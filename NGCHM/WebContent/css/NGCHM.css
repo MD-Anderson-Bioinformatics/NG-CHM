@@ -1,0 +1,489 @@
+@CHARSET "ISO-8859-1";
+/**
+ *  */
+
+::selection {
+    color: none;
+    background: none;
+}
+
+p {  
+  margin-left: 1.0em;  
+  margin-right: 1.0em;  
+}  
+
+body, html {
+    font-family: sans-serif;
+    font-family: arial;  
+    font-size: 100%;  
+}
+
+select {
+	border-width:1px;
+}
+
+div.mdaServiceHeader
+{
+	display: inline-flex;
+	float: none;
+	width: 100%;
+	height: 60px;
+	color: #666;
+	margin: 2px 0px 4px 0px;
+	background-color: white;
+	border-bottom: 4px solid #da0505;
+	z-index: -1;
+}
+
+div.mdaServiceHeaderLogo
+{
+	left: 0px;
+	display: inline-block;
+	width: auto;
+    padding: 0px 30px 0px 0px !important;
+}
+
+div.mdaServiceHeaderLogo img
+{
+	height: 54px;
+}
+
+#container{
+	display: flex;
+	height: 88%;
+}
+
+#divider{
+	height: 50%;
+	width: 5px;
+	margin-left:10px;
+	margin-right:10px;
+	vertical-align:top;
+	display:inline-block;
+	background: #666666;
+	cursor: ew-resize;
+}
+
+#detSizer{
+	height: 5px;
+	width: 5px;
+	/* margin-right:3px; */
+	margin-bottom:-10px;
+	bottom:17%;
+	right:8%;
+	vertical-align:bottom;
+	display:inline-block;
+	background: #666666;
+	cursor: nwse-resize;
+	/* float:right; */
+}
+
+#summary_chm {
+    height:auto;
+    min-height: 50px;
+    max-height: 100%;
+    width:48%;
+    min-width: 100px;
+    /* max-width: 80%; */
+    vertical-align:top;
+    margin-left: 3px;
+    display:inline-block;
+    position:relative;
+}
+
+#summary_canvas {
+	position:absolute;
+    /* height:68.3%; */
+    /* width:78%; */
+	zIndex:1;
+	image-rendering: pixelated;
+	image-rendering: -moz-crisp-edges;
+	/* float:right;
+	margin-right:2%; */
+}
+
+#summary_box_canvas {
+	position:absolute;
+	pointer-events: none;
+}
+
+#detail_box_canvas {
+	position:absolute;
+	pointer-events: none;
+}
+
+
+
+#column_dendro_canvas{
+	position:absolute;
+	/* float:right; */
+	/* margin-right:2%; */
+}
+
+
+#row_dendro_canvas{
+	position: absolute;
+	/* left:4%; */
+}
+
+.selection_canvas{
+	position: absolute;
+	image-rendering: pixelated;
+	image-rendering: -moz-crisp-edges;
+	z-index: -1;
+}
+
+#classBarLabels{
+	height:95%;
+	width:95%;
+	pointer-events:none;
+}
+
+#detail_chm {
+    height:auto;
+    width:48%;
+    min-height: 50px;
+    max-height: 100%;
+    min-width: 100px;
+    /* max-width: 90%; */
+    vertical-align:top;
+    display:inline-block;
+}
+
+#detail_canvas {
+	position:absolute;
+	height:82%;
+ /*   width:90%; */
+	zIndex:1;
+	outline: none;
+}
+
+#detail_buttons {
+	min-width:300px;
+	width:550px;
+	display: block;
+}
+
+#top_buttons {
+	margin-left:auto;
+}
+
+#bottom_buttons{
+	display: block;
+	margin-top:10px;
+}
+
+#settings_buttons{
+	display:inline;
+	margin-top:auto;
+	margin-bottom:auto;
+	margin-right:0px;
+}
+
+#flicks{
+	display:inline-block;
+}
+
+#pdf_gear{
+	display: inline-block;
+	margin-top: 10px;
+}
+
+#helptext {
+    margin: 5px !important;
+    padding: 10px 10px 10px 10px !important;
+    border: 1px solid #1a1a1a;
+    border-radius: 15px;
+    font-size: 90% !important;
+    font-family: Arial;
+    font-weight: normal;
+    background: #dddddd;
+    color: #000000;
+    min-width: 100px;
+    z-index: 10000;
+    text-align: center;
+    box-shadow: 5px 5px 5px #777777;
+}
+
+#helpprefs {
+    margin: 5px !important;
+    padding: 8px 8px 8px 8px !important;
+    border: 1px solid #1a1a1a;
+    border-radius: 15px;
+    font-size: 90% !important;
+    font-family: Arial;
+    font-weight: normal;
+    background: #dddddd;
+    color: #000000;
+    z-index: 10000;
+    text-align: center;
+    height: auto;
+    width: auto;
+    box-shadow: 5px 5px 5px #777777;
+    white-space: nowrap;
+}
+
+.input-color {
+    position: relative;
+}
+.input-color input {
+    padding-left: 0px;
+}
+.input-color .color-box {
+    width: 30px;
+    height: 15px;
+    display: inline-block;
+    background-color: #ccc;
+    position: absolute;
+    left: -8px;
+    top: -8px;
+}
+
+table {
+    width: 100%;
+    max-height: 500px;
+    border-spacing: 3px;
+}
+
+td {
+    height: 0px;
+	padding: 0px;
+    font-size: 80% !important;
+    font-family: Arial;
+    font-weight: normal;
+    color: #0843c1;
+    vertical-align: center;
+}
+
+.searchItem{
+	background-color: yellow;
+}
+
+.DynamicLabel{
+	position: absolute;
+	overflow: hidden;
+	text-overflow:ellipsis;
+    height: auto;
+    width: auto;
+    white-space: nowrap;
+}
+
+#searchError{
+	border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    font-size: 90% !important;
+    font-family: Arial;
+    font-weight: normal;
+    background: #dddddd;
+    color: red;
+    position: absolute;
+    width: 180px;
+    z-index:10;
+    /* height: 50px; */
+    text-align: center;
+    box-shadow: 5px 5px 5px #777777;
+}
+
+.labelMenu{
+    border: 1px solid #1a1a1a;
+    border-radius: 10px;
+    font-size: 90% !important;
+    font-family: Arial;
+    font-weight: normal;
+    background: #dddddd;
+    color: #000000;
+    width: 240px;
+    text-align: center;
+    box-shadow: 5px 5px 5px #777777;
+    position:relative;
+}
+
+.labelMenuCaption{
+	padding: .4em 1em;
+	background: #0843c1;
+	color: #ffffff;
+	font-size: 90% !important;
+    font-family: Arial;
+    font-weight: bold;
+    text-align: left;
+	border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.labelMenuClose{
+	position: absolute;
+	clear: both;
+	right: 2px;
+	bottom:2px;
+}
+
+.labelMenuHeader tr{
+	padding: 4em 1em;
+	position:relative;
+	margin: 0px 0px 0px 0px;
+	background: #f8f3f1; 
+	color: #0843c1;
+	text-align: left;
+	font-size: 90% !important;
+    font-family: Arial;
+    font-weight: normal;
+	border-radius: 10px;
+}
+
+.labelMenuBody tr{
+	height: 20px;
+}
+.labelMenuBody td{
+	height:20px;
+	position: absolute;
+	font-size: 80% !important;
+    font-family: Arial;
+    font-weight: normal;
+    color: #0843c1;
+    cursor: pointer;
+}
+
+.labelMenuBody td:hover{
+	font-weight: bold;
+}
+
+td.unclickable{
+	color: grey;
+	cursor: default;
+}
+
+.presetPalette{
+	height:20px;
+	width:90px;
+}
+
+.presetPaletteMissingColor{
+	height:20px;
+	width:10px;
+	margin-right:10px;
+	margin-left: 2px;
+}
+
+table.breakpointContainer {
+    border: none;
+    border-spacing: 0px;
+    border-collapse: collapse;
+}
+
+td.breakpointContainer
+th.breakpointContainer {
+    text-align: center;
+    margin: 0px;
+    padding: 0px 5px 0px 0px;
+    border-spacing: 0px;
+    border-collapse: collapse;    
+}
+
+#prefsPanel {
+	height: 100%;
+	width: 420px;
+	overflow: none;
+	position: fixed;
+	top: 0;
+	right: 0;
+	background-color: #CBDBF6; 
+}
+
+#prefTabButtons {
+	align: top;
+	border-bottom-width: 2px;
+	border-bottom-color: #0843c1;
+	border-bottom-style: solid;
+}
+
+#prefPrefs {
+	position: relative;
+    display: inline-block;
+    height: 88%;
+    overflow: auto;
+    overflow-x: hidden;
+}
+
+#prefActions {
+	position: absolute;
+	bottom: 5;
+	left: 32;
+	align: right;
+	background-color: #CBDBF6; 
+    font-family: Arial;
+    font-weight: bold;
+    text-align: center;
+    color: red;
+}
+
+#pdfPrefsPanel, #msgBox {
+    margin: 5px !important;
+    padding: 2px 2px 2px 2px !important;
+    border: 1px solid #1a1a1a;
+    border-radius: 15px;
+    font-size: 90% !important;
+    font-family: Arial;
+    font-weight: normal;
+    background: #dddddd;
+    color: #000000;
+    z-index: 10000;
+    text-align: center;
+    height: auto;
+    width: auto;
+    box-shadow: 5px 5px 5px #777777;
+    white-space: nowrap;
+}
+
+#prefsHeader, #pdfPrefsHeader, #msgBoxHdr{
+    display: table;
+    font-size: 18px;
+    font-weight: bold;
+    color: #0843c1;
+    margin: auto;
+    width: 100%;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    background: #CBD1EA;
+}
+
+#pdfPrefsHeader, #msgBoxHdr{
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+}
+
+.prefSubPanel{
+	width: inherit;
+	vertical-align: top;
+	height: 99%;
+	background-color: #CBDBF6; 
+    display: none;
+    overflow: none;
+    border: 2px solid #CBDBF6;
+}
+
+
+.hide{
+
+display: none
+
+}
+
+.show{
+
+display: ''
+
+}
+
+table.helpTable { 
+  border-collapse: collapse; 
+  width: 90%;
+}
+  
+table.helpTable td, 
+table.helpTable th { 
+  border: 1px solid black;
+  padding: 5px; 
+  color: black;
+}
+

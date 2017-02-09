@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project NGCHM">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <!--define folder properties-->
+    <property name="build.dir" value="./build"/>
+    <property name="classes.dir" value="./build/classes"/>
+    <property name="src.dir" value="./src/mda/ngchm/datagenerator"/>
+    <property name="dir.buildfile" value="."/>
+    <property name="dir.workspace" value="${dir.buildfile}"/>
+    <property name="dir.jarfile" value="."/>
+    <property name="mapgen.path" value="${dir.jarfile}/ShaidyMapGen.jar"/>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+    </target>
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpath="./WebContent/WEB-INF/lib/json-simple-1.1.1.jar:./WebContent/WEB-INF/lib/pdfbox-2.0.4.jar:./WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar"/>
+    </target>
+
+	<target name="create_run_jar" depends="compile">
+        <jar destfile="${mapgen.path}" filesetmanifest="mergewithoutmain">
+            <manifest>
+                <attribute name="Main-Class" value="mda.ngchm.datagenerator.ShaidyRMapGen"/>
+                <attribute name="Class-Path" value="."/>
+            </manifest>
+            <fileset dir="${dir.jarfile}/build/classes">
+            	<exclude name="**/WEB-INF/**"/>
+            	<exclude name="**/css/**"/>
+               	<exclude name="**/images/**"/>
+              	<exclude name="**/javascript/**"/>
+              	<exclude name="**/META-INF/**"/>
+                <exclude name="*.html"/>
+            </fileset>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/json-simple-1.1.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/pdfbox-2.0.4.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar"/>
+         </jar>
+    </target>
+</project>

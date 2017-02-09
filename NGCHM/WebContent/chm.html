@@ -1,0 +1,251 @@
+<!DOCTYPE html5>
+<html>
+<title>NG-CHM</title>
+<head>
+	<meta charset="utf-8"/>
+	<link rel="stylesheet" href="css/NGCHM.css">
+	<script src="javascript/lib/zip.js"></script>
+	<script src="javascript/lib/deflate.js"></script>
+	<script src="javascript/lib/inflate.js"></script>
+ 	<script src="javascript/MatrixManager.js"></script>
+  	<script src="javascript/NGCHM_Util.js"></script>
+	<script src="javascript/SelectionManager.js"></script>
+	<script src="javascript/ColorMapManager.js"></script>
+ 	<script src="javascript/SummaryHeatMapDisplay.js"></script>
+ 	<script src="javascript/DetailHeatMapDisplay.js"></script>
+ 	<script src="javascript/Dendrogram.js"></script>
+ 	<script src="javascript/UserHelpManager.js"></script>
+ 	<script src="javascript/UserPreferenceManager.js"></script>
+ 	<script src="javascript/PdfGenerator.js"></script>
+ 	<script src="javascript/Linkout.js"></script>
+ 	<script src="javascript/CompatibilityManager.js"></script>
+ 	
+ 	<script src="javascript/lib/jspdf.debug.js"></script>
+ 	
+	<meta id='viewport' name ="viewport" content="">
+	
+ 	<script type="text/Javascript">
+ 	NgChm.heatMap = null;  //global - heatmap object.
+ 	NgChm.staticPath = ""; //path for static web content - changes in galaxy.
+ 	
+ 	
+ 	window.onload = function() {
+ 		// See if we are running in file mode - launcHed locally rather than from a web server
+		if (document.location.search === "") {
+			//In local mode, need user to select the zip file with data (required by browser security)
+			var chmFileItem  = document.getElementById('fileButton');
+			document.getElementById('fileOpen_btn').style.display = '';
+			chmFileItem.style.display = '';
+			chmFileItem.addEventListener('change', loadCHM, false);
+		} else {
+			//Run from a web server.
+	   		var mapName = NgChm.UTIL.getURLParameter('map');
+    		var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.WEB_SOURCE);
+    		if (!NgChm.SEL.isSub) {
+    			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
+    			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+    			NgChm.SUM.initSummaryDisplay();
+    		} else {  // separated detail browser 
+    			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.DET.processDetailMapUpdate);
+    		}
+    		NgChm.DET.initDetailDisplay();
+ 		}
+		NgChm.SEL.setupLocalStorage();
+		document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);	
+		document.getElementById("detail_canvas").focus();
+
+ 	};	
+ 	
+ 	//Funciton called when running in local file mode and user selects the chm data .zip file.
+ 	function loadCHM (evt) {
+ 		zip.useWebWorkers = false;
+ 		var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.FILE_SOURCE);
+		var chmFile  = document.getElementById('chmFile').files[0];
+		var split = chmFile.name.split("."); 
+		if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
+			NgChm.UHM.invalidFileFormat();
+		} else {
+			if (!NgChm.SEL.isSub) {
+				NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
+				NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+				NgChm.SUM.initSummaryDisplay();
+			} else { // separated detail browser
+				NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.DET.processDetailMapUpdate, chmFile);			
+			}	
+			NgChm.DET.initDetailDisplay();
+			NgChm.SEL.openFileToggle();
+		}
+ 	};
+ 	
+ 	
+ 	function chmResize() {
+ 		NgChm.SUM.summaryResize();
+ 		NgChm.DET.detailResize();
+ 		NgChm.UPM.prefsResize();
+	//   	NgChm.DET.clearLabels();
+ 	//	NgChm.DET.drawRowAndColLabels();
+ 		NgChm.DET.detailResize();
+
+ 	}
+ 	</script>
+</head>
+
+<body onresize="chmResize()">
+    <div class="mdaServiceHeader" id="mdaServiceHeader">
+        <div class="mdaServiceHeaderLogo">
+        	<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
+           		<img src="images/mdabcblogo262x108.png" alt=""/>
+           </a>
+       	</div>
+		<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);">
+			<table><tr>
+				<td><div id="fileInstr" style="padding-bottom:5px; font-size: 14px; font-weight:bold;color: rgb(51, 51, 51);">Select .NGCHM file to view:<br></div></td></tr><tr>
+				<td><div style="font-size: 12px; font-weight:bold;color: rgb(51, 51, 51);"><input type='file' id='chmFile' name='chmFile'></div></td>
+			</tr></table>
+		    	
+    	</div>     
+ 		<div id='detail_buttons' style="display:none;" onmouseout='NgChm.UHM.userHelpClose();'> 
+	 		<div id='top_buttons'>
+     			<div id="mapName" onmouseover='NgChm.UHM.detailDataToolHelp(this,"Map Name: " + NgChm.heatMap.getMapInformation().name + "<br><br>Description: " + NgChm.heatMap.getMapInformation().description,350,"left")' style="font-size: 14px;color: rgb(51, 51, 51);"></div>
+  		    </div>
+		    <div id='bottom_buttons' >
+	 	    	<img id='fileOpen_btn' style="display: none;" src='images/openMap.png' alt='Open .NG-CHM' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Open .NG-CHM Heat Map",160)' onclick='NgChm.SEL.openFileToggle();' align="top"   />
+	 	    	<img id='back_btn' style="display: none;" src='images/returnArrow.png' alt='Return to previous screen' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Return To Previous Screen",160)' onclick='NgChm.UTIL.returnToHome();' align="top"   />
+	 	    	<img id='split_btn' src='images/split.png' alt='Split' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Split Into Two Windows",160)' onclick='NgChm.DET.detailSplit();' align="top"   />
+	 			<img id='zoomOut_btn' src='images/zoom-out.png' alt='Zoom Out' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Zoom Out")' onclick='NgChm.DET.detailDataZoomOut();'   align="top"   />
+			    <img id='zoomIn_btn' src='images/zoom-in.png' alt='Zoom In' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Zoom In")' onclick='NgChm.DET.detailDataZoomIn();' align="top"   />
+			    <img id='full_btn' src='images/full_selected.png' alt='Full' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Normal View")' onclick='NgChm.DET.detailNormal();' align="top"   />
+			    <img id='ribbonH_btn' src='images/ribbonH.png' alt='Ribbon H' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Horizontal Ribbon View",160)' onclick='NgChm.DET.detailHRibbonButton();' align="top"  />
+			    <img id='ribbonV_btn' src='images/ribbonV.png' alt='Ribbon V' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Vertical Ribbon View",160)' onclick='NgChm.DET.detailVRibbonButton();'  align="top"  />
+	   			<span style='display: inline-block;'><b>Search: </b><input type="text" id="search_text" name="search" onkeyup='NgChm.DET.clearSrchBtns(event);' onchange='NgChm.DET.detailSearch();'
+	   			                                                     onmouseover='NgChm.UHM.detailDataToolHelp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put \"\" characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.", 400)' /></span>	
+			    <img id='go_btn' src='images/go.png' alt='Go' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Search Row/Column Labels",180)'  onclick='NgChm.DET.detailSearch();' align="top"  />
+			    <img id='prev_btn' src='images/prev.png' alt='Previous' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Previous Search Result",160)' style="display:none;" onclick='NgChm.DET.searchPrev();'  align="top"  />
+			    <img id='next_btn' src='images/next.png' alt='Next' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Next Search Result",160)' style="display:none;" onclick='NgChm.DET.searchNext();'  align="top"  />
+			    <img id='cancel_btn' src='images/cancel.png' alt='Cancel' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Clear Search Results",160)' style="display:none;" onclick='NgChm.DET.clearSearch(event);'  align="top"  />
+		    </div>
+			<div id="pdf_gear" align="right" style="position: absolute;right: 15;top:5">
+				<div id="flicks" style="display: none;">
+				    <div id="noFlickViews" style="display: none;">
+				    	<table><tr><td><img id='flickOff' src='images/layersOff.png' onclick="NgChm.SEL.flickToggleOn();" onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Open Data Layer Control",160)'/></td></tr></table>
+				    </div>
+				    <div id="flickViews" style="display: none;">
+				    	<table><tr>
+				    			<td><table><tr><td rowspan="2"><img id='flick_btn' src='images/toggleUp.png' alt='Flick' onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Toggle Between Selected Data Layers (F2)",160)' onclick='NgChm.SEL.flickChange();'/></td><td><select name="flick1" id="flick1" onchange="NgChm.SEL.flickChange('flick1');"></select></td></tr><tr><td><select name="flick2" id="flick2" onchange="NgChm.SEL.flickChange('flick2');"></select></td></tr></table></td>
+				    			<td><img id='flickOn_pic' src='images/layersOn.png'  onclick="NgChm.SEL.flickToggleOff();" onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Close Data Layer Control",160)'/></td>
+				    		</tr></table>
+			    	</div>
+				</div>
+		    	<img id='pdf_btn' src='images/pdf.png' alt='go' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Save Heat Map As PDF",160)' onclick='NgChm.PDF.openPdfPrefs(this,null);' align="top"/>
+		    	<img id='save_btn' src='images/saveButton.png' alt='go' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Save Heat Map Changes",160)' onclick='NgChm.UHM.saveHeatMapChanges();' align="top"/>
+ 	    		<img id='gear_btn' src='images/gear.png' alt='Modify Map' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Modify Map Preferences",160)' onclick='NgChm.UPM.editPreferences(this,null);' align="top"/>
+ 	    		<img id='help_btn' src='images/questionMark.png' alt='Help' onmouseover='NgChm.UHM.detailDataToolHelp(this,"NgChm Help",160)' onclick='NgChm.UHM.openHelp(this);' align="top"/> 
+	    		
+    		</div>
+		 </div> 
+    </div>  
+
+	<div id="container" >
+		<div id='summary_chm' style='position: relative;'>
+   	        <img id='messageOpen_btn' style="position:absolute; display: none;" src='images/messageButton.png' alt='Open Alert' onclick='NgChm.SUM.displayInfoMessage();' align="top"   />
+			<canvas id='column_dendro_canvas' width='1200' height='500'></canvas>
+			<canvas id='row_dendro_canvas' width='1200' height='500'></canvas>
+			<canvas id='summary_canvas'></canvas>
+			<canvas id='summary_box_canvas' ></canvas>
+			<canvas id='summary_col_select_canvas' class='selection_canvas'></canvas>
+			<canvas id='summary_row_select_canvas' class='selection_canvas' ></canvas>
+			<div id='sumlabelDiv' style="display: inline-block"></div>
+		</div>
+		
+		<div id= 'divider' style='position: relative;' onmouseover="NgChm.UHM.userHelpClose()" onmousedown="NgChm.SUM.dividerStart()" ontouchstart="NgChm.SUM.dividerStart()">
+		</div>
+		
+		<div id='detail_chm' style='position: relative;'>
+			<canvas id='detail_canvas' tabindex='1'></canvas>
+			<canvas id='detail_box_canvas'></canvas>
+	<!--		<div id='detSizer' style='position:absolute'  onmousedown="NgChm.DET.detSizerStart()" ontouchstart="NgChm.DET.detSizerStart()"></div> -->
+			<div id='labelDiv' style="display: inline-block"></div>
+		</div>
+	</div>
+	<div id='insilico_footer' style="left:10px; bottom:15px;position:absolute">
+		<a href="http://insilico.us.com/"  target="_blank">
+			<img id='insilicologo' src='images/insilicologo.png' alt='insilico' height="28px"/>
+		</a>
+	</div>
+	<div id="pdfPrefsPanel" style="display: none; position: absolute; background-color: rgb(203, 219, 246);">
+		<div class="prefsHeader" id="pdfPrefsHeader">PDF Generation</div>
+		<table>
+			<tbody>
+				<tr>
+					<td>
+						<div id="pdfprefprefs" style="display: block; background-color: rgb(203, 219, 246);">
+							<div style="display: inherit; width: 220px; height: 220px;">
+								<h3 style="margin-bottom:0px;">Show maps:</h3>
+								<input id="pdfInputSummaryMap" type="radio" name="pages" value="summary"> Summary<br>
+								<input id="pdfInputDetailMap" type="radio" name="pages" value="detail"> Detail<br>
+								<input id="pdfInputBothMaps" type="radio" name="pages" value="both" checked> Both<br><br>
+						<!--  		<input id="pdfInputPages" type="checkbox" name="pages" value="separate"> Show maps on separate pages<br>	-->						
+								<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait 
+								<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape <br>							
+								<h3 style="margin-bottom:0px;">Show classification bars:</h3>							
+								<input id="pdfInputCondensed" type="radio" name="condensed" value="condensed" checked> Condensed 
+								<input id="pdfInputHistogram" type="radio" name="condensed" value="histogram"> Histogram <br>							
+								<input id="pdfInputColumn" type="checkbox" name="class" value="row" checked> Column<br>							
+								<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Row
+							</div>
+							<table>
+								<tbody>
+									<tr>
+										<td style="font-weight: bold;">
+											<div id="pref_buttons" align="right">
+												<img id="prefCancel_btn" src="images/prefCancel.png" alt="Cancel changes" onclick="NgChm.PDF.pdfCancelButton();" align="top">&nbsp;&nbsp;
+												<img id="prefCreate_btn" src="images/createPdf.png" alt="Create PDF" onclick="NgChm.PDF.getPDF();" align="top">
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>   
+	<div id="msgBox" style="top: 150;left: 300; display: none; position: absolute; background-color: rgb(230, 240, 255);">
+		<div class="msgBoxHdr" id="msgBoxHdr"></div>  
+		<table>
+			<tbody>
+				<tr>
+					<td>
+						<div id="msgBoxTxt" style="display: inherit;font-size: 12px; background-color: rgb(230, 240, 255); width: 400px; height: 80px;"></div>
+						<table>
+							<tbody>
+								<tr>
+									<td align="left">
+											<img id="msgBoxBtnImg_1" align="top" style="display: inherit;">
+									</td>
+									<td align="left">
+											<img id="msgBoxBtnImg_2" align="top" style="display: inherit;">
+									</td>
+									<td align="right">
+											<img id="msgBoxBtnImg_3" align="top" style="display: inherit;">
+									</td>
+									<td align="right">
+											<img id="msgBoxBtnImg_4" align="top" style="display: inherit;">
+									</td>
+								</tr>
+							</tbody>
+						</table> 
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div id="prefsPanel" style="display: none;">
+		<div id="prefsHeader">Heat Map Display Properties<img id="redX_btn" src="images/redX.png" alt="Cancel changes" onclick="NgChm.UPM.prefsCancelButton();" align="right"></div>
+		<div style="height: 20px;"></div>
+		<div id="prefTabButtons">&nbsp;<img id="prefRowsCols_btn" src="images/rowsColsOn.png" alt="Edit Rows &amp; Columns" onclick="NgChm.UPM.showRowsColsPrefs();" align="top">&nbsp;<img id="prefLayer_btn" src="images/dataLayersOff.png" alt="Edit Data Layers" onclick="NgChm.UPM.showLayerPrefs();" 	align="top">&nbsp;<img id="prefClass_btn" src="images/covariateBarsOff.png" alt="Edit Classifications" onclick="NgChm.UPM.showClassPrefs();" align="top"></div>
+		<div id="prefPrefs" class="prefSubPanel" style="display: block; height: 70"></div>
+	</div>
+	</body>
+</html>

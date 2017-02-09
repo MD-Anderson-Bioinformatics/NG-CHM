@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<tool id="NGCHMheatmap" name="NGCHM Heatmap" version="4.1.1">
+  <description>Create HeatMap from Dendogram and Matrix</description>
+<command>$GALAXY_ROOT_DIR/tools/MDA_Heatmaps/heatmap.sh  '$hmname' '$hmdesc' '$inputmatrix' $rowOrderMethod $rowDistanceMeasure $rowAgglomerationMethod $columnOrderMethod $columnDistanceMeasure $columnAgglomerationMethod '$summarymethod' '$GALAXY_ROOT_DIR/tools/MDA_Heatmaps/'
+    #for $op in $operations
+       ${op.class_name}
+       ${op.repeatinput.file_name}
+       ${op.cat}
+      #end for
+ 	'$output' 
+ </command>
+	<stdio>
+      <exit_code range="1:" level="fatal" />
+	</stdio>
+  <inputs>
+    <param name="inputmatrix" type="data" label="Input Matrix" />
+    <param name="hmname" size="20" type="text" value="HM_name" label="User Defined HeatMap Name"/>
+    <param name="hmdesc" size="100" optional="true" type="text" value="_" label="Optional HeatMap Description"/>
+    <param name="summarymethod" 	type="select"  label="Data Summarization Method">
+		<option value="average">average</option>
+		<option value="sample">sample</option>
+		<option value="mode">mode</option>
+    </param>
+	<param name="rowOrderMethod" type="select" label="Row ordering method" help="Choices -- Hierarchical Clustering, Original Order, Random">
+		<option value="Hierarchical">Hierarchical Clustering</option>
+		<option value="Original">Original Order</option>	    
+		<option value="Random">Random</option>	    
+	</param>
+	<param name="rowDistanceMeasure" type="select"  label="Row Distance Metric" help="euclidean, binary, manhattan, maximum, canberra, minkowski, or correlation">
+		<option value="euclidean">Euclidean</option>
+		<option value="binary">Binary</option>
+		<option value="manhattan">Manhattan</option>
+		<option value="maximum">Maximum</option>
+		<option value="canberra">Canberra</option>	    
+		<option value="minkowski">Minkowski</option>	    
+		<option value="correlation">Correlation</option>	    
+	</param>
+	<param name="rowAgglomerationMethod" type="select"  label="Row Clustering Method" help="Choices: 'average' for Average Linkage, 'complete' for Complete Linkage, 'single' for Single Linkage, 'ward', 'mcquitty', 'median', or 'centroid'.">
+		<option value="average">Average Linkage</option>
+		<option value="complete">Complete Linkage</option>
+		<option value="single">Single Linkage</option>
+		<option value="ward">Ward</option>
+		<option value="mcquitty">Mcquitty</option>	    
+		<option value="median">Median</option>	    
+		<option value="centroid">Centroid</option>	    
+	</param>
+	<param name="columnOrderMethod" type="select" label="Column ordering method" help="Choices -- Hierarchical Clustering, Original Order, Random">
+		<option value="Hierarchical">Hierarchical Clustering</option>
+		<option value="Original">Original Order</option>	    
+		<option value="Random">Random</option>	    
+	</param>
+	<param name="columnDistanceMeasure" type="select"  label="Column Distance Metric" help="euclidean, binary, manhattan, maximum, canberra, minkowski, or correlation">
+		<option value="euclidean">Euclidean</option>
+		<option value="binary">Binary</option>
+		<option value="manhattan">Manhattan</option>
+		<option value="maximum">Maximum</option>
+		<option value="canberra">Canberra</option>	    
+		<option value="minkowski">Minkowski</option>	    
+		<option value="correlation">Correlation</option>	    
+	</param>
+	<param name="columnAgglomerationMethod" type="select"  label="Column Clustering Method" help="Choices: 'average' for Average Linkage, 'complete' for Complete Linkage, 'single' for Single Linkage, 'ward', 'mcquitty', 'median', or 'centroid'.">
+		<option value="average">Average Linkage</option>
+		<option value="complete">Complete Linkage</option>
+		<option value="single">Single Linkage</option>
+		<option value="ward">Ward</option>
+		<option value="mcquitty">Mcquitty</option>	    
+		<option value="median">Median</option>	    
+		<option value="centroid">Centroid</option>	    
+	</param>
+    <repeat name="operations" title="Covariate Bars">
+        <param name="class_name" size="20" type="text" value="" label="Axis Covariate Name"/>
+        <param name="repeatinput" type="data" format="text" label="Axis Covariate File"/>        
+		<param name="cat" type="select" label="Axis Covariate Type">
+		  <option value="row_categorical" >row categorical</option>
+		  <option value="row_continuous" >row continuous</option>
+		  <option value="column_categorical" >column categorical</option>
+		  <option value="column_continuous" >column continuous</option>
+		</param>
+    </repeat>       
+  </inputs>
+  <outputs>
+    <data name="output" label='${hmname}' format="zip"/>
+  </outputs>
+</tool>
