@@ -91,8 +91,10 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 	this.getColor = function(value){
 		var color;
 	
-		if (value >= NgChm.SUM.maxValues){
+		if (value >= NgChm.SUM.maxValues || value == "Missing"){
 			color = rgbaMissingColor;
+		}else if(value <= NgChm.SUM.minValues){
+			color = (255, 255, 255, 0);
 		}else if(value <= thresholds[0]){
 			color = rgbaColors[0]; // return color for lowest threshold if value is below range
 		} else if (value >= thresholds[numBreaks-1]){
@@ -107,6 +109,9 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 	
 	this.getClassificationColor = function(value){
 		var color;
+		if (value == "!CUT!") {
+			return (255, 255, 255, 0);
+		}
 		if (type == "discrete"){
 			for (var i = 0; i < thresholds.length; i++){
 				if (value == thresholds[i]){
@@ -146,6 +151,17 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 		colors.splice(bounds["lower"],1);
 		rgbaColors.splice(bounds["lower"],1);
 	}
+	
+	this.getHexToRgba = function(hex) { // I didn't write this function. I'm not that clever. Thanks stackoverflow
+	    var rgbColor = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	    return rgbColor ? {
+	        r: parseInt(rgbColor[1], 16),
+	        g: parseInt(rgbColor[2], 16),
+	        b: parseInt(rgbColor[3], 16),
+	        a: 255
+	    } : null;
+	}
+
 	
 	//===========================//
 	// internal helper functions //
@@ -251,7 +267,7 @@ NgChm.CMM.ColorMapManager = function(mapConfig) {
 			var colorMap = new NgChm.CMM.ColorMap(colorMapCollection[2][colorMapName].color_map);
 		}
 		return colorMap;
-	}
+	};
 	
 	this.setColorMap = function(colorMapName, colorMap, type) {
 		if (type === "row") {
@@ -264,5 +280,5 @@ NgChm.CMM.ColorMapManager = function(mapConfig) {
 		existingColorMap.colors = colorMap.getColors();
 		existingColorMap.thresholds = colorMap.getThresholds();
 		existingColorMap.missing = colorMap.getMissingColor();
-	}
+	};
 }

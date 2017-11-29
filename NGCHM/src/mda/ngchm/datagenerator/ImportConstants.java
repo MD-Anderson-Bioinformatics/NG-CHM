@@ -20,7 +20,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 public final class ImportConstants {
 
 	//Version #
-	public static String CURRENT_VERSION = "1.0.0";
+	public static String CURRENT_GENERATOR_VERSION = "1.1.0";
 
 	//turn debugging on/off
 	public static boolean DEBUG = false;
@@ -39,6 +39,11 @@ public final class ImportConstants {
 	public static String BRACE_CLOSE = "}";
 	public static String BRACKET_OPEN = "[";
 	public static String BRACKET_CLOSE = "]";
+	
+	//Covariate Bar Types
+	public static String SCATTER_PLOT = "scatter_plot";
+	public static String COLOR_PLOT = "color_plot";
+	public static String BAR_PLOT = "bar_plot";
 
 	//JSON Label Constants
 	public static String HEIGHT_LABEL = "\"height\": ";
@@ -60,12 +65,15 @@ public final class ImportConstants {
 	public static String TILECOLSPER_LABEL = "\"cols_per_tile\": ";
 	public static String TOTALROWS_LABEL = "\"total_rows\": ";
 	public static String TOTALCOLS_LABEL = "\"total_cols\": ";
+	public static String MAP_CUT_ROWS_LABEL = "\"map_cut_rows\": ";
+	public static String MAP_CUT_COLS_LABEL = "\"map_cut_cols\": ";
 	public static String LEVELS_LABEL = "\"levels\" : ";
 	public static String ROW_SUMMARY_RATIO_LABEL = "\"row_summary_ratio\": ";
 	public static String COL_SUMMARY_RATIO_LABEL = "\"col_summary_ratio\": ";
 	public static String COLORMAPS_LABEL = "\"colormaps\" :";
 	public static String TYPE_LABEL = "\"type\" :";		
 	public static String COLORS_LABEL = "\"colors\" :";	
+	public static String DATA_TYPE_LABEL = "\"data_type\" :";	
 	public static String THRESHOLDS_LABEL = "\"thresholds\" :";	
 	public static String MISSING_LABEL = "\"missing\" :";	
 	public static String LABEL_LABEL = "\"label\" :";	
@@ -83,6 +91,8 @@ public final class ImportConstants {
 	public static String GRID_COLOR_LABEL = "\"grid_color\" :";	
 	public static String VERSION_LABEL = "\"version_id\" :";	
 	public static String LABEL_LENGTH_LABEL = "\"label_display_length\" :";	
+	public static String TOP_ITEMS_LABEL = "\"top_items\" :";	
+	public static String LABEL_ABBREV_METHOD_LABEL = "\"label_display_method\" :";	
 	public static String LABEL_TRUNCATION_LABEL = "\"label_display_truncation\" :";	
 	public static String READ_ONLY_LABEL = "\"read_only\" :";	
 	public static String SUMMARY_WIDTH_LABEL = "\"summary_width\" :";	
@@ -90,6 +100,11 @@ public final class ImportConstants {
 	public static String SUMMARY_HEIGHT_LABEL = "\"summary_height\" :";	
 	public static String DETAIL_HEIGHT_LABEL = "\"detail_height\" :";	
 	public static String SELECTION_COLOR_LABEL = "\"selection_color\" :";	
+	public static String BAR_TYPE_LABEL = "\"bar_type\" :";	
+	public static String FG_COLOR_LABEL = "\"fg_color\" :";	
+	public static String BG_COLOR_LABEL = "\"bg_color\" :";	
+	public static String LOW_BOUND_LABEL = "\"low_bound\" :";	
+	public static String HIGH_BOUND_LABEL = "\"high_bound\" :";	
 	
 	//PDF Generation Constants
 	public static int PDF_CONTENT_START = 725;
@@ -103,13 +118,14 @@ public final class ImportConstants {
 	public static PDFont PDF_FONT_BOLD = PDType1Font.HELVETICA_BOLD;
 	
 	//Dendro PNG Generation Constants
-	public static int TN_HEIGHT = 80;
+	public static int TN_HEIGHT = 60;
 	public static int TN_WIDTH = 200;
 	public static int PDF_HEIGHT = 161;
 	public static int PDF_WIDTH = 600;
-	public static int TN_MAX_WIDTH = 240;
+	public static int TN_MAX_WIDTH = 210;
 	public static int TN_MIN_WIDTH = 170;
 	public static int TN_THUMB_WIDTH = TN_MAX_WIDTH + TN_HEIGHT + 1;
+	public enum LineSegment {NONE, LEFT_END, MIDDLE, RIGHT_END}
 			
 	//Data layer constants
 	public static String LAYER_THUMBNAIL = "tn";
@@ -140,10 +156,12 @@ public final class ImportConstants {
 	public static String COLOR_WHITE = "#FFFFFF";
 	public static String COLOR_BLACK = "#000000";
 	public static String COLOR_LIME = "#00FF38";
-	public static String MAX_VALUES = "9999999999.99";
+	public static float MAX_VALUES = 2147483647;
+	public static float MIN_VALUES = -2147483647;
 	public static String LABEL_LENGTH_DEFAULT = "\"20\""; 
 	public static String LABEL_TRUNCATE_DEFAULT = "\"END\""; 
-	public static Set<String> NA_VALUES = new HashSet<String>(Arrays.asList("NA","N/A","-","?","NAN","NaN","Na","na","n/a"));
+	public static String CUT_VALUE = "!CUT!"; 
+	public static Set<String> NA_VALUES = new HashSet<String>(Arrays.asList("null","NA","N/A","-","?","NAN","NaN","Na","na","n/a",EMPTY,SPACE));
 
 	
 	//JSON node name constants
@@ -167,8 +185,16 @@ public final class ImportConstants {
 	public static String POSITION =  "position";
 	public static String HEIGHT =  "height";
 	public static String ORDER_HIERARCHICAL =  "Hierarchical";
+	public static String ORDER_RANDOM =  "Random";
+	public static String ORDER_ORIGINAL =  "Original";
 	public static String ORDER_FILE =  "order_file";
 	public static String ORDER_METHOD =  "order_method";
+	public static String TOP_ITEMS =  "top_items";
+	public static String CUT_LOCATIONS =  "cut_locations";
+	public static String CUT_WIDTH =  "cut_width";
+	public static String TREE_CUTS =  "tree_cuts";
+	public static String LABEL_MAXIMUM_LENGTH = "label_display_length"; 
+	public static String LABEL_ABBREV_METHOD = "label_display_abbreviation";
 	public static String DISTANCE_METRIC =  "distance_metric";
 	public static String AGGLOMERATION_METHOD =  "agglomeration_method";
 	public static String DENDRO_FILE =  "dendro_file";
@@ -184,9 +210,26 @@ public final class ImportConstants {
 	public static String COLORTYPE_DISCRETE = "discrete";
 	public static String COLORTYPE_CONTINUOUS = "continuous";
 	public static String COLORMAP_TYPE = "type"; 
+	public static String CLASS_BAR_TYPE = "bar_type"; 
+	public static String CLASS_FG_COLOR = "fg_color"; 
+	public static String CLASS_BG_COLOR = "bg_color"; 
+	public static String CLASS_LOW_BOUND = "low_bound"; 
+	public static String CLASS_HIGH_BOUND = "high_bound"; 
 	public static String COLORMAP_THRESHOLDS = "thresholds"; 
 	public static String COLORMAP_COLORS = "colors"; 
 	public static String COLORMAP_MISSING = "missing"; 
+	public static String DATA_START_ROW = "data_start_row";
+	public static String DATA_START_COL = "data_start_column"; 
+	public static String DATA_END_ROW = "data_end_row"; 
+	public static String ROW_COVARIATES = "row_covariates"; 
+	public static String COL_COVARIATES = "col_covariates"; 
+	public static String VALUE_ROW = "value_row"; 
+	public static String VALUE_COL = "value_column"; 
+	
+	
+	public static int RGB_BLACK = -16777216;     
+	public static int RGB_WHITE = -1;     
+
 	
 	//Mapping constant for colors
 	public static String COLOR_NAME_MAP[] = {

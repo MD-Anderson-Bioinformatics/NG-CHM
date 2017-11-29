@@ -1,0 +1,676 @@
+//==============================================//
+// Link out file for standard Galaxy Heat Maps  //
+//==============================================//
+
+//==============================================//
+// Biology base plugin                          //
+//==============================================// 
+(function(linkouts) {
+
+    linkouts.addSubtype ("bio.gene.hugo", "bio.pubmed");
+    linkouts.addSubtype ("bio.mirna", "bio.pubmed");
+    linkouts.addSubtype ("bio.gene.entrez", "bio.gene.entrezid");
+
+    function searchGeneCards(labels){
+	    linkouts.openUrl("http://www.genecards.org/Search/Keyword?queryString=" + labels[0]);
+    }
+
+    function searchPubMedForAll(labels){
+	    linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"));
+    }
+
+    function searchPubMedForAny(labels){
+	    linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"));
+    }
+
+    function openGenevisiblePeptide (names) {
+	var gname = names[0];
+	linkouts.openUrl("https://genevisible.com/tissues/HS/UniProt/" + gname, "genevisible");
+    }
+
+    function openGenevisibleHugo (names) {
+	var gname = names[0];
+	linkouts.openUrl("https://genevisible.com/tissues/HS/Gene%20Symbol/" + gname, "genevisible");
+    }
+
+    function openHGNCGene (names) {
+        var gname = names[0];
+        linkouts.openUrl("http://www.genenames.org/cgi-bin/gene_symbol_report?q=data/hgnc_data.php&match=" + gname, "hgnc");
+    }   
+
+    linkouts.addPlugin({
+        name: "Biology base",
+        description: "Adds general linkouts related to biology.",
+        version: "0.1.2",
+        logo: "https://bioinformatics.mdanderson.org/people/Bradley.Broom/tigerdna.png",
+        linkouts: [
+            // linkouts for pubmed terms
+            { menuEntry: "Search PubMed for All", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAll },
+            { menuEntry: "Search PubMed for Any", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAny },
+            // linkouts for gene symbols
+            { menuEntry: "View GeneCards", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchGeneCards },
+            { menuEntry: "View GeneVisible", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGenevisibleHugo },
+            { menuEntry: "View HGNC", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openHGNCGene },
+            // linkouts for uniprot ids
+            { menuEntry: "View GeneVisible", typeName: "bio.protein.uniprotid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGenevisiblePeptide }
+        ]
+    });
+}) (linkouts);
+
+//==============================================//
+// Amigo plugin                                 //
+//==============================================//
+(function(linkouts) {
+
+    function openAmigo (names) {
+	var goid = names[0];
+	linkouts.openUrl("http://amigo.geneontology.org/cgi-bin/amigo/term_details?term=" + goid, "genoontology");
+    };
+
+    linkouts.addPlugin({
+        name: "Amigo",
+	description: "Adds linkouts to Amigo gene ontology database.",
+	version: "0.1.0",
+	site: "http://amigo.geneontology.org/amigo",
+	logo: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png",
+	linkouts: [
+	    { menuEntry: "View Amigo", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openAmigo }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// BioGPS plugin                                //
+//==============================================//
+(function(linkouts) {
+
+    function searchBioGPS (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://biogps.org/search/?q=" + gname, "biogps");
+    }
+
+    linkouts.addPlugin({
+        name: "BioGPS",
+        description: "Adds linkouts to the BioGPS gene annotation portal.",
+        version: "0.1.0",
+        site: "http://biogps.org/",
+        logo: "http://biogps.org/assets/img2/biogps_logo.png",
+        linkouts: [
+	    { menuEntry: "View bioGPS", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchBioGPS }
+        ]
+    });
+}) (linkouts);
+
+//==============================================//
+// Cancer Digital Slide Archive plugin          //
+//==============================================//
+(function(linkouts) {
+    function openSlideArchive (ids) {
+        var part = ids[0].substr(0,12);
+        linkouts.openUrl("http://cancer.digitalslidearchive.net/index_mskcc.php?slide_name=" + part, "slidearchive");
+    }
+    linkouts.addPlugin({
+        name: "Cancer Digital Slide Archive",
+        site: "http://cancer.digitalslidearchive.net/",
+        logo: "http://cancer.digitalslidearchive.net/local_images/CDSA_Slide_50.png",
+        description: "Adds linkouts to the Cancer Digitial Slide Archive of TCGA digital slide images.",
+        version: "0.1.0",
+        linkouts: [
+            { menuEntry: "View SlideArchive", typeName: "bio.tcga.barcode.sample", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openSlideArchive }
+        ]});
+})(linkouts);
+
+//==============================================//
+// cBioPortal plugin                            //
+//==============================================//
+(function (linkouts) {
+    function openCBIOGenes ( genes) {
+	var studyid = linkouts.getAttribute("cbioportal.study");
+	linkouts.openUrl("http://www.cbioportal.org/ln?cancer_study_id=" + studyid + "&gene_list=" + genes.join("+"), "cbio");
+    }
+
+    function openCBIOSamp (ids) {
+        var studyid = linkouts.getAttribute("cbioportal.study");
+        linkouts.openUrl("http://www.cbioportal.org/case.do?cancer_study_id=" + studyid + "&case_id=" + ids[0], "cbio");
+    }
+
+    function openCBIOSampTCGA (ids) {
+        var part = ids[0].substring(0,12);
+        openCBIOSamp ([part]);
+    }
+
+    linkouts.addPlugin({
+        name: "cBioPortal",
+        description: "Adds linkouts to the cBioPortal for Cancer Genomics.",
+        version: "0.1.0",
+        logo: "http://www.cbioportal.org/images/cbioportal_logo.png",
+        site: "http://www.cbioportal.org/",
+        attributes: [
+            { name: "cbioportal.study", description: "cBioPortal study identifier" }
+        ],
+        linkouts: [
+            { menuEntry: "View in cBio Portal", typeName: "bio.cbioportal.sampleid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openCBIOSamp, attributes: ["cbioportal.study"] },
+            { menuEntry: "View in cBio Portal", typeName: "bio.tcga.barcode.sample", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openCBIOSampTCGA, attributes: ["cbioportal.study"] },
+            { menuEntry: "View in cBio Portal", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: openCBIOGenes, attributes: ["cbioportal.study"] }
+        ]});
+})(linkouts);
+
+//==============================================//
+// CivicDB plugin                               //
+//==============================================//
+(function(linkouts) {
+    function openCivicDB (ids) {
+        linkouts.openUrl("https://civic.genome.wustl.edu/links/entrez_id/" + ids[0], "civicdb");
+    }
+    linkouts.addPlugin({
+        name: "CIViC",
+        description: "Adds linkouts to the CIViC Mutation Database",
+        version: "0.1.0",
+        site: "https://civic.genome.wustl.edu/home",
+        logo: "https://civic.genome.wustl.edu/assets/images/CIViC_logo.png",
+        linkouts: [
+            { menuEntry: "View CIViC", typeName: "bio.gene.entrezid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openCivicDB }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// COSMIC plugin                                //
+//==============================================//
+(function(linkouts) {
+
+    function openCosmicGene (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://cancer.sanger.ac.uk/cosmic/gene/analysis?ln=" + gname, "cosmic");
+    }
+
+    linkouts.addPlugin({
+        name: "COSMIC",
+        description: "Adds linkouts to the Catalogue of somatic mutations in cancer (COSMIC).",
+        version: "0.1.0",
+        site: "http://cancer.sanger.ac.uk/cosmic",
+        logo: "http://cancer.sanger.ac.uk/cancergenome/gfx/logo_cosmic.png",
+        linkouts: [
+	    { menuEntry: "View Cosmic", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openCosmicGene }
+        ]
+    });
+}) (linkouts);
+
+//==============================================//
+// Decipher plugin                              //
+//==============================================//
+(function(linkouts) {
+
+    function openDecipher (names) { 
+	var gname = names[0];
+	linkouts.openUrl("https://decipher.sanger.ac.uk/search?q=" + gname, "decipher");
+    }
+
+    linkouts.addPlugin({
+        name: "Decipher",
+        description: "Adds linkouts to the Decipher database",
+        version: "0.1.0",
+        site: "https://decipher.sanger.ac.uk/",
+        logo: "https://decipher.sanger.ac.uk/img/decipher-logo.png",
+        linkouts: [
+            { menuEntry: "View Decipher", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openDecipher }
+        ]
+    });
+}) (linkouts);
+
+//==============================================//
+// Ensembl plugin                               //
+//==============================================//
+(function(linkouts) {
+
+    function searchEnsemblForGene (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species=Homo_sapiens&q=" + gname, "ensemble");
+    }
+
+    function searchEnsemblForTranscript (names) {
+	var tname = names[0];
+	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species=Homo_sapiens&q=" + tname, "ensemble");
+    }
+
+    linkouts.addPlugin({
+        name: "Ensembl",
+	description: "Adds linkouts to Ensembl genome browser.",
+	version: "0.1.0",
+	site: "http://www.ensembl.org/index.html",
+	logo: "http://www.sanger.ac.uk/sites/default/files/ensembl_1.gif",
+	linkouts: [
+	    // linkouts for gene symbols
+            { menuEntry: "Search Ensembl", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchEnsemblForGene },
+	    // linkouts for transcript ids
+	    { menuEntry: "Search Ensembl", typeName: "bio.transcript.ensembl", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchEnsemblForTranscript }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// FireBrowse plugin                            //
+//==============================================//
+(function(linkouts) {
+
+    function openFireBrowseGene (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://firebrowse.org/viewGene.html?gene=" + gname + "&search=" + gname, "firebrowse");
+    }
+
+    linkouts.addPlugin({
+        name: "FireBrowse",
+	description: "Adds linkouts to FireBrowse.",
+	version: "0.1.0",
+	site: "http://firebrowse.org/",
+	logo: "http://firebrowse.org/img/firebrowse.png",
+	linkouts: [
+            { menuEntry: "View FireBrowse", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openFireBrowseGene }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// Google plugin                                //
+//==============================================//
+(function(linkouts) {
+
+    linkouts.addSubtype ("bio.gene.hugo", "scholar");
+    linkouts.addSubtype ("bio.mirna", "scholar");
+
+    linkouts.addPlugin({
+        name: "Google Scholar",
+	description: "Add linkout to search Google Scholar.",
+	version: "0.1.2",
+	site: "https://scholar.google.com/schhp?hl=en",
+	logo: "https://scholar.google.com/intl/en/scholar/images/1x/googlelogo_color_270x104dp.png",
+	linkouts: [
+	    { menuEntry: "Search Google Scholar", typeName: "scholar", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchGoogleScholar },
+	    { menuEntry: "Search Google", typeName: "search", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchGoogle }
+	]
+    });
+
+    function searchGoogle(selection){
+	linkouts.openUrl("https://www.google.com/#q=" + selection.join("+"));
+    }
+
+    function searchGoogleScholar (labels) {
+        linkouts.openUrl("http://scholar.google.com/scholar?q=" + labels.join("+OR+"), "pubmed");
+    };
+
+}) (linkouts);
+
+//==============================================//
+// Ideogram viewer plugin                       //
+//==============================================//
+(function(linkouts) {
+
+    function viewIdeogramGene(genes){
+	linkouts.openUrl("http://bioinformatics.mdanderson.org/ideogramviewer/Ideogram.html?genelist1=" + genes.join(","), "ideogram");
+    }
+
+    function viewIdeogramGene2(labels){
+        var genes1 = labels.Row;
+        var genes2 = labels.Column;
+	linkouts.openUrl("http://bioinformatics.mdanderson.org/ideogramviewer/Ideogram.html?genelist1=" + genes1.join(",") + "&genelist2=" + genes2.join(","),
+	"ideogram");
+    }
+
+    function viewIdeogramMIRNA(mir){
+	mir = mir.map(function(m) { return m.substring(0, m.lastIndexOf(".MIMAT")) });
+	linkouts.openUrl("http://bioinformatics.mdanderson.org/ideogramviewer/Ideogram.html?mirlist1=" + mir.join(","),
+	"ideogram");
+    }
+
+    function viewIdeogramMIRNA2(labels){
+	var mirs1 = labels.Row.map(function (m) { return m.substring(0, m.lastIndexOf(".MIMAT")) });
+	var mirs2 = labels.Column.map(function (m) { return m.substring(0, m.lastIndexOf(".MIMAT")) });
+	linkouts.openUrl("http://bioinformatics.mdanderson.org/ideogramviewer/Ideogram.html?mirlist1=" + mirs1.join(",") + "&mirlist2=" + mirs2.join(","),
+	"ideogram");
+    }
+
+    linkouts.addPlugin({
+        name: "Ideogram Viewer",
+	description: "Adds linkouts for viewing a set of genes and/or mirs on an interactive ideogram.",
+	version: "0.1.0",
+	site: "http://bioinformatics.mdanderson.org/main/IdeogramViewer:Overview",
+        logo: "http://bioinformatics.mdanderson.org/people/Bradley.Broom/IdeogramViewerLogo.png",
+	linkouts: [
+	    { menuEntry: "View ideogram", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: viewIdeogramGene },
+            { menuEntry: "View ideogram", typeName: "bio.mirna", selectMode: linkouts.MULTI_SELECT, linkoutFn: viewIdeogramMIRNA }
+	],
+        matrixLinkouts: [
+            { menuEntry: "View ideogram", typeName1: ["bio.gene.hugo"], typeName2: ["bio.gene.hugo"], selectMode: linkouts.MULTI_SELECT, linkoutFn: viewIdeogramGene2 },
+            { menuEntry: "View ideogram", typeName1: ["bio.mirna"], typeName2: ["bio.mirna"], selectMode: linkouts.MULTI_SELECT, linkoutFn: viewIdeogramMIRNA2 }
+        ]
+    });
+}) (linkouts);
+
+//==============================================//
+// MD Anderson Pathway Database plugin          //
+//==============================================//
+(function(linkouts) {
+
+    function openMDACCPathwayID (names) { 
+	var gname = names[0];
+	linkouts.openUrl("http://bioinformatics.mdanderson.org/PathwaysBrowser/pathway/latest/mdaPathwayId/" + gname, "pathways");
+    };  
+
+    function openPathwaysBrowserGO (names) {
+	var goid = names[0];
+	linkouts.openUrl("http://bioinformatics.mdanderson.org/PathwaysBrowser/goTerm/latest/goId/" + goid, "geneontology");
+    };  
+
+    linkouts.addPlugin({
+        name: "Pathways Browser",
+	description: "Adds linkouts to the MD Anderson Pathways Browser.",
+	version: "0.1.0",
+	site: "https://bioinformatics.mdanderson.org/PathwaysBrowser/",
+	linkouts: [
+	    { menuEntry: "View PathwaysBrowser", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPathwaysBrowserGO },
+	    // linkouts for pathways
+	    { menuEntry: "View Pathway", typeName: "bio.mdacc.pathwayid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMDACCPathwayID }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// miRBase plugin                               //
+//==============================================//
+(function(linkouts) {
+
+    function viewMiRBasePage (eids) {
+	var gid = eids[0];
+	gid = gid.substr( gid.lastIndexOf(".MIMAT") + 1 );
+	linkouts.openUrl("http://www.mirbase.org/cgi-bin/query.pl?terms=" + gid, "miRBase");
+    }
+
+    linkouts.addPlugin({
+        name: "miRBase",
+	description: "Adds links to miRBase.",
+	version: "0.1.0",
+	site: "http://www.mirbase.org/",
+	logo: "http://www.mirbase.org/images/mirbase-logo-blue-web.png",
+	linkouts: [
+	    { menuEntry: "View miRBase Page", typeName: "bio.mirna", selectMode: linkouts.SINGLE_SELECT, linkoutFn: viewMiRBasePage }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// MSigDB plugin                                //
+//==============================================//
+(function(linkouts) {
+    function openMSigDB (names) {
+	var pwname = names[0];
+	linkouts.openUrl("http://software.broadinstitute.org/gsea/msigdb/cards/" + pwname + ".html", "uniprot"); 
+    }    
+
+    linkouts.addPlugin({
+        name: "MSigDB",
+        description: "Adds linkouts to MSigDB pathways database",
+	version: "0.1.0",
+	site: "http://software.broadinstitute.org/gsea/index.jsp",
+	linkouts: [
+	    { menuEntry: "View MSigDB", typeName: "bio.pathway.msigdb.name", selectMode: linkouts.SINGLE_SELECT,
+	      linkoutFn: openMSigDB }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// MuPIT plugin                                 //
+//==============================================//
+(function(linkouts) {
+
+    function viewMupitG (genes) {
+	genes = genes.sort().filter(function(el,i,a){return i==a.indexOf(el);});
+	var glist = encodeURIComponent(genes[0]);
+	linkouts.openUrl("http://mupit.icm.jhu.edu/?gene=" + glist, "mupit");
+    };
+
+    linkouts.addPlugin({
+        name: "MuPIT",
+        description: "Adds linkouts to MuPIT Interactive.",
+        version: "0.1.0",
+	site: "http://mupit.icm.jhu.edu/MuPIT_Interactive/",
+	logo: "http://mupit.icm.jhu.edu/MuPIT_Interactive/images/muPITlog.gif",
+	linkouts: [
+            { menuEntry: "View MuPIT", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: viewMupitG }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// NCBI plugin                                  //
+//==============================================//
+(function(linkouts) {
+
+    function openClinVar (names) {
+	var gname = names[0];
+	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/clinvar/?term=" + gname + "%5Bgene%5D", "clinvar");
+    }
+
+    function openNCBIGenePage (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gene?term=(homo%20sapiens%5BOrganism%5D)%20AND%20" + gname + "%5BGene%20Name%5D", "NCBI");
+    }
+    function openNCBIEntrezIDPage (eids) {
+	var gid = eids[0];
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gene/" + gid, "NCBI");
+    }
+    function searchNCBIDatabases (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gquery/?term=((" + gname + "%5BGene+Symbol%5D)+AND+Homo+sapiens%5BOrganism%5D)", "NCBI");
+    }  
+
+    function openGEOAccession (aids) {
+	var aid = aids[0];
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" + aid, "NCBI");
+    }
+
+    function searchClinicalTrials (labels) {
+	var gname = labels.join("+AND+");
+	linkouts.openUrl("http://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "clinicaltrials");
+    }
+
+    linkouts.addPlugin({
+        name: "NCBI",
+	description: "Adds linkouts to resources provided by the NCBI.",
+	version: "0.1.0",
+	site: "https://www.ncbi.nlm.nih.gov/",
+	logo: "https://www.ncbi.nlm.nih.gov/portal/portal3rc.fcgi/4013172/img/3242381",
+	linkouts: [
+	    { menuEntry: "View NCBI ClinVar", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openClinVar },
+            { menuEntry: "View NCBI Gene", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openNCBIGenePage },
+            { menuEntry: "View NCBI Entrez ID", typeName: "bio.gene.entrezid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openNCBIEntrezIDPage },
+            { menuEntry: "Search NCBI Databases", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT,  linkoutFn: searchNCBIDatabases },
+            { menuEntry: "Search ClinicalTrials.gov", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchClinicalTrials },
+	    // linkouts for GEO Accession identifiers
+	    { menuEntry: "View GEO Accession", typeName: "bio.geo.acc", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGEOAccession }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// OLSVis plugin                                //
+//==============================================//
+(function(linkouts) {
+
+    function openOLSVis (names) {
+	var goid = names[0];
+	linkouts.openUrl("http://ols.wordvis.com/q=" + goid, "genoontology");
+    };
+
+    linkouts.addPlugin({
+        name: "OLSVis",
+	description: "Adds linkouts to OLSVis ontolofy lookup service.",
+	version: "0.1.0",
+	site: "http://ols.wordvis.com/",
+	logo: "http://ols.wordvis.com/images/olsvis_logo.png",
+	linkouts: [
+	    { menuEntry: "View OLSVis", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openOLSVis }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// PeptideAtlas plugin                          //
+//==============================================//
+(function(linkouts) {
+
+    function openPeptideAtlas (names) {
+	var gname = names[0];
+	linkouts.openUrl("https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" + gname, "peptideatlas"); 
+    }  
+
+    linkouts.addPlugin({
+        name: "PeptideAtlas",
+	description: "Adds linkouts to PeptideAtlas.",
+	version: "0.1.0",
+	site: "http://www.peptideatlas.org/",
+	logo: "http://www.peptideatlas.org/images/PeptideAtlas_Logo.png",
+	linkouts: [
+	    { menuEntry: "View PeptideAtlas", typeName: "bio.protein.uniprotid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPeptideAtlas }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// QuickGO plugin                               //
+//==============================================//
+(function(linkouts) {
+
+    function openQuickGO (names) {
+	var goid = names[0];
+	linkouts.openUrl("http://www.ebi.ac.uk/QuickGO/GTerm?id=" + goid, "genoontology");
+    };
+
+    linkouts.addPlugin({
+        name: "QuickGO",
+	description: "Adds linkouts to QuickGO gene ontology browser.",
+	version: "0.1.0",
+	site: "https://www.ebi.ac.uk/QuickGO/",
+	logo: "https://www.ebi.ac.uk/QuickGO/image/mb/logo.png",
+	linkouts: [
+	    { menuEntry: "View QuickGO", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openQuickGO }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// TCGA plugin                                  //
+//==============================================//
+(function (linkouts) {
+
+    // Also allow any TCGA type longer than typeName.
+    function expandLinkOuts( ) {
+	const TCGAfields = "bio.tcga.barcode.sample.vial.portion.analyte.aliquot".split(".");
+
+	for (var idx = 4; idx < TCGAfields.length; idx++) {
+	    var supertype = TCGAfields.slice(0,idx).join(".");
+	    for (var jdx = idx+1; jdx <= TCGAfields.length; jdx++) {
+		var subtype = TCGAfields.slice(0,jdx).join(".");
+		linkouts.addSubtype (subtype, supertype);  // a subtype can be passed to any function expecting a supertype
+	    }
+	}
+    }
+    linkouts.addPlugin({
+        name: "TCGA",
+        logo: "https://cancergenome.nih.gov/PublishedContent/Images/SharedItems/Images/TCGA_54px%20Logo%20COLOR.__v30030670.svg",
+        site: "https://cancergenome.nih.gov/",
+        description: "Enhances linkouts to The Cancer Genome Atlas.",
+        version: "0.1.0",
+        expandLinkOuts: expandLinkOuts
+    });
+})(linkouts);
+
+//==============================================//
+// TumorPortal plugin                           //
+//==============================================//
+(function(linkouts) {
+
+    function openTumorPortalGene (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://www.tumorportal.org/view?geneSymbol=" + gname, "tumorportal");
+    }    
+
+    linkouts.addPlugin({
+        name: "TumorPortal",
+	description: "Adds linkouts to TumorPortal",
+	version: "0.1.0",
+	site: "http://www.tumorportal.org/",
+	linkouts: [
+            { menuEntry: "View Tumor Portal", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openTumorPortalGene }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// Uniprot plugin                               //
+//==============================================//
+(function(linkouts) {
+
+    function openUniprot (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://www.uniprot.org/uniprot/" + gname, "uniprot"); 
+    }    
+
+    linkouts.addPlugin({
+        name: "UniProt",
+	description: "Adds linkouts to UniProt protein database.",
+	version: "0.1.0",
+	site: "http://www.uniprot.org/",
+	logo: "http://www.uniprot.org/images/logos/uniprot-rgb-optimized.svg",
+	linkouts: [
+	    { menuEntry: "View Uniprot", typeName: "bio.protein.uniprotid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openUniprot }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// Vega plugin                                  //
+//==============================================//
+(function(linkouts) {
+
+    function searchVega (names) {
+	var gname = names[0];
+	linkouts.openUrl("http://vega.sanger.ac.uk/Homo_sapiens/psychic?site=vega&q=" + gname, "vega");
+    }  
+
+    linkouts.addPlugin({
+        name: "Vega",
+	description: "Adds linkouts to Vega.",
+	version: "0.1.0",
+	site: "http://vega.sanger.ac.uk/",
+	linkouts: [
+	    { menuEntry: "Search Vega", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchVega }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// Zodiac plugin                                //
+//==============================================//
+(function(linkouts) {
+
+    function viewZodiacG (labels) {
+	var glist = encodeURIComponent(linkouts.simplifyLabels(labels).join(","));
+	linkouts.openUrl("http://compgenome.org/zodiac2/query.php?act=input&gene_list=" + glist, "zodiac");
+    };
+
+    linkouts.addPlugin({
+        name: "Zodiac",
+	description: "Adds linkouts to Zodiac.",
+	version: "0.1.0",
+	site: "http://www.compgenome.org/zodiac2/",
+	logo: "http://www.compgenome.org/zodiac2/images/zodiac_logo.png",
+	linkouts: [
+            { menuEntry: "View Zodiac", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: viewZodiacG }
+	],
+        matrixLinkouts: [
+            { menuEntry: "View Zodiac", typeName1: ["bio.gene.hugo"], typeName2: ["bio.gene.hugo"], selectMode: linkouts.MULTI_SELECT, linkoutFn: viewZodiacG }
+        ]
+
+    });
+}) (linkouts);

@@ -51,7 +51,7 @@ public class ShaidyRMapGen {
 
 	//Parse the color break point information to pull out the colors values 
 	//If the color is a string like "blue" translate it to a hex value.
-	private static ArrayList<String> getColors(JSONArray points) {
+	private static ArrayList<String> getColors(JSONArray points) throws Exception {
 		ArrayList<String> cols = new ArrayList<String>();
 		for (int i = 0; i < points.size(); i++) {
 			JSONObject pt = (JSONObject)points.get(i);
@@ -65,7 +65,7 @@ public class ShaidyRMapGen {
 	}
 	
 	//Turn a 'render' into a color map for the heat map generator
-	private static String colorMap(JSONObject color, String type) {
+	private static String colorMap(JSONObject color, String type) throws Exception {
 		StringBuffer jsonCMap = new StringBuffer();
 		//Color map
 
@@ -274,6 +274,10 @@ public class ShaidyRMapGen {
 		int count = 1;
 		//build a hash of each label and the position that it should have in the heat map.
 		while (line != null) {
+			//traps error where blank line added to label file.
+			if (line.equals("")) {
+				line = br.readLine();
+			}
 			labelPosition.put(line, count);
 			count++;
 			line = br.readLine();
@@ -309,8 +313,117 @@ public class ShaidyRMapGen {
 		}
 		fileout.close();
 	}
-	
-	
+
+	// Append the types of any additional axis meta variables to the axisDataType.
+	private static String addAxisMetaTypes (JSONObject axisData, String axisDataType) {
+		JSONArray meta  = (JSONArray)axisData.get("meta");
+		if (meta != null) {
+			for (int midx = 0; midx < meta.size(); midx++) {
+				JSONObject m = (JSONObject) meta.get(midx);
+				String cls = (String) m.get("class");
+				if (!cls.equals( "ngchmMetaData" )) {
+					errors.append("ERROR: Invalid metadata class: " + cls + "\n");
+				}
+				JSONArray ty = (JSONArray) m.get("type");
+				if (ty.size() != 1) {
+					warnings.append("Warning: metadata has more than one type. All but first ignored.\n");
+				}
+				axisDataType = axisDataType + "\",\"" + (String) ty.get(0);
+			}
+		}
+		return axisDataType;
+	}
+
+	// Create a label_extra_file for extra metadata, if any, and output a reference to it in fileout.
+	private static void saveAxisMetaData (String axisName, JSONObject axisData, String rootDir, String viewDir, PrintWriter fileout) throws Exception {
+		if (axisData.get("meta") != null) {
+			String EmptyString = "";
+			JSONArray meta  = (JSONArray)axisData.get("meta");
+
+			// Read labels file to determine metadata keys in which we are interested.
+			JSONObject labels = getRequiredObj(axisName + "_data", axisData, "labels");
+			String labelShaidy = getRequiredStr(axisName + "_data labels", labels, "value");
+			String labelFile =  rootDir + File.separator + "label" + File.separator + labelShaidy + File.separator + "labels.txt";
+			if (!new File(labelFile).exists()) errors.append("ERROR: Label file: " + labelFile + " does not exist.\n");
+			BufferedReader br = new BufferedReader(new FileReader(labelFile));
+			HashMap<String, Integer>labelPosition = new HashMap<String, Integer>();
+			int numLabels = 0;
+			String line = br.readLine();
+			while (line != null) {
+				labelPosition.put(line.trim(), numLabels);
+				numLabels++;
+				line = br.readLine();
+			}
+			br.close();
+
+
+			// Create vectors of keys and metadata encountered in meta data.
+			String[] keys = new String[numLabels];
+			String[] axisMeta = new String[numLabels];
+			for (int i=0; i<numLabels; i++) {
+				keys[i] = EmptyString;
+				axisMeta[i] = EmptyString;
+			}
+
+			// Append data for each metadata field.
+			for (int midx = 0; midx < meta.size(); midx++) {
+				JSONObject m = (JSONObject) meta.get(midx);
+				JSONObject v = getRequiredObj(axisName + "_data meta", m, "value");
+				String dataShaidy = getRequiredStr(axisName + "_data meta value", v, "value");
+				String datafile = rootDir + File.separator + "dataset" + File.separator + dataShaidy + File.separator + "matrix.tsv";
+
+				// Read metadata file and keep values for all required labels
+				String[] values = new String[numLabels];
+				for (int i=0; i<numLabels; i++) {
+					values[i] = EmptyString;
+				}
+				br = new BufferedReader(new FileReader(datafile));
+				line = br.readLine(); // Skip header line
+				line = br.readLine();
+				int lineno = 1;
+				while (line != null) {
+					lineno++;
+					String metadata[] = line.split("\t");
+					if (metadata.length < 2) {
+					    errors.append("ERROR: metadata entry in dataset " + dataShaidy + " line " + lineno + " has less than two fields.\n");
+					}
+					String k = metadata[0].trim();
+					if (labelPosition.containsKey(k)) {
+						int idx = labelPosition.get(k);
+						values[idx] = metadata[1].trim();
+						if (keys[idx].equals(EmptyString)) { keys[idx] = k; }
+					}
+					line = br.readLine();
+				}
+				br.close();
+
+				// Append values from this metadata file to axisMeta
+				if (midx == 0) {
+				    for (int i=0; i<numLabels; i++) {
+					    axisMeta[i] = values[i];
+				    }
+				} else {
+				    for (int i=0; i<numLabels; i++) {
+					    axisMeta[i] = axisMeta[i] + "|" + values[i];
+				    }
+				}
+			}
+
+			// Save all metadata to label_extra_file.
+			String metafile = viewDir + FILE_SEP + axisName + "Meta.txt";
+			PrintWriter metaout = new PrintWriter( metafile );
+			for (int idx=0; idx<numLabels; idx++) {
+				if (!keys[idx].equals(EmptyString)) {
+					metaout.println( keys[idx] + "\t" + axisMeta[idx] );
+				}
+			}
+			metaout.close();
+
+			// Add entry for label_extra_file to fileout.
+			fileout.println("\t\t\"label_extra_file\": \"" + metafile + "\",");
+		}
+	}
+
 	//Main does everything with assistance from helper routines above.  Read in the shaidy chm.json; translate into
 	//what is needed by our heat map generator as a heatmapProperties.json; then run heat map generator to create
 	//the "viewer" version of the heat map in the appropriate shaidy directory.
@@ -395,6 +508,7 @@ public class ShaidyRMapGen {
 				JSONObject matrixInfo = getRequiredObj("layers", layer, "data");
 				String matrixDir = getRequiredStr("layers : data", matrixInfo, "value");
 				matrixFile = dataPath + matrixDir + FILE_SEP + "matrix.tsv";
+				
 				if (!new File(matrixFile).exists()) errors.append("ERROR: Data Layer matrix file: " + matrixFile + " does not exist.\n");
 				String summaryMethod = (String)layer.get("summary_method");
 				if (summaryMethod == null) {
@@ -405,7 +519,21 @@ public class ShaidyRMapGen {
 				fileout.println("\t\t\t\"name\": \"" + name + "\",");
 			 	fileout.println("\t\t\t\"path\":  \"" + matrixFile + "\",");
 				fileout.println("\t\t\t\"summary_method\": \"" + summaryMethod + "\",");
-			 	
+				if ((String) layer.get("data_start_row") != null) {
+					fileout.println("\t\t\"data_start_row\" : \"" + (String) layer.get("data_start_row") + "\",");
+				}
+				if ((String) layer.get("data_end_row") != null) {
+					fileout.println("\t\t\"data_end_row\" : \"" + (String) layer.get("data_end_row") + "\",");
+				}
+				if ((String) layer.get("data_start_column") != null) {
+					fileout.println("\t\t\"data_start_column\" : \"" + (String) layer.get("data_start_column") + "\",");
+				}
+				if ((String) layer.get("row_covariates") != null) {
+					fileout.println("\t\t\"row_covariates\" : \"" + (String) layer.get("row_covariates") + "\",");
+				}
+				if ((String) layer.get("col_covariates") != null) {
+					fileout.println("\t\t\"col_covariates\" : \"" + (String) layer.get("col_covariates") + "\",");
+				}
 			 	//Color map
 			 	int cMap = getRequiredInt("layers", layer, "renderer");
 			 	if (cMap < 0 || cMap >= colors.size()) errors.append("ERROR: renderer " + cMap + " specified in data layer " + name + " does not exist.");
@@ -440,8 +568,8 @@ public class ShaidyRMapGen {
 			if (colDataType.equals("Column_Labels")) warnings.append("Warning: Column label type (axisTypes where = col or both) not specified.  Will use generic linkouts menu\n");
 			if (rowDataType.equals("Row_Labels")) warnings.append("Warning: Row label type (axisTypes where = row or both) not specified.  Will use generic linkouts menu\n");
 			
-			colDataType = colDataType.replace(".bar.", "\",\"");
-			rowDataType = rowDataType.replace(".bar.", "\",\"");
+			colDataType = colDataType.replace(".|.", "\",\"");
+			rowDataType = rowDataType.replace(".|.", "\",\"");
 			
 			
 			//Row ordering / dendro
@@ -449,19 +577,38 @@ public class ShaidyRMapGen {
 			String orderfile = "";
 			JSONObject rowData = getRequiredObj("chm.json", chmRJson, "row_data");
 			String orderMethod = getRequiredStr("row_data", rowData, "order_method");
+			String cutLocations = (String) rowData.get("cut_locations");
+			String cutWidth = (String) rowData.get("cut_width");
+			String treeCuts = (String) rowData.get("tree_cuts");
+			JSONArray topItems = (JSONArray) rowData.get("top_items");
+			JSONObject rowDataLabels = (JSONObject) rowData.get("labels");
+			String displayLength = (String) rowDataLabels.get("display_length") != null ? (String) rowDataLabels.get("display_length") : "20";
+			String displayAbbrev = (String) rowDataLabels.get("display_abbreviation") != null ? (String) rowDataLabels.get("display_abbreviation") : "END";
 			Object dendro = rowData.get("dendrogram");
+			//special case - User ordering method but dendro provided -- switch order method to Hierarchical
+			if (orderMethod.equals("User") && dendro!=null)
+				orderMethod = "Hierarchical";
+			rowDataType = addAxisMetaTypes (rowData, rowDataType);
 			fileout.println("\t\"row_configuration\": ");
 			fileout.println("\t\t{");
 			fileout.println("\t\t\"data_type\" : [\"" + rowDataType + "\"],");
-	        if (rowData.get("label_extra_metadata") != null) {
-	        	JSONObject extraLabel  = (JSONObject)rowData.get("label_extra_metadata");
-	        	String value = (String)extraLabel.get("value");
-	        	fileout.println("\t\t\"label_extra_file\": \"" + rootDir + FILE_SEP + "label" + FILE_SEP + value + FILE_SEP + "labels.txt\"");
-	        }
- 
-			//special case - User ordering method but dendro provided -- switch order method to Heirarchical
-			if (orderMethod.equals("User") && dendro!=null)
-				orderMethod = "Hierarchical";
+			if (topItems != null) {
+				fileout.println("\t\t\"top_items\" : " + topItems.toString() + ",");
+			}
+			if (cutLocations != null) {
+				fileout.println("\t\t\"cut_locations\" : [" + cutLocations + "],");
+			} else {
+				if ((treeCuts != null) && orderMethod.equals("Hierarchical")) {
+					fileout.println("\t\t\"tree_cuts\" : \"" + treeCuts + "\",");
+				}
+			}
+			if (cutWidth != null) {
+				fileout.println("\t\t\"cut_width\" : \"" + cutWidth + "\",");
+			}
+			fileout.println("\t\t\"label_display_length\" : \"" + displayLength.toUpperCase() + "\",");
+			fileout.println("\t\t\"label_display_abbreviation\" : \"" + displayAbbrev.toUpperCase() + "\",");
+
+			saveAxisMetaData ("row", rowData, rootDir, viewerMapDir, fileout);
 				
 			if (orderMethod.equals("Hierarchical")){
 				String rowDendro = getRequiredStr("row_data : dendrogram", (JSONObject)dendro, "value");
@@ -473,16 +620,13 @@ public class ShaidyRMapGen {
 				orderfile = dendroDir+rowDendro + FILE_SEP + "dendrogram-order.tsv";
 				if (!new File(orderfile).exists()) errors.append("ERROR: Row order file: " + orderfile + " does not exist.\n");
 			} else {
-				// For not hierarchical methods, create a dendro order file from the labels file.
 				JSONObject labels = getRequiredObj("row_data", rowData, "labels");
 				String labelShaidy = getRequiredStr("row_data labels", labels, "value");
 				String labelFile =  rootDir + File.separator + "label" + File.separator + labelShaidy + File.separator + "labels.txt";
 				if (!new File(labelFile).exists()) errors.append("ERROR: Label file: " + labelFile + " does not exist.\n");
 				orderfile = viewerMapDir + FILE_SEP + "rowOrder.txt";
-				
 				dendroOrderFromLabels(labelFile, matrixFile, orderfile, true);
 			}
-			
 			fileout.println("\t\t\"order_file\": \"" + orderfile + "\",");
 			fileout.println("\t\t\"order_method\": \"" + orderMethod + "\"");
 			fileout.println("\t\t}");
@@ -492,19 +636,38 @@ public class ShaidyRMapGen {
 			orderfile = "";
 			JSONObject colData = getRequiredObj("chm.json", chmRJson, "col_data");
 			orderMethod = getRequiredStr("col_data", colData, "order_method");
+			topItems = (JSONArray) colData.get("top_items");
+			cutLocations = (String) colData.get("cut_locations");
+			cutWidth = (String) colData.get("cut_width");
+			treeCuts = (String) colData.get("tree_cuts");
+			JSONObject colDataLabels = (JSONObject) colData.get("labels");
+			displayLength = (String) colDataLabels.get("display_length") != null ? (String) colDataLabels.get("display_length") : "20";
+			displayAbbrev = (String) colDataLabels.get("display_abbreviation") != null ? (String) colDataLabels.get("display_abbreviation") : "END";
 			dendro = colData.get("dendrogram");
+			//special case - User ordering method but dendro provided -- switch order method to Hierarchical
+			if (orderMethod.equals("User") && dendro!=null)
+				orderMethod = "Hierarchical";
+			colDataType = addAxisMetaTypes (colData, colDataType);
 			fileout.println("\t\"col_configuration\": ");
 			fileout.println("\t\t{");
 			fileout.println("\t\t\"data_type\" : [\"" + colDataType + "\"],");
-	        if (colData.get("label_extra_metadata") != null) {
-	        	JSONObject extraLabel  = (JSONObject)colData.get("label_extra_metadata");
-	        	String value = (String)extraLabel.get("value");
-	        	fileout.println("\t\t\"label_extra_file\": \"" + rootDir + FILE_SEP + "label" + FILE_SEP + value + FILE_SEP + "labels.txt\"");
-	        }
+			if (topItems != null) {
+				fileout.println("\t\t\"top_items\" : " + topItems.toString() + ",");
+			}
+			if (cutLocations != null) {
+				fileout.println("\t\t\"cut_locations\" : [" + cutLocations + "],");
+			} else {
+				if ((treeCuts != null) && orderMethod.equals("Hierarchical")) {
+					fileout.println("\t\t\"tree_cuts\" : \"" + treeCuts + "\",");
+				}
+			}
+			if (cutWidth != null) {
+				fileout.println("\t\t\"cut_width\" : \"" + cutWidth + "\",");
+			}
+			fileout.println("\t\t\"label_display_length\" : \"" + displayLength.toUpperCase() + "\",");
+			fileout.println("\t\t\"label_display_abbreviation\" : \"" + displayAbbrev.toUpperCase() + "\",");
 
-			//special case - User ordering method but dendro provided -- switch order method to Heirarchical
-			if (orderMethod.equals("User") && dendro!=null)
-				orderMethod = "Hierarchical";
+			saveAxisMetaData ("col", colData, rootDir, viewerMapDir, fileout);
 
 			if (orderMethod.equals("Hierarchical")){
 				String colDendro = getRequiredStr("col_data : dendrogram", (JSONObject)dendro, "value");
@@ -522,7 +685,6 @@ public class ShaidyRMapGen {
 				String labelFile =  rootDir + File.separator + "label" + File.separator + labelShaidy + File.separator + "labels.txt";
 				if (!new File(labelFile).exists()) errors.append("ERROR: Label file: " + labelFile + " does not exist.\n");
 				orderfile = viewerMapDir + FILE_SEP + "colOrder.txt";
-				
 				dendroOrderFromLabels(labelFile, matrixFile, orderfile, false);
 			}
 			fileout.println("\t\t\"order_file\": \"" + orderfile + "\",");
@@ -553,6 +715,23 @@ public class ShaidyRMapGen {
 						fileout.println("\t\t\"height\": \"" + covar.get("thickness") + "\",");
 					fileout.println("\t\t\"position\": \"row\",");
 					fileout.println("\t\t\"show\": \"" + visible + "\",");
+					if (covar.get("data_type") != null)
+						fileout.println("\t\t\"data_type\": \"" + covar.get("data_type") + "\",");
+					if (covar.get("low_bound") != null)
+						fileout.println("\t\t\"low_bound\": \"" + covar.get("low_bound") + "\",");
+					if (covar.get("high_bound") != null)
+						fileout.println("\t\t\"high_bound\": \"" + covar.get("high_bound") + "\",");
+					if (covar.get("bar_type") != null)
+						fileout.println("\t\t\"bar_type\": \"" + covar.get("bar_type") + "\",");
+					else
+						fileout.println("\t\t\"bar_type\": \"color_plot\",");
+					if (covar.get("fg_color") != null)
+						fileout.println("\t\t\"fg_color\": \"" + covar.get("fg_color") + "\",");
+					if (covar.get("bg_color") != null)
+						fileout.println("\t\t\"bg_color\": \"" + covar.get("bg_color") + "\",");
+					if ((String) covar.get("value_column") != null) {
+						fileout.println("\t\t\"value_column\" : \"" + (String) covar.get("value_column") + "\",");
+					}
 					JSONObject color = null;
 					if (covar.get("renderer") != null) {
 						int cMap = (int)(long)covar.get("renderer");
@@ -561,7 +740,7 @@ public class ShaidyRMapGen {
 					} else warnings.append("Warning: No render for covarate " + label + " colors will be generated.\n");
 					String type = getRequiredStr("covariate", covar, "type");
 					fileout.println(colorMap(color, type));
-					if ((i == rowClassifications.size()-1) && (colClassifications.size() == 0))
+					if ((i == rowClassifications.size()-1) && ((colClassifications == null) || (colClassifications.size() == 0)))
 						fileout.println("\t\t}");
 					else
 						fileout.println("\t\t},");	
@@ -584,6 +763,20 @@ public class ShaidyRMapGen {
 						fileout.println("\t\t\"height\": \"" + covar.get("thickness") + "\",");
 					fileout.println("\t\t\"position\": \"col\",");
 					fileout.println("\t\t\"show\": \"" + visible + "\",");
+					if (covar.get("data_type") != null)
+						fileout.println("\t\t\"data_type\": \"" + covar.get("data_type") + "\",");
+					if (covar.get("low_bound") != null)
+						fileout.println("\t\t\"low_bound\": \"" + covar.get("low_bound") + "\",");
+					if (covar.get("high_bound") != null)
+						fileout.println("\t\t\"high_bound\": \"" + covar.get("high_bound") + "\",");
+					if (covar.get("bar_type") != null)
+						fileout.println("\t\t\"bar_type\": \"" + covar.get("bar_type") + "\",");
+					else
+						fileout.println("\t\t\"bar_type\": \"color_plot\",");
+					if (covar.get("fg_color") != null)
+						fileout.println("\t\t\"fg_color\": \"" + covar.get("fg_color") + "\",");
+					if (covar.get("bg_color") != null)
+						fileout.println("\t\t\"bg_color\": \"" + covar.get("bg_color") + "\",");
 					JSONObject color = null;
 					if (covar.get("renderer") != null) {
 						int cMap = (int)(long)covar.get("renderer");
@@ -607,22 +800,27 @@ public class ShaidyRMapGen {
 			fileout.close();
 
 			if (errors.length() > 0) {
-				System.out.println(errors);
+				System.out.println("FATAL Errors Found ShaidyRMapGen Terminating");
+				System.out.println( "ERROR in ShaidyRMapGen e= "+ errors.toString());
 				System.exit(1);
 			} else {
 				System.out.println(warnings);
 				String genArgs[] = new String[] {viewerMapDir+File.separator+"heatmapProperties.json",genPDF};
-				HeatmapDataGenerator.main(genArgs);
+				String errMsg = HeatmapDataGenerator.processHeatMap(genArgs); 
+				if (errMsg != null) {
+					System.out.println( "ERROR in ShaidyRMapGen e= "+ errMsg);
+					System.exit(1);
+				} else {
+					//Zip results
+					if (!noZip) zipDirectory(theDir, subdir + ".ngchm");
+					System.exit(0);
+				}
 			}
-
-			//Zip results
-			if (!noZip)
-				zipDirectory(theDir, subdir + ".zip");
 			
 		} catch(Exception e) {
-			System.out.println(errors);
 			e.printStackTrace();
-			System.out.println( "error in GalaxyMapGen e= "+ e.getMessage());
+			System.out.println( "ERROR in ShaidyRMapGen e= "+ e.getMessage());
+			System.exit(1);
 		} 
 	}
 	

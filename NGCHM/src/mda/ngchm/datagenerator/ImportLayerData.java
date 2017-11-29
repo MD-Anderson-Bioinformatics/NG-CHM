@@ -36,7 +36,6 @@ public class ImportLayerData {
 	public int importCols;
 	public ArrayList<ImportTileData> importTiles = new ArrayList<>();
 
-
 	/*******************************************************************
 	 * CONSTRUCTOR: ImportLayerData
 	 *
@@ -44,18 +43,23 @@ public class ImportLayerData {
 	 * of ImportTileData objects for each data tile to be generated within
 	 * a given layer.
 	 ******************************************************************/
-	public ImportLayerData(String level, int ir, int ic)
+	public ImportLayerData(String level, int ir, int ic) throws Exception 
 	{
-		layer = level;
-		importRows = ir;
-		importCols = ic;
-		configureLayer(layer);
-		// Loop for all col tiles and row tiles creating an
-		// ImportTileData object for each.
-		for (int i=0; i < colTiles; i++) {
-			for (int j=0; j < rowTiles; j++) {
-				importTiles.add(new ImportTileData(this, i, j));
+		try {
+			layer = level;
+			importRows = ir;
+			importCols = ic;
+			configureLayer(layer);
+			// Loop for all col tiles and row tiles creating an
+			// ImportTileData object for each.
+			for (int i=0; i < colTiles; i++) {
+				for (int j=0; j < rowTiles; j++) {
+					importTiles.add(new ImportTileData(this, i, j));
+				}
 			}
+		} catch (Exception ex) {
+	    	System.out.println("Exception instantiating ImportLayerData Object: "+ ex.toString());
+	        throw ex;
 		}
 	}
 	
@@ -66,7 +70,7 @@ public class ImportLayerData {
 	 * ImportDataLayer object.  These are configured based upon the layer
 	 * type that is being generated.
 	 ******************************************************************/
-	private void configureLayer(String layer) {
+	private void configureLayer(String layer) throws Exception {
 
 		switch (layer) {
         case "tn":   
@@ -147,7 +151,6 @@ public class ImportLayerData {
 			colsPerTile = setLayerValue(totalLevelCols, colTiles);
 			break;
 		}
-
 	}
 
 	/*********************************************************************
@@ -160,20 +163,32 @@ public class ImportLayerData {
 	 * is a remainder from that division. This method performs that division 
 	 * and adds 1 whenever a remainder is present.
 	 ******************************************************************/
-	private int setLayerValue(int numerator, int denominator) {
-		int returnVal = numerator/denominator;
-		float remainder = getRemainder(numerator,denominator);
-		if (remainder > 0) {
-			returnVal++;
-		}
+	private int setLayerValue(int numerator, int denominator) throws Exception {
+		int returnVal = 0;
+		try {
+			returnVal = numerator/denominator;
+			float remainder = getRemainder(numerator,denominator);
+			if (remainder > 0) {
+				returnVal++;
+			}
+	    } catch (Exception ex) {
+	        System.out.println("Exception in ImportLayerData.setLayerValue: " + ex.toString());
+	        ex.printStackTrace();
+	    }
 		return returnVal;
 	}
-	private float getRemainder(int numerator, int denominator) {
-		float intercalc = (float)numerator/denominator;
-		float remainder = intercalc%1;
+
+	private float getRemainder(int numerator, int denominator) throws Exception {
+		float remainder = 0;
+		try {
+			float intercalc = (float)numerator/denominator;
+			remainder = intercalc%1;
+	    } catch (Exception ex) {
+	        System.out.println("Exception in ImportLayerData.getRemainder: " + ex.toString());
+	        ex.printStackTrace();
+	    }
 		return remainder;
 	}
-
 
 	/*******************************************************************
 	 * METHOD: setCombinedInterval
@@ -184,8 +199,7 @@ public class ImportLayerData {
 	 * It will calculate the row interval and the column interval and then
 	 * return the higher of the two values.
 	 ******************************************************************/
-	private void setCombinedInterval(int sizeLimit)  
-	{  
+	private void setCombinedInterval(int sizeLimit)  throws Exception {  
 		setRowInterval(sizeLimit);
 		setColInterval(sizeLimit);
 	}
@@ -198,8 +212,7 @@ public class ImportLayerData {
 	 * skip, depending upon the layer type, when summarizing a data matrix
 	 * for the thumbnail, summary, or ribbon horizontal views.
 	 ******************************************************************/
-	private void setRowInterval(int sizeLimit)  
-	{  
+	private void setRowInterval(int sizeLimit)  throws Exception {  
 		int rows = importRows;
 		rowInterval = rows/sizeLimit;
 		float remainder = getRemainder(rows, sizeLimit);
@@ -218,8 +231,7 @@ public class ImportLayerData {
 	 * skip, depending upon the view type, when summarizing a data matrix
 	 * for the thumbnail, summary, or ribbon vertical views.
 	 ******************************************************************/
-	private void setColInterval(int sizeLimit)  
-	{  
+	private void setColInterval(int sizeLimit) throws Exception  {  
 		int cols = importCols;
 		colInterval = cols/sizeLimit;
 		float remainder = getRemainder(cols, sizeLimit);

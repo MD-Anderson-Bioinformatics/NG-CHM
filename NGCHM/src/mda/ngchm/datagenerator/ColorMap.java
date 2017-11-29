@@ -29,7 +29,7 @@ public class ColorMap {
 	 * This method returns the colorMap as a JSON string to be written
 	 * out to the mapConfig.JSON output file.
 	 ******************************************************************/
-	public String asJSON() {
+	public String asJSON() throws Exception {
 		StringBuffer json = new StringBuffer(COLOR_MAP_LABEL+BRACE_OPEN);
 		json.append(TYPE_LABEL+QUOTE+type+QUOTE+COMMA);
 		json.append(COLORS_LABEL+BRACKET_OPEN+QUOTE+HASHTAG+ toHex(colors.get(0))+QUOTE);
@@ -37,7 +37,7 @@ public class ColorMap {
 			json.append(COMMA+QUOTE+HASHTAG+toHex(colors.get(i))+QUOTE);
 		}
 		json.append(BRACKET_CLOSE+COMMA);
-		boolean isNumeric = areBreaksNumeric(breaks);
+		boolean isNumeric = (areBreaksNumeric(breaks) && !type.equals(COLORTYPE_DISCRETE));
 		json.append(THRESHOLDS_LABEL+BRACKET_OPEN+getBreakString(breaks.get(0), isNumeric));
 		for (int i = 1; i < breaks.size(); i++) {
 			json.append(COMMA+getBreakString(breaks.get(i), isNumeric));
@@ -55,7 +55,7 @@ public class ColorMap {
 	 * a JSON file.  If the break value is not numeric, it returns the
 	 * value as a string with quotes around it.
 	 ******************************************************************/
-	private String getBreakString(String breakpt, boolean isNumeric) {
+	private String getBreakString(String breakpt, boolean isNumeric) throws Exception {
 		if (!isNumeric) {
 			breakpt = QUOTE+breakpt+QUOTE;
 		}
@@ -68,10 +68,10 @@ public class ColorMap {
 	 * This method inspects the breakpoints for a given color map and
 	 * returns a boolean indicating whether they are numeric breakpoints.
 	 ******************************************************************/
-	private boolean areBreaksNumeric(ArrayList<String> breaks) {
+	private boolean areBreaksNumeric(ArrayList<String> breaks) throws Exception {
 		boolean isNumeric = true;
 		for (int i = 0; i < breaks.size(); i++) {
-			if (!HeatmapDataGenerator.isNumeric(breaks.get(i))) {
+			if (!MatrixValidator.isNumeric(breaks.get(i))) {
 				isNumeric = false;
 			}
 		}
@@ -84,7 +84,7 @@ public class ColorMap {
 	 * This method returns the hex representation for the color contained
 	 * in a Color object .
 	 ******************************************************************/
-	private String toHex(Color c) {
+	private String toHex(Color c) throws Exception {
 		String hex = "" + Integer.toHexString(c.getRGB());
 		return hex.substring(2);
 	}

@@ -1,16 +1,19 @@
 //Define Namespace for NgChm CompatibilityManager
 NgChm.createNS('NgChm.CM');
-
+ 
 // This string contains the entire configuration.json file.  This was previously located in a JSON file stored with the application code
 // but has been placed here at the top of the CompatibilityManager class so that the configuration can be utilized in File Mode.
-NgChm.CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\": \"Y\",\"height\": 15},\"classifications_order\": 1,\"organization\": {\"agglomeration_method\": \"unknown\","+
-			"\"order_method\": \"unknown\",\"distance_metric\": \"unknown\"},\"dendrogram\": {\"show\": \"ALL\",\"height\": \"100\"}},"+
-			"\"col_configuration\": {\"classifications\": {\"show\": \"Y\",\"height\": 15},\"classifications_order\": 1,"+ 
+NgChm.CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\": \"Y\",\"height\": 15,\"bar_type\": \"color_plot\",\"fg_color\": \"#000000\",\"bg_color\": \"#FFFFFF\",\"low_bound\": \"0\",\"high_bound\": \"100\"},\"classifications_order\": 1,\"organization\": {\"agglomeration_method\": \"unknown\","+
+			"\"order_method\": \"unknown\",\"distance_metric\": \"unknown\"},\"dendrogram\": {\"show\": \"ALL\",\"height\": \"100\"},\"label_display_length\": \"20\",\"label_display_method\": \"END\",\"top_items\": \"[]\"},"+
+			"\"col_configuration\": {\"classifications\": {\"show\": \"Y\",\"height\": 15,\"bar_type\": \"color_plot\",\"fg_color\": \"#000000\",\"bg_color\": \"#FFFFFF\",\"low_bound\": \"0\",\"high_bound\": \"100\"},\"classifications_order\": 1,"+ 
 		    "\"organization\": {\"agglomeration_method\": \"unknown\",\"order_method\": \"unknown\",\"distance_metric\": \"unknown\"},"+
-		    "\"dendrogram\": {\"show\": \"ALL\",\"height\": \"100\"}},\"data_configuration\": {\"map_information\": {\"data_layer\": {"+
+		    "\"dendrogram\": {\"show\": \"ALL\",\"height\": \"100\"},\"label_display_length\": \"20\",\"label_display_method\": \"END\",\"top_items\": \"[]\"},\"data_configuration\": {\"map_information\": {\"data_layer\": {"+
 		    "\"name\": \"Data Layer\",\"grid_show\": \"Y\",\"grid_color\": \"#FFFFFF\",\"selection_color\": \"#00FF38\"},\"name\": \"CHM Name\",\"description\": \""+
-		    "Full length description of this heatmap\",\"summary_width\": \"50\",\"summary_height\": \"100\",\"detail_width\": \"50\",\"detail_height\": \"100\",\"read_only\": \"N\",\"version_id\": \"1.0.0\",\"label_display_length\": \"20\",\"label_display_truncation\": \"END\"}}}";
+		    "Full length description of this heatmap\",\"summary_width\": \"50\",\"summary_height\": \"100\",\"detail_width\": \"50\",\"detail_height\": \"100\",\"read_only\": \"N\",\"version_id\": \"1.0.0\",\"map_cut_rows\": \"0\",\"map_cut_cols\": \"0\"}}}";
 
+// CURRENT VERSION NUMBER
+NgChm.CM.version = "2.1.0";
+NgChm.CM.webServerUrl = "http://projects.insilico.us.com:8081/NGCHM/";
 NgChm.CM.classOrderStr = ".classifications_order";
 
 /**********************************************************************************
@@ -64,9 +67,18 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 				var searchPath = searchItem.substring(1, searchItem.lastIndexOf("."));
 				var newItem = searchItem.substring(searchItem.lastIndexOf(".")+1, searchItem.length);
 				var parts = searchPath.split(".");
+				//Here we search any entries for classification bars to reconstruct bar labels that have been
+				//split apart due to the period character being contained in the label.
+				if (parts[1] === 'classifications') {
+					parts[2] = NgChm.CM.trimClassLabel(parts);
+				}
 				var obj = mapConfig;
 				for (i=0;i<parts.length;i++) {
 					obj = obj[parts[i]];
+				}
+				//For adding empty array for top_items
+				if (searchValue == "[]") {
+					searchValue = [];
 				}
 				obj[newItem] = searchValue;
 				foundUpdate = true;
@@ -83,6 +95,26 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 	if (foundUpdate === true) {
 		var success = NgChm.heatMap.autoSaveHeatMap();
 	}
+}
+
+/**********************************************************************************
+ * FUNCTION - trimClassLabel: The purpose of this function is to determine if the 
+ * classification label contains the period (.) character and combine the pieces, that
+ * have been previously split on that character, back into a single string.
+ * *******************************************************************************/
+NgChm.CM.trimClassLabel = function(parts) {
+	var classLabel = "";
+	if (parts.length > 3) {
+		var remItem = "";
+		for (var i = parts.length - 1; i >= 3; i--) {
+			remItem = "."+parts[i]+remItem;
+			parts.splice(i, 1);
+		}
+		classLabel = parts[2] + remItem;
+	} else {
+		classLabel = parts[2];
+	}
+	return classLabel;
 }
 
 /**********************************************************************************
@@ -122,7 +154,11 @@ NgChm.CM.buildConfigComparisonObject = function(obj, stack, configObj, mapConfig
     for (var property in obj) {
         if (obj.hasOwnProperty(property)) {
             if (typeof obj[property] == "object") {
-            	NgChm.CM.buildConfigComparisonObject(obj[property], stack + '.' + property, configObj, mapConfig);
+            	if ((typeof mapConfig === 'undefined') && (property === 'top_items')) {
+            		configObj[stack+"."+property] = obj[property];
+            	} else {
+                	NgChm.CM.buildConfigComparisonObject(obj[property], stack + '.' + property, configObj, mapConfig);
+            	}
             } else {
                var jsonPath = stack+"."+property;
                 //If we are processing the default config object tree, use the heatmap's config object to retrieve
@@ -160,4 +196,19 @@ NgChm.CM.buildConfigComparisonObject = function(obj, stack, configObj, mapConfig
         }
     }
 }
+
+/************************************************
+ * mapData compatibility fixes
+ ***********************************************/
+NgChm.CM.mapDataCompatibility = function(mapData) {
+	if (!Array.isArray(mapData.col_data.label.label_type)) {
+		var valArr = NgChm.UTIL.convertToArray(mapData.col_data.label.label_type);
+		mapData.col_data.label.label_type = valArr;
+	}
+	if (!Array.isArray(mapData.row_data.label.label_type)) {
+		var valArr = NgChm.UTIL.convertToArray(mapData.row_data.label.label_type);
+		mapData.row_data.label.label_type = valArr;
+	}
+}
+
 

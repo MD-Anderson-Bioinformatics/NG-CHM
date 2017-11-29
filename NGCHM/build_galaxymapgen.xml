@@ -9,6 +9,7 @@
     <property name="dir.buildfile" value="."/>
     <property name="dir.workspace" value="${dir.buildfile}"/>
     <property name="dir.jarfile" value="."/>
+    <property name="mapgen.path" value="${dir.jarfile}/GalaxyMapGen.jar"/>
 
     <target name="clean">
         <delete dir="${build.dir}"/>
@@ -20,7 +21,7 @@
     </target>
 
 	<target name="create_run_jar" depends="compile">
-        <jar destfile="${dir.jarfile}/GalaxyMapGen.jar" filesetmanifest="mergewithoutmain">
+        <jar destfile="${mapgen.path}" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="mda.ngchm.datagenerator.GalaxyMapGen"/>
                 <attribute name="Class-Path" value="."/>

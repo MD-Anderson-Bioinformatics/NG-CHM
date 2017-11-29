@@ -31,10 +31,40 @@ linkouts.getMapFileName = function(){
 	return NgChm.UTIL.getURLParameter("map");
 }
 
-//adds linkout objects to the linkouts global variable
+// returns type of object we're linking from.
+linkouts.getSourceObjectType = function() {
+	return "chm"; // CHM of course.
+}
+
+// returns a 'unique' identifier for the current source object.
+linkouts.getSourceObjectUniqueId = function() {
+	return NgChm.UTIL.getURLParameter("map");
+}
+
+//adds axis linkout objects to the linkouts global variable
 linkouts.addLinkout = function(name, labelType, selectType, callback, reqAttributes, index){
 	NgChm.LNK.addLinkout(name, labelType, selectType, callback, reqAttributes, index);
 }
+
+//adds matrix linkout objects to the linkouts global variable
+linkouts.addMatrixLinkout = function (name, rowType, colType, selectType, callback, reqAttributes, index) {
+	NgChm.LNK.addMatrixLinkout (name, rowType, colType, selectType, callback, reqAttributes, index);
+}
+
+// Linkout to the specified url in a suitable 'window'.
+// name identifies the linkout group (subsequent linkouts in the same group should display in the same window).
+// options fine tunes the window display.
+linkouts.openUrl = function (url, name, options) {
+        window.open (url, name, options);
+};
+
+linkouts.simplifyLabels = function (labels) {
+        if (!Array.isArray(labels)) {
+	        labels = labels.Row.concat(labels.Column);
+        }
+        // Remove duplicates.
+        return labels.sort().filter(function(el,i,a){return i===a.indexOf(el);});
+};
 
 /*******************************************
  * END EXTERNAL INTERFACE
@@ -42,6 +72,8 @@ linkouts.addLinkout = function(name, labelType, selectType, callback, reqAttribu
 
 //Define Namespace for NgChm Linkout
 NgChm.createNS('NgChm.LNK');
+//Used to store the label item that the user clicked-on
+NgChm.LNK.selection = 0;
 
 //the linkout object
 NgChm.LNK.linkout = function(title, labelType, selectType, reqAttributes, callback){
@@ -65,26 +97,28 @@ NgChm.LNK.matrixLinkout = function(title, rowType, colType, selectType, reqAttri
 // labelType will decide which menu to place the linkout in.
 // selectType decides when the linkout is executable. (passing in null or undefined, or false will allow the function to be executable for all selection types)
 NgChm.LNK.addLinkout = function(name, labelType, selectType, callback, reqAttributes, index){ 
+        var linkout = new NgChm.LNK.linkout(name, labelType, selectType,reqAttributes, callback);
 	if (!linkouts[labelType]){
-		linkouts[labelType] = [new NgChm.LNK.linkout(name, labelType, selectType,reqAttributes, callback)];
+		linkouts[labelType] = [linkout];
 	} else {
 		if (index !== undefined){
-			linkouts[labelType].splice(index, 0, new NgChm.LNK.linkout(name,labelType, selectType, reqAttributes, callback)); 
+			linkouts[labelType].splice(index, 0, linkout); 
 		}else {
-			linkouts[labelType].push(new NgChm.LNK.linkout(name,labelType,selectType, reqAttributes, callback));
+			linkouts[labelType].push(linkout);
 		}
 	}
 }
 
 
 NgChm.LNK.addMatrixLinkout = function(name, rowType, colType, selectType, callback, reqAttributes, index){ // this function is used to add linkouts to the matrix menu when the linkout needs a specific criteria for the row and column (ie: same attribute)
+        var linkout = new NgChm.LNK.matrixLinkout(name, rowType, colType, selectType,reqAttributes, callback);
 	if (!linkouts["Matrix"]){
-		linkouts["Matrix"] = [new NgChm.LNK.matrixLinkout(name, rowType, colType, selectType,reqAttributes, callback)];
+		linkouts["Matrix"] = [linkout];
 	} else {
 		if (index !== undefined){
-			linkouts["Matrix"].splice(index, 0, new NgChm.LNK.matrixLinkout(name, rowType, colType, selectType,reqAttributes, callback));
+			linkouts["Matrix"].splice(index, 0, linkout );
 		}else {
-			linkouts["Matrix"].push(new NgChm.LNK.matrixLinkout(name, rowType, colType, selectType,reqAttributes, callback));
+			linkouts["Matrix"].push(linkout);
 		}
 	}
 	
@@ -93,8 +127,9 @@ NgChm.LNK.addMatrixLinkout = function(name, rowType, colType, selectType, callba
 //this function goes through searchItems and returns the proper label type for linkout functions to use
 NgChm.LNK.getLabelsByType = function(axis, linkout){
 	var searchLabels;
+	var labelDataMatrix;
 	var labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] : 
-		axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getColClassificationConfig()) : axis == "RowCovar" ? Object.keys(NgChm.heatMap.getRowClassificationConfig()) : 
+		axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : 
 			[NgChm.heatMap.getRowLabels()["labels"], NgChm.heatMap.getColLabels()['labels'] ];
 	
 	var types;
@@ -113,20 +148,30 @@ NgChm.LNK.getLabelsByType = function(axis, linkout){
 		}
 		if (axis !== "Matrix"){
 			searchLabels = [];
-			for (var i in NgChm.SEL.searchItems[axis]){
-				if (axis.includes("Covar")){ // Covariate linkouts have not been tested very extensively. May need revision in future. 
-					searchLabels.push( generateSearchLabel(labels[i],formatIndex)) ;
-				} else {
-					searchLabels.push( generateSearchLabel(labels[i-1],formatIndex) );
+			//IF the linkout is single select, load ONLY the item that was clicked on to searchLabels.
+			if (linkout.selectType === linkouts.SINGLE_SELECT) {
+				searchLabels.push( generateSearchLabel(NgChm.LNK.selection,formatIndex));
+			} else {
+			//ELSE the linkout is multi select, load all selected items to searchLabels (not necessarily the item that was clicked on)
+				for (var i in NgChm.SEL.searchItems[axis]){
+					if (axis.includes("Covar")){ // Covariate linkouts have not been tested very extensively. May need revision in future. 
+						searchLabels.push( generateSearchLabel(labels[i],formatIndex)) ;
+					} else {
+						searchLabels.push( generateSearchLabel(labels[i-1],formatIndex));
+					}
 				}
 			}
 		} else {
-			searchLabels = {"Row" : [], "Column" : []};
+		   	searchLabels = {"Row" : [], "Column" : []};
 			for (var i in NgChm.SEL.searchItems["Row"]){
 				searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],[formatIndex[0]]) );
 			}
 			for (var i in NgChm.SEL.searchItems["Column"]){
 				searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],[formatIndex[0]]) );
+			}
+			if (linkout.title === 'Download selected matrix data to file') {
+				labelDataMatrix = NgChm.LNK.createMatrixData(searchLabels);
+				return labelDataMatrix;
 			}
 		}
 	} else { // if this linkout was added using addMatrixLinkout
@@ -150,7 +195,7 @@ NgChm.LNK.getLabelsByType = function(axis, linkout){
 		}
 		for (var i in NgChm.SEL.searchItems["Column"]){
 			searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],formatIndex.col) );
-		}
+		} 
 		
 	}
 	return searchLabels;
@@ -166,6 +211,38 @@ NgChm.LNK.getLabelsByType = function(axis, linkout){
 		return searchLabel;
 	}
 }
+
+//This function creates a two dimensional array which contains all of the row and
+//column labels along with the data for a given selection
+NgChm.LNK.createMatrixData = function(searchLabels) {
+	var matrix = new Array();
+	for (var j = 0; j < searchLabels["Row"].length+1; j++) {
+		matrix[j] = new Array();
+		if (j == 0) {
+			matrix[j].push(" ");
+			for (var i = 0; i < searchLabels["Column"].length; i++) {
+				matrix[j].push(searchLabels["Column"][i])
+			}
+		}
+	}
+	var dataMatrix = new Array();
+	for (var x in NgChm.SEL.searchItems["Row"]){
+		for (var y in NgChm.SEL.searchItems["Column"]){
+	    	var matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,x,y);
+	    	dataMatrix.push(matrixValue);
+		}
+	}
+	var dataIdx = 0;
+	for (var k = 1; k < matrix.length; k++) {
+		matrix[k].push(searchLabels["Row"][k-1]);
+		for (var i = 1; i < searchLabels["Column"].length+1; i++) {
+			matrix[k].push(dataMatrix[dataIdx])
+			dataIdx++;
+		}
+	}
+	return matrix;
+}
+
 
 NgChm.LNK.createLabelMenus = function(){
 	if (!document.getElementById("RowLabelMenu")){
@@ -191,12 +268,25 @@ NgChm.LNK.labelHelpClose = function(axis){
 }
 
 NgChm.LNK.labelHelpOpen = function(axis, e){
+	//Get the label item that the user clicked on (by axis) and save that value for use in NgChm.LNK.selection
+    var index = e.target.getAttribute("index");
+    NgChm.LNK.selection = '';
+    if (axis === "Row") {
+        NgChm.LNK.selection = NgChm.heatMap.getRowLabels().labels[index-1];
+    } else if (axis === "Column") {
+        NgChm.LNK.selection = NgChm.heatMap.getColLabels().labels[index-1];
+    } else if (axis === "RowCovar"){
+    	NgChm.LNK.selection = NgChm.heatMap.getRowClassificationConfigOrder()[index];
+    } else if (axis === "ColumnCovar"){
+    	NgChm.LNK.selection = NgChm.heatMap.getColClassificationConfigOrder()[index];
+    }
+
 	var labelMenu =  axis !== "Matrix" ? document.getElementById(axis + 'LabelMenu') : document.getElementById("MatrixMenu");
 	var labelMenuTable = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenuTable') : document.getElementById('MatrixMenuTable');
     var axisLabelsLength = axis !== "Matrix" ? NgChm.DET.getSearchLabelsByAxis(axis).length : {"Row":NgChm.DET.getSearchLabelsByAxis("Row").length ,"Column":  NgChm.DET.getSearchLabelsByAxis("Column").length};
     var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
     var row = header.getElementsByTagName('TR')[0];
-    if (axisLabelsLength > 0 && axis !== "Matrix"){
+    if (((axisLabelsLength > 0) || (NgChm.LNK.selection !== '')) && axis !== "Matrix"){
     	row.innerHTML = "Selected " + axis.replace("Covar"," Classification") + "s : " + axisLabelsLength;
     	labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
     	NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
@@ -242,34 +332,55 @@ NgChm.LNK.createLabelMenu = function(axis){
     document.addEventListener('click', labelHelpCloseAxis);
 }
 
+// Check to see if the item that the user clicked on is part of selected labels group
+NgChm.LNK.itemInSelection = function (axis) {
+	var labels = axis == "Row" ? NgChm.heatMap.getRowLabels() : axis == "Column" ? NgChm.heatMap.getColLabels() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : []; 
+	for (var key in NgChm.SEL.searchItems[axis]){
+		var selItem 
+		if (axis.includes("Covar")){
+			selItem = labels[key];
+		} else {
+			selItem = labels[key-1];
+		}
+		if (selItem === NgChm.LNK.selection) {
+			return true;
+		}
+	}
+	return false;
+}
+//Check to see if we have selections
+NgChm.LNK.hasSelection = function (axis) {
+	// Check to see if clicked item is part of selected labels group
+	var ctr = 0;
+	for (var key in NgChm.SEL.searchItems[axis]){
+		ctr++;
+	}
+	return ctr > 0 ? true : false;
+}
+
 //adds the row linkouts and the column linkouts to the menus
 NgChm.LNK.populateLabelMenu = function(axis, axisLabelsLength){
 	var table = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenuTable') : document.getElementById("MatrixMenuTable");
 	var labelType = axis == "Row" ? NgChm.heatMap.getRowLabels()["label_type"] : 
 					axis == "Column" ? NgChm.heatMap.getColLabels()["label_type"] : axis == "ColumnCovar" ? ["ColumnCovar"] : axis == "RowCovar"  ? ["RowCovar"] : ["Matrix"];
 	var linkoutsKeys = Object.keys(linkouts);
+	//Arrays here are used to store linkouts by type (e.g. individual OR group)
+	var indLinkouts = [];
+	var grpLinkouts = [];
+	var itemInSelection = NgChm.LNK.itemInSelection(axis);
 	for (var i = 0; i < labelType.length; i++){ // for every labeltype that the map has...
 		var type = labelType[i];
 		if (linkouts[type]){ // and for every linkout that the label type has, we add the linkout to the menu
 			for (var j = 0; j < linkouts[type].length; j++){
 				var linkout = linkouts[type][j];
-				var clickable;
-				if (labelType == "ColumnCovar" && NgChm.DET.getSearchLabelsByAxis("Column").length == 0 && linkout.selectType){
-					clickable = false;
-				} else if (labelType == "RowCovar" && NgChm.DET.getSearchLabelsByAxis("Row").length == 0 && linkout.selectType){
-					clickable = false;
-				} else if (linkout.selectType == linkouts.SINGLE_SELECT && axisLabelsLength > 1 && (axis == "Row" || axis == "Column")){
-					clickable = false;
-				} else if (linkout.selectType == linkouts.SINGLE_SELECT && (axisLabelsLength["Row"] > 1 || axisLabelsLength["Column"] > 1) && axis == "Matrix"){
-					clickable = false;
-				}else {
-					clickable = true;
-				}
-				
 				if (linkout.rowType &&  linkout.colType && type == "Matrix"){// if this is a MatrixLinkout...
-					handleMatrixLinkout(axis,table, linkout,clickable);
-				} else {
-					NgChm.LNK.addMenuItemToTable(axis, table, linkout, clickable);
+					handleMatrixLinkout(axis,table, linkout,grpLinkouts);
+				} else { 
+					if (linkout.selectType == linkouts.SINGLE_SELECT) {
+						indLinkouts.push({"linkout":linkout});
+					} else {
+						grpLinkouts.push({"linkout":linkout})
+					}
 				}
 			}
 		}
@@ -293,24 +404,42 @@ NgChm.LNK.populateLabelMenu = function(axis, axisLabelsLength){
 			}
 			if (linkouts[type] && add){ // and for every linkout that the label type has, we add the linkout to the menu
 				for (var j = 0; j < linkouts[type].length; j++){
-					var clickable;
-					if (labelType == "ColumnCovar" && NgChm.DET.getSearchLabelsByAxis("Column").length == 0){
-						clickable = false;
-					} else if (labelType == "RowCovar" && NgChm.DET.getSearchLabelsByAxis("Row").length == 0){
-						clickable = false;
-					} else if (linkouts[type][j].selectType == linkouts.SINGLE_SELECT && axisLabelsLength > 1){
-						clickable = false;
+                                        var linkout = linkouts[type][j];
+					if (linkout.selectType == linkouts.SINGLE_SELECT) {
+						indLinkouts.push({"linkout":linkout});
 					} else {
-						clickable = true;
+						grpLinkouts.push({"linkout":linkout})
 					}
-					NgChm.LNK.addMenuItemToTable(axis, table, linkouts[type][j], clickable);
 				}
 			}
 		}
 	}
+	if (axis === "Matrix") {
+		for (var l=0; l < grpLinkouts.length;l++ ) {
+			NgChm.LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, true);
+		}
+	} else {
+		//Always add clipboard link at top of list
+		NgChm.LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
+		if (indLinkouts.length > 0) {
+			var addedHeader = false;
+			for (var k=0; k < indLinkouts.length;k++ ) {
+				addedHeader = NgChm.LNK.addMenuItemToTable(axis, table, indLinkouts[k].linkout, addedHeader);
+			}
+		}
+		if (grpLinkouts.length > 1) {
+			var addedHeader = false;
+			for (var l=1; l < grpLinkouts.length;l++ ) {
+				addedHeader = NgChm.LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, addedHeader);
+			}
+		}
+	}
+	//Add blank row so links don't overlay close button
+	var body = table.getElementsByClassName('labelMenuBody')[0];
+	body.insertRow();
 	
 	// Helper functions for populateLabelMenu
-	function handleMatrixLinkout(axis, table, linkout,clickable){
+	function handleMatrixLinkout(axis, table, linkout,grpLinkouts){
 		var rowLabelTypes = NgChm.heatMap.getRowLabels().label_type;
 		var colLabelTypes = NgChm.heatMap.getColLabels().label_type;
 		if (Array.isArray(linkout.rowType)){ // if there are mutliple rowTypes required
@@ -335,81 +464,136 @@ NgChm.LNK.populateLabelMenu = function(axis, axisLabelsLength){
 				return;
 			}
 		}
-		NgChm.LNK.addMenuItemToTable(axis, table, linkout, clickable);
+		grpLinkouts.push({"linkout": linkout});
 	}
 }
 
-NgChm.LNK.addMenuItemToTable = function(axis, table, linkout,clickable){
+// Helper functions to add header comment lines to help box
+NgChm.LNK.addTextRowToTable = function(table, type, axis) {
+	var body = table.getElementsByClassName('labelMenuBody')[0];
+	var row = body.insertRow();
+	var cell = row.insertCell();
+	if (type === "multi") {
+		cell.innerHTML = ("<b>Linkouts for entire selection:</b>");
+	} else {
+		var labelVal = NgChm.LNK.selection.indexOf("|") > 0 ? NgChm.LNK.selection.substring(0,NgChm.LNK.selection.indexOf("|")) : NgChm.LNK.selection; 
+		labelVal = NgChm.UTIL.getLabelText(labelVal,axis);
+		cell.innerHTML = ("<b>Linkouts for: " + labelVal +"</b>");
+	}
+}
+
+NgChm.LNK.addMenuItemToTable = function(axis, table, linkout,addedHeader){
 	var body = table.getElementsByClassName('labelMenuBody')[0];
 	
 	var functionWithParams = function(){ // this is the function that gets called when the linkout is clicked
 		var input = NgChm.LNK.getLabelsByType(axis,linkout)
 		linkout.callback(input,axis); // linkout functions will have inputs that correspond to the labelType used in the addlinkout function used to make them.
 	};
-	if (linkout.reqAttributes == null){
-		var row = body.insertRow();
-		var cell = row.insertCell();
-		if (clickable){
-			cell.innerHTML = linkout.title;
-			cell.addEventListener('click', functionWithParams);
-		} else{
-			cell.innerHTML = linkout.title;
-			cell.classList.add('unclickable');
-			cell.addEventListener("click", NgChm.LNK.selectionError)
+	//Add indentation to linkout title if the link does not contain the word "clipboard" and it is not a Matrix linkout
+	var linkTitle = linkout.title.indexOf("clipboard") > 0 && axis !== "Matrix"? linkout.title : "&nbsp;&nbsp"+linkout.title;
+	if (linkout.reqAttributes == null || (linkout.reqAttributes.constructor === Array && linkout.reqAttributes.length === 0)){
+		if (addedHeader === false) {
+			//If sub-sectional header has not been added to the popup (before single/multi links) AND a link is being added...put in the header
+			if (linkout.selectType === 'multiSelection') {
+				//Don't add a subsection header for multi links IF only one link has been selected
+				if (NgChm.LNK.hasSelection(axis)) {
+					NgChm.LNK.addTextRowToTable(table, "multi",axis);
+				}
+			} else {
+				NgChm.LNK.addTextRowToTable(table, "ind",axis);
+			}
+			addedHeader = true;
 		}
-	} else {
-		if (typeof(linkout.reqAttributes) == 'string' && linkouts.getAttribute(linkout.reqAttributes)){
+		if ((!NgChm.LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection') && (axis !== 'Matrix')) {
+			return addedHeader;
+		} else {
 			var row = body.insertRow();
 			var cell = row.insertCell();
-			if (clickable){
-				cell.innerHTML = linkout.title;
-				cell.addEventListener('click', functionWithParams);
-			} else{
-				cell.innerHTML = linkout.title;
-				cell.classList.add('unclickable');
-				cell.addEventListener("click", NgChm.LNK.selectionError)
-			}
-		} else if (typeof(linkout.reqAttributes) == 'object'){
-			var add = true;
-			for (var i = 0; i < linkout.reqAttributes.length; i++){
-				if (!linkouts.getAttribute(linkout.reqAttributes[i])){
-					add = false;
+			cell.innerHTML = linkTitle;
+			cell.addEventListener('click', functionWithParams);
+		}
+	} else {
+		if (typeof(linkout.reqAttributes) == 'string'){
+			linkout.reqAttributes = [linkout.reqAttributes];
+		}
+		var add = false;
+		if ( linkout.labelType == "ColumnCovar"){
+			for (var i=0; i < linkout.reqAttributes.length; i++){
+				for (var j in NgChm.SEL.searchItems[axis]){
+					var name = NgChm.heatMap.getColClassificationConfigOrder()[j];
+					if (NgChm.heatMap.getColClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
+						add = true;
+					}
+				}
+				if (NgChm.heatMap.getColClassificationConfig()[NgChm.LNK.selection].data_type == linkout.reqAttributes[i]){
+					add = true;
 				}
 			}
-			if (add){
+		} else if (linkout.labelType == "RowCovar"){
+			for (var i=0; i < linkout.reqAttributes.length; i++){
+				for (var j in NgChm.SEL.searchItems[axis]){
+					var name = NgChm.heatMap.getRowClassificationConfigOrder()[j];
+					if (NgChm.heatMap.getRowClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
+						add = true;
+					}
+				}
+				if (NgChm.heatMap.getRowClassificationConfig()[NgChm.LNK.selection].data_type == linkout.reqAttributes[i]){
+					add = true;
+				}
+			}
+		} else {
+			for (var i = 0; i < linkout.reqAttributes.length; i++){
+				if (linkouts.getAttribute(linkout.reqAttributes[i])){
+					add = true;
+				}
+			}
+		}
+		if (add){
+			if (addedHeader === false) {
+				if (linkout.selectType === 'multiSelection') {
+					if (NgChm.LNK.hasSelection(axis)) {
+						NgChm.LNK.addTextRowToTable(table, "multi",axis);
+					}
+				} else {
+					NgChm.LNK.addTextRowToTable(table, "ind",axis);
+				}
+				addedHeader = true;
+			}
+			if ((!NgChm.LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection')) {
+				return addedHeader;
+			} else {
 				var row = body.insertRow();
 				var cell = row.insertCell();
-				if (clickable){
-					cell.innerHTML = linkout.title;
-					cell.addEventListener('click', functionWithParams);
-				} else{
-					cell.innerHTML = linkout.title;
-					cell.classList.add('unclickable');
-					cell.addEventListener("click", NgChm.LNK.selectionError)
-				}
+				cell.innerHTML = linkTitle;
+				cell.addEventListener('click', functionWithParams);
 			}
 		}
 	}
+	return addedHeader;
 }
 
 NgChm.LNK.selectionError = function(e){
-	var message = "Please select only one label in this axis to use the following linkout:\n\n" + e.currentTarget.innerHTML;
-	alert(message);
+	var message = "<br>Please select only one label in this axis to use the following linkout:<br><br><b>" + e.currentTarget.innerHTML+"</b>";
+	NgChm.UHM.linkoutError(message);
 }
 
 NgChm.LNK.getDefaultLinkouts = function(){
 	var colLabelType = NgChm.heatMap.getColLabels().label_type;
 	var rowLabelType = NgChm.heatMap.getRowLabels().label_type;
-	NgChm.LNK.addLinkout("Copy " + (colLabelType[0].length < 20 ? colLabelType[0] : "Column Labels") +" to Clipboard", colLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0);
+//	NgChm.LNK.addLinkout("Copy " + (colLabelType[0].length < 20 ? colLabelType[0] : "Column Labels") +" to Clipboard", colLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0);
+	NgChm.LNK.addLinkout("Copy selected labels to clipboard", colLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0); // text changed from the full label type to just "Column/Row Label" to prevent misreading of this linkout
 	if (rowLabelType[0] !== colLabelType[0]){
-		NgChm.LNK.addLinkout("Copy " + (rowLabelType[0].length < 20 ? rowLabelType[0] : "Row Labels") + " to Clipboard", rowLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0);
+//		NgChm.LNK.addLinkout("Copy " + (rowLabelType[0].length < 20 ? rowLabelType[0] : "Row Labels") + " to Clipboard", rowLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0);
+		NgChm.LNK.addLinkout("Copy selected labels to clipboard", rowLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0);
 	}
 	
 	NgChm.LNK.addLinkout("Copy bar data for all labels", "ColumnCovar", null, NgChm.LNK.copyEntireClassBarToClipBoard,null,0);
 	NgChm.LNK.addLinkout("Copy bar data for selected labels", "ColumnCovar", linkouts.MULTI_SELECT,NgChm.LNK.copyPartialClassBarToClipBoard,null,1);
 	NgChm.LNK.addLinkout("Copy bar data for all labels", "RowCovar", null,NgChm.LNK.copyEntireClassBarToClipBoard,null,0);
 	NgChm.LNK.addLinkout("Copy bar data for selected labels", "RowCovar", linkouts.MULTI_SELECT,NgChm.LNK.copyPartialClassBarToClipBoard,null,1);
-	NgChm.LNK.addLinkout("Copy selected items to clipboard", "Matrix", linkouts.MULTI_SELECT,NgChm.LNK.copySelectionToClipboard,null,0);
+	NgChm.LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,NgChm.LNK.copySelectionToClipboard,null,0);
+	NgChm.LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,NgChm.LNK.copySelectedDataToClipboard,null,0);
+	NgChm.LNK.addLinkout("Set selection as detail view.", "Matrix", linkouts.MULTI_SELECT,NgChm.LNK.setDetailView,null,0);
 }
 
 
@@ -454,4 +638,41 @@ NgChm.LNK.copyPartialClassBarToClipBoard = function(labels,axis){
 
 NgChm.LNK.copySelectionToClipboard = function(labels,axis){
 	window.open("","",'width=335,height=330,resizable=1').document.write("Rows: " + labels["Row"].join(", ") + "<br><br> Columns: " + labels["Column"].join(", "));
+}
+
+NgChm.LNK.copySelectedDataToClipboard = function(matrixData,axis){
+	var dataStr = "";
+	for (var i = 0; i<matrixData.length;i++) {
+		var rowData = matrixData[i].join('\t');
+		dataStr += rowData+"\n";
+	}
+	var fileName = NgChm.heatMap.getMapInformation().name+" Matrix Data.tsv";
+	download(fileName,dataStr);
+	//window.open("","",'width=335,height=330,resizable=1').document.write(dataStr);
+}
+
+function download(filename, text) {
+	var element = document.createElement('a');
+	element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+	element.setAttribute('download', filename);
+	element.style.display = 'none';
+	document.body.appendChild(element);
+	element.click();
+	document.body.removeChild(element);
+}
+
+
+//This matrix function allows users to create a special sub-ribbon view that matches
+//the currently selected box in the detail panel.  It just uses the first
+//row/col selected and last row/col selected so it will work well with a drag
+//selected box but not with random selections all over the map.
+NgChm.LNK.setDetailView = function(labels,axis){
+	var selCols = Object.keys(NgChm.SEL.searchItems["Column"])
+	var selRows = Object.keys(NgChm.SEL.searchItems["Row"])
+	var startCol = parseInt(selCols[0])
+	var endCol = parseInt(selCols[selCols.length-1])
+	var startRow = parseInt(selRows[0])
+	var endRow = parseInt(selRows[selRows.length-1])
+
+	NgChm.SUM.setSubRibbonView(startRow, endRow, startCol, endCol);
 }

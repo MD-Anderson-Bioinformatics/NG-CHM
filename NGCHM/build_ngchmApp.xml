@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="build_ngchm_all" basedir = "." name="Create a minimize javascript file for the widgetizer">
+
+	<property name="src.dir" value="mda.ngchm.util."/>
+    <property name="web.dir" value="./WebContent/"/>
+    <property name="js.dir" value="${web.dir}javascript/"/>
+    <property name="dir.jarfile" value="./WebContent/WEB-INF/lib"/>
+    <property name="java.dir" value="./src/mda/ngchm/util/"/>
+
+    <target name="minimize_custom_js">
+	<apply executable="java" parallel="false">
+	    <fileset dir="${js.dir}" includes="custom/custom.js"/>
+	    <arg line="-jar"/>
+	    <arg path="${dir.jarfile}/yuicompressor-2.4.2.jar"/>
+	    <srcfile/>
+	    <arg line="-o"/>
+	    <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
+	    <targetfile/>
+	</apply>
+    </target>  
+		
+    <target name="classfiles">
+        <mkdir dir="build/classes"/>
+        <javac srcdir="${java.dir}" destdir="build/classes" />
+    </target>
+
+    <target name="create_combined_js" depends="classfiles,minimize_custom_js">
+	<java classname="${src.dir}NGCHM_Minimizer">
+	    <arg value="${web.dir}"/>
+	    <arg value="ngchm.js"/>
+	    <classpath>
+	        <pathelement path="build/classes"/>
+	    </classpath>
+	</java>
+    </target>
+	
+    <target name="minify_js" depends="create_combined_js">
+        <apply executable="java" parallel="false">
+            <fileset dir="${js.dir}" includes="ngchm.js"/>
+            <arg line="-jar"/>
+            <arg path="${dir.jarfile}/yuicompressor-2.4.2.jar"/>
+            <srcfile/>
+            <arg line="-o"/>
+            <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
+            <targetfile/>
+        </apply>
+    </target>  
+	
+    <target name="create_app_html" depends="classfiles,minify_js"> 
+	<java classname="${src.dir}NGCHM_AppGenerator">
+	    <arg value="${web.dir}"/>
+	    <arg value="ngChmApp.html"/>
+	    <classpath>
+	        <pathelement path="build/classes"/>
+	    </classpath>
+	</java>
+    </target>
+	
+    <target name="create_widget_js" depends="classfiles,minify_js">
+	<java classname="${src.dir}NGCHM_Widgetizer">
+	    <arg value="${web.dir}"/>
+	    <arg value="ngchmWidget-min.js"/>
+	    <classpath>
+	        <pathelement path="build/classes"/>
+	    </classpath>
+	</java>
+    </target>
+	
+    <target name="build_ngchm_app" depends="create_app_html">
+	<delete>
+            <fileset dir="${js.dir}" includes="ngchm.js"/>
+            <fileset dir="${js.dir}" includes="ngchm-min.js"/>
+            <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
+	</delete>
+    </target>
+	
+    <target name="build_ngchm_widget" depends="create_widget_js">
+	<delete>
+            <fileset dir="${js.dir}" includes="ngchm.js"/>
+            <fileset dir="${js.dir}" includes="ngchm-min.js"/>
+            <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
+	</delete>
+    </target>
+
+    <target name="build_ngchm_all" depends="create_app_html,create_widget_js">
+	<delete>
+            <fileset dir="${js.dir}" includes="ngchm.js"/>
+            <fileset dir="${js.dir}" includes="ngchm-min.js"/>
+            <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
+	</delete>
+    </target>
+
+</project>
+

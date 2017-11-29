@@ -35,22 +35,26 @@ public class ImportTileData {
 	 * to calculate and store the fileName and data matrix row/column
 	 * starting and ending positions for the HeatmapDataGenerator.
 	 ******************************************************************/
-	public ImportTileData(ImportLayerData layerData, int tileCol, int tileRow)
+	public ImportTileData(ImportLayerData layerData, int tileCol, int tileRow) throws Exception 
 	{
-	    fileName = File.separator+layerData.layer+File.separator+layerData.layer+"."+(tileRow+1)+"."+(tileCol+1)+BIN_FILE;
-	    
-		switch (layerData.layer) {
-	        case "tn": setupThumbnailTile(layerData);  
-	                 break;
-	        case "s":  setupSummaryTile(layerData, tileCol, tileRow);
-	                 break;
-	        case "d":  setupDetailTile(layerData, tileCol, tileRow);
-	                 break;
-	        case "rh":  setupRibbonHorizTile(layerData, tileCol, tileRow);
-            		break;
-	        case "rv":  setupRibbonVertTile(layerData, tileCol, tileRow);
-    				break;
-		}
+		try {
+			fileName = File.separator+layerData.layer+File.separator+layerData.layer+"."+(tileRow+1)+"."+(tileCol+1)+BIN_FILE;
+			switch (layerData.layer) {
+		        case "tn": setupThumbnailTile(layerData);  
+		                 break;
+		        case "s":  setupSummaryTile(layerData, tileCol, tileRow);
+		                 break;
+		        case "d":  setupDetailTile(layerData, tileCol, tileRow);
+		                 break;
+		        case "rh":  setupRibbonHorizTile(layerData, tileCol, tileRow);
+	            		break;
+		        case "rv":  setupRibbonVertTile(layerData, tileCol, tileRow);
+	    				break;
+			}
+	    } catch (Exception ex) {
+	        System.out.println("Exception instantiating ImportTileData Object: " + ex.toString());
+	        ex.printStackTrace();
+	    }
 	}
 	
 	/*******************************************************************
@@ -59,7 +63,7 @@ public class ImportTileData {
 	 * This method sets up the row/col start and ending positions for
 	 * the thumbnail layer tile.
 	 ******************************************************************/
-	private void setupThumbnailTile(ImportLayerData layerData) {
+	private void setupThumbnailTile(ImportLayerData layerData) throws Exception {
 		rowStartPos = 1;
 		rowEndPos = layerData.importRows+1;
 		colStartPos = 1;
@@ -72,7 +76,7 @@ public class ImportTileData {
 	 * This method sets up the row/col start and ending positions for
 	 * a summary layer tile.
 	 ******************************************************************/
-	private void setupSummaryTile(ImportLayerData layerData, int tileCol, int tileRow) {
+	private void setupSummaryTile(ImportLayerData layerData, int tileCol, int tileRow) throws Exception {
 		int rowStartingPos = 1;
 		int rowMidPoint = (layerData.rowsPerTile*layerData.rowInterval)+rowStartingPos;
 		if (tileRow == 0) {
@@ -99,7 +103,7 @@ public class ImportTileData {
 	 * This method sets up the row/col start and ending positions for
 	 * a detail layer tile.
 	 ******************************************************************/
-	private void setupDetailTile(ImportLayerData layerData, int tileCol, int tileRow) {
+	private void setupDetailTile(ImportLayerData layerData, int tileCol, int tileRow) throws Exception {
 		//Set Row starting and ending positions for layer
 		if (tileRow == 0) {
 			rowStartPos = 1;
@@ -129,7 +133,7 @@ public class ImportTileData {
 	 * This method sets up the row/col start and ending positions for
 	 * a horizontal ribbon layer tile.
 	 ******************************************************************/
-	private void setupRibbonVertTile(ImportLayerData layerData, int tileCol, int tileRow) {
+	private void setupRibbonVertTile(ImportLayerData layerData, int tileCol, int tileRow) throws Exception {
 		//Set Row starting and ending positions for layer
 		int rowStartingPos = 1;
 		int rowMidPoint = (layerData.rowsPerTile*layerData.rowInterval)+rowStartingPos;
@@ -158,13 +162,13 @@ public class ImportTileData {
 	 * This method sets up the row/col start and ending positions for
 	 * a vertical ribbon layer tile.
 	 ******************************************************************/
-	private void setupRibbonHorizTile(ImportLayerData layerData, int tileCol, int tileRow) {
+	private void setupRibbonHorizTile(ImportLayerData layerData, int tileCol, int tileRow) throws Exception {
 		//Set Row starting and ending positions for layer
 		if (tileRow == 0) {
 			rowStartPos = 1;
 			rowEndPos = (TILE_SIZE+rowStartPos);
 		} else {
-			rowStartPos = (tileRow*TILE_SIZE); 
+			rowStartPos = (tileRow*TILE_SIZE)+1; 
 			rowEndPos = (TILE_SIZE+rowStartPos)+1;
 		}
 		if (rowEndPos > layerData.importRows) {

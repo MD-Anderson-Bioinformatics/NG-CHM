@@ -14,23 +14,28 @@
 package mda.ngchm.datagenerator;
 
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics; 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
+
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import java.util.ArrayList;
 import java.io.OutputStreamWriter;
 
@@ -44,7 +49,22 @@ public class HeatmapDataGenerator {
 	 * METHOD: main
 	 *
 	 * This method is the driver for the entire heat map data generation
-	 * process.  An incoming JSON file is parsed to create the following
+	 * process.  
+	 ******************************************************************/
+	public static void main(String[] args) {
+		String errMsg = processHeatMap(args);
+		if (errMsg != null) {
+			System.out.println( "ERROR in HeatmapDataGenerator e= "+ errMsg);
+			System.exit(1);
+		} else {
+			System.exit(0);
+		}
+	}
+
+	/*******************************************************************
+	 * METHOD: processHeatMap
+	 *
+	 * An incoming JSON file is parsed to create the following
 	 * data objects representing the heatmap to be generated:
 	 * 1. ImportData - This object describes the entire map and holds
 	 *                 all of the objects related to the map.
@@ -67,154 +87,136 @@ public class HeatmapDataGenerator {
 	 * necessary for rendering the heatmap in the NGCHM viewer are 
 	 * generated.
 	 ******************************************************************/
-	public static void main(String[] args) {
-		System.out.println("START Heat Map Generation: " + new Date()); 
+	public static String processHeatMap(String[] args) {
+		System.out.println("START Data Generator Heat Map Generation: " + new Date()); 
+		String errMsg = null;
 		
+		// Validate JSON configuration file
+        try {     
+        	validateConfigJson(new File(args[0]));
+        } catch (Exception e) {
+    		System.out.println("FATAL ERROR: Invalid heatmapProperties.JSON: " + new Date()); 
+            return "FATAL ERROR: Invalid JSON Configuration.";
+        }
+
 		// Create ImportData object for data matrix.  This object will 
 		// contain subordinate objects for import layers and import tiles
-		ImportData iData =  new ImportData(args);
-		try {
-			String errMsg = validateMatrices(iData);
-			if (!errMsg.equals(NONE)) {
-				System.out.println(errMsg); 
-				return;
-			}
-		} catch (Exception e) {
-			System.out.println("Error Validating Matrices" + e.toString());  
-		}
+		ImportData iData = null;
+        try {
+			iData =  new ImportData(args);
+        } catch (Exception ex) {
+			System.out.println("FATAL ERROR: Importing Heat Map Configuration Data. " + ex.getMessage() + ". Terminating HeatmapDataGenerator");  
+			return "FATAL ERROR: Importing Heat Map Configuration Data. " + ex.getMessage() + ". Terminating HeatmapDataGenerator";
+        }
+
 		ImportLayerData summaryLayer = null;
-		for (int i=0; i < iData.matrixFiles.size(); i++) {
-			summaryLayer = writeTileFiles(iData, i);
+		try {
+			for (int i=0; i < iData.matrixFiles.size(); i++) {
+				summaryLayer = writeTileFiles(iData, i);
+			}
+		} catch (Exception ex) {
+			errMsg = "FATAL ERROR: Writing Tile Data. Terminating HeatmapDataGenerator: " + ex.toString();
+			System.out.println(errMsg);  
+	        ex.printStackTrace();
+	        return errMsg;
 		}
+
 		//Create configuration files for heatmap viewer
-		writeMapDataFile(iData, summaryLayer);
-		writeMapConfigFile(iData);
-		//Generate PDF and Thumbnail PNG
+		try {
+			writeMapDataFile(iData, summaryLayer);
+		} catch (Exception ex) {
+			errMsg = "FATAL ERROR: Writing mapData.JSON Configuration File: " + ex.toString();
+			System.out.println(errMsg);  
+	        ex.printStackTrace();
+	        return errMsg;
+		}
+		try {
+			writeMapConfigFile(iData);
+		} catch (Exception ex) {
+			errMsg = "FATAL ERROR: Writing mapConfig.JSON Configuration File: " + ex.toString();
+			System.out.println(errMsg);  
+	        ex.printStackTrace();
+	        return errMsg;
+		}
+		
+		//Thumbnail PNG
+        InputFile iFile = iData.matrixFiles.get(0);
+		try {
+    	    createTnHeatmapImg(iFile.getMap(), iData, iData.tnMatrix);
+			buildTnThumbnail(iData);
+		} catch (Exception e) {
+			System.out.println("Error generating thumbnail image: " + e.toString());  
+		}
+
+		//Generate PDF
         if (iData.generatePDF) {
 			try {
+	        	for (int i=0; i < iData.matrixFiles.size();i++) {
+			        iFile = iData.matrixFiles.get(i);
+			        if (iData.pdfMatrices !=null) {
+			        	createSummaryImg(iFile.getMap(), iData, iData.pdfMatrices.get(i));
+			        }
+	        	}
+		        int size = iData.pdfMatrices.get(0).length;
+	        	for (int i=0; i < iData.rowData.classFiles.size();i++) {
+	        		InputClass iClass = iData.rowData.classFiles.get(i);
+	        		iClass.createClassSummaryImg(size);
+	        		iClass.createClassLegendImg();
+	        	}
+        		iData.rowData.createTopItemsImg(iData.rowData.classArray.length - 1);
+				size = iData.pdfMatrices.get(0)[0].length;
+	        	for (int i=0; i < iData.colData.classFiles.size();i++) {
+	        		InputClass iClass = iData.colData.classFiles.get(i);
+	        		iClass.createClassSummaryImg(size);
+	        		iClass.createClassLegendImg();
+	        	}
+        		iData.colData.createTopItemsImg(iData.colData.classArray.length - 1);
 				PdfGenerator pGen = new PdfGenerator();
-				if (iData.rowDendroMatrix != null) {
-					iData.rowDendroImage = createRowDendroImg(iData, new Float(5.5));
+				if (iData.rowData.dendroMatrix != null) {
+					iData.rowData.dendroImage = createRowDendroImg(iData, new Float(5.5));
 				}
-				if (iData.colDendroMatrix != null) {
-					iData.colDendroImage = createColDendroImg(iData, new Float(5.5));
+				if (iData.colData.dendroMatrix != null) {
+					iData.colData.dendroImage = createColDendroImg(iData, new Float(5.5));
 				}
 				pGen.createHeatmapPDF(iData); 
-			} catch (Exception e) {
-				System.out.println("Error generating PDF: " + e.toString());  
-			}
-			try {
-				buildTnThumbnail(iData);
-			} catch (Exception e) {
-				System.out.println("Error generating Thumbnail: " + e.toString());  
+			} catch (Exception ex) {
+				System.out.println("Exception in HeatmapDataGenerator.main. Error generating PDF: " + ex.toString());  
+				ex.printStackTrace();
 			}
         }
 		if (DEBUG) {
 			writeClusteredDebugFile(iData);
 		}
 		System.out.println("END Heat Map Generation: " + new Date()); 
-	}
-
-	/*******************************************************************
-	 * METHOD: validateMatrices
-	 *
-	 * This method loops through all of the matrix files and calls a 
-	 * validation method for each file.  A String is returned containing
-	 * any error which caused the validation process to kick out. 
-	 ******************************************************************/
-	private static String validateMatrices(ImportData iData) throws Exception{
-		String errMsg = NONE;
-		for (int i=0; i< iData.matrixFiles.size(); i++) {
-			String iFile = iData.matrixFiles.get(i).file;
-			errMsg = validateMatrixFile(iFile);
-			if (!errMsg.equals(NONE)) {
-				errMsg = "INVALID MATRIX FILE: " + iFile + " Error Found: " + errMsg;
-				break;
-			}
-		}
 		return errMsg;
 	}
 	
 	/*******************************************************************
-	 * METHOD: validateMatrixFile
+	 * METHOD: validateConfigJson
 	 *
-	 * This method performs a series of validations against a given data
-	 * matrix file.  A String is returned containing any error found 
-	 * during validation. 
+	 * This method parses the heatmapProperties JSON file to validate
+	 * its contents. 
 	 ******************************************************************/
-	private static String validateMatrixFile(String matrixFile) {
-		String errMsg = NONE;
-		int rowId = 0;
-		BufferedReader br = null;
-	    try {
-	    	int firstRowLen = 0;
-	    	int headerRowLen = 0;
-			br = new BufferedReader(new FileReader(new File(matrixFile)));
-		    String sCurrentLine;
-			while((sCurrentLine = br.readLine()) != null) {
-				rowId++;
-				if (!sCurrentLine.contains("\t")) {
-			    	errMsg = "Matrix file is not tab delimited";
-					break;
-				}
-				String vals[] = sCurrentLine.split("\t");
-				int rowLen = vals.length - 1;
-				if (rowId == 1) {
-					headerRowLen = rowLen;
-					boolean containsText = true;
-					for (int i=1; i<vals.length; i++) {
-						if (isNumeric(vals[i])) {
-							containsText = false;
-						}
-					}
-					if (!containsText) {
-				    	errMsg = "Column labels contain numeric data";
-				    	break;
-					}
-				} 
-				if  (rowId == 2) {
-					firstRowLen = rowLen;
-				} 
-				if (rowId > 1) {
-					if (rowLen != firstRowLen) {
-				    	errMsg = "Matrix data rows are not all of equal length.";
-					}
-					if (isNumeric(vals[0]) || vals[0].equals(EMPTY)) {
-				    	errMsg = "Row labels contain non-textual or blank data at row: " + rowId;
-				    	break;
-					}
-					boolean invalidDataElement = false;
-					for (int i=1; i<vals.length; i++) {
-						String dataElem = vals[i];
-						if (!isNumeric(dataElem)) {
-							if (!NA_VALUES.contains(dataElem)) {
-								invalidDataElement = true;
-							}
-						}
-					}
-					if (invalidDataElement) {
-				    	errMsg = "Matrix contains non-numeric data other than N/A";
-				    	break;
-					}
-				}
-			}	
-			if (headerRowLen < firstRowLen - 1) {
-		    	errMsg = "Not enough column labels present on matrix file.";
-			}
-			if (headerRowLen > firstRowLen) {
-		    	errMsg = "Too many column labels found on matrix file";
-			}
-		    br.close();
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    } finally {
-	    	try {
-	    		br.close();
-	    	} catch (Exception ex) {}
-	    }
-		return errMsg;
+	private static void validateConfigJson(File config) throws Exception {
+		// Validate JSON configuration file
+	    try {     
+	        JSONParser parser = new JSONParser();
+	        parser.parse(new FileReader(config));
+	    } catch (FileNotFoundException ex) {
+	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: heatmapProperties.JSON file not found. Terminating HeatmapDataGenerator" );
+			ex.printStackTrace();
+	        throw ex;
+	    } catch (IOException ex) {
+	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: IO Exception reading heatmapProperties.JSON file. Terminating HeatmapDataGenerator");
+			ex.printStackTrace();
+	        throw ex;
+	   } catch (ParseException ex) {
+			System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: Invalid Heatmap Configuration. Terminating HeatmapDataGenerator. "); 
+	        ex.printStackTrace();
+	        throw ex;
+	   }
 	}
-
+	
 	/*====================================================================
 	 * BEGIN: DATA TILE FILE WRITING METHODS
 	 *
@@ -229,34 +231,39 @@ public class HeatmapDataGenerator {
 	 * thru the ImportDataLayers and calling the writeTileFile method for
 	 * each tile in each layer. 
 	 ******************************************************************/
-	private static ImportLayerData writeTileFiles(ImportData iData, int position) {
-		// Loop thru ImportData object processing for each ImportDataLayer
+	private static ImportLayerData writeTileFiles(ImportData iData, int position) throws Exception {
 		ImportLayerData summaryLayer = null;
-		InputFile iFile = iData.matrixFiles.get(position);
-		ArrayList<ImportLayerData> iLayers = iFile.importLayers;
-		for (int i=0; i < iLayers.size(); i++) {
-			ImportLayerData ilData = iLayers.get(i);
-			// Create thumbnail float value array for ONLY the first data layer processed.
-			if (ilData.layer.equals(LAYER_THUMBNAIL)) {
-				if (iFile.position.equals("DataLayer1")) {
-					iData.tnMatrix = new Float[ilData.rowsPerTile][ilData.colsPerTile];
+		try {
+			// Loop thru ImportData object processing for each ImportDataLayer
+			InputFile iFile = iData.matrixFiles.get(position);
+			ArrayList<ImportLayerData> iLayers = iFile.importLayers;
+			for (int i=0; i < iLayers.size(); i++) {
+				ImportLayerData ilData = iLayers.get(i);
+				// Create thumbnail float value array for ONLY the first data layer processed.
+				if (ilData.layer.equals(LAYER_THUMBNAIL)) {
+					if (iFile.position.equals("DataLayer1")) {
+						iData.tnMatrix = new Float[ilData.rowsPerTile][ilData.colsPerTile];
+					}
+					if (!iFile.hasSummary) {
+						iData.pdfMatrices.add(new Float[ilData.rowsPerTile][ilData.colsPerTile]);
+					}
 				}
-				if (!iFile.hasSummary) {
-					iData.pdfMatrices.add(new Float[ilData.rowsPerTile][ilData.colsPerTile]);
+				if (ilData.layer.equals(LAYER_SUMMARY) && (iData.generatePDF)) {
+					iData.pdfMatrices.add(new Float[ilData.totalLevelRows][ilData.totalLevelCols]);
+				}
+				if (ilData.layer.equals(LAYER_SUMMARY)) {
+					summaryLayer = ilData;
+				}
+				// Within each ImportDataLayer, loop thru each of its 
+				// ImportTileData objects writing out a tile for each
+				for (int j=0; j < ilData.importTiles.size(); j++){
+					ImportTileData itData = ilData.importTiles.get(j);
+					writeTileFile(iData, ilData, itData, position);
 				}
 			}
-			if (ilData.layer.equals(LAYER_SUMMARY) && (iData.generatePDF)) {
-				iData.pdfMatrices.add(new Float[ilData.totalLevelRows][ilData.totalLevelCols]);
-			}
-			if (ilData.layer.equals(LAYER_SUMMARY)) {
-				summaryLayer = ilData;
-			}
-			// Within each ImportDataLayer, loop thru each of its 
-			// ImportTileData objects writing out a tile for each
-			for (int j=0; j < ilData.importTiles.size(); j++){
-				ImportTileData itData = ilData.importTiles.get(j);
-				writeTileFile(iData, ilData, itData, position);
-			}
+		} catch (Exception ex) {
+	    	System.out.println("Exception writing tile files: "+ ex.toString());
+			throw ex;
 		}
 		return summaryLayer;
 	}
@@ -269,8 +276,8 @@ public class HeatmapDataGenerator {
 	 * and writing out individual binary float values using the ImportLayerData 
 	 * and ImportTileData objects as a guideline.
 	 ******************************************************************/
-	private static void writeTileFile(ImportData iData, ImportLayerData ilData, ImportTileData itData, int position) {
-		int writes = 0;
+	private static void writeTileFile(ImportData iData, ImportLayerData ilData, ImportTileData itData, int position) throws Exception {
+//		int writes = 0;
 	    try {
 			InputFile iFile = iData.matrixFiles.get(position);
 			String dlDir = "dl"+(position+1);
@@ -297,7 +304,7 @@ public class HeatmapDataGenerator {
 					if (DEBUG) { valprint = Integer.toString(row); } //For debugging: writes out file
 					for (int col = colStart; col < colEnd; col++) {
 						if (col == nextColWrite) {
-							float v = getMatrixValue(iData,ilData,iFile,row,col);
+							float v = getMatrixValue(iData,ilData,iFile,row,col); 
 							if (ilData.layer.equals(LAYER_THUMBNAIL)) {
 								if (iFile.position.equals("DataLayer1")) {
 									iData.tnMatrix[rowctr][colctr] = v;
@@ -317,7 +324,7 @@ public class HeatmapDataGenerator {
 							write.write(f, 2, 1);
 							write.write(f, 1, 1);
 							write.write(f, 0, 1); 
-							writes++;
+//							writes++;
 							nextColWrite += colInterval;
 							colctr++;
 						}
@@ -333,13 +340,10 @@ public class HeatmapDataGenerator {
 			}
 	    	if (DEBUG) { writeRow.close(); } //For debugging: writes out file
 	    	write.close();
-	    	System.out.println("     File " + itData.fileName + " writes: " + writes) ;
+	//    	System.out.println("File " + itData.fileName + " writes: " + writes + " time: " + new Date()); 
 	    } catch (NumberFormatException ex) {
-	    	System.out.println("ERROR: Non-numeric data found in matrix"+ ex.toString());
-	    	return;
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    } finally {
+	    	System.out.println("Exception in HeatmapDataGenerator.writeTileFile: Non-numeric data found in matrix "+ ex.toString());
+	       throw ex;
 	    }
 	}
 	
@@ -356,69 +360,49 @@ public class HeatmapDataGenerator {
 	 * method is "predominance", the value that re-occurs the most in the
 	 * array is returned. 
 	 ******************************************************************/
-	private static float getMatrixValue(ImportData iData, ImportLayerData ilData, InputFile iFile, int row, int col) throws NumberFormatException
+	private static float getMatrixValue(ImportData iData, ImportLayerData ilData, InputFile iFile, int row, int col) throws Exception
 	{  
 	  float value = 0;
-	  try {
-		  if (iFile.summaryMethod.equals(METHOD_SAMPLE)) {
-			  value = Float.parseFloat(iFile.reorgMatrix[row][col]);
-		  }	else  {
-			  int rowInter = ilData.rowInterval;
-			  int colInter = ilData.colInterval;
-			  if (rowInter+colInter == 2) {
-				  if (NA_VALUES.contains(iFile.reorgMatrix[row][col])) {
-					  value =  new Float(MAX_VALUES);
-				  } else if (isNumeric(iFile.reorgMatrix[row][col])) {
-					  value = Float.parseFloat(iFile.reorgMatrix[row][col]);
-				  } else {
-					  throw new Exception("Encountered non-numeric value that was not NA: " + iFile.reorgMatrix[row][col]);
-				  }
-			  } else {
-				  //We must check if we are going past the max row/cols and adjust the 
-				  //boundary for our loop AND the interval value that will be used for averaging.
-				  int rowBoundary = row+ilData.rowInterval;
-				  int colBoundary = col+ilData.colInterval;
-				  if (rowBoundary>=iFile.reorgMatrix.length) {
-					  rowBoundary = iFile.reorgMatrix.length;
-					  rowInter = rowBoundary - row;
-				  }
-				  if (colBoundary>=iFile.reorgMatrix[0].length) {
-					  colBoundary = iFile.reorgMatrix[0].length;
-					  colInter = colBoundary - col;
-				  }
-				  int combInter = (rowInter*colInter);
-				  float[] valArr = new float[combInter];
-				  int valArrIdx = 0;
-				  // Grab all values in the prescribed bounded range and place them in an array
-				  for (int i = row; i < rowBoundary;i++) {
-					  for (int j = col; j < colBoundary;j++) {
-						  if (NA_VALUES.contains(iFile.reorgMatrix[i][j])) { 
-							  valArr[valArrIdx] = new Float(MAX_VALUES);
-							  valArrIdx++;
-						  } else if (isNumeric(iFile.reorgMatrix[i][j])) {
-							  valArr[valArrIdx] = Float.parseFloat(iFile.reorgMatrix[i][j]);
-							  valArrIdx++;
-						  } else {
-							  throw new Exception("Encountered non-numeric value that was not NA: " + iFile.reorgMatrix[i][j]);
-						  }
-					  }
-				  }
-				  if (iFile.summaryMethod.equals(METHOD_AVERAGE)) {
-					  value = getAverageValue(valArr, combInter);
-				  } else if (iFile.summaryMethod.equals(METHOD_MODE)) {
-					  value = getPredominantValue(valArr);
+	  if (iFile.summaryMethod.equals(METHOD_SAMPLE)) {
+		  value = iFile.reorgMatrix[row][col];
+	  }	else  {
+		  int rowInter = ilData.rowInterval;
+		  int colInter = ilData.colInterval;
+		  if (rowInter+colInter == 2) {
+			  value = iFile.reorgMatrix[row][col];
+		  } else {
+			  //We must check if we are going past the max row/cols and adjust the 
+			  //boundary for our loop AND the interval value that will be used for averaging.
+			  int rowBoundary = row+ilData.rowInterval;
+			  int colBoundary = col+ilData.colInterval;
+			  if (rowBoundary>=iFile.reorgMatrix.length) {
+				  rowBoundary = iFile.reorgMatrix.length;
+				  rowInter = rowBoundary - row;
+			  }
+			  if (colBoundary>=iFile.reorgMatrix[0].length) {
+				  colBoundary = iFile.reorgMatrix[0].length;
+				  colInter = colBoundary - col;
+			  }
+			  int combInter = (rowInter*colInter);
+			  float[] valArr = new float[combInter];
+			  int valArrIdx = 0;
+			  // Grab all values in the prescribed bounded range and place them in an array
+			  for (int i = row; i < rowBoundary;i++) {
+				  for (int j = col; j < colBoundary;j++) {
+					  valArr[valArrIdx] = iFile.reorgMatrix[i][j];
+					  valArrIdx++;
 				  }
 			  }
-		  }	
-	    } catch (NumberFormatException ex) {
-	    	//Do nothing
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    } finally {
-	    }
+			  if (iFile.summaryMethod.equals(METHOD_AVERAGE)) {
+				  value = getAverageValue(valArr, combInter);  
+			  } else if (iFile.summaryMethod.equals(METHOD_MODE)) {
+				  value = getPredominantValue(valArr);
+			  }
+		  }
+	  }	
 	  return value;  
 	}
-
+	
 	/*******************************************************************
 	 * METHOD: getAverageValue
 	 *
@@ -427,21 +411,33 @@ public class HeatmapDataGenerator {
 	 * combined row/col interval.  HIGH VALUES are factored out UNLESS
 	 * they represent every data element in the block being averaged.
 	 ******************************************************************/
-	private static float getAverageValue(float[] array, int combInter) {
+	private static float getAverageValue(float[] array, int combInter) throws Exception {
+		float retVal = 0;
 		float value = 0;
+		boolean allCut = true;
 		// sum the values in the array
 		for (int k = 0; k < array.length; k++) {
-			if (array[k] != new Float(MAX_VALUES)) {
+			if ((array[k] != MAX_VALUES) && (array[k] != MIN_VALUES)) {
 				value = value + array[k];
 			} else {
+				if (array[k] != MIN_VALUES) {
+					allCut = false;
+				}
 				combInter--;
 			}
 		}
+		//If at least one value in the array is not a max/cut value, average and return.
 		if (combInter != 0) {
-			return value / combInter;
+			retVal = value / combInter;
 		} else {
-			return new Float(MAX_VALUES);
+			//If all values to be averaged are cut values, return the cut value
+			if (allCut) {
+				retVal =  MIN_VALUES;
+			} else {
+				retVal =  MAX_VALUES;
+			}
 		}
+		return retVal;
 	}
 	
 	/*******************************************************************
@@ -452,7 +448,7 @@ public class HeatmapDataGenerator {
 	 * value with the most occurrences. If more than one value occurs the 
 	 * same amount of times, the first value encountered is returned.
 	 ******************************************************************/
-	private static float getPredominantValue(float[] array){
+	private static float getPredominantValue(float[] array) throws Exception {
 		float value = 0;
         ArrayList<Float> distinctVals = new ArrayList<>();
         // loop original array adding distinct values to ArrayList
@@ -500,30 +496,13 @@ public class HeatmapDataGenerator {
     }
 
 	/*******************************************************************
-	 * METHOD: isNumeric
-	 *
-	 * A helper method evaluating a matrix data element to ensure that 
-	 * it contains a numeric value.
-	 ******************************************************************/
-	public static boolean isNumeric(String str)  
-	{  
-	  try  {  
-	    @SuppressWarnings("unused")
-		double d = Double.parseDouble(str);
-	  }   catch(Exception e)  { 
-	    return false;  
-	  }  
-	  return true;  
-	}
-
-	/*******************************************************************
 	 * METHOD: getNextRowWrite
 	 *
 	 * A helper method calculating the next row to write when beginning
 	 * a new tile.  This is only used when an interval is being used
 	 * for thumbnail, summary, and ribbon horizontal layer views.
 	 ******************************************************************/
-	private static int getNextRowWrite(ImportLayerData ilData, int rowStart) {	
+	private static int getNextRowWrite(ImportLayerData ilData, int rowStart) throws Exception {	
 		int nextRowWrite = rowStart;
 		if (Arrays.asList(LAYER_THUMBNAIL, LAYER_SUMMARY, LAYER_RIBBONHORIZ).contains(ilData.layer)) {
 			if ((rowStart != 1) && (ilData.rowInterval != 1)) {
@@ -540,7 +519,7 @@ public class HeatmapDataGenerator {
 	 * a new tile.  This is only used when an interval is being used
 	 * for thumbnail, summary, and ribbon vertical layer views.
 	 ******************************************************************/
-	private static int getNextColWrite(ImportLayerData ilData, int colStart) {	
+	private static int getNextColWrite(ImportLayerData ilData, int colStart) throws Exception {	
 		int nextColWrite = colStart;
 		if (Arrays.asList(LAYER_THUMBNAIL, LAYER_SUMMARY, LAYER_RIBBONVERT).contains(ilData.layer)) {
 			if ((colStart != 1) && (ilData.colInterval != 1)) {
@@ -578,10 +557,12 @@ public class HeatmapDataGenerator {
 	 * row classification (covariate) data.  The colData subschem contains
 	 * similar data for the heatMap columns.
 	 ******************************************************************/
-   	private static void writeMapDataFile(ImportData iData, ImportLayerData summaryLayer) {
+   	private static void writeMapDataFile(ImportData iData, ImportLayerData summaryLayer) throws Exception {
+		DataOutputStream writer = null;
+		OutputStreamWriter fw = null;
 		try {
-			DataOutputStream writer = new DataOutputStream(new FileOutputStream(iData.outputDir+File.separator+MAP_DATA_FILE));
-			OutputStreamWriter fw = new OutputStreamWriter(writer, UTF8);
+			writer = new DataOutputStream(new FileOutputStream(iData.outputDir+File.separator+MAP_DATA_FILE));
+			fw = new OutputStreamWriter(writer, UTF8);
 			//Write out row_data JSON section
 	        fw.write(BRACE_OPEN+ROWDATA_LABEL+BRACE_OPEN);
 	        writeLabels(fw, iData, true);
@@ -592,18 +573,17 @@ public class HeatmapDataGenerator {
 	        fw.write(COLDATA_LABEL+BRACE_OPEN);
 	        writeLabels(fw, iData, false);
 	        writeDataDendrogram(fw, iData, false);
-	        writeDataClassifications(fw, iData, summaryLayer, false);
+	        writeDataClassifications(fw, iData, summaryLayer, false); 
 	        fw.write(BRACE_CLOSE+BRACE_CLOSE+BRACE_CLOSE);
+	    } catch (Exception ex) {
+			System.out.println("Exception Writing mapData.JSON file: " + ex.toString());  
+	        throw ex;
+	    } finally {
 			fw.close();
 			writer.close();
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    } finally {
-	    	try {
-	    	} catch (Exception ex) { /* Do nothing FOR NOW */ }
 	    }
 	}
-				           
+			
 	/*******************************************************************
 	 * METHOD: writeLabels
 	 *
@@ -613,50 +593,47 @@ public class HeatmapDataGenerator {
 	 * stored on the ImportData object is traversed pulling either row or 
 	 * column headers from the matrix in clustered order.
 	 ******************************************************************/
-	private static void writeLabels(OutputStreamWriter w, ImportData iData, boolean isRowFile) {	
-		try {
-			InputFile iFile = iData.matrixFiles.get(0);
-			// Build String constants
-			// Loop thru import layers and write out structure data for each.
-			if (isRowFile) {
-				//Sometimes label hidden fields are loaded from a separate file into this hash.  Otherwise it will be empty.
-				HashMap<String, String> extraLabelInfo = loadExtraLabel(iData.rowData.labelExtraFile);
-			    w.write(LABEL_LABEL+BRACE_OPEN+LABEL_TYPE_LABEL+BRACKET_OPEN);
-			    //Write data types - can be more than one.
-			    for (int i = 0; i < iData.rowData.dataTypes.length; i++) { 
-			    	w.write(QUOTE+iData.rowData.dataTypes[i]+QUOTE);
-			    	if (i < iData.rowData.dataTypes.length-1) w.write(COMMA);
-			    }
-			    w.write(BRACKET_CLOSE+COMMA+LABELS_LABEL+BRACKET_OPEN);
-		        for (int row = 1; row < iData.importRows + 1; row++) {
-		        	String label = addExtra(iFile.reorgMatrix[row][0], extraLabelInfo);
-	        	    w.write(QUOTE+label+QUOTE);
-					if (row < (iData.importRows)) {
-						w.write(COMMA);
-					}
-		        }
-			} else {
-				//Sometimes label hidden fields are loaded from a separate file into this hash.  Otherwise it will be empty.
-				HashMap<String, String> extraLabelInfo = loadExtraLabel(iData.colData.labelExtraFile);
-			    w.write(LABEL_LABEL+BRACE_OPEN+LABEL_TYPE_LABEL+BRACKET_OPEN);
-			    //Write data types - can be more than one.
-			    for (int i = 0; i < iData.colData.dataTypes.length; i++) { 
-			    	w.write(QUOTE+iData.colData.dataTypes[i]+QUOTE);
-			    	if (i < iData.colData.dataTypes.length-1) w.write(COMMA);
-			    }
-			    w.write(BRACKET_CLOSE+COMMA+LABELS_LABEL+BRACKET_OPEN);
-		        for (int col = 1; col < iData.importCols + 1; col++) {
-		        	String label = addExtra(iFile.reorgMatrix[0][col], extraLabelInfo);
-		        	w.write(QUOTE+label+QUOTE);
-					if (col < (iData.importCols)) {
-						w.write(COMMA);
-					}
-		        }
-			}
-			w.write(BRACKET_CLOSE+BRACE_CLOSE);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+	private static void writeLabels(OutputStreamWriter w, ImportData iData, boolean isRowFile) throws Exception {	
+		// Build String constants
+		// Loop thru import layers and write out structure data for each.
+		if (isRowFile) {
+			//Sometimes label hidden fields are loaded from a separate file into this hash.  Otherwise it will be empty.
+			HashMap<String, String> extraLabelInfo = loadExtraLabel(iData.rowData.labelExtraFile);
+		    w.write(LABEL_LABEL+BRACE_OPEN+LABEL_TYPE_LABEL+BRACKET_OPEN);
+		    //Write data types - can be more than one.
+		    for (int i = 0; i < iData.rowData.dataTypes.length; i++) { 
+		    	w.write(QUOTE+iData.rowData.dataTypes[i]+QUOTE);
+		    	if (i < iData.rowData.dataTypes.length-1) w.write(COMMA);
+		    }
+		    w.write(BRACKET_CLOSE+COMMA+LABELS_LABEL+BRACKET_OPEN);
+	        for (int row = 1; row < iData.rowData.classArray.length; row++) {
+	        	String initLabel = iData.rowData.classArray[row].equals(CUT_VALUE) ? "" : iData.rowData.classArray[row];
+	        	String label = addExtra(initLabel, extraLabelInfo);
+        	    w.write(QUOTE+label+QUOTE);
+				if (row < (iData.rowData.classArray.length-1)) {
+					w.write(COMMA);
+				}
+	        }
+		} else {
+			//Sometimes label hidden fields are loaded from a separate file into this hash.  Otherwise it will be empty.
+			HashMap<String, String> extraLabelInfo = loadExtraLabel(iData.colData.labelExtraFile);
+		    w.write(LABEL_LABEL+BRACE_OPEN+LABEL_TYPE_LABEL+BRACKET_OPEN);
+		    //Write data types - can be more than one.
+		    for (int i = 0; i < iData.colData.dataTypes.length; i++) { 
+		    	w.write(QUOTE+iData.colData.dataTypes[i]+QUOTE);
+		    	if (i < iData.colData.dataTypes.length-1) w.write(COMMA);
+		    }
+		    w.write(BRACKET_CLOSE+COMMA+LABELS_LABEL+BRACKET_OPEN);
+	        for (int col = 1; col < iData.colData.classArray.length; col++) {
+	        	String initLabel = iData.colData.classArray[col].equals(CUT_VALUE) ? "" : iData.colData.classArray[col];
+	        	String label = addExtra(initLabel, extraLabelInfo);
+        	    w.write(QUOTE+label+QUOTE);
+				if (col < (iData.colData.classArray.length-1)) {
+					w.write(COMMA);
+				}
+	        }
+		}
+		w.write(BRACKET_CLOSE+BRACE_CLOSE);
 	}
 	
 	/*******************************************************************
@@ -671,32 +648,23 @@ public class HeatmapDataGenerator {
 	 * Extra label file is tab delimited with first column being the row/column
 	 * label from the matrix and the second column being the string to append
 	 * to the label with the '|' character.
-	 * 
-	 */
-
-	private static HashMap<String, String> loadExtraLabel(String extraLabelFile) {
+	 *******************************************************************/
+	private static HashMap<String, String> loadExtraLabel(String extraLabelFile) throws Exception {
 		HashMap<String, String> extraLabelInfo = new HashMap<String, String>();
-		
 		if (extraLabelFile != null ) {
-			try {
-				BufferedReader br = new BufferedReader(new FileReader(extraLabelFile));
-				//For now assume extra label file has no header.
-				String line = br.readLine();
-				while (line != null) {
-					String toks[] = line.split("\t");
-					if (toks.length == 2)
-						extraLabelInfo.put(toks[0].trim(), toks[1].trim());
+			BufferedReader br = new BufferedReader(new FileReader(extraLabelFile));
+			//For now assume extra label file has no header.
+			String line = br.readLine();
+			while (line != null) {
+				String toks[] = line.split("\t");
+				if (toks.length == 2)
+					extraLabelInfo.put(toks[0].trim(), toks[1].trim());
 
-					line = br.readLine();
-				}
-				br.close();
+				line = br.readLine();
+			}
+			br.close();
 
-			} catch (Exception e) {
-				System.out.println("Exception while processing extra label file: " + extraLabelFile + "  ");
-				e.printStackTrace();
-			} 
 		}
-		
 		return extraLabelInfo;
 	}
 	
@@ -704,16 +672,17 @@ public class HeatmapDataGenerator {
 	 * METHOD: addExtra
 	 * 
 	 * Helper method to lookup and add extra hidden fields to labels.
-	 * 
-	 */
-	
-	private static String addExtra(String label, HashMap<String, String> extraLabelInfo) {
-		if (extraLabelInfo.containsKey(label))
-			return (label + "|" + extraLabelInfo.get(label));
-		if (label != null && label.contains("|")) {
-			String visLabel = label.substring(0, label.indexOf("|"));
-			if (extraLabelInfo.containsKey(visLabel))
-				return label + "|" + extraLabelInfo.get(visLabel);
+	 ******************************************************************/
+	private static String addExtra(String label, HashMap<String, String> extraLabelInfo) throws Exception {
+		// To accommodate tree cuts in data with blank label
+		if (label == null) {
+			label = EMPTY;
+		} 
+		//Add extra label information for labels that apply
+		int pipeIdx = label.indexOf("|");
+		String visibleLabel = pipeIdx > 0 ? label.substring(0, pipeIdx) : label;
+		if (extraLabelInfo.containsKey(visibleLabel)) {
+			label = (label + "|" + extraLabelInfo.get(visibleLabel));
 		}
 		return label;
 	}
@@ -728,24 +697,20 @@ public class HeatmapDataGenerator {
 	 * second method is called that writes out the dendrogram data for
 	 * the row/col to mapData.
 	 ******************************************************************/
-	private static void writeDataDendrogram(OutputStreamWriter fw, ImportData iData, boolean isRowFile) {
-		try {
-			if (isRowFile) {
-				if (iData.rowData.dendroFile != null) {
-					populateDendrogramData(iData, iData.rowData.orderArray, iData.rowData.dendroFile, ROW, fw);
-					fw.write(BRACKET_CLOSE);
-		        }
-			} else {
-		        if (iData.colData.dendroFile!= null) {
-		        	populateDendrogramData(iData, iData.colData.orderArray, iData.colData.dendroFile, COL, fw);
-					fw.write(BRACKET_CLOSE);
-		        }
-			}
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+	private static void writeDataDendrogram(OutputStreamWriter fw, ImportData iData, boolean isRowFile) throws Exception {
+		if (isRowFile) {
+			if (iData.rowData.dendroFile != null) {
+				populateDendrogramData(iData.rowData.dendroValues, fw, iData);
+				fw.write(BRACKET_CLOSE);
+	        }
+		} else {
+	        if (iData.colData.dendroFile!= null) {
+				populateDendrogramData(iData.colData.dendroValues, fw, iData);
+				fw.write(BRACKET_CLOSE);
+	        }
+		}
 	}
-
+	
 	/*******************************************************************
 	 * METHOD: populateDendrogramData
 	 *
@@ -754,50 +719,19 @@ public class HeatmapDataGenerator {
 	 * and data is written out to an outputStreamWriter for the mapData
 	 * JSON file.
 	 ******************************************************************/
-	private static void populateDendrogramData(ImportData iData, int[] order, String dendroFile, String dendroType, OutputStreamWriter fw) {
-        try {
-            // Reading the data file and writing the output file
-            BufferedReader br = new BufferedReader(new FileReader(dendroFile));
-            String line = br.readLine(); // skip the first line since it's just labels
-            line = br.readLine();
-            boolean firstTimeThrough = true;
-            fw.write(COMMA+DENDROGRAM_LABEL+BRACKET_OPEN);
-            while (line != null) {
-                String[] tokes = line.split(TAB);
-                int a = Integer.parseInt(tokes[0]);
-                int b = Integer.parseInt(tokes[1]);
-                if (a<0){ // Check if first column is referring to a sample
-                    a = 0-order[0-a];
-                }
-                if (b<0){ // Check if second column is referring to a sample
-                    b = 0-order[0-b];
-                }
-                if (firstTimeThrough){
-                    firstTimeThrough = false;
-                } else {
-                    fw.write(COMMA);
-                }
-                String dendroLineData = a+COMMA+b+COMMA+tokes[2];
-                fw.write(QUOTE+dendroLineData+QUOTE);
-                if (dendroType.equals(ROW)) {
-                	iData.rowDendroValues.add(dendroLineData);
-                } else {
-                	iData.colDendroValues.add(dendroLineData);
-                }
-                line = br.readLine();
+	private static void populateDendrogramData(List<String> dendroValues, OutputStreamWriter fw, ImportData iData) throws Exception {
+        boolean firstTimeThrough = true;
+        fw.write(COMMA+DENDROGRAM_LABEL+BRACKET_OPEN);
+        for (int i=0; i<dendroValues.size();i++) {
+            if (firstTimeThrough){
+                firstTimeThrough = false;
+            } else {
+                fw.write(COMMA);
             }
-            if (iData.generatePDF) {
-                generateDendroMatrix(iData, dendroType);
-            }
-            br.close();
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    } finally {
-	    	try {
-	    	} catch (Exception ex) { /* Do nothing FOR NOW */ }
-	    }
+            String dendroLineData = dendroValues.get(i);
+            fw.write(QUOTE+dendroLineData+QUOTE);
+        }
 	}
-	
 	/*******************************************************************
 	 * METHOD: writeClassifications
 	 *
@@ -809,45 +743,37 @@ public class HeatmapDataGenerator {
 	 * data and then a second method is called that writes out the classification 
 	 * data for the row/col to mapData.
 	 ******************************************************************/
-	private static void writeDataClassifications(OutputStreamWriter fw, ImportData iData, ImportLayerData ilData, boolean isRowFile) {
-		try {
-			int rowInterval = (ilData!=null) ? ilData.rowInterval : 1;
-			int colInterval = (ilData!=null) ? ilData.colInterval : 1;
-            fw.write(COMMA+CLASSIFICATIONS_LABEL+BRACE_OPEN);
-            if (isRowFile) {
-				if (iData.rowClassFiles.size() == 0) {
-					fw.write(EMPTY);
-				} else {
-			        for (int i=0;i<iData.rowClassFiles.size();i++) {
-			        	InputClass currInput = iData.rowClassFiles.get(i);
-			        	String reOrgClass[]= reOrderClassificationFile(currInput, iData.rowData.classArray);
-			        	iData.rowClassValues.add(reOrgClass);
-			        	populateClassifications(currInput, reOrgClass, fw, rowInterval, isRowFile);
-		        		fw.write(BRACE_CLOSE);
-			        	if (i != iData.rowClassFiles.size() - 1) {
-			        		fw.write(COMMA);
-			        	}
-			        } 
-				} 
-            } else {
-				if (iData.colClassFiles.size() == 0) {
-					fw.write(EMPTY);
-				} else {
-			        for (int i=0;i<iData.colClassFiles.size();i++) {
-			        	InputClass currInput = iData.colClassFiles.get(i);
-			        	String reOrgClass[]= reOrderClassificationFile(currInput, iData.colData.classArray);
-			        	iData.colClassValues.add(reOrgClass);
-			        	populateClassifications(currInput, reOrgClass, fw, colInterval, isRowFile);
-		        		fw.write(BRACE_CLOSE);
-			        	if (i != iData.colClassFiles.size() - 1) {
-			        		fw.write(COMMA);
-			        	}
-			        } 
-				}
-            }
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+	private static void writeDataClassifications(OutputStreamWriter fw, ImportData iData, ImportLayerData ilData, boolean isRowFile) throws Exception {
+		int rowInterval = (ilData!=null) ? ilData.rowInterval : 1;
+		int colInterval = (ilData!=null) ? ilData.colInterval : 1;
+        fw.write(COMMA+CLASSIFICATIONS_LABEL+BRACE_OPEN);
+        if (isRowFile) {
+			if (iData.rowData.classFiles.size() == 0) {
+				fw.write(EMPTY);
+			} else {
+		        for (int i=0;i<iData.rowData.classFiles.size();i++) {
+		        	InputClass currInput = iData.rowData.classFiles.get(i);
+		        	populateClassifications(currInput, currInput.orderedClass, fw, rowInterval, isRowFile);
+	        		fw.write(BRACE_CLOSE);
+		        	if (i != iData.rowData.classFiles.size() - 1) {
+		        		fw.write(COMMA);
+		        	}
+		        } 
+			} 
+        } else {
+			if (iData.colData.classFiles.size() == 0) {
+				fw.write(EMPTY);
+			} else {
+		        for (int i=0;i<iData.colData.classFiles.size();i++) {
+		        	InputClass currInput = iData.colData.classFiles.get(i);
+		        	populateClassifications(currInput, currInput.orderedClass, fw, colInterval, isRowFile);
+	        		fw.write(BRACE_CLOSE);
+		        	if (i != iData.colData.classFiles.size() - 1) {
+		        		fw.write(COMMA);
+		        	}
+		        } 
+			}
+        }
 	}
 	
 	/*******************************************************************
@@ -861,42 +787,57 @@ public class HeatmapDataGenerator {
 	 * the summary level using the summary interval, is written to the
 	 * JSON file in addition to the values subschema.
 	 ******************************************************************/
-	private static void populateClassifications(InputClass currFile, String classData[], OutputStreamWriter fw, int interval, boolean isRowFile) {
-        try {
-	        fw.write(QUOTE+currFile.name+QUOTE+COLON+LINE_FEED+BRACE_OPEN);
-	        fw.write(QUOTE+"values"+QUOTE+COLON+LINE_FEED+TAB+TAB+BRACKET_OPEN);
-	        // Write out a separate "values" node containing values for the classification file
+	private static void populateClassifications(InputClass currFile, String classData[], OutputStreamWriter fw, int interval, boolean isRowFile) throws Exception {
+        fw.write(QUOTE+currFile.name+QUOTE+COLON+LINE_FEED+BRACE_OPEN);
+        fw.write(QUOTE+"values"+QUOTE+COLON+LINE_FEED+TAB+TAB+BRACKET_OPEN);
+        boolean isDiscrete = currFile.map.type.equals(COLORTYPE_DISCRETE) ? true : false;
+        // Write out a separate "values" node containing values for the classification file
+        for (int row = 1; row < classData.length; row++) {
+        	writeClassValue(classData[row], row, classData.length, fw, 1, isDiscrete);
+        }
+        // Write out a separate "svalues" node containing values for the classification file
+        // this dataset will be sampled at the same level as the summary layer.
+        if (interval > 1) {
+        	int sValen = (classData.length-1)/interval;
+        	float remn = ((float)classData.length-1)/interval%1;
+        	if (remn > 0) {
+        		sValen++;
+        	}
+    		String sValArr[] = new String[sValen+1];
+    		int sValCtr = 0;
+	        fw.write(COMMA+QUOTE+"svalues"+QUOTE+COLON+LINE_FEED+BRACKET_OPEN);
+	        float aggrVal = 0;
+	        int cutCtr = 0;
 	        for (int row = 1; row < classData.length; row++) {
-	        	writeClassValue(classData[row], row, classData.length, fw, 1);
-	        }
-	        // Write out a separate "svalues" node containing values for the classification file
-	        // this dataset will be sampled at the same level as the summary layer.
-	        if (interval > 1) {
-	        	int sValen = (classData.length-1)/interval;
-	        	float remn = ((float)classData.length-1)/interval%1;
-	        	if (remn > 0) {
-	        		sValen++;
-	        	}
-	    		String sValArr[] = new String[sValen+1];
-	    		int sValCtr = 0;
-		        fw.write(COMMA+QUOTE+"svalues"+QUOTE+COLON+LINE_FEED+BRACKET_OPEN);
-		        for (int row = 1; row < classData.length; row++) {
-		        	int adjustedPos = row - 1;
-		    		float remainder = ((float)adjustedPos/interval)%1;
-		    		if (remainder == 0) {
-			        	writeClassValue(classData[row], row, classData.length, fw, interval);
-			        	sValCtr++;
-			        	sValArr[sValCtr] = classData[row];
+	        	int adjustedPos = row - 1;
+	    		float remainder = ((float)adjustedPos/interval)%1;
+	    		String dataItem = classData[row];
+	    		if (currFile.map.type.equals(COLORTYPE_CONTINUOUS)) {
+	    			if (dataItem.equals(CUT_VALUE) || NA_VALUES.contains(dataItem)) {
+	    				cutCtr++;
+	    			} else {
+	    				aggrVal = aggrVal+Float.parseFloat(dataItem);
+	    			}
+	    		}
+	    		if (remainder == 0) {
+		    		if (currFile.map.type.equals(COLORTYPE_CONTINUOUS)) {
+		    			if ((aggrVal == 0) && (dataItem.equals(CUT_VALUE) || NA_VALUES.contains(dataItem))) {
+			    			writeClassValue(dataItem, row, classData.length, fw, interval, isDiscrete);
+		    			} else {
+			    			String avgVal = Float.toString(aggrVal/(interval-cutCtr));
+			    			writeClassValue(avgVal, row, classData.length, fw, interval, isDiscrete);
+		    			}
+		    		} else {
+		    			writeClassValue(dataItem, row, classData.length, fw, interval, isDiscrete);
 		    		}
-		        }
-	        } 
-        	fw.write(LINE_FEED);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    } finally {
-	    	try {
-	    	} catch (Exception ex) { /* Do nothing FOR NOW */ }
-	    }
+		        	sValCtr++;
+		        	sValArr[sValCtr] = classData[row];
+		        	aggrVal = 0;
+		        	cutCtr = 0;
+	    		} 
+	        }
+        } 
+    	fw.write(LINE_FEED);
 	}
 	
 	/*******************************************************************
@@ -906,70 +847,17 @@ public class HeatmapDataGenerator {
 	 * write out string and numeric values to the classifications subschema
 	 * in the mapData.JSON file. 
 	 ******************************************************************/
-	private static void writeClassValue(String val, int row, int len, OutputStreamWriter fw, int interval) {
-        try {
-        	if (isNumeric(val)) {
-        		fw.write(val);
-        	} else {
-        		fw.write(QUOTE+val+QUOTE);
-        	}
-        	if (row+interval < len) {
-        		fw.write(COMMA);
-        	} else {
-        		fw.write(BRACKET_CLOSE);
-        	}
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    } finally {
-	    	try {
-	    	} catch (Exception ex) { /* Do nothing FOR NOW */ }
-	    }
-	}
-	
-	/*******************************************************************
-	 * METHOD: reOrderClassificationFile
-	 *
-	 * This method re-orders a classification file in clustered order.
-	 ******************************************************************/
-	private static String[] reOrderClassificationFile(InputClass inputFile, String[] order) {
-		String reorg[] = new String[order.length];
-		try {
-			Map<String, String> origData = new HashMap<String, String>();
-			// Reading the data file and writing the output file
-            BufferedReader br = new BufferedReader(new FileReader(inputFile.file));
-            String line = br.readLine(); // skip header row
-            if (line.split("\t").length == 1) {
-            	line = br.readLine();
-            }
-	        while(line !=null) {
-	              String toks[] = line.split("\t");
-	              for (int i = 0; i < toks.length; i++) {
-	            	  origData.put(toks[0], toks[1]);
-	              }      
-	              line = br.readLine();
-	        }
-            br.close();
-            
-	        for (int row = 0; row < order.length; row++) {
-	        	  String orderStr = order[row];
-	        	  String classification = origData.get(orderStr);
-	        	  
-	        	  // If we don't find a match and the label has hidden fields, try to 
-	        	  // match without the hidden fields.
-	        	  if ((classification == null) && (orderStr != null) && orderStr.contains("|")) {
-	        		  orderStr = orderStr.substring(0, orderStr.indexOf('|'));
-	        		  classification = origData.get(orderStr);
-	        	  }
-	        	  
-	              reorg[row] = classification;
-	        }
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    } finally {
-	    	try {
-	    	} catch (Exception ex) { /* Do nothing FOR NOW */ }
-	    }
-		return reorg;
+	private static void writeClassValue(String val, int row, int len, OutputStreamWriter fw, int interval, boolean discrete) throws Exception {
+    	if ((MatrixValidator.isNumeric(val)) && !discrete) {
+    		fw.write(val);
+    	} else {
+    		fw.write(QUOTE+val+QUOTE);
+    	}
+    	if (row+interval < len) {
+    		fw.write(COMMA);
+    	} else {
+    		fw.write(BRACKET_CLOSE);
+    	}
 	}
 	
 	/*====================================================================
@@ -999,10 +887,12 @@ public class HeatmapDataGenerator {
 	 * 3. classifications: Containing classification (covariate) configuration 
 	 *                     for the map. 
 	 ******************************************************************/
-   	private static void writeMapConfigFile(ImportData iData) {
+   	private static void writeMapConfigFile(ImportData iData) throws Exception {
+		DataOutputStream writer = null;
+		OutputStreamWriter fw = null;
 		try {
-			DataOutputStream writer = new DataOutputStream(new FileOutputStream(iData.outputDir+File.separator+MAP_CONFIG_FILE));
-			OutputStreamWriter fw = new OutputStreamWriter(writer, UTF8);
+			writer = new DataOutputStream(new FileOutputStream(iData.outputDir+File.separator+MAP_CONFIG_FILE));
+			fw = new OutputStreamWriter(writer, UTF8);
 			//Write out data configuration JSON section
 	        fw.write(BRACE_OPEN+DATA_CONFIG_LABEL+BRACE_OPEN);
 	        writeMapInformation(fw, iData);
@@ -1012,23 +902,26 @@ public class HeatmapDataGenerator {
 	        fw.write(BRACE_CLOSE+COMMA);
 			//Write out column configuration JSON section
 	        fw.write(ROW_CONFIG_LABEL+BRACE_OPEN);
+	        writeTopItems(fw, iData, true);
 	        writeOrganization(fw, iData, true);
+	        writeLabelConfig(fw, iData, true);
 	        writeConfigDendrogram(fw, iData, true);
 	        writeConfigClassifications(fw, iData, true);
 	        fw.write(BRACE_CLOSE+COMMA);
 			//Write out row configuration JSON section
 	        fw.write(COL_CONFIG_LABEL+BRACE_OPEN);
+	        writeTopItems(fw, iData, false);
 	        writeOrganization(fw, iData, false);
+	        writeLabelConfig(fw, iData, false);
 	        writeConfigDendrogram(fw, iData, false);
 	        writeConfigClassifications(fw, iData, false);
 	        fw.write(BRACE_CLOSE+BRACE_CLOSE);
-			fw.close();
-			writer.close();
 	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
+			System.out.println("Exception Writing mapConfig.JSON file: " + ex.toString());  
+	        throw ex;
 	    } finally {
-	    	try {
-	    	} catch (Exception ex) { /* Do nothing FOR NOW */ }
+	    	fw.close();
+	    	writer.close();
 	    }
 	}
 				           
@@ -1040,31 +933,31 @@ public class HeatmapDataGenerator {
 	 * data for the heatmap name, description, and any attributes provided
 	 * to the builder are written out.
 	 ******************************************************************/
-	private static void writeMapInformation(OutputStreamWriter fw, ImportData iData) {
-		try {
-	        fw.write(MAP_INFO_LABEL+BRACE_OPEN);
-	        fw.write(NAME_LABEL+QUOTE+iData.chmName+QUOTE+COMMA);
-	        fw.write(DESC_LABEL+QUOTE+iData.chmDescription+QUOTE+COMMA);
-	        fw.write(READ_ONLY_LABEL+QUOTE+iData.readOnly+QUOTE+COMMA);
-	        fw.write(VERSION_LABEL+QUOTE+CURRENT_VERSION+QUOTE+COMMA);
-	        fw.write(LABEL_LENGTH_LABEL+LABEL_LENGTH_DEFAULT+COMMA);
-	        fw.write(LABEL_TRUNCATION_LABEL+LABEL_TRUNCATE_DEFAULT+COMMA);
-	        fw.write(SUMMARY_WIDTH_LABEL+QUOTE+"50"+QUOTE+COMMA);
-	        fw.write(SUMMARY_HEIGHT_LABEL+QUOTE+"100"+QUOTE+COMMA);
-	        fw.write(DETAIL_WIDTH_LABEL+QUOTE+"50"+QUOTE+COMMA);
-	        fw.write(DETAIL_HEIGHT_LABEL+QUOTE+"100"+QUOTE+COMMA);
-	        fw.write(ATTRS_LABEL+BRACE_OPEN);
-	        for (int i=0;i<iData.chmAttributes.size();i++) {
-	        	AttributeData ad = iData.chmAttributes.get(i);
-		        fw.write(QUOTE+ad.attributeName+QUOTE+COLON+QUOTE+ad.attributeValue+QUOTE);
-	        	if (i != (iData.chmAttributes.size() - 1)) {
-	        		fw.write(COMMA);
-	        	}
-	        } 
-	        fw.write(BRACE_CLOSE+COMMA);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+	private static void writeMapInformation(OutputStreamWriter fw, ImportData iData)  throws Exception {
+        fw.write(MAP_INFO_LABEL+BRACE_OPEN);
+        fw.write(NAME_LABEL+QUOTE+iData.chmName+QUOTE+COMMA);
+        fw.write(DESC_LABEL+QUOTE+iData.chmDescription+QUOTE+COMMA);
+        fw.write(READ_ONLY_LABEL+QUOTE+iData.readOnly+QUOTE+COMMA);
+        fw.write(VERSION_LABEL+QUOTE+CURRENT_GENERATOR_VERSION+QUOTE+COMMA);
+        fw.write(LABEL_LENGTH_LABEL+LABEL_LENGTH_DEFAULT+COMMA);
+        fw.write(LABEL_TRUNCATION_LABEL+LABEL_TRUNCATE_DEFAULT+COMMA);
+        fw.write(SUMMARY_WIDTH_LABEL+QUOTE+"50"+QUOTE+COMMA);
+        fw.write(SUMMARY_HEIGHT_LABEL+QUOTE+"100"+QUOTE+COMMA);
+        fw.write(DETAIL_WIDTH_LABEL+QUOTE+"50"+QUOTE+COMMA);
+        fw.write(DETAIL_HEIGHT_LABEL+QUOTE+"100"+QUOTE+COMMA);
+        int cutRows = iData.rowData.cutLocations.length*iData.rowData.cutWidth;
+        int cutCols = iData.colData.cutLocations.length*iData.colData.cutWidth;
+        fw.write(MAP_CUT_ROWS_LABEL+QUOTE+cutRows+QUOTE+COMMA);
+        fw.write(MAP_CUT_COLS_LABEL+QUOTE+cutCols+QUOTE+COMMA);
+        fw.write(ATTRS_LABEL+BRACE_OPEN);
+        for (int i=0;i<iData.chmAttributes.size();i++) {
+        	AttributeData ad = iData.chmAttributes.get(i);
+	        fw.write(QUOTE+ad.attributeName+QUOTE+COLON+QUOTE+ad.attributeValue+QUOTE);
+        	if (i != (iData.chmAttributes.size() - 1)) {
+        		fw.write(COMMA);
+        	}
+        } 
+        fw.write(BRACE_CLOSE+COMMA);
 	}
 	
 	/*******************************************************************
@@ -1076,33 +969,29 @@ public class HeatmapDataGenerator {
 	 * always be written.  The levels  below will be written to the file if 
 	 * they are generated.
 	 ******************************************************************/
-	private static void writeMapStructure(OutputStreamWriter w, ImportData iData) {	
-		try {
-			InputFile iFile = iData.matrixFiles.get(0);
-			w.write(LEVELS_LABEL+BRACE_OPEN);
-			// Loop thru import layers and write out structure data for each.
-			for (int i=0; i < iFile.importLayers.size(); i++) {
-				ImportLayerData ilData = iFile.importLayers.get(i);
-				// Write out the Thumbnail file structure data.
-				w.write(QUOTE+ilData.layer+QUOTE+COLON);
-				w.write(BRACE_OPEN);
-				w.write(TILEROWS_LABEL+ilData.rowTiles);
-				w.write(COMMA+TILECOLS_LABEL+ilData.colTiles);
-				w.write(COMMA+TILEROWSPER_LABEL+ilData.rowsPerTile);
-				w.write(COMMA+TILECOLSPER_LABEL+ilData.colsPerTile);
-				w.write(COMMA+TOTALROWS_LABEL+ilData.totalLevelRows);
-				w.write(COMMA+TOTALCOLS_LABEL+ilData.totalLevelCols);
-				w.write(COMMA+ROW_SUMMARY_RATIO_LABEL+ilData.rowInterval);
-				w.write(COMMA+COL_SUMMARY_RATIO_LABEL+ilData.colInterval);
-				w.write(BRACE_CLOSE);
-				if (i < (iFile.importLayers.size() - 1)) {
-					w.write(COMMA);
-				}
+	private static void writeMapStructure(OutputStreamWriter w, ImportData iData)  throws Exception {	
+		InputFile iFile = iData.matrixFiles.get(0);
+		w.write(LEVELS_LABEL+BRACE_OPEN);
+		// Loop thru import layers and write out structure data for each.
+		for (int i=0; i < iFile.importLayers.size(); i++) {
+			ImportLayerData ilData = iFile.importLayers.get(i);
+			// Write out the Thumbnail file structure data.
+			w.write(QUOTE+ilData.layer+QUOTE+COLON);
+			w.write(BRACE_OPEN);
+			w.write(TILEROWS_LABEL+ilData.rowTiles);
+			w.write(COMMA+TILECOLS_LABEL+ilData.colTiles);
+			w.write(COMMA+TILEROWSPER_LABEL+ilData.rowsPerTile);
+			w.write(COMMA+TILECOLSPER_LABEL+ilData.colsPerTile);
+			w.write(COMMA+TOTALROWS_LABEL+ilData.totalLevelRows);
+			w.write(COMMA+TOTALCOLS_LABEL+ilData.totalLevelCols);
+			w.write(COMMA+ROW_SUMMARY_RATIO_LABEL+ilData.rowInterval);
+			w.write(COMMA+COL_SUMMARY_RATIO_LABEL+ilData.colInterval);
+			w.write(BRACE_CLOSE);
+			if (i < (iFile.importLayers.size() - 1)) {
+				w.write(COMMA);
 			}
-			w.write(BRACE_CLOSE+COMMA);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+		}
+		w.write(BRACE_CLOSE+COMMA);
 	}
 	
 	/*******************************************************************
@@ -1116,67 +1005,47 @@ public class HeatmapDataGenerator {
 	 * a method to write the colormap configuration for the data layer into
 	 * the mapConfig.JSON file.
 	 ******************************************************************/
-	private static void writeDataLayers(OutputStreamWriter fw, ImportData iData) {	
-		try {
-	        fw.write(DATA_LAYER_LABEL+BRACE_OPEN);
-			// Build String constants
-			for (int i=0; i < iData.matrixFiles.size(); i++) {
-				InputFile iFl = iData.matrixFiles.get(i);
-				fw.write(QUOTE+iFl.id+QUOTE+COLON+BRACE_OPEN);
-				fw.write(NAME_LABEL+QUOTE+iFl.name+QUOTE+COMMA);
-				fw.write(GRID_SHOW_LABEL+QUOTE+YES+QUOTE+COMMA);
-				fw.write(GRID_COLOR_LABEL+QUOTE+COLOR_WHITE+QUOTE+COMMA);
-				fw.write(SELECTION_COLOR_LABEL+QUOTE+COLOR_LIME+QUOTE+COMMA);
-				writeColorMap(fw, iData, i, DATA_LAYER_LABEL);
-				fw.write(BRACE_CLOSE);
-				
-				if (i < iData.matrixFiles.size() - 1) {
-					fw.write(COMMA);
-				}
-			}
+	private static void writeDataLayers(OutputStreamWriter fw, ImportData iData)  throws Exception {	
+        fw.write(DATA_LAYER_LABEL+BRACE_OPEN);
+		// Build String constants
+		for (int i=0; i < iData.matrixFiles.size(); i++) {
+			InputFile iFl = iData.matrixFiles.get(i);
+			fw.write(QUOTE+iFl.id+QUOTE+COLON+BRACE_OPEN);
+			fw.write(NAME_LABEL+QUOTE+iFl.name+QUOTE+COMMA);
+			fw.write(GRID_SHOW_LABEL+QUOTE+YES+QUOTE+COMMA);
+			fw.write(GRID_COLOR_LABEL+QUOTE+COLOR_WHITE+QUOTE+COMMA);
+			fw.write(SELECTION_COLOR_LABEL+QUOTE+COLOR_LIME+QUOTE+COMMA);
+			writeColorMap(fw, iData, i, DATA_LAYER_LABEL);
 			fw.write(BRACE_CLOSE);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+			
+			if (i < iData.matrixFiles.size() - 1) {
+				fw.write(COMMA);
+			}
+		}
+		fw.write(BRACE_CLOSE);
 	}	
 
 	/*******************************************************************
 	 * METHOD: writeColorMap
 	 *
 	 * This method writes out the colorMap JSON subschema of the 
-	 * data_layers AND classfications subschemas of the mapConfig.JSON file.	 
+	 * data_layers AND classifications subschemas of the mapConfig.JSON file.	 
 	 ******************************************************************/
-	private static void writeColorMap(OutputStreamWriter fw, ImportData iData, int filePos, String mapType) {
-		try {
-			ColorMap cMap = null;
-			if (DATA_LAYER_LABEL.equals(mapType)) {
-		        InputFile iFile = iData.matrixFiles.get(filePos);
-		        cMap = iFile.getMap();
-		        if (filePos == 0){
-		        	createTnHeatmapImg(cMap, iData, iData.tnMatrix);
-		        }
-		        if ((iData.generatePDF) && (iData.pdfMatrices !=null)) {
-		        	createSummaryImg(cMap, iData, iData.pdfMatrices.get(filePos));
-		        }
-			} else if (ROW_CONFIG_LABEL.equals(mapType)) {
-		        InputClass iFile = iData.rowClassFiles.get(filePos);
-		        cMap = iFile.getMap();
-		        if (iData.generatePDF) {
-		        	createRowClassSummaryImg(cMap, iData, filePos);
-			        createRowClassLegendImg(cMap, iData, filePos);
-		        }
-			} else if (COL_CONFIG_LABEL.equals(mapType)){
-		        InputClass iFile = iData.colClassFiles.get(filePos);
-		        cMap = iFile.getMap();
-		        if (iData.generatePDF) {
-			        createColClassSummaryImg(cMap, iData, filePos);
-			        createColClassLegendImg(cMap, iData, filePos);
-		        }
-		    }
-	        fw.write(cMap.asJSON());
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
+	private static void writeColorMap(OutputStreamWriter fw, ImportData iData, int filePos, String mapType)  throws Exception {
+		ColorMap cMap = null;
+		if (DATA_LAYER_LABEL.equals(mapType)) {
+	        InputFile iFile = iData.matrixFiles.get(filePos);
+	        cMap = iFile.getMap();
+		} else {
+	        InputClass iFile;
+			if (ROW_CONFIG_LABEL.equals(mapType)) {
+		        iFile = iData.rowData.classFiles.get(filePos);
+			} else {
+				iFile = iData.colData.classFiles.get(filePos);
+			} 
+	        cMap = iFile.getMap();
 	    }
+        fw.write(cMap.asJSON());
 	}	
 	
 	/*******************************************************************
@@ -1187,36 +1056,73 @@ public class HeatmapDataGenerator {
 	 * file.  A boolean is used to drive the This subschema contains the row/col organization configuration 
 	 * for the heatmap.
 	 ******************************************************************/
-	private static void writeOrganization(OutputStreamWriter fw, ImportData iData, boolean isRowFile) {	
-		try {
-			// Build String constants
-			fw.write(ORGANIZATION_LABEL+BRACE_OPEN);
-			// Loop thru import layers and write out structure data for each.
-			if (isRowFile) {
-			    String rowOrderMethod = iData.rowData.orderMethod;
-			    fw.write(ORDER_METHOD_LABEL+QUOTE+rowOrderMethod+QUOTE+COMMA);
-			    if (ORDER_HIERARCHICAL.equals(rowOrderMethod)) {
-			    	fw.write(AGGLOMERATION_LABEL+QUOTE+iData.rowData.agglomerationMethod+QUOTE+COMMA);
-			    	fw.write(DISTANCE_METRIC_LABEL+QUOTE+iData.rowData.distanceMetric+QUOTE);
-			    } else {
-			    	fw.write(AGGLOMERATION_LABEL+QUOTE+NONE+QUOTE+COMMA);
-			    	fw.write(DISTANCE_METRIC_LABEL+QUOTE+NONE+QUOTE);
-			    }
-			} else {
-			    String cowOrderMethod = iData.colData.orderMethod;
-			    fw.write(ORDER_METHOD_LABEL+QUOTE+cowOrderMethod+QUOTE+COMMA);
-			    if (ORDER_HIERARCHICAL.equals(cowOrderMethod)) {
-			    	fw.write(AGGLOMERATION_LABEL+QUOTE+iData.colData.agglomerationMethod+QUOTE+COMMA);
-			    	fw.write(DISTANCE_METRIC_LABEL+QUOTE+iData.colData.distanceMetric+QUOTE);
-			    } else {
-			    	fw.write(AGGLOMERATION_LABEL+QUOTE+NONE+QUOTE+COMMA);
-			    	fw.write(DISTANCE_METRIC_LABEL+QUOTE+NONE+QUOTE);
-			    }
+	private static void writeOrganization(OutputStreamWriter fw, ImportData iData, boolean isRowFile)  throws Exception {	
+		// Build String constants
+		fw.write(ORGANIZATION_LABEL+BRACE_OPEN);
+		// Loop thru import layers and write out structure data for each.
+		if (isRowFile) {
+		    String rowOrderMethod = iData.rowData.orderMethod;
+		    fw.write(ORDER_METHOD_LABEL+QUOTE+rowOrderMethod+QUOTE+COMMA);
+		    if (ORDER_HIERARCHICAL.equals(rowOrderMethod)) {
+		    	fw.write(AGGLOMERATION_LABEL+QUOTE+iData.rowData.agglomerationMethod+QUOTE+COMMA);
+		    	fw.write(DISTANCE_METRIC_LABEL+QUOTE+iData.rowData.distanceMetric+QUOTE);
+		    } else {
+		    	fw.write(AGGLOMERATION_LABEL+QUOTE+NONE+QUOTE+COMMA);
+		    	fw.write(DISTANCE_METRIC_LABEL+QUOTE+NONE+QUOTE);
+		    }
+		} else {
+		    String cowOrderMethod = iData.colData.orderMethod;
+		    fw.write(ORDER_METHOD_LABEL+QUOTE+cowOrderMethod+QUOTE+COMMA);
+		    if (ORDER_HIERARCHICAL.equals(cowOrderMethod)) {
+		    	fw.write(AGGLOMERATION_LABEL+QUOTE+iData.colData.agglomerationMethod+QUOTE+COMMA);
+		    	fw.write(DISTANCE_METRIC_LABEL+QUOTE+iData.colData.distanceMetric+QUOTE);
+		    } else {
+		    	fw.write(AGGLOMERATION_LABEL+QUOTE+NONE+QUOTE+COMMA);
+		    	fw.write(DISTANCE_METRIC_LABEL+QUOTE+NONE+QUOTE);
+		    }
+		}
+		fw.write(BRACE_CLOSE+COMMA);
+	}	
+	
+	/*******************************************************************
+	 * METHOD: writeLabelConfig
+	 *
+	 * This method writes out label configuration data to the mapConfig
+	 * JSON file. Configuration data written includes the maximum display
+	 * length for a label and the method for abbreviating that label.
+	 ******************************************************************/
+	private static void writeLabelConfig(OutputStreamWriter fw, ImportData iData, boolean isRowFile)  throws Exception {	
+		RowColData data = iData.rowData;
+		if (!isRowFile) {
+			data = iData.colData;
+		}
+	    fw.write(LABEL_LENGTH_LABEL+QUOTE+data.labelMaxLength+QUOTE+COMMA);
+	    fw.write(LABEL_ABBREV_METHOD_LABEL+QUOTE+data.labelAbbrevMethod+QUOTE+COMMA);
+	}	
+
+	/*******************************************************************
+	 * METHOD: writeTopItems
+	 *
+	 * This method writes out top row/column label items to the mapConfig
+	 * JSON file.  These items are defined by the incoming heatmapConfig
+	 * JSON file and are used to display specific "top" labels on the
+	 * Summary heatmap in the viewer application.
+	 ******************************************************************/
+	private static void writeTopItems(OutputStreamWriter fw, ImportData iData, boolean isRowFile)  throws Exception {	
+		String[] topItems = iData.rowData.topItems;
+		if (!isRowFile) {
+			topItems = iData.colData.topItems;
+		}
+	    fw.write(TOP_ITEMS_LABEL+BRACKET_OPEN);
+		if (topItems != null) {
+			for (int i=0;i<topItems.length;i++) {
+				fw.write(QUOTE+topItems[i]+QUOTE);
+				if (i < topItems.length-1) {
+					fw.write(COMMA);
+				}
 			}
-			fw.write(BRACE_CLOSE+COMMA);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+		}
+		fw.write(BRACKET_CLOSE+COMMA);
 	}	
 	
 	/*******************************************************************
@@ -1228,30 +1134,26 @@ public class HeatmapDataGenerator {
 	 * processing. This subschema contains the dendrogram configuration 
 	 * for the heatmap.
 	 ******************************************************************/
-	private static void writeConfigDendrogram(OutputStreamWriter fw, ImportData iData, boolean isRowFile) {
-		try {
-	        fw.write(DENDROGRAM_LABEL+BRACE_OPEN);
-			if (isRowFile) {
-		        if (iData.rowData.dendroFile != null) {
-			        fw.write(SHOW_LABEL+QUOTE+"ALL"+QUOTE+COMMA); 
-			        fw.write(HEIGHT_LABEL+QUOTE+"100"+QUOTE); 
-		        } else {
-			        fw.write(SHOW_LABEL+QUOTE+"NA"+QUOTE+COMMA); 
-			        fw.write(HEIGHT_LABEL+QUOTE+"10"+QUOTE); 
-		        }
-			} else {
-		        if (iData.colData.dendroFile!= null) {
-			        fw.write(SHOW_LABEL+QUOTE+"ALL"+QUOTE+COMMA); 
-			        fw.write(HEIGHT_LABEL+QUOTE+"100"+QUOTE); 
-		        } else {
-			        fw.write(SHOW_LABEL+QUOTE+"NA"+QUOTE+COMMA); 
-			        fw.write(HEIGHT_LABEL+QUOTE+"10"+QUOTE); 
-		        }
-			}
-            fw.write(BRACE_CLOSE+COMMA);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+	private static void writeConfigDendrogram(OutputStreamWriter fw, ImportData iData, boolean isRowFile)  throws Exception {
+        fw.write(DENDROGRAM_LABEL+BRACE_OPEN);
+		if (isRowFile) {
+	        if (iData.rowData.dendroFile != null) {
+		        fw.write(SHOW_LABEL+QUOTE+"ALL"+QUOTE+COMMA); 
+		        fw.write(HEIGHT_LABEL+QUOTE+"100"+QUOTE); 
+	        } else {
+		        fw.write(SHOW_LABEL+QUOTE+"NA"+QUOTE+COMMA); 
+		        fw.write(HEIGHT_LABEL+QUOTE+"10"+QUOTE); 
+	        }
+		} else {
+	        if (iData.colData.dendroFile!= null) {
+		        fw.write(SHOW_LABEL+QUOTE+"ALL"+QUOTE+COMMA); 
+		        fw.write(HEIGHT_LABEL+QUOTE+"100"+QUOTE); 
+	        } else {
+		        fw.write(SHOW_LABEL+QUOTE+"NA"+QUOTE+COMMA); 
+		        fw.write(HEIGHT_LABEL+QUOTE+"10"+QUOTE); 
+	        }
+		}
+        fw.write(BRACE_CLOSE+COMMA);
 	}
 	
 	/*******************************************************************
@@ -1263,55 +1165,67 @@ public class HeatmapDataGenerator {
 	 * processing. This subschema contains the classification configuration
 	 * variable and colormap for the heatmap.
 	 ******************************************************************/
-	private static void writeConfigClassifications(OutputStreamWriter fw, ImportData iData, boolean isRowFile) {
-		try {
-	        fw.write(CLASSIFICATIONS_LABEL+BRACE_OPEN);
-			String classOrder = BRACKET_OPEN;
-			if (isRowFile) {
-				if (iData.rowClassFiles.size() == 0) {
-					fw.write(EMPTY);
-				} else {
-			        for (int i=0;i<iData.rowClassFiles.size();i++) {
-			        	InputClass currInput = iData.rowClassFiles.get(i);
-			        	classOrder += QUOTE+currInput.name+QUOTE;
-						fw.write(QUOTE+currInput.name+QUOTE+COLON+BRACE_OPEN);
-						fw.write(HEIGHT_LABEL+QUOTE+currInput.height+QUOTE+COMMA);
-						fw.write(SHOW_LABEL+QUOTE+currInput.show+QUOTE+COMMA);
-						writeColorMap(fw, iData, i,ROW_CONFIG_LABEL);
-						if (i < iData.rowClassFiles.size() - 1) {
-				        	classOrder += COMMA;
-							fw.write(BRACE_CLOSE+COMMA);
-						} else {
-							fw.write(BRACE_CLOSE);
-						}
-			        }
-				}
+	private static void writeConfigClassifications(OutputStreamWriter fw, ImportData iData, boolean isRowFile)  throws Exception {
+        fw.write(CLASSIFICATIONS_LABEL+BRACE_OPEN);
+		String classOrder = BRACKET_OPEN;
+		if (isRowFile) {
+			if (iData.rowData.classFiles.size() == 0) {
+				fw.write(EMPTY);
 			} else {
-				if (iData.colClassFiles.size() == 0) {
-					fw.write(EMPTY);
-				} else {
-			        for (int i=0;i<iData.colClassFiles.size();i++) {
-			        	InputClass currInput = iData.colClassFiles.get(i);
-			        	classOrder += QUOTE+currInput.name+QUOTE;
-						fw.write(QUOTE+currInput.name+QUOTE+COLON+BRACE_OPEN);
-						fw.write(HEIGHT_LABEL+QUOTE+currInput.height+QUOTE+COMMA);
-						fw.write(SHOW_LABEL+QUOTE+currInput.show+QUOTE+COMMA);
-						writeColorMap(fw, iData, i,COL_CONFIG_LABEL);
-						if (i < iData.colClassFiles.size() - 1) {
-				        	classOrder += COMMA;
-							fw.write(BRACE_CLOSE+COMMA);
-						} else {
-							fw.write(BRACE_CLOSE);
-						}
+		        for (int i=0;i<iData.rowData.classFiles.size();i++) {
+		        	InputClass currInput = iData.rowData.classFiles.get(i);
+		        	classOrder += QUOTE+currInput.name+QUOTE;
+					fw.write(QUOTE+currInput.name+QUOTE+COLON+BRACE_OPEN);
+					fw.write(HEIGHT_LABEL+QUOTE+currInput.height+QUOTE+COMMA);
+					fw.write(SHOW_LABEL+QUOTE+currInput.show+QUOTE+COMMA);
+			        fw.write(BAR_TYPE_LABEL+QUOTE+currInput.barType+QUOTE+COMMA);
+			        if (currInput.dataType != null) {
+				        fw.write(DATA_TYPE_LABEL+QUOTE+currInput.dataType+QUOTE+COMMA);
 			        }
-				}
+			        fw.write(FG_COLOR_LABEL+QUOTE+currInput.fgColor+QUOTE+COMMA);
+			        fw.write(BG_COLOR_LABEL+QUOTE+currInput.bgColor+QUOTE+COMMA);
+			        fw.write(LOW_BOUND_LABEL+QUOTE+currInput.lowBound+QUOTE+COMMA);
+			        fw.write(HIGH_BOUND_LABEL+QUOTE+currInput.highBound+QUOTE+COMMA);
+					writeColorMap(fw, iData, i,ROW_CONFIG_LABEL);
+					if (i < iData.rowData.classFiles.size() - 1) {
+			        	classOrder += COMMA;
+						fw.write(BRACE_CLOSE+COMMA);
+					} else {
+						fw.write(BRACE_CLOSE);
+					}
+		        }
 			}
-            fw.write(BRACE_CLOSE+COMMA);
-	        classOrder += BRACKET_CLOSE;
-	        fw.write(CLASSIFICATIONS_ORDER_LABEL+classOrder);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
+		} else {
+			if (iData.colData.classFiles.size() == 0) {
+				fw.write(EMPTY);
+			} else {
+		        for (int i=0;i<iData.colData.classFiles.size();i++) {
+		        	InputClass currInput = iData.colData.classFiles.get(i);
+		        	classOrder += QUOTE+currInput.name+QUOTE;
+					fw.write(QUOTE+currInput.name+QUOTE+COLON+BRACE_OPEN);
+					fw.write(HEIGHT_LABEL+QUOTE+currInput.height+QUOTE+COMMA);
+					fw.write(SHOW_LABEL+QUOTE+currInput.show+QUOTE+COMMA);
+			        fw.write(BAR_TYPE_LABEL+QUOTE+currInput.barType+QUOTE+COMMA);
+			        if (currInput.dataType != null) {
+				        fw.write(DATA_TYPE_LABEL+QUOTE+currInput.dataType+QUOTE+COMMA);
+			        }
+			        fw.write(FG_COLOR_LABEL+QUOTE+currInput.fgColor+QUOTE+COMMA);
+			        fw.write(BG_COLOR_LABEL+QUOTE+currInput.bgColor+QUOTE+COMMA);
+			        fw.write(LOW_BOUND_LABEL+QUOTE+currInput.lowBound+QUOTE+COMMA);
+			        fw.write(HIGH_BOUND_LABEL+QUOTE+currInput.highBound+QUOTE+COMMA);
+					writeColorMap(fw, iData, i,COL_CONFIG_LABEL);
+					if (i < iData.colData.classFiles.size() - 1) {
+			        	classOrder += COMMA;
+						fw.write(BRACE_CLOSE+COMMA);
+					} else {
+						fw.write(BRACE_CLOSE);
+					}
+		        }
+			}
+		}
+        fw.write(BRACE_CLOSE+COMMA);
+        classOrder += BRACKET_CLOSE;
+        fw.write(CLASSIFICATIONS_ORDER_LABEL+classOrder);
 	}
 	
 	/*====================================================================
@@ -1335,10 +1249,11 @@ public class HeatmapDataGenerator {
 				String dlDir = "dl"+(i+1);
 				writeRow = new DataOutputStream(new FileOutputStream(iData.outputDir+File.separator+dlDir+File.separator+"clustered.txt"));
 				w = new OutputStreamWriter(writeRow, UTF8);
-		        for (int row = 1; row < iData.importRows + 1; row++) {
-			        for (int col = 1; col < iData.importCols + 1; col++) {
-			        	w.write(iFile.reorgMatrix[row][col]);
-						if (col < (iData.importCols)) {
+		        for (int row = 0; row < iFile.reorgMatrix.length; row++) {
+			        for (int col = 0; col < iFile.reorgMatrix[0].length; col++) {
+			        	float val = iFile.reorgMatrix[row][col];
+			        	w.write(String.valueOf(val));
+						if (col < (iFile.reorgMatrix[0].length-1)) {
 							w.write(TAB);
 						} else {
 							w.write(LINE_FEED);
@@ -1349,7 +1264,8 @@ public class HeatmapDataGenerator {
 				writeRow.close();
 			}
 	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
+			System.out.println("Exception in HeatmapDataGenerator.writeClusteredDebugFile: " + ex.toString());  
+	        ex.printStackTrace();
 	    } finally {
 	    	try {
 	    		w.close();
@@ -1387,160 +1303,37 @@ public class HeatmapDataGenerator {
 	            for (int x = 0; x < width; x++) {
 	                float val = sumMatrix[y][x];
 	                int rgb;
-	                if (val > hiEx){
-	                    rgb = hiExCol.getRGB();
-	                } else if (val < lowEx){
-	                    rgb = lowExCol.getRGB();
+	                if (val == MIN_VALUES) {
+	                	rgb = RGB_WHITE;
+	                } else if (val == MAX_VALUES) {
+	                	rgb = RGB_BLACK;
 	                } else {
-	                    int i = 0;
-	                    // find the breakpoints that this value is between
-	                    while (Float.parseFloat(cMap.breaks.get(i)) <= val && i < numBreaks-1){
-	                    	i++;
-	                    };
-	                    Color lowCol = cMap.colors.get(i-1);
-	                    Color hiCol = cMap.colors.get(i);
-	                    float low = Float.parseFloat(cMap.breaks.get(i-1));
-	                    float hi = Float.parseFloat(cMap.breaks.get(i));
-	                    float ratio = (hi-val)/(hi-low);
-	                    Color blend = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
-	                    rgb = blend.getRGB();
+		                if (val > hiEx){
+		                    rgb = hiExCol.getRGB();
+		                } else if (val < lowEx){
+		                    rgb = lowExCol.getRGB();
+		                } else {
+		                    int i = 0;
+		                    // find the breakpoints that this value is between
+		                    while (Float.parseFloat(cMap.breaks.get(i)) <= val && i < numBreaks-1){
+		                    	i++;
+		                    };
+		                    Color lowCol = cMap.colors.get(i-1);
+		                    Color hiCol = cMap.colors.get(i);
+		                    float low = Float.parseFloat(cMap.breaks.get(i-1));
+		                    float hi = Float.parseFloat(cMap.breaks.get(i));
+		                    float ratio = (hi-val)/(hi-low);
+		                    Color blend = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
+		                    rgb = blend.getRGB();
+		                }
 	                }
 	                image.setRGB(x, y, rgb);
 	            }
 	        }
 			iData.matrixImages.add(image);
 	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
-	}
-	
-	/*******************************************************************
-	 * METHOD: createRowClassSummaryImg
-	 *
-	 * This method creates a bufferedImage of a given row classification bar
-	 * using summary level info its color map.  It is used in generating 
-	 * the heat map PDF.
-	 ******************************************************************/
-	private static void createRowClassSummaryImg(ColorMap cMap, ImportData iData, int filePos){
-		try {
-	        int height = iData.pdfMatrices.get(0).length;
-	        String[] rowValues = iData.rowClassValues.get(filePos);
-	        int sampleFactor = rowValues.length/height;
-	        BufferedImage image = new BufferedImage(1, height, BufferedImage.TYPE_INT_RGB);
- 	        for (int i = 1; i < height + 1; i++) {
-	        	int valPos = i*sampleFactor > rowValues.length-1 ? rowValues.length-1 :  i*sampleFactor;
-	        	String elemValue = rowValues[valPos];
-	        	int rgb = 0;
-	        	if (cMap.type.equals("continuous")) {
-	        		rgb = getContinuousColor(cMap, elemValue);
-	        	} else {
-	        		rgb = getDiscreteColor(cMap, elemValue);
-	        	}
-                image.setRGB(0, i - 1, rgb);
-	        }
-	        iData.rowClassImages.add(image);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
-	}
-	
-	/*******************************************************************
-	 * METHOD: createRowClassLegendImg
-	 *
-	 * This method creates a bufferedImage for the legend of a given row 
-	 * classification bar using summary level info its color map. It is
-	 * used in generating the heat map PDF.
-	 ******************************************************************/
-	private static void createRowClassLegendImg(ColorMap cMap, ImportData iData, int filePos){
-		try {
-	        BufferedImage image = new BufferedImage(1, cMap.breaks.size()+1, BufferedImage.TYPE_INT_RGB);
-        	Color elemColor;
-	    	ArrayList<String> classBreaks;
-	    	ArrayList<Color> classColors;
-	        if (cMap.type.equals("continuous")) {
-	        	classBreaks = new ArrayList<String>(cMap.contBreaks);
-	        	classColors = new ArrayList<Color>(cMap.contColors);
-	        } else {
-		    	classBreaks = new ArrayList<String>(cMap.breaks);
-		    	classColors = new ArrayList<Color>(cMap.colors);
-	        }
-        	int rgb = 0;
-        	for (int y = 0; y < classBreaks.size(); y++) {
-    	        elemColor = classColors.get(y);
-    	        rgb = elemColor.getRGB();
-                image.setRGB(0, y, rgb);
-        	}
-        	elemColor = cMap.missingColor;
-        	rgb = elemColor.getRGB();
-        	image.setRGB(0, classBreaks.size(), rgb);
-	        iData.rowClassLegends.add(image);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
-	}
-	
-	/*******************************************************************
-	 * METHOD: createColClassSummaryImg
-	 *
-	 * This method creates a bufferedImage of a given column classification bar
-	 * using summary level info its color map.  It is used in generating 
-	 * the heat map PDF.
-	 ******************************************************************/
-	private static void createColClassSummaryImg(ColorMap cMap, ImportData iData, int filePos){
-		try {
-			int width = iData.pdfMatrices.get(0)[0].length;
-	        String[] colValues = iData.colClassValues.get(filePos);
-	        int sampleFactor = colValues.length/width;
-	        BufferedImage image = new BufferedImage(width, 1, BufferedImage.TYPE_INT_RGB);
-	        for (int i = 1; i < width + 1; i++) {
-	        	int valPos = i*sampleFactor > colValues.length-1 ? colValues.length-1 :  i*sampleFactor;
-	        	String elemValue = colValues[valPos];
-	        	int rgb = 0;
-	        	if (cMap.type.equals("continuous")) {
-	        		rgb = getContinuousColor(cMap, elemValue);
-	        	} else {
-	        		rgb = getDiscreteColor(cMap, elemValue);
-	        	}
-                image.setRGB(i - 1, 0, rgb);
-	        }
-	        iData.colClassImages.add(image);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
-	    }
-	}
-	
-	/*******************************************************************
-	 * METHOD: createColClassLegendImg
-	 *
-	 * This method creates a bufferedImage for the legend of a given column 
-	 * classification bar using summary level info its color map. It is
-	 * used in generating the heat map PDF.
-	 ******************************************************************/
-	private static void createColClassLegendImg(ColorMap cMap, ImportData iData, int filePos){
-		try {
-        	Color elemColor;
-	    	ArrayList<String> classBreaks;
-	    	ArrayList<Color> classColors;
-	        if (cMap.type.equals("continuous")) {
-	        	classBreaks = new ArrayList<String>(cMap.contBreaks);
-	        	classColors = new ArrayList<Color>(cMap.contColors);
-	        } else {
-		    	classBreaks = new ArrayList<String>(cMap.breaks);
-		    	classColors = new ArrayList<Color>(cMap.colors);
-	        }
-	        BufferedImage image = new BufferedImage(1, classBreaks.size()+1, BufferedImage.TYPE_INT_RGB);
-        	int rgb = 0;
-        	for (int y = 0; y < classBreaks.size(); y++) {
-    	        elemColor = classColors.get(y);
-    	        rgb = elemColor.getRGB();
-                image.setRGB(0, y, rgb);
-        	}
-        	elemColor = cMap.missingColor;
-        	rgb = elemColor.getRGB();
-        	image.setRGB(0, classBreaks.size(), rgb);
-        	iData.colClassLegends.add(image);
-	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
+			System.out.println("Exception in HeatmapDataGenerator.createSummaryImg: " + ex.toString());  
+	        ex.printStackTrace();
 	    }
 	}
 	
@@ -1553,8 +1346,8 @@ public class HeatmapDataGenerator {
 	private static BufferedImage createColDendroImg(ImportData iData, Float sizeTo) {
 		BufferedImage image = null;
 		try {
-			int dendroWidth = iData.colDendroMatrix[0].length;
-			int dendroHeight = iData.colDendroMatrix.length;
+			int dendroWidth = iData.colData.dendroMatrix[0].length;
+			int dendroHeight = iData.colData.dendroMatrix.length;
 			//This factor reduces the dendro size to the number of inches on a BufferedImage divides by 5.5 
 			//to determine how many values to factor to make the dendro approximately 5.5 inches wide
 			Float lowSample = new Float(new Float(dendroWidth)/120)/sizeTo;
@@ -1577,15 +1370,16 @@ public class HeatmapDataGenerator {
 			}
 	        image = new BufferedImage(dendroWidth, dendroHeight, BufferedImage.TYPE_INT_RGB);
 	        //Build all white image to draw lines on
-	        fillDendroImage(image, dendroHeight, dendroWidth);
+	        fillDendroImage(image, dendroHeight, dendroWidth, RGB_WHITE);
            	//Draw lines on the image
 	        if (lowSampInd) {
-	        	drawDendroImageLinesUpScale(image, iData.colDendroMatrix, dendroHeight, sampleFactor, COL);
+	        	drawDendroImageLinesUpScale(image, iData.colData.dendroMatrix, dendroHeight, sampleFactor, COL);
 	        } else {
-	        	drawDendroImageLines(image, iData.colDendroMatrix, dendroHeight, sampleFactor, COL);
+	        	drawDendroImageLines(image, iData.colData.dendroMatrix, dendroHeight, sampleFactor, COL);
 	        }
 	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
+			System.out.println("Exception in HeatmapDataGenerator.createColDendroImg: " + ex.toString());  
+	        ex.printStackTrace();
 	    }
 		return image;
 	}
@@ -1599,8 +1393,8 @@ public class HeatmapDataGenerator {
 	private static BufferedImage createRowDendroImg(ImportData iData, Float sizeTo){
 		BufferedImage image = null;
 		try {
-			int dendroWidth = iData.rowDendroMatrix[0].length;
-			int dendroHeight = iData.rowDendroMatrix.length;
+			int dendroWidth = iData.rowData.dendroMatrix[0].length;
+			int dendroHeight = iData.rowData.dendroMatrix.length;
 			//This factor reduces the dendro size to the number of inches on a BufferedImage divides by 5.5 
 			//to determine how many values to factor to make the dendro approximately 5.5 inches tall
 			Float lowSample = new Float(new Float(dendroWidth)/120)/new Float(sizeTo);
@@ -1622,15 +1416,16 @@ public class HeatmapDataGenerator {
 			}
 	        image = new BufferedImage(dendroHeight, dendroWidth, BufferedImage.TYPE_INT_RGB);
 	        //Build all white image to draw lines on
-	        fillDendroImage(image, dendroWidth, dendroHeight);
+	        fillDendroImage(image, dendroWidth, dendroHeight, RGB_WHITE);
            	//Draw lines on the image
 	        if (lowSampInd) {
-	        	drawDendroImageLinesUpScale(image, iData.rowDendroMatrix, dendroHeight, sampleFactor, ROW);
+	        	drawDendroImageLinesUpScale(image, iData.rowData.dendroMatrix, dendroHeight, sampleFactor, ROW);
 	        } else {
-	        	drawDendroImageLines(image, iData.rowDendroMatrix, dendroHeight, sampleFactor, ROW);
+	        	drawDendroImageLines(image, iData.rowData.dendroMatrix, dendroHeight, sampleFactor, ROW);
 	        }
 	    } catch (Exception ex) {
-	    	System.out.println("Exception: "+ ex.toString());
+			System.out.println("Exception in HeatmapDataGenerator.createRowDendroImg: " + ex.toString());  
+	        ex.printStackTrace();
 	    }
 		return image;
 	}	
@@ -1642,15 +1437,18 @@ public class HeatmapDataGenerator {
 	 * This method fills a prospective dendrogram BuffereImage with white
 	 * space and is configurable for drawing on both Row and Column images.
 	 ******************************************************************/
-	private static void fillDendroImage(BufferedImage image, int dendroHeight, int dendroWidth) throws Exception {
-		Color blank = Color.white;
-		int blankColor = blank.getRGB();
-	    //Build all white image to draw lines on
-		for (int i = 0; i < dendroHeight; i++) {
-			for (int j=0; j < dendroWidth; j++) {
-	                image.setRGB(j, dendroHeight-(i+1), blankColor);
-	 		}
-		}
+	public static void fillDendroImage(BufferedImage image, int dendroHeight, int dendroWidth, int fillColor)  {
+		try {
+		    //Build all white image to draw lines on
+			for (int i = 0; i < dendroHeight; i++) {
+				for (int j=0; j < dendroWidth; j++) {
+		                image.setRGB(j, dendroHeight-(i+1), fillColor);
+		 		}
+			}
+	    } catch (Exception ex) {
+			System.out.println("Exception in HeatmapDataGenerator.fillDendroImage: " + ex.toString());  
+	        ex.printStackTrace();
+	    }
 	}
 
 	/*******************************************************************
@@ -1661,34 +1459,39 @@ public class HeatmapDataGenerator {
 	 * when the dendro image being created is smaller than the dendro matrix.
 	 * Thus, the image is down-scaled.
 	 ******************************************************************/
-	private static void drawDendroImageLines(BufferedImage image, int[][] dendroMatrix, int dendroHeight, Float sampleFactor, String type) throws Exception {
-       	//Draw lines on the image
-       	for (int i = 0; i < dendroHeight; i++) {
-    		int[] dendroRow = dendroMatrix[i];
-    		int sample = 0;
-    		int sampleSum = 0;
-    		int samplePos = 0;
-    		int jPos = 0;
-    		for (int j=0; j < dendroRow.length; j++) {
-    			if (sample < sampleFactor) {
-    				sampleSum += dendroRow[samplePos];
-        			samplePos++;
-        			sample++;
-    			} 
-    			if (sample == sampleFactor) {
-    				if (sampleSum > 0) {
-    					if (type.equals(COL)) {
-    						setDendroImageValue(image, jPos, dendroHeight-(i+1)); //Draw
-    					} else {
-    						setDendroImageValue(image, dendroHeight-(i+1), jPos); //Draw
-    					}
-    				}
-    				sample = 0;
-    				sampleSum = 0;
-    				jPos++;
-    			}
-    		}
-    	} 
+	private static void drawDendroImageLines(BufferedImage image, int[][] dendroMatrix, int dendroHeight, Float sampleFactor, String type) {
+		try {
+	       	//Draw lines on the image
+	       	for (int i = 0; i < dendroHeight; i++) {
+	    		int[] dendroRow = dendroMatrix[i];
+	    		int sample = 0;
+	    		int sampleSum = 0;
+	    		int samplePos = 0;
+	    		int jPos = 0;
+	    		for (int j=0; j < dendroRow.length; j++) {
+	    			if (sample < sampleFactor) {
+	    				sampleSum += dendroRow[samplePos];
+	        			samplePos++;
+	        			sample++;
+	    			} 
+	    			if (sample == sampleFactor) {
+	    				if (sampleSum > 0) {
+	    					if (type.equals(COL)) {
+	    						setDendroImageValue(image, jPos, dendroHeight-(i+1)); //Draw
+	    					} else {
+	    						setDendroImageValue(image, dendroHeight-(i+1), jPos); //Draw
+	    					}
+	    				}
+	    				sample = 0;
+	    				sampleSum = 0;
+	    				jPos++;
+	    			}
+	    		}
+	    	} 
+	    } catch (Exception ex) {
+			System.out.println("Exception in HeatmapDataGenerator.drawDendroImageLines: " + ex.toString());  
+	        ex.printStackTrace();
+	    }
 	}
 	
 	/*******************************************************************
@@ -1699,50 +1502,55 @@ public class HeatmapDataGenerator {
 	 * when the dendro image being created is larger than the dendro matrix.
 	 * Thus, the image is up-scaled.
 	 ******************************************************************/
-	private static void drawDendroImageLinesUpScale(BufferedImage image, int[][] dendroMatrix, int dendroHeight, Float sampleFactor, String type) throws Exception {
-       	//Draw lines on the image
-		boolean lastWasSelected = false;
-		 for (int i = 0; i < dendroHeight; i++) {
-    		int[] dendroRow = dendroMatrix[i];
-    		int jPos = 0;
-    		for (int j=0; j < dendroRow.length; j++) {
-    			int sampleVal = dendroRow[j];
-    			if (sampleVal == 1) {
-    				if (lastWasSelected) {
-    					//back up 1/2 a position and draw for 1 full position
-    					jPos -= sampleFactor/2;
-    					for (int k = 0; k < sampleFactor; k++) {
-        					if (type.equals(COL)) {
-        						setDendroImageValue(image, jPos, dendroHeight-(i+1));
-        					} else {
-        						setDendroImageValue(image, dendroHeight-(i+1), jPos);
-        					}
-    						jPos++;
-    					}
-    					if (type.equals(COL)) {
-    						setDendroImageValue(image, jPos, dendroHeight-(i+1));
-    					} else {
-    						setDendroImageValue(image, dendroHeight-(i+1), jPos);
-    					}
-    					jPos += sampleFactor/2;
-    				} else {
-    					//draw one dot in the middle of one full position
-	    				jPos += sampleFactor/2;
-    					if (type.equals(COL)) {
-    						setDendroImageValue(image, jPos, dendroHeight-(i+1)); //Draw
-    					} else {
-    						setDendroImageValue(image, dendroHeight-(i+1), jPos);
-    					}
-	    				jPos += sampleFactor/2;
-    				}
-    				lastWasSelected = true;
-    			} else {
-    				//skip one full position
-    				lastWasSelected = false;
-    				jPos += sampleFactor;
-    			}
-    		}
-   		} 
+	private static void drawDendroImageLinesUpScale(BufferedImage image, int[][] dendroMatrix, int dendroHeight, Float sampleFactor, String type) {
+		try {
+	       	//Draw lines on the image
+			boolean lastWasSelected = false;
+			 for (int i = 0; i < dendroHeight; i++) {
+	    		int[] dendroRow = dendroMatrix[i];
+	    		int jPos = 0;
+	    		for (int j=0; j < dendroRow.length; j++) {
+	    			int sampleVal = dendroRow[j];
+	    			if (sampleVal == 1) {
+	    				if (lastWasSelected) {
+	    					//back up 1/2 a position and draw for 1 full position
+	    					jPos -= sampleFactor/2;
+	    					for (int k = 0; k < sampleFactor; k++) {
+	        					if (type.equals(COL)) {
+	        						setDendroImageValue(image, jPos, dendroHeight-(i+1));
+	        					} else {
+	        						setDendroImageValue(image, dendroHeight-(i+1), jPos);
+	        					}
+	    						jPos++;
+	    					}
+	    					if (type.equals(COL)) {
+	    						setDendroImageValue(image, jPos, dendroHeight-(i+1));
+	    					} else {
+	    						setDendroImageValue(image, dendroHeight-(i+1), jPos);
+	    					}
+	    					jPos += sampleFactor/2;
+	    				} else {
+	    					//draw one dot in the middle of one full position
+		    				jPos += sampleFactor/2;
+	    					if (type.equals(COL)) {
+	    						setDendroImageValue(image, jPos, dendroHeight-(i+1)); //Draw
+	    					} else {
+	    						setDendroImageValue(image, dendroHeight-(i+1), jPos);
+	    					}
+		    				jPos += sampleFactor/2;
+	    				}
+	    				lastWasSelected = true;
+	    			} else {
+	    				//skip one full position
+	    				lastWasSelected = false;
+	    				jPos += sampleFactor;
+	    			}
+	    		}
+	   		} 
+	    } catch (Exception ex) {
+			System.out.println("Exception in HeatmapDataGenerator.drawDendroImageLinesUpScale: " + ex.toString());  
+	        ex.printStackTrace();
+	    }
 	}
 	
 	/*******************************************************************
@@ -1752,146 +1560,61 @@ public class HeatmapDataGenerator {
 	 * in a BufferedImage containing a row/col dendrogram.
 	 ******************************************************************/
 	private static void setDendroImageValue(BufferedImage image, int x, int y) {
-		Color line = Color.black;
-		int lineColor = line.getRGB();
 		try {
-			image.setRGB(x, y, lineColor);
+			image.setRGB(x, y, RGB_BLACK);	
+		} catch (Exception e) {
+			// Do nothing - for logging: System.out.println("setImageValue exception x: " + x + " y: " + y);
+		}
+	}
+	
+	/*******************************************************************
+	 * METHOD: setTNDendroImageValue
+	 *
+	 * This method sets a black pixel on the submitted x/y coordinates
+	 * in a BufferedImage containing a row/col dendrogram. This is an advanced
+	 * version of the function that handles widths and line end conditions for
+	 * special processing in the thumbnail image.
+	 ******************************************************************/
+	private static void setTNDendroImageValue(BufferedImage image, int x, int y, boolean columnDendro, int width, LineSegment seg) {
+		try {
+			if (columnDendro) {
+				int start = x;
+				int stop = x + 1;
+				if (width > 1) {
+					if (seg == LineSegment.MIDDLE) {
+						start -= width/2;
+						stop += width/2;
+					} else if (seg == LineSegment.LEFT_END) {
+						stop += width/2;
+					} else if (seg == LineSegment.RIGHT_END) {
+						start -= width/2;
+					}
+				}
+				for (int xPos = start; xPos < stop; xPos++){
+					image.setRGB(xPos, y, RGB_BLACK);
+				}	
+			} else {
+				int start = y;
+				int stop = y + 1;
+				if (width > 1) {
+					if (seg == LineSegment.MIDDLE) {
+						start -= width/2;
+						stop += width/2;
+					} else if (seg == LineSegment.LEFT_END) {
+						start -= width/2;
+					} else if (seg == LineSegment.RIGHT_END) {
+						stop += width/2;
+					}
+				}
+				for (int yPos = start; yPos < stop; yPos++){
+					image.setRGB(x, yPos, RGB_BLACK);
+				}	
+			}
 		} catch (Exception e) {
 			// Do nothing - for logging: System.out.println("setImageValue exception x: " + x + " y: " + y);
 		}
 	}
 
-	/*******************************************************************
-	 * METHOD: getDiscreteColor
-	 *
-	 * This method retrieves the RGB color corresponding to a given 
-	 * element for drawing a discrete classification bar. It is used
-	 * in generating the heat map PDF.
-	 ******************************************************************/
-	private static int getDiscreteColor(ColorMap cMap, String elemValue) {
-		ArrayList<String> classBreaks = new ArrayList<String>(cMap.breaks);
-		ArrayList<Color> classColors = new ArrayList<Color>(cMap.colors);
-    	Color elemColor;
-    	int rgb = 0;
-    	boolean found = false;
-    	for (int y = 0; y < classBreaks.size(); y++) {
-    		if (elemValue.equals(classBreaks.get(y))) {
-    	        elemColor = classColors.get(y);
-    	        rgb = elemColor.getRGB();
-    	        found = true;
-    		}
-    	}
-    	if (!found) {
-    		elemColor = cMap.missingColor;
-    		rgb = elemColor.getRGB();
-    	}
-    	return rgb;
-	}
-	
-	/*******************************************************************
-	 * METHOD: getContinuousColor
-	 *
-	 * This method retrieves the RGB color corresponding to a given 
-	 * element for drawing a continuous classification bar. It is used
-	 * in generating the heat map PDF.
-	 ******************************************************************/
-	private static int getContinuousColor(ColorMap cMap, String elemValue) {
-		ArrayList<String> classBreaks = new ArrayList<String>(cMap.contBreaks);
-		ArrayList<Color> classColors = new ArrayList<Color>(cMap.contColors);
-    	int rgb = 0;
-    	if (!HeatmapDataGenerator.isNumeric(elemValue)) {
-    		Color missingColor = cMap.missingColor;
-    		rgb = missingColor.getRGB();
-    	} else {
-        	float eVal = Float.parseFloat(elemValue);
-            int i = 0;
-            // find the breakpoints that this value is between
-            while (Float.parseFloat(classBreaks.get(i)) <= eVal && i < classBreaks.size()-1){
-            	i++;
-            };
-            Color lowCol = classColors.get(i-1);
-            Color hiCol = classColors.get(i);
-            float low = Float.parseFloat(classBreaks.get(i-1));
-            float hi = Float.parseFloat(classBreaks.get(i));
-            float ratio = (hi-eVal)/(hi-low);
-            Color breakColor = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
-            rgb = breakColor.getRGB();
-    	}
-    	return rgb;
-	}
-	
-	/*******************************************************************
-	 * METHOD: generateDendroMatrix
-	 *
-	 * This method generates a 3 points per leaf matrix for a given
-	 * dendrogram (row/col).  This matrix will be used to generate 
-	 * dendrogram images for both the PDF and the thumbnail PNG.
-	 ******************************************************************/
-	private static void generateDendroMatrix(ImportData iData, String dendrotype) {
-		int normDendroMatrixHeight = 160;
-		int pointsPerLeaf = 3;
-		List<String> dendroValues = iData.colDendroValues;
-		int[][] matrix = new int[normDendroMatrixHeight+1][pointsPerLeaf*iData.importCols];
-		if (dendrotype.equals(ROW)) {
-			dendroValues = iData.rowDendroValues;
-			matrix = new int[normDendroMatrixHeight+1][pointsPerLeaf*iData.importRows];
-		}
-		int numNodes = dendroValues.size();
-		Float maxHeight;
-		if (dendroValues.size() > 0) {
-			String maxColValue = dendroValues.get(dendroValues.size()-1);
-			String[] tokes = maxColValue.split(COMMA);
-			maxHeight = new Float(tokes[2]);
-		} else {
-			return;
-		}
-
-		List<Integer> barsLeft = new ArrayList<Integer>();
-		List<Integer> barsRight = new ArrayList<Integer>();
-		for (int i = 0; i < numNodes; i++){
-			String colValue = dendroValues.get(i);
-			String[] tokes = colValue.split(COMMA);
-			int leftIndex = Integer.parseInt(tokes[0]); // index is the location of the bar in the clustered data
-			int rightIndex = Integer.parseInt(tokes[1]);
-			Float height = new Float(tokes[2]);
-			int normHeight = Math.round(normDendroMatrixHeight*height/maxHeight);
-			
-			int leftLoc = findLocationFromIndex(leftIndex, barsLeft, barsRight);
-			int rightLoc = findLocationFromIndex(rightIndex, barsLeft, barsRight);
-			barsLeft.add(leftLoc);
-			barsRight.add(rightLoc);
-			for (int j = leftLoc; j < rightLoc; j++){
-				matrix[normHeight][j] = 1;
-			}
-			int drawHeight = normHeight-1;
-			while (drawHeight > 0 && matrix[drawHeight][leftLoc] != 1){	// this fills in any spaces 		
-				matrix[drawHeight][leftLoc] = 1;
-				drawHeight--;
-			}
-			drawHeight = normHeight;
-			while (matrix[drawHeight][rightLoc] != 1 && drawHeight > 0){			
-				matrix[drawHeight][rightLoc] = 1;
-				drawHeight--;
-			}
-		}
-		if (dendrotype.equals(ROW)) {
-			iData.rowDendroMatrix = matrix;
-		} else {
-			iData.colDendroMatrix = matrix;
-		}
-		return;
-	}
-
-	private static int findLocationFromIndex(int index, List<Integer> barsLeft, List<Integer> barsRight) {
-		if (index < 0){
-			index = 0-index; // make index a positive number to find the leaf
-			return 3*index-2; // all leafs should occupy the middle space of the 3 points available
-		} else {
-			index--;
-			return (int) Math.round(new Float(barsLeft.get(index) + barsRight.get(index))/2); // gets the middle point of the bar
-		}
-	}
-	
 	/*==========================
 	 * THUMBNAIL SPECIFIC LOGIC
 	 *=========================*/
@@ -1902,39 +1625,35 @@ public class HeatmapDataGenerator {
 	 * This method constructs the completed thumbnail PNG from buffered
 	 * images generated for the row/col dendros and the heat map.
 	 ******************************************************************/
-	 public static void buildTnThumbnail(ImportData iData) throws Exception {
+	 public static void buildTnThumbnail(ImportData iData) {
 	        //do some calculate first
 	        int offset  = 1;
 	        int finalHmW = TN_WIDTH;
 	        int finalDendH = TN_HEIGHT;
 	        Graphics g = null;
 	        try {
-				BufferedImage rDScale = null;
+				//BufferedImage rDScale = null;
+				BufferedImage rDendImg = null;
 				int rDendHgt = 0;
-				if (iData.rowDendroMatrix != null) {
+				if (iData.rowData.dendroMatrix != null) {
 			        // Build scaled row dendro image for thumbnail
-					BufferedImage rDendImg = createTnRowDendroImg(iData, TN_WIDTH, TN_HEIGHT);
-					rDendHgt = rDendImg.getHeight() > TN_MAX_WIDTH ? TN_MAX_WIDTH : (rDendImg.getHeight() < TN_MIN_WIDTH ? TN_MIN_WIDTH : rDendImg.getHeight()) ;
-			        rDScale = new BufferedImage(finalDendH, rDendHgt, BufferedImage.TYPE_INT_RGB);
-					g = rDScale.createGraphics();
-					g.drawImage(rDendImg, 0, 0, finalDendH, rDendHgt, null);
+					rDendImg = createTnRowDendroImg(iData, TN_WIDTH, TN_HEIGHT);
+					rDendHgt = rDendImg.getHeight();
 				}
-				BufferedImage cDScale = null;
+				//BufferedImage cDScale = null;
+				BufferedImage cDendImg = null;
 				int cDendWid = 0;
-				if (iData.colDendroMatrix != null) {
+				if (iData.colData.dendroMatrix != null) {
 			        // Build scaled column dendro image for thumbnail
-					BufferedImage cDendImg = createTnColDendroImg(iData, TN_WIDTH, TN_HEIGHT);
-					cDendWid = cDendImg.getWidth() > TN_MAX_WIDTH ? TN_MAX_WIDTH : (cDendImg.getWidth() < TN_MIN_WIDTH ? TN_MIN_WIDTH : cDendImg.getWidth()) ;
-			        cDScale = new BufferedImage(cDendWid, finalDendH, BufferedImage.TYPE_INT_RGB);
-					g = cDScale.createGraphics();
-					g.drawImage(cDendImg, 0, 0, cDendWid, finalDendH, null);
+					cDendImg = createTnColDendroImg(iData, TN_WIDTH, TN_HEIGHT);
+					cDendWid = cDendImg.getWidth();
 				}
 	
 				//Calculate total image height/width for thumbnail
 				int imgWid = cDendWid > 0 ? cDendWid : TN_WIDTH+TN_HEIGHT;
 				int imgHgt = rDendHgt > 0 ? rDendHgt : TN_WIDTH+TN_HEIGHT;
-				int imgWDiff = (TN_MAX_WIDTH - imgWid);
-				int imgHDiff = (TN_MAX_WIDTH - imgHgt);
+				int imgWDiff = 5;
+				int imgHDiff = 5;
 				
 		        //Build scaled heat map image for thumbnail
 		        BufferedImage hmImg = iData.tnImage;
@@ -1955,15 +1674,15 @@ public class HeatmapDataGenerator {
 		        
 		        // Draw thumbnail image from heat map and dendros
 		        g2.setColor(oldColor);
-		        g2.drawImage(rDScale, null, imgWDiff, imgHDiff+finalDendH+offset);
-		        g2.drawImage(cDScale, null, imgWDiff+finalDendH+offset, imgHDiff);
+		        g2.drawImage(rDendImg, null, imgWDiff, imgHDiff+finalDendH+offset);
+		        g2.drawImage(cDendImg, null, imgWDiff+finalDendH+offset, imgHDiff);
 		        g2.drawImage(hmScale, null, imgWDiff+finalDendH+offset, imgHDiff+finalDendH+offset);
 		        g2.dispose();
 		        File outputFile = new File(iData.outputDir+File.separator + "tn.png"); 
 		        ImageIO.write(newImage, "png", outputFile);
-		    } catch (Exception e) {
-				System.out.println("Error in ThumbnailGen buildTnThumbnail: " + e.toString());
-		    	throw e;
+		    } catch (Exception ex) {
+				System.out.println("Exception in HeatmapDataGenerator.buildTnThumbnail: " + ex.toString());  
+		        ex.printStackTrace();
 		    }
 		}
 
@@ -1974,7 +1693,7 @@ public class HeatmapDataGenerator {
 		 * and the colormap for the first data layer.  The resulting bufferedImage
 		 * will be used to construct the full thumbnail PNG.
 		 ******************************************************************/
-		private static void createTnHeatmapImg(ColorMap cMap, ImportData iData, Float tnMatrix[][]) throws Exception{
+		private static void createTnHeatmapImg(ColorMap cMap, ImportData iData, Float tnMatrix[][]) {
 			try {
 				int width = tnMatrix[0].length;
 		        int height = tnMatrix.length;
@@ -1990,37 +1709,64 @@ public class HeatmapDataGenerator {
 		        // go through each value in the TN matrix and determine the color for the pixel
 		        for (int y = 0; y < height; y++) {
 		            for (int x = 0; x < width; x++) {
-		                float val = tnMatrix[y][x];
 		                int rgb;
-		                if (val > hiEx){
-		                    rgb = hiExCol.getRGB();
-		                } else if (val < lowEx){
-		                    rgb = lowExCol.getRGB();
+		                float val = tnMatrix[y][x];
+		                if (val == MIN_VALUES) {
+		                	rgb = RGB_WHITE;
+		                } else if (val == MAX_VALUES) {
+		                	rgb = RGB_BLACK;
 		                } else {
-		                    int i = 0;
-		                    // find the breakpoints that this value is between
-		                    while (Float.parseFloat(cMap.breaks.get(i)) <= val && i < numBreaks-1){
-		                    	i++;
-		                    };
-		                    Color lowCol = cMap.colors.get(i-1);
-		                    Color hiCol = cMap.colors.get(i);
-		                    float low = Float.parseFloat(cMap.breaks.get(i-1));
-		                    float hi = Float.parseFloat(cMap.breaks.get(i));
-		                    float ratio = (hi-val)/(hi-low);
-		                    Color blend = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
-		                    rgb = blend.getRGB();
+			                if (val > hiEx){
+			                    rgb = hiExCol.getRGB();
+			                } else if (val < lowEx){
+			                    rgb = lowExCol.getRGB();
+			                } else {
+			                    int i = 0;
+			                    // find the breakpoints that this value is between
+			                    while (Float.parseFloat(cMap.breaks.get(i)) <= val && i < numBreaks-1){
+			                    	i++;
+			                    };
+			                    Color lowCol = cMap.colors.get(i-1);
+			                    Color hiCol = cMap.colors.get(i);
+			                    float low = Float.parseFloat(cMap.breaks.get(i-1));
+			                    float hi = Float.parseFloat(cMap.breaks.get(i));
+			                    float ratio = (hi-val)/(hi-low);
+			                    Color blend = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
+			                    rgb = blend.getRGB();
+			                }
 		                }
 		                image.setRGB(x, y, rgb);
 		            }
 		            
 		        }
 		        iData.tnImage = image;
-//		        File outputFile = new File(iData.outputDir+File.separator + "tn.png"); 
-//		        ImageIO.write(image, "png", outputFile);
-		    } catch (Exception e) {
-				System.out.println("Error in ThumbnailGen createTnHeatmapImg: " + e.toString());
-		    	throw e;
+		        File outputFile = new File(iData.outputDir+File.separator + "tnPre.png"); 
+		        ImageIO.write(image, "png", outputFile);
+		    } catch (Exception ex) {
+				System.out.println("Exception in HeatmapDataGenerator.createTnHeatmapImg: " + ex.toString());  
+		        ex.printStackTrace();
 		    }
+		}
+		
+		
+		/*******************************************************************
+		 * METHOD: getSegType
+		 *
+		 * Helper function that figures out from the matrix whether we are
+		 * drawing the left, right, or middle part of a horizontal line. Returns
+		 * none if it is a vertical line element. 
+		 ******************************************************************/
+		private static LineSegment getSegType (int[][] matrix,  int yPos, int xPos){
+			LineSegment seg = LineSegment.NONE;
+			
+			if (xPos > 0 && xPos < matrix[0].length-1 && matrix[yPos][xPos-1]==1 && matrix[yPos][xPos+1]==1)
+				seg = LineSegment.MIDDLE;
+			else if (xPos > 0 && matrix[yPos][xPos-1]==1)
+				seg = LineSegment.RIGHT_END;
+			else if (xPos < matrix[0].length-1 && matrix[yPos][xPos+1]==1)
+				seg = LineSegment.LEFT_END;
+			
+			return seg;
 		}
 		
 		/*******************************************************************
@@ -2029,32 +1775,38 @@ public class HeatmapDataGenerator {
 		 * This method creates a PNG image of the column dendrogram for a 
 		 * given heat map. It is used in generating the thumbnail PNG.
 		 ******************************************************************/
-		private static BufferedImage createTnColDendroImg(ImportData iData, int intendedDendroWidth, int intendedDendroHeight) throws Exception {
+		private static BufferedImage createTnColDendroImg(ImportData iData, int intendedDendroWidth, int intendedDendroHeight) {
 			BufferedImage image = null;
 			try {
-				int[][] matrix = iData.colDendroMatrix;
+				int[][] matrix = iData.colData.dendroMatrix;
 				int dendroMatrixWidth = matrix[0].length;
 				int dendroMatrixHeight = matrix.length;
-				int dendroHeight = intendedDendroHeight;
-				Float scaleFactor = new Float(new Float(dendroMatrixWidth)/new Float(intendedDendroWidth));
-				Float sampleFactor = new Float(Math.round(1/scaleFactor));
-				if ((sampleFactor%2)!=0) sampleFactor++;
-				int wFactor = new Float(Math.round(scaleFactor)).intValue();
-				intendedDendroWidth = getIntendedSize(scaleFactor, sampleFactor, dendroMatrixWidth, wFactor);
-				int hFactor = new Float(Math.round(dendroMatrixHeight/intendedDendroHeight)).intValue();
+				
 				// Create buffered image with specified dimensions
 				image = new BufferedImage(intendedDendroWidth, intendedDendroHeight, BufferedImage.TYPE_INT_RGB);
-		        //Build all white image to draw lines on
-		        fillDendroImage(image, intendedDendroHeight, intendedDendroWidth);
-	           	//Draw lines on the image
-		        if (scaleFactor < .75) {
-		        	drawTnDendroImageLinesUpScale(image, matrix, dendroHeight, hFactor, sampleFactor, COL);
-		        } else {
-		        	drawTnDendroImageLines(image, matrix, wFactor, hFactor, dendroHeight, COL);
-		        }
-		    } catch (Exception e) {
-				System.out.println("Error in ThumbnailGen createTnColDendroImg: " + e.toString());
-		    	throw e;
+				fillDendroImage(image, intendedDendroHeight, intendedDendroWidth, RGB_WHITE);
+				
+				//Create a scaling factor to map from dendro matrix position to the dendro png image position
+				double heightScale = (double)(intendedDendroHeight-1)/(double)(dendroMatrixHeight-1);
+				double widthScale = (double)(intendedDendroWidth-1)/(double)(dendroMatrixWidth-1);
+				
+				for (int heightPos = 0; heightPos < dendroMatrixHeight; heightPos++){
+					for (int widthPos = 0; widthPos < dendroMatrixWidth; widthPos++){
+						if (matrix[heightPos][widthPos] > 0) {							
+							int y = (int) Math.min(Math.round((double)heightPos*heightScale), intendedDendroHeight-1);
+							int x = (int) Math.min(Math.round((double)widthPos*widthScale), intendedDendroWidth-1);
+							//If the png is larger than the matrix (happens for small matrices), then for horizontal lines
+							//we need to draw more than 1 pixel.  When the widthScale is > 1, then we know we need to draw
+							//multiple pixels.  The line segment type is also needed to do this properly.
+							LineSegment seg = getSegType(matrix, heightPos, widthPos);
+							setTNDendroImageValue(image, x, intendedDendroHeight-(y+1), true, (int)Math.round(widthScale), seg);
+						}
+					}
+				}
+				
+		    } catch (Exception ex) {
+				System.out.println("Exception in HeatmapDataGenerator.createTnColDendroImg: " + ex.toString());  
+		        ex.printStackTrace();
 		    }
 			return image;
 		}	
@@ -2065,147 +1817,42 @@ public class HeatmapDataGenerator {
 		 * This method creates a PNG image of the row dendrogram for a 
 		 * given heat map. It is used in generating the thumbnail PNG.
 		 ******************************************************************/
-		private static BufferedImage createTnRowDendroImg(ImportData iData, int intendedDendroHeight, int intendedDendroWidth) throws Exception {
+		private static BufferedImage createTnRowDendroImg(ImportData iData, int intendedDendroHeight, int intendedDendroWidth) {
 			BufferedImage image = null;
 			try {
-				int[][] matrix = iData.rowDendroMatrix;
+				int[][] matrix = iData.rowData.dendroMatrix;
 				int dendroMatrixWidth = matrix.length;
 				int dendroMatrixHeight = matrix[0].length;
-				dendroMatrixHeight = iData.rowDendroMatrix[0].length;
+
 				
-				int dendroHeight = intendedDendroWidth;
-				Float scaleFactor = new Float(new Float(dendroMatrixHeight)/new Float(intendedDendroHeight));
-				Float sampleFactor = new Float(Math.round(1/scaleFactor));
-				if ((sampleFactor%2)!=0) sampleFactor++;
-				int wFactor = new Float(Math.round(new Float(dendroMatrixHeight)/new Float(intendedDendroHeight))).intValue();
-				intendedDendroHeight = getIntendedSize(scaleFactor, sampleFactor, dendroMatrixHeight, wFactor);
-				int hFactor = new Float(Math.round(dendroMatrixWidth/intendedDendroWidth)).intValue();
 				// Create buffered image with specified dimensions
 				image = new BufferedImage(intendedDendroWidth, intendedDendroHeight, BufferedImage.TYPE_INT_RGB);
-		        //Build all white image to draw lines on
-		        fillDendroImage(image, intendedDendroHeight, intendedDendroWidth);
-	           	//Draw lines on the image
-		        if (scaleFactor < .75) {
-		        	drawTnDendroImageLinesUpScale(image, matrix, dendroHeight, hFactor, sampleFactor, ROW);
-		        } else {	        	
-		        	drawTnDendroImageLines(image, matrix, wFactor, hFactor, dendroHeight, ROW);
-		        }
-		    } catch (Exception e) {
-				System.out.println("Error in ThumbnailGen createTnRowDendroImg: " + e.toString());
-		    	throw e;
+
+				//Build all white image to draw lines on
+		        fillDendroImage(image, intendedDendroHeight, intendedDendroWidth, RGB_WHITE);
+
+				//Create a scaling factor to map from dendro matrix position to the dendro png image position
+				double heightScale = (double)(intendedDendroHeight-1)/(double)(dendroMatrixHeight-1);
+				double widthScale = (double)(intendedDendroWidth-1)/(double)(dendroMatrixWidth-1);
+				
+				for (int heightPos = 0; heightPos < dendroMatrixHeight; heightPos++){
+					for (int widthPos = 0; widthPos < dendroMatrixWidth; widthPos++){
+						if (matrix[widthPos][heightPos] > 0) {
+							int y = (int)Math.min(((double)(dendroMatrixHeight-heightPos)*heightScale), intendedDendroHeight-1);
+							int x = (int)Math.min(((double)widthPos*widthScale), intendedDendroWidth-1);
+							//If the png is larger than the matrix (happens for small matrices), then for vertical lines
+							//we need to draw more than 1 pixel.  When the heightScale is > 1, then we know we need to draw
+							//multiple pixels.  The line segment type is also needed to do this properly.
+							LineSegment seg = getSegType(matrix, widthPos, heightPos);
+							setTNDendroImageValue(image, intendedDendroWidth-x, y, false, (int)Math.round(heightScale), seg);							
+						}
+					}
+				}
+		        
+		    } catch (Exception ex) {
+				System.out.println("Exception in HeatmapDataGenerator.createTnRowDendroImg: " + ex.toString());  
+		        ex.printStackTrace();
 		    }
 			return image;
-		}	
-
-		/*******************************************************************
-		 * METHOD: getIntendedSize
-		 *
-		 * This method creates a determines the optimal size for the 
-		 * dendro image being created based upon the data matrix and
-		 * scaling factors.
-		 ******************************************************************/
-	 	private static int getIntendedSize(Float scaleFactor, Float sampleFactor, int dendWidth, int wFactor) throws Exception {
-			int intendedSize = 0;
-			int scaleInt = new Float(Math.round(scaleFactor)).intValue();
-			if (scaleFactor >= 2) {
-				intendedSize = dendWidth/scaleInt;
-			} else if (scaleFactor < .75) {
-				intendedSize = dendWidth * sampleFactor.intValue();
-			} else {
-				intendedSize = dendWidth/wFactor;
-			}
-			if ((intendedSize%2)!=0) intendedSize++;
-			return intendedSize;
-		}
-
-		/*******************************************************************
-		 * METHOD: drawTnDendroImageLines
-		 *
-		 * This method draws dendrogram lines on a BufferedImage and is 
-		 * configurable for drawing both Row and Column lines.  An image that
-		 * larger than the intended destination image is down-scaled to fit that
-		 * size. This is  designed to draw the dendrogram in a compressed size 
-		 * to fit on  a Thumbnail image.
-		 ******************************************************************/
-		private static void drawTnDendroImageLines(BufferedImage image, int[][] dendroMatrix, int wFactor, int hFactor, int dendroHeight, String type) throws Exception {
-	       	//Draw lines on the image
-	       	for (int i = 0; i < dendroMatrix.length; i++) {
-	    		int[] dendroRow = dendroMatrix[i];
-	    		for (int j=0; j < dendroRow.length; j++) {
-	    			int curVal = dendroRow[j];
-	    			if (curVal == 1) {
-	    				int xVal = new Float(Math.round(j/wFactor)).intValue();
-	    				int yVal = new Float(dendroHeight -(Math.round(i/hFactor))).intValue();
-	    				if (yVal != dendroHeight) {
-		    				if (type.equals(COL)) {
-		    					setDendroImageValue(image, xVal, yVal);
-		    				} else {
-		    					setDendroImageValue(image, yVal, xVal);
-		    				}
-	     				}
-	    			}
-	    		}
-	    	} 
-		}
-
-		/*******************************************************************
-		 * METHOD: drawTnDendroImageLinesUpScale
-		 *
-		 * This method draws dendrogram lines on a BufferedImage and is 
-		 * configurable for drawing both Row and Column lines.  An image that
-		 * smaller than the intended destination image is up-scaled to fit that
-		 * size. This is  designed to draw the dendrogram in a compressed size 
-		 * to fit on  a Thumbnail image.
-		 ******************************************************************/
-		private static void drawTnDendroImageLinesUpScale(BufferedImage image, int[][] dendroMatrix, int dendroHeight, int hFactor, Float sampleFactor, String type) throws Exception {
-	       	//Draw lines on the image
-			boolean lastWasSelected = false;
-	        for (int i = 0; i < dendroMatrix.length; i++) {
-	    		int[] dendroRow = dendroMatrix[i];
-	    		int jPos = 0;
-				int yVal = new Float(dendroHeight -(Math.round(i/hFactor))).intValue();
-	    		for (int j=0; j < dendroRow.length; j++) {
-	    			int sampleVal = dendroRow[j];
-	    			if (sampleVal == 1) {
-	    				if (lastWasSelected) {
-	    					//back up 1/2 a position and draw for 1 full position
-	    					jPos -= sampleFactor/2;
-	    					for (int k = 0; k < sampleFactor; k++) {
-	    	    				if (yVal != dendroHeight) {
-		        					if (type.equals(COL)) {
-		        						setDendroImageValue(image, jPos, yVal);
-		        					} else {
-		        						setDendroImageValue(image, yVal, jPos);
-		        					}
-		    						jPos++;
-	    	    				}
-	    					}
-	    					if (type.equals(COL)) {
-	    						setDendroImageValue(image, jPos, yVal);
-	    					} else {
-	    						setDendroImageValue(image, yVal, jPos);
-	    					}
-	    					jPos += sampleFactor/2;
-	    				} else {
-	    					//draw one dot in the middle of one full position
-		    				jPos += sampleFactor/2;
-		    				if (yVal != dendroHeight) {
-		   					    if (type.equals(COL)) {
-		    						setDendroImageValue(image, jPos, yVal); //Draw
-		    					} else {
-		    						setDendroImageValue(image, yVal, jPos);
-		    					}
-		    				}
-		    				jPos += sampleFactor/2;
-	    				}
-	    				lastWasSelected = true;
-	    			} else {
-	    				//skip one full position
-	    				lastWasSelected = false;
-	    				jPos += sampleFactor;
-	    			}
-	    		}
-	   		} 
-		}
-	
+		}		
 }

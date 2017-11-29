@@ -2,28 +2,9 @@
 /**
  *  */
 
-::selection {
-    color: none;
-    background: none;
-}
-
-p {  
-  margin-left: 1.0em;  
-  margin-right: 1.0em;  
-}  
-
-body, html {
-    font-family: sans-serif;
-    font-family: arial;  
-    font-size: 100%;  
-}
-
-select {
-	border-width:1px;
-}
-
 div.mdaServiceHeader
 {
+	position: relative;
 	display: inline-flex;
 	float: none;
 	width: 100%;
@@ -32,7 +13,7 @@ div.mdaServiceHeader
 	margin: 2px 0px 4px 0px;
 	background-color: white;
 	border-bottom: 4px solid #da0505;
-	z-index: -1;
+	font-family: sans-serif;
 }
 
 div.mdaServiceHeaderLogo
@@ -67,7 +48,6 @@ div.mdaServiceHeaderLogo img
 #detSizer{
 	height: 5px;
 	width: 5px;
-	/* margin-right:3px; */
 	margin-bottom:-10px;
 	bottom:17%;
 	right:8%;
@@ -75,16 +55,13 @@ div.mdaServiceHeaderLogo img
 	display:inline-block;
 	background: #666666;
 	cursor: nwse-resize;
-	/* float:right; */
 }
 
 #summary_chm {
-    height:auto;
     min-height: 50px;
     max-height: 100%;
     width:48%;
     min-width: 100px;
-    /* max-width: 80%; */
     vertical-align:top;
     margin-left: 3px;
     display:inline-block;
@@ -93,13 +70,9 @@ div.mdaServiceHeaderLogo img
 
 #summary_canvas {
 	position:absolute;
-    /* height:68.3%; */
-    /* width:78%; */
 	zIndex:1;
 	image-rendering: pixelated;
 	image-rendering: -moz-crisp-edges;
-	/* float:right;
-	margin-right:2%; */
 }
 
 #summary_box_canvas {
@@ -110,20 +83,6 @@ div.mdaServiceHeaderLogo img
 #detail_box_canvas {
 	position:absolute;
 	pointer-events: none;
-}
-
-
-
-#column_dendro_canvas{
-	position:absolute;
-	/* float:right; */
-	/* margin-right:2%; */
-}
-
-
-#row_dendro_canvas{
-	position: absolute;
-	/* left:4%; */
 }
 
 .selection_canvas{
@@ -145,7 +104,6 @@ div.mdaServiceHeaderLogo img
     min-height: 50px;
     max-height: 100%;
     min-width: 100px;
-    /* max-width: 90%; */
     vertical-align:top;
     display:inline-block;
 }
@@ -153,9 +111,10 @@ div.mdaServiceHeaderLogo img
 #detail_canvas {
 	position:absolute;
 	height:82%;
- /*   width:90%; */
 	zIndex:1;
 	outline: none;
+	image-rendering: pixelated;
+	image-rendering: -moz-crisp-edges;
 }
 
 #detail_buttons {
@@ -239,13 +198,8 @@ div.mdaServiceHeaderLogo img
     top: -8px;
 }
 
-table {
-    width: 100%;
-    max-height: 500px;
-    border-spacing: 3px;
-}
-
-td {
+.chmTblRow {
+	display: 'none';
     height: 0px;
 	padding: 0px;
     font-size: 80% !important;
@@ -266,6 +220,27 @@ td {
     height: auto;
     width: auto;
     white-space: nowrap;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+.topItems{
+	position: absolute;
+	display:inline-table;
+	font-size: 8;
+	margin: 1px;
+}
+
+.classLegend{
+	position: absolute;
+	display:block;
+	font-size: 6;
+	margin: 0px;
 }
 
 #searchError{
@@ -279,7 +254,6 @@ td {
     position: absolute;
     width: 180px;
     z-index:10;
-    /* height: 50px; */
     text-align: center;
     box-shadow: 5px 5px 5px #777777;
 }
@@ -385,8 +359,9 @@ th.breakpointContainer {
 	overflow: none;
 	position: fixed;
 	top: 0;
-	right: 0;
 	background-color: #CBDBF6; 
+	border-left: 1px solid black; 
+	border-right: 1px solid black; 
 }
 
 #prefTabButtons {
@@ -453,7 +428,6 @@ th.breakpointContainer {
 }
 
 .prefSubPanel{
-	width: inherit;
 	vertical-align: top;
 	height: 99%;
 	background-color: #CBDBF6; 
