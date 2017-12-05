@@ -34,7 +34,6 @@ import org.json.simple.parser.ParseException;
 
 import static mda.ngchm.datagenerator.ImportConstants.*;
 
-
 public class ImportData { 
 	public String chmName;
 	public String chmDescription;
@@ -150,7 +149,11 @@ public class ImportData {
        		if (readonly != null) {
        			readOnly = readonly;
        		}
-            chmName = (String) jsonObject.get(CHM_NAME);
+       		String mapname = (String) jsonObject.get(CHM_NAME);
+       		//Cleanup slashes in mapname and replace with underscore char
+       		mapname = mapname.replace("/","_");
+       		mapname = mapname.replace("\\","_");
+            chmName = mapname;
             chmDescription = (String) jsonObject.get(CHM_DESC);
             JSONArray tags = (JSONArray) jsonObject.get(CHM_ATTRS);
             for (int i=0; i < tags.size();i++) {
@@ -181,7 +184,7 @@ public class ImportData {
             for (int i=0; i < classfiles.size();i++) {
            		JSONObject jo = (JSONObject) classfiles.get(i);
            		String pos = (String) jo.get(POSITION);
-           		String id;
+           		String id = EMPTY;
         		if (pos.equals("row")) {
         			rowCtr++;
             		id = ROW_CLASS+(rowCtr);

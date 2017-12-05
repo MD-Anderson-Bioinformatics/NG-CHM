@@ -45,6 +45,7 @@ ENV STANDALONE=/artifacts/standalone
 RUN mkdir -p ${STANDALONE} &&\
     cd /NGCHM &&\
     ant -f build_ngchmApp.xml &&\
+    cp ngchmWidget-min.js ${STANDALONE} &&\
     cp WebContent/ngChmApp.html ${STANDALONE}
 
 # Final stage: copy artifacts from previous stages into a minimal layer

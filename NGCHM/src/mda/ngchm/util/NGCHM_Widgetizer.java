@@ -29,34 +29,6 @@ public class NGCHM_Widgetizer {
           return encodedfile;
     }
      
-    //Get the contents of a javascript file and write it to the combined file, changing
-    //any images into encoded strings.
-    private static void writeJSFile(String webDir, String jsFile, BufferedWriter combinedWidget) throws Exception {
-		BufferedReader br = new BufferedReader(new FileReader(webDir + "/" + jsFile ));
-		String line = br.readLine();
-		while (line != null) {
-			if (line.contains("images/")) {
-				String toks[] = line.split(" ");
-				for (String tok : toks) {
-					if (tok.contains("images/")) {
-						int start = tok.indexOf("images/");
-						int stop = tok.indexOf(".png") + 4;
-						combinedWidget.write(tok.substring(0,start));
-						combinedWidget.write(encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
-						combinedWidget.write(tok.substring(stop) + " ");
-					} else {
-						combinedWidget.write(tok + " ");
-					}
-				}
-				combinedWidget.write("\n");
-			} else {
-				combinedWidget.write(line + "\n");
-			}
-			line = br.readLine();
-		} 	
-		br.close();	
-    }
-    
     public static String styleToString(String webDir, String cssFile) throws Exception {
     	StringBuffer strBuff = new StringBuffer();
     	
@@ -179,7 +151,7 @@ public class NGCHM_Widgetizer {
     		bw.write(scriptedLines.toString());
     		//hide split screen and save buttons for "widget mode"
        		bw.write("document.getElementById('split_btn').style.display = 'none';\n");
-       		bw.write("document.getElementById('save_btn').style.display = 'none';\n");
+       		//bw.write("document.getElementById('save_btn').style.display = 'none';\n");
     		bw.close();
     		br.close();
     		System.out.println("END NGCHM Widgetizer  " + new Date());

@@ -73,8 +73,8 @@ NgChm.DET.initDetailDisplay = function () {
  		document.getElementById('detail_chm').style.width = '100%';
  		document.getElementById('flicks').style.display = '';
  		document.getElementById('detail_buttons').style.display = '';
- 		document.getElementById('split_btn').src= NgChm.staticPath + "images/join.png";
- 		document.getElementById('gear_btn').src= NgChm.staticPath + "images/gearDis.png";
+ 		document.getElementById('split_btn').src= "images/join.png";
+ 		document.getElementById('gear_btn').src= "images/gearDis.png";
  		document.getElementById('pdf_btn').style.display = 'none';
 	}
 	if (NgChm.heatMap.isInitialized() > 0) {
@@ -1010,15 +1010,15 @@ NgChm.DET.setButtons = function () {
 	var full = document.getElementById('full_btn');
 	var ribbonH = document.getElementById('ribbonH_btn');
 	var ribbonV = document.getElementById('ribbonV_btn');
-	full.src= NgChm.staticPath+ "images/full.png";
-	ribbonH.src= NgChm.staticPath + "images/ribbonH.png";
-	ribbonV.src= NgChm.staticPath + "images/ribbonV.png";
+	full.src= "images/full.png";
+	ribbonH.src= "images/ribbonH.png";
+	ribbonV.src= "images/ribbonV.png";
 	if (NgChm.SEL.mode=='RIBBONV')
-		ribbonV.src= NgChm.staticPath + "images/ribbonV_selected.png";
+		ribbonV.src= "images/ribbonV_selected.png";
 	else if (NgChm.SEL.mode == "RIBBONH")
-		ribbonH.src= NgChm.staticPath + "images/ribbonH_selected.png";
+		ribbonH.src= "images/ribbonH_selected.png";
 	else
-		full.src= NgChm.staticPath + "images/full_selected.png";	
+		full.src= "images/full_selected.png";	
 }
 
 NgChm.DET.setDetCanvasBoxSize = function () {
@@ -1037,7 +1037,7 @@ NgChm.DET.detailSplit = function () {
 		if (!NgChm.SEL.isSub) {
 			//Set flick button to top selection for later screen join
 			var flickBtn = document.getElementById("flick_btn");
-			flickBtn.setAttribute('src', NgChm.staticPath + 'images/toggleUp.png');
+			flickBtn.setAttribute('src', 'images/toggleUp.png');
 			//Write current selection settings to the local storage
 			NgChm.SEL.hasSub=true;
 			NgChm.DET.clearLabels();

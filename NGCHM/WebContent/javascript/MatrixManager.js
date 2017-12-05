@@ -404,9 +404,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			NgChm.UHM.zipSaveNotification(false);
 		} else {
 			zipSaveMapProperties();
-			if (NgChm.staticPath === "") {
-				NgChm.UHM.zipSaveNotification(false);
-			}
+			NgChm.UHM.zipSaveNotification(false);
 		}
 		NgChm.heatMap.setUnAppliedChanges(false);
 	}
@@ -418,18 +416,16 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (fileSrc !== NgChm.MMGR.FILE_SOURCE) {
 			success = webSaveMapProperties(JSON.stringify(mapConfig)); 
 		} else {
-			if (NgChm.staticPath === "") {
-				zipSaveMapProperties();
-				NgChm.UHM.zipSaveNotification(true);
-			}
+			zipSaveMapProperties();
+			NgChm.UHM.zipSaveNotification(true);
 		}
 		return success;
 	}
 
 	// Call download of NGCHM File Viewer application zip
 	this.downloadFileApplication = function () { 
-		if (NgChm.staticPath != "") {
-			window.open(NgChm.staticPath + "ngchmApp.zip");
+		if (typeof NgChm.galaxy !== 'undefined') {
+			window.open("/plugins/visualizations/mda_heatmap_viz/static/ngChmApp.zip");
 		} else {
 			zipAppFileMode();
 		}	
@@ -682,7 +678,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		var success = "";
 		var name = "";
 		if (fileSrc === NgChm.MMGR.FILE_SOURCE){
-			name += NgChm.CM.webServerUrl;
+			name += NgChm.CM.viewerAppUrl;
 		}
 		name += "ZipAppDownload"; 
 		callServlet("POST", name, false);
@@ -926,7 +922,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	//Specify which file to get and what function to call when it arrives.
 	function fileModeFetchVersion() {
 		var req = new XMLHttpRequest();
-		req.open("GET", NgChm.CM.webServerUrl+"GetSoftwareVersion", true);
+		req.open("GET", NgChm.CM.versionCheckUrl+NgChm.CM.version , true);
 		req.onreadystatechange = function () {
 			if (req.readyState == req.DONE) {
 		        if (req.status != 200) {
@@ -934,7 +930,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		            console.log('Failed to get software version: ' + req.status);
 		        } else {
 		        	var latestVersion = req.response;
-		        	if ((latestVersion !== NgChm.CM.version) && (NgChm.staticPath === "")) {
+		        	if ((latestVersion !== NgChm.CM.version) && (typeof NgChm.galaxy === 'undefined')) {
 		        		NgChm.UHM.viewerAppVersionExpiredNotification(NgChm.CM.version, latestVersion);   
 		        	}
 			    } 

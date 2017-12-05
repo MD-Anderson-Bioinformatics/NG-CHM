@@ -115,12 +115,12 @@ public static boolean debugOutput = false;
 			if (isTree > 0) {
 				String[] cutValues = rowCutsVal.split("t");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"tree_cuts\": \"" + cutValues[0] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"10\",");
+				writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
 			} else if (!rowCutsVal.equals("None") && !rowCutsVal.equals("0")) {
 				String[] toks = rowCutsVal.split(",");
 				boolean cutsValid = true;
 				for (int j=0;j<toks.length;j++) {
-					String tokVal = toks[j];
+					String tokVal = toks[j].trim();
 					if (!MatrixValidator.isInteger(tokVal)) {
 						cutsValid = false;
 						System.out.println("Warning: Row Gap Locations parameter invalid and skipped. Must contain only a comma-delimited string of integer values.");
@@ -129,7 +129,7 @@ public static boolean debugOutput = false;
 				}
 				if (cutsValid) {
 					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_locations\": [" + rowCutsVal + "],");
-					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"10\",");
+					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
 				}
 			}
 			String rowTopItems = args[14].substring(2, args[14].length());
@@ -166,12 +166,12 @@ public static boolean debugOutput = false;
 			if (isTree > 0) {
 				String[] cutValues = colCutsVal.split("t");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"tree_cuts\": \"" + cutValues[0] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"10\",");
+				writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
 			} else if (!colCutsVal.equals("None") && !colCutsVal.equals("0") && !colCutsVal.equals(EMPTY)) {
 				String[] toks = colCutsVal.split(",");
 				boolean cutsValid = true;
 				for (int j=0;j<toks.length;j++) {
-					String tokVal = toks[j];
+					String tokVal = toks[j].trim();
 					if (!MatrixValidator.isInteger(tokVal)) {
 						cutsValid = false;
 						System.out.println("Warning: Column Gap Locations parameter invalid and skipped. Must contain only a comma-delimited string of integer values.");
@@ -181,7 +181,7 @@ public static boolean debugOutput = false;
 				if (cutsValid) {
 					System.out.println("INSIDE CUTS VALID");
 					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_locations\": [" + colCutsVal + "],");
-					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"10\",");
+					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
 				}
 			}
 			String colTopItems = args[21].substring(2, args[21].length());

@@ -49,7 +49,7 @@ public class NGCHM_Minimizer {
 				}
 				combinedWidget.write("\n");
 			} else {
-				if (line.contains("script.src = NgChm.staticPath + 'javascript/custom/custom.js'")) {
+				if (line.contains("script.src = 'javascript/custom/custom.js'")) {
 					line = br.readLine();
 					combinedWidget.write(line + "\n");
 					writeCustomJS(webDir, combinedWidget);

@@ -75,7 +75,7 @@ public class NGCHM_AppGenerator {
     				} else {
          				String jsLine = br2.readLine();
          				bw.write("<script>\n");
-         				bw.write("var isApp=true;\n");
+         				bw.write("var isNgChmAppViewer=true;\n");
          				while (jsLine != null) {
              				bw.write(jsLine+"\n");
              				jsLine = br2.readLine();

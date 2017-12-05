@@ -444,7 +444,7 @@ NgChm.PDF.getPDF = function() {
 	// makes the MDAnderson logo, the HM name, and the red divider line at the top of each page
 	function createHeader(theFont, contText) {
 		//If standard viewer version OR file viewer version show MDA logo 
-		if ((NgChm.PDF.isWidget === false) || (isApp === true)) {
+		if ((NgChm.PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined')) {
 			doc.addImage(NgChm.PDF.mdaLogo, 'PNG',5,5,header.clientWidth,header.clientHeight);
 			// Center Heat Map name in header whitespace to left of logo and step down the font if excessively long.
 			if (NgChm.heatMap.getMapInformation().name.length > 60) {
@@ -464,7 +464,7 @@ NgChm.PDF.getPDF = function() {
 				doc.text(10, paddingTop, contText, null);
 			}
 		} else {
-			// If widgetized viewer exclude MDA logo and show compressed header
+			// If widgetized viewer exclude MDA logo and show compressed hear
 			doc.setFontSize(8);
 			doc.setFontType("bold");
 			doc.text(10,10,"NG-CHM Heat Map: "+ NgChm.heatMap.getMapInformation().name,null);

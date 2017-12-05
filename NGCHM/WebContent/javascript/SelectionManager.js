@@ -608,11 +608,11 @@ NgChm.SEL.flickChange = function(fromList) {
 	var flickDrop2 = document.getElementById("flick2");
 	if (typeof fromList === 'undefined') {
 		if (flickBtn.name === 'flickUp') {
-			flickBtn.setAttribute('src', NgChm.staticPath + 'images/toggleDown.png');
+			flickBtn.setAttribute('src', 'images/toggleDown.png');
 			flickBtn.name = 'flickDown';
 			NgChm.SEL.currentDl = flickDrop2.value;
 		} else {
-			flickBtn.setAttribute('src', NgChm.staticPath + 'images/toggleUp.png');
+			flickBtn.setAttribute('src', 'images/toggleUp.png');
 			flickBtn.name = 'flickUp';
 			NgChm.SEL.currentDl = flickDrop1.value;
 		}
@@ -622,11 +622,11 @@ NgChm.SEL.flickChange = function(fromList) {
 		} else if ((fromList === "flick2") && (flickBtn.name === 'flickDown')) {
 			NgChm.SEL.currentDl = document.getElementById(fromList).value;
 		} else if ((fromList === "toggle1") && (flickBtn.name === 'flickDown')) {
-			flickBtn.setAttribute('src', NgChm.staticPath + 'images/toggleUp.png');
+			flickBtn.setAttribute('src', 'images/toggleUp.png');
 			flickBtn.name = 'flickUp';
 			NgChm.SEL.currentDl = flickDrop1.value;
 		} else if ((fromList === "toggle2") && (flickBtn.name === 'flickUp')) {
-			flickBtn.setAttribute('src', NgChm.staticPath + 'images/toggleDown.png');
+			flickBtn.setAttribute('src', 'images/toggleDown.png');
 			flickBtn.name = 'flickDown';
 			NgChm.SEL.currentDl = flickDrop2.value;
 		} else {

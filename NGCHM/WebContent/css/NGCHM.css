@@ -57,6 +57,10 @@ div.mdaServiceHeaderLogo img
 	cursor: nwse-resize;
 }
 
+#row_dendro_canvas, #column_dendro_canvas{
+	position: absolute;
+}
+
 #summary_chm {
     min-height: 50px;
     max-height: 100%;

@@ -73,7 +73,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 
 	if (errorMsg !== null) {
 		var prefBtnsDiv = document.getElementById('prefActions');
-		prefBtnsDiv.innerHTML=errorMsg[2]+"<br/><br/><img id='prefApplyInactive_btn' src='" + NgChm.staticPath + "images/applyButtonInactive.png' style='display:none' align='top'/><img id='prefApply_btn' src='" + NgChm.staticPath + "images/applyButtonActive.png' alt='Apply changes' onclick='NgChm.UPM.prefsApplyButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefReset_btn' src='" + NgChm.staticPath + "images/reset.png' alt='Reset' onclick='NgChm.UPM.prefsResetButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;<img id='prefClose_btn' src='" + NgChm.staticPath + "images/prefClose.png' alt='Close' onclick='NgChm.UPM.prefsCancelButton();' align='top'/>";
+		prefBtnsDiv.innerHTML=errorMsg[2]+"<br/><br/><img id='prefApplyInactive_btn' src='images/applyButtonInactive.png' style='display:none' align='top'/><img id='prefApply_btn' src='images/applyButtonActive.png' alt='Apply changes' onclick='NgChm.UPM.prefsApplyButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefReset_btn' src='images/reset.png' alt='Reset' onclick='NgChm.UPM.prefsResetButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;<img id='prefClose_btn' src='images/prefClose.png' alt='Close' onclick='NgChm.UPM.prefsCancelButton();' align='top'/>";
 	} else {
 		//Create and populate row & col preferences DIV and add to parent DIV
 		var rowcolprefs = NgChm.UPM.setupRowColPrefs(e, prefprefs);
@@ -93,7 +93,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		
 		var prefBtnsDiv = document.createElement('div');
 		prefBtnsDiv.id='prefActions';
-		prefBtnsDiv.innerHTML="<img id='prefApplyInactive_btn' src='" + NgChm.staticPath + "images/applyButtonInactive.png' style='display:none' align='top'/><img id='prefApply_btn' src='" + NgChm.staticPath + "images/applyButtonActive.png' alt='Apply changes' onclick='NgChm.UPM.prefsApplyButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefReset_btn' src='" + NgChm.staticPath + "images/reset.png' alt='Reset' onclick='NgChm.UPM.prefsResetButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefClose_btn' src='" + NgChm.staticPath + "images/prefClose.png' alt='Close' onclick='NgChm.UPM.prefsCancelButton();' align='top'/>";
+		prefBtnsDiv.innerHTML="<img id='prefApplyInactive_btn' src='images/applyButtonInactive.png' style='display:none' align='top'/><img id='prefApply_btn' src='images/applyButtonActive.png' alt='Apply changes' onclick='NgChm.UPM.prefsApplyButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefReset_btn' src='images/reset.png' alt='Reset' onclick='NgChm.UPM.prefsResetButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefClose_btn' src='images/prefClose.png' alt='Close' onclick='NgChm.UPM.prefsCancelButton();' align='top'/>";
 		prefspanel.appendChild(prefBtnsDiv);
 	}
 	prefspanel.style.display= '';
@@ -148,7 +148,7 @@ NgChm.UPM.showRowsColsPrefs = function() {
 	NgChm.UPM.hideAllPrefs();
 	//Turn on layer prefs tab
 	var rowsColsBtn = document.getElementById("prefRowsCols_btn");
-	rowsColsBtn.setAttribute('src', NgChm.staticPath + 'images/rowsColsOn.png');
+	rowsColsBtn.setAttribute('src', 'images/rowsColsOn.png');
 	var rowsColsDiv = document.getElementById("rowsColsPrefs");
 	rowsColsDiv.style.display="block";
 }
@@ -163,7 +163,7 @@ NgChm.UPM.showLayerPrefs = function() {
 	NgChm.UPM.hideAllPrefs();
 	//Turn on layer prefs tab
 	var layerBtn = document.getElementById("prefLayer_btn");
-	layerBtn.setAttribute('src', NgChm.staticPath + 'images/heatMapColorsOn.png');
+	layerBtn.setAttribute('src', 'images/heatMapColorsOn.png');
 	var layerDiv = document.getElementById("layerPrefs");
 	layerDiv.style.display="block";
 	NgChm.UPM.showLayerBreak();
@@ -178,7 +178,7 @@ NgChm.UPM.showClassPrefs = function() {
 	NgChm.UPM.hideAllPrefs();
 	//Turn on classification prefs tab
 	var classBtn = document.getElementById("prefClass_btn");
-	classBtn.setAttribute('src', NgChm.staticPath + 'images/covariateBarsOn.png');
+	classBtn.setAttribute('src', 'images/covariateBarsOn.png');
 	var classDiv = document.getElementById("classPrefs");
 	classDiv.style.display="block";
 }
@@ -190,15 +190,15 @@ NgChm.UPM.showClassPrefs = function() {
  **********************************************************************************/
 NgChm.UPM.hideAllPrefs = function() {
 	var classBtn = document.getElementById("prefClass_btn");
-	classBtn.setAttribute('src', NgChm.staticPath + 'images/covariateBarsOff.png');
+	classBtn.setAttribute('src', 'images/covariateBarsOff.png');
 	var classDiv = document.getElementById("classPrefs");
 	classDiv.style.display="none";
 	var layerBtn = document.getElementById("prefLayer_btn");
-	layerBtn.setAttribute('src', NgChm.staticPath + 'images/heatMapColorsOff.png');
+	layerBtn.setAttribute('src', 'images/heatMapColorsOff.png');
 	var layerDiv = document.getElementById("layerPrefs");
 	layerDiv.style.display="none";
 	var rowsColsBtn = document.getElementById("prefRowsCols_btn");
-	rowsColsBtn.setAttribute('src', NgChm.staticPath + 'images/rowsColsOff.png');
+	rowsColsBtn.setAttribute('src', 'images/rowsColsOff.png');
 	var rowsColsDiv = document.getElementById("rowsColsPrefs");
 	rowsColsDiv.style.display="none";
 }
@@ -236,12 +236,12 @@ NgChm.UPM.prefsMoveButton = function() {
 	var prefspanel = document.getElementById("prefsPanel");
 	var moveBtn = document.getElementById("prefsMove_btn");
 	if (moveBtn.name === 'moveLeft') {
-		moveBtn.setAttribute('src', NgChm.staticPath + 'images/prefsRight.png');
+		moveBtn.setAttribute('src', 'images/prefsRight.png');
 		moveBtn.name = 'moveRight';
 		prefspanel.style.right = "";
 		prefspanel.style.left = 0;
 	} else {
-		moveBtn.setAttribute('src', NgChm.staticPath + 'images/prefsLeft.png');
+		moveBtn.setAttribute('src', 'images/prefsLeft.png');
 		moveBtn.name = 'moveLeft';
 		prefspanel.style.right = 0;
 		prefspanel.style.left = "";
@@ -859,8 +859,8 @@ NgChm.UPM.setupLayerBreaks = function(e, mapName) {
 		var colorId = mapName+"_color"+j;
 		var breakPtInput = "&nbsp;&nbsp;<input name='"+threshId+"_breakPref' id='"+threshId+"_breakPref' value='"+threshold+"' maxlength='8' size='8'>";
 		var colorInput = "<input class='spectrumColor' type='color' name='"+colorId+"_colorPref' id='"+colorId+"_colorPref' value='"+color+"'>"; 
-		var addButton = "<img id='"+threshId+"_breakAdd' src='" + NgChm.staticPath + "images/plusButton.png' alt='Add Breakpoint' onclick='NgChm.UPM.addLayerBreak("+j+",\""+mapName+"\");' align='top'/>"
-		var delButton = "<img id='"+threshId+"_breakDel' src='" + NgChm.staticPath + "images/minusButton.png' alt='Remove Breakpoint' onclick='NgChm.UPM.deleteLayerBreak("+j+",\""+mapName+"\");' align='top'/>"
+		var addButton = "<img id='"+threshId+"_breakAdd' src='images/plusButton.png' alt='Add Breakpoint' onclick='NgChm.UPM.addLayerBreak("+j+",\""+mapName+"\");' align='top'/>"
+		var delButton = "<img id='"+threshId+"_breakDel' src='images/minusButton.png' alt='Remove Breakpoint' onclick='NgChm.UPM.deleteLayerBreak("+j+",\""+mapName+"\");' align='top'/>"
 		if (j === 0) {
 			NgChm.UHM.setTableRow(prefContents, [breakPtInput, colorInput, addButton]);
 		} else {
@@ -1175,7 +1175,7 @@ NgChm.UPM.setupClassPrefs = function(e, prefprefs) {
 	var prefContents = document.createElement("TABLE");
 	NgChm.UHM.addBlankRow(prefContents);
 	var filterInput = "<input name='all_searchPref' id='all_searchPref'>";
-	var filterButton = "<img id='all_searchPref_btn' src='" + NgChm.staticPath + "images/filterClassButton.png' alt='Filter Covariates' onclick='NgChm.UPM.filterClassPrefs(true);' align='top'/>";
+	var filterButton = "<img id='all_searchPref_btn' src='images/filterClassButton.png' alt='Filter Covariates' onclick='NgChm.UPM.filterClassPrefs(true);' align='top'/>";
 	var searchClasses = filterInput+"&nbsp;&nbsp;"+filterButton+"&emsp;&emsp;";
 	NgChm.UHM.setTableRow(prefContents,[searchClasses], 4, 'right');
 	NgChm.UHM.addBlankRow(prefContents,2);
@@ -1481,11 +1481,11 @@ NgChm.UPM.filterClassPrefs = function(filterOn) {
 	if (filterOn) {
 		if (searchPrefVal != "") {
 			NgChm.UPM.filterVal = searchPrefVal;
-			filterButton.src = NgChm.staticPath + "images/removeFilterClassButton.png";
+			filterButton.src = "images/removeFilterClassButton.png";
 			filterButton.onclick=function (){NgChm.UPM.filterClassPrefs(false);};
 		}
 	} else {
-		filterButton.src = NgChm.staticPath + "images/filterClassButton.png";
+		filterButton.src = "images/filterClassButton.png";
 		filterButton.onclick=function (){NgChm.UPM.filterClassPrefs(true);};
 		searchPrefSelect.value = "";
 		NgChm.UPM.filterVal = null;

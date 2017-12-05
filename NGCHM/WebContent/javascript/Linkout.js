@@ -315,7 +315,7 @@ NgChm.LNK.createLabelMenu = function(axis){
 	topDiv.classList.add("labelMenuCaption");
 	topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Classification") + ' Label Menu:' : axis + ' Menu';
 	var closeMenu = document.createElement("IMG");
-	closeMenu.src = NgChm.staticPath +"images/closeButton.png";
+	closeMenu.src = "images/closeButton.png";
 	closeMenu.classList.add('labelMenuClose')
 	closeMenu.addEventListener('click', function(){NgChm.LNK.labelHelpClose(axis)},false);
 	var table = document.createElement("TABLE");

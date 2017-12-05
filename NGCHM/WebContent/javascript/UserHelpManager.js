@@ -19,7 +19,7 @@ NgChm.UHM.userHelpOpen = function() {
     var orgW = window.innerWidth+window.pageXOffset;
     var orgH = window.innerHeight+window.pageYOffset;
     var helptext = NgChm.UHM.getDivElement("helptext");    
-    helptext.innerHTML=("<a href='javascript:void(pasteHelpContents())' align='left'>Copy To Clipboard</a><img id='redX_btn' src='" + NgChm.staticPath + "images/redX.png' alt='Close Help' onclick='NgChm.UHM.userHelpClose();' align='right'>");
+    helptext.innerHTML=("<a href='javascript:void(pasteHelpContents())' align='left'>Copy To Clipboard</a><img id='redX_btn' src='images/redX.png' alt='Close Help' onclick='NgChm.UHM.userHelpClose();' align='right'>");
     helptext.style.position = "absolute";
     document.getElementsByTagName('body')[0].appendChild(helptext);
     var rowElementSize = NgChm.DET.dataBoxWidth * NgChm.DET.canvas.clientWidth/NgChm.DET.canvas.width; // px/Glpoint
@@ -455,8 +455,8 @@ NgChm.UHM.saveHeatMapChanges = function() {
 	NgChm.UHM.setMessageBoxHeader("Save Heat Map");
 	//Have changes been made?
 	if (NgChm.heatMap.getUnAppliedChanges()) {
-		if ((NgChm.heatMap.isFileMode()) || (NgChm.staticPath !== "")) {
-			if (NgChm.staticPath !== "") {
+		if ((NgChm.heatMap.isFileMode()) || (typeof NgChm.galaxy !== "undefined")) {
+			if (typeof NgChm.galaxy !== "undefined") {
 				text = "<br>Changes to the heatmap cannot be saved in the Galaxy history.  Your modifications to the heatmap may be written to a downloaded NG-CHM file.";
 			} else {
 				text = "<br>You have elected to save changes made to this NG-CHM heat map file.<br><br>You may save them to a new NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
@@ -480,8 +480,8 @@ NgChm.UHM.saveHeatMapChanges = function() {
 			}
 		}
 	} else {
-		if ((NgChm.MMGR.source!== NgChm.MMGR.WEB_SOURCE) || (NgChm.staticPath !== "")) {
-			if (NgChm.staticPath !== "") {
+		if ((NgChm.MMGR.source!== NgChm.MMGR.WEB_SOURCE) || (typeof NgChm.galaxy !== "undefined")) {
+			if (typeof NgChm.galaxy !== "undefined") {
 				text = "<br>There are no changes to save to this Galaxy heat map file at this time.<br><br>";
 			} else {
 				text = "<br>There are no changes to save to this NG-CHM heat map file at this time.<br><br>";
@@ -687,7 +687,7 @@ NgChm.UHM.setMessageBoxText = function(text) {
 NgChm.UHM.setMessageBoxButton = function(buttonId, imageSrc, altText, onClick) {
 	var buttonImg = document.getElementById('msgBoxBtnImg_'+buttonId);
 	buttonImg.style.display = '';
-	buttonImg.src = NgChm.staticPath + imageSrc;
+	buttonImg.src = imageSrc;
 	buttonImg.alt = altText;
 	var fn = eval("(function() {"+onClick+"();})");
 	buttonImg.onclick=fn;
@@ -702,12 +702,7 @@ NgChm.UHM.openHelp = function() {
 		NgChm.UHM.widgetHelp();
 	} else {
 		var url = location.origin+location.pathname;
-		if (NgChm.staticPath == ""){
-			window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
-		} else {
-			url = url.replace(location.pathname,NgChm.staticPath);
-			window.open(url+"chmHelp.html",'_blank');
-		}
+		window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
 	}
 }
 
