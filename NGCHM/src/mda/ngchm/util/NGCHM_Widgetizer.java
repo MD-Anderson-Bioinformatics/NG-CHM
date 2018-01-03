@@ -151,7 +151,7 @@ public class NGCHM_Widgetizer {
     		bw.write(scriptedLines.toString());
     		//hide split screen and save buttons for "widget mode"
        		bw.write("document.getElementById('split_btn').style.display = 'none';\n");
-       		//bw.write("document.getElementById('save_btn').style.display = 'none';\n");
+       		bw.write("document.getElementById('save_btn').style.display = 'none';\n");
     		bw.close();
     		br.close();
     		System.out.println("END NGCHM Widgetizer  " + new Date());

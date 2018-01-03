@@ -799,7 +799,9 @@ NgChm.DET.detailHRibbon = function () {
 		
 	NgChm.SEL.mode='RIBBONH';
 	NgChm.DET.setButtons();
-	
+	if (previousMode=='FULL_MAP') {
+		NgChm.DET.setDetailDataHeight(NgChm.DET.zoomBoxSizes[0]);
+	}
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
 	if (NgChm.SEL.selectedStart == null || NgChm.SEL.selectedStart == 0) {
@@ -854,6 +856,9 @@ NgChm.DET.detailVRibbon = function () {
 	
 	NgChm.SEL.mode='RIBBONV';
 	NgChm.DET.setButtons();
+	if (previousMode=='FULL_MAP') {
+		NgChm.DET.setDetailDataWidth(NgChm.DET.zoomBoxSizes[0]);
+	}
 
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
@@ -1906,6 +1911,8 @@ NgChm.DET.detailDrawColClassBars = function () {
 			if (((NgChm.SEL.mode == 'RIBBONH') || (NgChm.SEL.mode == 'FULL_MAP')) &&  (typeof colClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps - if we are showing the whole row or a large part of it, use the summary classification values.
 				classBarValues = colClassBarData[key].svalues;
+				var rhRate = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
+			    start = Math.ceil(start/rhRate);
 			}
 			if (currentClassBar.bar_type === 'color_plot') {
 				pos = NgChm.DET.drawColorPlotColClassBar(pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap);
@@ -2185,6 +2192,8 @@ NgChm.DET.detailDrawRowClassBars = function () {
 			if (((NgChm.SEL.mode == 'RIBBONV') || (NgChm.SEL.mode == 'FULL_MAP')) &&  (typeof rowClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps, if we are showing the whole column, switch to the summary classificaiton values
 				classBarValues = rowClassBarData[key].svalues;
+				var rvRate = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
+			    start = Math.ceil(start/rvRate);
 			}
 			var pos = offset; // move past the dendro and the other class bars...
 			if (currentClassBar.bar_type === 'color_plot') {

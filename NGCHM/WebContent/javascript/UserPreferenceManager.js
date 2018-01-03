@@ -72,8 +72,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	var prefprefs = document.getElementById("prefPrefs");
 
 	if (errorMsg !== null) {
-		var prefBtnsDiv = document.getElementById('prefActions');
-		prefBtnsDiv.innerHTML=errorMsg[2]+"<br/><br/><img id='prefApplyInactive_btn' src='images/applyButtonInactive.png' style='display:none' align='top'/><img id='prefApply_btn' src='images/applyButtonActive.png' alt='Apply changes' onclick='NgChm.UPM.prefsApplyButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefReset_btn' src='images/reset.png' alt='Reset' onclick='NgChm.UPM.prefsResetButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;<img id='prefClose_btn' src='images/prefClose.png' alt='Close' onclick='NgChm.UPM.prefsCancelButton();' align='top'/>";
+		NgChm.UPM.setMessage(errorMsg[2]+"<br/><br/>");
 	} else {
 		//Create and populate row & col preferences DIV and add to parent DIV
 		var rowcolprefs = NgChm.UPM.setupRowColPrefs(e, prefprefs);
@@ -93,8 +92,8 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		
 		var prefBtnsDiv = document.createElement('div');
 		prefBtnsDiv.id='prefActions';
-		prefBtnsDiv.innerHTML="<img id='prefApplyInactive_btn' src='images/applyButtonInactive.png' style='display:none' align='top'/><img id='prefApply_btn' src='images/applyButtonActive.png' alt='Apply changes' onclick='NgChm.UPM.prefsApplyButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefReset_btn' src='images/reset.png' alt='Reset' onclick='NgChm.UPM.prefsResetButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefClose_btn' src='images/prefClose.png' alt='Close' onclick='NgChm.UPM.prefsCancelButton();' align='top'/>";
 		prefspanel.appendChild(prefBtnsDiv);
+		NgChm.UPM.setMessage("");
 	}
 	prefspanel.style.display= '';
 	NgChm.UPM.prefsResize();
@@ -121,7 +120,16 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	}
 	
 	errorMsg = null;
+}
 
+/**********************************************************************************
+ * FUNCTION - setMessage: The purpose of this function is to set the message at 
+ * the bottom of the preferences panel when it is drawn or re-drawn.
+ **********************************************************************************/
+NgChm.UPM.setMessage = function(errorMsgTxt) {
+	var prefBtnsDiv = document.getElementById('prefActions');
+	var buttonsTxt = "<img id='prefApplyInactive_btn' src='images/applyButtonInactive.png' style='display:none' align='top'/><img id='prefApply_btn' src='images/applyButtonActive.png' alt='Apply changes' onclick='NgChm.UPM.prefsApplyButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefReset_btn' src='images/reset.png' alt='Reset' onclick='NgChm.UPM.prefsResetButton();' align='top'/>&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;<img id='prefClose_btn' src='images/prefClose.png' alt='Close' onclick='NgChm.UPM.prefsCancelButton();' align='top'/>"
+	prefBtnsDiv.innerHTML=errorMsgTxt+buttonsTxt;
 }
 
 /**********************************************************************************
@@ -343,6 +351,7 @@ NgChm.UPM.prefsSuccess = function() {
 	NgChm.DET.drawDetailHeatMap();
 	NgChm.SEL.callDetailDrawFunction(NgChm.SEL.mode);
 	NgChm.UPM.applyDone = true;
+	NgChm.UPM.setMessage("");
 }
 
 /**********************************************************************************
@@ -445,7 +454,7 @@ NgChm.UPM.prefsApply = function() {
 	NgChm.heatMap.getRowConfig().label_display_length = document.getElementById("rowLabelSizePref").value;
 	NgChm.heatMap.getRowConfig().label_display_method = document.getElementById("rowLabelAbbrevPref").value;  
 
-	// Apply Data Layer Preferences
+	// Apply Data Layer Preferences 
 	var dataLayers = NgChm.heatMap.getDataLayers();
 	for (var key in dataLayers){
 		var showGrid = document.getElementById(key+'_gridPref');
@@ -1851,12 +1860,16 @@ NgChm.UPM.getResetVals = function(){
 NgChm.UPM.prefsResetButton = function(){
 	var resetVal = JSON.parse(NgChm.UPM.resetVal);
 	// Reset the Row/Col panel items
-	document.getElementById("rowDendroShowPref").value = resetVal.rowDendroConfig.show;
-	document.getElementById("colDendroShowPref").value = resetVal.colDendroConfig.show;
-	NgChm.UPM.dendroRowShowChange();
-	NgChm.UPM.dendroColShowChange();
-	document.getElementById("rowDendroHeightPref").value = resetVal.rowDendroConfig.height;
-	document.getElementById("colDendroHeightPref").value = resetVal.colDendroConfig.height;
+	if (document.getElementById("rowDendroShowPref") !== null) {
+		document.getElementById("rowDendroShowPref").value = resetVal.rowDendroConfig.show;
+		document.getElementById("rowDendroHeightPref").value = resetVal.rowDendroConfig.height;
+		NgChm.UPM.dendroRowShowChange();
+	}
+	if (document.getElementById("colDendroShowPref") !== null) {
+		document.getElementById("colDendroShowPref").value = resetVal.colDendroConfig.show;
+		document.getElementById("colDendroHeightPref").value = resetVal.colDendroConfig.height;
+		NgChm.UPM.dendroColShowChange();
+	}
 	document.getElementById("rowLabelSizePref").value = resetVal.rowConfig.label_display_length;
 	document.getElementById("colLabelSizePref").value = resetVal.colConfig.label_display_length;
 	document.getElementById("rowLabelAbbrevPref").value = resetVal.rowConfig.label_display_method;

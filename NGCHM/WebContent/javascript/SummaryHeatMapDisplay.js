@@ -980,7 +980,8 @@ NgChm.SUM.drawRowClassBars = function(dataBuffer) {
 				pos = NgChm.SUM.drawScatterBarPlotRowClassBar(dataBuffer, pos, height-NgChm.SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar);
 			}
 			//offset starting point of one bar to the next by the width of one bar multiplied by BPR (e.g. 15 becomes 60)
-			offset+= height*NgChm.SUM.BYTE_PER_RGBA*NgChm.SUM.heightScale; 
+			//offset+= height*NgChm.SUM.BYTE_PER_RGBA*NgChm.SUM.heightScale; 
+			offset+= height*NgChm.SUM.BYTE_PER_RGBA; 
 		} else {
 			if (!document.getElementById("missingSumRowClassBars")){
 				var x = NgChm.SUM.canvas.offsetLeft;
