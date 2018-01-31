@@ -290,51 +290,94 @@ NgChm.UTIL.onLoadCHM = function () {
 		//Run from a web server.
 		var mapName = NgChm.UTIL.getURLParameter('map');
 		var dataSource = NgChm.MMGR.WEB_SOURCE;
-		if (NgChm.MMGR.embeddedMapName !== null) { 
+		if ((NgChm.MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) { 
 			mapName = NgChm.MMGR.embeddedMapName;
-			dataSource = NgChm.MMGR.LOCAL_SOURCE;
-		}
-		var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
-		if (!NgChm.SEL.isSub) {
-			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
-			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
-			NgChm.SUM.initSummaryDisplay();
-		} else {  // separated detail browser 
-			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.DET.processDetailMapUpdate);
-		}
-		NgChm.DET.initDetailDisplay();
-		}
-	NgChm.SEL.setupLocalStorage();
-	document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);	
-	document.getElementById("detail_canvas").focus();
+			dataSource = NgChm.MMGR.FILE_SOURCE;
+			NgChm.UTIL.loadLocalModeCHM();
+		} else {  // New temp
+			//		}  // old put back
+			if (NgChm.MMGR.embeddedMapName !== null) {
+				mapName = NgChm.MMGR.embeddedMapName;
+				dataSource = NgChm.MMGR.LOCAL_SOURCE;
+			}
+			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
+			if (!NgChm.SEL.isSub) {
+				NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
+				NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+				NgChm.SUM.initSummaryDisplay();
+			} else {  // separated detail browser 
+				NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.DET.processDetailMapUpdate);
+			}
+			NgChm.DET.initDetailDisplay();
+			}
+		NgChm.SEL.setupLocalStorage();
+		document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);	
+		document.getElementById("detail_canvas").focus();
+	} // NewTemp
 
 }
 
 /**********************************************************************************
- * FUNCTION - loadFileModeCHM: This function is called when running in local file mode and 
- * user selects the chm data .zip file.
+ * FUNCTION - loadLocalModeCHM: This function is called when running in local file mode and 
+ * with the heat map embedded in a "widgetized" web page.
  **********************************************************************************/
-NgChm.UTIL.loadFileModeCHM = function (evt) {
+NgChm.UTIL.loadLocalModeCHM = function () {
+	var req = new XMLHttpRequest();
+	req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName);
+	req.responseType = "blob";
+	req.onreadystatechange = function () {
+		if (req.readyState == req.DONE) {
+			if (req.status != 200) {
+				console.log('Failed in call to get NGCHM from server: ' + req.status);
+			} else {
+				var chmBlob  =  new Blob([req.response],{type:'application/zip'});  // req.response;
+				var chmFile  =  new File([chmBlob], NgChm.MMGR.embeddedMapName);
+				NgChm.UTIL.resetCHM();
+				var split = chmFile.name.split("."); 
+				if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
+					NgChm.UHM.invalidFileFormat();
+				} else {
+					NgChm.UTIL.displayFileModeCHM(chmFile);
+				}
+			}
+		}
+	};	
+	req.send();	
+}
+
+/**********************************************************************************
+ * FUNCTION - loadFileModeCHM: This function is called when running in stand-alone
+ * file mode and  user selects the chm data .zip file.
+ **********************************************************************************/
+NgChm.UTIL.loadFileModeCHM = function () {
 	document.getElementById('loader').style.display = '';
-	zip.useWebWorkers = false;
-	var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.FILE_SOURCE);
 	var chmFile  = document.getElementById('chmFile').files[0];
 	var split = chmFile.name.split("."); 
-	NgChm.UTIL.resetCHM();
 	if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
 		NgChm.UHM.invalidFileFormat();
 	} else {
-		if (!NgChm.SEL.isSub) {
-			NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
-			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
-			NgChm.SUM.initSummaryDisplay();
-		} else { // separated detail browser
-			NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.DET.processDetailMapUpdate, chmFile);			
-		}	
-		NgChm.DET.initDetailDisplay();
+		NgChm.UTIL.displayFileModeCHM(chmFile);
 		NgChm.SEL.openFileToggle();
 	}
 }
+
+/**********************************************************************************
+ * FUNCTION - displayFileModeCHM: This function performs functions shared by the
+ * stand-alone and widgetized "file" versions of the application.
+ **********************************************************************************/
+NgChm.UTIL.displayFileModeCHM = function (chmFile) {
+	var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.FILE_SOURCE);
+	zip.useWebWorkers = false;
+	if (!NgChm.SEL.isSub) {
+		NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
+		NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+		NgChm.SUM.initSummaryDisplay();
+	} else { // separated detail browser
+		NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.DET.processDetailMapUpdate, chmFile);			
+	}	
+	NgChm.DET.initDetailDisplay();
+}
+
 
 /**********************************************************************************
  * FUNCTION - chmResize: This function handles the resizing of the NG-CHM Viewer.  

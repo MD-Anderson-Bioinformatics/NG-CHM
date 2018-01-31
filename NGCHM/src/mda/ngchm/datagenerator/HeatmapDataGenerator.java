@@ -21,6 +21,7 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -30,6 +31,8 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
 
@@ -184,6 +187,16 @@ public class HeatmapDataGenerator {
 				ex.printStackTrace();
 			}
         }
+		//Generate zipped .ngchm file
+        if (iData.generateNGCHM) {
+        	try {
+        		zipDirectory(iData.outputDir, iData.chmName);
+			} catch (Exception ex) {
+				System.out.println("Exception in HeatmapDataGenerator.main. Error generating NGCHM zip file: " + ex.toString());  
+				ex.printStackTrace();
+			}
+        }
+
 		if (DEBUG) {
 			writeClusteredDebugFile(iData);
 		}
@@ -1854,5 +1867,87 @@ public class HeatmapDataGenerator {
 		        ex.printStackTrace();
 		    }
 			return image;
-		}		
+		}	
+
+		/*******************************************************************
+		 * METHOD: validateConfigJson
+		 *
+		 * This and following three methods perform a recursive zip of the heatmap directory.  
+		 * that the zip file contain a folder at the top level with folder name = heat map name.
+		 ******************************************************************/
+		private static void zipDirectory(String zipDir, String chmName) throws IOException {
+			File directoryToZip = new File(zipDir);
+			File rootDir = new File(zipDir.substring(0,zipDir.lastIndexOf(File.separator)));
+			String zipFileName = zipDir + FILE_SEP + chmName + ".ngchm";
+			List<File> fileList = new ArrayList<File>();
+			fileList.add(directoryToZip);
+			getAllFiles(directoryToZip, fileList, chmName);
+			writeZipFile(rootDir, fileList, zipFileName);
+		}
+
+		private static void getAllFiles(File dir, List<File> fileList, String chmName) {
+			try {
+				File[] files = dir.listFiles();
+				for (File file : files) {
+					String fileName = file.getName();
+					if (!chmName.equals(EMPTY))  { // there are some build files we don't need in the viewer zip file.  At the top level, just zip the heat map folder not other files.
+						if (NGCHM_FILES.contains(fileName) || fileName.equals(chmName+" HeatMap.pdf")) {
+							fileList.add(file);
+						} 
+					} else {
+						fileList.add(file);
+					}
+					if (file.isDirectory()) {
+						getAllFiles(file, fileList, EMPTY);
+					} 
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		private static void writeZipFile(File directoryToZip, List<File> fileList, String zipFileName) {
+
+			try {
+				FileOutputStream fos = new FileOutputStream(zipFileName);
+				ZipOutputStream zos = new ZipOutputStream(fos);
+
+				for (File file : fileList) {
+					if (!file.isDirectory()) { // we only zip files, not directories
+						addToZip(directoryToZip, file, zos);
+					}
+				}
+				zos.close();
+				fos.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
+		private static void addToZip(File directoryToZip, File file, ZipOutputStream zos) throws FileNotFoundException,
+		IOException {
+
+			FileInputStream fis = new FileInputStream(file);
+
+			// we want the zipEntry's path to be a relative path that is relative
+			// to the directory being zipped, so chop off the rest of the path
+			String zipFilePath = file.getCanonicalPath().substring(directoryToZip.getCanonicalPath().length() + 1,
+					file.getCanonicalPath().length());
+			if (zipFilePath.contains("\\"))
+				zipFilePath = zipFilePath.replace("\\", "/");
+			ZipEntry zipEntry = new ZipEntry(zipFilePath);
+			zos.putNextEntry(zipEntry);
+
+			byte[] bytes = new byte[1024];
+			int length;
+			while ((length = fis.read(bytes)) >= 0) {
+				zos.write(bytes, 0, length);
+			}
+
+			zos.closeEntry();
+			fis.close();
+		}
+
 }

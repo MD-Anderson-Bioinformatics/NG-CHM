@@ -10,6 +10,7 @@
 
 package mda.ngchm.datagenerator;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,6 +28,7 @@ public final class ImportConstants {
 
 	//Character Constants
 	public static String EMPTY = "";
+	public static String DOT = ".";
 	public static String SPACE = " ";
 	public static String LINE_FEED = "\n";
 	public static String BACK_SLASH = "\\";
@@ -39,6 +41,7 @@ public final class ImportConstants {
 	public static String BRACE_CLOSE = "}";
 	public static String BRACKET_OPEN = "[";
 	public static String BRACKET_CLOSE = "]";
+	public static String FILE_SEP = File.separator + File.separator;
 	
 	//Covariate Bar Types
 	public static String SCATTER_PLOT = "scatter_plot";
@@ -116,6 +119,8 @@ public final class ImportConstants {
 	public static int PDF_COL_POS = 1;
 	public static PDFont PDF_FONT = PDType1Font.HELVETICA;
 	public static PDFont PDF_FONT_BOLD = PDType1Font.HELVETICA_BOLD;
+	public static String GENERATE_PDF = "-PDF";
+	public static String GENERATE_NGCHM = "-NGCHM";
 	
 	//Dendro PNG Generation Constants
 	public static int TN_HEIGHT = 60;
@@ -225,6 +230,7 @@ public final class ImportConstants {
 	public static String COL_COVARIATES = "col_covariates"; 
 	public static String VALUE_ROW = "value_row"; 
 	public static String VALUE_COL = "value_column"; 
+	public static Set<String> NGCHM_FILES = new HashSet<String>(Arrays.asList("mapConfig.json","mapData.json","tn.png","tnPre.png"));
 	
 	
 	public static int RGB_BLACK = -16777216;     

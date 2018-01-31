@@ -60,6 +60,7 @@
 	<java classname="${src.dir}NGCHM_Widgetizer">
 	    <arg value="${web.dir}"/>
 	    <arg value="ngchmWidget-min.js"/>
+	    <arg value="file"/>
 	    <classpath>
 	        <pathelement path="build/classes"/>
 	    </classpath>

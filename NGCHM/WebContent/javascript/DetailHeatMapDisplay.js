@@ -459,6 +459,20 @@ NgChm.DET.getDetCanvasXFromCol = function (col) {
 NgChm.DET.drawSelections = function () {
 	var ctx=NgChm.DET.boxCanvas.getContext("2d");
 	ctx.clearRect(0, 0, NgChm.DET.boxCanvas.width, NgChm.DET.boxCanvas.height);
+
+	//Draw the border
+	if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0) {
+		var ctx=NgChm.DET.boxCanvas.getContext("2d");
+		var boxX = (NgChm.DET.calculateTotalClassBarHeight("row") / NgChm.DET.canvas.width) * NgChm.DET.boxCanvas.width;
+		var boxY = (NgChm.DET.calculateTotalClassBarHeight("column") / NgChm.DET.canvas.height) * NgChm.DET.boxCanvas.height;
+		var boxW = NgChm.DET.boxCanvas.width-boxX;
+		var boxH = NgChm.DET.boxCanvas.height-boxY;
+		ctx.lineWidth=1;
+		ctx.strokeStyle="#000000";
+		ctx.strokeRect(boxX,boxY,boxW,boxH);
+	}
+
+	
 	//Retrieve contiguous row and column search arrays
 	var searchRows = NgChm.DET.getSearchRows();
 	var rowRanges = NgChm.DET.getContigSearchRanges(searchRows);
@@ -1112,6 +1126,7 @@ NgChm.DET.detailJoin = function () {
 	} else {
 		document.getElementById('pdf_gear').style.minWidth = '140px';
 	}
+	NgChm.SEL.updateSelection();
 }
 
 
@@ -1237,20 +1252,12 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 	var dataSelectionColorRGB = colorMap.getHexToRgba(dataLayer.selection_color);
 	var dataSelectionColor = [dataSelectionColorRGB.r/255, dataSelectionColorRGB.g/255, dataSelectionColorRGB.b/255, 1];
 	var regularGridColor = [dataGridColor.r, dataGridColor.g, dataGridColor.b];
-	//Draw black border line
-	var showBorder = false;
-	if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0){
-		showBorder = true;
-	}
  
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
 	var gridLine = new Uint8Array(new ArrayBuffer((rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA));
 	var whiteLine = new Uint8Array(new ArrayBuffer((rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA));
 	if (showGrid == true) {
 		var linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
-		if (showBorder) {
-			gridLine[linePos]=0; gridLine[linePos+1]=0;gridLine[linePos+2]=0;gridLine[linePos+3]=255;
-		}
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		for (var j = 0; j < detDataPerRow; j++) {
 			//When building grid line check for vertical cuts by grabbing value of currentRow (any row really) and column being iterated to
@@ -1266,7 +1273,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 						gridLine[linePos] = 255; gridLine[linePos+1] = 255; gridLine[linePos+2] = 255;	gridLine[linePos+3] = 0;
 					}
 				} else {
-					if (k==NgChm.DET.dataBoxWidth-1 && showGrid == true){ // should the grid line be drawn?
+					if (k==NgChm.DET.dataBoxWidth-1 && showGrid == true ){ // should the grid line be drawn?
 						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
 					} else {
 						gridLine[linePos]=regularGridColor[0]; gridLine[linePos + 1]=regularGridColor[1]; gridLine[linePos + 2]=regularGridColor[2]; gridLine[linePos + 3]=255;
@@ -1275,23 +1282,12 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 				linePos += NgChm.SUM.BYTE_PER_RGBA;
 			}
 		}
-		linePos -= NgChm.SUM.BYTE_PER_RGBA;
-		gridLine[linePos] = 255; gridLine[linePos+1] = 255; gridLine[linePos+2] = 255;	gridLine[linePos+3] = 0;
-		if (showBorder) {
-			gridLine[linePos]=0; gridLine[linePos+1]=0;gridLine[linePos+2]=0;gridLine[linePos+3]=255;
-		}	
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 	}
 	
-	//Draw black border line
+	//Spacer
 	var pos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
 	for (var i = 0; i < NgChm.DET.dataViewWidth; i++) {
-		if (showBorder) {
-			NgChm.DET.texPixels[pos]=0;
-			NgChm.DET.texPixels[pos+1]=0;
-			NgChm.DET.texPixels[pos+2]=0;
-			NgChm.DET.texPixels[pos+3]=255;
-		}
 		pos+=NgChm.SUM.BYTE_PER_RGBA;
 	}
 	
@@ -1311,10 +1307,6 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the 
 		// preceding line are "cut values" mark the current line as as a horizontal cut
 		var isHorizCut = NgChm.DET.isLineACut(i) && NgChm.DET.isLineACut(i-1);
-		//Add black border
-		if (showBorder) {
-			line[linePos]=0; line[linePos+1]=0;line[linePos+2]=0;line[linePos+3]=255;
-		}
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		for (var j = 0; j < detDataPerRow; j++) { // for every data point...
 			var val = NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j);
@@ -1322,7 +1314,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 			var color = colorMap.getColor(val);
 			//For each data point, write it several times to get correct data point width.
 			for (var k = 0; k < NgChm.DET.dataBoxWidth; k++) {
-				if (k==NgChm.DET.dataBoxWidth-1 && showGrid == true && NgChm.DET.dataBoxWidth > NgChm.DET.minLabelSize ){ // should the grid line be drawn?
+				if (k==NgChm.DET.dataBoxWidth-1 && showGrid == true && NgChm.DET.dataBoxWidth > NgChm.DET.minLabelSize && j < detDataPerRow-1 ){ // should the grid line be drawn?
 					if (j < detDataPerRow-1) {
 						//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
 						if ((val <= NgChm.SUM.minValues) && (nextVal <= NgChm.SUM.minValues)) {
@@ -1337,23 +1329,18 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 				linePos += NgChm.SUM.BYTE_PER_RGBA;
 			}
 		}
-		if (showBorder) {
-			line[linePos]=0; line[linePos+1]=0;line[linePos+2]=0;line[linePos+3]=255;
-		}
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		
 		//Write each line several times to get correct data point height.
 		for (dup = 0; dup < NgChm.DET.dataBoxHeight; dup++) {
-			if (dup == NgChm.DET.dataBoxHeight-1 && showGrid == true && NgChm.DET.dataBoxHeight > NgChm.DET.minLabelSize){ // do we draw gridlines?
+			if (dup == NgChm.DET.dataBoxHeight-1 && showGrid == true && NgChm.DET.dataBoxHeight > NgChm.DET.minLabelSize && i > 0){ // do we draw gridlines?
 				for (k = 0; k < line.length; k++) {
 					//IF the line being drawn was comprised entirely of cut values, draw an empty white line as the horizontal grid line,
 					//ELSE draw the normal grid line as the horizontal grid line
-					if (i > 0) {  //Don't draw top gridline
-						if (isHorizCut === true) {
-							NgChm.DET.texPixels[pos]=whiteLine[k];
-						} else {
-							NgChm.DET.texPixels[pos]=gridLine[k];
-						}
+					if (isHorizCut === true) {
+						NgChm.DET.texPixels[pos]=whiteLine[k];
+					} else {
+						NgChm.DET.texPixels[pos]=gridLine[k];
 					}
 					pos++;
 				}
@@ -1366,12 +1353,9 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		} 
 	}
 
-	//Draw black border line
+	//Spacer Row
 	pos += (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
 	for (var i = 0; i < NgChm.DET.dataViewWidth; i++) {
-		if (showBorder) {
-			NgChm.DET.texPixels[pos]=0;NgChm.DET.texPixels[pos+1]=0;NgChm.DET.texPixels[pos+2]=0;NgChm.DET.texPixels[pos+3]=255;
-		}
 		pos+=NgChm.SUM.BYTE_PER_RGBA;
 	}
 
@@ -1418,8 +1402,6 @@ NgChm.DET.isLineACut = function (row) {
 }
 
 NgChm.DET.detailResize = function () {
-	 var divider = document.getElementById('divider');
-	 divider.style.height=Math.max(document.getElementById('detail_canvas').offsetHeight,document.getElementById('summary_canvas').offsetHeight + NgChm.SUM.colDendro.getDivHeight())+'px';
 	 NgChm.DET.clearLabels();
 	 NgChm.DET.rowDendro.resize();
 	 NgChm.DET.colDendro.resize();
@@ -1893,6 +1875,7 @@ NgChm.DET.detailDrawColClassBars = function () {
 	var fullWidth = NgChm.DET.dataViewWidth + rowClassBarWidth;
 	var mapHeight = NgChm.DET.dataViewHeight;
 	var pos = fullWidth*mapHeight*NgChm.SUM.BYTE_PER_RGBA;
+	pos += fullWidth*NgChm.DET.paddingHeight*NgChm.SUM.BYTE_PER_RGBA;
 	var colorMapMgr = NgChm.heatMap.getColorMapManager();
 	
 	for (var i=colClassBarConfigOrder.length-1; i>= 0;i--) {
@@ -2978,58 +2961,4 @@ NgChm.DET.zoomAnimation = function (destRow,destCol) {
 	
 }
 
-NgChm.DET.detSizerStart = function () {
-		NgChm.UHM.userHelpClose();
-		document.addEventListener('mousemove', NgChm.DET.detSizerMove);
-		document.addEventListener('touchmove', NgChm.DET.detSizerMove);
-		document.addEventListener('mouseup', NgChm.DET.detSizerEnd);
-		document.addEventListener('touchend',NgChm.DET.detSizerEnd);
-}
-
-NgChm.DET.detSizerMove = function (e) {
-	var summary = document.getElementById('summary_chm');
-	var detail = document.getElementById('detail_chm');
-	var divider = document.getElementById('divider');
-	var detSizer = document.getElementById('detSizer');
-	if (e.touches){
-    	if (e.touches.length > 1){
-    		return;
-    	}
-    }
-	var Xmove = e.touches ? detSizer.getBoundingClientRect().right - e.touches[0].pageX : detSizer.getBoundingClientRect().right - e.pageX;
-	var Ymove = e.touches ? detSizer.getBoundingClientRect().bottom - e.touches[0].pageY : detSizer.getBoundingClientRect().bottom - e.pageY;
-	var detailX = detail.offsetWidth - Xmove;
-	var detailY = detail.offsetHeight - Ymove;
-	if (e.clientX > window.innerWidth || e.clientY > window.innerHeight){
-		return;
-	}
-	if (!(detail.getBoundingClientRect().right > container.clientLeft+container.clientWidth && Xmove < 0)){
-		detail.style.width=detailX+'px';
-	}
-	
-	detail.style.height=detailY+'px';
-	divider.style.height=Math.max(document.getElementById('detail_canvas').offsetHeight,document.getElementById('summary_canvas').offsetHeight + NgChm.SUM.colDendro.getDivHeight())+'px';
-	NgChm.DET.clearLabels();
-	NgChm.SUM.clearSelectionMarks();
-}
-
-NgChm.DET.detSizerEnd = function () {
-	document.removeEventListener('mousemove', NgChm.DET.detSizerMove);
-	document.removeEventListener('mouseup', NgChm.DET.detSizerEnd);
-	document.removeEventListener('touchmove',NgChm.DET.detSizerMove);
-	document.removeEventListener('touchend',NgChm.DET.detSizerEnd);
-	// set summary and detail canvas sizes to percentages to avoid map getting pushed down on resize
-	var container = document.getElementById('container');
-	var summary = document.getElementById('summary_chm');
-	var sumPercent = 100*summary.clientWidth / container.clientWidth;
-	summary.style.width = sumPercent + "%";
-	var detail = document.getElementById('detail_chm');
-	var detPercent = 100*detail.clientWidth/container.clientWidth;
-	detail.style.width = detPercent + "%";
-	if (!NgChm.SEL.isSub){
-		NgChm.SUM.summaryResize();
-	}
-	NgChm.DET.detailResize();
-	NgChm.DET.drawRowAndColLabels();  
-}
 

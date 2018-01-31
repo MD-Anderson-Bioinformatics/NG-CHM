@@ -312,6 +312,8 @@ NgChm.SEL.callDetailDrawFunction = function(modeVal) {
 		NgChm.DET.detailHRibbon();
 	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
 		NgChm.DET.detailVRibbon();
+	if (modeVal == 'FULL_MAP')
+		NgChm.DET.detailFullMap();
 	if (modeVal == 'NORMAL') {
 		NgChm.DET.detailNormal();	
 	}

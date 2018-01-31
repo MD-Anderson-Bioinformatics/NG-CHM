@@ -266,6 +266,13 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return mapConfig.data_configuration.map_information.data_layer;
 	}
 	
+	this.setDividerPref = function() {
+		var container = document.getElementById('container');
+		var summary = document.getElementById('summary_chm');
+		var sumPercent = Math.ceil(100*summary.clientWidth / container.clientWidth);
+		mapConfig.data_configuration.map_information.summary_width = sumPercent;
+	}
+	
 	this.setClassificationPrefs = function(classname, type, showVal, heightVal) {
 		if (type === "row") {
 			mapConfig.row_configuration.classifications[classname].show = showVal ? 'Y' : 'N';
@@ -930,7 +937,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		            console.log('Failed to get software version: ' + req.status);
 		        } else {
 		        	var latestVersion = req.response;
-		        	if ((latestVersion !== NgChm.CM.version) && (typeof NgChm.galaxy === 'undefined')) {
+		        	if ((latestVersion > NgChm.CM.version) && (typeof NgChm.galaxy === 'undefined')) {
 		        		NgChm.UHM.viewerAppVersionExpiredNotification(NgChm.CM.version, latestVersion);   
 		        	}
 			    } 

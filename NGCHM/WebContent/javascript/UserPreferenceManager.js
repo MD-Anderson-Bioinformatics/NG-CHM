@@ -111,6 +111,8 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	} else if ((errorMsg != null) && (errorMsg[1] === "layerPrefs")){ 
 		NgChm.UPM.showLayerBreak(errorMsg[0]);
 		NgChm.UPM.showLayerPrefs();
+	} else if ((errorMsg != null) && (errorMsg[1] === "rowColPrefs")){ 
+		NgChm.UPM.showRowsColsPrefs();
 	} else if (NgChm.UPM.searchPerformed){ 
 		NgChm.UPM.searchPerformed = false;
 		NgChm.UPM.showClassPrefs();
@@ -288,20 +290,30 @@ NgChm.UPM.removeSettingsPanels = function() {
  * these changes are not yet permanently  saved to the JSON files that are used to 
  * configure heat map presentation.
  **********************************************************************************/
-NgChm.UPM.prefsApplyButton = function() {
+NgChm.UPM.prefsApplyButton = function(isReset) {
 	NgChm.UPM.disableApplyButton();
 	setTimeout(function(){ // wait until the disable button has been updated, otherwise the disable button never shows up
-        NgChm.UPM.doApply();   
+        NgChm.UPM.doApply(isReset);   
    },10);
 }
 
-NgChm.UPM.doApply = function(){
-	//Perform validations of all user-entered data layer and covariate bar
-	//preference changes.
-	var errorMsg = NgChm.UPM.prefsValidate();
-	if (errorMsg !== null) {
-		NgChm.UPM.prefsError(errorMsg);
+NgChm.UPM.doApply = function(isReset){
+	//Normal processing when not reset
+	if (typeof isReset === 'undefined') {
+		//Perform validations of all user-entered data layer and covariate bar
+		//preference changes.
+		var errorMsg = NgChm.UPM.prefsValidate();
+		if (errorMsg !== null) {
+			NgChm.UPM.prefsError(errorMsg);
+		} else {
+			NgChm.UPM.prefsApply();
+			NgChm.heatMap.setUnAppliedChanges(true);
+			NgChm.UPM.prefsSuccess();
+			NgChm.UPM.enableApplyButton();
+		}
 	} else {
+		//When resetting no validations need be performed and, if they were, 
+		//additional modifications to validation logic would be required.
 		NgChm.UPM.prefsApply();
 		NgChm.heatMap.setUnAppliedChanges(true);
 		NgChm.UPM.prefsSuccess();
@@ -347,7 +359,7 @@ NgChm.UPM.prefsSuccess = function() {
 	//Remove the backup color map (used to reinstate colors if user cancels)
 	//and formally apply all changes to the heat map, re-draw, and exit preferences.
 	NgChm.UPM.bkpColorMaps = null;
-	NgChm.SUM.summaryInit();
+	NgChm.SUM.summaryInit(true);  //we set this to true so that the separator bar will not move on an apply.
 	NgChm.DET.drawDetailHeatMap();
 	NgChm.SEL.callDetailDrawFunction(NgChm.SEL.mode);
 	NgChm.UPM.applyDone = true;
@@ -598,10 +610,12 @@ NgChm.UPM.prefsValidateBreakPoints = function(colorMapName,prefPanel) {
 		//current selection.  If found, throw duplicate error
 		for (var j = 0; j < thresholds.length; j++) {
 			var be = document.getElementById(colorMapName+"_breakPt"+j+"_breakPref");
-			if (i != j) {
-				if (Number(breakElement.value) === Number(be.value)) {
-					dupeBreak = true;
-					break;
+			if (be !== null) {
+				if (i != j) {
+					if (Number(breakElement.value) === Number(be.value)) {
+						dupeBreak = true;
+						break;
+					}
 				}
 			}
 		}
@@ -697,30 +711,34 @@ NgChm.UPM.getNewBreakColors = function(colorMapName, type, pos, action) {
 	}
 	for (var j = 0; j < thresholds.length; j++) {
 		var colorElement = document.getElementById(key+"_color"+j+"_colorPref");
-		//If being called from addLayerBreak or deleteLayerBreak
-		if (typeof pos !== 'undefined') {
-			if (action === "add") {
-				newColors.push(colorElement.value);
-				if (j === pos) {
-					//get next breakpoint color.  If none, use black
-					var nextColorElement = document.getElementById(key+"_color"+(j+1)+"_colorPref");
-					var nextColorVal = "#000000";
-					if (nextColorElement !== null) {
-						nextColorVal = nextColorElement.value;
+		//In case there are now less elements than the thresholds list on Reset.
+		if (colorElement !== null) {
+			//If being called from addLayerBreak or deleteLayerBreak
+			if (typeof pos !== 'undefined') {
+				if (action === "add") {
+					newColors.push(colorElement.value);
+					if (j === pos) {
+						//get next breakpoint color.  If none, use black
+						var nextColorElement = document.getElementById(key+"_color"+(j+1)+"_colorPref");
+						var nextColorVal = "#000000";
+						if (nextColorElement !== null) {
+							nextColorVal = nextColorElement.value;
+						}
+						//Blend last and next breakpoint colors to get new color.
+						var newColor =  NgChm.UTIL.blendTwoColors(colorElement.value, nextColorVal);   
+						newColors.push(newColor);
 					}
-					//Blend last and next breakpoint colors to get new color.
-					var newColor =  NgChm.UTIL.blendTwoColors(colorElement.value, nextColorVal);   
-					newColors.push(newColor);
+				} else {
+					if (j !== pos) {
+						newColors.push(colorElement.value);
+					}
 				}
 			} else {
-				if (j !== pos) {
-					newColors.push(colorElement.value);
-				}
+				newColors.push(colorElement.value);
 			}
-		} else {
-			newColors.push(colorElement.value);
 		}
 	}
+	
 	//If this color map is for a row/col class bar AND that bar is a scatter or
 	//bar plot (colormap will always be continuous), set the upper colormap color
 	//to the foreground color set by the user for the bar/scatter plot. This is
@@ -734,6 +752,15 @@ NgChm.UPM.getNewBreakColors = function(colorMapName, type, pos, action) {
 		if (classBar.bar_type != 'color_plot') {
 			newColors[1] = classBar.fg_color;
 		}
+	} else {
+		//Potentially on a data layer reset, there could be more color points than contained in the thresholds object
+		//because a user may have deleted a breakpoint and then hit "reset". So we check for up to 50 preferences.
+		for (var k = thresholds.length; k < 50; k++) {
+			var colorElement = document.getElementById(key+"_color"+k+"_colorPref");
+			if (colorElement !== null) {
+				newColors.push(colorElement.value);
+			} 
+		} 
 	}
 	return newColors;
 }
@@ -753,33 +780,44 @@ NgChm.UPM.getNewBreakThresholds = function(colorMapName, pos, action) {
 	var newThresholds = [];
 	for (var j = 0; j < thresholds.length; j++) {
 		var breakElement = document.getElementById(colorMapName+"_breakPt"+j+"_breakPref");
-		if (typeof pos !== 'undefined') {
-			if (action === "add") {
-				newThresholds.push(breakElement.value);
-				if (j === pos) {
-					//get next breakpoint value.  If none, add 1 to current breakpoint
-					var nextBreakElement = document.getElementById(colorMapName+"_breakPt"+(j+1)+"_breakPref");
-					var nextBreakVal = 0;
-					if (nextBreakElement === null) {
-						nextBreakVal = Number(breakElement.value)+1;
-					} else {
-						nextBreakVal = Number(nextBreakElement.value);
+		//In case there are now less elements than the thresholds list on Reset.
+		if (breakElement !== null) {
+			if (typeof pos !== 'undefined') {
+				if (action === "add") {
+					newThresholds.push(breakElement.value);
+					if (j === pos) {
+						//get next breakpoint value.  If none, add 1 to current breakpoint
+						var nextBreakElement = document.getElementById(colorMapName+"_breakPt"+(j+1)+"_breakPref");
+						var nextBreakVal = 0;
+						if (nextBreakElement === null) {
+							nextBreakVal = Number(breakElement.value)+1;
+						} else {
+							nextBreakVal = Number(nextBreakElement.value);
+						}
+						//calculate the difference between last and next breakpoint values and divide by 2 to get the mid-point between.
+						var breakDiff = (Math.abs((Math.abs(nextBreakVal) - Math.abs(Number(breakElement.value))))/2);
+						//add mid-point to last breakpoint.
+						var calcdBreak = (Number(breakElement.value) + breakDiff).toFixed(4);
+						newThresholds.push(calcdBreak);
 					}
-					//calculate the difference between last and next breakpoint values and divide by 2 to get the mid-point between.
-					var breakDiff = (Math.abs((Math.abs(nextBreakVal) - Math.abs(Number(breakElement.value))))/2);
-					//add mid-point to last breakpoint.
-					var calcdBreak = (Number(breakElement.value) + breakDiff).toFixed(4);
-					newThresholds.push(calcdBreak);
+				} else {
+					if (j !== pos) {
+						newThresholds.push(breakElement.value);
+					}
 				}
 			} else {
-				if (j !== pos) {
-					newThresholds.push(breakElement.value);
-				}
+				newThresholds.push(breakElement.value);
 			}
-		} else {
-			newThresholds.push(breakElement.value);
 		}
 	}
+	//Potentially on a data layer reset, there could be more color points than contained in the thresholds object
+	//because a user may have deleted a breakpoint and then hit "reset". So we check for up to 50 preferences.
+	for (var k = thresholds.length; k < 50; k++) {
+		var breakElement = document.getElementById(colorMapName+"_breakPt"+k+"_breakPref");
+		if (breakElement !== null) {
+			newThresholds.push(breakElement.value);
+		}
+	} 
 	
 	return newThresholds;
 }
@@ -861,6 +899,8 @@ NgChm.UPM.setupLayerBreaks = function(e, mapName) {
 	var selectionColorInput = "<input class='spectrumColor' type='color' name='"+mapName+"_selectionColorPref' id='"+mapName+"_selectionColorPref' value='"+layer.selection_color+"'>"; 
 	NgChm.UHM.addBlankRow(prefContents, 2)
 	NgChm.UHM.setTableRow(prefContents, ["&nbsp;<u>Breakpoint</u>", "<u><b>Color</b></u>","&nbsp;"]); 
+	var breakpts = document.createElement("TABLE"); 
+	breakpts.id = "breakPrefsTable_"+mapName;
 	for (var j = 0; j < thresholds.length; j++) {
 		var threshold = thresholds[j];    
 		var color = colors[j];
@@ -871,11 +911,12 @@ NgChm.UPM.setupLayerBreaks = function(e, mapName) {
 		var addButton = "<img id='"+threshId+"_breakAdd' src='images/plusButton.png' alt='Add Breakpoint' onclick='NgChm.UPM.addLayerBreak("+j+",\""+mapName+"\");' align='top'/>"
 		var delButton = "<img id='"+threshId+"_breakDel' src='images/minusButton.png' alt='Remove Breakpoint' onclick='NgChm.UPM.deleteLayerBreak("+j+",\""+mapName+"\");' align='top'/>"
 		if (j === 0) {
-			NgChm.UHM.setTableRow(prefContents, [breakPtInput, colorInput, addButton]);
+			NgChm.UHM.setTableRow(breakpts, [breakPtInput, colorInput, addButton]);
 		} else {
-			NgChm.UHM.setTableRow(prefContents, [breakPtInput,  colorInput, addButton+ delButton]);
+			NgChm.UHM.setTableRow(breakpts, [breakPtInput,  colorInput, addButton+ delButton]);
 		}
 	} 
+	NgChm.UHM.setTableRow(prefContents, [breakpts.outerHTML],3);
 	NgChm.UHM.addBlankRow(prefContents)
 	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Missing Color:",  "<input class='spectrumColor' type='color' name='"+mapName+"_missing_colorPref' id='"+mapName+"_missing_colorPref' value='"+colorMap.getMissingColor()+"'>"]);
 	NgChm.UHM.addBlankRow(prefContents, 3)
@@ -1881,18 +1922,49 @@ NgChm.UPM.prefsResetButton = function(){
 	for (var dl in resetVal.matrix.data_layer){
 		var layer = resetVal.matrix.data_layer[dl];
 		var cm = layer.color_map;
+		//Check to see if there are more breakpoints in current threshold set than those being reset and remove them
+		for (var i = cm.thresholds.length; i < 50; i++) {
+			var bPrefix = dl + "_breakPt" + i;
+			var breakpt = document.getElementById(bPrefix + "_breakPref");
+			if (breakpt !== null) {
+				breakpt.remove();
+				var colorpt = document.getElementById(dl + "_color" + i + "_colorPref");
+				colorpt.remove();
+				var bAdd = document.getElementById(bPrefix+"_breakAdd");
+				bAdd.remove();
+				var bDel = document.getElementById(bPrefix+"_breakDel");
+				bDel.remove();
+			} else {
+				break;
+			}
+		}
 		for (var i = 0; i < cm.thresholds.length; i++){
 			var breakpt = document.getElementById(dl + "_breakPt" + i + "_breakPref");
-			breakpt.value = cm.thresholds[i];
-			var colorpt = document.getElementById(dl + "_color" + i + "_colorPref");
-			colorpt.value = cm.colors[i];
-			var gridColor = document.getElementById(dl + "_gridColorPref");
-			gridColor.value = layer.grid_color;
-			var gridShow = document.getElementById(dl + "_gridPref");
-			layer.grid_show == "Y" ? gridShow.checked = true : gridShow.checked = false; 
-			var selectionColor = document.getElementById(dl + "_selectionColorPref");
-			selectionColor.value = layer.selection_color;
+			//If there are not enough screen elements to reset, add them.
+			if (breakpt === null) {
+				var bPrefix = dl + "_breakPt" + i;
+				var bName = bPrefix + "_breakPref";
+				var cName = dl + "_color" + i + "_colorPref";
+				var colorId = mapName+"_color"+i;
+				var breakPtInput = "&nbsp;&nbsp;<input name='"+bName+"' " + " id='"+bName+"' value='"+cm.thresholds[i]+"' maxlength='8' size='8'>";
+				var colorInput = "<input class='spectrumColor' type='color' name='"+cName+"' id='"+cName+"' value='"+cm.colors[i]+"'>"; 
+				var addButton = "<img id='"+bPrefix+"_breakAdd' src='images/plusButton.png' alt='Add Breakpoint' onclick='NgChm.UPM.addLayerBreak("+i+",\""+dl+"\");' align='top'/>"
+				var delButton = "<img id='"+bPrefix+"_breakDel' src='images/minusButton.png' alt='Remove Breakpoint' onclick='NgChm.UPM.deleteLayerBreak("+i+",\""+dl+"\");' align='top'/>"
+				var dlTable = document.getElementById("breakPrefsTable_" + dl);
+				NgChm.UHM.setTableRow(dlTable, [breakPtInput, colorInput, addButton + delButton]);
+
+			} else {
+				breakpt.value = cm.thresholds[i];
+				var colorpt = document.getElementById(dl + "_color" + i + "_colorPref");
+				colorpt.value = cm.colors[i];
+			}
 		}
+		var gridColor = document.getElementById(dl + "_gridColorPref");
+		gridColor.value = layer.grid_color;
+		var gridShow = document.getElementById(dl + "_gridPref");
+		layer.grid_show == "Y" ? gridShow.checked = true : gridShow.checked = false; 
+		var selectionColor = document.getElementById(dl + "_selectionColorPref");
+		selectionColor.value = layer.selection_color;
 		NgChm.UHM.loadColorPreviewDiv(dl);
 	}
 	
@@ -1952,5 +2024,5 @@ NgChm.UPM.prefsResetButton = function(){
 			}
 		}
 	}
-	NgChm.UPM.prefsApplyButton();
+	NgChm.UPM.prefsApplyButton(1);
 }

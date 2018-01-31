@@ -101,7 +101,8 @@
 			<div id='sumlabelDiv' style="display: inline-block"></div>
 		</div>
 		
-		<div id= 'divider' style='position: relative;' onmouseover="NgChm.UHM.userHelpClose()" onmousedown="NgChm.SUM.dividerStart()" ontouchstart="NgChm.SUM.dividerStart()">
+		<div id= 'divider' class="resizerHelper resizerHelperRight" onmousedown="NgChm.SUM.dividerStart()" ontouchstart="NgChm.SUM.dividerStart()">
+			<div class='resizerSplitterVertical'></div>
 		</div>
 		
 		<div id='detail_chm' style='position: relative;'>
@@ -109,7 +110,6 @@
 			<canvas id='detail_row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
 			<canvas id='detail_canvas' tabindex='1'></canvas>
 			<canvas id='detail_box_canvas'></canvas>
-	<!--		<div id='detSizer' style='position:absolute'  onmousedown="NgChm.DET.detSizerStart()" ontouchstart="NgChm.DET.detSizerStart()"></div> -->
 			<div id='labelDiv' style="display: inline-block">
 				<div id='colLabelDiv' axis="Column" style="display: inline-block; position: absolute; right: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
 				<div id='rowLabelDiv' axis ="Row" style="display: inline-block; position: absolute; bottom: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>

@@ -31,30 +31,36 @@ div.mdaServiceHeaderLogo img
 
 #container{
 	display: flex;
-	height: 88%;
+	height: 90%;
 }
 
-#divider{
-	height: 50%;
-	width: 5px;
+.resizerHelper {
+    position: relative;
 	margin-left:10px;
 	margin-right:10px;
-	vertical-align:top;
-	display:inline-block;
-	background: #666666;
+	height:100%;
+    background-color: #666666;
 	cursor: ew-resize;
+    z-index: 99;
 }
 
-#detSizer{
-	height: 5px;
-	width: 5px;
-	margin-bottom:-10px;
-	bottom:17%;
-	right:8%;
-	vertical-align:bottom;
-	display:inline-block;
-	background: #666666;
-	cursor: nwse-resize;
+.resizerHelperRight {
+    width: 5px;
+    border-left: 1px solid rgb(181, 188, 199);
+    border-right: 1px solid rgb(181, 188, 199);
+}
+
+.resizerHelper:hover {
+     background-color: LightBlue;
+}
+
+.resizerSplitterVertical {
+    position: absolute;
+    top: 48%;
+    bottom: 48%;
+    right: 30%;
+    left: 30%;
+    background-color: white;
 }
 
 #row_dendro_canvas, #column_dendro_canvas{

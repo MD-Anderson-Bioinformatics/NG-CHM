@@ -426,7 +426,7 @@
     function viewMupitG (genes) {
 	genes = genes.sort().filter(function(el,i,a){return i==a.indexOf(el);});
 	var glist = encodeURIComponent(genes[0]);
-	linkouts.openUrl("http://mupit.icm.jhu.edu/?gene=" + glist, "mupit");
+	linkouts.openUrl("http://mupit.icm.jhu.edu/MuPIT_Interactive?gene=" + glist, "mupit");
     };
 
     linkouts.addPlugin({

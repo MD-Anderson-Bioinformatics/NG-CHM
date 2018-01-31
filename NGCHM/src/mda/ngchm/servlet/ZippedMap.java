@@ -1,5 +1,8 @@
 package mda.ngchm.servlet;
 
+import static mda.ngchm.datagenerator.ImportConstants.EMPTY;
+import static mda.ngchm.datagenerator.ImportConstants.NGCHM_FILES;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,7 +58,7 @@ public class ZippedMap extends HttpServlet {
 				if (file.getName().equals(mapName)) {
 					fileList.add(file);
 					if (file.isDirectory()) {
-						getAllFiles(file, fileList);
+						getAllFiles(file, fileList, mapName);
 					} 
 				}
 			}
@@ -70,13 +73,20 @@ public class ZippedMap extends HttpServlet {
 	 * This method gets all files in the heatmap directory and returns
 	 * them as a File[] list object.
 	 ******************************************************************/
-	public static void getAllFiles(File dir, List<File> fileList) {
+	public static void getAllFiles(File dir, List<File> fileList, String mapName) {
 		try {
 			File[] files = dir.listFiles();
 			for (File file : files) {
-				fileList.add(file);
+				String fileName = file.getName();
+				if (!mapName.equals(EMPTY))  { // there are some build files we don't need in the viewer zip file.  At the top level, just zip the heat map folder not other files.
+					if (NGCHM_FILES.contains(fileName) || fileName.contains("HeatMap.pdf")) {
+						fileList.add(file);
+					}
+				} else {
+					fileList.add(file);
+				}
 				if (file.isDirectory()) {
-					getAllFiles(file, fileList);
+					getAllFiles(file, fileList,EMPTY);
 				} 
 			}
 		} catch (Exception e) {

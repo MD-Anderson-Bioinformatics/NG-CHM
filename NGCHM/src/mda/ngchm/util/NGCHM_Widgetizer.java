@@ -59,7 +59,7 @@ public class NGCHM_Widgetizer {
 		System.out.println("BEGIN NGCHM Widgetizer  " + new Date());
         try {
    		if (args.length < 2) {
-    			System.out.println("Usage: NGCHM_Widgetizer <web directory> <output file>");
+    			System.out.println("Usage: NGCHM_Widgetizer <web directory> <output file> <mode>");
     			System.exit(1);
     		}
 		
@@ -69,6 +69,7 @@ public class NGCHM_Widgetizer {
     		BufferedReader br = new BufferedReader(new FileReader(args[0] + "/chm.html" ));
     		BufferedReader br2 = new BufferedReader(new FileReader(args[0] + "javascript/ngchm-min.js" ));
     		BufferedReader br3 = new BufferedReader(new FileReader(args[0] + "javascript/lib/jspdf.min.js" )); 
+    		String mode = args[2];
     		String htmlString = "";
     		
     		String line = br.readLine();
@@ -128,7 +129,7 @@ public class NGCHM_Widgetizer {
     					}
     				}
     			} else if (line.contains("body")){
-    				//do nothing
+    				//skip
     			} else {	
     				if ((line.contains("mda_header")) || (line.contains("insilico_footer"))) {
     					//Exclude MDA and Insilico logo from widgetized html
@@ -145,13 +146,16 @@ public class NGCHM_Widgetizer {
        		bw.write("/* BEGIN CSS Javascript: */\n");
 			bw.write(delayedLines.toString());
        		bw.write("/* END CSS Javascript: */\n\n");
+	       	bw.write("var ngChmWidgetMode = '" + mode + "'\n");
     		bw.write("var htmlContent = \"" + finalHtml + "\"\n");
     		bw.write("var embedDiv = document.getElementById(\"NGCHMEmbed\");\n");
     		bw.write("embedDiv.innerHTML = htmlContent;\n");
     		bw.write(scriptedLines.toString());
     		//hide split screen and save buttons for "widget mode"
        		bw.write("document.getElementById('split_btn').style.display = 'none';\n");
-       		bw.write("document.getElementById('save_btn').style.display = 'none';\n");
+       		if (mode.equals("web")) {
+       		    bw.write("document.getElementById('save_btn').style.display = 'none';\n"); 
+       		}
     		bw.close();
     		br.close();
     		System.out.println("END NGCHM Widgetizer  " + new Date());

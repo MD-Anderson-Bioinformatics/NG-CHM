@@ -2,17 +2,11 @@ package mda.ngchm.datagenerator;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -195,76 +189,6 @@ public class ShaidyRMapGen {
 	}
 
 	
-	//This and following four routines perform a recursive zip of the heatmap directory.  It is important
-	//that the zip file contain a folder at the top level with folder name = heat map name.
-	public static void zipDirectory(File directoryToZip, String zipFileName) throws IOException {
-
-		List<File> fileList = new ArrayList<File>();
-		getAllFiles(directoryToZip, fileList, true);
-		writeZipFile(directoryToZip, fileList, zipFileName);
-	}
-
-	public static void getAllFiles(File dir, List<File> fileList, boolean topLevel) {
-		try {
-			File[] files = dir.listFiles();
-			for (File file : files) {
-				if (!topLevel)  // there are some build files we don't need in the viewer zip file.  At the top level, just zip the heat map folder not other files.
-					fileList.add(file);
-				if (file.isDirectory()) {
-					getAllFiles(file, fileList, false);
-				} 
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static void writeZipFile(File directoryToZip, List<File> fileList, String zipFileName) {
-
-		try {
-			FileOutputStream fos = new FileOutputStream(zipFileName);
-			ZipOutputStream zos = new ZipOutputStream(fos);
-
-			for (File file : fileList) {
-				if (!file.isDirectory()) { // we only zip files, not directories
-					addToZip(directoryToZip, file, zos);
-				}
-			}
-
-			zos.close();
-			fos.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static void addToZip(File directoryToZip, File file, ZipOutputStream zos) throws FileNotFoundException,
-	IOException {
-
-		FileInputStream fis = new FileInputStream(file);
-
-		// we want the zipEntry's path to be a relative path that is relative
-		// to the directory being zipped, so chop off the rest of the path
-		String zipFilePath = file.getCanonicalPath().substring(directoryToZip.getCanonicalPath().length() + 1,
-				file.getCanonicalPath().length());
-		if (zipFilePath.contains("\\"))
-			zipFilePath = zipFilePath.replace("\\", "/");
-		ZipEntry zipEntry = new ZipEntry(zipFilePath);
-		zos.putNextEntry(zipEntry);
-
-		byte[] bytes = new byte[1024];
-		int length;
-		while ((length = fis.read(bytes)) >= 0) {
-			zos.write(bytes, 0, length);
-		}
-
-		zos.closeEntry();
-		fis.close();
-	}
-
-	
 	//The heat map generator expects a dendro order file whether or not clustering is done.  If clustering
 	//was not done, use the shaidy label file to generate a dendro order file.
 	public static void dendroOrderFromLabels(String labelFile, String matrixFile, String dendroOrderFile, boolean row) throws Exception {
@@ -438,7 +362,7 @@ public class ShaidyRMapGen {
 		String viewerMapDir = rootDir + FILE_SEP + "viewer";
 		String dataPath = rootDir + FILE_SEP + "dataset" + FILE_SEP;
 		String genPDF = ((args.length == 4 && args[3].equals("NO_PDF")) ||  (args.length == 5 && args[4].equals("NO_PDF"))) ? "" : "-PDF";
-		boolean noZip = ((args.length == 4 && args[3].equals("NO_ZIP")) ||  (args.length == 5 && args[4].equals("NO_ZIP")));
+		String genNGCHM = ((args.length == 4 && args[3].equals("NO_ZIP")) ||  (args.length == 5 && args[4].equals("NO_ZIP"))) ? "" : "-NGCHM";
 		
 		//Ensure that directories are properly setup.
 		envChecks(rootDir, chmJSON, viewerMapDir, dataPath);
@@ -466,6 +390,11 @@ public class ShaidyRMapGen {
 			PrintWriter fileout = new PrintWriter( viewerMapDir + File.separator + "heatmapProperties.json", "UTF-8" );
 			fileout.println("{");
 			fileout.println("\t\"chm_name\": \"" + mapName + "\",");
+			
+			String readOnly = getRequiredStr("chm.json", chmRJson, "read_only");
+			if (readOnly != null) {
+				fileout.println("\t\"read_only\": \"" + readOnly + "\","); 
+			}
 
 			//The properties field in the shady R contains various map attributes.  
 			JSONArray properties = (JSONArray)chmRJson.get("properties");
@@ -805,14 +734,12 @@ public class ShaidyRMapGen {
 				System.exit(1);
 			} else {
 				System.out.println(warnings);
-				String genArgs[] = new String[] {viewerMapDir+File.separator+"heatmapProperties.json",genPDF};
+				String genArgs[] = new String[] {viewerMapDir+File.separator+"heatmapProperties.json",genPDF,genNGCHM};
 				String errMsg = HeatmapDataGenerator.processHeatMap(genArgs); 
 				if (errMsg != null) {
 					System.out.println( "ERROR in ShaidyRMapGen e= "+ errMsg);
 					System.exit(1);
 				} else {
-					//Zip results
-					if (!noZip) zipDirectory(theDir, subdir + ".ngchm");
 					System.exit(0);
 				}
 			}

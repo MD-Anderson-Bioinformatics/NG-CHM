@@ -41,6 +41,7 @@ public class ImportData {
 	public int importCols;
 	public String readOnly = NO;
 	public boolean generatePDF = false;
+	public boolean generateNGCHM = false;
 	public ArrayList<AttributeData> chmAttributes = new ArrayList<AttributeData>();
 	public String outputDir;
 	public RowColData rowData;
@@ -59,9 +60,13 @@ public class ImportData {
 	 ******************************************************************/
 	public ImportData(String[] fileInfo) throws Exception
 	{
-		if ((fileInfo.length > 1) && (fileInfo[1].equals("-PDF"))) {
+		if ((fileInfo.length > 1 && fileInfo[1].equals(GENERATE_PDF)) ||  (fileInfo.length > 2 && fileInfo[2].equals(GENERATE_PDF))) {
 			generatePDF = true;
 		}
+		if ((fileInfo.length > 1 && fileInfo[1].equals(GENERATE_NGCHM)) ||  (fileInfo.length > 2 && fileInfo[2].equals(GENERATE_NGCHM))) {
+			generateNGCHM = true;
+		}
+
 		// Retrieve heatmap properties
 		setHeatmapProperties(new File(fileInfo[0]));
 		

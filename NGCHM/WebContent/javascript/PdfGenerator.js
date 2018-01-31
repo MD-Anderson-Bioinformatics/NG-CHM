@@ -372,7 +372,7 @@ NgChm.PDF.getPDF = function() {
 	var leftOff = 20;
 	getDataMatrixDistributionPlot();
 	
-	var sectionHeader = "Row Covariate Bar Legends"
+	var sectionHeader = "Row Covariate Bar Legends"  
 	if (rowBarsToDraw.length > 0){
 //		doc.addPage();
 		leftOff = 20; // ...reset leftOff...
@@ -384,6 +384,7 @@ NgChm.PDF.getPDF = function() {
 		doc.text(10, topOff, sectionHeader , null);
 		doc.setFontType("normal");
 		var leftOff = 20;
+		classBarFigureH = 0;   
 		topOff += classBarTitleSize + 5;
 		for (var i = 0; i < rowBarsToDraw.length;i++){
 			var key = rowBarsToDraw[i];
@@ -407,6 +408,7 @@ NgChm.PDF.getPDF = function() {
 		doc.text(10, topOff, sectionHeader , null);
 		doc.setFontType("normal");
 		var leftOff=20;
+		classBarFigureH = 0;   
 		topOff += classBarTitleSize + 5;
 		for (var i = 0; i < colBarsToDraw.length;i++){
 			var key = colBarsToDraw[i];
@@ -597,7 +599,7 @@ NgChm.PDF.getPDF = function() {
 			doc.text(leftOff + threshMaxLen +barW + 5, bartop + classBarLegendTextSize, "n = " + missingCount , null);
 		}
 		var foundMissing = 0;
-		setClassBarFigureH(10,'discrete',true);   
+		setClassBarFigureH(10,'discrete',false);   
 	}
 
 	/**********************************************************************************
@@ -662,7 +664,7 @@ NgChm.PDF.getPDF = function() {
 			}
 			for (var val in counts){
 				maxCount = Math.max(maxCount, counts[val]);
-				maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val.length)*classBarLegendTextSize);
+				maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val,classBarLegendTextSize)*classBarLegendTextSize);
 			}
 				
 			// NOTE: missingCount will contain all elements that are not accounted for in the thresholds
@@ -736,7 +738,6 @@ NgChm.PDF.getPDF = function() {
 		if(splitTitle.length > 1) {
 			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
 		}
-
 		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap(type, key);
 		var classBarConfig = rowClassBarConfig[key];
 		var classBarData = rowClassBarData[key];
@@ -845,7 +846,6 @@ NgChm.PDF.getPDF = function() {
 			doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + missingCount , null);
 		}
 	}
-
 	
 	/**********************************************************************************
 	 * FUNCTION - adjustForNextClassBar: This function will set the positioning for the
@@ -859,7 +859,7 @@ NgChm.PDF.getPDF = function() {
 			topOff += topSkip; // ... and move the next figure to the line below
 			classBarHeaderHeight = classBarHeaderSize+10; //reset this value
 			var nextClassBarFigureH = getNextLineClassBarFigureH(key,type);
-			if (topOff + nextClassBarFigureH > pageHeight && !isLastClassBarToBeDrawn(key,type)){ // if the next class bar goes off the page vertically...
+			if (topOff + classBarHeaderHeight + nextClassBarFigureH > pageHeight && !isLastClassBarToBeDrawn(key,type)){ // if the next class bar goes off the page vertically...
 				doc.addPage(); // ... make a new page and reset topOff
 				createHeader(theFont, sectionHeader + " (continued)");
 				topOff = paddingTop + 15;
@@ -868,27 +868,28 @@ NgChm.PDF.getPDF = function() {
 		}
 	}
 	
-	
 	/**********************************************************************************
 	 * FUNCTION - getNextLineClassBarFigureH: This function is used to determine the
 	 * height of the next few class bars when a new line of class bar legends needs to 
 	 * be drawn.
 	 **********************************************************************************/
 	function getNextLineClassBarFigureH(key,type){
+		var minLabelLength = doc.getStringUnitWidth("Missing Value")*classBarLegendTextSize;
 		var classBarsToDraw = type == "col" ? colBarsToDraw : rowBarsToDraw;
 		var classBars = type == "col" ? NgChm.heatMap.getColClassificationConfig(): NgChm.heatMap.getRowClassificationConfig();
 		var index = classBarsToDraw.indexOf(key);
 		var classW = classBarFigureW;
 		var maxThresh = 0;
 		var numFigures = 0;
-		while (numFigures*classBarFigureW < pageWidth){
-			var barName = classBarsToDraw[index];
+		var nextIdx = index+1;
+		while (numFigures*(classBarFigureW+minLabelLength+60) < pageWidth){
+			var barName = classBarsToDraw[nextIdx];
 			if (!barName) break;
 			var thisBar = classBars[barName];
 			var threshCount = thisBar.color_map.thresholds.length+1; // +1 added to assume that missing values will be present
 			if (thisBar.color_map.type == "continuous"){threshCount = 10}
 			if (threshCount > maxThresh) maxThresh = threshCount;
-			index++,numFigures++;
+			nextIdx++,numFigures++;
 		}
 		return maxThresh*classBarLegendTextSize;
 	}

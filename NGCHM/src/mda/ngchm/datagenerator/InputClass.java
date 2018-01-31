@@ -228,6 +228,7 @@ public class InputClass {
 	private String[] reOrderClassificationFile(Map<String,String> origData, String[] order) throws Exception {
 		String reorg[] = new String[order.length];
 		try {
+			boolean foundMatch = false;
 			for (int row = 0; row < order.length; row++) {
 	        	  String orderStr = order[row];
 	        	  String classification = null;
@@ -235,6 +236,9 @@ public class InputClass {
 	        		  classification = orderStr;
 	        	  } else {
 	        		  classification = origData.get(orderStr);
+		        	  if (classification != null)  {
+		        		  foundMatch = true;
+		        	  }
 	        	  }
 	        	  // If we don't find a match and the label has hidden fields, try to 
 	        	  // match without the hidden fields.
@@ -244,8 +248,11 @@ public class InputClass {
 	        	  }
 	              reorg[row] = classification;
 	        }
+			if (!foundMatch) {
+				throw new Exception("COVARIATE INVALID: The covariate file (" + name + ") contains class labels that do not match the data matrix labels");
+			}
+ 
     	} catch (Exception ex) { 
-    		System.out.println("ERROR reordering class file: " + ex.toString());
     		throw ex;
 	    }
 		return reorg;
