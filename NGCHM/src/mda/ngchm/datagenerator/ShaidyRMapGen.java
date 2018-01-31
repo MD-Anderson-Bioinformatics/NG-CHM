@@ -391,7 +391,7 @@ public class ShaidyRMapGen {
 			fileout.println("{");
 			fileout.println("\t\"chm_name\": \"" + mapName + "\",");
 			
-			String readOnly = getRequiredStr("chm.json", chmRJson, "read_only");
+			String readOnly = (String)chmRJson.get("read_only"); 
 			if (readOnly != null) {
 				fileout.println("\t\"read_only\": \"" + readOnly + "\","); 
 			}

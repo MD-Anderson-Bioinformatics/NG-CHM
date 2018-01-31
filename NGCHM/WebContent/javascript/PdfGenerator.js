@@ -16,6 +16,7 @@ NgChm.PDF.mdaLogo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQYAAABsCAYAA
  * button on the menu bar.  The PDF preferences panel is then launched
  **********************************************************************************/
 NgChm.PDF.openPdfPrefs = function(e) {
+	NgChm.UHM.closeMenu();
 	maxRows = 0;
 	NgChm.UHM.userHelpClose();
 	var prefspanel = document.getElementById('pdfPrefsPanel');
@@ -23,7 +24,6 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	//Add prefspanel table to the main preferences DIV and set position and display
 	prefspanel.style.top = headerpanel.offsetTop + 15;
 	prefspanel.style.display="inherit";
-	prefspanel.style.left = e.getBoundingClientRect().left - prefspanel.clientWidth;
 	document.getElementById("pdfInputFont"). value = parseInt(document.getElementsByClassName("DynamicLabel")[0].style["font-size"]);
 }
 
@@ -299,13 +299,13 @@ NgChm.PDF.getPDF = function() {
 			if (label.getAttribute("axis") == "Row"){
 				if (NgChm.DET.labelIndexInSearch(NgChm.SEL.currentRow+i,"Row")) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
-					doc.rect((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight+1, longestRowLabelUnits+2, theFont,'F');
+					doc.rect((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, longestRowLabelUnits+2, theFont,'F');
 				}
 				rowLabels++;
 			} else if (label.getAttribute("axis") == "Column") {
 				if (NgChm.DET.labelIndexInSearch(NgChm.SEL.currentCol+i-rowLabels,"Column")) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
-					doc.rect((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth-1, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight,  theFont+2.5, longestColLabelUnits+2,'F'); 
+					doc.rect((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth-2, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight,  theFont+2.5, longestColLabelUnits+2,'F'); 
 				}
 			}
 		}

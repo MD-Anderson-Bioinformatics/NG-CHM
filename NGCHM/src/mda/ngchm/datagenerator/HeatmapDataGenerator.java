@@ -861,11 +861,7 @@ public class HeatmapDataGenerator {
 	 * in the mapData.JSON file. 
 	 ******************************************************************/
 	private static void writeClassValue(String val, int row, int len, OutputStreamWriter fw, int interval, boolean discrete) throws Exception {
-    	if ((MatrixValidator.isNumeric(val)) && !discrete) {
-    		fw.write(val);
-    	} else {
-    		fw.write(QUOTE+val+QUOTE);
-    	}
+		fw.write(QUOTE+val+QUOTE);
     	if (row+interval < len) {
     		fw.write(COMMA);
     	} else {

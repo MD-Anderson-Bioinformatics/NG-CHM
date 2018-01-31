@@ -106,6 +106,8 @@ public class NGCHM_Widgetizer {
         				scriptedLines.append(line + "\n");
     					line = br.readLine();
     					line = br.readLine();
+    					line = br.readLine();
+    					line = br.readLine();
      				} else {
         				scriptedLines.append(line + "\n");
      				}

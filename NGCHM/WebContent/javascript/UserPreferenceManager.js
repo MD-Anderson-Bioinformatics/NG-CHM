@@ -45,6 +45,7 @@ NgChm.UHM.previewDiv = null;
  * Processing for this function is documented in detail in the body of the function.
  **********************************************************************************/
 NgChm.UPM.editPreferences = function(e,errorMsg) {
+	NgChm.UHM.closeMenu();
 	NgChm.UHM.userHelpClose();
 
 	// If helpPrefs element already exists, the user is pressing the gear button

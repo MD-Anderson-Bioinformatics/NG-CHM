@@ -29,6 +29,8 @@
 	 	window.onload = function() {
 	 		window.addEventListener('resize', NgChm.UTIL.chmResize);
 	 		NgChm.UTIL.onLoadCHM();
+	 		document.body.addEventListener('click', NgChm.UHM.closeMenu,true);
+	 		document.getElementById('barMenu_btn').mouseIsOver = "";
 	 	};	
  	</script>
 </head>
@@ -52,21 +54,21 @@
      			<div id="mapName" onmouseover='NgChm.UHM.detailDataToolHelp(this,"Map Name: " + NgChm.heatMap.getMapInformation().name + "<br><br>Description: " + NgChm.heatMap.getMapInformation().description,350,"left")' style="font-size: 14px;color: rgb(51, 51, 51);"></div>
   		    </div>
 		    <div id='bottom_buttons' >
-	 	    	<img id='fileOpen_btn' style="display: none;" src='images/openMap.png' alt='Open .NG-CHM' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Open .NG-CHM Heat Map",160)' onclick='NgChm.SEL.openFileToggle();' align="top"   />
-	 	    	<img id='back_btn' style="display: none;" src='images/returnArrow.png' alt='Return to previous screen' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Return To Previous Screen",160)' onclick='NgChm.UTIL.returnToHome();' align="top"   />
-	 	    	<img id='split_btn' src='images/split.png' alt='Split' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Split Into Two Windows",160)' onclick='NgChm.DET.detailSplit();' align="top"   />
-	 			<img id='zoomOut_btn' src='images/zoom-out.png' alt='Zoom Out' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Zoom Out")' onclick='NgChm.DET.detailDataZoomOut();'   align="top"   />
-			    <img id='zoomIn_btn' src='images/zoom-in.png' alt='Zoom In' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Zoom In")' onclick='NgChm.DET.zoomAnimation();' align="top"   />
-			    <img id='full_btn' src='images/full_selected.png' alt='Full' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Normal View")' onclick='NgChm.DET.detailNormal();' align="top"   />
-			    <img id='ribbonH_btn' src='images/ribbonH.png' alt='Ribbon H' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Horizontal Ribbon View",160)' onclick='NgChm.DET.detailHRibbonButton();' align="top"  />
-			    <img id='ribbonV_btn' src='images/ribbonV.png' alt='Ribbon V' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Vertical Ribbon View",160)' onclick='NgChm.DET.detailVRibbonButton();'  align="top"  />
+	 	    	<img id='fileOpen_btn' style="display: none;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.detailDataToolHelp(this,"Open .NG-CHM Heat Map",160)' onclick='NgChm.SEL.openFileToggle();' align="top"   />
+	 	    	<img id='back_btn' style="display: none;" src='images/returnArrow.png' alt='Return to previous screen' onmouseout='this.setAttribute("src", "images/returnArrow.png");' onmouseover='this.setAttribute("src", "images/returnArrowHover.png");NgChm.UHM.detailDataToolHelp(this,"Return To Previous Screen",160)' onclick='NgChm.UTIL.returnToHome();' align="top"   />
+	 	    	<img id='split_btn' src='images/split.png' alt='Split' onmouseout='this.setAttribute("src", "images/split.png");' onmouseover='this.setAttribute("src", "images/splitHover.png");NgChm.UHM.detailDataToolHelp(this,"Split Into Two Windows",160);' onclick='NgChm.DET.detailSplit();' align="top"   />
+	 			<img id='zoomOut_btn' src='images/zoomOut.png' alt='Zoom Out' onmouseout='this.setAttribute("src", "images/zoomOut.png");' onmouseover='this.setAttribute("src", "images/zoomOutHover.png");NgChm.UHM.detailDataToolHelp(this,"Zoom Out")' onclick='NgChm.DET.detailDataZoomOut();'   align="top"   />
+			    <img id='zoomIn_btn' src='images/zoomIn.png' alt='Zoom In' onmouseout='this.setAttribute("src", "images/zoomIn.png");' onmouseover='this.setAttribute("src", "images/zoomInHover.png");NgChm.UHM.detailDataToolHelp(this,"Zoom In")' onclick='NgChm.DET.zoomAnimation();' align="top"   />
+			    <img id='full_btn' src='images/full_selected.png' alt='Full' onmouseout='NgChm.UHM.fullBtnOver(this,0);' onmouseover='NgChm.UHM.fullBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Normal View")' onclick='NgChm.DET.detailNormal();' align="top"   />
+			    <img id='ribbonH_btn' src='images/ribbonH.png' alt='Ribbon H' onmouseout='NgChm.UHM.ribbonHBtnOver(this,0);' onmouseover='NgChm.UHM.ribbonHBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Horizontal Ribbon View",160)' onclick='NgChm.DET.detailHRibbonButton();' align="top"  />
+			    <img id='ribbonV_btn' src='images/ribbonV.png' alt='Ribbon V' onmouseout='NgChm.UHM.ribbonVBtnOver(this,0);' onmouseover='NgChm.UHM.ribbonVBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Vertical Ribbon View",160)' onclick='NgChm.DET.detailVRibbonButton();'  align="top"  />
 	   			<span style='display: inline-block;'><b>Search: </b><input type="text" id="search_text" name="search" onkeyup='NgChm.DET.clearSrchBtns(event);' onchange='NgChm.DET.detailSearch();' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.", 400)' /></span>	
-			    <img id='go_btn' src='images/go.png' alt='Go' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Search Row/Column Labels",180)'  onclick='NgChm.DET.detailSearch();' align="top"  />
-			    <img id='prev_btn' src='images/prev.png' alt='Previous' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Previous Search Result",160)' style="display:none;" onclick='NgChm.DET.searchPrev();'  align="top"  />
-			    <img id='next_btn' src='images/next.png' alt='Next' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Next Search Result",160)' style="display:none;" onclick='NgChm.DET.searchNext();'  align="top"  />
-			    <img id='cancel_btn' src='images/cancel.png' alt='Cancel' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Clear Search Results",160)' style="display:none;" onclick='NgChm.DET.clearSearch(event);'  align="top"  />
+			    <img id='go_btn' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.detailDataToolHelp(this,"Search Row/Column Labels",180)'  onclick='NgChm.DET.detailSearch();' align="top"  />
+			    <img id='prev_btn' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.detailDataToolHelp(this,"Previous Search Result",160)' style="display:none;" onclick='NgChm.DET.searchPrev();'  align="top"  />
+			    <img id='next_btn' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.detailDataToolHelp(this,"Next Search Result",160)' style="display:none;" onclick='NgChm.DET.searchNext();'  align="top"  />
+			    <img id='cancel_btn' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.detailDataToolHelp(this,"Clear Search Results",160)' style="display:none;" onclick='NgChm.DET.clearSearch(event);'  align="top"  />
 		    </div>
-			<div id="pdf_gear" align="right" style="position: absolute;right: 15;top:0">
+			<div id="pdf_gear" align="right" style="position: absolute;right: 0;top:0">
 				<div id="flicks" style="display: none;">
 				    <div id="noFlickViews" style="display: none;">
 				    	<table><tr><td><img id='flickOff' src='images/layersOff.png' onclick="NgChm.SEL.flickToggleOn();" onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Open Data Layer Control",160)'/></td></tr></table>
@@ -78,11 +80,7 @@
 				    		</tr></table>
 			    	</div>
 				</div>
-		    	<img id='pdf_btn' src='images/pdf.png' alt='go' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Save Heat Map As PDF",160)' onclick='NgChm.PDF.openPdfPrefs(this,null);' align="top"/>
-		    	<img id='save_btn' src='images/saveButton.png' alt='go' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Save Heat Map Changes",160)' onclick='NgChm.UHM.saveHeatMapChanges();' align="top"/>
- 	    		<img id='gear_btn' src='images/gear.png' alt='Modify Map' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Modify Map Preferences",160)' onclick='NgChm.UPM.editPreferences(this,null);' align="top"/>
- 	    		<img id='help_btn' src='images/questionMark.png' alt='Help' onmouseover='NgChm.UHM.detailDataToolHelp(this,"NgChm Help",160)' onclick='NgChm.UHM.openHelp(this);' align="top"/> 
-	    		
+ 	    		<img id='barMenu_btn' src='images/barMenu.png' alt='Open Menu' onmouseout='NgChm.UHM.menuOver(0)' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.detailDataToolHelp(this,"Open Menu")' onclick='NgChm.UHM.openMenu(this);' align="top"/> 
     		</div>
 		 </div> 
     </div>  
@@ -114,11 +112,6 @@
 				<div id='colLabelDiv' axis="Column" style="display: inline-block; position: absolute; right: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
 				<div id='rowLabelDiv' axis ="Row" style="display: inline-block; position: absolute; bottom: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
 			</div>
-		</div>
-		<div id='insilico_footer' style="right:-3px; bottom:-3px;position:absolute">
-			<a href="http://insilico.us.com/"  target="_blank">
-				<img id='insilicologo' src='images/insilicologo.png' alt='insilico' height="20px"/>
-			</a>
 		</div>
 	</div>
 	<div id="pdfPrefsPanel" style="display: none; position: absolute; background-color: rgb(203, 219, 246);">
@@ -220,6 +213,17 @@
 		<div style="height: 20px;"></div>
 		<div id="prefTabButtons">&nbsp;<img id="prefLayer_btn" src="images/heatMapColorsOff.png" alt="Edit Data Layers" onclick="NgChm.UPM.showLayerPrefs();" 	align="top">&nbsp;<img id="prefRowsCols_btn" src="images/rowsColsOn.png" alt="Edit Rows &amp; Columns" onclick="NgChm.UPM.showRowsColsPrefs();" align="top">&nbsp;<img id="prefClass_btn" src="images/covariateBarsOff.png" alt="Edit Classifications" onclick="NgChm.UPM.showClassPrefs();" align="top"></div>
 		<div id="prefPrefs" class="prefSubPanel" style="display: block; height: 70"></div>
+	</div>
+	<div id="menuPanel" style="display: none;">
+		<div id="menuSpace" class="menuitemTop"></div><br>
+		<div id="menuPdf" class="menuItem" onclick='NgChm.PDF.openPdfPrefs(this,null);'><img id='menuPdf_btn' class="menuitem" name ='menuPdf' src='images/pdf.png' align='middle'>&nbsp;&nbsp;Save Heat Map As PDF...</div><br>
+		<div id="menuSave" class="menuItem" onclick='NgChm.UHM.saveHeatMapChanges();'><img id='menuSave_btn' class="menuitem" name ='menuSave' src='images/saveButton.png' align='middle'>&nbsp;&nbsp;Save Heat Map Changes...</div><br>
+		<div id="menuGear" class="menuitem" onclick='NgChm.UPM.editPreferences(this,null);'><img id='menuGear_btn' class="menuitem" name ='menuGear' src='images/gear.png' align='middle'>&nbsp;&nbsp;Modify Map Preferences...</div><br>
+		<div id="menuSpace" class="menuitemBorder"></div><br>
+	<!--  	<div id="menuLink" class="menuitem" onclick='NgChm.UHM.openHelp(this);'><img id='linkHelp_btn' class="menuitem" name ='linkHelp' src='images/linkouts.png' align='middle'>&nbsp;&nbsp;Linkout Help...</div><br>  -->
+		<div id="menuHelp" class="menuitem" onclick='NgChm.UHM.openHelp(this);'><img id='help_btn' class="menuitem" name ='menuGear' src='images/questionMark.png' align='middle'>&nbsp;&nbsp;NgChm Help...</div><br>
+		<div id="menuSpaceAbout" class="menuitemBorder"></div><br  id="spaceAboutBr" >
+		<div id="menuAbout" class="menuitem" onclick='NgChm.UHM.widgetHelp();'><img id='about_btn' class="menuitem" name ='menuGear' src='images/aboutNgchm.png' align='middle'>&nbsp;&nbsp;About NgChm...</div><br  id="aboutBr" >
 	</div>
 	</body>
 </html>

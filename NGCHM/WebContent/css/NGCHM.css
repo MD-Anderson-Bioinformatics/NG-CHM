@@ -63,6 +63,36 @@ div.mdaServiceHeaderLogo img
     background-color: white;
 }
 
+#menuPanel {
+    position:absolute;
+	width: 275px;
+    right: 0px; 
+	z-index: 10000;
+	background-color: #FFFFFF; 
+	border-left: 1px solid gray; 
+	border-bottom: 1px solid gray; 
+	border-top: 1px solid gray; 
+}
+
+
+.menuItem {
+    padding: 1px 10px 1px 10px;
+	}
+
+.menuItemBorder {
+	border-bottom: 1px solid gray; 
+    padding: 0px 5px 5px 10px;
+}
+
+.menuItemTop {
+    padding: 5px 10px 1px 10px;
+}
+
+.menuitem:hover {
+     background-color: LightGray;
+}
+
+
 #row_dendro_canvas, #column_dendro_canvas{
 	position: absolute;
 }
@@ -363,6 +393,13 @@ th.breakpointContainer {
     border-collapse: collapse;    
 }
 
+#prefTabButtons {
+	align: top;
+	border-bottom-width: 2px;
+	border-bottom-color: #0843c1;
+	border-bottom-style: solid;
+}
+
 #prefsPanel {
 	height: 100%;
 	width: 420px;
@@ -372,6 +409,7 @@ th.breakpointContainer {
 	background-color: #CBDBF6; 
 	border-left: 1px solid black; 
 	border-right: 1px solid black; 
+	z-index: 10000;
 }
 
 #prefTabButtons {
@@ -403,6 +441,7 @@ th.breakpointContainer {
 
 #pdfPrefsPanel, #msgBox {
     margin: 5px !important;
+    right: 5%;
     padding: 2px 2px 2px 2px !important;
     border: 1px solid #1a1a1a;
     border-radius: 15px;

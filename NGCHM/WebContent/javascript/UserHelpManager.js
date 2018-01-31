@@ -330,10 +330,10 @@ NgChm.UHM.detailDataToolHelp = function(e,text,width,align) {
 	    
 //	    if (helptext.offsetParent == e.parentElement){ // in most cases, this will be true
 	    	if (2*width + e.getBoundingClientRect().right > document.body.offsetWidth-50){ // 2*width and -50 from window width to force elements close to right edge to move
-		    	if (e.offsetLeft === 0) {
-			    	helptext.style.left = e.offsetLeft - 40;
+		    	if (e.offsetLeft < 5) {
+			    	helptext.style.left = e.offsetLeft + 50;
 		    	} else {
-			    	helptext.style.left = e.offsetLeft - width;  
+			    	helptext.style.left = e.offsetLeft - (width*1.5);  
 		    	}
 		    } else {
 		    	if (e.offsetLeft !== 0) {
@@ -451,6 +451,7 @@ NgChm.UHM.showSearchError = function(type) {
  * display a modal window whenever the user requests to save heat map changes.  
  **********************************************************************************/
 NgChm.UHM.saveHeatMapChanges = function() {
+	NgChm.UHM.closeMenu();
 	NgChm.UHM.initMessageBox();
 	NgChm.heatMap.setDividerPref();
 	NgChm.UHM.setMessageBoxHeader("Save Heat Map");
@@ -507,7 +508,7 @@ NgChm.UHM.widgetHelp = function() {
 	document.getElementById('ngchmLogos').style.display = '';
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("About NG-CHM Viewer");
-	var text = "<br>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.<br><br><a href='http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview' target='_blank'>Full NG-CHM Information and Help</a><br><br><b>Software Version: </b>" + NgChm.CM.version+"<br><b>Map Version: </b>" +NgChm.heatMap.getMapInformation().version_id+"<br><br>";
+	var text = "<br>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.<br><br><a href='http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview' target='_blank'>Additional NG-CHM Information and Help</a><br><br><b>Software Version: </b>" + NgChm.CM.version+"<br><b>Map Version: </b>" +NgChm.heatMap.getMapInformation().version_id+"<br><br>";
 	NgChm.UHM.setMessageBoxText(text);
 	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
@@ -659,8 +660,8 @@ NgChm.UHM.initMessageBox = function() {
 	var msgBox = document.getElementById('msgBox');
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	document.getElementById('loader').style.display = 'none'
-	msgBox.style.top = headerpanel.offsetTop + 150;
-	msgBox.style.left = headerpanel.offsetLeft + 300;
+	msgBox.style.top = headerpanel.offsetTop + 15;
+	msgBox.style.right = "5%";
 	
 	document.getElementById('msgBox').style.display = 'none';
 	document.getElementById('msgBoxBtnImg_1').style.display = 'none';
@@ -699,6 +700,7 @@ NgChm.UHM.messageBoxCancel = function() {
 }
 
 NgChm.UHM.openHelp = function() {
+	NgChm.UHM.closeMenu();
 	if (NgChm.MMGR.source !== NgChm.MMGR.WEB_SOURCE) {
 		NgChm.UHM.widgetHelp();
 	} else {
@@ -706,6 +708,70 @@ NgChm.UHM.openHelp = function() {
 		window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
 	}
 }
+
+NgChm.UHM.openMenu = function(e) {
+	var menu = document.getElementById('menuPanel');
+	var parent = menu.parentElement;
+	var parentTop = parent.offsetTop+50;
+	menu.style.top = parentTop;
+	if (menu.style.display === 'none') {
+		menu.style.display = '';
+		if (NgChm.MMGR.source !== NgChm.MMGR.WEB_SOURCE) {
+			document.getElementById('menuAbout').style.display = 'none';
+			document.getElementById('menuSpaceAbout').style.display = 'none';
+			document.getElementById('spaceAboutBr').style.display = 'none';
+			document.getElementById('aboutBr').style.display = 'none';
+		}
+	} else {
+		menu.style.display = 'none';
+	}
+}
+
+NgChm.UHM.closeMenu = function() {
+	if (document.getElementById('barMenu_btn').mouseIsOver < 1) {
+		var menu = document.getElementById('menuPanel');
+		menu.style.display = 'none';
+	}
+}
+
+NgChm.UHM.menuOver = function(val) {
+	var menuBtn = document.getElementById('barMenu_btn')
+	if (val === 0) {
+		menuBtn.setAttribute('src', 'images/barMenu.png');
+	} else {
+		menuBtn.setAttribute('src', 'images/barMenuHover.png');
+	}
+	menuBtn.mouseIsOver=val;
+}
+
+NgChm.UHM.fullBtnOver = function(btn,val) {
+	if (NgChm.SEL.mode !=='NORMAL') {
+		if (val === 0) {
+			btn.setAttribute('src', 'images/full.png');
+		} else {
+			btn.setAttribute('src', 'images/fullHover.png');
+		}
+	}
+}
+NgChm.UHM.ribbonHBtnOver = function(btn,val) {
+	if (NgChm.SEL.mode !=='RIBBONH') {
+		if (val === 0) {
+			btn.setAttribute('src', 'images/ribbonH.png');
+		} else {
+			btn.setAttribute('src', 'images/ribbonHHover.png');
+		}
+	}
+}
+NgChm.UHM.ribbonVBtnOver = function(btn,val) {
+	if (NgChm.SEL.mode !=='RIBBONV') {
+		if (val === 0) {
+			btn.setAttribute('src', 'images/ribbonV.png');
+		} else {
+			btn.setAttribute('src', 'images/ribbonVHover.png');
+		}
+	}
+}
+
 
 /**********************************************************************************
  * FUNCTION - displayStartupWarnings: The purpose of this function is to display any
