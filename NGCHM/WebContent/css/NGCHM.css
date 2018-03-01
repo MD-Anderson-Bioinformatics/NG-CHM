@@ -249,6 +249,30 @@ div.mdaServiceHeaderLogo img
     vertical-align: center;
 }
 
+.chmHdrRow tr {
+	display: 'none';
+    height: 0px;
+	padding: 0px;
+    font-size: 80% !important;
+    font-family: Arial;
+    font-weight: normal;
+    color: #0843c1;
+    vertical-align: center;
+}
+
+.chmHdrRow td {
+	font-size: 80% !important;
+    font-family: Arial;
+    font-weight: bold;
+    color: #FFFFFF;
+    background-color: #0843c1;
+}
+
+.chmTblCell {
+	padding: 5px;
+}
+
+
 .searchItem{
 	background-color: yellow;
 }
@@ -393,7 +417,7 @@ th.breakpointContainer {
     border-collapse: collapse;    
 }
 
-#prefTabButtons {
+#prefTabButtons, #linkTabButtons {
 	align: top;
 	border-bottom-width: 2px;
 	border-bottom-color: #0843c1;
@@ -439,7 +463,7 @@ th.breakpointContainer {
     color: red;
 }
 
-#pdfPrefsPanel, #msgBox {
+#pdfPrefsPanel, #msgBox, #linkBox {
     margin: 5px !important;
     right: 5%;
     padding: 2px 2px 2px 2px !important;
@@ -456,9 +480,13 @@ th.breakpointContainer {
     width: auto;
     box-shadow: 5px 5px 5px #777777;
     white-space: nowrap;
+    box-sizing: border-box
+}
+#msgBoxTxt {
+    box-sizing: border-box
 }
 
-#prefsHeader, #pdfPrefsHeader, #msgBoxHdr{
+#prefsHeader, #pdfPrefsHeader, #msgBoxHdr, #linkBoxHdr{
     display: table;
     font-size: 18px;
     font-weight: bold;
@@ -471,7 +499,7 @@ th.breakpointContainer {
     background: #CBD1EA;
 }
 
-#pdfPrefsHeader, #msgBoxHdr{
+#pdfPrefsHeader, #msgBoxHdr, #linkBoxHdr{
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
 }

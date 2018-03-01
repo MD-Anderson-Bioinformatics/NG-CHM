@@ -48,11 +48,17 @@ public static boolean debugOutput = false;
 			System.exit(1);
 		}
 		System.out.println("START Galaxy Interface Advanced Heat Map Generation: " + new Date()); 
+		//Used to keep pdfBox warning messages out of the log (specifically for Galaxy)
+		java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.SEVERE);
 		//Create an output directory - this should be a heatmap name.
 		String dir = ""+ new Date().getTime();
 		File tDir = new File(dir);
 		tDir.mkdir();
 		String name = args[1].replace(' ', '_');
+		//Truncate name to 40 characters
+		if (name.length() > 40) {
+			name = name.substring(0,40);
+		}
 		String subdir = dir + File.separator + File.separator + name;
 		File sub = new File(subdir);
 		sub.mkdir();
@@ -116,7 +122,7 @@ public static boolean debugOutput = false;
 				String[] cutValues = rowCutsVal.split("t");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"tree_cuts\": \"" + cutValues[0] + "\",");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
-			} else if (!rowCutsVal.equals("None") && !rowCutsVal.equals("0")) {
+			} else if (!rowCutsVal.equals("None") && !rowCutsVal.equals("0") && !rowCutsVal.equals(EMPTY)) {
 				String[] toks = rowCutsVal.split(",");
 				boolean cutsValid = true;
 				for (int j=0;j<toks.length;j++) {
@@ -179,7 +185,6 @@ public static boolean debugOutput = false;
 					}
 				}
 				if (cutsValid) {
-					System.out.println("INSIDE CUTS VALID");
 					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_locations\": [" + colCutsVal + "],");
 					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
 				}
@@ -230,7 +235,11 @@ public static boolean debugOutput = false;
 				String fileName = new File(args[pos+1]).getName();
 				if (fileName.contains("."))
 					fileName = fileName.substring(0,fileName.lastIndexOf("."));
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"name\": \"" + args[pos] + "\",");
+				String className = args[pos];
+				if (className.length() > 25) {
+					className = className.substring(0, 25);
+				}
+				writeHeatmapPropertiesEntry(fileout, "\t\t\"name\": \"" + className + "\",");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"path\": \"" + args[pos+1] + "\",");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"position\": \"" + type + "\",");
 				if (!barType.equals("color_plot")) {
@@ -289,6 +298,10 @@ public static boolean debugOutput = false;
 		File tDir = new File(dir);
 		tDir.mkdir();
 		String name = args[1].replace(' ', '_');
+		//Truncate name to 40 characters
+		if (name.length() > 40) {
+			name = name.substring(0,40);
+		}
 		String subdir = dir + File.separator + File.separator + name;
 		File sub = new File(subdir);
 		sub.mkdir();
@@ -357,7 +370,11 @@ public static boolean debugOutput = false;
 				String fileName = new File(args[pos+1]).getName();
 				if (fileName.contains("."))
 					fileName = fileName.substring(0,fileName.lastIndexOf("."));
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"name\": \"" + args[pos] + "\",");
+				String className = args[pos];
+				if (className.length() > 25) {
+					className = className.substring(0, 25);
+				}
+				writeHeatmapPropertiesEntry(fileout, "\t\t\"name\": \"" + className + "\",");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"path\": \"" + args[pos+1] + "\",");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"position\": \"" + type + "\",");
 				writeHeatmapPropertiesEntry(fileout, "\t\t\"color_map\": {");

@@ -94,6 +94,9 @@ public class HeatmapDataGenerator {
 		System.out.println("START Data Generator Heat Map Generation: " + new Date()); 
 		String errMsg = null;
 		
+		//Used to keep pdfBox warning messages out of the log (specifically for Galaxy)
+		java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.SEVERE);
+		
 		// Validate JSON configuration file
         try {     
         	validateConfigJson(new File(args[0]));
@@ -1873,7 +1876,7 @@ public class HeatmapDataGenerator {
 		 ******************************************************************/
 		private static void zipDirectory(String zipDir, String chmName) throws IOException {
 			File directoryToZip = new File(zipDir);
-			File rootDir = new File(zipDir.substring(0,zipDir.lastIndexOf(File.separator)));
+			File rootDir = new File(zipDir.substring(0,Math.max(zipDir.lastIndexOf(File.separator), zipDir.lastIndexOf("/"))));
 			String zipFileName = zipDir + FILE_SEP + chmName + ".ngchm";
 			List<File> fileList = new ArrayList<File>();
 			fileList.add(directoryToZip);

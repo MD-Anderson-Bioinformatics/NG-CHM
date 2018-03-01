@@ -386,9 +386,10 @@ NgChm.UTIL.chmResize = function () {
  		NgChm.SUM.summaryResize();
  		NgChm.DET.detailResize();
  		NgChm.UPM.prefsResize();
-	//   	NgChm.DET.clearLabels();
- 	//	NgChm.DET.drawRowAndColLabels();
  		NgChm.DET.detailResize();
+ 		if (document.getElementById('linkBox').style.display !== 'none') {
+ 			NgChm.UHM.linkBoxSizing();
+ 		}
 }
 
 /**********************************************************************************

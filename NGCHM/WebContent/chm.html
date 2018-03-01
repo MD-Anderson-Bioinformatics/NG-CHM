@@ -208,6 +208,32 @@
 			</tbody>
 		</table>
 	</div>
+	<div id="linkBox" style="display: none; position: absolute; background-color: rgb(230, 240, 255); width: 800px;">
+		<div id="linkBoxHdr" class="msgBoxHdr"></div>  
+		<table>
+			<tbody>
+				<tr class=chmTblRow"><td style='line-height:4px;' colspan=2>&nbsp;</td></tr>
+				<tr class="chmTblRow"><td><b>This screen contains a listing of all plug-ins that are active in the current heat map and a listing all plug-ins installed in this Ng-Chm system.</b></td></tr>
+				<tr class="chmTblRow">
+					<td>
+						<div id="linkTabButtons">&nbsp;<img id="mapLinks_btn" src="images/mapLinksOn.png" alt="Plugins available for this map" onclick="NgChm.UHM.showMapPlugins();" 	align="top">&nbsp;<img id="allLinks_btn" src="images/allLinksOff.png" alt="Plugins Installed" onclick="NgChm.UHM.showAllPlugins();" align="top"></div>
+						<div id="linkBoxTxt" style="font-size: 12px; background-color: #FFFFFF; width: 780px; overflow-y: auto;"></div>
+						<div id="linkBoxAllTxt" style="font-size: 12px; background-color: #FFFFFF; width: 780px; overflow-y: auto;  display: none;"></div>
+						<table>
+							<tbody>
+								<tr><td style='line-height:4px;' colspan=2>&nbsp;</td></tr>
+								<tr>
+									<td align="left">
+											<img id="linkBoxBtn" src="images/closeButton.png" onclick='NgChm.UHM.linkBoxCancel();' align="top">
+									</td>
+								</tr>
+							</tbody>
+						</table> 
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
 	<div id="prefsPanel" style="display: none;">
 		<div id="prefsHeader"><img id='prefsMove_btn' name = 'moveLeft' src='images/prefsLeft.png' alt='Move preferences' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Move Preferences",120)' onclick='NgChm.UPM.prefsMoveButton();' align='left'>Heat Map Display Properties<img id="redX_btn" src="images/redX.png" alt="Cancel changes" onclick="NgChm.UPM.prefsCancelButton();" align="right"></div>
 		<div style="height: 20px;"></div>
@@ -220,8 +246,8 @@
 		<div id="menuSave" class="menuItem" onclick='NgChm.UHM.saveHeatMapChanges();'><img id='menuSave_btn' class="menuitem" name ='menuSave' src='images/saveButton.png' align='middle'>&nbsp;&nbsp;Save Heat Map Changes...</div><br>
 		<div id="menuGear" class="menuitem" onclick='NgChm.UPM.editPreferences(this,null);'><img id='menuGear_btn' class="menuitem" name ='menuGear' src='images/gear.png' align='middle'>&nbsp;&nbsp;Modify Map Preferences...</div><br>
 		<div id="menuSpace" class="menuitemBorder"></div><br>
-	<!--  	<div id="menuLink" class="menuitem" onclick='NgChm.UHM.openHelp(this);'><img id='linkHelp_btn' class="menuitem" name ='linkHelp' src='images/linkouts.png' align='middle'>&nbsp;&nbsp;Linkout Help...</div><br>  -->
-		<div id="menuHelp" class="menuitem" onclick='NgChm.UHM.openHelp(this);'><img id='help_btn' class="menuitem" name ='menuGear' src='images/questionMark.png' align='middle'>&nbsp;&nbsp;NgChm Help...</div><br>
+	  	<div id="menuLink" class="menuitem" onclick='NgChm.UHM.openLinkoutHelp();'><img id='linkHelp_btn' class="menuitem" name ='linkHelp' src='images/plugin.png' align='middle'>&nbsp;&nbsp;Plug-in Help...</div><br>  
+  		<div id="menuHelp" class="menuitem" onclick='NgChm.UHM.openHelp(this);'><img id='help_btn' class="menuitem" name ='menuGear' src='images/questionMark.png' align='middle'>&nbsp;&nbsp;NgChm Help...</div><br> 
 		<div id="menuSpaceAbout" class="menuitemBorder"></div><br  id="spaceAboutBr" >
 		<div id="menuAbout" class="menuitem" onclick='NgChm.UHM.widgetHelp();'><img id='about_btn' class="menuitem" name ='menuGear' src='images/aboutNgchm.png' align='middle'>&nbsp;&nbsp;About NgChm...</div><br  id="aboutBr" >
 	</div>

@@ -825,4 +825,338 @@ NgChm.UHM.displayStartupWarnings = function() {
 	document.getElementById('msgBox').style.display = '';
 }
 
+/*===========================================================
+ * 
+ * LINKOUT HELP MENU ITEM FUNCTIONS
+ * 
+ *===========================================================*/
+
+/**********************************************************************************
+ * FUNCTION - openLinkoutHelp: The purpose of this function is to construct an 
+ * HTML tables for plugins associated with the current heat map AND plugins 
+ * installed for the NG-CHM instance. Then the logic to display the linkout 
+ * help box is called. 
+ **********************************************************************************/
+NgChm.UHM.openLinkoutHelp = function() {
+	NgChm.UHM.closeMenu();
+	var mapLinksTbl = NgChm.UHM.openMapLinkoutsHelp();
+	var allLinksTbl = NgChm.UHM.openAllLinkoutsHelp();
+	NgChm.UHM.linkoutHelp(mapLinksTbl,allLinksTbl);
+}
+
+/**********************************************************************************
+ * FUNCTION - openMapLinkoutsHelp: The purpose of this function is to construct an 
+ * HTML table object containing all of the linkout plugins that apply to a 
+ * particular heat map. The table is created and then passed on to a linkout
+ * popup help window.
+ **********************************************************************************/
+NgChm.UHM.openMapLinkoutsHelp = function() {
+	var validPluginCtr = 0;
+	var pluginTbl = document.createElement("TABLE");
+	var rowLabels = NgChm.heatMap.getRowLabels().label_type;
+	var colLabels = NgChm.heatMap.getColLabels().label_type;
+	pluginTbl.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
+	var tr = pluginTbl.insertRow();
+	var tr = pluginTbl.insertRow();
+	for (var i=0;i<NgChm.CUST.customPlugins.length;i++) {
+		var plugin = NgChm.CUST.customPlugins[i];
+		var rowPluginFound = NgChm.UHM.isPluginFound(plugin, rowLabels);
+		var colPluginFound = NgChm.UHM.isPluginFound(plugin, colLabels);
+		var matrixPluginFound = NgChm.UHM.isPluginMatrix(plugin);
+		var axesFound = matrixPluginFound && rowPluginFound && colPluginFound ? "Row, Column, Matrix" : rowPluginFound && colPluginFound ? "Row, Column" : rowPluginFound ? "Row" : colPluginFound ? "Column" : "None";
+		//If there is at least one available plugin, fill table with plugin rows containing 5 cells
+		if (rowPluginFound || colPluginFound) {
+			//If first plugin being written to table, write header row.
+			if (validPluginCtr === 0) {
+				tr.className = "chmHdrRow";
+				var td = tr.insertCell(0);
+				td.innerHTML = "<b>Version</b>";
+				td = tr.insertCell(0);
+				td.innerHTML = "<b>Plugin Axes</b>";
+				td = tr.insertCell(0);
+				td.innerHTML = "<b>Description</b>";
+				td = tr.insertCell(0);
+				td.innerHTML = "<b>Name</b>";
+				td = tr.insertCell(0);
+				td.className = "chmHdrRow";
+				td.innerHTML = "Website";
+			}
+			validPluginCtr++;
+			var plugLogo;
+			//If there is no plugin logo, replace it with hyperlink using plugin name
+			var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' width='100px'>" : plugin.name;
+			var hrefSite = typeof plugin.site !== 'undefined' ? "<a href='"+plugin.site+"' target='_blank'> " : "<a>";
+			var logo = hrefSite + logoImage + "</a>";
+			var tr = pluginTbl.insertRow();
+			tr.className = "chmTblRow";
+			var tdLogo = tr.insertCell(0);
+			tdLogo.className = "chmTblCell";
+			tdLogo.innerHTML = logo;
+			var tdName = tr.insertCell(1);
+			tdName.className = "chmTblCell";
+			tdName.style.fontWeight="bold";
+			tdName.innerHTML = plugin.name;
+			var tdDesc = tr.insertCell(2);
+			tdDesc.className = "chmTblCell";
+			tdDesc.innerHTML = plugin.description;
+			var tdAxes = tr.insertCell(3);
+			tdAxes.className = "chmTblCell";
+			tdAxes.innerHTML = axesFound;
+			var tdVersion = tr.insertCell(4);
+			tdVersion.className = "chmTblCell";
+			tdVersion.innerHTML = plugin.version;
+		} 
+	}
+	if (validPluginCtr === 0) {
+		var tr = pluginTbl.insertRow();
+		tr.className = "chmTblRow";
+		var tdLogo = tr.insertCell(0);
+		tdLogo.className = "chmTblCell";
+		tdLogo.innerHTML = "<B>NO AVAILABLE PLUGINS WERE FOUND FOR THIS HEATMAP</B>";
+
+	}
+	return pluginTbl;
+}
+
+/**********************************************************************************
+ * FUNCTION - openAllLinkoutsHelp: The purpose of this function is to construct an 
+ * HTML table object containing all of the linkout plugins that are installed for
+ * the NG-CHM instance. The table is created and then passed on to a linkout
+ * popup help window.
+ **********************************************************************************/
+NgChm.UHM.openAllLinkoutsHelp = function() {
+	var validPluginCtr = 0;
+	var pluginTbl = document.createElement("TABLE");
+	pluginTbl.id = 'allPlugins';
+	pluginTbl.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
+	var tr = pluginTbl.insertRow();
+	var tr = pluginTbl.insertRow();
+	for (var i=0;i<NgChm.CUST.customPlugins.length;i++) {
+		var plugin = NgChm.CUST.customPlugins[i];
+			//If first plugin being written to table, write header row.
+			if (validPluginCtr === 0) {
+				tr.className = "chmHdrRow";
+				var td = tr.insertCell(0);
+				td.innerHTML = "<b>Version</b>";
+				td = tr.insertCell(0);
+				td.innerHTML = "<b>Description</b>";
+				td = tr.insertCell(0);
+				td.innerHTML = "<b>Name</b>";
+				td = tr.insertCell(0);
+				td.className = "chmHdrRow";
+				td.innerHTML = "Website";
+			}
+			validPluginCtr++;
+			var plugLogo;
+			//If there is no plugin logo, replace it with hyperlink using plugin name
+			var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' width='100px'>" : plugin.name;
+			var hrefSite = typeof plugin.site !== 'undefined' ? "<a href='"+plugin.site+"' target='_blank'> " : "<a>";
+			var logo = hrefSite + logoImage + "</a>";
+			var tr = pluginTbl.insertRow();
+			tr.className = "chmTblRow";
+			var tdLogo = tr.insertCell(0);
+			tdLogo.className = "chmTblCell";
+			tdLogo.innerHTML = logo;
+			var tdName = tr.insertCell(1);
+			tdName.className = "chmTblCell";
+			tdName.style.fontWeight="bold";
+			tdName.innerHTML = plugin.name;
+			var tdDesc = tr.insertCell(2);
+			tdDesc.className = "chmTblCell";
+			tdDesc.innerHTML = plugin.description;
+			var tdVersion = tr.insertCell(3);
+			tdVersion.className = "chmTblCell";
+			tdVersion.innerHTML = plugin.version;
+	}
+	return pluginTbl;
+}
+
+/**********************************************************************************
+ * FUNCTION - isPluginFound: The purpose of this function is to check to see if 
+ * a given plugin is applicable for the current map based upon the label types.
+ * Row or column label types are passed into this function.
+ **********************************************************************************/
+NgChm.UHM.isPluginFound = function(plugin,labels) {
+	var pluginFound = false;
+	if (plugin.name === "TCGA") {
+		for (var l=0;l<labels.length;l++) {
+			var tcgaBase = "bio.tcga.barcode.sample";
+			if (labels[l] === tcgaBase) {
+				pluginFound = true;
+			}
+			if (typeof NgChm.CUST.subTypes[tcgaBase] !== 'undefined') {
+				for(var m=0;m<NgChm.CUST.subTypes[tcgaBase].length;m++) {
+					var subVal = NgChm.CUST.subTypes[tcgaBase][m];
+					if (labels[l] === subVal) {
+						pluginFound = true;
+					}
+				}
+			}
+		}
+	} else {
+		for (var k=0;k<plugin.linkouts.length;k++) {
+			var typeN = plugin.linkouts[k].typeName;
+			for (var l=0;l<labels.length;l++) {
+				var labelVal = labels[l];
+				if (labelVal === typeN) {
+					pluginFound = true;
+				}
+				if (typeof NgChm.CUST.superTypes[labelVal] !== 'undefined') {
+					for(var m=0;m<NgChm.CUST.superTypes[labelVal].length;m++) {
+						var superVal = NgChm.CUST.superTypes[labelVal][m];
+						if (superVal === typeN) {
+							pluginFound = true;
+						}
+					}
+				}
+			}
+		}
+	}
+	return pluginFound;
+}
+
+/**********************************************************************************
+ * FUNCTION - isPluginMatrix: The purpose of this function is to determine whether
+ * a given plugin is also a Matrix plugin.
+ **********************************************************************************/
+NgChm.UHM.isPluginMatrix = function(plugin) {
+	var pluginMatrix = false;
+	if (typeof plugin.linkouts !== 'undefined') {
+	for (var k=0;k<plugin.linkouts.length;k++) {
+		var pluginName = plugin.linkouts[k].menuEntry;
+		for (var l=0;l<linkouts.Matrix.length;l++) {
+			var matrixName = linkouts.Matrix[l].title;
+			if (pluginName === matrixName) {
+				pluginMatrix = true;
+			}
+		}
+	}
+	}
+	return pluginMatrix;
+}
+
+/**********************************************************************************
+ * FUNCTION - linkoutHelp: The purpose of this function is to load and make visible
+ * the linkout help popup window.
+ **********************************************************************************/
+NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
+	var linkBox = document.getElementById('linkBox');
+	var linkBoxHdr = document.getElementById('linkBoxHdr');
+	var linkBoxTxt = document.getElementById('linkBoxTxt');
+	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+	var pluginCtr = allLinksTbl.rows.length;
+	var headerpanel = document.getElementById('mdaServiceHeader');
+	document.getElementById('loader').style.display = 'none'
+	linkBox.style.display = 'none';
+	linkBox.style.top = headerpanel.offsetTop + 15;
+	linkBox.style.right = "5%";
+	linkBoxHdr.innerHTML = "NG-CHM Plug-in Information";
+	linkBoxTxt.innerHTML = "";
+	linkBoxTxt.appendChild(mapLinksTbl);
+	mapLinksTbl.style.width = '100%';
+	linkBoxAllTxt.innerHTML = "";
+	linkBoxAllTxt.appendChild(allLinksTbl);
+	allLinksTbl.style.width = '100%';
+	NgChm.UHM.linkBoxSizing();
+	NgChm.UHM.hideAllLinks();
+	NgChm.UHM.showMapPlugins();
+	document.getElementById('linkBox').style.display = '';
+}
+
+/**********************************************************************************
+ * FUNCTION - linkBoxCancel: The purpose of this function is to hide the linkout
+ * help popup window.
+ **********************************************************************************/
+NgChm.UHM.linkBoxCancel = function() {
+	var linkBox = document.getElementById('linkBox');
+	linkBox.style.display = 'none';
+}
+
+/**********************************************************************************
+ * FUNCTION - showMapPlugins: The purpose of this function is to show the map specific
+ * plugins panel within the linkout help screen and toggle the appropriate
+ * tab button.
+ **********************************************************************************/
+NgChm.UHM.showMapPlugins = function() {
+	//Turn off all tabs
+	NgChm.UHM.hideAllLinks();
+	//Turn on map links div
+	var linkBoxTxt = document.getElementById('linkBoxTxt');
+	var mapLinksBtn = document.getElementById("mapLinks_btn");
+	mapLinksBtn.setAttribute('src', 'images/mapLinksOn.png');
+	linkBoxTxt.style.display="block";
+}
+
+/**********************************************************************************
+ * FUNCTION - showAllPlugins: The purpose of this function is to show the all
+ * plugins installed panel within the linkout help screen and toggle the appropriate
+ * tab button.
+ **********************************************************************************/
+NgChm.UHM.showAllPlugins = function() {
+	//Turn off all tabs
+	NgChm.UHM.hideAllLinks();
+	//Turn on all links div
+	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+	var allLinksBtn = document.getElementById("allLinks_btn");
+	allLinksBtn.setAttribute('src', 'images/allLinksOn.png');
+	linkBoxAllTxt.style.display="block";
+}
+
+/**********************************************************************************
+ * FUNCTION - hideAllLinks: The purpose of this function is to hide the linkout
+ * help boxes and reset the tabs associated with them.
+ **********************************************************************************/
+NgChm.UHM.hideAllLinks = function() {
+	var linkBoxTxt = document.getElementById('linkBoxTxt');
+	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+	var mapLinksBtn = document.getElementById("mapLinks_btn");
+	var allLinksBtn = document.getElementById("allLinks_btn");
+	mapLinksBtn.setAttribute('src', 'images/mapLinksOff.png');
+	linkBoxTxt.style.display="none";
+	allLinksBtn.setAttribute('src', 'images/allLinksOff.png');
+	linkBoxAllTxt.style.display="none";
+}
+
+/**********************************************************************************
+ * FUNCTION - linkBoxSizing: The purpose of this function is to size the height
+ * of the linkout help popup window depending on the number of plugins to be 
+ * listed.
+ **********************************************************************************/
+NgChm.UHM.linkBoxSizing = function() {
+	var linkBox = document.getElementById('linkBox');
+	var pluginCtr = document.getElementById('allPlugins').rows.length;
+	var linkBoxTxt = document.getElementById('linkBoxTxt');
+	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+	var contHeight = container.offsetHeight;
+	if (pluginCtr === 0) {
+		var boxHeight = contHeight *.30;
+		var boxTextHeight = boxHeight * .40;
+		if (boxHeight < 150) {
+			boxHeight = contHeight *.35;
+			boxTextHeight = boxHeight * .20;
+		}
+		linkBox.style.height = boxHeight;
+		linkBoxTxt.style.height = boxTextHeight;
+	} else {
+		var boxHeight = contHeight *.92;
+		linkBox.style.height = boxHeight;
+		var boxTextHeight = boxHeight * .80;
+		if (NgChm.MMGR.embeddedMapName !== null) {
+			boxTextHeight = boxHeight *.60;
+		}
+		if (boxHeight < 400) {
+			if (NgChm.MMGR.embeddedMapName !== null) {
+				boxTextHeight = boxHeight *.60;
+			} else {
+				boxTextHeight = boxHeight * .70;
+			}
+		}
+		linkBoxTxt.style.height = boxTextHeight;
+		linkBoxAllTxt.style.height = boxTextHeight;
+	}
+}
+
+
+
+
 

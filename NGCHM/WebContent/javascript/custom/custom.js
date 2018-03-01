@@ -5,56 +5,13 @@
 //==============================================//
 // Biology base plugin                          //
 //==============================================// 
+
 (function(linkouts) {
 
     linkouts.addSubtype ("bio.gene.hugo", "bio.pubmed");
     linkouts.addSubtype ("bio.mirna", "bio.pubmed");
     linkouts.addSubtype ("bio.gene.entrez", "bio.gene.entrezid");
 
-    function searchGeneCards(labels){
-	    linkouts.openUrl("http://www.genecards.org/Search/Keyword?queryString=" + labels[0]);
-    }
-
-    function searchPubMedForAll(labels){
-	    linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"));
-    }
-
-    function searchPubMedForAny(labels){
-	    linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"));
-    }
-
-    function openGenevisiblePeptide (names) {
-	var gname = names[0];
-	linkouts.openUrl("https://genevisible.com/tissues/HS/UniProt/" + gname, "genevisible");
-    }
-
-    function openGenevisibleHugo (names) {
-	var gname = names[0];
-	linkouts.openUrl("https://genevisible.com/tissues/HS/Gene%20Symbol/" + gname, "genevisible");
-    }
-
-    function openHGNCGene (names) {
-        var gname = names[0];
-        linkouts.openUrl("http://www.genenames.org/cgi-bin/gene_symbol_report?q=data/hgnc_data.php&match=" + gname, "hgnc");
-    }   
-
-    linkouts.addPlugin({
-        name: "Biology base",
-        description: "Adds general linkouts related to biology.",
-        version: "0.1.2",
-        logo: "https://bioinformatics.mdanderson.org/people/Bradley.Broom/tigerdna.png",
-        linkouts: [
-            // linkouts for pubmed terms
-            { menuEntry: "Search PubMed for All", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAll },
-            { menuEntry: "Search PubMed for Any", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAny },
-            // linkouts for gene symbols
-            { menuEntry: "View GeneCards", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchGeneCards },
-            { menuEntry: "View GeneVisible", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGenevisibleHugo },
-            { menuEntry: "View HGNC", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openHGNCGene },
-            // linkouts for uniprot ids
-            { menuEntry: "View GeneVisible", typeName: "bio.protein.uniprotid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGenevisiblePeptide }
-        ]
-    });
 }) (linkouts);
 
 //==============================================//
@@ -69,11 +26,11 @@
 
     linkouts.addPlugin({
         name: "Amigo",
-	description: "Adds linkouts to Amigo gene ontology database.",
-	version: "0.1.0",
-	site: "http://amigo.geneontology.org/amigo",
-	logo: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png",
-	linkouts: [
+		description: "Adds linkouts to Amigo gene ontology database.",
+		version: "0.1.0",
+		site: "http://amigo.geneontology.org/amigo",
+		logo: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png",
+		linkouts: [
 	    { menuEntry: "View Amigo", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openAmigo }
 	]
     });
@@ -271,6 +228,56 @@
 }) (linkouts);
 
 //==============================================//
+//GeneCards plugin                                //
+//==============================================//
+(function(linkouts) {
+
+  function searchGeneCards(labels){
+	    linkouts.openUrl("http://www.genecards.org/Search/Keyword?queryString=" + labels[0]);
+  }
+
+linkouts.addPlugin({
+   name: "GeneCards",
+   description: "Adds linkouts to the GeneCards Human Gene Card Database.",
+   version: "0.1.2",
+   site: "http://www.genecards.org/",
+   logo: "http://www.genecards.org/Images/logo_genecards.png",
+   linkouts: [
+	    { menuEntry: "View GeneCards", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchGeneCards }
+   ]
+});
+}) (linkouts);
+
+//==============================================//
+//GeneVisible plugin                                 //
+//==============================================//
+(function(linkouts) {
+
+  function openGenevisiblePeptide (names) {
+  	var gname = names[0];
+  	linkouts.openUrl("https://genevisible.com/tissues/HS/UniProt/" + gname, "genevisible");
+      }
+
+      function openGenevisibleHugo (names) {
+  	var gname = names[0];
+  	linkouts.openUrl("https://genevisible.com/tissues/HS/Gene%20Symbol/" + gname, "genevisible");
+      }
+
+
+linkouts.addPlugin({
+   name: "GeneVisible",
+	description: "Adds linkouts to the GeneVisible portal.",
+	version: "0.1.2",
+	site: "https://genevisible.com",
+	logo: "https://genevisible.com/img/genevisible_logo.svgz",
+	linkouts: [
+	            { menuEntry: "View GeneVisible", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGenevisibleHugo },
+	            { menuEntry: "View GeneVisible", typeName: "bio.protein.uniprotid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGenevisiblePeptide }
+	]
+});
+}) (linkouts);
+
+//==============================================//
 // Google plugin                                //
 //==============================================//
 (function(linkouts) {
@@ -298,6 +305,28 @@
         linkouts.openUrl("http://scholar.google.com/scholar?q=" + labels.join("+OR+"), "pubmed");
     };
 
+}) (linkouts);
+
+//==============================================//
+//HGNC plugin                                 //
+//==============================================//
+(function(linkouts) {
+
+  function openHGNCGene (names) {
+      var gname = names[0];
+      linkouts.openUrl("http://www.genenames.org/cgi-bin/gene_symbol_report?q=data/hgnc_data.php&match=" + gname, "hgnc");
+  }   
+
+linkouts.addPlugin({
+   name: "HGNC",
+	description: "Adds linkouts to HGNC portal.",
+	version: "0.1.2",
+	site: "http://www.genenames.org",
+	logo: "https://www.genenames.org/sites/genenames.org/themes/custom/genenames/genenames_logo.png",
+	linkouts: [
+	    { menuEntry: "View HGNC", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openHGNCGene }
+	]
+});
 }) (linkouts);
 
 //==============================================//
@@ -366,6 +395,7 @@
 	description: "Adds linkouts to the MD Anderson Pathways Browser.",
 	version: "0.1.0",
 	site: "https://bioinformatics.mdanderson.org/PathwaysBrowser/",
+	logo: "https://bioinformatics.mdanderson.org//PathwaysBrowser/mda_logo.png",
 	linkouts: [
 	    { menuEntry: "View PathwaysBrowser", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPathwaysBrowserGO },
 	    // linkouts for pathways
@@ -411,6 +441,7 @@
         description: "Adds linkouts to MSigDB pathways database",
 	version: "0.1.0",
 	site: "http://software.broadinstitute.org/gsea/index.jsp",
+	logo: "http://software.broadinstitute.org/gsea/images/GSEA-logo.gif",
 	linkouts: [
 	    { menuEntry: "View MSigDB", typeName: "bio.pathway.msigdb.name", selectMode: linkouts.SINGLE_SELECT,
 	      linkoutFn: openMSigDB }
@@ -537,6 +568,32 @@
 }) (linkouts);
 
 //==============================================//
+//PubMed plugin                                //
+//==============================================//
+(function(linkouts) {
+
+  function searchPubMedForAll(labels){
+	    linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"));
+  }
+
+  function searchPubMedForAny(labels){
+	    linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"));
+  }
+
+linkouts.addPlugin({
+ name: "PubMed",
+ description: "Adds linkouts to the PubMed portal.",
+ version: "0.1.2",
+ site: "http://www.ncbi.nlm.nih.gov/pubmed/",
+ logo: "https://www.ncbi.nlm.nih.gov/coreutils/img/pubmed256blue.png",
+ linkouts: [
+            { menuEntry: "Search PubMed for All", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAll },
+            { menuEntry: "Search PubMed for Any", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAny },
+ ]
+});
+}) (linkouts);
+
+//==============================================//
 // QuickGO plugin                               //
 //==============================================//
 (function(linkouts) {
@@ -551,7 +608,7 @@
 	description: "Adds linkouts to QuickGO gene ontology browser.",
 	version: "0.1.0",
 	site: "https://www.ebi.ac.uk/QuickGO/",
-	logo: "https://www.ebi.ac.uk/QuickGO/image/mb/logo.png",
+	logo: "https://www.ebi.ac.uk/QuickGO/images/quickgo-logo3.622656dc.png",  
 	linkouts: [
 	    { menuEntry: "View QuickGO", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openQuickGO }
 	]
@@ -600,6 +657,7 @@
 	description: "Adds linkouts to TumorPortal",
 	version: "0.1.0",
 	site: "http://www.tumorportal.org/",
+	logo: "http://www.tumorportal.org/assets/tplogo-b2692452952b98eee833d30f08757924.png",
 	linkouts: [
             { menuEntry: "View Tumor Portal", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openTumorPortalGene }
 	]
@@ -643,6 +701,7 @@
 	description: "Adds linkouts to Vega.",
 	version: "0.1.0",
 	site: "http://vega.sanger.ac.uk/",
+	logo: "http://vega.archive.ensembl.org/i/vega.gif",
 	linkouts: [
 	    { menuEntry: "Search Vega", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchVega }
 	]

@@ -13,6 +13,7 @@ NgChm.UPM.searchPerformed = false;
 NgChm.UPM.resetVal = {};
 NgChm.UPM.applyDone = true;
 NgChm.UHM.previewDiv = null;
+NgChm.UPM.hasClasses = false;
 
 /*===================================================================================
  *  COMMON PREFERENCE PROCESSING FUNCTIONS
@@ -47,6 +48,11 @@ NgChm.UHM.previewDiv = null;
 NgChm.UPM.editPreferences = function(e,errorMsg) {
 	NgChm.UHM.closeMenu();
 	NgChm.UHM.userHelpClose();
+	var rowClassBarsOrder = NgChm.heatMap.getRowClassificationOrder();
+	var colClassBarsOrder = NgChm.heatMap.getColClassificationOrder();
+	if ((colClassBarsOrder.length > 0) || (rowClassBarsOrder.length > 0)) {
+		NgChm.UPM.hasClasses = true;
+	}
 
 	// If helpPrefs element already exists, the user is pressing the gear button
 	// when preferences are already open. Disregard.
@@ -1225,40 +1231,45 @@ NgChm.UPM.setupClassPrefs = function(e, prefprefs) {
 	var classprefs = NgChm.UHM.getDivElement("classPrefs");
 	var prefContents = document.createElement("TABLE");
 	NgChm.UHM.addBlankRow(prefContents);
-	var filterInput = "<input name='all_searchPref' id='all_searchPref'>";
-	var filterButton = "<img id='all_searchPref_btn' src='images/filterClassButton.png' alt='Filter Covariates' onclick='NgChm.UPM.filterClassPrefs(true);' align='top'/>";
-	var searchClasses = filterInput+"&nbsp;&nbsp;"+filterButton+"&emsp;&emsp;";
-	NgChm.UHM.setTableRow(prefContents,[searchClasses], 4, 'right');
-	NgChm.UHM.addBlankRow(prefContents,2);
-	var classSelect = "<select name='classPref_list' id='classPref_list' onchange='NgChm.UPM.showClassBreak();'></select>"
-	NgChm.UHM.setTableRow(prefContents,["&nbsp;Covariate Bar: ", classSelect]);
-	NgChm.UHM.addBlankRow(prefContents);
-	classprefs.appendChild(prefContents);
-	var i = 0;
-	for (var i = 0; i < rowClassBarsOrder.length;i++){
-		var key = rowClassBarsOrder[i];
-		var currentClassBar = rowClassBars[key];
-		if (NgChm.UPM.filterShow(key)) {
-			var breakprefs = NgChm.UPM.setupClassBreaks(e, key, "row", currentClassBar);
-			breakprefs.style.display="none";
-			//breakprefs.style.width = 300;
-			classprefs.appendChild(breakprefs);
+	if (NgChm.UPM.hasClasses) {
+		var filterInput = "<input name='all_searchPref' id='all_searchPref'>";
+		var filterButton = "<img id='all_searchPref_btn' src='images/filterClassButton.png' alt='Filter Covariates' onclick='NgChm.UPM.filterClassPrefs(true);' align='top'/>";
+		var searchClasses = filterInput+"&nbsp;&nbsp;"+filterButton+"&emsp;&emsp;";
+		NgChm.UHM.setTableRow(prefContents,[searchClasses], 4, 'right');
+		NgChm.UHM.addBlankRow(prefContents,2);
+		var classSelect = "<select name='classPref_list' id='classPref_list' onchange='NgChm.UPM.showClassBreak();'></select>"
+		NgChm.UHM.setTableRow(prefContents,["&nbsp;Covariate Bar: ", classSelect]);
+		NgChm.UHM.addBlankRow(prefContents);
+		classprefs.appendChild(prefContents);
+		var i = 0;
+		for (var i = 0; i < rowClassBarsOrder.length;i++){
+			var key = rowClassBarsOrder[i];
+			var currentClassBar = rowClassBars[key];
+			if (NgChm.UPM.filterShow(key)) {
+				var breakprefs = NgChm.UPM.setupClassBreaks(e, key, "row", currentClassBar);
+				breakprefs.style.display="none";
+				//breakprefs.style.width = 300;
+				classprefs.appendChild(breakprefs);
+			}
 		}
-	}
-	for (var i = 0; i < colClassBarsOrder.length;i++){
-		var key = colClassBarsOrder[i];
-		var currentClassBar = colClassBars[key];
-		if (NgChm.UPM.filterShow(key)) {
-			var breakprefs = NgChm.UPM.setupClassBreaks(e, key, "col", currentClassBar);
-			breakprefs.style.display="none";
-			//breakprefs.style.width = 300;
-			classprefs.appendChild(breakprefs);
+		for (var i = 0; i < colClassBarsOrder.length;i++){
+			var key = colClassBarsOrder[i];
+			var currentClassBar = colClassBars[key];
+			if (NgChm.UPM.filterShow(key)) {
+				var breakprefs = NgChm.UPM.setupClassBreaks(e, key, "col", currentClassBar);
+				breakprefs.style.display="none";
+				//breakprefs.style.width = 300;
+				classprefs.appendChild(breakprefs);
+			}
 		}
+		// Append a DIV panel for all of the covariate class bars 
+		var allPrefs = NgChm.UPM.setupAllClassesPrefs(); 
+		allPrefs.style.display="block";
+		classprefs.appendChild(allPrefs);
+	} else {
+		NgChm.UHM.setTableRow(prefContents,["This Heat Map contains no covariate bars"]);
+		classprefs.appendChild(prefContents);
 	}
-	// Append a DIV panel for all of the covariate class bars 
-	var allPrefs = NgChm.UPM.setupAllClassesPrefs(); 
-	allPrefs.style.display="block";
-	classprefs.appendChild(allPrefs);
 	
 	return classprefs;
 }
@@ -1274,11 +1285,14 @@ NgChm.UPM.setupAllClassesPrefs = function() {
 	var prefContents = document.createElement("TABLE");
 	prefContents.id = "tableAllClasses";
 	NgChm.UHM.addBlankRow(prefContents);
-	var colShowAll = "<input name='all_showPref' id='all_showPref' type='checkbox' onchange='NgChm.UPM.showAllBars();'> ";
+	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
+	var rowClassBarsOrder = NgChm.heatMap.getRowClassificationOrder(); 
+	var colClassBars = NgChm.heatMap.getColClassificationConfig();
+	var colClassBarsOrder = NgChm.heatMap.getColClassificationOrder();
+	var colShowAll = "<input name='all_showPref' id='all_showPref' type='checkbox' onchange='NgChm.UPM.showAllBars();'> ";    
+	NgChm.UHM.setTableRow(prefContents, ["&nbsp;&nbsp;&nbsp;","&nbsp;&nbsp;&nbsp;","<b>Adjust All Heights: </b>","<button type='button' onclick='NgChm.UPM.decrementAllHeights()'><b>-</b></button><button type='button' onclick='NgChm.UPM.incrementAllHeights()'><b>+</b></button>"]);
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;<u>"+"Covariate"+"</u>", "<b><u>"+"Position"+"</u></b>", colShowAll+"<b><u>"+"Show"+"</u></b>", "<b><u>"+"Height"+"</u></b>"]);
 	var checkState = true;
-	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
-	var rowClassBarsOrder = NgChm.heatMap.getRowClassificationOrder();
 	for (var i = 0;  i < rowClassBarsOrder.length; i++){
 		var key = rowClassBarsOrder[i];
 		var currentClassBar = rowClassBars[key];
@@ -1297,8 +1311,6 @@ NgChm.UPM.setupAllClassesPrefs = function() {
 			NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;"+displayName,"Row",colShow,colHeight]); 
 		}
 	}
-	var colClassBars = NgChm.heatMap.getColClassificationConfig();
-	var colClassBarsOrder = NgChm.heatMap.getColClassificationOrder();
 	for (var i = 0; i < colClassBarsOrder.length; i++){
 		var key = colClassBarsOrder[i];
 		var currentClassBar = colClassBars[key];
@@ -1455,6 +1467,33 @@ NgChm.UPM.showAllBars = function() {
 	return;
 }	
 
+NgChm.UPM.incrementAllHeights = function() {
+	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
+	for (var key in rowClassBars){
+		var heightItem = document.getElementById(key+"_row"+'_heightPref');
+		heightItem.value = parseInt(heightItem.value)+1;
+	}
+	var colClassBars = NgChm.heatMap.getColClassificationConfig();
+	for (var key in colClassBars){
+		var heightItem = document.getElementById(key+"_col"+'_heightPref');
+		heightItem.value = parseInt(heightItem.value)+1;
+	}
+}	
+
+NgChm.UPM.decrementAllHeights = function() {
+	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
+	for (var key in rowClassBars){
+		var heightItem = document.getElementById(key+"_row"+'_heightPref');
+		heightItem.value = parseInt(heightItem.value)-1;
+	}
+	var colClassBars = NgChm.heatMap.getColClassificationConfig();
+	for (var key in colClassBars){
+		var heightItem = document.getElementById(key+"_col"+'_heightPref');
+		heightItem.value = parseInt(heightItem.value)-1;
+	}
+}	
+
+
 /**********************************************************************************
  * FUNCTION - setShowAll: The purpose of this function is to set the condition of
  * the "show all" checkbox on the covariate bars tab of the user preferences dialog.
@@ -1464,29 +1503,33 @@ NgChm.UPM.showAllBars = function() {
  * resulting in all of the boxes being selected, the show all box will be checked.
  **********************************************************************************/
 NgChm.UPM.setShowAll = function() {
-	var checkState = true;
-	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
-	for (var key in rowClassBars){
-		var colShow = document.getElementById(key+"_row"+'_showPref');
-		if (NgChm.UPM.filterShow(key)) {
-			if (!colShow.checked) {
-				checkState = false;
-				break;
+	var rowClassBarsOrder = NgChm.heatMap.getRowClassificationOrder();
+	var colClassBarsOrder = NgChm.heatMap.getColClassificationOrder();
+	if (NgChm.UPM.hasClasses) {
+		var checkState = true;
+		var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
+		for (var key in rowClassBars){
+			var colShow = document.getElementById(key+"_row"+'_showPref');
+			if (NgChm.UPM.filterShow(key)) {
+				if (!colShow.checked) {
+					checkState = false;
+					break;
+				}
 			}
 		}
-	}
-	var colClassBars = NgChm.heatMap.getColClassificationConfig();
-	for (var key in colClassBars){
-		var colShow = document.getElementById(key+"_col"+'_showPref');
-		if (NgChm.UPM.filterShow(key)) {
-			if (!colShow.checked) {
-				checkState = false;
-				break;
+		var colClassBars = NgChm.heatMap.getColClassificationConfig();
+		for (var key in colClassBars){
+			var colShow = document.getElementById(key+"_col"+'_showPref');
+			if (NgChm.UPM.filterShow(key)) {
+				if (!colShow.checked) {
+					checkState = false;
+					break;
+				}
 			}
 		}
+		var showAllBox = document.getElementById('all_showPref');
+		showAllBox.checked = checkState;
 	}
-	var showAllBox = document.getElementById('all_showPref');
-	showAllBox.checked = checkState;
 	
 	return;
 }	
@@ -1581,44 +1624,46 @@ NgChm.UPM.addClassPrefOptions = function() {
 	var colClassBars = NgChm.heatMap.getColClassificationConfig();
 	var rowClassBarsOrder = NgChm.heatMap.getRowClassificationOrder();
 	var colClassBarsOrder = NgChm.heatMap.getColClassificationOrder();
-	var classSelect = document.getElementById('classPref_list');
 	var hiddenOpts = new Array();
-	classSelect.options.length = 0;
-	classSelect.options[classSelect.options.length] = new Option('ALL', 'ALL');
-	for (var i=0; i < rowClassBarsOrder.length;i++){
-		var key = rowClassBarsOrder[i];
-		var keyrow = key+"_row";
-		var displayName = key;
-		if (key.length > 20){
-			displayName = key.substring(0,20) + "...";
+	if (NgChm.UPM.hasClasses) {
+		var classSelect = document.getElementById('classPref_list');
+		classSelect.options.length = 0;
+		classSelect.options[classSelect.options.length] = new Option('ALL', 'ALL');
+		for (var i=0; i < rowClassBarsOrder.length;i++){
+			var key = rowClassBarsOrder[i];
+			var keyrow = key+"_row";
+			var displayName = key;
+			if (key.length > 20){
+				displayName = key.substring(0,20) + "...";
+			}
+			if (NgChm.UPM.filterShow(key)) {
+				classSelect.options[classSelect.options.length] = new Option(displayName, keyrow);
+			} else {
+				hiddenOpts.push(displayName);
+			}
+			var barType = document.getElementById(keyrow+"_barTypePref");
+			if (barType !== null) {
+				var currentClassBar = rowClassBars[key];
+				barType.value = currentClassBar.bar_type;
+			}
 		}
-		if (NgChm.UPM.filterShow(key)) {
-			classSelect.options[classSelect.options.length] = new Option(displayName, keyrow);
-		} else {
-			hiddenOpts.push(displayName);
-		}
-		var barType = document.getElementById(keyrow+"_barTypePref");
-		if (barType !== null) {
-			var currentClassBar = rowClassBars[key];
-			barType.value = currentClassBar.bar_type;
-		}
-	}
-	for (var i=0; i < colClassBarsOrder.length;i++){
-		var key = colClassBarsOrder[i];
-		var keycol = key+"_col";
-		var displayName = key;
-		if (key.length > 20){
-			displayName = key.substring(0,20) + "...";
-		}
-		if (NgChm.UPM.filterShow(key)) {
-			classSelect.options[classSelect.options.length] = new Option(displayName, keycol);
-		} else {
-			hiddenOpts.push(displayName);
-		}
-		var barType = document.getElementById(keycol+"_barTypePref");
-		if (barType !== null) {
-			var currentClassBar = colClassBars[key];
-			barType.value = currentClassBar.bar_type;
+		for (var i=0; i < colClassBarsOrder.length;i++){
+			var key = colClassBarsOrder[i];
+			var keycol = key+"_col";
+			var displayName = key;
+			if (key.length > 20){
+				displayName = key.substring(0,20) + "...";
+			}
+			if (NgChm.UPM.filterShow(key)) {
+				classSelect.options[classSelect.options.length] = new Option(displayName, keycol);
+			} else {
+				hiddenOpts.push(displayName);
+			}
+			var barType = document.getElementById(keycol+"_barTypePref");
+			if (barType !== null) {
+				var currentClassBar = colClassBars[key];
+				barType.value = currentClassBar.bar_type;
+			}
 		}
 	}
 	

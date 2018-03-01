@@ -68,7 +68,7 @@ public class RowColData {
 			orderFile = (String) configData.get(ORDER_FILE);
 			String[] orderArr = constructOrderArray(iFile);
 			topItems = (JSONArray)configData.get(TOP_ITEMS) != null ? jsonArrayToStringArray((JSONArray)configData.get(TOP_ITEMS)) : null;
-			cutLocations = jsonArrayToIntArray((JSONArray)configData.get(CUT_LOCATIONS));
+			cutLocations = processCutLocations(length,configData);
 			if (cutLocations.length == 0) {
 				String treeCutStr = (String) configData.get(TREE_CUTS);
 				treeCuts = treeCutStr != null ? Integer.parseInt(treeCutStr) : 0;
@@ -91,6 +91,10 @@ public class RowColData {
 	            // of "tree cuts". Calculate those cut positions and reconfigure required
 	            // object properties. Must be ordered hierarchically.
 	    		if (treeCuts > 0){
+	    			if (dendroValues.size()-1 < treeCuts) {
+	    		    	System.out.println("Warning: Less " + orderType + " dendrogram values found than Cluster-Based Gaps requested.  Lowering the number of gaps requested FROM: " + treeCuts + " TO: " + (dendroValues.size()-1));
+	    				treeCuts = dendroValues.size()-1;
+	    			}
 	    			int[] cutLocs = getTreeCutPositions();
 	    			ResetForTreeCuts(length, cutLocs, orderArr);
 	    		}
@@ -104,6 +108,37 @@ public class RowColData {
 		}
 	}
 	
+	/*******************************************************************
+	 * METHOD: processCutLocations
+	 *
+	 * This method extracts user defined cut locations from JSON config,
+	 * orders them, and validates that they are within the boundaries 
+	 * of the row/col maximum. If values are outside the range, they 
+	 * are discarded and a warning message is generated.
+	 ******************************************************************/
+	private int[] processCutLocations(int length, JSONObject configData) throws Exception
+	{
+		int[] propCuts = jsonArrayToIntArray((JSONArray)configData.get(CUT_LOCATIONS)); 
+		if (propCuts.length == 0) {
+			return propCuts;
+		}
+		java.util.Arrays.sort(propCuts);
+		ArrayList<Integer> cutProc = new ArrayList<Integer>();
+		for (int i=0;i<propCuts.length;i++) {
+			int val = propCuts[i];
+			if ((val < length) && (val > 0)) {
+				cutProc.add(val);
+			} else {
+		    	System.out.println("Warning: Fixed " + orderType + " Gap value " + val + " is outside the range of heat map " +orderType+ "s (1-"+length+"). Gap value disregarded.");
+			}
+		} 
+		int [] validCuts = new int[cutProc.size()];
+		for(int j=0;j<cutProc.size();j++) {
+			validCuts[j] = cutProc.get(j);
+		}
+		return validCuts;
+	}
+
 	/*******************************************************************
 	 * METHOD: ResetForTreeCuts
 	 *
