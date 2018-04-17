@@ -137,9 +137,9 @@ public class ImportData {
 	 ******************************************************************/
 	private void setHeatmapProperties(File filename) throws Exception{
         JSONParser parser = new JSONParser();
-
+        FileReader propsFile = new FileReader(filename);
         try {     
-            Object obj = parser.parse(new FileReader(filename)); 
+            Object obj = parser.parse(propsFile); 
             JSONObject jsonObject =  (JSONObject) obj;
             JSONArray inputfiles = (JSONArray) jsonObject.get(MATRIX_FILES);
        		JSONObject matrix = (JSONObject) inputfiles.get(0);
@@ -202,7 +202,7 @@ public class ImportData {
          			colData.classFiles.add(iClass);
         		}
         	}
-
+            propsFile.close();
         } catch (FileNotFoundException e) {
             System.out.println("heatmapProperties.JSON file not found. Terminating HeatmapDataGenerator");
             e.printStackTrace();
@@ -210,6 +210,9 @@ public class ImportData {
             e.printStackTrace();
         } catch (ParseException e) {
             e.printStackTrace();
+        } finally {
+            propsFile.close();
+            propsFile = null;
         }
     }
 

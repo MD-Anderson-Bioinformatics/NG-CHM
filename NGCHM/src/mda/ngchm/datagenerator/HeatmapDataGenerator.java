@@ -93,7 +93,7 @@ public class HeatmapDataGenerator {
 	public static String processHeatMap(String[] args) {
 		System.out.println("START Data Generator Heat Map Generation: " + new Date()); 
 		String errMsg = null;
-		
+		       
 		//Used to keep pdfBox warning messages out of the log (specifically for Galaxy)
 		java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.SEVERE);
 		
@@ -103,7 +103,7 @@ public class HeatmapDataGenerator {
         } catch (Exception e) {
     		System.out.println("FATAL ERROR: Invalid heatmapProperties.JSON: " + new Date()); 
             return "FATAL ERROR: Invalid JSON Configuration.";
-        }
+        } 
 
 		// Create ImportData object for data matrix.  This object will 
 		// contain subordinate objects for import layers and import tiles
@@ -215,9 +215,12 @@ public class HeatmapDataGenerator {
 	 ******************************************************************/
 	private static void validateConfigJson(File config) throws Exception {
 		// Validate JSON configuration file
-	    try {     
+		FileReader configFile = new FileReader(config);
+		try {     
 	        JSONParser parser = new JSONParser();
-	        parser.parse(new FileReader(config));
+	        parser.parse(configFile);
+//	        parser.parse(new FileReader(config));
+	        configFile.close();
 	    } catch (FileNotFoundException ex) {
 	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: heatmapProperties.JSON file not found. Terminating HeatmapDataGenerator" );
 			ex.printStackTrace();
@@ -230,6 +233,9 @@ public class HeatmapDataGenerator {
 			System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: Invalid Heatmap Configuration. Terminating HeatmapDataGenerator. "); 
 	        ex.printStackTrace();
 	        throw ex;
+	   } finally {
+		   configFile.close();
+		   configFile = null;
 	   }
 	}
 	
