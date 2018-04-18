@@ -23,7 +23,7 @@ public class AttributeData {
 	public AttributeData(String name, String value)
 	{
 		attributeName = name.trim();
-		attributeValue = value.trim();
+		attributeValue = value.trim(); 
 	}
 
 }
