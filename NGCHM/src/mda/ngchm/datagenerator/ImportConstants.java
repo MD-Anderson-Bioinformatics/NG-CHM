@@ -158,7 +158,11 @@ public final class ImportConstants {
 	public static String UTF8 = "utf-8";
 	public static String YES = "Y";
 	public static String NO = "N";
+	public static String ALL = "ALL";
+	public static String SUMMARY = "SUMMARY";
 	public static String COLOR_WHITE = "#FFFFFF";
+	public static String TEN = "10";
+	public static String HUNDRED = "100";
 	public static String COLOR_BLACK = "#000000";
 	public static String COLOR_LIME = "#00FF38";
 	public static float MAX_VALUES = 2147483647;
@@ -172,6 +176,9 @@ public final class ImportConstants {
 	//JSON node name constants
 	public static String READ_ONLY = "read_only";
 	public static String SUMMARY_METHOD = "summary_method";
+	public static String GRID_SHOW = "grid_show";
+	public static String GRID_COLOR = "grid_color";
+	public static String SELECTION_COLOR = "selection_color";
 	public static String OUTPUT_LOC = "output_location";
 	public static String METHOD_SAMPLE = "sample";
 	public static String METHOD_AVERAGE = "average";
@@ -195,6 +202,8 @@ public final class ImportConstants {
 	public static String ORDER_FILE =  "order_file";
 	public static String ORDER_METHOD =  "order_method";
 	public static String TOP_ITEMS =  "top_items";
+	public static String DENDRO_SHOW =  "dendro_show";
+	public static String DENDRO_HEIGHT =  "dendro_height";
 	public static String CUT_LOCATIONS =  "cut_locations";
 	public static String CUT_WIDTH =  "cut_width";
 	public static String TREE_CUTS =  "tree_cuts";

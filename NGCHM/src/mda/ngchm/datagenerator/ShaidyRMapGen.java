@@ -448,6 +448,18 @@ public class ShaidyRMapGen {
 				fileout.println("\t\t\t\"name\": \"" + name + "\",");
 			 	fileout.println("\t\t\t\"path\":  \"" + matrixFile + "\",");
 				fileout.println("\t\t\t\"summary_method\": \"" + summaryMethod + "\",");
+				String gridShow = (String)layer.get("grid_show");
+				if (gridShow != null) {
+					fileout.println("\t\t\"grid_show\" : \"" + gridShow + "\",");
+				}	
+				String gridColor = (String)layer.get("grid_color");
+				if (gridColor != null) {
+					fileout.println("\t\t\"grid_color\" : \"" + gridColor + "\",");
+				}	
+				String selColor = (String)layer.get("selection_color");
+				if (selColor != null) {
+					fileout.println("\t\t\"selection_color\" : \"" + selColor + "\",");
+				}	
 				if ((String) layer.get("data_start_row") != null) {
 					fileout.println("\t\t\"data_start_row\" : \"" + (String) layer.get("data_start_row") + "\",");
 				}
@@ -506,6 +518,8 @@ public class ShaidyRMapGen {
 			String orderfile = "";
 			JSONObject rowData = getRequiredObj("chm.json", chmRJson, "row_data");
 			String orderMethod = getRequiredStr("row_data", rowData, "order_method");
+			String dendroHeight = (String) rowData.get("dendro_height");
+			String dendroShow = (String) rowData.get("dendro_show");
 			String cutLocations = (String) rowData.get("cut_locations");
 			String cutWidth = (String) rowData.get("cut_width");
 			String treeCuts = (String) rowData.get("tree_cuts");
@@ -533,6 +547,12 @@ public class ShaidyRMapGen {
 			}
 			if (cutWidth != null) {
 				fileout.println("\t\t\"cut_width\" : \"" + cutWidth + "\",");
+			}
+			if ((dendroShow != null) && orderMethod.equals("Hierarchical")) {
+				fileout.println("\t\t\"dendro_show\" : \"" + dendroShow + "\",");
+			}
+			if ((dendroHeight != null) && orderMethod.equals("Hierarchical")) {
+				fileout.println("\t\t\"dendro_height\" : \"" + dendroHeight + "\",");
 			}
 			fileout.println("\t\t\"label_display_length\" : \"" + displayLength.toUpperCase() + "\",");
 			fileout.println("\t\t\"label_display_abbreviation\" : \"" + displayAbbrev.toUpperCase() + "\",");
@@ -569,6 +589,8 @@ public class ShaidyRMapGen {
 			cutLocations = (String) colData.get("cut_locations");
 			cutWidth = (String) colData.get("cut_width");
 			treeCuts = (String) colData.get("tree_cuts");
+			dendroHeight = (String) colData.get("dendro_height");
+			dendroShow = (String) colData.get("dendro_show");
 			JSONObject colDataLabels = (JSONObject) colData.get("labels");
 			displayLength = (String) colDataLabels.get("display_length") != null ? (String) colDataLabels.get("display_length") : "20";
 			displayAbbrev = (String) colDataLabels.get("display_abbreviation") != null ? (String) colDataLabels.get("display_abbreviation") : "END";
@@ -592,6 +614,12 @@ public class ShaidyRMapGen {
 			}
 			if (cutWidth != null) {
 				fileout.println("\t\t\"cut_width\" : \"" + cutWidth + "\",");
+			}
+			if ((dendroShow != null) && orderMethod.equals("Hierarchical")) {
+				fileout.println("\t\t\"dendro_show\" : \"" + dendroShow + "\",");
+			}
+			if ((dendroHeight != null) && orderMethod.equals("Hierarchical")) {
+				fileout.println("\t\t\"dendro_height\" : \"" + dendroHeight + "\",");
 			}
 			fileout.println("\t\t\"label_display_length\" : \"" + displayLength.toUpperCase() + "\",");
 			fileout.println("\t\t\"label_display_abbreviation\" : \"" + displayAbbrev.toUpperCase() + "\",");

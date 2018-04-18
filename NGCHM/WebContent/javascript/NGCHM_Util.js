@@ -81,7 +81,7 @@ NgChm.UTIL.getLabelText = function(text,type) {
 		} else if (elPos === 'MIDDLE') {
 			text = text.substr(0,(size/2 - 1))+"..."+text.substr(text.length-(size/2 - 2),text.length);
 		} else {
-			text = "..."+text.substr(size - 3,text.length);
+			text = "..."+text.substr(text.length - (size - 3), text.length);
 		}
 	}
 	return text;
@@ -256,7 +256,7 @@ NgChm.UTIL.convertToArray = function(value) {
  * on load processing for the viewer.  repository (default .) is the path to the
  * directory containing the specified map.
  **********************************************************************************/
-NgChm.UTIL.embedCHM = function (map, repository) {
+NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
 	NgChm.MMGR.embeddedMapName = map;
 	NgChm.MMGR.localRepository = repository || ".";
 	//Reset dendros for local/widget load
@@ -264,7 +264,7 @@ NgChm.UTIL.embedCHM = function (map, repository) {
 	NgChm.SUM.rowDendro = null;
 	NgChm.DET.colDendro = null;
 	NgChm.DET.rowDendro = null;
-	NgChm.UTIL.onLoadCHM();
+	NgChm.UTIL.onLoadCHM(sizeBuilderView);
 }
 
 /**********************************************************************************
@@ -272,7 +272,7 @@ NgChm.UTIL.embedCHM = function (map, repository) {
  * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
  * viewer.  
  **********************************************************************************/
-NgChm.UTIL.onLoadCHM = function () {
+NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	//Call functions that enable viewing in IE.
 	NgChm.UTIL.iESupport();
 	NgChm.UTIL.setBrowserMinFontSize();
@@ -293,7 +293,7 @@ NgChm.UTIL.onLoadCHM = function () {
 		if ((NgChm.MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) { 
 			mapName = NgChm.MMGR.embeddedMapName;
 			dataSource = NgChm.MMGR.FILE_SOURCE;
-			NgChm.UTIL.loadLocalModeCHM();
+			NgChm.UTIL.loadLocalModeCHM(sizeBuilderView);
 		} else {  // New temp
 			//		}  // old put back
 			if (NgChm.MMGR.embeddedMapName !== null) {
@@ -321,7 +321,7 @@ NgChm.UTIL.onLoadCHM = function () {
  * FUNCTION - loadLocalModeCHM: This function is called when running in local file mode and 
  * with the heat map embedded in a "widgetized" web page.
  **********************************************************************************/
-NgChm.UTIL.loadLocalModeCHM = function () {
+NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 	var req = new XMLHttpRequest();
 	req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName);
 	req.responseType = "blob";
@@ -337,7 +337,7 @@ NgChm.UTIL.loadLocalModeCHM = function () {
 				if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
 					NgChm.UHM.invalidFileFormat();
 				} else {
-					NgChm.UTIL.displayFileModeCHM(chmFile);
+					NgChm.UTIL.displayFileModeCHM(chmFile,sizeBuilderView);
 				}
 			}
 		}
@@ -365,17 +365,32 @@ NgChm.UTIL.loadFileModeCHM = function () {
  * FUNCTION - displayFileModeCHM: This function performs functions shared by the
  * stand-alone and widgetized "file" versions of the application.
  **********************************************************************************/
-NgChm.UTIL.displayFileModeCHM = function (chmFile) {
+NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.FILE_SOURCE);
 	zip.useWebWorkers = false;
 	if (!NgChm.SEL.isSub) {
 		NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
 		NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+		if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
+			NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
+		}
 		NgChm.SUM.initSummaryDisplay();
 	} else { // separated detail browser
 		NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.DET.processDetailMapUpdate, chmFile);			
 	}	
 	NgChm.DET.initDetailDisplay();
+}
+
+/**********************************************************************************
+ * FUNCTION - builderViewSizing: This function handles the resizing of the summary
+ * panel for the builder in cases where ONLY the summary panel is being drawn.  
+ **********************************************************************************/
+NgChm.UTIL.builderViewSizing = function (event, level) {
+	if (event == NgChm.MMGR.Event_INITIALIZED) {
+		document.getElementById('detail_chm').style.width = '4%';
+		document.getElementById('summary_chm').style.width = '75%';
+		NgChm.SUM.summaryResize();  
+	 }
 }
 
 

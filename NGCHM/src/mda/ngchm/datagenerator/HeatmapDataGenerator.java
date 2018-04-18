@@ -1030,9 +1030,9 @@ public class HeatmapDataGenerator {
 			InputFile iFl = iData.matrixFiles.get(i);
 			fw.write(QUOTE+iFl.id+QUOTE+COLON+BRACE_OPEN);
 			fw.write(NAME_LABEL+QUOTE+iFl.name+QUOTE+COMMA);
-			fw.write(GRID_SHOW_LABEL+QUOTE+YES+QUOTE+COMMA);
-			fw.write(GRID_COLOR_LABEL+QUOTE+COLOR_WHITE+QUOTE+COMMA);
-			fw.write(SELECTION_COLOR_LABEL+QUOTE+COLOR_LIME+QUOTE+COMMA);
+			fw.write(GRID_SHOW_LABEL+QUOTE+iFl.gridShow+QUOTE+COMMA);
+			fw.write(GRID_COLOR_LABEL+QUOTE+iFl.gridColor+QUOTE+COMMA);
+			fw.write(SELECTION_COLOR_LABEL+QUOTE+iFl.selectionColor+QUOTE+COMMA);
 			writeColorMap(fw, iData, i, DATA_LAYER_LABEL);
 			fw.write(BRACE_CLOSE);
 			
@@ -1155,17 +1155,17 @@ public class HeatmapDataGenerator {
 	private static void writeConfigDendrogram(OutputStreamWriter fw, ImportData iData, boolean isRowFile)  throws Exception {
         fw.write(DENDROGRAM_LABEL+BRACE_OPEN);
 		if (isRowFile) {
-	        if (iData.rowData.dendroFile != null) {
-		        fw.write(SHOW_LABEL+QUOTE+"ALL"+QUOTE+COMMA); 
-		        fw.write(HEIGHT_LABEL+QUOTE+"100"+QUOTE); 
+	        if (iData.rowData != null) {
+		        fw.write(SHOW_LABEL+QUOTE+iData.rowData.showDendro+QUOTE+COMMA); 
+		        fw.write(HEIGHT_LABEL+QUOTE+iData.rowData.heightDendro+QUOTE); 
 	        } else {
 		        fw.write(SHOW_LABEL+QUOTE+"NA"+QUOTE+COMMA); 
 		        fw.write(HEIGHT_LABEL+QUOTE+"10"+QUOTE); 
 	        }
 		} else {
 	        if (iData.colData.dendroFile!= null) {
-		        fw.write(SHOW_LABEL+QUOTE+"ALL"+QUOTE+COMMA); 
-		        fw.write(HEIGHT_LABEL+QUOTE+"100"+QUOTE); 
+		        fw.write(SHOW_LABEL+QUOTE+iData.colData.showDendro+QUOTE+COMMA); 
+		        fw.write(HEIGHT_LABEL+QUOTE+iData.colData.heightDendro+QUOTE); 
 	        } else {
 		        fw.write(SHOW_LABEL+QUOTE+"NA"+QUOTE+COMMA); 
 		        fw.write(HEIGHT_LABEL+QUOTE+"10"+QUOTE); 
@@ -1316,7 +1316,7 @@ public class HeatmapDataGenerator {
 	        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 	        
 	        // BUILD HEAT MAP IMAGE
-	        // go through each value in the TN matrix and determine the color for the pixel
+	        // go through each value in the SUMMARY matrix and determine the color for the pixel
 	        for (int y = 0; y < height; y++) {
 	            for (int x = 0; x < width; x++) {
 	                float val = sumMatrix[y][x];

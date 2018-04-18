@@ -40,7 +40,10 @@ public class InputFile {
 	public int colDataStart = 1;
 	public int rowCovs;
 	public int colCovs;
-	public String summaryMethod;
+	public String summaryMethod = METHOD_AVERAGE;
+	public String gridShow = YES;
+	public String gridColor = COLOR_WHITE;
+	public String selectionColor = COLOR_LIME;
 	public ArrayList<ImportLayerData> importLayers = new ArrayList<>();
 	public String origMatrix[][];
 	
@@ -54,8 +57,18 @@ public class InputFile {
 		String sumMeth = (String) jo.get(SUMMARY_METHOD);
 		if (sumMeth != null) {
 	        summaryMethod = sumMeth.trim();
-		} else {
-	        summaryMethod = METHOD_AVERAGE;
+		}
+		String gridShw = (String) jo.get(GRID_SHOW);
+		if (gridShw != null) {
+	        gridShow = gridShw.trim();
+		}
+		String gridCol = (String) jo.get(GRID_COLOR);
+		if (gridCol != null) {
+	        gridColor = gridCol.trim();
+		}
+		String selColor = (String) jo.get(SELECTION_COLOR);
+		if (selColor != null) {
+	        selectionColor = selColor.trim();
 		}
 		file.trim();
 		position = pos.trim();

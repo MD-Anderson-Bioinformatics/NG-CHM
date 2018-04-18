@@ -35,6 +35,8 @@ public class RowColData {
 	public String distanceMetric = null;
 	public String agglomerationMethod = null;
 	public String dendroFile = null; 
+	public String showDendro = NA; 
+	public String heightDendro = TEN; 
 	public int orderArray[];
 	public String classArray[];
 	public String labelExtraFile = null;
@@ -65,6 +67,20 @@ public class RowColData {
 			dataTypes = jsonArrayToStringArray((JSONArray)configData.get(DATA_TYPE));
 			orderType = type.trim();
 			orderMethod = (String) configData.get(ORDER_METHOD);
+			if (orderMethod.equals(ORDER_HIERARCHICAL)) {
+				if ((String) configData.get(DENDRO_SHOW) != null) {
+					showDendro = (String) configData.get(DENDRO_SHOW);
+				} else {
+					showDendro = ALL;
+				}
+				if ((String) configData.get(DENDRO_HEIGHT) != null) {
+					if (!showDendro.equals(NONE.toUpperCase())) {
+						heightDendro = (String) configData.get(DENDRO_HEIGHT);
+					}
+				} else {
+					heightDendro = HUNDRED;
+				}
+			} 
 			orderFile = (String) configData.get(ORDER_FILE);
 			String[] orderArr = constructOrderArray(iFile);
 			topItems = (JSONArray)configData.get(TOP_ITEMS) != null ? jsonArrayToStringArray((JSONArray)configData.get(TOP_ITEMS)) : null;
