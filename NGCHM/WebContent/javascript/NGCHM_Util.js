@@ -267,6 +267,7 @@ NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
 	NgChm.UTIL.onLoadCHM(sizeBuilderView);
 }
 
+
 /**********************************************************************************
  * FUNCTION - onLoadCHM: This function performs "on load" processing for the NG_CHM
  * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
@@ -322,6 +323,13 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
  * with the heat map embedded in a "widgetized" web page.
  **********************************************************************************/
 NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
+	//Special case for embedded version where a blob is passed in.
+	if (NgChm.MMGR.embeddedMapName instanceof Blob) {
+		NgChm.UTIL.loadBlobModeCHM(sizeBuilderView)
+		return;
+	}
+	
+	//Else, fetch the .ngchm file
 	var req = new XMLHttpRequest();
 	req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName);
 	req.responseType = "blob";
@@ -343,6 +351,16 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		}
 	};	
 	req.send();	
+}
+
+/**********************************************************************************
+ * FUNCTION - loadCHMFromBlob: Works kind of like local mode but works when javascript
+ * passes in the ngchm as a blob.
+ **********************************************************************************/
+NgChm.UTIL.loadBlobModeCHM = function (sizeBuilderView) {
+	var chmFile  =  new File([NgChm.MMGR.embeddedMapName], "ngchm");
+	NgChm.UTIL.resetCHM();
+	NgChm.UTIL.displayFileModeCHM(chmFile,sizeBuilderView);
 }
 
 /**********************************************************************************
