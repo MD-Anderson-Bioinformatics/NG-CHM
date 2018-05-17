@@ -479,7 +479,7 @@ NgChm.DDR.SummaryRowDendrogram = function() {
 	var hasData = dendroConfig.show === 'NA' ? false : true;
 	var dendroData = NgChm.heatMap.getRowDendroData();
 	var normDendroMatrixHeight = Math.min(Math.max(NgChm.DDR.minDendroMatrixHeight,dendroData.length),NgChm.DDR.maxDendroMatrixHeight); // this is the height of the dendro matrices created in buildDendroMatrix
-	var maxHeight = dendroData.length > 0 ? Number(dendroData[dendroData.length-1].split(",")[2]) : 0; // this assumes the heightData is ordered from lowest height to highest
+	var maxHeight = dendroData.length > 0 ? getMaxHeight(dendroData) : 0; // this assumes the heightData is ordered from lowest height to highest
 	var dendroMatrix;
 	if (hasData) {
 		while(dendroMatrix == undefined){dendroMatrix = buildMatrix();}
@@ -1027,7 +1027,7 @@ NgChm.DDR.DetailRowDendrogram = function() {
 	var hasData = dendroConfig.show === 'NA' ? false : true;
 	var dendroData = NgChm.heatMap.getRowDendroData();
 	var normDendroMatrixHeight = Math.min(Math.max(NgChm.DDR.minDendroMatrixHeight,dendroData.length),NgChm.DDR.maxDendroMatrixHeight); // this is the height of the dendro matrices created in buildDendroMatrix
-	var maxHeight = dendroData.length > 0 ? Number(dendroData[dendroData.length-1].split(",")[2]) : 0; // this assumes the heightData is ordered from lowest height to highest
+	var maxHeight = dendroData.length > 0 ? getMaxHeight(dendroData) : 0; // this assumes the heightData is ordered from lowest height to highest
 	var dendroMatrix;
 	var zoomLevel = 1;
 	
@@ -1140,7 +1140,7 @@ NgChm.DDR.DetailRowDendrogram = function() {
 		var lastRow = dendroInfo[numNodes-1];
 		var matrix = new NgChm.DDR.DendroMatrix(normDendroMatrixHeight+1, matrixWidth-1,true);
 		var topLineArray = new Array(matrixWidth-1); // this array is made to keep track of which bars have vertical lines that extend outside the matrix
-		var maxHeight = Number(lastRow.split(",")[2])/(heightRatio); // this assumes the heightData is ordered from lowest height to highest
+		var maxHeight = getMaxHeight(dendroData)/(heightRatio); // this assumes the heightData is ordered from lowest height to highest
 		var branchCount = 0;
 		
 		// check the left and right endpoints of each bar, and see if they are within the bounds.
@@ -1158,7 +1158,7 @@ NgChm.DDR.DetailRowDendrogram = function() {
 			
 			var leftLoc = convertJsonIndexToDataViewSpace(leftJsonIndex); // Loc is the location in the dendro matrix
 			var rightLoc = convertJsonIndexToDataViewSpace(rightJsonIndex);
-			var normHeight = height < 0.0001*matrix.getNumCols() ? 1 : Math.round(normDendroMatrixHeight*height/maxHeight); // height in matrix (if height is roughly 0, treat as such)
+			var normHeight = height < 0.000001*matrix.getNumCols() ? 1 : Math.round(normDendroMatrixHeight*height/maxHeight); // height in matrix (if height is roughly 0, treat as such)
 			var leftEnd = Math.max(leftLoc, 1);
 			var rightEnd = Math.min(rightLoc, matrixWidth-1);
 			
@@ -1304,9 +1304,9 @@ NgChm.DDR.DetailColumnDendrogram = function() {
 	var dendroCanvas = document.getElementById('detail_column_dendro_canvas');
 	var dendroConfig = NgChm.heatMap.getColDendroConfig();
 	var hasData = dendroConfig.show === 'NA' ? false : true;
-	var dendroData = NgChm.heatMap.getRowDendroData();
+	var dendroData = NgChm.heatMap.getColDendroData();
 	var normDendroMatrixHeight = Math.min(Math.max(NgChm.DDR.minDendroMatrixHeight,dendroData.length),NgChm.DDR.maxDendroMatrixHeight); // this is the height of the dendro matrices created in buildDendroMatrix
-	var maxHeight = dendroData.length > 0 ? Number(dendroData[dendroData.length-1].split(",")[2]) : 0; // this assumes the heightData is ordered from lowest height to highest
+	var maxHeight = dendroData.length > 0 ? getMaxHeight(dendroData) : 0; // this assumes the heightData is ordered from lowest height to highest
 	var zoomLevel = 1;
 	var dendroMatrix;
 	
@@ -1416,7 +1416,7 @@ NgChm.DDR.DetailColumnDendrogram = function() {
 		var lastRow = dendroInfo[numNodes-1];
 		var matrix = new NgChm.DDR.DendroMatrix(normDendroMatrixHeight+1, matrixWidth-1,false);
 		var topLineArray = new Array(matrixWidth-1); // this array is made to keep track of which bars have vertical lines that extend outside the matrix
-		var maxHeight = Number(lastRow.split(",")[2])/(heightRatio); // this assumes the heightData is ordered from lowest height to highest
+		var maxHeight = getMaxHeight(dendroInfo)/(heightRatio); // this assumes the heightData is ordered from lowest height to highest
 		var branchCount = 0;
 		
 		// check the left and right endpoints of each bar, and see if they are within the bounds.
@@ -1434,7 +1434,7 @@ NgChm.DDR.DetailColumnDendrogram = function() {
 			
 			var leftLoc = convertJsonIndexToDataViewSpace(leftJsonIndex); // Loc is the location in the dendro matrix
 			var rightLoc = convertJsonIndexToDataViewSpace(rightJsonIndex);
-			var normHeight = height < 0.0001*matrix.getNumRows() ? 1 : Math.round(normDendroMatrixHeight*height/maxHeight); // height in matrix (if height is roughly 0, treat as such)
+			var normHeight = height < 0.000001*matrix.getNumRows() ? 1 : Math.round(normDendroMatrixHeight*height/maxHeight); // height in matrix (if height is roughly 0, treat as such)
 			var leftEnd = Math.max(leftLoc, Math.round(PPL/2));
 			var rightEnd = Math.min(rightLoc, Math.round(matrixWidth-PPL/2));
 			
