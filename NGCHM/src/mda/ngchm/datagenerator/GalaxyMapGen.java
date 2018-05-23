@@ -265,7 +265,7 @@ public static boolean debugOutput = false;
 
 			String genArgs[] = new String[] {"heatmapProperties.json"};
 			String errMsg = HeatmapDataGenerator.processHeatMap(genArgs);
-			if (errMsg != null) {
+			if ((errMsg != EMPTY) && (errMsg.contains("BUILD ERROR"))) {
 				System.out.println( "ERROR in GalaxyMapGen e= "+ errMsg);
 				System.exit(1);
 			} else {
@@ -396,7 +396,7 @@ public static boolean debugOutput = false;
 		
 			String genArgs[] = new String[] {"heatmapProperties.json"};
 			String errMsg = HeatmapDataGenerator.processHeatMap(genArgs);
-			if (errMsg != null) {
+			if ((errMsg != EMPTY) && (errMsg.contains("BUILD ERROR"))) {
 				System.out.println( "ERROR in GalaxyMapGen e= "+ errMsg);
 				System.exit(1);
 			} else {

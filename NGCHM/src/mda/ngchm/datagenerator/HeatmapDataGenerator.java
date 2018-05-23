@@ -56,7 +56,7 @@ public class HeatmapDataGenerator {
 	 ******************************************************************/
 	public static void main(String[] args) {
 		String errMsg = processHeatMap(args);
-		if (errMsg != null) {
+		if ((errMsg != EMPTY) && (errMsg.contains("BUILD ERROR"))) {
 			System.out.println( "ERROR in HeatmapDataGenerator e= "+ errMsg);
 			System.exit(1);
 		} else {
@@ -92,7 +92,7 @@ public class HeatmapDataGenerator {
 	 ******************************************************************/
 	public static String processHeatMap(String[] args) {
 		System.out.println("START Data Generator Heat Map Generation: " + new Date()); 
-		String errMsg = null;
+		String errMsg = EMPTY;
 		       
 		//Used to keep pdfBox warning messages out of the log (specifically for Galaxy)
 		java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.SEVERE);
@@ -102,7 +102,7 @@ public class HeatmapDataGenerator {
         	validateConfigJson(new File(args[0]));
         } catch (Exception e) {
     		System.out.println("FATAL ERROR: Invalid heatmapProperties.JSON: " + new Date()); 
-            return "FATAL ERROR: Invalid JSON Configuration.";
+            return "BUILD ERROR: Invalid JSON Configuration.";
         } 
 
 		// Create ImportData object for data matrix.  This object will 
@@ -112,7 +112,7 @@ public class HeatmapDataGenerator {
 			iData =  new ImportData(args);
         } catch (Exception ex) {
 			System.out.println("FATAL ERROR: Importing Heat Map Configuration Data. " + ex.getMessage() + ". Terminating HeatmapDataGenerator");  
-			return "FATAL ERROR: Importing Heat Map Configuration Data. " + ex.getMessage() + ". Terminating HeatmapDataGenerator";
+			return "BUILD ERROR: Importing Heat Map Configuration Data. " + ex.getMessage() + ". Terminating HeatmapDataGenerator";
         }
 
 		ImportLayerData summaryLayer = null;
@@ -121,7 +121,7 @@ public class HeatmapDataGenerator {
 				summaryLayer = writeTileFiles(iData, i);
 			}
 		} catch (Exception ex) {
-			errMsg = "FATAL ERROR: Writing Tile Data. Terminating HeatmapDataGenerator: " + ex.toString();
+			errMsg = "BUILD ERROR: Writing Tile Data. Terminating HeatmapDataGenerator: " + ex.toString();
 			System.out.println(errMsg);  
 	        ex.printStackTrace();
 	        return errMsg;
@@ -131,7 +131,7 @@ public class HeatmapDataGenerator {
 		try {
 			writeMapDataFile(iData, summaryLayer);
 		} catch (Exception ex) {
-			errMsg = "FATAL ERROR: Writing mapData.JSON Configuration File: " + ex.toString();
+			errMsg = "BUILD ERROR: Writing mapData.JSON Configuration File: " + ex.toString();
 			System.out.println(errMsg);  
 	        ex.printStackTrace();
 	        return errMsg;
@@ -139,7 +139,7 @@ public class HeatmapDataGenerator {
 		try {
 			writeMapConfigFile(iData);
 		} catch (Exception ex) {
-			errMsg = "FATAL ERROR: Writing mapConfig.JSON Configuration File: " + ex.toString();
+			errMsg = "BUILD ERROR: Writing mapConfig.JSON Configuration File: " + ex.toString();
 			System.out.println(errMsg);  
 	        ex.printStackTrace();
 	        return errMsg;
@@ -202,6 +202,16 @@ public class HeatmapDataGenerator {
 
 		if (DEBUG) {
 			writeClusteredDebugFile(iData);
+		}
+		if (iData.rowData.configWarnings.size() > 0) {
+			for (int i=0;i<iData.rowData.configWarnings.size();i++) {
+				errMsg = errMsg + iData.rowData.configWarnings.get(i) + "\n";
+			}
+		}
+		if (iData.colData.configWarnings.size() > 0) {
+			for (int i=0;i<iData.colData.configWarnings.size();i++) {
+				errMsg = errMsg + iData.colData.configWarnings.get(i) + "\n";
+			}
 		}
 		System.out.println("END Heat Map Generation: " + new Date()); 
 		return errMsg;

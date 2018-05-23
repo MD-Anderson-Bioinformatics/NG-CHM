@@ -1,5 +1,7 @@
 package mda.ngchm.datagenerator;
 
+import static mda.ngchm.datagenerator.ImportConstants.EMPTY;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -764,7 +766,7 @@ public class ShaidyRMapGen {
 				System.out.println(warnings);
 				String genArgs[] = new String[] {viewerMapDir+File.separator+"heatmapProperties.json",genPDF,genNGCHM};
 				String errMsg = HeatmapDataGenerator.processHeatMap(genArgs); 
-				if (errMsg != null) {
+				if ((errMsg != EMPTY) && (errMsg.contains("BUILD ERROR"))) {
 					System.out.println( "ERROR in ShaidyRMapGen e= "+ errMsg);
 					System.exit(1);
 				} else {

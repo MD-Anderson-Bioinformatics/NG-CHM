@@ -50,6 +50,7 @@ public class RowColData {
 	public String[] topItems = null;
 	public BufferedImage topItemImage;
 	public List<Object[]> topItemsLines = new ArrayList<Object[]>();
+	public List<String> configWarnings = new ArrayList<String>();
 
 	private int TOP_ITEMS_IMAGE_WIDTH = 44;
 
@@ -63,6 +64,7 @@ public class RowColData {
 	public RowColData(String type, int length, JSONObject configData, InputFile iFile) throws Exception
 	{
 		try {
+			String warningMsgs = null;
 			dataSize = length;
 			dataTypes = jsonArrayToStringArray((JSONArray)configData.get(DATA_TYPE));
 			orderType = type.trim();
@@ -84,7 +86,7 @@ public class RowColData {
 			orderFile = (String) configData.get(ORDER_FILE);
 			String[] orderArr = constructOrderArray(iFile);
 			topItems = (JSONArray)configData.get(TOP_ITEMS) != null ? jsonArrayToStringArray((JSONArray)configData.get(TOP_ITEMS)) : null;
-			cutLocations = processCutLocations(length,configData);
+			processCutLocations(length,configData);
 			if (cutLocations.length == 0) {
 				String treeCutStr = (String) configData.get(TREE_CUTS);
 				treeCuts = treeCutStr != null ? Integer.parseInt(treeCutStr) : 0;
@@ -108,7 +110,9 @@ public class RowColData {
 	            // object properties. Must be ordered hierarchically.
 	    		if (treeCuts > 0){
 	    			if (dendroValues.size()-1 < treeCuts) {
-	    		    	System.out.println("Warning: Less " + orderType + " dendrogram values found than Cluster-Based Gaps requested.  Lowering the number of gaps requested FROM: " + treeCuts + " TO: " + (dendroValues.size()-1));
+	    				String warning = "Less " + orderType + " dendrogram values found than Cluster-Based Gaps requested.  Lowering the number of gaps requested FROM: " + treeCuts + " TO: " + (dendroValues.size()-1);
+	    		    	System.out.println(warning);
+	    		    	configWarnings.add(warning);
 	    				treeCuts = dendroValues.size()-1;
 	    			}
 	    			int[] cutLocs = getTreeCutPositions();
@@ -116,7 +120,7 @@ public class RowColData {
 	    		}
 	        }
 			if (topItems != null) {
-				buildTopItemsArray();
+				warningMsgs = warningMsgs + buildTopItemsArray();
 			}
 		} catch (Exception ex) {
 	    	System.out.println("Exception instantiating RowColData Object: "+ ex.toString());
@@ -132,11 +136,13 @@ public class RowColData {
 	 * of the row/col maximum. If values are outside the range, they 
 	 * are discarded and a warning message is generated.
 	 ******************************************************************/
-	private int[] processCutLocations(int length, JSONObject configData) throws Exception
+	private void processCutLocations(int length, JSONObject configData) throws Exception
 	{
+		String warningMsgs = null;
 		int[] propCuts = jsonArrayToIntArray((JSONArray)configData.get(CUT_LOCATIONS)); 
 		if (propCuts.length == 0) {
-			return propCuts;
+			cutLocations = propCuts;
+			return;
 		}
 		java.util.Arrays.sort(propCuts);
 		ArrayList<Integer> cutProc = new ArrayList<Integer>();
@@ -145,14 +151,16 @@ public class RowColData {
 			if ((val < length) && (val > 0)) {
 				cutProc.add(val);
 			} else {
-		    	System.out.println("Warning: Fixed " + orderType + " Gap value " + val + " is outside the range of heat map " +orderType+ "s (1-"+length+"). Gap value disregarded.");
+				String warning = "Fixed " + orderType + " Gap value " + val + " is outside the range of heat map " +orderType+ "s (1-"+length+"). Gap value disregarded.";
+		    	System.out.println(warning);
+		    	configWarnings.add(warning);
 			}
 		} 
 		int [] validCuts = new int[cutProc.size()];
 		for(int j=0;j<cutProc.size();j++) {
 			validCuts[j] = cutProc.get(j);
 		}
-		return validCuts;
+		cutLocations = validCuts;
 	}
 
 	/*******************************************************************
@@ -526,7 +534,8 @@ public class RowColData {
 	 * is where that arrow ends.  If there is enough room, the arrow
 	 * will be straight.  If not it will be adjusted upward or downward.
 	 ******************************************************************/
-	private void buildTopItemsArray()  throws Exception {
+	private String buildTopItemsArray()  throws Exception {
+		String warningMsgs = null;
 		int itemsFound = 0;
 		for (int j=0;j<classArray.length;j++) {
 			String currElem = classArray[j];
@@ -544,10 +553,14 @@ public class RowColData {
 				}
 			}
 		}
-		if (itemsFound == 0) {
-			System.out.println("Warning: No top items found for axis: " + orderType + ".  All parameter entries skipped..");
-		} else if (topItems.length != itemsFound) {
-			System.out.println("Warning: Not all top items found for axis: " + orderType + ". Those parameter entries skipped.");
+		if ((topItems.length > 0) && (itemsFound == 0)) {
+			String warning = "No top items found for axis: " + orderType + ".  All parameter entries skipped..";
+			System.out.println(warning);
+			configWarnings.add(warning);
+		} else if ((topItems.length > 0) && (topItems.length != itemsFound)) {
+			String warning = "Not all top items found for axis: " + orderType + ". Those parameter entries skipped.";
+			System.out.println(warning);
+			configWarnings.add(warning);
 		}
 		if ((classArray.length > 80) && (itemsFound > 0)){
 			boolean found = true;
@@ -555,6 +568,7 @@ public class RowColData {
 				found = adjustTopItemLines();
 			}
 		}
+		return warningMsgs;
 	}
 
 	/*******************************************************************
