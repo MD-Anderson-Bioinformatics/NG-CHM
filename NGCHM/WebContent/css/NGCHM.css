@@ -129,7 +129,7 @@ div.mdaServiceHeaderLogo img
 	position: absolute;
 	image-rendering: pixelated;
 	image-rendering: -moz-crisp-edges;
-	z-index: -1;
+	z-index: 9999;
 }
 
 #classBarLabels{

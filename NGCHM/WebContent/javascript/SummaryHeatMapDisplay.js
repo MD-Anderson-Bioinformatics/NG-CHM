@@ -1072,7 +1072,7 @@ NgChm.SUM.drawScatterBarPlotRowClassBar = function(dataBuffer, pos, height, clas
 	return pos;
 }
 
-//THIS FUNCTION NOT CURRENTLY CALLED BUT MAY BE ADDED BACK IN IN THE FUTURE
+//THIS FUNCTION NOT CURRENTLY FOR THE SUMMARY PANEL CALLED BUT MAY BE ADDED BACK IN IN THE FUTURE
 NgChm.SUM.drawRowClassBarLegends = function (isSummary) {
 	var classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
 	var classBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
