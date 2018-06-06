@@ -346,6 +346,7 @@ public class ColorMapGenerator {
 				float value = 0;
 				try {
 					value = iFile.reorgMatrix[i][j];
+					//ignore cuts
 					if ((value != MAX_VALUES) && (value != MIN_VALUES)) {
 						if (value < minValue) {
 							minValue = value;
@@ -356,8 +357,14 @@ public class ColorMapGenerator {
 					}
 				} catch (NumberFormatException nex) {/*ignore*/}
 			}
-			minMeanCalc += minValue;
-			maxMeanCalc += maxValue;
+			//Ignore Cuts when calculating thresholds
+			if (minValue != MAX_VALUES) {
+				minMeanCalc += minValue;
+			}
+			//Ignore Cuts when calculating thresholds
+			if (maxValue != MIN_VALUES) {
+				maxMeanCalc += maxValue;
+			}
 		}
 		//Calculate the Minimum mean threshold and format as String
 		Double minMean = new Double(minMeanCalc/iFile.cols);
