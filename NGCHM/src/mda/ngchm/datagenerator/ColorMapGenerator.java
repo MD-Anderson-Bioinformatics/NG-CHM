@@ -340,8 +340,8 @@ public class ColorMapGenerator {
 		Double maxMeanCalc = new Double(0);
 		//Go through the matrix summing up the minimum and maximum values in each column
 		for (int j = 1; j <= iFile.cols; j++) {
-			float minValue = new Float(0);
-			float maxValue = new Float(0);
+			float minValue = new Float(MAX_VALUES);
+			float maxValue = new Float(MIN_VALUES);
 			for (int i = 1; i < iFile.rows; i++) {
 				float value = 0;
 				try {
