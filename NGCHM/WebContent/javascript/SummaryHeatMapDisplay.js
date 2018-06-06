@@ -1574,9 +1574,8 @@ NgChm.SUM.dividerMove = function(e) {
     		return false;
     	}
     }
-	var Xmove = e.touches ? divider.offsetLeft - e.touches[0].pageX : divider.offsetLeft - e.pageX;
 	var summary = document.getElementById('summary_chm');
-	var summaryX = summary.offsetWidth - Xmove;
+	var summaryX = summary.offsetWidth + e.movementX;
 	summary.style.width=summaryX+'px';
 	NgChm.SUM.setSummarySize();
 	NgChm.SUM.colDendro.resize();
@@ -1584,13 +1583,8 @@ NgChm.SUM.dividerMove = function(e) {
 	if (summary.style.width == summary.style.maxWidth){
 		return
 	}
-	var sumScale = summaryX/summary.clientWidth;
-	var container = document.getElementById("container");
-	var originalW = Math.max(Math.max(Math.round(NgChm.SUM.matrixWidth/250 * 48), 3))*container.clientWidth;
-	var originalH = Math.max(Math.max(Math.round(NgChm.SUM.matrixHeight/250 * 48), 3))*container.clientHeight;
-	var originalAR = originalW/originalH;
 	var detail = document.getElementById('detail_chm');
-	var detailX = detail.offsetWidth + Xmove;
+	var detailX = detail.offsetWidth -e.movementX;
 	detail.style.width=detailX+'px';
 	if(document.getElementById("missingSumRowClassBars")) document.getElementById("missingSumRowClassBars").remove();
 	if(document.getElementById("missingSumColClassBars")) document.getElementById("missingSumColClassBars").remove();
