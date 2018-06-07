@@ -178,6 +178,10 @@ public final class ImportConstants {
 	public static String SUMMARY_METHOD = "summary_method";
 	public static String GRID_SHOW = "grid_show";
 	public static String GRID_COLOR = "grid_color";
+	public static String SUMMARY_WIDTH = "summary_width";
+	public static String DETAIL_WIDTH = "detail_width";
+	public static String SUMMARY_HEIGHT = "summary_height";
+	public static String DETAIL_HEIGHT  = "detail_height";
 	public static String SELECTION_COLOR = "selection_color";
 	public static String OUTPUT_LOC = "output_location";
 	public static String METHOD_SAMPLE = "sample";

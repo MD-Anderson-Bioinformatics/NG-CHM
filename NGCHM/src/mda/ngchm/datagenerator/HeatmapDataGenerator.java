@@ -969,10 +969,10 @@ public class HeatmapDataGenerator {
         fw.write(VERSION_LABEL+QUOTE+CURRENT_GENERATOR_VERSION+QUOTE+COMMA);
         fw.write(LABEL_LENGTH_LABEL+LABEL_LENGTH_DEFAULT+COMMA);
         fw.write(LABEL_TRUNCATION_LABEL+LABEL_TRUNCATE_DEFAULT+COMMA);
-        fw.write(SUMMARY_WIDTH_LABEL+QUOTE+"50"+QUOTE+COMMA);
-        fw.write(SUMMARY_HEIGHT_LABEL+QUOTE+"100"+QUOTE+COMMA);
-        fw.write(DETAIL_WIDTH_LABEL+QUOTE+"50"+QUOTE+COMMA);
-        fw.write(DETAIL_HEIGHT_LABEL+QUOTE+"100"+QUOTE+COMMA);
+        fw.write(SUMMARY_WIDTH_LABEL+QUOTE+iData.summaryWidth+QUOTE+COMMA);
+        fw.write(SUMMARY_HEIGHT_LABEL+QUOTE+iData.summaryHeight+QUOTE+COMMA);
+        fw.write(DETAIL_WIDTH_LABEL+QUOTE+iData.detailWidth+QUOTE+COMMA);
+        fw.write(DETAIL_HEIGHT_LABEL+QUOTE+iData.detailHeight+QUOTE+COMMA);
         int cutRows = iData.rowData.cutLocations.length*iData.rowData.cutWidth;
         int cutCols = iData.colData.cutLocations.length*iData.colData.cutWidth;
         fw.write(MAP_CUT_ROWS_LABEL+QUOTE+cutRows+QUOTE+COMMA);

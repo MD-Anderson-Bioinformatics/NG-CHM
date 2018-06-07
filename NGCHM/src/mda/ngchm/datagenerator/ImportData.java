@@ -49,6 +49,10 @@ public class ImportData {
 	public List<InputFile> matrixFiles = new ArrayList<InputFile>();
 	public Float tnMatrix[][];
 	public BufferedImage tnImage;
+	public String summaryWidth = "50";
+	public String detailWidth = "50";
+	public String summaryHeight = "100";
+	public String detailHeight = "100";
 	public List<Float[][]> pdfMatrices = new ArrayList<Float[][]>();
 	public List<BufferedImage> matrixImages = new ArrayList<BufferedImage>();
 	
@@ -160,6 +164,19 @@ public class ImportData {
        		mapname = mapname.replace("\\","_");
             chmName = mapname;
             chmDescription = (String) jsonObject.get(CHM_DESC);
+            String sumWidth = (String) jsonObject.get(SUMMARY_WIDTH);
+			if (sumWidth != null) {
+				summaryWidth = sumWidth;
+				detailWidth = String.valueOf(100 - Integer.parseInt(summaryWidth));
+			}
+            String sumHgt = (String) jsonObject.get(SUMMARY_HEIGHT); 
+			if (sumHgt != null) {
+				summaryHeight = sumHgt;
+			}
+            String detHgt = (String) jsonObject.get(DETAIL_HEIGHT); 
+			if (detHgt != null) {
+				detailHeight = detHgt;
+			}
             JSONArray tags = (JSONArray) jsonObject.get(CHM_ATTRS);
             for (int i=0; i < tags.size();i++) {
            		JSONObject jo = (JSONObject) tags.get(i);
