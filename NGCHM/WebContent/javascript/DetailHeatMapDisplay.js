@@ -1076,7 +1076,7 @@ NgChm.DET.detailSplit = function () {
 			detailButtonDiv.style.display = 'none';
 			detailFlickDiv.style.display = 'none';
 			var summaryDiv = document.getElementById('summary_chm');
-			summaryDiv.style.width = '100%';
+			summaryDiv.style.width = '90%';
 			NgChm.SUM.setSummarySize();
 			NgChm.SUM.rowDendro.draw();
 			NgChm.SUM.colDendro.draw();
@@ -1088,6 +1088,8 @@ NgChm.DET.detailSplit = function () {
 			NgChm.SUM.drawColSelectionMarks();
 			NgChm.SUM.drawTopItems();
 	 		document.getElementById('pdf_gear').style.display = 'none';
+		 	NgChm.SUM.drawColClassBarLabels(); 
+			NgChm.SUM.drawRowClassBarLabels(); 
 		} else {
 			NgChm.SEL.updateSelection();
 			NgChm.SEL.rejoinNotice();
@@ -1125,6 +1127,11 @@ NgChm.DET.detailJoin = function () {
 		document.getElementById('pdf_gear').style.minWidth = '340px';
 	} else {
 		document.getElementById('pdf_gear').style.minWidth = '140px';
+	}
+	//Remove class labels
+	var classLabels = document.getElementsByClassName("classLabel");
+	while (classLabels.length > 0) {
+		classLabels[0].parentNode.removeChild(classLabels[0]);
 	}
 	NgChm.SEL.updateSelection();
 }

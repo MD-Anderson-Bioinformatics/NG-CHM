@@ -153,6 +153,11 @@ NgChm.SUM.summaryInit = function(applying) {
 	NgChm.SUM.drawRowSelectionMarks();
 	NgChm.SUM.drawColSelectionMarks();
 	NgChm.SUM.drawTopItems();
+	//Labels only re-drawn in NGCHM_GUI_Builder and split screen mode
+	if (document.getElementById('divider').style.display === 'none') {
+	 	NgChm.SUM.drawColClassBarLabels(); 
+		NgChm.SUM.drawRowClassBarLabels(); 
+	}
  	//NgChm.SUM.drawColClassBarLegends(true); Temporarily removed legends from summary
 	//NgChm.SUM.drawRowClassBarLegends(true); they may or may not come back later
 }
@@ -906,6 +911,130 @@ NgChm.SUM.drawScatterBarPlotColClassBar = function(dataBuffer, pos, height, clas
 	return pos;
 }
 
+NgChm.SUM.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalHeight, fewClasses) {
+	//calculate where covariate bars end and heatmap begins by using the top items canvas (which is lined up with the heatmap)
+	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
+	var classHgt = NgChm.SUM.canvas.offsetHeight - rowCanvas.offsetHeight;
+	//calculate where the previous bar ends and the current one begins.
+	var prevEndPct = prevHeight/totalHeight;
+	var currEndPct = (prevHeight+parseInt(currentClassBar.height))/totalHeight;
+	//calculate where covariate bars begin and end and use that to calculate the total covariate bars height
+	var beginClasses = NgChm.SUM.canvas.offsetTop-6;
+	var endClasses = beginClasses+classHgt-2;
+	var classHeight = endClasses-beginClasses;
+	//get your horizontal start position (to the right of bars)
+	var leftPos = NgChm.SUM.canvas.offsetLeft + NgChm.SUM.canvas.offsetWidth;
+	var midPos =  topPos+((endPos-topPos)/2);
+	//Get your 3 values for the legend.
+	var midVal = key;
+	//Create div and place mid legend value
+	NgChm.SUM.setLabelDivElement(key+"Label","- "+midVal,midPos,leftPos,false);
+}
+
+NgChm.SUM.drawRowClassBarLabels = function () {
+	var classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
+	var classBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
+	var classBarsData = NgChm.heatMap.getRowClassificationData(); 
+	var totalHeight = 0;
+	for (var i = 0; i < classBarConfigOrder.length; i++) {
+		var key = classBarConfigOrder[i];
+		var currentClassBar = classBarsConfig[key];
+		if (currentClassBar.show === 'Y') {
+			totalHeight += parseInt(currentClassBar.height);
+		}
+	}
+	var prevHeight = 0;
+	for (var i = 0; i < classBarConfigOrder.length; i++) {
+		var key = classBarConfigOrder[i];
+		var currentClassBar = classBarsConfig[key];
+		if (currentClassBar.show === 'Y') {
+			NgChm.SUM.drawRowClassBarLabel(key,currentClassBar,prevHeight,totalHeight,i);
+			prevHeight += parseInt(currentClassBar.height);
+		}
+	}
+}
+
+NgChm.SUM.drawRowClassBarLabel = function(key,currentClassBar,prevHeight,totalHeight,i) {
+	var colCanvas = document.getElementById("summary_col_top_items_canvas");
+	var classHgt = colCanvas.offsetLeft - NgChm.SUM.canvas.offsetLeft;
+	var prevEndPct = prevHeight/totalHeight;
+	var currEndPct = (prevHeight+parseInt(currentClassBar.height))/totalHeight;
+	var beginClasses = NgChm.SUM.canvas.offsetLeft - 6;
+	var endClasses = beginClasses+classHgt-2;
+	var classesHeight = endClasses-beginClasses;
+	var beginPos =  beginClasses+(classesHeight*prevEndPct)+(NgChm.SUM.rowClassPadding*(i+1));
+	var endPos =  beginClasses+(classesHeight*currEndPct)-NgChm.SUM.rowClassPadding;
+	var midPos =  beginPos+((endPos-beginPos)/2);
+	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
+	var topPos = rowCanvas.offsetTop+rowCanvas.offsetHeight+10;
+	var midVal = key;
+	//Create div and place middle legend value
+	NgChm.SUM.setLabelDivElement(key+"Label",midVal,topPos,midPos,true,true);
+}
+
+NgChm.SUM.drawColClassBarLabels = function () {
+	var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
+	var classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
+	var classBarsData = NgChm.heatMap.getColClassificationData(); 
+	var totalHeight = 0;
+	for (var i = 0; i < classBarConfigOrder.length; i++) {
+		var key = classBarConfigOrder[i];
+		var currentClassBar = classBarsConfig[key];
+		if (currentClassBar.show === 'Y') {
+			totalHeight += parseInt(currentClassBar.height);
+		}
+	}
+	var prevHeight = 0;
+	var fewClasses = classBarConfigOrder.length < 7 ? 2 : 0;
+	for (var i = 0; i < classBarConfigOrder.length; i++) {
+		var key = classBarConfigOrder[i];
+		var currentClassBar = classBarsConfig[key];
+		if (currentClassBar.show === 'Y') {
+			NgChm.SUM.drawColClassBarLabel(key, currentClassBar,prevHeight,totalHeight, fewClasses);
+			prevHeight += parseInt(currentClassBar.height);
+		}
+	}
+}
+
+NgChm.SUM.drawColClassBarLabel = function(key,currentClassBar,prevHeight,totalHeight, fewClasses) {
+	//calculate where covariate bars end and heatmap begins by using the top items canvas (which is lined up with the heatmap)
+	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
+	var classHgt = NgChm.SUM.canvas.offsetHeight - rowCanvas.offsetHeight;
+	//calculate where the previous bar ends and the current one begins.
+	var prevEndPct = prevHeight/totalHeight;
+	var currEndPct = (prevHeight+parseInt(currentClassBar.height))/totalHeight;
+	//calculate where covariate bars begin and end and use that to calculate the total covariate bars height
+	var beginClasses = NgChm.SUM.canvas.offsetTop-6;
+	var endClasses = beginClasses+classHgt-2;
+	var classHeight = endClasses-beginClasses;
+	//get your horizontal start position (to the right of bars)
+	var leftPos = NgChm.SUM.canvas.offsetLeft + NgChm.SUM.canvas.offsetWidth + 2;
+	//find the first, middle, and last vertical positions for the bar legend being drawn
+	var topPos =  beginClasses+(classHeight*prevEndPct)+fewClasses;
+	var endPos =  beginClasses+(classHeight*currEndPct)+fewClasses;
+	var midPos =  topPos+((endPos-topPos)/2);
+	var midVal = key;
+	//Create div and place mid legend value
+	NgChm.SUM.setLabelDivElement(key+"Label",midVal,midPos,leftPos,false);
+}
+
+NgChm.SUM.setLabelDivElement = function (itemId,boundVal,topVal,leftVal,isRowVal) {
+	//Create div and place high legend value
+	var itemElem = document.getElementById(itemId);
+	if (itemElem === null) {
+		itemElem = document.createElement("Div"); 
+		itemElem.id = itemId;
+		itemElem.innerHTML = boundVal;
+		itemElem.className = "classLabel";
+		if (isRowVal) {
+			itemElem.style.transform = "rotate(90deg)";
+		}
+		document.getElementById("summary_chm").appendChild(itemElem);
+	}
+	itemElem.style.top = topVal;
+	itemElem.style.left = leftVal;
+}
+
 NgChm.SUM.drawColClassBarLegends = function (isSummary) {
 	var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
 	var classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
@@ -1253,6 +1382,11 @@ NgChm.SUM.summaryResize = function() {
 		NgChm.SUM.drawMissingRowClassBarsMark();
 		NgChm.SUM.drawMissingColClassBarsMark();
 		NgChm.SUM.drawTopItems();
+		//Labels only drawn in NGCHM_GUI_Builder and split screen mode
+		if (document.getElementById('divider').style.display === 'none') {
+		 	NgChm.SUM.drawColClassBarLabels(); 
+			NgChm.SUM.drawRowClassBarLabels(); 
+		}
 //		NgChm.SUM.drawColClassBarLegends(true); Removed for the time being
 //		NgChm.SUM.drawRowClassBarLegends(true);
 	}
