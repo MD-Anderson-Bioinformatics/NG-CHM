@@ -1018,7 +1018,7 @@ NgChm.SUM.drawColClassBarLabel = function(key,currentClassBar,prevHeight,totalHe
 	var topPos =  beginClasses+(classHeight*prevEndPct)+fewClasses;
 	var endPos =  beginClasses+(classHeight*currEndPct)+fewClasses;
 	var midPos =  topPos+((endPos-topPos)/2);
-	var midVal = key.length > 13 ? key.substr(0,10)+"..." : key;
+	var midVal = key.length > 23 ? key.substr(0,20)+"..." : key;
 	//Create div and place mid legend value
 	NgChm.SUM.setLabelDivElement(key+"Label",midVal,midPos,leftPos,false);
 }
