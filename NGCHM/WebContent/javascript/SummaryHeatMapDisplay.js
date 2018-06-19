@@ -966,8 +966,13 @@ NgChm.SUM.drawRowClassBarLabel = function(key,currentClassBar,prevHeight,totalHe
 	var endPos =  beginClasses+(classesHeight*currEndPct)-NgChm.SUM.rowClassPadding;
 	var midPos =  beginPos+((endPos-beginPos)/2)-5;
 	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
-	var topPos = rowCanvas.offsetTop+rowCanvas.offsetHeight+10;
-	var midVal = key;
+	var midVal = key.length > 13 ? key.substr(0,10)+"..." : key;
+	var addlOffset = 10;
+	if (midVal.length > 7) {
+		addlOffset = 25;
+	}
+	var topPos = rowCanvas.offsetTop+rowCanvas.offsetHeight+addlOffset;
+	var midVal = key.length > 9 ? key.substr(0,6)+"..." : key;
 	//Create div and place middle legend value
 	NgChm.SUM.setLabelDivElement(key+"Label",midVal,topPos,midPos,true,true);
 }
@@ -1013,7 +1018,7 @@ NgChm.SUM.drawColClassBarLabel = function(key,currentClassBar,prevHeight,totalHe
 	var topPos =  beginClasses+(classHeight*prevEndPct)+fewClasses;
 	var endPos =  beginClasses+(classHeight*currEndPct)+fewClasses;
 	var midPos =  topPos+((endPos-topPos)/2);
-	var midVal = key;
+	var midVal = key.length > 23 ? key.substr(0,20)+"..." : key;
 	//Create div and place mid legend value
 	NgChm.SUM.setLabelDivElement(key+"Label",midVal,midPos,leftPos,false);
 }
