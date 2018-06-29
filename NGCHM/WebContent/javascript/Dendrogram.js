@@ -1208,29 +1208,31 @@ NgChm.DDR.DetailRowDendrogram = function() {
 				}
 			}
 		}
+
+		// this counts the number of spots that are heatmap breaks.
+		var gapBreaks = 0;
+		var numLeafsToShow = 0;
+		for (var j = 0; j < stop-start; j++){ // this counts the number of spots that are not heatmap breaks. if we don't do this, we get the weird "comb"
+			if (NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,1,start+j) > NgChm.SUM.minValues){
+				numLeafsToShow++;
+			} else {
+				gapBreaks++;
+			}
+		}
 		
 		var numPoints = NgChm.SEL.getCurrentDetDataPerCol();
-		if (branchCount < numPoints/2 && NgChm.DET.initialized == false){
+		if ((branchCount+gapBreaks) < numPoints/2 && NgChm.DET.initialized == false){
 			zoomLevel *=.5;
 			buildMatrix (start, stop, NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)/NgChm.SEL.dataPerCol*zoomLevel);
-//			return;
 		}
 		
 		// fill in any missing leaves but only if the viewport is zoomed in far enough to tell.
 		if (stop - start < 100){
 			var numLeafsDrawn = 0;
-			var numLeafsToShow = 0;
 			for (var j in matrix[1]){
 				if (j < NgChm.DET.SIZE_NORMAL_MODE)numLeafsDrawn++; // tally up the number of leaves drawn
 			}
-			for (var j = 0; j < stop-start; j++){ // this counts the number of spots that are not heatmap breaks. if we don't do this, we get the weird "comb"
-				if (NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,start+i,1) > NgChm.SUM.minValues){
-					numLeafsToShow++;
-				}else if (NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,1,start+i) > NgChm.SUM.minValues){
-					numLeafsToShow++;
-				}
-			}
-			
+
 			var pos = Math.round(boxLength/2);
 			if (numLeafsDrawn < numLeafsToShow){ // have enough lines been drawn?
 				for (var i = 0; i < stop-start; i++){
@@ -1484,26 +1486,30 @@ NgChm.DDR.DetailColumnDendrogram = function() {
 			}
 		}
 		
+		// this counts the number of spots that are heatmap breaks.
+		var gapBreaks = 0;
+		var numLeafsToShow = 0;
+		for (var j = 0; j < stop-start; j++){ 
+			if (NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,start+j,1) > NgChm.SUM.minValues){
+				numLeafsToShow++;
+			} else {
+				gapBreaks++;
+			}
+		}
+		
 		var numPoints = NgChm.SEL.getCurrentDetDataPerRow();
-		if (branchCount < numPoints/2 && NgChm.DET.initialized == false){
+		if ((branchCount+gapBreaks) < numPoints/2 && NgChm.DET.initialized == false){
 			zoomLevel*=.5;
 			buildMatrix (start, stop, NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)/NgChm.SEL.dataPerRow*zoomLevel);
-//			return;
 		}
 		
 		// fill in any missing leaves but only if the viewport is zoomed in far enough to tell.
 		if (stop - start < 100){
 			var numLeafsDrawn = 0;
-			var numLeafsToShow = 0;
 			for (var j in matrix[1]){
 				if (j < NgChm.DET.SIZE_NORMAL_MODE)numLeafsDrawn++; // tally up the number of leaves drawn
 			}
-			for (var j = 0; j < stop-start; j++){ // this counts the number of spots that are not heatmap breaks. if we don't do this, we get the weird "comb"
-				if (NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,1,start+i) > NgChm.SUM.minValues){
-					numLeafsToShow++;
-				}
-			}
-			
+
 			var pos = Math.round(boxLength/2);
 			if (numLeafsDrawn < numLeafsToShow){ // have enough lines been drawn?
 				for (var i = 0; i < stop-start; i++){

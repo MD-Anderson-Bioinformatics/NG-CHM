@@ -148,7 +148,7 @@ public class RowColData {
 		ArrayList<Integer> cutProc = new ArrayList<Integer>();
 		for (int i=0;i<propCuts.length;i++) {
 			int val = propCuts[i];
-			if ((val < length) && (val > 0)) {
+			if ((val < length+1) && (val > 0)) {
 				cutProc.add(val);
 			} else {
 				String warning = "Fixed " + orderType + " Gap value " + val + " is outside the range of heat map " +orderType+ "s (1-"+length+"). Gap value disregarded.";

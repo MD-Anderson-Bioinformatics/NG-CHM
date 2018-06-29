@@ -964,12 +964,12 @@ NgChm.SUM.drawRowClassBarLabel = function(key,currentClassBar,prevHeight,totalHe
 	var classesHeight = endClasses-beginClasses;
 	var beginPos =  beginClasses+(classesHeight*prevEndPct)+(NgChm.SUM.rowClassPadding*(i+1));
 	var endPos =  beginClasses+(classesHeight*currEndPct)-NgChm.SUM.rowClassPadding;
-	var midPos =  beginPos+((endPos-beginPos)/2)-5;
+	var addlOffset = 22;
+	var midPos =  beginPos+((endPos-beginPos)/2)-addlOffset;
 	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
 	var midVal = key.length > 13 ? key.substr(0,10)+"..." : key;
-	var addlOffset = 10;
 	if (midVal.length > 7) {
-		addlOffset = 25;
+		addlOffset = addlOffset+5;
 	}
 	var topPos = rowCanvas.offsetTop+rowCanvas.offsetHeight+addlOffset;
 	var midVal = key.length > 9 ? key.substr(0,6)+"..." : key;
@@ -1784,4 +1784,6 @@ NgChm.SUM.setBrowserMinFontSize = function () {
 	  document.body.removeChild(el);
 	  return minSettingFound;
 }
+
+
 
