@@ -2341,6 +2341,7 @@ NgChm.DET.detailDrawRowClassBarLabels = function () {
 						NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_classrow' + i, 'DynamicLabel ClassBar', labelText, key, xPos, yPos, NgChm.DET.rowClassLabelFont, 'T', i, "RowCovar",key);
 					}
 					yPos += (currentClassBar.height * scale);
+					startingPoint += (currentClassBar.height*scale);
 				} else {
 					if (!document.getElementById("missingDetRowClassBars")){
 						var x = NgChm.DET.canvas.offsetLeft + 10;

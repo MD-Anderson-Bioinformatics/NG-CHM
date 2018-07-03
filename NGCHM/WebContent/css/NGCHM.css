@@ -315,7 +315,15 @@ div.mdaServiceHeaderLogo img
 	margin: 0px;
 }
 
-
+.classLabelVertical{
+	position: absolute;
+	display:block;
+	font-size: 10;
+    font-weight: bold;
+	margin: 0px;
+	transform: rotate(90deg);
+	transform-origin: top left;
+}
 
 #searchError{
 	border: 1px solid #1a1a1a;

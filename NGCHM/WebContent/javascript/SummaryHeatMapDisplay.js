@@ -928,14 +928,28 @@ NgChm.SUM.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalH
 	//Get your 3 values for the legend.
 	var midVal = key;
 	//Create div and place mid legend value
-	NgChm.SUM.setLabelDivElement(key+"Label","- "+midVal,midPos,leftPos,false);
+	NgChm.SUM.setLabelDivElement(key+"ColLabel","- "+midVal,midPos,leftPos,false);
+}
+
+NgChm.SUM.removeRowClassBarLabels = function () {
+	var classLabels = document.getElementsByClassName("classLabelVertical");
+	while (classLabels.length > 0) {
+		classLabels[0].parentNode.removeChild(classLabels[0]);
+	}
 }
 
 NgChm.SUM.drawRowClassBarLabels = function () {
+	NgChm.SUM.removeRowClassBarLabels();
+	var colCanvas = document.getElementById("summary_col_top_items_canvas");
+	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
+	var sumCanvas = document.getElementById("summary_canvas");
 	var classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
 	var classBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
-	var classBarsData = NgChm.heatMap.getRowClassificationData(); 
 	var totalHeight = 0;
+	var matrixWidth = colCanvas.width;
+	var canvasWidth = parseInt(sumCanvas.style.width,10);
+	var covarWidth = canvasWidth - matrixWidth;
+	//Calc total width of all covariate bars
 	for (var i = 0; i < classBarConfigOrder.length; i++) {
 		var key = classBarConfigOrder[i];
 		var currentClassBar = classBarsConfig[key];
@@ -943,41 +957,38 @@ NgChm.SUM.drawRowClassBarLabels = function () {
 			totalHeight += parseInt(currentClassBar.height);
 		}
 	}
-	var prevHeight = 0;
-	for (var i = 0; i < classBarConfigOrder.length; i++) {
-		var key = classBarConfigOrder[i];
+	//Set starting horizontal covariate position to the left edge of Summary canvas PLUS the font height of the label text
+	var covPos = parseInt(NgChm.SUM.canvas.style.left) + 10;
+	//Set starting vertical covariate position to the bottom edge of Summary canvas PLUS a space factor adjustment
+	var topPos = rowCanvas.offsetTop+rowCanvas.offsetHeight+5;
+	//Loop thru the class bars retrieving label (truncating where necessary), figuring the percentage of the total width of bars
+	//relfected in the current bar, draw label, and set the next position by off-setting the total width*that percentage.
+	for (var j = 0; j < classBarConfigOrder.length; j++) {
+		var key = classBarConfigOrder[j];
 		var currentClassBar = classBarsConfig[key];
 		if (currentClassBar.show === 'Y') {
-			NgChm.SUM.drawRowClassBarLabel(key,currentClassBar,prevHeight,totalHeight,i);
-			prevHeight += parseInt(currentClassBar.height);
+			var covLabel = NgChm.UTIL.getLabelText(key,'COL');
+			var covPct = parseInt(currentClassBar.height) / totalHeight;
+			//scaled width of current bar
+			var barWidth = (covarWidth*covPct);
+			//half the bar width minus half the font size for centered placement
+			var halfBar = (barWidth / 2) - 5;
+			NgChm.SUM.setLabelDivElement(key+"RowLabel",covLabel,topPos,(covPos+halfBar),true);
+			//Set position to beginning of next bar
+			covPos = covPos + barWidth;
 		}
 	}
 }
 
-NgChm.SUM.drawRowClassBarLabel = function(key,currentClassBar,prevHeight,totalHeight,i) {
-	var colCanvas = document.getElementById("summary_col_top_items_canvas");
-	var classHgt = colCanvas.offsetLeft - NgChm.SUM.canvas.offsetLeft;
-	var prevEndPct = prevHeight/totalHeight;
-	var currEndPct = (prevHeight+parseInt(currentClassBar.height))/totalHeight;
-	var beginClasses = NgChm.SUM.canvas.offsetLeft - 6;
-	var endClasses = beginClasses+classHgt-2;
-	var classesHeight = endClasses-beginClasses;
-	var beginPos =  beginClasses+(classesHeight*prevEndPct)+(NgChm.SUM.rowClassPadding*(i+1));
-	var endPos =  beginClasses+(classesHeight*currEndPct)-NgChm.SUM.rowClassPadding;
-	var addlOffset = 22;
-	var midPos =  beginPos+((endPos-beginPos)/2)-addlOffset;
-	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
-	var midVal = key.length > 13 ? key.substr(0,10)+"..." : key;
-	if (midVal.length > 7) {
-		addlOffset = addlOffset+5;
+NgChm.SUM.removeColClassBarLabels = function () {
+	var classLabels = document.getElementsByClassName("classLabel");
+	while (classLabels.length > 0) {
+		classLabels[0].parentNode.removeChild(classLabels[0]);
 	}
-	var topPos = rowCanvas.offsetTop+rowCanvas.offsetHeight+addlOffset;
-	var midVal = key.length > 9 ? key.substr(0,6)+"..." : key;
-	//Create div and place middle legend value
-	NgChm.SUM.setLabelDivElement(key+"Label",midVal,topPos,midPos,true,true);
 }
 
 NgChm.SUM.drawColClassBarLabels = function () {
+	NgChm.SUM.removeColClassBarLabels();
 	var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
 	var classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
 	var classBarsData = NgChm.heatMap.getColClassificationData(); 
@@ -1018,9 +1029,9 @@ NgChm.SUM.drawColClassBarLabel = function(key,currentClassBar,prevHeight,totalHe
 	var topPos =  beginClasses+(classHeight*prevEndPct)+fewClasses;
 	var endPos =  beginClasses+(classHeight*currEndPct)+fewClasses;
 	var midPos =  topPos+((endPos-topPos)/2);
-	var midVal = key.length > 23 ? key.substr(0,20)+"..." : key;
+	var midVal = NgChm.UTIL.getLabelText(key,'ROW'); 
 	//Create div and place mid legend value
-	NgChm.SUM.setLabelDivElement(key+"Label",midVal,midPos,leftPos,false);
+	NgChm.SUM.setLabelDivElement(key+"ColLabel",midVal,midPos,leftPos,false);
 }
 
 NgChm.SUM.setLabelDivElement = function (itemId,boundVal,topVal,leftVal,isRowVal) {
@@ -1030,9 +1041,10 @@ NgChm.SUM.setLabelDivElement = function (itemId,boundVal,topVal,leftVal,isRowVal
 		itemElem = document.createElement("Div"); 
 		itemElem.id = itemId;
 		itemElem.innerHTML = boundVal;
-		itemElem.className = "classLabel";
 		if (isRowVal) {
-			itemElem.style.transform = "rotate(90deg)";
+			itemElem.className = "classLabelVertical";
+		} else {
+			itemElem.className = "classLabel";
 		}
 		document.getElementById("summary_chm").appendChild(itemElem);
 	}
