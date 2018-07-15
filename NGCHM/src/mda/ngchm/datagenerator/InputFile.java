@@ -184,20 +184,20 @@ public class InputFile {
 		        // Check to see if the column headers are lined up over the data or are
 		        // offset by one to the left.  If the latter case is true, add a TAB to the line. 
 	            if (pos == 0) {
-		            String headerCols[] = line.split("\t");
+		            String headerCols[] = line.split("\t",-1);
 		            if ((headerCols.length-rowCovs-colStart) < (cols+1)) {
 		        		  line = TAB+line;
 		            }
-		            headerLength = line.split("\t").length;
+		            headerLength = line.split("\t",-1).length;
 	            } else if (pos >= rowDataStart - rowStart) {
-	            	int dataRowLen = line.split("\t").length;
+	            	int dataRowLen = line.split("\t",-1).length;
 	            	errMsg = MatrixValidator.validateMatrixRowLength(headerLength, dataRowLen);
             		if (errMsg != null) {
             			errMsg += " Matrix Row: " + (pos + rowStart + 1);
             			throw new Exception(errMsg);
              		}
 	            }
-		        String toks[] = line.split("\t");
+		        String toks[] = line.split("\t",-1);
 	            for (int i = colStart; i < toks.length; i++) {
 	            	if (pos == 0) {
 		            	if (i > colStart) {

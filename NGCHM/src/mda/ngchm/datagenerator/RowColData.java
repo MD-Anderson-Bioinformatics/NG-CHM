@@ -362,7 +362,7 @@ public class RowColData {
         int pos = 0;
         // Construct an integer array containing the row numbers of the clustered data
         while(line !=null) {
-           String toks[] = line.split("\t"); 
+           String toks[] = line.split("\t",-1);
            orderArr[pos] = toks[0]+"\t"+toks[1];  
            pos++;
            line = rowRead.readLine();
