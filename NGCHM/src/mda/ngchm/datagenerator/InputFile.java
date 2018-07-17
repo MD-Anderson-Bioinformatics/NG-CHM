@@ -15,6 +15,8 @@ package mda.ngchm.datagenerator;
 
 import static mda.ngchm.datagenerator.ImportConstants.*;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
@@ -29,6 +31,9 @@ public class InputFile {
 	public String file;
 	public String position; 
 	public boolean hasSummary = false;
+	public boolean hasDetail = false;
+	public boolean hasHorizontalRibbon = false;
+	public boolean hasVerticalRibbon = false;
 	public ColorMap map;
 	public float reorgMatrix[][];
 	public int rows;
@@ -46,6 +51,10 @@ public class InputFile {
 	public String selectionColor = COLOR_LIME;
 	public ArrayList<ImportLayerData> importLayers = new ArrayList<>();
 	public String origMatrix[][];
+	public BufferedImage distributionLegend;
+	public int[] distributionCounts;
+	public int missingCount;
+	public float[] distributionBreaks;
 	
 	public InputFile(JSONObject jo, String idv, String pos, int importRows, int importCols) throws Exception {
 		name = (String) jo.get(NAME);
@@ -107,6 +116,8 @@ public class InputFile {
 		if (map.colors.isEmpty()) {
 			map = ColorMapGenerator.getDefaultMapColors(map,this);
 		}
+		
+		createDistributionLegendImg();
 		// Create thumbnail level ImportDataLayer
 		ImportLayerData ild = new ImportLayerData(LAYER_THUMBNAIL, rows, cols);
 		importLayers.add(ild);
@@ -118,6 +129,15 @@ public class InputFile {
 			// If summary is not already at a 1-to-1 ratio, create detail level,
 			// ribbon vertical and ribbon horizontal level ImportDataLayers.
 			if (ild.rowInterval > 1 || ild.colInterval > 1) {
+				if (ild.rowInterval > 1) {
+					hasHorizontalRibbon = true;
+				}
+				if (ild.colInterval > 1) {
+					hasVerticalRibbon = true;
+				}
+				if (ild.rowInterval > 1 || ild.colInterval > 1) {
+					hasDetail = true;
+				}
 				ild = new ImportLayerData(LAYER_DETAIL, rows, cols);
 				importLayers.add(ild);
 				ild = new ImportLayerData(LAYER_RIBBONVERT, rows, cols);
@@ -315,6 +335,123 @@ public class InputFile {
 	    	System.out.println("Exception in InputFile.setReorderedInputMatrix: Reading Matrix. "+ ex.toString());
 	        throw ex;
 	    }
+	}
+	
+	/*******************************************************************
+	 * METHOD: createDistributionLegendImg
+	 *
+	 * This method creates a bufferedImage for the legend of the  
+	 * classification bar using summary level info its color map. It is
+	 * used in generating the heat map PDF.
+	 ******************************************************************/
+	public void createDistributionLegendImg() throws Exception {
+		
+		ColorMap cm = getMap();
+        float lowBP = Float.parseFloat(cm.breaks.get(0));
+        float highBP = Float.parseFloat(cm.breaks.get(cm.breaks.size()-1));
+        float range = highBP - lowBP;
+        int missingNum = 0;
+        int gapCount = 0;
+        int binNums = 10;
+        int threshNums = binNums - 1; 
+        int[] countBins = new int[binNums];
+        float[] thresh = new float[threshNums];
+        for (int i = 0; i < threshNums; i++) {
+     	   thresh[i] = lowBP + i*(range/(threshNums-1));
+        }
+        int asdf = 0;
+        asdf = asdf +1;
+        for (int i = 1; i < reorgMatrix.length; i++) {
+     	   for (int j = 1; j < reorgMatrix[i].length; j++) {
+     		   float v = reorgMatrix[i][j];
+     		   boolean gap = v == MIN_VALUES ? true : false;
+     		   if (NA_VALUES.contains(v) || v == MAX_VALUES) {
+     			  missingNum ++;
+     		   } else if (gap) {
+     			   gapCount ++;
+     		   } else if (v < lowBP) {
+     			   countBins[0]++;
+     		   } else if (highBP <= v) {
+     			   countBins[threshNums]++;
+     		   } else {
+     			   for (int k = 0; k < threshNums; k++) {
+     				   if ( v < thresh[k]) {
+     					   countBins[k]++;
+     					   break;
+     				   }
+     			   }
+     		   }
+     	   }
+        }
+        asdf = asdf + 1;
+        int maxCountInt = missingNum;
+        for (int a = 0; a < binNums; a++) {
+     	   if (countBins[a] > maxCountInt) {
+     		  maxCountInt = countBins[a];
+     	   }
+        }
+		int legendWidth = 110;
+		int legendHeight = binNums*10+10+1; // +10 for the missing data, +1 for the border
+		float maxCount = (float) maxCountInt/legendWidth;
+		BufferedImage image = new BufferedImage(legendWidth, legendHeight, BufferedImage.TYPE_INT_ARGB);
+		Color elemColor;
+		int rgb = 0;
+		for (int b = 0; b < threshNums; b++) {
+			float eVal = thresh[b];
+			int i = 0;
+			// find the breakpoints that this value is between
+			while (Float.parseFloat(cm.breaks.get(i)) <= eVal && i < cm.breaks.size()-1){
+				i++;
+			};
+			Color lowCol = cm.colors.get(i-1);
+			Color hiCol = cm.colors.get(i);
+			float low = Float.parseFloat(cm.breaks.get(i-1));
+			float hi = Float.parseFloat(cm.breaks.get(i));
+			float ratio = (hi-eVal)/(hi-low);
+			Color breakColor = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
+			rgb = breakColor.getRGB();
+			float length = Math.max(1,countBins[b]/maxCount-1);
+			for (int c = 0; c < length; c++) {
+				image.setRGB(c, b*10, RGB_BLACK);
+				image.setRGB(c, b*10+10, RGB_BLACK);
+				for (int d = 1; d < 10; d++) {
+					image.setRGB(c, b*10+d, rgb);
+				}
+			}
+			for (int d = 0; d < 11; d++) {
+				image.setRGB((int)length, b*10+d, RGB_BLACK);
+			}
+		}
+		elemColor = cm.colors.get(cm.colors.size()-1);
+		rgb = elemColor.getRGB();
+		float length = Math.max(1,countBins[threshNums]/maxCount-1);
+		for (int e = 0; e < length; e++) {
+			image.setRGB(e, threshNums*10, RGB_BLACK);
+			image.setRGB(e, threshNums*10+10, RGB_BLACK);
+			for (int f = legendHeight-20; f < legendHeight-11; f++) {
+				image.setRGB(e, f, rgb);
+			}
+		}
+		for (int d = 0; d < 11; d++) {
+			image.setRGB((int)length, threshNums*10+d, RGB_BLACK);
+		}
+		elemColor = cm.missingColor;
+		rgb = elemColor.getRGB();
+		length = Math.max(1,missingCount/maxCount-1);
+		for (int e = 0; e < length; e++) {
+			image.setRGB(e, legendHeight-1, RGB_BLACK);
+			image.setRGB(e, legendHeight-10, RGB_BLACK);
+			for (int f = 0; f < 10; f++) {
+				image.setRGB(e, legendHeight-10+f, rgb);
+			}
+		}
+		for (int d = 0; d < 10; d++) {
+			image.setRGB((int)length, legendHeight-10 + d, RGB_BLACK);
+		}
+		missingCount = missingNum;
+		distributionCounts = countBins;
+        distributionBreaks = thresh;
+    	distributionLegend = image;
 	}
 	
 	public ColorMap getMap() {

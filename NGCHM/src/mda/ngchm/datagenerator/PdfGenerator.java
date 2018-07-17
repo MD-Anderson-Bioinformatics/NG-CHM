@@ -19,7 +19,9 @@ import java.util.List;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
@@ -37,14 +39,18 @@ public class PdfGenerator {
 	 * document using the PdfBox library.  A page is created for each 
 	 * data layer and a legend page is created at the end of the PDF.
 	 ******************************************************************/
-	public void createHeatmapPDF(ImportData iData) {
+	public void createHeatmapPDF(ImportData iData, boolean fullPDF) {
 		PDDocument doc = null;
 		BufferedImage image;
 		try {
 		    doc = new PDDocument();
 			for (int i=0; i < iData.matrixImages.size(); i++) {
 				image = iData.matrixImages.get(i); 
-				createPDFHeatmapPage(doc, image, iData);
+				if (fullPDF) {
+					createFullPDFHeatmapPage(doc,image,iData);
+				} else {
+					createPDFHeatmapPage(doc, image, iData);
+				}
 			}
 			if ((iData.rowData.getVisibleClasses().size() > 0) || (iData.colData.getVisibleClasses().size() > 0)) {
 				createPDFLegendPage(doc, iData);
@@ -70,27 +76,39 @@ public class PdfGenerator {
         doc.addPage(page);
         PDPageContentStream contentStream = new PDPageContentStream(doc, page);
         //Write header and footer to PDF Document
-        drawHeaderFooter(doc, contentStream, iData.chmName);
+        drawHeaderFooter(doc, contentStream, iData.chmName, US_LETTER_WIDTH, US_LETTER_HEIGHT);
+		return contentStream;
+	}
+	
+	public PDPageContentStream getPdfPageCustomSize(PDDocument doc, ImportData iData, int mapWidth, int mapHeight) throws Exception {
+		int pageWidth = PDF_DENDRO_HEIGHT + mapWidth + 300;
+		int pageHeight = PDF_CONTENT_START + PDF_DENDRO_HEIGHT + mapHeight + 300;
+		PDRectangle pageDim = new PDRectangle(pageWidth, pageHeight); 
+        PDPage page = new PDPage(pageDim);
+        doc.addPage(page);
+        PDPageContentStream contentStream = new PDPageContentStream(doc, page);
+        //Write header and footer to PDF Document
+        drawHeaderFooter(doc, contentStream, iData.chmName,pageWidth, pageHeight);
 		return contentStream;
 	}
    
 	public void createPDFHeatmapPage(PDDocument doc, BufferedImage image, ImportData iData) {
 		try {
             PDPageContentStream contentStream = getPdfPage(doc, iData);
-            int[] rowColPos = getStartingPositions(iData);
+            int[] rowColPos = getStartingPositions(iData,US_LETTER_HEIGHT);
             //Draw row dendrogram on PDF
             if (iData.colData.dendroMatrix != null) {
-	            rowColPos = drawColumnDendrogram(doc, contentStream, iData, rowColPos);
+	            rowColPos = drawColumnDendrogram(doc, contentStream, iData, rowColPos, PDF_MAP_SIZE);
             }
             //Draw column covariates on PDF
-            rowColPos = drawColumnCovariates(doc, contentStream, iData, rowColPos);
+            rowColPos = drawColumnCovariates(doc, contentStream, iData, rowColPos, PDF_MAP_SIZE);
             //Draw row dendrogram on PDF
             rowColPos[PDF_ROW_POS] -= PDF_MAP_SIZE;
             if (iData.rowData.dendroMatrix != null) {
-                rowColPos = drawRowDendrogram(doc, contentStream, iData, rowColPos);
+                rowColPos = drawRowDendrogram(doc, contentStream, iData, rowColPos, PDF_MAP_SIZE);
             }
             //Draw row covariates on PDF
-            rowColPos = drawRowCovariates(doc, contentStream, iData, rowColPos);
+            rowColPos = drawRowCovariates(doc, contentStream, iData, rowColPos, PDF_MAP_SIZE);
             //Draw heat map on PDF
             PDImageXObject  pdImageXObject = LosslessFactory.createFromImage(doc, image);
             contentStream.drawImage(pdImageXObject, rowColPos[PDF_COL_POS], rowColPos[PDF_ROW_POS], PDF_MAP_SIZE, PDF_MAP_SIZE);
@@ -107,10 +125,45 @@ public class PdfGenerator {
 		} 
 	}	
 	
-	public int[] getStartingPositions(ImportData iData) {
+
+	public void createFullPDFHeatmapPage(PDDocument doc, BufferedImage image, ImportData iData) {
+		try {
+			int mapWidth = iData.colData.classArray.length*5-5;
+			int mapHeight = iData.rowData.classArray.length*5-5;
+            PDPageContentStream contentStream = getPdfPageCustomSize(doc, iData, mapWidth, mapHeight);
+            int[] rowColPos = getStartingPositions(iData,PDF_CONTENT_START + PDF_DENDRO_HEIGHT + mapHeight + 300);
+            //Draw row dendrogram on PDF
+            if (iData.colData.dendroMatrix != null) {
+	            rowColPos = drawColumnDendrogram(doc, contentStream, iData, rowColPos, mapWidth);
+            }
+            //Draw column covariates on PDF
+            rowColPos = drawColumnCovariates(doc, contentStream, iData, rowColPos, mapWidth);
+            //Draw row dendrogram on PDF
+            rowColPos[PDF_ROW_POS] -= mapHeight;
+            if (iData.rowData.dendroMatrix != null) {
+                rowColPos = drawRowDendrogram(doc, contentStream, iData, rowColPos, mapHeight);
+            }
+            //Draw row covariates on PDF
+            rowColPos = drawRowCovariates(doc, contentStream, iData, rowColPos, mapHeight);
+            //Draw all the col labels
+            rowColPos = drawAllColLabels(doc, contentStream, iData, rowColPos);
+            //Draw all the row labels
+            rowColPos = drawAllRowLabels(doc, contentStream, iData, rowColPos, mapWidth, mapHeight);
+            //Draw heat map on PDF
+            PDImageXObject  pdImageXObject = LosslessFactory.createFromImage(doc, image);
+            contentStream.drawImage(pdImageXObject, rowColPos[PDF_COL_POS], rowColPos[PDF_ROW_POS], mapWidth, mapHeight);
+            createPDFDataDistributionPlot(doc, iData);
+            contentStream.close();
+		} catch (Exception ex) {
+			System.out.println("Exception in PdfGenerator.createPDFHeatmapPage: " + ex.toString());
+	        ex.printStackTrace();
+		} 
+	}	
+	
+	public int[] getStartingPositions(ImportData iData, int pageHeight) {
         int[] rowColPos = new int[2];
         try {
-	        rowColPos[PDF_ROW_POS] = PDF_CONTENT_START;
+	        rowColPos[PDF_ROW_POS] = pageHeight - PDF_CONTENT_START;
 	    	List<InputClass> icList = iData.rowData.getVisibleClasses();
 	    	int classAdj = 0;
 	        for (int i = 0; i <  icList.size(); i++) {
@@ -131,6 +184,53 @@ public class PdfGenerator {
 	        ex.printStackTrace();
 		} 
         return rowColPos;
+	}
+
+	public void createPDFDataDistributionPlot(PDDocument doc, ImportData iData) {
+		try {
+	           PDPageContentStream contentStream = getPdfPage(doc, iData);
+	           int missingCount = iData.matrixFiles.get(0).missingCount;
+	           int[] countBins = iData.matrixFiles.get(0).distributionCounts;
+	           float[] thresh = iData.matrixFiles.get(0).distributionBreaks;
+	           int binNums = countBins.length;
+	           int threshNums = thresh.length;
+	           int maxCount = iData.matrixFiles.get(0).missingCount;
+	           for (int a = 0; a < binNums; a++) {
+	        	   if (countBins[a] > maxCount) {
+	        		   maxCount = countBins[a];
+	        	   }
+	           }
+	           int histStartY = 712;
+	           writePDFText(contentStream, "Data Distribution", 12, PDF_FONT_BOLD, 10, histStartY, false);
+	           histStartY -= 15;
+	           PDImageXObject  pdMatrixDistributionLegend = LosslessFactory.createFromImage(doc, iData.matrixFiles.get(0).distributionLegend);
+	           contentStream.drawImage(pdMatrixDistributionLegend, 50, histStartY-110, 110, 111);
+	           BufferedImage breakTick = new BufferedImage(2, 1, BufferedImage.TYPE_INT_RGB);
+	           breakTick.setRGB(0, 0, RGB_BLACK);
+	           breakTick.setRGB(1,0,RGB_BLACK);
+	           PDImageXObject pdImageBreakTick = LosslessFactory.createFromImage(doc, breakTick);
+	           contentStream.drawImage(pdImageBreakTick, 48, histStartY, 2, 1);
+	           contentStream.drawImage(pdImageBreakTick, 48, histStartY-100, 2, 1);
+	           contentStream.drawImage(pdImageBreakTick, 48, histStartY-110, 2, 1);
+	           for (int i = 0; i < threshNums; i++) {
+	        	   float roundThreshK = Math.round(thresh[i]*1000);
+	        	   float roundThresh = roundThreshK/1000;
+	        	   PDFont font = PDF_FONT;
+	        	   float textWidth = font.getStringWidth(Float.toString(roundThresh))/1000.0f * 12;
+	        	   writePDFText(contentStream, Float.toString(roundThresh), 12, PDF_FONT, 45-(int) textWidth, histStartY-(i+1)*10-5, false);
+	        	   writePDFText(contentStream, "n = " + Integer.toString(countBins[i]), 12, PDF_FONT, 55+(110*countBins[i]/maxCount) + 2, histStartY-(i+1)*10+1, false);
+	        	   contentStream.drawImage(pdImageBreakTick, 48, histStartY-(i+1)*10, 2, 1);
+	           }
+	           
+	           writePDFText(contentStream, "n = " + Integer.toString(countBins[binNums-1]), 12, PDF_FONT, 55+(110*countBins[binNums-1]/maxCount) + 2, histStartY-(threshNums+1)*10+1, false);
+	           writePDFText(contentStream, "Missing", 12, PDF_FONT, 5, histStartY-120+10, false);
+	           writePDFText(contentStream, "n = " + Integer.toString(missingCount), 12, PDF_FONT, 55+(110*missingCount/maxCount) + 2, histStartY-(binNums+1)*10+1, false);
+
+	           contentStream.close();
+			} catch (Exception ex) {
+				System.out.println("Exception in PdfGenerator.createPDFLegendPage: " + ex.toString());
+		        ex.printStackTrace();
+			}
 	}
 	
 	public void createPDFLegendPage(PDDocument doc, ImportData iData) {
@@ -374,22 +474,22 @@ public class PdfGenerator {
 		} 
   }
    
-	public void drawHeaderFooter(PDDocument doc, PDPageContentStream contentStream, String mapName) {
+	public void drawHeaderFooter(PDDocument doc, PDPageContentStream contentStream, String mapName, int pageWidth, int pageHeight) {
         try {
         	//Write heatmap name to header (truncating if necessary)
         	if (mapName.length() > 40) {
 	        	mapName = mapName.substring(0,40) + "...";
 	        }
-			writePDFText(contentStream, mapName, 14, PDF_FONT_BOLD, 130, 755, false);
+			writePDFText(contentStream, mapName, 14, PDF_FONT_BOLD, 130, pageHeight - 37, false);
 			//Draw MDA logo on header
 			InputStream is = getClass().getResourceAsStream("/images/mdabcblogo262x108.png");
 	        BufferedImage mdaLogoImg = ImageIO.read(is);
 	        PDImageXObject  mdaLogo = LosslessFactory.createFromImage(doc, mdaLogoImg);
-	        contentStream.drawImage(mdaLogo, 10, 740, 100, 40);
+	        contentStream.drawImage(mdaLogo, 10, pageHeight - 52, 100, 40);
 			//Draw red bar on header
 	        BufferedImage redBarImg = ImageIO.read(getClass().getResourceAsStream("/images/redbar.png"));
 	        PDImageXObject  redBar = LosslessFactory.createFromImage(doc, redBarImg);
-	        contentStream.drawImage(redBar, 10, 735, 590, 12);
+	        contentStream.drawImage(redBar, 10, pageHeight - 57, pageWidth - 22, 12);
 			//Draw In Silico logo on footer
 	        BufferedImage insilicoLogoImg = ImageIO.read(getClass().getResourceAsStream("/images/insilicologo.png"));
 	        PDImageXObject  insilicoLogo = LosslessFactory.createFromImage(doc, insilicoLogoImg);
@@ -400,11 +500,11 @@ public class PdfGenerator {
 		} 
 	}
 
-	public int[] drawColumnDendrogram(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray) {
+	public int[] drawColumnDendrogram(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray, int mapWidth) {
 		posArray[PDF_ROW_POS] -= PDF_DENDRO_HEIGHT;
         try {
             PDImageXObject  pdColDendroImageXObject = LosslessFactory.createFromImage(doc, iData.colData.dendroImage);
-            contentStream.drawImage(pdColDendroImageXObject, posArray[PDF_COL_POS], posArray[PDF_ROW_POS], PDF_MAP_SIZE, PDF_DENDRO_HEIGHT);
+            contentStream.drawImage(pdColDendroImageXObject, posArray[PDF_COL_POS], posArray[PDF_ROW_POS], mapWidth, PDF_DENDRO_HEIGHT);
 		} catch (Exception ex) {
 			System.out.println("Exception in PdfGenerator.drawColumnDendrogram: " + ex.toString());
 	        ex.printStackTrace();
@@ -412,7 +512,7 @@ public class PdfGenerator {
         return posArray;
 	}
 	
-	public int[] drawColumnCovariates(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray) {
+	public int[] drawColumnCovariates(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray, int mapWidth) {
         try {
         	List<InputClass> icList = iData.colData.getVisibleClasses();
         	posArray[PDF_ROW_POS] -= 2;
@@ -427,7 +527,7 @@ public class PdfGenerator {
             	InputClass ic = (InputClass) icList.get(i);
 	            PDImageXObject  pdImageClassXObjectC = LosslessFactory.createFromImage(doc, ic.classImage);
 	            int classHeight = PDF_CLASS_HEIGHT;
-	            int horizPos = posArray[PDF_COL_POS]+PDF_MAP_SIZE+2;
+	            int horizPos = posArray[PDF_COL_POS]+mapWidth+2;
 	            int midPos = posArray[PDF_ROW_POS]-3;
 	            if (!ic.barType.equals(COLOR_PLOT)) {
 	            	classHeight = PDF_CLASS_HEIGHT*3;
@@ -450,7 +550,7 @@ public class PdfGenerator {
 	            	if (containsBar) horizPos += 11;
 	            }
 	            posArray[PDF_ROW_POS] -= classHeight-2;
-	            contentStream.drawImage(pdImageClassXObjectC, posArray[PDF_COL_POS], posArray[PDF_ROW_POS], PDF_MAP_SIZE, classHeight - 1);
+	            contentStream.drawImage(pdImageClassXObjectC, posArray[PDF_COL_POS], posArray[PDF_ROW_POS], mapWidth, classHeight - 1);
             	String covName = ic.name;
     			covName = covName.length() > 20 ? covName.substring(0, 20)+"..." : covName;
 	    		writePDFText(contentStream, covName, 5, PDF_FONT_BOLD, horizPos, midPos, false);
@@ -463,10 +563,10 @@ public class PdfGenerator {
         return posArray;
 	}
 	
-	public int[] drawRowDendrogram(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray) {
+	public int[] drawRowDendrogram(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray, int mapHeight) {
         try {
         	PDImageXObject  pdRowDendroImageXObject = LosslessFactory.createFromImage(doc, iData.rowData.dendroImage);
-            contentStream.drawImage(pdRowDendroImageXObject, 10, posArray[PDF_ROW_POS], PDF_DENDRO_HEIGHT, PDF_MAP_SIZE);
+            contentStream.drawImage(pdRowDendroImageXObject, 10, posArray[PDF_ROW_POS], PDF_DENDRO_HEIGHT, mapHeight);
 		} catch (Exception ex) {
 			System.out.println("Exception in PdfGenerator.drawRowDendrogram: " + ex.toString());
 	        ex.printStackTrace();
@@ -474,7 +574,7 @@ public class PdfGenerator {
         return posArray;
 	}
 	
-	public int[] drawRowCovariates(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray) throws Exception {
+	public int[] drawRowCovariates(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray, int mapHeight) throws Exception {
     	List<InputClass> icList = iData.rowData.getVisibleClasses();
         int colStartPos = posArray[PDF_COL_POS] - (rowClassAdjustment+1);
         try {
@@ -513,7 +613,7 @@ public class PdfGenerator {
 	            	if (containsBar) vertPos -= 11;
 	            }
 	            PDImageXObject  pdImageClassXObjectR = LosslessFactory.createFromImage(doc, ic.classImage);
-	            contentStream.drawImage(pdImageClassXObjectR, colStartPos, posArray[PDF_ROW_POS], classHeight - 1, PDF_MAP_SIZE);
+	            contentStream.drawImage(pdImageClassXObjectR, colStartPos, posArray[PDF_ROW_POS], classHeight - 1, mapHeight);
             	String covName = ic.name;
     			covName = covName.length() > 20 ? covName.substring(0, 20)+"..." : covName;
 	    		writePDFText(contentStream, covName, 5, PDF_FONT_BOLD, midPos, vertPos, true);
@@ -549,6 +649,24 @@ public class PdfGenerator {
         return posArray;
 	}
 	
+	public int[] drawAllRowLabels(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray, int mapWidth, int mapHeight) {
+        try {
+	       int colStartPos = posArray[PDF_COL_POS] + mapWidth + 1;
+	        int startRowPosition = posArray[PDF_ROW_POS] + mapHeight;
+	        for (int i = 0; i < iData.rowData.classArray.length; i++) {
+		        String itemVal = iData.rowData.classArray[i];
+		        int textLoc = i*5 - 1;
+		        if (itemVal != null && itemVal != CUT_VALUE) {
+			        writePDFText(contentStream, itemVal, 5, PDF_FONT_BOLD, colStartPos, startRowPosition - textLoc, false);
+		        }
+	        }
+		} catch (Exception ex) {
+			System.out.println("Exception in PdfGenerator.drawRowTopItems: " + ex.toString());
+	        ex.printStackTrace();
+		} 
+        return posArray;
+	}
+	
 	public int[] drawColTopItems(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray) {
         try {
 			int colStartPos = posArray[PDF_COL_POS];
@@ -564,6 +682,24 @@ public class PdfGenerator {
 		        int textLoc = Math.round(((int)iData.colData.topItemsLines.get(i)[1])*increment)-2 - (increment.intValue()/2);
 		        if (itemVal != null) {
 			        writePDFText(contentStream, itemVal, 5, PDF_FONT_BOLD, startColPosition+textLoc, rowStartPos-2, true);
+		        } 
+	        }
+		} catch (Exception ex) {
+			System.out.println("Exception in PdfGenerator.drawColTopItems: " + ex.toString());
+	        ex.printStackTrace();
+		} 
+        return posArray;
+	}
+	
+	public int[] drawAllColLabels(PDDocument doc, PDPageContentStream contentStream, ImportData iData, int[] posArray) {
+        try {
+	        int rowStartPos = (posArray[PDF_ROW_POS]) - 1;
+	        int startColPosition = posArray[PDF_COL_POS];
+	        for (int i = 0; i < iData.colData.classArray.length; i++) {
+		        String itemVal = (String) iData.colData.classArray[i];
+		        int textLoc = Math.round((int)i*5)-5;
+		        if (itemVal != null && itemVal != CUT_VALUE) {
+			        writePDFText(contentStream, itemVal, 5, PDF_FONT_BOLD, startColPosition+textLoc, rowStartPos, true);
 		        } 
 	        }
 		} catch (Exception ex) {

@@ -156,6 +156,7 @@ public class HeatmapDataGenerator {
 
 		//Generate PDF
         if (iData.generatePDF) {
+        	boolean fullPDF = false;
 			try {
 	        	for (int i=0; i < iData.matrixFiles.size();i++) {
 			        iFile = iData.matrixFiles.get(i);
@@ -184,7 +185,46 @@ public class HeatmapDataGenerator {
 				if (iData.colData.dendroMatrix != null) {
 					iData.colData.dendroImage = createColDendroImg(iData, new Float(5.5));
 				}
-				pGen.createHeatmapPDF(iData); 
+				pGen.createHeatmapPDF(iData, fullPDF); 
+			} catch (Exception ex) {
+				System.out.println("Exception in HeatmapDataGenerator.main. Error generating PDF: " + ex.toString());  
+				ex.printStackTrace();
+			}
+        } else if (iData.generateFullPDF) { 
+        	boolean fullPDF = true;
+			try {
+	        	for (int i=0; i < iData.matrixFiles.size();i++) {
+			        iFile = iData.matrixFiles.get(i);
+			        if (iData.pdfMatrices !=null) {
+			        	createDetailImg(iFile.getMap(), iData, iData.pdfMatrices.get(i));
+			        }
+	        	}
+		        int size = iData.pdfMatrices.get(0).length;
+	        	for (int i=0; i < iData.rowData.classFiles.size();i++) {
+	        		InputClass iClass = iData.rowData.classFiles.get(i);
+	        		iClass.createClassSummaryImg(size);
+	        		iClass.createClassLegendImg();
+	        	}
+        		iData.rowData.createTopItemsImg(iData.rowData.classArray.length - 1);
+				size = iData.pdfMatrices.get(0)[0].length;
+	        	for (int i=0; i < iData.colData.classFiles.size();i++) {
+	        		InputClass iClass = iData.colData.classFiles.get(i);
+	        		iClass.createClassSummaryImg(size);
+	        		iClass.createClassLegendImg();
+	        	}
+        		iData.colData.createTopItemsImg(iData.colData.classArray.length - 1);
+				PdfGenerator pGen = new PdfGenerator();
+				if (iData.rowData.dendroMatrix != null) {
+//					iData.rowData.dendroImage = createRowDendroImg(iData, new Float(5.5)); // 5.5 inches is about 50% on a 11 inch tall piece of paper
+					float sizeTo = new Float((iData.rowData.classArray.length*5-1)/72*0.5);  // mapHeight divided by 72 to get inch width of map, x50% to get approximate size on page
+					iData.rowData.dendroImage = createRowDendroImg(iData, sizeTo);
+				}
+				if (iData.colData.dendroMatrix != null) {
+//					iData.colData.dendroImage = createColDendroImg(iData, new Float(5.5)); // 5.5 inches is about 65% on a 8.5 inch wide piece of paper
+					float sizeTo = new Float((iData.colData.classArray.length*5-1)/72*0.65);  // mapWidth divided by 72 to get inch width of map, x65% to get approximate size on page 
+					iData.colData.dendroImage = createColDendroImg(iData, sizeTo);
+				}
+				pGen.createHeatmapPDF(iData, fullPDF); 
 			} catch (Exception ex) {
 				System.out.println("Exception in HeatmapDataGenerator.main. Error generating PDF: " + ex.toString());  
 				ex.printStackTrace();
@@ -283,6 +323,17 @@ public class HeatmapDataGenerator {
 				if (ilData.layer.equals(LAYER_SUMMARY) && (iData.generatePDF)) {
 					iData.pdfMatrices.add(new Float[ilData.totalLevelRows][ilData.totalLevelCols]);
 				}
+				else if (iData.generateFullPDF) {
+					// if it has detail tiles, use those, if not revert to summary. if not summary, then thumbnail
+					if (ilData.layer.equals(LAYER_THUMBNAIL) && !iFile.hasSummary) {
+						iData.pdfMatrices.add(new Float[ilData.totalLevelRows][ilData.totalLevelCols]);
+					} else if (ilData.layer.equals(LAYER_SUMMARY) && !iFile.hasDetail) {
+						iData.pdfMatrices.add(new Float[ilData.totalLevelRows][ilData.totalLevelCols]);
+					} else if (ilData.layer.equals(LAYER_DETAIL)) {
+						iData.pdfMatrices.add(new Float[ilData.totalLevelRows][ilData.totalLevelCols]);
+					}
+				}
+				
 				if (ilData.layer.equals(LAYER_SUMMARY)) {
 					summaryLayer = ilData;
 				}
@@ -309,7 +360,6 @@ public class HeatmapDataGenerator {
 	 * and ImportTileData objects as a guideline.
 	 ******************************************************************/
 	private static void writeTileFile(ImportData iData, ImportLayerData ilData, ImportTileData itData, int position) throws Exception {
-//		int writes = 0;
 	    try {
 			InputFile iFile = iData.matrixFiles.get(position);
 			String dlDir = "dl"+(position+1);
@@ -349,6 +399,24 @@ public class HeatmapDataGenerator {
 								int rowPos = itData.rowStartPos == 1 ? rowctr : ilData.rowsPerTile + rowctr;
 								int colPos = itData.colStartPos == 1 ? colctr : ilData.colsPerTile + colctr;
 								iData.pdfMatrices.get(position)[rowPos][colPos] = v;
+							} else if (iData.generateFullPDF) {
+								if (ilData.layer.equals(LAYER_THUMBNAIL) && !iFile.hasSummary) {
+									int rowPos = itData.rowStartPos == 1 ? rowctr : rowStart + rowctr;
+									int colPos = itData.colStartPos == 1 ? colctr : colStart + colctr;
+									iData.pdfMatrices.get(position)[rowPos][colPos] = v;
+								} else if (ilData.layer.equals(LAYER_SUMMARY) && !iFile.hasDetail) {
+									int rowPos = itData.rowStartPos == 1 ? rowctr : ilData.rowsPerTile + rowctr;
+									int colPos = itData.colStartPos == 1 ? colctr : ilData.colsPerTile + colctr;
+									iData.pdfMatrices.get(position)[rowPos][colPos] = v;
+								} else if (ilData.layer.equals(LAYER_DETAIL)) {
+									int rowPos = itData.rowStartPos == 1 ? rowctr : rowStart - 1 + rowctr;
+									int colPos = itData.colStartPos == 1 ? colctr : colStart - 1 + colctr;
+									iData.pdfMatrices.get(position)[rowPos][colPos] = v;
+								} else if ((ilData.layer.equals(LAYER_RIBBONVERT) || ilData.layer.equals(LAYER_RIBBONHORIZ)) && !iFile.hasDetail) {
+									int rowPos = itData.rowStartPos == 1 ? rowctr : rowStart + rowctr;
+									int colPos = itData.colStartPos == 1 ? colctr : colStart + colctr;
+									iData.pdfMatrices.get(position)[rowPos][colPos] = v;
+								}
 							}
 							byte f[] = ByteBuffer.allocate(4).putFloat(v).array();
 							if (DEBUG) { valprint = valprint + TAB + v; } //For debugging: writes out file
@@ -356,7 +424,6 @@ public class HeatmapDataGenerator {
 							write.write(f, 2, 1);
 							write.write(f, 1, 1);
 							write.write(f, 0, 1); 
-//							writes++;
 							nextColWrite += colInterval;
 							colctr++;
 						}
@@ -1361,6 +1428,64 @@ public class HeatmapDataGenerator {
 			iData.matrixImages.add(image);
 	    } catch (Exception ex) {
 			System.out.println("Exception in HeatmapDataGenerator.createSummaryImg: " + ex.toString());  
+	        ex.printStackTrace();
+	    }
+	}
+	
+	/*******************************************************************
+	 * METHOD: createDetailImg
+	 *
+	 * This method creates the preview image using the summary level info
+	 * and the color map. It is used in generating the heat map PDF.
+	 ******************************************************************/
+	private static void createDetailImg(ColorMap cMap, ImportData iData, Float detMatrix[][]){
+		try {
+			int width = detMatrix[0].length;
+	        int height = detMatrix.length;
+	        int numBreaks = cMap.breaks.size();
+	        Color lowExCol = cMap.colors.get(0);
+	        Color hiExCol = cMap.colors.get(numBreaks-1);
+	        float lowEx = Float.parseFloat(cMap.breaks.get(0));
+	        float hiEx = Float.parseFloat(cMap.breaks.get(numBreaks-1));
+	        
+	        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+	        
+	        // BUILD HEAT MAP IMAGE
+	        // go through each value in the Detail matrix and determine the color for the pixel
+	        for (int y = 0; y < height; y++) {
+	            for (int x = 0; x < width; x++) {
+	                float val = detMatrix[y][x];
+	                int rgb;
+	                if (val == MIN_VALUES) {
+	                	rgb = RGB_WHITE;
+	                } else if (val == MAX_VALUES) {
+	                	rgb = RGB_BLACK;
+	                } else {
+		                if (val > hiEx){
+		                    rgb = hiExCol.getRGB();
+		                } else if (val < lowEx){
+		                    rgb = lowExCol.getRGB();
+		                } else {
+		                    int i = 0;
+		                    // find the breakpoints that this value is between
+		                    while (Float.parseFloat(cMap.breaks.get(i)) <= val && i < numBreaks-1){
+		                    	i++;
+		                    };
+		                    Color lowCol = cMap.colors.get(i-1);
+		                    Color hiCol = cMap.colors.get(i);
+		                    float low = Float.parseFloat(cMap.breaks.get(i-1));
+		                    float hi = Float.parseFloat(cMap.breaks.get(i));
+		                    float ratio = (hi-val)/(hi-low);
+		                    Color blend = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
+		                    rgb = blend.getRGB();
+		                }
+	                }
+	                image.setRGB(x, y, rgb);
+	            }
+	        }
+			iData.matrixImages.add(image);
+	    } catch (Exception ex) {
+			System.out.println("Exception in HeatmapDataGenerator.createDetailImg: " + ex.toString());  
 	        ex.printStackTrace();
 	    }
 	}

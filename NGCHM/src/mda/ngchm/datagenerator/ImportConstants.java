@@ -110,7 +110,9 @@ public final class ImportConstants {
 	public static String HIGH_BOUND_LABEL = "\"high_bound\" :";	
 	
 	//PDF Generation Constants
-	public static int PDF_CONTENT_START = 725;
+	public static int US_LETTER_WIDTH = 612;
+	public static int US_LETTER_HEIGHT = 792;
+	public static int PDF_CONTENT_START = 67;
 	public static int PDF_MAP_SIZE = 430;
 	public static int PDF_DENDRO_HEIGHT = 80;
 	public static int PDF_CLASS_HEIGHT = 7;
@@ -120,6 +122,7 @@ public final class ImportConstants {
 	public static PDFont PDF_FONT = PDType1Font.HELVETICA;
 	public static PDFont PDF_FONT_BOLD = PDType1Font.HELVETICA_BOLD;
 	public static String GENERATE_PDF = "-PDF";
+	public static String GENERATE_FULL_PDF = "-FULLPDF";
 	public static String GENERATE_NGCHM = "-NGCHM";
 	
 	//Dendro PNG Generation Constants
