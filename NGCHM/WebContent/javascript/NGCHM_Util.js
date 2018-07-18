@@ -337,6 +337,7 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		if (req.readyState == req.DONE) {
 			if (req.status != 200) {
 				console.log('Failed in call to get NGCHM from server: ' + req.status);
+				document.getElementById('loader').innerHTML = "Failed in call to get NGCHM from server";
 			} else {
 				var chmBlob  =  new Blob([req.response],{type:'application/zip'});  // req.response;
 				var chmFile  =  new File([chmBlob], NgChm.MMGR.embeddedMapName);
