@@ -48,6 +48,7 @@ public class InputFile {
 	public String summaryMethod = METHOD_AVERAGE;
 	public String gridShow = YES;
 	public String gridColor = COLOR_WHITE;
+	public String cutsColor = COLOR_WHITE;
 	public String selectionColor = COLOR_LIME;
 	public ArrayList<ImportLayerData> importLayers = new ArrayList<>();
 	public String origMatrix[][];
@@ -74,6 +75,10 @@ public class InputFile {
 		String gridCol = (String) jo.get(GRID_COLOR);
 		if (gridCol != null) {
 	        gridColor = gridCol.trim();
+		}
+		String cutsCol = (String) jo.get(CUTS_COLOR);
+		if (cutsCol != null) {
+	        cutsColor = cutsCol.trim();
 		}
 		String selColor = (String) jo.get(SELECTION_COLOR);
 		if (selColor != null) {

@@ -94,7 +94,13 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 		if (value >= NgChm.SUM.maxValues || value == "Missing"){
 			color = rgbaMissingColor;
 		}else if(value <= NgChm.SUM.minValues){
-			color = (255, 255, 255, 0);
+			var layers = NgChm.heatMap.getDataLayers();
+			var dl = layers[NgChm.SEL.currentDl];
+			if (typeof dl.cuts_color !== 'undefined') {
+				color = this.getHexToRgba(dl.cuts_color);
+			} else {
+				color = (255, 255, 255, 0);
+			}
 		}else if(value <= thresholds[0]){
 			color = rgbaColors[0]; // return color for lowest threshold if value is below range
 		} else if (value >= thresholds[numBreaks-1]){

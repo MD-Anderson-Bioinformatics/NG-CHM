@@ -1109,6 +1109,7 @@ public class HeatmapDataGenerator {
 			fw.write(NAME_LABEL+QUOTE+iFl.name+QUOTE+COMMA);
 			fw.write(GRID_SHOW_LABEL+QUOTE+iFl.gridShow+QUOTE+COMMA);
 			fw.write(GRID_COLOR_LABEL+QUOTE+iFl.gridColor+QUOTE+COMMA);
+			fw.write(CUTS_COLOR_LABEL+QUOTE+iFl.cutsColor+QUOTE+COMMA);
 			fw.write(SELECTION_COLOR_LABEL+QUOTE+iFl.selectionColor+QUOTE+COMMA);
 			writeColorMap(fw, iData, i, DATA_LAYER_LABEL);
 			fw.write(BRACE_CLOSE);

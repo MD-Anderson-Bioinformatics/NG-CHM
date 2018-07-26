@@ -92,6 +92,7 @@ public final class ImportConstants {
 	public static String DENDROGRAM_LABEL = "\"dendrogram\" :";	
 	public static String GRID_SHOW_LABEL = "\"grid_show\" :";	
 	public static String GRID_COLOR_LABEL = "\"grid_color\" :";	
+	public static String CUTS_COLOR_LABEL = "\"cuts_color\" :";	
 	public static String VERSION_LABEL = "\"version_id\" :";	
 	public static String LABEL_LENGTH_LABEL = "\"label_display_length\" :";	
 	public static String TOP_ITEMS_LABEL = "\"top_items\" :";	
@@ -181,6 +182,7 @@ public final class ImportConstants {
 	public static String SUMMARY_METHOD = "summary_method";
 	public static String GRID_SHOW = "grid_show";
 	public static String GRID_COLOR = "grid_color";
+	public static String CUTS_COLOR = "cuts_color";
 	public static String SUMMARY_WIDTH = "summary_width";
 	public static String DETAIL_WIDTH = "detail_width";
 	public static String SUMMARY_HEIGHT = "summary_height";
