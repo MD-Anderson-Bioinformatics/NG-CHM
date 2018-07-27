@@ -124,6 +124,7 @@ public class RowColData {
 			}
 		} catch (Exception ex) {
 	    	System.out.println("Exception instantiating RowColData Object: "+ ex.toString());
+                ex.printStackTrace();
 	        throw ex;
 		}
 	}
@@ -439,6 +440,10 @@ public class RowColData {
 	private void setClassificationOrder(String[] orderArr) throws Exception {
     	orderArray[0] = 0;
     	for (int i=0;i<orderArr.length;i++) {
+                if (orderArr[i] == null) {
+                    System.out.println("null entry in row or column order array (likely incorrect order file specified): index " + i);
+                    throw new Exception();
+                }
     		String toks[] = orderArr[i].split("\t");
             int toks1 = Integer.parseInt(toks[1]);
   	        for (int j=0;j<+cutLocations.length;j++) {
