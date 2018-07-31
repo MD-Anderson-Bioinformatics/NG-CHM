@@ -55,7 +55,7 @@ public class PdfGenerator {
 			if ((iData.rowData.getVisibleClasses().size() > 0) || (iData.colData.getVisibleClasses().size() > 0)) {
 				createPDFLegendPage(doc, iData);
 			}
-		    doc.save(iData.outputDir+File.separator+iData.chmName+" HeatMap.pdf");
+		    doc.save(iData.outputDir+File.separator+iData.chmName+".pdf");
 		    doc.close();
 		} catch (Exception ex) {
 			System.out.println("Exception in PdfGenerator.createHeatmapPDF: " + ex.toString());
