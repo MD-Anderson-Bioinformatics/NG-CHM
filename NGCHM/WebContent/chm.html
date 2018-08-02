@@ -68,7 +68,7 @@
 			    <img id='next_btn' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.detailDataToolHelp(this,"Next Search Result",160)' style="display:none;" onclick='NgChm.DET.searchNext();'  align="top"  />
 			    <img id='cancel_btn' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.detailDataToolHelp(this,"Clear Search Results",160)' style="display:none;" onclick='NgChm.DET.clearSearch(event);'  align="top"  />
 		    </div>
-			<div id="pdf_gear" align="right" style="position: absolute;right: 0;top:0">
+			<div id="pdf_gear" align="right" >
 				<div id="flicks" style="display: none;">
 				    <div id="noFlickViews" style="display: none;">
 				    	<table><tr><td><img id='flickOff' src='images/layersOff.png' onclick="NgChm.SEL.flickToggleOn();" onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Open Data Layer Control",160)'/></td></tr></table>
@@ -80,9 +80,10 @@
 				    		</tr></table>
 			    	</div>
 				</div>
- 	    		<img id='barMenu_btn' src='images/barMenu.png' alt='Open Menu' onmouseout='NgChm.UHM.menuOver(0)' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.detailDataToolHelp(this,"Open Menu")' onclick='NgChm.UHM.openMenu(this);' align="top"/> 
     		</div>
-		 </div> 
+        	<img id='colorMenu_btn' src='images/barColors.png' alt='Open Alert' onmouseout="NgChm.UHM.colorOver(0);" onmouseover='NgChm.UHM.colorOver(1);NgChm.UHM.detailDataToolHelp(this,"Edit Map Colors")' onclick='NgChm.UPM.editPreferences(this,null);' align="top"   />
+  			<img id='barMenu_btn' src='images/barMenu.png' alt='Open Menu' onmouseout='NgChm.UHM.menuOver(0)' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.detailDataToolHelp(this,"Open Menu")' onclick='NgChm.UHM.openMenu(this);' align="top"/> 
+ 		 </div> 
     </div>  
 	<div id='loader' style='display: none;'>Loading...</div>
 	<div id="container" style="position: relative">
@@ -104,7 +105,7 @@
 		</div>
 		
 		<div id='detail_chm' style='position: relative;'>
-			<canvas id='detail_column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
+ 			<canvas id='detail_column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
 			<canvas id='detail_row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
 			<canvas id='detail_canvas' tabindex='1'></canvas>
 			<canvas id='detail_box_canvas'></canvas>
