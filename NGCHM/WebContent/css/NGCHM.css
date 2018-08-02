@@ -185,7 +185,9 @@ div.mdaServiceHeaderLogo img
 
 #pdf_gear{
 	display: inline-block;
-	margin-top: 10px;
+	top: 0px;
+	position: absolute;
+	right: 60px;
 }
 
 #helptext {
@@ -554,5 +556,17 @@ table.helpTable th {
   border: 1px solid black;
   padding: 5px; 
   color: black;
+}
+
+#colorMenu_btn {
+	right: 30px;
+	top: 0px;
+    position: absolute;
+}
+
+#barMenu_btn {
+	right: 0px;
+	top: 0px;
+    position: absolute;
 }
 

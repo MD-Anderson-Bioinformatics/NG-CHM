@@ -744,6 +744,17 @@ NgChm.UHM.menuOver = function(val) {
 	menuBtn.mouseIsOver=val;
 }
 
+NgChm.UHM.colorOver = function(val) {
+	var menuBtn = document.getElementById('colorMenu_btn')
+	if (val === 0) {
+		menuBtn.setAttribute('src', 'images/barColors.png');
+	} else {
+		menuBtn.setAttribute('src', 'images/barColorsHover.png');
+	}
+	menuBtn.mouseIsOver=val;
+}
+
+
 NgChm.UHM.fullBtnOver = function(btn,val) {
 	if (NgChm.SEL.mode !=='NORMAL') {
 		if (val === 0) {
