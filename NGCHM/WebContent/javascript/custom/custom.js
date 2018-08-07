@@ -4,7 +4,7 @@
 
 //==============================================//
 // Biology base plugin                          //
-//==============================================// 
+//==============================================//
 
 (function(linkouts) {
 
@@ -12,6 +12,50 @@
     linkouts.addSubtype ("bio.mirna", "bio.pubmed");
     linkouts.addSubtype ("bio.gene.entrez", "bio.gene.entrezid");
 
+    linkouts.describeTypes([
+        { typeName: "bio.gene.hugo",
+          description: "The official HUGO symbol for a gene.",
+          examples: "TP53",
+          format: "Latin letters and Arabic numerals, usually without punctuation."
+        },
+        { typeName: "bio.go",
+          description: "A Gene Ontology (GO) accession identifier.",
+          examples: "GO:0007015",
+          format: "Letters G and O, a colon, and a seven-digit number."
+        },
+        { typeName: "bio.transcriptid",
+          description: "An Entrez transcription identifier",
+          format: "ENST###########"
+        },
+        { typeName: "bio.mirna",
+          description: "An miRNA identifier"
+        },
+        { typeName: "bio.pathway.msigdb.name",
+          description: "A Pathway Name as defined by the msig DB"
+        },
+        { typeName: "bio.gene.entrezid",
+          description: "Numeric Id representing a gene as defined by NCBI"
+        },
+        { typeName: "bio.protein.uniprotid",
+          description: "A Uniprot protein identifier."
+        },
+        { typeName: "bio.geo.acc",
+          description: "A Gene Expression Omnibus (GEO) accession id"
+        },
+        { typeName: "bio.pubmed",
+          description: "A PubMed Identifier, (Integer ID)",
+          format: "an integer"
+        },
+        { typeName: "bio.transcript.ensembl",
+          description: "An Ensembl transcript identifier"
+        },
+        { typeName: "scholar",
+          description: "A text string used to search for something in Google Scholar"
+        },
+        { typeName: "search",
+          description: "A text string used to search for something"
+        }
+    ]);
 }) (linkouts);
 
 //==============================================//
@@ -26,11 +70,11 @@
 
     linkouts.addPlugin({
         name: "Amigo",
-		description: "Adds linkouts to Amigo gene ontology database.",
-		version: "0.1.0",
-		site: "http://amigo.geneontology.org/amigo",
-		logo: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png",
-		linkouts: [
+	description: "Adds linkouts to Amigo gene ontology database.",
+	version: "0.1.0",
+	site: "http://amigo.geneontology.org/amigo",
+	logo: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png",
+	linkouts: [
 	    { menuEntry: "View Amigo", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openAmigo }
 	]
     });
@@ -81,6 +125,13 @@
 // cBioPortal plugin                            //
 //==============================================//
 (function (linkouts) {
+
+    linkouts.describeTypes([
+        { typeName: "bio.cbioportal.sampleid",
+          description: "An identifier that refers to a specific sample in cBioPortal."
+        }
+    ]);
+
     function openCBIOGenes ( genes) {
 	var studyid = linkouts.getAttribute("cbioportal.study");
 	linkouts.openUrl("http://www.cbioportal.org/ln?cancer_study_id=" + studyid + "&gene_list=" + genes.join("+"), "cbio");
@@ -158,7 +209,7 @@
 //==============================================//
 (function(linkouts) {
 
-    function openDecipher (names) { 
+    function openDecipher (names) {
 	var gname = names[0];
 	linkouts.openUrl("https://decipher.sanger.ac.uk/search?q=" + gname, "decipher");
     }
@@ -315,7 +366,7 @@ linkouts.addPlugin({
   function openHGNCGene (names) {
       var gname = names[0];
       linkouts.openUrl("http://www.genenames.org/cgi-bin/gene_symbol_report?q=data/hgnc_data.php&match=" + gname, "hgnc");
-  }   
+  }
 
 linkouts.addPlugin({
    name: "HGNC",
@@ -346,7 +397,7 @@ linkouts.addPlugin({
     }
 
     function viewIdeogramMIRNA(mir){
-	mir = mir.map(function(m) { return m.substring(0, m.lastIndexOf(".MIMAT")) });
+	mir = mir.map(function (m) { return m.substring(0, m.lastIndexOf(".MIMAT")) });
 	linkouts.openUrl("http://bioinformatics.mdanderson.org/ideogramviewer/Ideogram.html?mirlist1=" + mir.join(","),
 	"ideogram");
     }
@@ -380,15 +431,21 @@ linkouts.addPlugin({
 //==============================================//
 (function(linkouts) {
 
-    function openMDACCPathwayID (names) { 
+    linkouts.describeTypes([
+        { typeName: "bio.mdacc.pathwayid",
+          description: "A Pathway Id as defined by the MD Anderson PathwaysWeb System"
+        }
+    ]);
+
+    function openMDACCPathwayID (names) {
 	var gname = names[0];
 	linkouts.openUrl("http://bioinformatics.mdanderson.org/PathwaysBrowser/pathway/latest/mdaPathwayId/" + gname, "pathways");
-    };  
+    };
 
     function openPathwaysBrowserGO (names) {
 	var goid = names[0];
 	linkouts.openUrl("http://bioinformatics.mdanderson.org/PathwaysBrowser/goTerm/latest/goId/" + goid, "geneontology");
-    };  
+    };
 
     linkouts.addPlugin({
         name: "Pathways Browser",
@@ -433,8 +490,8 @@ linkouts.addPlugin({
 (function(linkouts) {
     function openMSigDB (names) {
 	var pwname = names[0];
-	linkouts.openUrl("http://software.broadinstitute.org/gsea/msigdb/cards/" + pwname + ".html", "uniprot"); 
-    }    
+	linkouts.openUrl("http://software.broadinstitute.org/gsea/msigdb/cards/" + pwname + ".html", "uniprot");
+    }
 
     linkouts.addPlugin({
         name: "MSigDB",
@@ -493,7 +550,7 @@ linkouts.addPlugin({
     function searchNCBIDatabases (names) {
 	var gname = names[0];
 	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gquery/?term=((" + gname + "%5BGene+Symbol%5D)+AND+Homo+sapiens%5BOrganism%5D)", "NCBI");
-    }  
+    }
 
     function openGEOAccession (aids) {
 	var aid = aids[0];
@@ -552,8 +609,8 @@ linkouts.addPlugin({
 
     function openPeptideAtlas (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" + gname, "peptideatlas"); 
-    }  
+	linkouts.openUrl("https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" + gname, "peptideatlas");
+    }
 
     linkouts.addPlugin({
         name: "PeptideAtlas",
@@ -572,25 +629,25 @@ linkouts.addPlugin({
 //==============================================//
 (function(linkouts) {
 
-  function searchPubMedForAll(labels){
-	    linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"));
-  }
+    function searchPubMedForAll(labels){
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"));
+    }
 
-  function searchPubMedForAny(labels){
-	    linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"));
-  }
+    function searchPubMedForAny(labels){
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"));
+    }
 
-linkouts.addPlugin({
- name: "PubMed",
- description: "Adds linkouts to the PubMed portal.",
- version: "0.1.2",
- site: "http://www.ncbi.nlm.nih.gov/pubmed/",
- logo: "https://www.ncbi.nlm.nih.gov/coreutils/img/pubmed256blue.png",
- linkouts: [
+    linkouts.addPlugin({
+        name: "PubMed",
+        description: "Adds linkouts to the PubMed portal.",
+        version: "0.1.2",
+        site: "http://www.ncbi.nlm.nih.gov/pubmed/",
+        logo: "https://www.ncbi.nlm.nih.gov/coreutils/img/pubmed256blue.png",
+        linkouts: [
             { menuEntry: "Search PubMed for All", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAll },
             { menuEntry: "Search PubMed for Any", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAny },
- ]
-});
+        ]
+    });
 }) (linkouts);
 
 //==============================================//
@@ -608,7 +665,7 @@ linkouts.addPlugin({
 	description: "Adds linkouts to QuickGO gene ontology browser.",
 	version: "0.1.0",
 	site: "https://www.ebi.ac.uk/QuickGO/",
-	logo: "https://www.ebi.ac.uk/QuickGO/images/quickgo-logo3.622656dc.png",  
+	logo: "https://www.ebi.ac.uk/QuickGO/images/quickgo-logo3.622656dc.png",
 	linkouts: [
 	    { menuEntry: "View QuickGO", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openQuickGO }
 	]
@@ -619,6 +676,24 @@ linkouts.addPlugin({
 // TCGA plugin                                  //
 //==============================================//
 (function (linkouts) {
+
+    linkouts.describeTypes([
+        { typeName: "bio.tcga.barcode.sample",
+          description: "First 15 characters of TCGA aliquot barcode"
+        },
+        { typeName: "bio.tcga.barcode.sample.vial.portion.analyte.aliquot",
+          description: "Full 28 character TCGA aliquot barcode"
+        },
+        { typeName: "bio.tcga.barcode.sample.vial.portion.analyte",
+          description: "First 20 characters of a TCGA aliquot barcode"
+        },
+        { typeName: "bio.tcga.barcode.sample.vial.portion",
+          description: "First 19 characters of TCGA aliquot barcode"
+        },
+        { typeName: "bio.tcga.barcode.sample.vial",
+          description: "First 16 characters of TCGA aliquot barcode"
+        }
+    ]);
 
     // Also allow any TCGA type longer than typeName.
     function expandLinkOuts( ) {
@@ -650,7 +725,7 @@ linkouts.addPlugin({
     function openTumorPortalGene (names) {
 	var gname = names[0];
 	linkouts.openUrl("http://www.tumorportal.org/view?geneSymbol=" + gname, "tumorportal");
-    }    
+    }
 
     linkouts.addPlugin({
         name: "TumorPortal",
@@ -671,8 +746,8 @@ linkouts.addPlugin({
 
     function openUniprot (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://www.uniprot.org/uniprot/" + gname, "uniprot"); 
-    }    
+	linkouts.openUrl("http://www.uniprot.org/uniprot/" + gname, "uniprot");
+    }
 
     linkouts.addPlugin({
         name: "UniProt",
@@ -694,7 +769,7 @@ linkouts.addPlugin({
     function searchVega (names) {
 	var gname = names[0];
 	linkouts.openUrl("http://vega.sanger.ac.uk/Homo_sapiens/psychic?site=vega&q=" + gname, "vega");
-    }  
+    }
 
     linkouts.addPlugin({
         name: "Vega",
