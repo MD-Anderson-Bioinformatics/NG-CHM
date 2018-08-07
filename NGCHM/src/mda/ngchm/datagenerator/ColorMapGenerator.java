@@ -105,7 +105,7 @@ public class ColorMapGenerator {
         if (!cm.type.equals(COLORTYPE_DISCRETE) && !cm.type.equals(COLORTYPE_CONTINUOUS)) {
            return null;
         }
-        cm.missingColor = Color.black;
+        cm.missingColor = hex2Rgb(COLOR_MISSING);
         if (cm.type.equals(COLORTYPE_CONTINUOUS)) {
         	ArrayList<Double> range = getMinMax(iClass);
         	cm.breaks.add(range.get(0).toString());
@@ -131,6 +131,13 @@ public class ColorMapGenerator {
         return cm;
     }
     
+    private static Color hex2Rgb(String colorStr) {
+        return new Color(
+                Integer.valueOf( colorStr.substring( 1, 3 ), 16 ),
+                Integer.valueOf( colorStr.substring( 3, 5 ), 16 ),
+                Integer.valueOf( colorStr.substring( 5, 7 ), 16 ) );
+    }
+    
 	/*******************************************************************
 	 * METHOD: getDefaultClassColors
 	 *
@@ -141,7 +148,7 @@ public class ColorMapGenerator {
         if (!cm.type.equals(COLORTYPE_LINEAR) && !cm.type.equals(COLORTYPE_QUANTILE)) {
            return null;
         }
-        cm.missingColor = Color.black;
+        cm.missingColor = hex2Rgb(COLOR_MISSING);
         if (cm.type.equals(COLORTYPE_LINEAR)) {
         	ArrayList<String> range = getDataRangeMeans(iFile);  
         	cm.breaks.add(range.get(0)); //min
@@ -179,7 +186,7 @@ public class ColorMapGenerator {
 	 * found at the beginning of a classification file. 
 	 ******************************************************************/
     public static ColorMap getDefinedClassColors(String ifileName, ColorMap cm) throws Exception {
-        cm.missingColor = Color.black;
+        cm.missingColor = hex2Rgb(COLOR_MISSING);
     	getColorSchemeCont(ifileName, cm);
         return cm;
     }

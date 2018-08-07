@@ -111,8 +111,8 @@ public class HeatmapDataGenerator {
         try {
 			iData =  new ImportData(args);
         } catch (Exception ex) {
-			System.out.println("FATAL ERROR: Importing Heat Map Configuration Data. " + ex.getMessage() + ". Terminating HeatmapDataGenerator");  
-			return "BUILD ERROR: Importing Heat Map Configuration Data. " + ex.getMessage() + ". Terminating HeatmapDataGenerator";
+			System.out.println("FATAL ERROR: Importing Heat Map Configuration Data. " + ex.getMessage());  
+			return "BUILD ERROR: Importing Heat Map Configuration Data. " + ex.getMessage();
         }
 
 		ImportLayerData summaryLayer = null;
@@ -121,7 +121,7 @@ public class HeatmapDataGenerator {
 				summaryLayer = writeTileFiles(iData, i);
 			}
 		} catch (Exception ex) {
-			errMsg = "BUILD ERROR: Writing Tile Data. Terminating HeatmapDataGenerator: " + ex.toString();
+			errMsg = "BUILD ERROR: Writing Tile Data: " + ex.toString();
 			System.out.println(errMsg);  
 	        ex.printStackTrace();
 	        return errMsg;
@@ -272,15 +272,15 @@ public class HeatmapDataGenerator {
 //	        parser.parse(new FileReader(config));
 	        configFile.close();
 	    } catch (FileNotFoundException ex) {
-	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: heatmapProperties.JSON file not found. Terminating HeatmapDataGenerator" );
+	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: heatmapProperties.JSON file not found." );
 			ex.printStackTrace();
 	        throw ex;
 	    } catch (IOException ex) {
-	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: IO Exception reading heatmapProperties.JSON file. Terminating HeatmapDataGenerator");
+	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: IO Exception reading heatmapProperties.JSON file.");
 			ex.printStackTrace();
 	        throw ex;
 	   } catch (ParseException ex) {
-			System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: Invalid Heatmap Configuration. Terminating HeatmapDataGenerator. "); 
+			System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: Invalid Heatmap Configuration."); 
 	        ex.printStackTrace();
 	        throw ex;
 	   } finally {

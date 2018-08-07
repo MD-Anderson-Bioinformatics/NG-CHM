@@ -169,6 +169,7 @@ public final class ImportConstants {
 	public static String HUNDRED = "100";
 	public static String COLOR_BLACK = "#000000";
 	public static String COLOR_LIME = "#00FF38";
+	public static String COLOR_MISSING = "#B3B3B3";
 	public static float MAX_VALUES = 2147483647;
 	public static float MIN_VALUES = -2147483647;
 	public static String LABEL_LENGTH_DEFAULT = "\"20\""; 

@@ -101,20 +101,20 @@ public class InputClass {
 				dataType = (String) jo.get(DATA_TYPE);
 			}
 			Map<String, String> origData = null;
+	   		JSONObject jocm = (JSONObject) jo.get(COLORMAP);
+			ColorMap cMap = new ColorMap();
+			cMap.id = id;
+			cMap.type = (String) jocm.get(COLORMAP_TYPE);
 			if (isMatrixClass) {
 				origData = extractClassDataFromMatrix(iFile);
 			} else {
-				String errMsg = MatrixValidator.validateClassificationFile(name, file);
+				String errMsg = MatrixValidator.validateClassificationFile(name, file, cMap.type);
 				if (errMsg != null) {
 					throw new Exception(errMsg);
 				}
 				origData = extractClassDataFromFile();
 			}
 			orderedClass = reOrderClassificationFile(origData, classArray);
-	   		JSONObject jocm = (JSONObject) jo.get(COLORMAP);
-			ColorMap cMap = new ColorMap();
-			cMap.id = id;
-			cMap.type = (String) jocm.get(COLORMAP_TYPE);
 			if ((jocm != null) && (jocm.get("colors") != null)) {
 				map = ColorMapGenerator.getJsonColors(jocm, cMap);
 			} else {

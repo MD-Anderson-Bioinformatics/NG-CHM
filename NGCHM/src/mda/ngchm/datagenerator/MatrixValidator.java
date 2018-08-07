@@ -38,7 +38,7 @@ public class MatrixValidator {
 	  return errMsg;	
 	}
 	
-	public static String validateClassificationFile(String name, String file) throws Exception {
+	public static String validateClassificationFile(String name, String file, String type) throws Exception {
 		String errMsg = null;
 		int rowId = 0; 
 		BufferedReader br = null;
@@ -63,6 +63,11 @@ public class MatrixValidator {
 					if ((vals[0] == null) || (vals[0].equals(EMPTY))) {
 				    	errMsg = "COVARIATE INVALID: A row (" + rowId + ") in the covariate file (" + name + ") contains no label";
 						break;
+					}
+					if ((type.equals("continuous")) && ((!isNumeric(vals[1])) && !NA_VALUES.contains(vals[1]))) {
+				    	errMsg = "COVARIATE INVALID: All values for a continuous covariate bar must be numeric OR valid N/A values (NA, N/A)";
+						break;
+						
 					}
 				}
 			}	
