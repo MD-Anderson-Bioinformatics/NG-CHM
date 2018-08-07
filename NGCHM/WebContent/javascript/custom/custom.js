@@ -14,45 +14,57 @@
 
     linkouts.describeTypes([
         { typeName: "bio.gene.hugo",
+          displayName: "HUGO gene symbol",
           description: "The official HUGO symbol for a gene.",
           examples: "TP53",
           format: "Latin letters and Arabic numerals, usually without punctuation."
         },
         { typeName: "bio.go",
+          displayName: "Gene Ontology accession identifier",
           description: "A Gene Ontology (GO) accession identifier.",
           examples: "GO:0007015",
           format: "Letters G and O, a colon, and a seven-digit number."
         },
         { typeName: "bio.transcriptid",
+          displayName: "Entrez transcription identifier",
           description: "An Entrez transcription identifier",
           format: "ENST###########"
         },
         { typeName: "bio.mirna",
+          displayName: "miRNA identifier",
           description: "An miRNA identifier"
         },
         { typeName: "bio.pathway.msigdb.name",
+          displayName: "msig DB pathway name",
           description: "A Pathway Name as defined by the msig DB"
         },
         { typeName: "bio.gene.entrezid",
+          displayName: "NCBI Entrez Gene Identifier",
           description: "Numeric Id representing a gene as defined by NCBI"
         },
         { typeName: "bio.protein.uniprotid",
+          displayName: "Uniprot protein identifier",
           description: "A Uniprot protein identifier."
         },
         { typeName: "bio.geo.acc",
+          displayName: "GEO accession id",
           description: "A Gene Expression Omnibus (GEO) accession id"
         },
         { typeName: "bio.pubmed",
+          displayName: "PubMed identifier",
           description: "A PubMed Identifier, (Integer ID)",
           format: "an integer"
         },
         { typeName: "bio.transcript.ensembl",
+          displayName: "Ensembl transcript identifier",
           description: "An Ensembl transcript identifier"
         },
         { typeName: "scholar",
+          displayName: "Google Scholar search term",
           description: "A text string used to search for something in Google Scholar"
         },
         { typeName: "search",
+          displayName: "Generic search term",
           description: "A text string used to search for something"
         }
     ]);
@@ -128,6 +140,7 @@
 
     linkouts.describeTypes([
         { typeName: "bio.cbioportal.sampleid",
+          displayName: "cBioPortal Sample Identifier",
           description: "An identifier that refers to a specific sample in cBioPortal."
         }
     ]);
@@ -433,6 +446,7 @@ linkouts.addPlugin({
 
     linkouts.describeTypes([
         { typeName: "bio.mdacc.pathwayid",
+          displayName: "PathwaysWeb pathway identifier",
           description: "A Pathway Id as defined by the MD Anderson PathwaysWeb System"
         }
     ]);
@@ -679,18 +693,23 @@ linkouts.addPlugin({
 
     linkouts.describeTypes([
         { typeName: "bio.tcga.barcode.sample",
+          displayName: "TCGA sample barcode",
           description: "First 15 characters of TCGA aliquot barcode"
         },
         { typeName: "bio.tcga.barcode.sample.vial.portion.analyte.aliquot",
+          displayName: "TCGA aliquot barcode",
           description: "Full 28 character TCGA aliquot barcode"
         },
         { typeName: "bio.tcga.barcode.sample.vial.portion.analyte",
+          displayName: "TCGA analyte barcode",
           description: "First 20 characters of a TCGA aliquot barcode"
         },
         { typeName: "bio.tcga.barcode.sample.vial.portion",
+          displayName: "TCGA portion barcode",
           description: "First 19 characters of TCGA aliquot barcode"
         },
         { typeName: "bio.tcga.barcode.sample.vial",
+          displayName: "TCGA vial barcode",
           description: "First 16 characters of TCGA aliquot barcode"
         }
     ]);
