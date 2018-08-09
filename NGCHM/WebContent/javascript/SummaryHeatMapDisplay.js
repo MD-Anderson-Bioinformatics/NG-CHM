@@ -57,6 +57,11 @@ NgChm.SUM.initSummaryDisplay = function() {
 	//Add necessary event listeners for canvas
 	NgChm.SUM.canvas.addEventListener("touchstart", NgChm.SUM.onMouseDownCanvas);
 	NgChm.SUM.canvas.addEventListener("touchend", NgChm.SUM.onMouseUpCanvas);
+	
+	document.getElementById('summary_row_select_canvas').addEventListener("mouseup", NgChm.SUM.onMouseUpSelRowCanvas);
+	document.getElementById('summary_row_top_items_canvas').addEventListener("mouseup", NgChm.SUM.onMouseUpSelRowCanvas);
+	document.getElementById('summary_col_select_canvas').addEventListener("mouseup", NgChm.SUM.onMouseUpSelColCanvas);
+	document.getElementById('summary_col_top_items_canvas').addEventListener("mouseup", NgChm.SUM.onMouseUpSelColCanvas);
 	NgChm.SUM.canvas.onmousedown = NgChm.SUM.onMouseDownCanvas;
 	NgChm.SUM.canvas.onmouseup = NgChm.SUM.onMouseUpCanvas;
 	NgChm.SUM.canvas.onmousemove = NgChm.SUM.onMouseMoveCanvas;
@@ -1415,8 +1420,11 @@ NgChm.SUM.drawRowSelectionMarks = function() {
 	var dataLayer = dataLayers[NgChm.SEL.currentDl];
 	var rowSel = document.getElementById("summary_row_select_canvas");
 	var rowCtx = rowSel.getContext('2d');
-	rowCtx.fillStyle=dataLayer.selection_color;
+	var darkenedColor = NgChm.UTIL.shadeColor(dataLayer.selection_color, -25)
+	rowCtx.fillStyle=darkenedColor;
 	var height = Math.max(1,rowSel.height/300);
+	var rowHeightFactor = Math.ceil(NgChm.heatMap.getNumRows('d')/2000);  
+	height = height*rowHeightFactor;
 	for (var i = 0; i < selectedRows.length; i++) {
 		rowCtx.fillRect(0,selectedRows[i]-1,rowSel.width,height);
 	}
@@ -1428,8 +1436,11 @@ NgChm.SUM.drawColSelectionMarks = function() {
 	var dataLayer = dataLayers[NgChm.SEL.currentDl];
 	var colSel = document.getElementById("summary_col_select_canvas");
 	var colCtx = colSel.getContext('2d');
-	colCtx.fillStyle = dataLayer.selection_color;
+	var darkenedColor = NgChm.UTIL.shadeColor(dataLayer.selection_color, -25)
+	colCtx.fillStyle = darkenedColor;
 	var width = Math.max(1,colSel.width/300);
+	var colWidthFactor = Math.ceil(NgChm.heatMap.getNumColumns('d')/2000);  
+	width = width*colWidthFactor;
 	for (var i = 0; i < selectedCols.length; i++) {
 		colCtx.fillRect(selectedCols[i]-1,0,width,colSel.height);
 	}
@@ -1795,6 +1806,48 @@ NgChm.SUM.setBrowserMinFontSize = function () {
 	  }
 	  document.body.removeChild(el);
 	  return minSettingFound;
+}
+
+NgChm.SUM.onMouseUpSelRowCanvas = function(evt) {
+	evt.preventDefault();
+	evt.stopPropagation();	
+	//When doing a shift drag, this block will actually do the selection on mouse up.
+	var sumOffsetX = evt.touches ? evt.layerX : evt.offsetX;
+	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
+	var rowClassXLimit = NgChm.SUM.rowClassBarWidth/NgChm.SUM.canvas.width*NgChm.SUM.canvas.clientWidth;
+	var colClassYLimit = NgChm.SUM.colClassBarHeight/NgChm.SUM.canvas.height*NgChm.SUM.canvas.clientHeight;
+	var xPos = NgChm.SUM.getCanvasX(sumOffsetX) + NgChm.SUM.rowClassBarWidth;
+	var yPos = NgChm.SUM.getCanvasY(sumOffsetY) + NgChm.SUM.colClassBarHeight;
+	var sumRow = NgChm.SUM.canvasToMatrixRow(yPos) - Math.floor(NgChm.SEL.getCurrentSumDataPerCol()/2);
+	NgChm.SEL.setCurrentRowFromSum(sumRow);
+	NgChm.SEL.updateSelection();
+	NgChm.SUM.clickStartRow = null;
+	NgChm.SUM.clickStartCol = null;
+	//Make sure the selected row/column are within the bounds of the matrix.
+	NgChm.SEL.checkRow();
+	NgChm.SEL.checkColumn();
+	NgChm.SUM.mouseEventActive = false;
+}
+
+NgChm.SUM.onMouseUpSelColCanvas = function(evt) {
+	evt.preventDefault();
+	evt.stopPropagation();	
+	//When doing a shift drag, this block will actually do the selection on mouse up.
+	var sumOffsetX = evt.touches ? evt.layerX : evt.offsetX;
+	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
+	var rowClassXLimit = NgChm.SUM.rowClassBarWidth/NgChm.SUM.canvas.width*NgChm.SUM.canvas.clientWidth;
+	var colClassYLimit = NgChm.SUM.colClassBarHeight/NgChm.SUM.canvas.height*NgChm.SUM.canvas.clientHeight;
+	var xPos = NgChm.SUM.getCanvasX(sumOffsetX) + NgChm.SUM.rowClassBarWidth;
+	var yPos = NgChm.SUM.getCanvasY(sumOffsetY) + NgChm.SUM.colClassBarHeight;
+	var sumCol = NgChm.SUM.canvasToMatrixCol(xPos) - Math.floor(NgChm.SEL.getCurrentSumDataPerRow()/2);
+	NgChm.SEL.setCurrentColFromSum(sumCol); 
+	NgChm.SEL.updateSelection();
+	NgChm.SUM.clickStartRow = null;
+	NgChm.SUM.clickStartCol = null;
+	//Make sure the selected row/column are within the bounds of the matrix.
+	NgChm.SEL.checkRow();
+	NgChm.SEL.checkColumn();
+	NgChm.SUM.mouseEventActive = false;
 }
 
 

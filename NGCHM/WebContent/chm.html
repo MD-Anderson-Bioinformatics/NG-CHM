@@ -54,19 +54,60 @@
      			<div id="mapName" onmouseover='NgChm.UHM.detailDataToolHelp(this,"Map Name: " + NgChm.heatMap.getMapInformation().name + "<br><br>Description: " + NgChm.heatMap.getMapInformation().description,350,"left")' style="font-size: 14px;color: rgb(51, 51, 51);"></div>
   		    </div>
 		    <div id='bottom_buttons' >
-	 	    	<img id='fileOpen_btn' style="display: none;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.detailDataToolHelp(this,"Open .NG-CHM Heat Map",160)' onclick='NgChm.SEL.openFileToggle();' align="top"   />
-	 	    	<img id='back_btn' style="display: none;" src='images/returnArrow.png' alt='Return to previous screen' onmouseout='this.setAttribute("src", "images/returnArrow.png");' onmouseover='this.setAttribute("src", "images/returnArrowHover.png");NgChm.UHM.detailDataToolHelp(this,"Return To Previous Screen",160)' onclick='NgChm.UTIL.returnToHome();' align="top"   />
-	 	    	<img id='split_btn' src='images/split.png' alt='Split' onmouseout='this.setAttribute("src", "images/split.png");' onmouseover='this.setAttribute("src", "images/splitHover.png");NgChm.UHM.detailDataToolHelp(this,"Split Into Two Windows",160);' onclick='NgChm.DET.detailSplit();' align="top"   />
-	 			<img id='zoomOut_btn' src='images/zoomOut.png' alt='Zoom Out' onmouseout='this.setAttribute("src", "images/zoomOut.png");' onmouseover='this.setAttribute("src", "images/zoomOutHover.png");NgChm.UHM.detailDataToolHelp(this,"Zoom Out")' onclick='NgChm.DET.detailDataZoomOut();'   align="top"   />
-			    <img id='zoomIn_btn' src='images/zoomIn.png' alt='Zoom In' onmouseout='this.setAttribute("src", "images/zoomIn.png");' onmouseover='this.setAttribute("src", "images/zoomInHover.png");NgChm.UHM.detailDataToolHelp(this,"Zoom In")' onclick='NgChm.DET.zoomAnimation();' align="top"   />
-			    <img id='full_btn' src='images/full_selected.png' alt='Full' onmouseout='NgChm.UHM.fullBtnOver(this,0);' onmouseover='NgChm.UHM.fullBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Normal View")' onclick='NgChm.DET.detailNormal();' align="top"   />
-			    <img id='ribbonH_btn' src='images/ribbonH.png' alt='Ribbon H' onmouseout='NgChm.UHM.ribbonHBtnOver(this,0);' onmouseover='NgChm.UHM.ribbonHBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Horizontal Ribbon View",160)' onclick='NgChm.DET.detailHRibbonButton();' align="top"  />
-			    <img id='ribbonV_btn' src='images/ribbonV.png' alt='Ribbon V' onmouseout='NgChm.UHM.ribbonVBtnOver(this,0);' onmouseover='NgChm.UHM.ribbonVBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Vertical Ribbon View",160)' onclick='NgChm.DET.detailVRibbonButton();'  align="top"  />
-	   			<span style='display: inline-block;'><b>Search: </b><input type="text" id="search_text" name="search" onkeyup='NgChm.DET.clearSrchBtns(event);' onchange='NgChm.DET.detailSearch();' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.", 400)' /></span>	
-			    <img id='go_btn' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.detailDataToolHelp(this,"Search Row/Column Labels",180)'  onclick='NgChm.DET.detailSearch();' align="top"  />
-			    <img id='prev_btn' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.detailDataToolHelp(this,"Previous Search Result",160)' style="display:none;" onclick='NgChm.DET.searchPrev();'  align="top"  />
-			    <img id='next_btn' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.detailDataToolHelp(this,"Next Search Result",160)' style="display:none;" onclick='NgChm.DET.searchNext();'  align="top"  />
-			    <img id='cancel_btn' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.detailDataToolHelp(this,"Clear Search Results",160)' style="display:none;" onclick='NgChm.DET.clearSearch(event);'  align="top"  />
+				<table>
+					<tr>
+						<td class='tdTop' colspan='2'>
+				 	    	<img id='fileOpen_btn' style="display: none;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.detailDataToolHelp(this,"Open .NG-CHM Heat Map",160)' onclick='NgChm.SEL.openFileToggle();' align="top"   />
+						</td>
+						<td class='tdTop' colspan='2'>
+				 	    	<img id='back_btn' style="display: none;" src='images/returnArrow.png' alt='Return to previous screen' onmouseout='this.setAttribute("src", "images/returnArrow.png");' onmouseover='this.setAttribute("src", "images/returnArrowHover.png");NgChm.UHM.detailDataToolHelp(this,"Return To Previous Screen",160)' onclick='NgChm.UTIL.returnToHome();' align="top"   />
+						</td>
+						<td class='tdTop' colspan='2'>
+				 	    	<img id='split_btn' src='images/split.png' alt='Split' onmouseout='this.setAttribute("src", "images/split.png");' onmouseover='this.setAttribute("src", "images/splitHover.png");NgChm.UHM.detailDataToolHelp(this,"Split Into Two Windows",160);' onclick='NgChm.DET.detailSplit();' align="top"   />
+						</td>
+						<td class='tdTop' colspan='2'>
+				 			<img id='zoomOut_btn' src='images/zoomOut.png' alt='Zoom Out' onmouseout='this.setAttribute("src", "images/zoomOut.png");' onmouseover='this.setAttribute("src", "images/zoomOutHover.png");NgChm.UHM.detailDataToolHelp(this,"Zoom Out")' onclick='NgChm.DET.detailDataZoomOut();'   align="top"   />
+						</td>
+						<td class='tdTop' colspan='2'>
+						    <img id='zoomIn_btn' src='images/zoomIn.png' alt='Zoom In' onmouseout='this.setAttribute("src", "images/zoomIn.png");' onmouseover='this.setAttribute("src", "images/zoomInHover.png");NgChm.UHM.detailDataToolHelp(this,"Zoom In")' onclick='NgChm.DET.zoomAnimation();' align="top"   />
+						</td>
+						<td class='tdTop' colspan='2'>
+						    <img id='full_btn' src='images/full_selected.png' alt='Full' onmouseout='NgChm.UHM.fullBtnOver(this,0);' onmouseover='NgChm.UHM.fullBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Normal View")' onclick='NgChm.DET.detailNormal();' align="top"   />
+						</td>
+						<td class='tdTop' colspan='2'>
+						    <img id='ribbonH_btn' src='images/ribbonH.png' alt='Ribbon H' onmouseout='NgChm.UHM.ribbonHBtnOver(this,0);' onmouseover='NgChm.UHM.ribbonHBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Horizontal Ribbon View",160)' onclick='NgChm.DET.detailHRibbonButton();' align="top"  />
+						</td>
+						<td class='tdTop' colspan='2'>
+						    <img id='ribbonV_btn' src='images/ribbonV.png' alt='Ribbon V' onmouseout='NgChm.UHM.ribbonVBtnOver(this,0);' onmouseover='NgChm.UHM.ribbonVBtnOver(this,1);NgChm.UHM.detailDataToolHelp(this,"Vertical Ribbon View",160)' onclick='NgChm.DET.detailVRibbonButton();'  align="top"  />
+						</td>
+						<td>
+							<table>
+								<tr>
+									<td>
+							   			<span style='display: inline-block;'><b>Search: </b><input type="text" id="search_text" name="search" onkeyup='NgChm.DET.clearSrchBtns(event);' onchange='NgChm.DET.detailSearch();' onmouseover='NgChm.UHM.detailDataToolHelp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.", 400)' /></span>	
+									</td>
+								</tr>
+								<tr id="search_display_show" >
+									<td>
+										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<div id='search_display_text' name='search_display_text' style='font-size: 10px;display: inline-block;'></div>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td class='tdTop' colspan='2'>
+						    <img id='go_btn' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.detailDataToolHelp(this,"Search Row/Column Labels",180)'  onclick='NgChm.DET.detailSearch();' align="top"  />
+						</td>
+						<td class='tdTop' colspan='2'>
+						    <img id='prev_btn' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.detailDataToolHelp(this,"Previous Search Result",160)' style="display:none;" onclick='NgChm.DET.searchPrev();'  align="top"  />
+						</td>
+						<td class='tdTop' colspan='2'>
+						    <img id='next_btn' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.detailDataToolHelp(this,"Next Search Result",160)' style="display:none;" onclick='NgChm.DET.searchNext();'  align="top"  />
+						</td>
+						<td class='tdTop' colspan='2'>
+						    <img id='cancel_btn' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.detailDataToolHelp(this,"Clear Search Results",160)' style="display:none;" onclick='NgChm.DET.clearSearch(event);'  align="top"  />
+						</td>
+					</tr>
+				</table>
 		    </div>
 			<div id="pdf_gear" align="right" >
 				<div id="flicks" style="display: none;">
@@ -93,10 +134,10 @@
 			<canvas id='row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
 			<canvas id='summary_canvas'></canvas>
 			<canvas id='summary_box_canvas' ></canvas>
-			<canvas id='summary_col_select_canvas' class='selection_canvas'></canvas>
-			<canvas id='summary_row_select_canvas' class='selection_canvas' ></canvas>
 			<canvas id=summary_col_top_items_canvas class='selection_canvas' style='padding-top:2px;'></canvas>
 			<canvas id='summary_row_top_items_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
+			<canvas id='summary_col_select_canvas' class='selection_canvas' style='padding-top:2px;'></canvas>
+			<canvas id='summary_row_select_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
 			<div id='sumlabelDiv' style="display: inline-block"></div>
 		</div>
 		

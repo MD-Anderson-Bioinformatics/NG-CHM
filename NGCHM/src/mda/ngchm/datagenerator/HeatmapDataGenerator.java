@@ -215,12 +215,10 @@ public class HeatmapDataGenerator {
         		iData.colData.createTopItemsImg(iData.colData.classArray.length - 1);
 				PdfGenerator pGen = new PdfGenerator();
 				if (iData.rowData.dendroMatrix != null) {
-//					iData.rowData.dendroImage = createRowDendroImg(iData, new Float(5.5)); // 5.5 inches is about 50% on a 11 inch tall piece of paper
 					float sizeTo = new Float((iData.rowData.classArray.length*5-1)/72*0.5);  // mapHeight divided by 72 to get inch width of map, x50% to get approximate size on page
 					iData.rowData.dendroImage = createRowDendroImg(iData, sizeTo);
 				}
 				if (iData.colData.dendroMatrix != null) {
-//					iData.colData.dendroImage = createColDendroImg(iData, new Float(5.5)); // 5.5 inches is about 65% on a 8.5 inch wide piece of paper
 					float sizeTo = new Float((iData.colData.classArray.length*5-1)/72*0.65);  // mapWidth divided by 72 to get inch width of map, x65% to get approximate size on page 
 					iData.colData.dendroImage = createColDendroImg(iData, sizeTo);
 				}
@@ -2016,7 +2014,7 @@ public class HeatmapDataGenerator {
 		 * This and following three methods perform a recursive zip of the heatmap directory.  
 		 * that the zip file contain a folder at the top level with folder name = heat map name.
 		 ******************************************************************/
-		private static void zipDirectory(String zipDir, String chmName) throws IOException {
+		private static void zipDirectory(String zipDir, String chmName) throws Exception {
 			File directoryToZip = new File(zipDir);
 			File rootDir = new File(zipDir.substring(0,Math.max(zipDir.lastIndexOf(File.separator), zipDir.lastIndexOf("/"))));
 			String zipFileName = zipDir + FILE_SEP + chmName + ".ngchm";

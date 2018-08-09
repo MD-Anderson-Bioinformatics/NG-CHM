@@ -448,6 +448,17 @@ NgChm.UTIL.resetCHM = function () {
 	NgChm.SUM.rowDendro = null;
 }
 
+/**********************************************************************************
+ * FUNCTION - shadeColor: This function darken or lighten a color given a percentage.
+ * Percentages are represented from 0 to 100.  Positive percentages lighten a color 
+ * (100 = white) and negative percentages will darken a color (-100 = black).
+ **********************************************************************************/
+NgChm.UTIL.shadeColor = function (color, pct) {   
+	var percent = pct/100;
+    var f=parseInt(color.slice(1),16),t=percent<0?0:255,p=percent<0?percent*-1:percent,R=f>>16,G=f>>8&0x00FF,B=f&0x0000FF;
+    return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
+}
+
 
 
 

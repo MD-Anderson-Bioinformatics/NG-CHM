@@ -1712,6 +1712,7 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 }
 
 NgChm.DET.labelClick = function (e) {
+	NgChm.DET.hideSearchResults();	
 	if (e.shiftKey){ // shift + click
 		var selection = window.getSelection();
 		selection.removeAllRanges();
@@ -1772,6 +1773,7 @@ NgChm.DET.labelClick = function (e) {
 		NgChm.SUM.drawColSelectionMarks();
 		NgChm.SUM.drawTopItems();
 	}
+	NgChm.DET.showSearchResults();	
 }
 
 //clears the search items on a particular axis
@@ -2405,6 +2407,7 @@ NgChm.DET.getSamplingRatio = function (axis) {
 
 //Called when search string is entered.
 NgChm.DET.detailSearch = function () {
+	NgChm.DET.hideSearchResults();	
 	var searchElement = document.getElementById('search_text');
 	var searchString = searchElement.value.trim();
 	if (searchString == "" || searchString == null || searchString == " " || searchString == "."){
@@ -2472,7 +2475,7 @@ NgChm.DET.detailSearch = function () {
 	if (searchString == null || searchString == ""){
 		return;
 	}
-	NgChm.DET.searchNext();
+	NgChm.DET.searchNext(true);
 	if (!NgChm.SEL.isSub){
 		NgChm.SUM.drawRowSelectionMarks();
 		NgChm.SUM.drawColSelectionMarks();
@@ -2491,7 +2494,15 @@ NgChm.DET.detailSearch = function () {
 		//Clear previous matches when search is empty.
 		NgChm.SEL.updateSelection();
 	}
+	NgChm.DET.showSearchResults();	
 	document.getElementById("detail_canvas").focus();
+}
+
+NgChm.DET.showSearchResults = function () {
+	document.getElementById("search_display_text").innerHTML = NgChm.DET.getSearchResultsTxt();
+}
+NgChm.DET.hideSearchResults = function () {
+	document.getElementById("search_display_text").innerHTML = "";
 }
 
 NgChm.DET.goToCurrentSearchItem = function () {
@@ -2570,8 +2581,10 @@ NgChm.DET.findPrevSearchItem = function (index, axis) {
 }
 
 //Go to next search item
-NgChm.DET.searchNext = function () {
-	if (!NgChm.DET.currentSearchItem["index"] || !NgChm.DET.currentSearchItem["axis"]){ // if currentSeachItem isnt set (first time search)
+NgChm.DET.searchNext = function (firstTime) {
+	if (typeof firstTime !== 'undefined') {
+		NgChm.DET.findNextSearchItem(-1,"Row");
+	} else if (!NgChm.DET.currentSearchItem["index"] || !NgChm.DET.currentSearchItem["axis"]){ // if currentSeachItem isnt set (first time search)
 		NgChm.DET.findNextSearchItem(-1,"Row");
 	} else {
 		NgChm.DET.findNextSearchItem(NgChm.DET.currentSearchItem["index"],NgChm.DET.currentSearchItem["axis"]);
@@ -2587,6 +2600,7 @@ NgChm.DET.searchPrev = function () {
 
 //Called when red 'X' is clicked.
 NgChm.DET.clearSearch = function (event) {
+	NgChm.DET.hideSearchResults();
 	var searchElement = document.getElementById('search_text');
 	searchElement.value = "";
 	NgChm.DET.currentSearchItem = {};
@@ -2628,6 +2642,13 @@ NgChm.DET.getSearchCols = function () {
 		selected.push(i);
 	}
 	return selected;	
+}
+
+//Generates search results text to be displayed on button bar
+NgChm.DET.getSearchResultsTxt = function () {
+	var rowItems = Object.keys(NgChm.SEL.searchItems["Row"]).length;
+	var colItems = Object.keys(NgChm.SEL.searchItems["Column"]).length;
+	return "Found: Rows - " + rowItems + " Columns - " + colItems;	
 }
 
 //Return row numbers of any rows meeting current user search.

@@ -169,7 +169,7 @@ div.mdaServiceHeaderLogo img
 
 #bottom_buttons{
 	display: block;
-	margin-top:10px;
+	margin-top:0px;
 }
 
 #settings_buttons{
@@ -570,3 +570,6 @@ table.helpTable th {
     position: absolute;
 }
 
+.tdTop {
+    vertical-align: text-top;
+}
