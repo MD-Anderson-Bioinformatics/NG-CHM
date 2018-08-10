@@ -104,6 +104,7 @@ NgChm.CUST.verbose = false;
     // is an object with the following fields:
     // - typeName: name of the type being described (mandatory)
     // - description: high-level description of the meaning of type values (mandatory)
+    // - displayName: user friendly type name (optional)
     // - format: description of the lexical/syntactic rules of valid type values (optional)
     // - examples: one or more examples of type values (optional).
     function describeTypes (typelist) {

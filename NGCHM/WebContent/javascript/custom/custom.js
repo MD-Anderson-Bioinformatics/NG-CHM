@@ -120,14 +120,14 @@
 (function(linkouts) {
     function openSlideArchive (ids) {
         var part = ids[0].substr(0,12);
-        linkouts.openUrl("http://cancer.digitalslidearchive.net/index_mskcc.php?slide_name=" + part, "slidearchive");
+        linkouts.openUrl("http://cancer.digitalslidearchive.net/?slide_name=" + part, "slidearchive");
     }
     linkouts.addPlugin({
         name: "Cancer Digital Slide Archive",
         site: "http://cancer.digitalslidearchive.net/",
         logo: "http://cancer.digitalslidearchive.net/local_images/CDSA_Slide_50.png",
         description: "Adds linkouts to the Cancer Digitial Slide Archive of TCGA digital slide images.",
-        version: "0.1.0",
+        version: "0.2.0",
         linkouts: [
             { menuEntry: "View SlideArchive", typeName: "bio.tcga.barcode.sample", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openSlideArchive }
         ]});
@@ -643,6 +643,10 @@ linkouts.addPlugin({
 //==============================================//
 (function(linkouts) {
 
+    function searchPubMedForOne(labels){
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels[0]);
+    }
+
     function searchPubMedForAll(labels){
 	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"));
     }
@@ -654,10 +658,11 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "PubMed",
         description: "Adds linkouts to the PubMed portal.",
-        version: "0.1.2",
+        version: "0.1.3",
         site: "http://www.ncbi.nlm.nih.gov/pubmed/",
         logo: "https://www.ncbi.nlm.nih.gov/coreutils/img/pubmed256blue.png",
         linkouts: [
+            { menuEntry: "Search PubMed", typeName: "bio.pubmed", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchPubMedForOne },
             { menuEntry: "Search PubMed for All", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAll },
             { menuEntry: "Search PubMed for Any", typeName: "bio.pubmed", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchPubMedForAny },
         ]
