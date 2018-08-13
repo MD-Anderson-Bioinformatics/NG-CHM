@@ -459,7 +459,7 @@ public class ShaidyRMapGen {
 					fileout.println("\t\t\"grid_color\" : \"" + gridColor + "\",");
 				}	
 				String cutsColor = (String)layer.get("cuts_color");
-				if (gridColor != null) {
+				if (cutsColor != null) {
 					fileout.println("\t\t\"cuts_color\" : \"" + cutsColor + "\",");
 				}	
 				String selColor = (String)layer.get("selection_color");

@@ -208,26 +208,25 @@ public class InputFile {
 				}
 		        // Check to see if the column headers are lined up over the data or are
 		        // offset by one to the left.  If the latter case is true, add a TAB to the line. 
-		        String toks[] = line.split("\t",-1);
-				int rowLabelLen = toks.length - 1;
 	            if (pos == 0) {
 		            String headerCols[] = line.split("\t");
 		            if ((headerCols.length-rowCovs-colStart) < (cols+1)) {
 		        		  line = TAB+line;
-		        		  rowLabelLen--;
 		            } 
 		            headerLength = line.split("\t").length;
-	            } else if (pos >= rowDataStart - rowStart) {
-	            	int dataRowLen = line.split("\t",-1).length;
+		        } else if (pos >= rowDataStart - rowStart) {
+		        	int dataRowLen = line.split("\t",-1).length;
 	            	errMsg = MatrixValidator.validateMatrixRowLength(headerLength, dataRowLen);
             		if (errMsg != null) {
             			errMsg += " Matrix Row: " + (pos + rowStart + 1);
             			throw new Exception(errMsg);
              		}
 	            }
-	            for (int i = colStart; i < toks.length; i++) {
+	        	String toks[] = line.split("\t",-1);
+	        	int lineLen = (pos == 0 && headerLength < toks.length) ? headerLength : toks.length;
+	            for (int i = colStart; i < lineLen; i++) {
 	            	if (pos == 0) {
-		            	if ((i > colStart) && (i < rowLabelLen)) {
+		            	if ((i > colStart) && (i < headerLength)) {
 		            		errMsg = MatrixValidator.validateMatrixLabelValue(toks[i], false);
 		            		if (errMsg != null) {
 			            		errMsg += (i+1);
@@ -262,6 +261,8 @@ public class InputFile {
 		            //do nothing
 		        }
 	         }
+		 } catch (Exception e) {
+			 throw e;
 		 } finally {
 	        if (inputStream != null) {
 	        	try {
