@@ -107,11 +107,14 @@ NgChm.CUST.verbose = false;
     // - displayName: user friendly type name (optional)
     // - format: description of the lexical/syntactic rules of valid type values (optional)
     // - examples: one or more examples of type values (optional).
+    // - the typelist is stored on NgChm.CUST.linkoutTypes for use in the NG-CHM viewer
+    // - and builder
     function describeTypes (typelist) {
-        // NO-OP for now.
-        return;
+    	for (var i=0;i<typelist.length;i++) {
+    		var typeItem = typelist[i];
+    		NgChm.CUST.linkoutTypes.push(typeItem);
+    	}
     };
-
 
     // Add subtype relation.
     // We maintain two maps:
@@ -224,6 +227,7 @@ NgChm.CUST.verbose = false;
 		}
 	
 	        NgChm.CUST.customPlugins = [];
+	        NgChm.CUST.linkoutTypes = [];
 		initLabelTypes ([].concat(colTypes,rowTypes));
     };
 

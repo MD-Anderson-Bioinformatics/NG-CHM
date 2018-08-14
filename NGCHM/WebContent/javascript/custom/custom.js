@@ -125,7 +125,7 @@
     linkouts.addPlugin({
         name: "Cancer Digital Slide Archive",
         site: "http://cancer.digitalslidearchive.net/",
-        logo: "http://cancer.digitalslidearchive.net/local_images/CDSA_Slide_50.png",
+        logo: "http://cancer.digitalslidearchive.net/img/CDSA_Slide_50.png",
         description: "Adds linkouts to the Cancer Digitial Slide Archive of TCGA digital slide images.",
         version: "0.2.0",
         linkouts: [
@@ -684,7 +684,7 @@ linkouts.addPlugin({
 	description: "Adds linkouts to QuickGO gene ontology browser.",
 	version: "0.1.0",
 	site: "https://www.ebi.ac.uk/QuickGO/",
-	logo: "https://www.ebi.ac.uk/QuickGO/images/quickgo-logo3.622656dc.png",
+    logo: "https://www.ebi.ac.uk/QuickGO/images/quickgo-logo3.622656dc.png",
 	linkouts: [
 	    { menuEntry: "View QuickGO", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openQuickGO }
 	]
