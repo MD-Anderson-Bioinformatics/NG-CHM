@@ -645,6 +645,7 @@ NgChm.SEL.flickChange = function(fromList) {
 		localStorage.setItem('event', 'changePosition');
 	}
 	NgChm.DET.drawDetailHeatMap();
+	NgChm.SEL.updateSelection();
 }
 
 
