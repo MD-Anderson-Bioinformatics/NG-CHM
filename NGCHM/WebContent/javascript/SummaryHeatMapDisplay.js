@@ -1056,8 +1056,15 @@ NgChm.SUM.setLabelDivElement = function (itemId,boundVal,topVal,leftVal,isRowVal
 		itemElem = document.createElement("Div"); 
 		itemElem.id = itemId;
 		itemElem.innerHTML = boundVal;
+		itemElem.className = "classLabel";
 		if (isRowVal) {
-			itemElem.className = "classLabelVertical";
+			itemElem.style.fontSize = '9pt';
+			itemElem.style.fontFamily = 'arial';
+			itemElem.style.fontWeight = 'bold';
+			itemElem.style.transformOrigin = 'left top';
+			itemElem.style.transform = 'rotate(90deg)';
+			itemElem.style.webkitTransformOrigin = "left top";
+			itemElem.style.webkitTransform = "rotate(90deg)";
 		} else {
 			itemElem.className = "classLabel";
 		}
