@@ -1030,9 +1030,12 @@ NgChm.DDR.DetailRowDendrogram = function() {
 	var maxHeight = dendroData.length > 0 ? getMaxHeight(dendroData) : 0; // this assumes the heightData is ordered from lowest height to highest
 	var dendroMatrix;
 	var zoomLevel = 1;
+	var lastTouchLoc;
 	
 	dendroCanvas.onwheel = scroll;
 	dendroCanvas.onclick = click;
+	dendroCanvas.ontouchmove = scroll;
+	dendroCanvas.ontouchend = touchEnd;
 	
 	this.getDivWidth = function(){
 		return dendroCanvas.clientWidth;
@@ -1054,10 +1057,22 @@ NgChm.DDR.DetailRowDendrogram = function() {
 	function scroll(e){
 		e.preventDefault();
 		e.stopPropagation();
-		zoomLevel -= e.deltaY/400;
+		if (!lastTouchLoc && e.touches){
+			lastTouchLoc = e.touches[0].clientX;
+			return;
+		}
+		var deltaY = e.touches ? e.touches[0].clientX - lastTouchLoc : e.deltaY;
+		if (e.touches){
+			lastTouchLoc = e.touches[0].clientX;
+		}
+		zoomLevel -= deltaY/400;
 		if (zoomLevel < 0.1) zoomLevel = .1;
 		if (zoomLevel > 100) zoomLevel = 100;
 		draw();
+	}
+	
+	function touchEnd(e){
+		lastTouchLoc = null;
 	}
 	
 	function click(e){
@@ -1311,10 +1326,13 @@ NgChm.DDR.DetailColumnDendrogram = function() {
 	var maxHeight = dendroData.length > 0 ? getMaxHeight(dendroData) : 0; // this assumes the heightData is ordered from lowest height to highest
 	var zoomLevel = 1;
 	var dendroMatrix;
+	var lastTouchLoc;
 	
 	// event listeners
 	dendroCanvas.onwheel = scroll;
 	dendroCanvas.onclick = click;
+	dendroCanvas.ontouchmove = scroll;
+	dendroCanvas.ontouchend = touchEnd;
 	
 	this.getDivHeight = function(){
 		return dendroCanvas.clientWidth;
@@ -1336,10 +1354,22 @@ NgChm.DDR.DetailColumnDendrogram = function() {
 	function scroll(e){
 		e.preventDefault();
 		e.stopPropagation();
-		zoomLevel -= e.deltaY/400;
+		if (!lastTouchLoc && e.touches){
+			lastTouchLoc = e.touches[0].clientY;
+			return;
+		}
+		var deltaY = e.touches ? e.touches[0].clientY - lastTouchLoc : e.deltaY;
+		if (e.touches){
+			lastTouchLoc = e.touches[0].clientY;
+		}
+		zoomLevel -= deltaY/400;
 		if (zoomLevel < 0.1) zoomLevel = .1;
 		if (zoomLevel > 100) zoomLevel = 100;
 		draw();
+	}
+	
+	function touchEnd(e){
+		lastTouchLoc = null;
 	}
 	
 	function click(e){

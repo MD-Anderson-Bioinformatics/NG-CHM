@@ -300,8 +300,10 @@ NgChm.LNK.labelHelpOpen = function(axis, e){
     
     if (labelMenu){
     	labelMenu.style.display = 'inherit';
-    	labelMenu.style.left = e.pageX + labelMenu.offsetWidth > window.innerWidth ? window.innerWidth-labelMenu.offsetWidth-15 : e.pageX; // -15 added in for the scroll bars
-    	labelMenu.style.top = e.pageY + labelMenu.offsetHeight > window.innerHeight ? window.innerHeight-labelMenu.offsetHeight-15 : e.pageY;
+    	var pageX = e.changedTouches ? e.changedTouches[0].pageX : e.pageX;
+    	var pageY = e.changedTouches ? e.changedTouches[0].pageY : e.pageY;
+    	labelMenu.style.left = pageX + labelMenu.offsetWidth > window.innerWidth ? window.innerWidth-labelMenu.offsetWidth-15 : pageX; // -15 added in for the scroll bars
+    	labelMenu.style.top = pageY + labelMenu.offsetHeight > window.innerHeight ? window.innerHeight-labelMenu.offsetHeight-15 : pageY;
     }
 }
 
@@ -330,6 +332,7 @@ NgChm.LNK.createLabelMenu = function(axis){
 	tableBody.classList.add('labelMenuBody');
 	var labelHelpCloseAxis = function(){ NgChm.LNK.labelHelpClose(axis)};
     document.addEventListener('click', labelHelpCloseAxis);
+    labelMenu.addEventListener("contextmenu",function(e){e.preventDefault()},true);
 }
 
 // Check to see if the item that the user clicked on is part of selected labels group

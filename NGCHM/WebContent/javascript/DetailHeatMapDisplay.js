@@ -21,6 +21,13 @@ NgChm.DET.offsetY = 0;
 NgChm.DET.pageX = 0;
 NgChm.DET.pageY = 0;
 
+NgChm.DET.latestTap;
+NgChm.DET.latestDoubleTap;
+NgChm.DET.latestPinchDistance;
+NgChm.DET.latestLabelTap;
+NgChm.DET.latestTapLocation;
+
+
 NgChm.DET.saveRow;
 NgChm.DET.saveCol;
 NgChm.DET.dataBoxHeight;
@@ -96,33 +103,108 @@ NgChm.DET.initDetailDisplay = function () {
 	NgChm.DET.canvas.onmousedown = NgChm.DET.clickStart;
 	NgChm.DET.canvas.ondblclick = NgChm.DET.dblClick;
 	
-	document.addEventListener("touchmove", function(e){
-		e.preventDefault();
-		if (e.touches){
-	    	if (e.touches.length > 1){
-	    		return false;
-	    	}
-	    }
-	});
+	
 	NgChm.DET.canvas.addEventListener("touchstart", function(e){
 		NgChm.UHM.userHelpClose();
-		NgChm.DET.clickStart(e);
-	}, false);
-	NgChm.DET.canvas.addEventListener("touchmove", function(e){
-		e.stopPropagation();
-		e.preventDefault();
-		NgChm.DET.handleMouseMove(e);
-	}, false);
-	NgChm.DET.canvas.addEventListener("touchend", function(e){NgChm.DET.clickEnd(e)}, false);
-	
-	NgChm.DET.canvas.addEventListener("gestureend",function(e){
-		if (e.scale > 1){
-			NgChm.DET.detailDataZoomIn();
-		} else if (e.scale < 1){
-			NgChm.DET.detailDataZoomOut();
+		var now = new Date().getTime();
+		var timesince = now - NgChm.DET.latestTap;
+		if((timesince < 600) && (timesince > 0) && e.touches.length == 1){ // double tap
+		}else if (e.touches.length == 2){ // two finger tap
+		} else if (e.touches.length == 1) { // single finger tap
+			NgChm.DET.latestTapLocation = NgChm.DET.getCursorPosition(e);
+			NgChm.DET.clickStart(e);
 		}
+		NgChm.DET.latestTap = now;
+	});
+	
+	NgChm.DET.canvas.addEventListener("touchmove", function(e){
+		if (e.touches){
+	    	if (e.touches.length > 2){
+	    		clearTimeout(NgChm.DET.eventTimer);
+	    		return false;
+	    	} else if (e.touches.length == 2){
+	    		clearTimeout(NgChm.DET.eventTimer);
+	    		e.preventDefault();
+	    		NgChm.DET.latestTap = null;
+	    		var distance = Math.hypot(
+	    			    e.touches[0].pageX - e.touches[1].pageX,
+	    			    e.touches[0].pageY - e.touches[1].pageY);
+	    		var distanceX = Math.abs(e.touches[0].clientX - e.touches[1].clientX);
+	    		var distanceY = Math.abs(e.touches[0].clientY - e.touches[1].clientY);
+	    		if (!NgChm.DET.latestPinchDistance){
+	    			NgChm.DET.latestPinchDistance = distance;
+	    		} else if (distance > NgChm.DET.latestPinchDistance){ // pinch inward
+	    			NgChm.DET.detailDataZoomIn();
+	    		} else if (NgChm.DET.latestPinchDistance > distance){ // pinch outward
+	    			NgChm.DET.detailDataZoomOut();
+	    		}
+	    		NgChm.DET.latestPinchDistance = distance;
+	    	} else if (e.touches.length == 1){
+	    		clearTimeout(NgChm.DET.eventTimer);
+	    		NgChm.DET.mouseDown = true;
+	    		NgChm.DET.handleMoveDrag(e);
+	    	}
+	    }
 	},false);
 	
+	NgChm.DET.canvas.addEventListener("touchend", function(e){
+		if (e.touches.length == 0){
+			NgChm.DET.mouseDown = false;
+			NgChm.DET.latestPinchDistance = null;
+			var now = new Date().getTime();
+			if (NgChm.DET.latestTap){
+				var timesince = now - NgChm.DET.latestTap;
+				var coords = NgChm.DET.getCursorPosition(e);
+				var diffX = Math.abs(coords.x - NgChm.DET.latestTapLocation.x); 
+				var diffY = Math.abs(coords.y - NgChm.DET.latestTapLocation.y);
+				var diffMax = Math.max(diffX,diffY);
+				if (timesince > 500 && diffMax < 20){
+					clearTimeout(NgChm.DET.eventTimer);
+					NgChm.UHM.userHelpClose();
+					NgChm.DET.matrixRightClick(e);
+				} else if (timesince < 500 && diffMax < 20){
+					NgChm.UHM.userHelpOpen();
+				}
+			}
+	    }
+	},false);
+	
+	
+	// set up touch events for row and column labels
+	var rowLabelDiv = document.getElementById("rowLabelDiv");
+	var colLabelDiv = document.getElementById("colLabelDiv");
+	
+	rowLabelDiv.addEventListener("touchstart", function(e){
+		NgChm.UHM.userHelpClose();
+		var now = new Date().getTime();
+		NgChm.DET.latestLabelTap = now;
+	});
+	
+	rowLabelDiv.addEventListener("touchend", function(e){
+		if (e.touches.length == 0){
+			var now = new Date().getTime();
+			var timesince = now - NgChm.DET.latestLabelTap;
+			if (timesince > 500){
+				NgChm.DET.labelRightClick(e);
+			}
+		}
+	});
+	
+	colLabelDiv.addEventListener("touchstart", function(e){
+		NgChm.UHM.userHelpClose();
+		var now = new Date().getTime();
+		NgChm.DET.latestLabelTap = now;
+	});
+	
+	colLabelDiv.addEventListener("touchend", function(e){
+		if (e.touches.length == 0){
+			var now = new Date().getTime();
+			var timesince = now - NgChm.DET.latestLabelTap;
+			if (timesince > 500){
+				NgChm.DET.labelRightClick(e);
+			}
+		}
+	});
 }
 
 /*********************************************************************************************
@@ -131,8 +213,21 @@ NgChm.DET.initDetailDisplay = function () {
  * The purpose of this function is to return the cursor position over the canvas.  
  *********************************************************************************************/
 NgChm.DET.getCursorPosition = function (e) {
-    var x = e.touches ? e.touches[0].clientX : e.offsetX;
-    var y = e.touches ? e.touches[0].clientY : e.offsetY;
+	var x,y;
+	if (e.touches){
+		if (e.touches.length > 0){
+			var rect = e.target.getBoundingClientRect();
+			x = Math.round(e.targetTouches[0].pageX - rect.left);
+			y = Math.round(e.targetTouches[0].pageY - rect.top);
+		} else {
+			var rect = e.target.getBoundingClientRect();
+			x = Math.round(e.changedTouches[0].pageX - rect.left);
+			y = Math.round(e.changedTouches[0].pageY - rect.top);
+		}
+	} else {
+		x = e.offsetX;
+	    y = e.offsetY;
+	}
     return {x:x, y:y};
 }
 
@@ -167,10 +262,10 @@ NgChm.DET.clickStart = function (e) {
 		var mapH = NgChm.DET.dataViewHeight/colTotalH;
 		var clickX = coords.x/divW;
 		var clickY = coords.y/divH;
-		NgChm.DET.offsetX = e.offsetX;
-		NgChm.DET.offsetY = e.offsetY;
-		NgChm.DET.pageX = e.pageX;
-		NgChm.DET.pageY = e.pageY;
+		NgChm.DET.offsetX = coords.x;
+		NgChm.DET.offsetY = coords.y;
+		NgChm.DET.pageX = e.targetTouches ? e.targetTouches[0].pageX : e.pageX;
+		NgChm.DET.pageY = e.targetTouches ? e.targetTouches[0].pageY : e.pageY;
 		if (NgChm.DET.eventTimer != 0) {
 			clearTimeout(NgChm.DET.eventTimer);
 		}
@@ -340,8 +435,8 @@ NgChm.DET.handleMoveDrag = function (e) {
     	}
     } 
 	var coords = NgChm.DET.getCursorPosition(e);
-    var xDrag = e.touches ? coords.x - NgChm.DET.dragOffsetX : coords.x - NgChm.DET.dragOffsetX;
-    var yDrag = e.touches ? coords.y - NgChm.DET.dragOffsetY : coords.y - NgChm.DET.dragOffsetY;
+    var xDrag = coords.x - NgChm.DET.dragOffsetX;
+    var yDrag = coords.y - NgChm.DET.dragOffsetY;
     if ((Math.abs(xDrag/rowElementSize) > 1) || (Math.abs(yDrag/colElementSize) > 1)) {
     	//Disregard vertical movement if the cursor is not on the heat map.
 		if (!NgChm.DET.isOnObject(e,"colClass")) {
@@ -858,8 +953,6 @@ NgChm.DET.detailHRibbon = function () {
 	NgChm.DET.detSetupGl();
 	NgChm.DET.detInitGl();
 	NgChm.SEL.updateSelection();
-	document.getElementById("viewport").setAttribute("content", "height=device-height");
-    document.getElementById("viewport").setAttribute("content", "");
 }
 
 NgChm.DET.detailVRibbon = function () {
@@ -1703,6 +1796,23 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 		div.addEventListener('contextmenu',NgChm.DET.labelRightClick,false);
 		div.onmouseover = function(){NgChm.UHM.detailDataToolHelp(this,longText);}
 		div.onmouseleave = NgChm.UHM.userHelpClose;
+		div.addEventListener("touchstart", function(e){
+			NgChm.UHM.userHelpClose();
+			var now = new Date().getTime();
+			var timesince = now - NgChm.DET.latestTap;
+			NgChm.DET.labelLastClicked[this.getAttribute("axis")] = this.getAttribute("index");
+			NgChm.DET.latestLabelTap = now;
+		});
+		div.addEventListener("touchend", function(e){
+			if (e.touches.length == 0 && NgChm.DET.latestLabelTap){
+				var now = new Date().getTime();
+				var timesince = now - NgChm.DET.latestLabelTap;
+				if (timesince > 500){
+					NgChm.DET.labelRightClick(e);
+				}
+			}
+		});
+		div.addEventListener("touchmove", NgChm.DET.labelDrag);
 	}
 	if (text == "..."){
 		div.addEventListener('mouseover', (function() {
@@ -1713,11 +1823,11 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 
 NgChm.DET.labelClick = function (e) {
 	NgChm.DET.hideSearchResults();	
-	if (e.shiftKey){ // shift + click
+	if (e.shiftKey || e.type == "touchmove"){ // shift + click
 		var selection = window.getSelection();
 		selection.removeAllRanges();
-		var focusNode = this;
-		var focusIndex = Number(this.getAttribute('index'));
+		var focusNode = e.type == "touchmove" ? e.target : this;
+		var focusIndex = Number(focusNode.getAttribute('index'));
 		var axis = focusNode.getAttribute("axis");
 		if (NgChm.DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
 			var anchorIndex = Number(NgChm.DET.labelLastClicked[axis]);
@@ -1728,7 +1838,7 @@ NgChm.DET.labelClick = function (e) {
 				}
 			}
 		} else { // otherwise, treat as normal click
-			NgChm.DET.clearSearchItems(this.getAttribute('axis'));
+			NgChm.DET.clearSearchItems(focusNode.getAttribute('axis'));
 			var searchIndex = NgChm.DET.labelIndexInSearch(focusIndex,axis);
 			if (searchIndex ){
 				delete NgChm.SEL.searchItems[axis][index];
@@ -1774,6 +1884,56 @@ NgChm.DET.labelClick = function (e) {
 		NgChm.SUM.drawTopItems();
 	}
 	NgChm.DET.showSearchResults();	
+}
+
+NgChm.DET.labelDrag = function(e){
+	e.preventDefault();
+	NgChm.DET.latestLabelTap = null;
+	var selection = window.getSelection();
+	selection.removeAllRanges();
+	var focusNode = e.type == "touchmove" ? document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY) : this;
+	var focusIndex = Number(focusNode.getAttribute('index'));
+	var axis = focusNode.getAttribute("axis");
+	if (NgChm.DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
+		var anchorIndex = Number(NgChm.DET.labelLastClicked[axis]);
+		var startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
+		for (var i = startIndex; i <= endIndex; i++){
+			if (!NgChm.DET.labelIndexInSearch(i, axis)){
+				NgChm.SEL.searchItems[axis][i] = 1;
+			}
+		}
+	} else { // otherwise, treat as normal click
+		NgChm.DET.clearSearchItems(focusNode.getAttribute('axis'));
+		var searchIndex = NgChm.DET.labelIndexInSearch(focusIndex,axis);
+		if (searchIndex ){
+			delete NgChm.SEL.searchItems[axis][index];
+		} else {
+			NgChm.SEL.searchItems[axis][focusIndex] = 1;
+		}
+	}
+	NgChm.DET.labelLastClicked[axis] = focusIndex;
+	var searchElement = document.getElementById('search_text');
+	searchElement.value = "";
+	document.getElementById('prev_btn').style.display='';
+	document.getElementById('next_btn').style.display='';
+	document.getElementById('cancel_btn').style.display='';
+	NgChm.DET.clearLabels();
+	NgChm.SUM.clearSelectionMarks();
+	NgChm.DET.showSearchResults();	
+	NgChm.DET.detailDrawRowClassBarLabels();
+	NgChm.DET.detailDrawColClassBarLabels();
+	NgChm.DET.drawRowAndColLabels();
+	NgChm.SEL.updateSelection();
+	if (NgChm.SEL.isSub){
+		localStorage.setItem('selected', JSON.stringify(NgChm.SEL.searchItems));
+	}
+	if (!NgChm.SEL.isSub){
+		NgChm.SUM.drawRowSelectionMarks();
+		NgChm.SUM.drawColSelectionMarks();
+		NgChm.SUM.drawTopItems();
+	}
+	NgChm.DET.showSearchResults();	
+	return;
 }
 
 //clears the search items on a particular axis

@@ -55,9 +55,6 @@ NgChm.SUM.initSummaryDisplay = function() {
 	NgChm.SUM.boxCanvas = document.getElementById('summary_box_canvas');
 	
 	//Add necessary event listeners for canvas
-	NgChm.SUM.canvas.addEventListener("touchstart", NgChm.SUM.onMouseDownCanvas);
-	NgChm.SUM.canvas.addEventListener("touchend", NgChm.SUM.onMouseUpCanvas);
-	
 	document.getElementById('summary_row_select_canvas').addEventListener("mouseup", NgChm.SUM.onMouseUpSelRowCanvas);
 	document.getElementById('summary_row_top_items_canvas').addEventListener("mouseup", NgChm.SUM.onMouseUpSelRowCanvas);
 	document.getElementById('summary_col_select_canvas').addEventListener("mouseup", NgChm.SUM.onMouseUpSelColCanvas);
@@ -66,6 +63,9 @@ NgChm.SUM.initSummaryDisplay = function() {
 	NgChm.SUM.canvas.onmouseup = NgChm.SUM.onMouseUpCanvas;
 	NgChm.SUM.canvas.onmousemove = NgChm.SUM.onMouseMoveCanvas;
 	NgChm.SUM.canvas.onmouseout = NgChm.SUM.onMouseOut;
+	NgChm.SUM.canvas.ontouchstart = NgChm.SUM.onMouseDownCanvas;
+	NgChm.SUM.canvas.ontouchmove = NgChm.SUM.onMouseMoveCanvas;
+	NgChm.SUM.canvas.ontouchend = NgChm.SUM.onMouseUpCanvas;
 	document.addEventListener("keydown",NgChm.SEL.keyNavigate);
 	
 	// set the position to (1,1) so that the detail pane loads at the top left corner of the summary.
@@ -385,8 +385,8 @@ NgChm.SUM.onMouseDownCanvas = function(evt) {
 	evt.preventDefault();
 	evt.stopPropagation();	
 	var boxY = ((NgChm.SUM.colClassBarHeight)/NgChm.SUM.canvas.height * NgChm.SUM.boxCanvas.height);
-	var sumOffsetX = evt.touches ? evt.touches[0].offsetX : evt.offsetX;
-	var sumOffsetY = evt.touches ? evt.touches[0].offsetY : evt.offsetY;
+	var sumOffsetX = evt.touches ? NgChm.SUM.getTouchEventOffset(evt).offsetX : evt.offsetX;
+	var sumOffsetY = evt.touches ? NgChm.SUM.getTouchEventOffset(evt).offsetY : evt.offsetY;
 	var sumRow = NgChm.SUM.canvasToMatrixRow(NgChm.SUM.getCanvasY(sumOffsetY));
 	var sumCol = NgChm.SUM.canvasToMatrixCol(NgChm.SUM.getCanvasX(sumOffsetX));
 	if ((sumRow > 0) && (sumCol > 0)) {
@@ -410,8 +410,8 @@ NgChm.SUM.onMouseOut = function(evt) {
 NgChm.SUM.onMouseMoveCanvas = function(evt) {
 	if (NgChm.SUM.mouseEventActive) {
 		//if ((NgChm.SEL.mode === 'NORMAL') && (evt.which==1)) {
-		if (evt.which==1) {
-			if (evt.shiftKey) {
+		if (evt.which==1 || evt.touches.length == 2) {
+			if (evt.shiftKey || evt.touches) {
 				NgChm.SUM.dragSelection(evt);
 			} else {
 				NgChm.SUM.dragMove(evt);
@@ -426,12 +426,12 @@ NgChm.SUM.onMouseUpCanvas = function(evt) {
 		evt.preventDefault();
 		evt.stopPropagation();	
 		var clickSection = 'Matrix';
+		var sumOffsetX = evt.touches ? NgChm.SUM.getTouchEventOffset(evt).offsetX : evt.offsetX;
+		var sumOffsetY = evt.touches ? NgChm.SUM.getTouchEventOffset(evt).offsetY : evt.offsetY;
 		//When doing a shift drag, this block will actually do the selection on mouse up.
 		if (NgChm.SUM.dragSelect) {
 			var totalRows = NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL);
 			var totalCols = NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL);
-			var sumOffsetX = evt.touches ? evt.touches[0].offsetX : evt.offsetX;
-			var sumOffsetY = evt.touches ? evt.touches[0].offsetY : evt.offsetY;
 			var xPos = NgChm.SUM.getCanvasX(sumOffsetX);
 			var yPos = NgChm.SUM.getCanvasY(sumOffsetY);
 			var sumRow = NgChm.SUM.canvasToMatrixRow(yPos);
@@ -446,8 +446,6 @@ NgChm.SUM.onMouseUpCanvas = function(evt) {
 			var endCol = Math.max(NgChm.SUM.clickStartCol,clickEndCol);
 			NgChm.SUM.setSubRibbonView(startRow, endRow, startCol, endCol);
 		} else {
-			var sumOffsetX = evt.touches ? evt.layerX : evt.offsetX;
-			var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
 			var rowClassXLimit = NgChm.SUM.rowClassBarWidth/NgChm.SUM.canvas.width*NgChm.SUM.canvas.clientWidth;
 			var colClassYLimit = NgChm.SUM.colClassBarHeight/NgChm.SUM.canvas.height*NgChm.SUM.canvas.clientHeight;
 			if (sumOffsetX < rowClassXLimit || sumOffsetY < colClassYLimit){ // top left deadspace corner clicked
@@ -510,8 +508,8 @@ NgChm.SUM.clickSelection = function(xPos, yPos) {
 }
 
 NgChm.SUM.dragMove = function(evt) {
-	var sumOffsetX = evt.touches ? evt.layerX : evt.offsetX;
-	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
+	var sumOffsetX = evt.touches ? NgChm.SUM.getTouchEventOffset(evt).offsetX : evt.offsetX;
+	var sumOffsetY = evt.touches ? NgChm.SUM.getTouchEventOffset(evt).offsetY : evt.offsetY;
 	var xPos = NgChm.SUM.getCanvasX(sumOffsetX);
 	var yPos = NgChm.SUM.getCanvasY(sumOffsetY);
 	var sumRow = NgChm.SUM.canvasToMatrixRow(yPos) - Math.round(NgChm.SEL.getCurrentSumDataPerCol()/2);
@@ -526,8 +524,20 @@ NgChm.SUM.dragMove = function(evt) {
 NgChm.SUM.dragSelection = function(evt) {
 	var totalRows = NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL);
 	var totalCols = NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL);
-	var sumOffsetX = evt.touches ? evt.touches[0].offsetX : evt.offsetX;
-	var sumOffsetY = evt.touches ? evt.touches[0].offsetY : evt.offsetY;
+	var sumOffsetX = evt.offsetX;
+	var sumOffsetY = evt.offsetY;
+	if (evt.touches){
+		var rect = evt.target.getBoundingClientRect();
+		sumOffsetX = Math.round(evt.targetTouches[0].pageX - rect.left);
+		sumOffsetY = Math.round(evt.targetTouches[0].pageY - rect.top);
+		var initSumOffsetX = Math.round(evt.targetTouches[1].pageX - rect.left);
+		var initSumOffsetY = Math.round(evt.targetTouches[1].pageY - rect.top);
+		var sumRow = NgChm.SUM.canvasToMatrixRow(NgChm.SUM.getCanvasY(initSumOffsetY));
+		var sumCol = NgChm.SUM.canvasToMatrixCol(NgChm.SUM.getCanvasX(initSumOffsetX));
+
+		NgChm.SUM.clickStartRow = (sumRow*NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.SUMMARY_LEVEL));
+		NgChm.SUM.clickStartCol = (sumCol*NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.SUMMARY_LEVEL));
+	}
 	var xPos = NgChm.SUM.getCanvasX(sumOffsetX);
 	var yPos = NgChm.SUM.getCanvasY(sumOffsetY);
 	var sumRow = NgChm.SUM.canvasToMatrixRow(yPos);
@@ -1850,5 +1860,17 @@ NgChm.SUM.onMouseUpSelColCanvas = function(evt) {
 	NgChm.SUM.mouseEventActive = false;
 }
 
-
+NgChm.SUM.getTouchEventOffset = function (evt) {
+	var x, y;
+	if (evt.touches.length > 0){
+		var rect = evt.target.getBoundingClientRect();
+		x = sumOffsetX = Math.round(evt.targetTouches[0].pageX - rect.left);
+		y = sumOffsetY = Math.round(evt.targetTouches[0].pageY - rect.top);
+	} else {
+		var rect = evt.target.getBoundingClientRect();
+		x = sumOffsetX = Math.round(evt.changedTouches[0].pageX - rect.left);
+		y = sumOffsetY = Math.round(evt.changedTouches[0].pageY - rect.top);
+	}
+	return {"offsetX": x, "offsetY": y}
+}
 
