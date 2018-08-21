@@ -2320,17 +2320,20 @@ NgChm.DET.detailDrawRowClassBarLabels = function () {
 	var rowClassBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
 	if (document.getElementById("missingDetRowClassBars"))document.getElementById("missingDetRowClassBars").remove();
 	var scale =  NgChm.DET.canvas.clientWidth / (NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
+	var classBarAreaWidth = NgChm.DET.calculateTotalClassBarHeight("row")*scale;
+	var dataAreaWidth = NgChm.DET.dataViewWidth*scale;
 	var rowClassBarConfig = NgChm.heatMap.getRowClassificationConfig();
 	var rowClassLength = Object.keys(rowClassBarConfig).length;
 	var containsLegend = NgChm.DET.colClassLabelsContainLegend("row");
 	if (rowClassBarConfig != null && rowClassLength > 0) {
 		var startingPoint = NgChm.DET.canvas.offsetLeft+NgChm.DET.rowClassLabelFont + 2;
 		if (NgChm.DET.rowClassLabelFont > NgChm.DET.minLabelSize) {
+			var prevClassBarHeight = 0;
 			for (var i=0;i< rowClassBarConfigOrder.length;i++) {
 				var key = rowClassBarConfigOrder[i];
 				var currentClassBar = rowClassBarConfig[rowClassBarConfigOrder[i]];
-				var textLoc = (currentClassBar.height/2) - Math.floor(NgChm.DET.rowClassLabelFont/2);
-				var xPos = startingPoint+(textLoc*scale);
+				var barWidth = (currentClassBar.height*scale);
+				var xPos = startingPoint + (barWidth/2) - (NgChm.DET.rowClassLabelFont/2);
 				var yPos = NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.clientHeight + 4;
 				if (currentClassBar.show === 'Y') {
 					NgChm.SUM.drawRowClassBarLegends(false);
@@ -2343,7 +2346,7 @@ NgChm.DET.detailDrawRowClassBarLabels = function () {
 						NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_classrow' + i, 'DynamicLabel ClassBar', labelText, key, xPos, yPos, NgChm.DET.rowClassLabelFont, 'T', i, "RowCovar",key);
 					}
 					yPos += (currentClassBar.height * scale);
-					startingPoint += (currentClassBar.height*scale);
+					startingPoint += barWidth;
 				} else {
 					if (!document.getElementById("missingDetRowClassBars")){
 						var x = NgChm.DET.canvas.offsetLeft + 10;
@@ -2356,7 +2359,7 @@ NgChm.DET.detailDrawRowClassBarLabels = function () {
 						NgChm.DET.addLabelDiv(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
 					}
 				}
-				startingPoint += (currentClassBar.height*scale);
+				prevClassBarHeight = currentClassBar.height;
 			} 
 		}	
 	}
