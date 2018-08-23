@@ -692,6 +692,32 @@ linkouts.addPlugin({
 }) (linkouts);
 
 //==============================================//
+// RRID  plugin                                 //
+//==============================================//
+(function(linkouts) {
+
+    function searchAntibodyRegistry(labels){
+	linkouts.openUrl("http://antibodyregistry.org/search.php?q=" + labels[0]);
+    }
+
+    function searchSCICrunch(labels){
+	linkouts.openUrl("https://scicrunch.org/resources/Antibodies/search?q=" + labels[0] + "&l="  + labels[0]);
+    }
+
+    linkouts.addPlugin({
+        name: "RRID",
+        description: "Antibody RRID.",
+//        version: "0.1.3",
+        site: "http://antibodyregistry.org/",
+//        logo: "https://www.ncbi.nlm.nih.gov/coreutils/img/pubmed256blue.png",
+        linkouts: [
+            { menuEntry: "Search Antibody Registry", typeName: "bio.rrid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchAntibodyRegistry },
+            { menuEntry: "Search SCICrunch for ", typeName: "bio.rrid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchSCICrunch },
+        ]
+    });
+}) (linkouts);
+
+//==============================================//
 // TCGA plugin                                  //
 //==============================================//
 (function (linkouts) {
