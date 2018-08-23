@@ -800,31 +800,17 @@ NgChm.UHM.displayStartupWarnings = function() {
 		warningText = "<br><b>Unsupported Browser Warning:</b> Your current browser is Internet Explorer. The NG-CHM application is optimized for use with the Google Chrome and Mozilla Firefox browsers.  While you may view maps in IE, the performance of the application cannot be guaranteed.<br><br>You may wish to switch to one of these supported browsers.";
 		msgFound = true;
 	} else {
-		var zoomVal = NgChm.UTIL.isScreenZoomed();
-		if (zoomVal < 0) {
+		if (NgChm.DET.minLabelSize > 11) {
 			if (msgFound) { warningText = warningText+"<br>" }
-			warningText = "<br><b>Zoom Level Warning:</b> Current browser settings include a zoom level that is too low. This will interfere with the proper display of the NG-CHM application. You may wish to increase the zoom setting in your browser.";
+			warningText = warningText+"<br><b>Minimum Font Warning:</b> Current browser settings include a minimum font size setting that is too large. This will block the display of row, column, and covariate bar labels in the NG-CHM application. You may wish to turn off or adjust this setting in your browser."
 			msgFound = true;
 			warningsFound++;
-		} else {
-			if (zoomVal > 0) {
-				if (msgFound) { warningText = warningText+"<br>" }
-				warningText = "<br><b>Zoom Level Warning:</b> Current browser settings include a zoom level that is too high. This will interfere with the proper display of the NG-CHM application. You may wish to decrease the zoom setting in your browser.";
-				msgFound = true;
-				warningsFound++;
-			} 
-			if (NgChm.DET.minLabelSize > 11) {
-				if (msgFound) { warningText = warningText+"<br>" }
-				warningText = warningText+"<br><b>Minimum Font Warning:</b> Current browser settings include a minimum font size setting that is too large. This will block the display of row, column, and covariate bar labels in the NG-CHM application. You may wish to turn off or adjust this setting in your browser."
-				msgFound = true;
-				warningsFound++;
-			} 
-			if (NgChm.DET.minLabelSize > 5) {
-				if (msgFound) { warningText = warningText+"<br>" }
-				warningText = warningText+"<br><b>Minimum Font Warning:</b> Current browser settings include a minimum font size setting. This may interfere with the display of row, column, and covariate bar labels in the NG-CHM application. You may wish to turn off or adjust this setting in your browser."
-				msgFound = true;
-				warningsFound++;
-			}
+		} 
+		if (NgChm.DET.minLabelSize > 5) {
+			if (msgFound) { warningText = warningText+"<br>" }
+			warningText = warningText+"<br><b>Minimum Font Warning:</b> Current browser settings include a minimum font size setting. This may interfere with the display of row, column, and covariate bar labels in the NG-CHM application. You may wish to turn off or adjust this setting in your browser."
+			msgFound = true;
+			warningsFound++;
 		}
 	}
 	if (warningsFound > 2) {

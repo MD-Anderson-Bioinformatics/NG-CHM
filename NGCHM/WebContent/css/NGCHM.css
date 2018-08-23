@@ -573,3 +573,21 @@ table.helpTable th {
 .tdTop {
     vertical-align: text-top;
 }
+
+.editableText_btn {
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
+    padding: 7px 10px;
+    border: 0px solid #2b27a1;
+    border-radius: 35px;
+    background: #2525f5;
+    background: -webkit-gradient(linear, left top, left bottom, from(#2525f5), to(#000326));
+    background: -moz-linear-gradient(top, #2525f5, #000326);
+    background: linear-gradient(to bottom, #2525f5, #000326);
+    text-shadow: #591717 1px 1px 1px;
+    font: normal normal bold 12px arial;
+    color: #ffffff;
+    text-decoration: none;
+}
+.editableText_btn:focus { outline: none; }

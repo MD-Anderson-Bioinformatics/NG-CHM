@@ -185,9 +185,6 @@ NgChm.UTIL.startupChecks = function () {
 	if (NgChm.UTIL.getBrowserType() === 'IE') {
     	warningsRequired = true;
 	}
-    if (NgChm.UTIL.isScreenZoomed() !== 0) {
-    	warningsRequired = true;
-    }
     if (NgChm.DET.minLabelSize > 5) {
     	warningsRequired = true;
     }
@@ -294,8 +291,16 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 		if ((NgChm.MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) { 
 			mapName = NgChm.MMGR.embeddedMapName;
 			dataSource = NgChm.MMGR.FILE_SOURCE;
-			NgChm.UTIL.loadLocalModeCHM(sizeBuilderView);
-		} else {  // New temp
+			var embedButton = document.getElementById('NGCHMEmbedButton');
+			if (embedButton !== null) {
+				document.getElementById('NGCHMEmbed').style.display = 'none';
+				NgChm.UTIL.embedSrc = embedButton.src;
+			} else {
+				document.getElementById('NGCHMEmbed').style.display = '';
+				NgChm.UTIL.loadLocalModeCHM(sizeBuilderView);
+			}
+		} else {  
+			// New temp
 			//		}  // old put back
 			if (NgChm.MMGR.embeddedMapName !== null) {
 				mapName = NgChm.MMGR.embeddedMapName;
@@ -310,7 +315,8 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 				NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.DET.processDetailMapUpdate);
 			}
 			NgChm.DET.initDetailDisplay();
-			}
+		}
+
 		NgChm.SEL.setupLocalStorage();
 		document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);	
 		document.getElementById("detail_canvas").focus();
@@ -459,6 +465,29 @@ NgChm.UTIL.shadeColor = function (color, pct) {
     return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
 }
 
+
+/**********************************************************************************
+ * FUNCTION - showEmbed: This function toggles the embedded map view based on
+ * user clicks to embed button.
+ **********************************************************************************/
+//variable used to store original button png for embeddedmap
+NgChm.UTIL.embedSrc;
+NgChm.UTIL.embedLoaded = false;
+NgChm.UTIL.showEmbed = function () {
+	var embedButton = document.getElementById('NGCHMEmbedButton');
+	var embeddedMap = document.getElementById('NGCHMEmbed');
+	if (embedButton.src === NgChm.UTIL.embedSrc) {
+		embeddedMap.style.display = '';
+		if (NgChm.UTIL.embedLoaded === false) {
+			NgChm.UTIL.embedLoaded = true;
+			NgChm.UTIL.loadLocalModeCHM(false);
+		}
+		embedButton.src = "images/buttonCollapseMap.png";
+	} else {
+		embedButton.src = NgChm.UTIL.embedSrc;
+		embeddedMap.style.display = 'none';
+	}
+}
 
 
 
