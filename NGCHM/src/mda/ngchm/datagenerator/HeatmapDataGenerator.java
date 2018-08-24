@@ -1990,7 +1990,7 @@ public class HeatmapDataGenerator {
 				for (int heightPos = 0; heightPos < dendroMatrixHeight; heightPos++){
 					for (int widthPos = 0; widthPos < dendroMatrixWidth; widthPos++){
 						if (matrix[widthPos][heightPos] > 0) {
-							int y = (int)Math.min(((double)(dendroMatrixHeight-heightPos)*heightScale), intendedDendroHeight-1);
+							int y = (int)Math.min(((double)heightPos*heightScale), intendedDendroHeight-1);
 							int x = (int)Math.min(((double)widthPos*widthScale), intendedDendroWidth-1);
 							//If the png is larger than the matrix (happens for small matrices), then for vertical lines
 							//we need to draw more than 1 pixel.  When the heightScale is > 1, then we know we need to draw
