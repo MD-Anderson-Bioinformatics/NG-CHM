@@ -937,7 +937,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		            console.log('Failed to get software version: ' + req.status);
 		        } else {
 		        	var latestVersion = req.response;
-		        	if ((latestVersion > NgChm.CM.version) && (typeof NgChm.galaxy === 'undefined')) {
+		        	if ((latestVersion > NgChm.CM.version) && (typeof NgChm.galaxy === 'undefined') && (NgChm.MMGR.embeddedMapName === null)) {
 		        		NgChm.UHM.viewerAppVersionExpiredNotification(NgChm.CM.version, latestVersion);   
 		        	}
 			    } 
