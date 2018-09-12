@@ -58,6 +58,9 @@ NgChm.UHM.userHelpOpen = function() {
     	} else {
     		matrixValue = matrixValue.toFixed(5);
     	}
+    	if (NgChm.SEL.mode === 'FULL_MAP') {
+    		matrixValue = matrixValue + "<br>(summarized)";
+    	}
     	NgChm.UHM.setTableRow(helpContents,["&nbsp;Value:", matrixValue]);
     	NgChm.UHM.setTableRow(helpContents,[ "&nbsp;Row:", rowLabels[row-1]]);
     	NgChm.UHM.setTableRow(helpContents,["&nbsp;Column:", colLabels[col-1]]);

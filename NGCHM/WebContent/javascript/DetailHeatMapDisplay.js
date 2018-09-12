@@ -661,6 +661,10 @@ NgChm.DET.drawSearchBox = function (csRowStart, csRowEnd, csColStart, csColEnd) 
 	//height/width of a data cell in pixels
 	var cellWidth = mapXWidth/NgChm.SEL.getCurrentDetDataPerRow();
 	var cellHeight = mapYHeight/NgChm.SEL.getCurrentDetDataPerCol();
+	if (NgChm.SEL.mode === 'FULL_MAP') {
+		cellWidth = mapXWidth/NgChm.SEL.dataPerRow;
+		cellHeight = mapYHeight/NgChm.SEL.dataPerCol;
+	}
 	//bottom-right corner of visible area
 	var bottomX = topX + (NgChm.SEL.getCurrentDetDataPerCol()*cellWidth);
 	var bottomY = topY + (NgChm.SEL.getCurrentDetDataPerRow()*cellHeight);
