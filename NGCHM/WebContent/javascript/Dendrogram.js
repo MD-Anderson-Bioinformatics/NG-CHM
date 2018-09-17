@@ -1173,7 +1173,7 @@ NgChm.DDR.DetailRowDendrogram = function() {
 			
 			var leftLoc = convertJsonIndexToDataViewSpace(leftJsonIndex); // Loc is the location in the dendro matrix
 			var rightLoc = convertJsonIndexToDataViewSpace(rightJsonIndex);
-			var normHeight = height < 0.000001*matrix.getNumCols() ? 1 : Math.round(normDendroMatrixHeight*height/maxHeight); // height in matrix (if height is roughly 0, treat as such)
+			var normHeight = height < 0.000001*matrix.getNumCols() ? 1 : Math.max(Math.round(normDendroMatrixHeight*height/maxHeight),1); // height in matrix (if height is roughly 0, treat as such)
 			var leftEnd = Math.max(leftLoc, 1);
 			var rightEnd = Math.min(rightLoc, matrixWidth-1);
 			
@@ -1466,7 +1466,7 @@ NgChm.DDR.DetailColumnDendrogram = function() {
 			
 			var leftLoc = convertJsonIndexToDataViewSpace(leftJsonIndex); // Loc is the location in the dendro matrix
 			var rightLoc = convertJsonIndexToDataViewSpace(rightJsonIndex);
-			var normHeight = height < 0.000001*matrix.getNumRows() ? 1 : Math.round(normDendroMatrixHeight*height/maxHeight); // height in matrix (if height is roughly 0, treat as such)
+			var normHeight = height < 0.000001*matrix.getNumRows() ? 1 : Math.max(Math.round(normDendroMatrixHeight*height/maxHeight),1); // height in matrix (if height is roughly 0, treat as such)
 			var leftEnd = Math.max(leftLoc, Math.round(PPL/2));
 			var rightEnd = Math.min(rightLoc, Math.round(matrixWidth-PPL/2));
 			
