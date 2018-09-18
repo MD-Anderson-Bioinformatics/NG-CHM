@@ -798,17 +798,22 @@ NgChm.PDF.getPDF = function() {
 			if (isNaN(value) || value == undefined){
 				value = 0;
 			}
+			var valLabel = thresholds[j].toString();
+			var decimalVal = 4; // go out to 3 decimal places
+			if (valLabel.indexOf(".") > 0){
+				valLabel = valLabel.substring(0, valLabel.indexOf(".") + decimalVal);
+			}
 			if (condenseClassBars){ // square
 				var barW = 10;
 				doc.rect(leftOff, bartop, barW, barHeight, "FD"); // make the square
 				doc.setFontSize(classBarLegendTextSize);
-				doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, thresholds[j].toString(), null);
+				doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, valLabel, null);
 				doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value , null);
 			} else { // histogram
 				var barW = (value/maxCount*classBarFigureW)*.65;  //scale bars to fit page
 				doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD"); // make the histo bar
 				doc.setFontSize(classBarLegendTextSize);
-				doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth(thresholds[j].toString())*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, thresholds[j].toString() , null);
+				doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth(valLabel)*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, valLabel , null);
 				doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + value , null);
 			}
 			missingCount -= value; 
