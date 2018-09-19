@@ -215,11 +215,11 @@ public class HeatmapDataGenerator {
         		iData.colData.createTopItemsImg(iData.colData.classArray.length - 1);
 				PdfGenerator pGen = new PdfGenerator();
 				if (iData.rowData.dendroMatrix != null) {
-					float sizeTo = new Float((iData.rowData.classArray.length*5-1)/72*0.5);  // mapHeight divided by 72 to get inch width of map, x50% to get approximate size on page
+					Float sizeTo = new Float( new Float(iData.rowData.dendroMatrix[0].length*5-1)/ new Float(120));  // mapWidth divided by 120 to get inch width of map. 120 is a bit of a fudge factor to try to figure out how many points per inch on the PDF
 					iData.rowData.dendroImage = createRowDendroImg(iData, sizeTo);
 				}
 				if (iData.colData.dendroMatrix != null) {
-					float sizeTo = new Float((iData.colData.classArray.length*5-1)/72*0.65);  // mapWidth divided by 72 to get inch width of map, x65% to get approximate size on page 
+					Float sizeTo = new Float( new Float((iData.colData.dendroMatrix[0].length*5-1))/ new Float(120));  // mapWidth divided by 120 to get inch width of map, x65% to get approximate size on page
 					iData.colData.dendroImage = createColDendroImg(iData, sizeTo);
 				}
 				pGen.createHeatmapPDF(iData, fullPDF); 
