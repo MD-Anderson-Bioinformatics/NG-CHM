@@ -247,25 +247,6 @@ NgChm.UTIL.convertToArray = function(value) {
 }
 
 /**********************************************************************************
- * FUNCTION - embedCHM: This function is a special pre-processing function for the
- * widgetized version of the NG-CHM Viewer.  It will take the map name provided 
- * by the user (embedded in an unaffiliated web page) and pass that on to the 
- * on load processing for the viewer.  repository (default .) is the path to the
- * directory containing the specified map.
- **********************************************************************************/
-NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
-	NgChm.MMGR.embeddedMapName = map;
-	NgChm.MMGR.localRepository = repository || ".";
-	//Reset dendros for local/widget load
-	NgChm.SUM.colDendro = null;
-	NgChm.SUM.rowDendro = null;
-	NgChm.DET.colDendro = null;
-	NgChm.DET.rowDendro = null;
-	NgChm.UTIL.onLoadCHM(sizeBuilderView);
-}
-
-
-/**********************************************************************************
  * FUNCTION - onLoadCHM: This function performs "on load" processing for the NG_CHM
  * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
  * viewer.  
@@ -294,7 +275,6 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 			var embedButton = document.getElementById('NGCHMEmbedButton');
 			if (embedButton !== null) {
 				document.getElementById('NGCHMEmbed').style.display = 'none';
-				NgChm.UTIL.embedSrc = embedButton.src;
 			} else {
 				document.getElementById('NGCHMEmbed').style.display = '';
 				NgChm.UTIL.loadLocalModeCHM(sizeBuilderView);
@@ -423,6 +403,9 @@ NgChm.UTIL.builderViewSizing = function (event, level) {
  * FUNCTION - chmResize: This function handles the resizing of the NG-CHM Viewer.  
  **********************************************************************************/
 NgChm.UTIL.chmResize = function () {
+		if ((NgChm.SUM.rowDendro === null) || (NgChm.SUM.colDendro === null)) {
+			return;
+		}
  		NgChm.SUM.summaryResize();
  		NgChm.DET.detailResize();
  		NgChm.UPM.prefsResize();
@@ -467,27 +450,100 @@ NgChm.UTIL.shadeColor = function (color, pct) {
 
 
 /**********************************************************************************
- * FUNCTION - showEmbed: This function toggles the embedded map view based on
- * user clicks to embed button.
+ * BEGIN: EMBEDDED MAP FUNCTIONS AND GLOBALS
+ * 
+ * embedLoaded: Global for whether a given iFrame's heat map has been loaded already.  
+ * We only only load once.
+ * 
  **********************************************************************************/
-//variable used to store original button png for embeddedmap
-NgChm.UTIL.embedSrc;
 NgChm.UTIL.embedLoaded = false;
-NgChm.UTIL.showEmbed = function () {
-	var embedButton = document.getElementById('NGCHMEmbedButton');
+NgChm.UTIL.embedThumbSize = '75px';
+
+/**********************************************************************************
+ * FUNCTION - embedCHM: This function is a special pre-processing function for the
+ * widgetized version of the NG-CHM Viewer.  It will take the map name provided 
+ * by the user (embedded in an unaffiliated web page) and pass that on to the 
+ * on load processing for the viewer.  repository (default .) is the path to the
+ * directory containing the specified map.
+ **********************************************************************************/
+NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
+	NgChm.MMGR.embeddedMapName = map;
+	NgChm.MMGR.localRepository = repository || ".";
+	//Reset dendros for local/widget load
+	NgChm.SUM.colDendro = null;
+	NgChm.SUM.rowDendro = null;
+	NgChm.DET.colDendro = null;
+	NgChm.DET.rowDendro = null;
+	NgChm.UTIL.onLoadCHM(sizeBuilderView);
+}
+
+/**********************************************************************************
+ * FUNCTION - showEmbed: This function shows the embedded heat map when the
+ * user clicks on the embedded map image.
+ **********************************************************************************/
+NgChm.UTIL.showEmbed = function (baseDiv) {
+	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
+	NgChm.UTIL.embedThumbSize = embeddedWrapper.style.height;
+	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	var embeddedMap = document.getElementById('NGCHMEmbed');
-	if (embedButton.src === NgChm.UTIL.embedSrc) {
-		embeddedMap.style.display = '';
-		if (NgChm.UTIL.embedLoaded === false) {
-			NgChm.UTIL.embedLoaded = true;
-			NgChm.UTIL.loadLocalModeCHM(false);
-		}
-		embedButton.src = "images/buttonCollapseMap.png";
-	} else {
-		embedButton.src = NgChm.UTIL.embedSrc;
-		embeddedMap.style.display = 'none';
+	var iFrame = window.frameElement; // reference to iframe element container
+	iFrame.style.height = '100%';
+	embeddedMap.style.height = '90%';
+	embeddedMap.style.width = '90%';
+	embeddedMap.style.display = '';
+	embeddedWrapper.style.display = 'none';
+	embeddedCollapse.style.display = '';
+	if (NgChm.UTIL.embedLoaded === false) {
+		NgChm.UTIL.embedLoaded = true;
+		NgChm.UTIL.loadLocalModeCHM(false);
 	}
 }
 
+/**********************************************************************************
+ * FUNCTION - hideEmbed: This function hides the embedded map when the user 
+ * clicks on the collapse map button.
+ **********************************************************************************/
+NgChm.UTIL.hideEmbed = function (baseDiv) {
+	var iFrame = window.frameElement; // reference to iframe element container
+	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
+	iFrame.style.height = NgChm.UTIL.embedThumbSize;
+	embeddedWrapper.style.height = NgChm.UTIL.embedThumbSize;
+	embeddedWrapper.style.width = NgChm.UTIL.embedThumbSize;
+	var embeddedMap = document.getElementById('NGCHMEmbed');
+	embeddedMap.style.height = NgChm.UTIL.embedThumbSize;
+	embeddedWrapper.style.height = NgChm.UTIL.embedThumbSize;
+	embeddedWrapper.style.width = NgChm.UTIL.embedThumbSize;
+	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
+	embeddedMap.style.display = 'none';
+	embeddedCollapse.style.display = 'none';
+	embeddedWrapper.style.display = '';
+}
 
+/**********************************************************************************
+ * FUNCTION - embedExpandableMap: This function constructs the html for embedding
+ * a heat map widget within an iFrame object.  The name of the div that the iframe
+ * will reside in, the name of heat map ngchm file, and the name of the thumbnail
+ * image file are required parameters.  The size for the thumbnail (in pixels) is
+ * an optional parameter. 
+ **********************************************************************************/
+NgChm.UTIL.embedExpandableMap = function(baseDiv,ngchmFile,thumbFile,thumbSize) {
+	if (typeof thumbSize !== 'undefined') {
+		NgChm.UTIL.embedThumbSize = thumbSize;
+	}
+	var embeddedDiv = document.getElementById(baseDiv);
+	var ngchmIFrame = document.createElement('iframe');
+	ngchmIFrame.id = baseDiv+"_iframe";
+	ngchmIFrame.scrolling = "no";
+	ngchmIFrame.style = "height:"+NgChm.UTIL.embedThumbSize+"; width:100%; border-style:none; ";
+	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin';
+	embeddedDiv.appendChild(ngchmIFrame);
+	var doc = ngchmIFrame.contentWindow.document;
+	doc.open();
+	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+NgChm.UTIL.embedThumbSize+"; width: "+NgChm.UTIL.embedThumbSize+"'><img img id='NGCHMEmbedButton' src='"+thumbFile+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this);' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this);' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 5%; width: 100%; border: 2px solid gray; padding: 5px'></div><script src='ngchmWidget-min.js'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+ngchmFile+"');<\/script></BODY></HTML>");
+	doc.close();
+}
+
+/**********************************************************************************
+ * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
+ **********************************************************************************/
 

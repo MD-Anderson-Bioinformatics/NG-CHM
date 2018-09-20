@@ -1644,6 +1644,8 @@ NgChm.SUM.drawTopItems = function(){
 	
 	 //Find the optional position of a set of top items.  The index list of top items must be sorted.
     function topItemPositions(topItemsIndex, matrixSize, itemSize, canvasSize,summaryRatio) {
+    	 if (canvasSize === 0) { return;}
+    	
           //Array of possible top item positions is the size of the canvas divided by the size of each label.
           //Create a position array with initial value of -1
           var totalPositions = Math.round(canvasSize/itemSize)+1;
