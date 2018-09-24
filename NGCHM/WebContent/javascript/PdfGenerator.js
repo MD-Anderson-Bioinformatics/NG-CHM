@@ -276,6 +276,7 @@ NgChm.PDF.getPDF = function() {
 			NgChm.SUM.drawLeftCanvasBox();
 		}
 	}
+	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
 
 	// Add row and column labels to the PDF
 	if (mapsToShow !== "S"){
@@ -288,7 +289,6 @@ NgChm.PDF.getPDF = function() {
 		}
 		// Get selection color for current datalayer to be used in highlighting selected labels
 		var dataLayers = NgChm.heatMap.getDataLayers();
-		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
 		var layer = dataLayers[NgChm.SEL.currentDl];
 		var selectedColor = colorMap.getHexToRgba(layer.selection_color);
 		var rowLabels = 0;
