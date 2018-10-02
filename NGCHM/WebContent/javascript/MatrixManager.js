@@ -883,7 +883,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			req.send();	
 		} else {
 			//File fileSrc - get tile from zip
-			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.bin'];
+			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.tile'];
+			if (typeof entry == 'undefined') {
+				entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.bin'];
+			}
 			entry.getData(new zip.BlobWriter(), function(blob) {
 				var fr = new FileReader();
 				

@@ -38,7 +38,7 @@ public class ImportTileData {
 	public ImportTileData(ImportLayerData layerData, int tileCol, int tileRow) throws Exception 
 	{
 		try {
-			fileName = File.separator+layerData.layer+File.separator+layerData.layer+"."+(tileRow+1)+"."+(tileCol+1)+BIN_FILE;
+			fileName = File.separator+layerData.layer+File.separator+layerData.layer+"."+(tileRow+1)+"."+(tileCol+1)+TILE_FILE;
 			switch (layerData.layer) {
 		        case "tn": setupThumbnailTile(layerData);  
 		                 break;

@@ -54,6 +54,9 @@ public class RowColData {
 
 	private int TOP_ITEMS_IMAGE_WIDTH = 44;
 
+	public RowColData() {
+		// TODO Auto-generated constructor stub
+	}
 
 	/*******************************************************************
 	 * CONSTRUCTOR: RowColData
@@ -115,7 +118,7 @@ public class RowColData {
 	    		    	configWarnings.add(warning);
 	    				treeCuts = dendroValues.size()-1;
 	    			}
-	    			int[] cutLocs = getTreeCutPositions();
+	    			int[] cutLocs = getTreeCutPositions(treeCuts, dendroValues);
 	    			ResetForTreeCuts(length, cutLocs, orderArr);
 	    		}
 	        }
@@ -471,16 +474,16 @@ public class RowColData {
 	 * the heatmapProperties.json file contains a TREE_CUT node in the 
 	 * row/column information. 
 	 ******************************************************************/
-	private int[] getTreeCutPositions()  throws Exception {
+	public int[] getTreeCutPositions(int tCuts, List<String> dValues)  throws Exception {
 		int[] cutLocs = null;
-		int [] cuts = new int[treeCuts];
-		int firstCut = dendroValues.size()-(treeCuts-1);
-		int[] cutBars = new int[treeCuts];
+		int [] cuts = new int[tCuts];
+		int firstCut = dValues.size()-(tCuts-1);
+		int[] cutBars = new int[tCuts];
 		cutBars[0] = firstCut;
 		int cutCtr = 1;
 		//Construct array for the bars that represent each tree cut.
-		for (int i=dendroValues.size()-1; i >= firstCut; i--) {
-			String colValue = dendroValues.get(i);
+		for (int i=dValues.size()-1; i >= firstCut; i--) {
+			String colValue = dValues.get(i);
 			String[] tokes = colValue.split(COMMA);
 			int leftIndex = Integer.parseInt(tokes[0]); // index is the location of the bar in the clustered data
 			int rightIndex = Integer.parseInt(tokes[1]);
@@ -497,7 +500,7 @@ public class RowColData {
 			int cutBar = cutBars[j];
 			int leftIndex = cutBar;
 			while (leftIndex > 0) {
-				String currBar = dendroValues.get(leftIndex-1);
+				String currBar = dValues.get(leftIndex-1);
 				String[] tokes = currBar.split(COMMA);
 				leftIndex = Integer.parseInt(tokes[0]); // index is the location of the bar in the clustered data
 			}

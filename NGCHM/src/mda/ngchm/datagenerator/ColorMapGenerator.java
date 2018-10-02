@@ -115,17 +115,24 @@ public class ColorMapGenerator {
             	cm.colors.add(Color.red);
         	}
         	setDefaultContinuousBreaksAndColors(cm, range);
-        } else if (cm.type.equals(COLORTYPE_DISCRETE)) {           
-        	ArrayList<String> categories = getCategories(iClass);
-        	int i = 0;
-        	for (String cat : categories) {
-        		cm.breaks.add(cat);
-        		if (i < defaultColors.length -1)
+        } else if (cm.type.equals(COLORTYPE_DISCRETE)) { 
+        	if (iClass.cutLocations == null) {
+	        	ArrayList<String> categories = getCategories(iClass);
+	        	int i = 0;
+	        	for (String cat : categories) {
+	        		cm.breaks.add(cat);
+	        		if (i < defaultColors.length -1)
+	        			cm.colors.add(Color.decode(defaultColors[i]));
+	        		else
+	        			//whoops - ran out of colors - just use the last one.
+	        			cm.colors.add(Color.decode(defaultColors[defaultColors.length-1]));
+	        		i++;        
+	        	}
+        	} else {
+        		for (int i=0; i < iClass.cutLocations.length;i++) {
+	        		cm.breaks.add("Cluster"+(i+1));
         			cm.colors.add(Color.decode(defaultColors[i]));
-        		else
-        			//whoops - ran out of colors - just use the last one.
-        			cm.colors.add(Color.decode(defaultColors[defaultColors.length-1]));
-        		i++;        
+        		}
         	}
         }
         return cm;
@@ -199,6 +206,9 @@ public class ColorMapGenerator {
 	 ******************************************************************/
     public static boolean definedClassColorsFound(String classificationFile) throws Exception {
          boolean supplied = false;
+         if (classificationFile.equals("treecut")) {
+        	 return supplied;
+         }
          if (classificationFile.equals("matrix")) {
         	 return supplied;
          }

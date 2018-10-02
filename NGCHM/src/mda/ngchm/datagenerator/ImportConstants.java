@@ -148,6 +148,7 @@ public final class ImportConstants {
 	public static String MAP_DATA_FILE = "mapData.json";
 	public static String MAP_CONFIG_FILE = "mapConfig.json";
 	public static String BIN_FILE = ".bin";
+	public static String TILE_FILE = ".tile";
 	public static String TXT_FILE = ".txt";
 
 	//Configuration constants

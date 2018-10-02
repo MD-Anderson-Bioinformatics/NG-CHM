@@ -280,8 +280,6 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 				NgChm.UTIL.loadLocalModeCHM(sizeBuilderView);
 			}
 		} else {  
-			// New temp
-			//		}  // old put back
 			if (NgChm.MMGR.embeddedMapName !== null) {
 				mapName = NgChm.MMGR.embeddedMapName;
 				dataSource = NgChm.MMGR.LOCAL_SOURCE;
@@ -526,7 +524,7 @@ NgChm.UTIL.hideEmbed = function (baseDiv) {
  * image file are required parameters.  The size for the thumbnail (in pixels) is
  * an optional parameter. 
  **********************************************************************************/
-NgChm.UTIL.embedExpandableMap = function(baseDiv,ngchmFile,thumbFile,thumbSize) {
+NgChm.UTIL.embedExpandableMap = function(baseDiv,ngchmFile,thumbFile,jsDir,thumbSize) {
 	if (typeof thumbSize !== 'undefined') {
 		NgChm.UTIL.embedThumbSize = thumbSize;
 	}
@@ -539,7 +537,7 @@ NgChm.UTIL.embedExpandableMap = function(baseDiv,ngchmFile,thumbFile,thumbSize) 
 	embeddedDiv.appendChild(ngchmIFrame);
 	var doc = ngchmIFrame.contentWindow.document;
 	doc.open();
-	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+NgChm.UTIL.embedThumbSize+"; width: "+NgChm.UTIL.embedThumbSize+"'><img img id='NGCHMEmbedButton' src='"+thumbFile+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this);' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this);' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 5%; width: 100%; border: 2px solid gray; padding: 5px'></div><script src='ngchmWidget-min.js'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+ngchmFile+"');<\/script></BODY></HTML>");
+	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+NgChm.UTIL.embedThumbSize+"; width: "+NgChm.UTIL.embedThumbSize+"'><img img id='NGCHMEmbedButton' src='"+thumbFile+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this);' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this);' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 5%; width: 100%; border: 2px solid gray; padding: 5px'></div><script src='"+jsDir+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+ngchmFile+"');<\/script></BODY></HTML>");
 	doc.close();
 }
 

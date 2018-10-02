@@ -210,16 +210,25 @@ public class ImportData {
            		JSONObject jo = (JSONObject) classfiles.get(i);
            		String pos = (String) jo.get(POSITION);
            		String id = EMPTY;
+    			String classFile = (String) jo.get(PATH);
         		if (pos.equals("row")) {
-        			rowCtr++;
-            		id = ROW_CLASS+(rowCtr);
-            		InputClass iClass = new InputClass(jo, pos, rowData.classArray, rowCtr, iFile);
-        			rowData.classFiles.add(iClass);
+        			if ((classFile.equals("treecut")) && (!rowData.orderMethod.equals(ORDER_HIERARCHICAL))) {
+        				//Do nothing: Skip treecut covariate if data not clustered]
+        			} else {
+	        			rowCtr++;
+	            		id = ROW_CLASS+(rowCtr);
+	            		InputClass iClass = new InputClass(jo, pos, rowData, rowCtr, iFile);
+	        			rowData.classFiles.add(iClass);
+        			}
         		} else {
-        			colCtr++;
-            		id = COL_CLASS+(colCtr);
-            		InputClass iClass = new InputClass(jo , pos, colData.classArray, colCtr, iFile);
-         			colData.classFiles.add(iClass);
+        			if ((classFile.equals("treecut")) && (!colData.orderMethod.equals(ORDER_HIERARCHICAL))) {
+        				//Do nothing: Skip treecut covariate if data not clustered
+        			} else {
+            			colCtr++;
+                		id = COL_CLASS+(colCtr);
+                		InputClass iClass = new InputClass(jo , pos, colData, colCtr, iFile);
+             			colData.classFiles.add(iClass);
+        			}
         		}
         	}
             propsFile.close();

@@ -43,9 +43,11 @@ public class InputClass {
 	public int valueCol = 1;
 	public int classPos = 1;
 	private boolean isMatrixClass = false;
+	public int[] cutLocations = null;
 
-	public InputClass(JSONObject jo, String pos, String[] classArray, int classCtr, InputFile iFile) throws Exception {
+	public InputClass(JSONObject jo, String pos, RowColData rcData, int classCtr, InputFile iFile) throws Exception {
 		try {
+			String[] classArray = rcData.classArray;
 			name = (String) jo.get(NAME);
 			file = (String) jo.get(PATH);
 			position = pos.trim();
@@ -105,16 +107,24 @@ public class InputClass {
 			ColorMap cMap = new ColorMap();
 			cMap.id = id;
 			cMap.type = (String) jocm.get(COLORMAP_TYPE);
-			if (isMatrixClass) {
-				origData = extractClassDataFromMatrix(iFile);
+			if (file.equals("treecut")) {
+				String treeCutStr = (String) jo.get(TREE_CUTS);
+				int treeCuts = treeCutStr != null ? Integer.parseInt(treeCutStr) : 0;
+				RowColData rcd = new RowColData();
+				cutLocations = rcd.getTreeCutPositions(treeCuts, rcData.dendroValues);
+				orderedClass = buildTreeCutClassificationFile(classArray);
 			} else {
-				String errMsg = MatrixValidator.validateClassificationFile(name, file, cMap.type);
-				if (errMsg != null) {
-					throw new Exception(errMsg);
+				if (isMatrixClass) {
+					origData = extractClassDataFromMatrix(iFile);
+				} else {
+					String errMsg = MatrixValidator.validateClassificationFile(name, file, cMap.type);
+					if (errMsg != null) {
+						throw new Exception(errMsg);
+					}
+					origData = extractClassDataFromFile();
 				}
-				origData = extractClassDataFromFile();
+				orderedClass = reOrderClassificationFile(origData, classArray);
 			}
-			orderedClass = reOrderClassificationFile(origData, classArray);
 			if ((jocm != null) && (jocm.get("colors") != null)) {
 				map = ColorMapGenerator.getJsonColors(jocm, cMap);
 			} else {
@@ -257,6 +267,37 @@ public class InputClass {
 	    }
 		return reorg;
 	}
+	
+	private String[] buildTreeCutClassificationFile(String[] order) throws Exception {
+		String reorg[] = new String[order.length];
+		try {
+			for (int i = 0; i < order.length; i++) {
+	        	  String orderStr = order[i];
+	        	  String classification = null;
+	        	  if ((orderStr == null) || (orderStr.equals(CUT_VALUE))) {
+	        		  classification = orderStr;
+	        	  } else {
+	        		  boolean found = false;
+	        		  for (int j=0;j<cutLocations.length;j++) {
+	        			  if (i<cutLocations[j]) {
+	        				  classification = "Cluster"+(j+1);
+	        				  found=true;
+	        				  break;
+	        			  }
+	        			  if (!found) {
+	        				  classification = "Cluster"+(j+2);
+	        			  }
+	        		  }
+	        	  }
+	              reorg[i] = classification;
+	        }
+ 
+    	} catch (Exception ex) { 
+    		throw ex;
+	    }
+		return reorg;
+	}
+
 	
 	/*******************************************************************
 	 * METHOD: calcLowHighBounds
