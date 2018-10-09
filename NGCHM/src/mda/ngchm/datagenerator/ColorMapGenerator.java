@@ -57,6 +57,10 @@ public class ColorMapGenerator {
 	        	Object obj = breaks.get(i);
 	       		cm.breaks.add(obj.toString());
 	        }
+		} else {
+	        for (int i=0; i < colors.size();i++) {
+	       		cm.breaks.add("Cluster"+(i+1));
+	        }
 		}
         String missingColor = (String) jocm.get(COLORMAP_MISSING);
         if (missingColor != null) {
