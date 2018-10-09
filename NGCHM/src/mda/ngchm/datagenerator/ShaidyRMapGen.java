@@ -671,8 +671,11 @@ public class ShaidyRMapGen {
 					String visible = getRequiredStr("covaraites", covar, "display").equals("visible") ? "Y" : "N";
 					fileout.println("\t\t\"name\": \"" + label + "\",");
 					JSONObject data = getRequiredObj("covariates", covar, "data");
-					String covarFile = dataPath + getRequiredStr("covariates : data", data, "value") + FILE_SEP + "matrix.tsv";
-					if (!new File(covarFile).exists()) errors.append("ERROR: Row covariate data file: " + covarFile + " does not exist.\n");
+					String covarFile =  getRequiredStr("covariates : data", data, "value");
+					if (!covarFile.equals("treecut")) {
+						covarFile = dataPath + getRequiredStr("covariates : data", data, "value") + FILE_SEP + "matrix.tsv";
+						if (!new File(covarFile).exists()) errors.append("ERROR: Row covariate data file: " + covarFile + " does not exist.\n");
+					}
 					fileout.println("\t\t\"path\": \"" + covarFile + "\",");
 					if (covar.get("thickness") != null)
 						fileout.println("\t\t\"height\": \"" + covar.get("thickness") + "\",");
@@ -680,6 +683,8 @@ public class ShaidyRMapGen {
 					fileout.println("\t\t\"show\": \"" + visible + "\",");
 					if (covar.get("data_type") != null)
 						fileout.println("\t\t\"data_type\": \"" + covar.get("data_type") + "\",");
+					if (covar.get("tree_cuts") != null)
+						fileout.println("\t\t\"tree_cuts\": \"" + covar.get("tree_cuts") + "\",");
 					if (covar.get("low_bound") != null)
 						fileout.println("\t\t\"low_bound\": \"" + covar.get("low_bound") + "\",");
 					if (covar.get("high_bound") != null)
@@ -719,8 +724,11 @@ public class ShaidyRMapGen {
 					String visible = getRequiredStr("covaraites", covar, "display").equals("visible") ? "Y" : "N";
 					fileout.println("\t\t\"name\": \"" + label + "\",");
 					JSONObject data = getRequiredObj("covariates", covar, "data");
-					String covarFile = dataPath + getRequiredStr("covariates : data", data, "value") + FILE_SEP + "matrix.tsv";
-					if (!new File(covarFile).exists()) errors.append("ERROR: Col covariate data file: " + covarFile + " does not exist.\n");
+					String covarFile =  getRequiredStr("covariates : data", data, "value");
+					if (!covarFile.equals("treecut")) {
+						covarFile = dataPath + getRequiredStr("covariates : data", data, "value") + FILE_SEP + "matrix.tsv";
+						if (!new File(covarFile).exists()) errors.append("ERROR: Col covariate data file: " + covarFile + " does not exist.\n");
+					}
 					fileout.println("\t\t\"path\": \"" + covarFile + "\",");
 					if (covar.get("thickness") != null)
 						fileout.println("\t\t\"height\": \"" + covar.get("thickness") + "\",");
@@ -728,6 +736,8 @@ public class ShaidyRMapGen {
 					fileout.println("\t\t\"show\": \"" + visible + "\",");
 					if (covar.get("data_type") != null)
 						fileout.println("\t\t\"data_type\": \"" + covar.get("data_type") + "\",");
+					if (covar.get("tree_cuts") != null)
+						fileout.println("\t\t\"tree_cuts\": \"" + covar.get("tree_cuts") + "\",");
 					if (covar.get("low_bound") != null)
 						fileout.println("\t\t\"low_bound\": \"" + covar.get("low_bound") + "\",");
 					if (covar.get("high_bound") != null)
@@ -748,7 +758,6 @@ public class ShaidyRMapGen {
 					} else warnings.append("Warning: No render for covarate " + label + " colors will be generated.\n");
 					String type = getRequiredStr("covariate", covar, "type");
 					fileout.println(colorMap(color, type));
-
 					if (i == colClassifications.size()-1) 
 						fileout.println("\t\t}");
 					else
