@@ -47,63 +47,65 @@ NgChm.UHM.userHelpOpen = function() {
     	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
     	var row = Math.floor(NgChm.SEL.currentRow + (mapLocY/colElementSize)*NgChm.DET.getSamplingRatio('row'));
     	var col = Math.floor(NgChm.SEL.currentCol + (mapLocX/rowElementSize)*NgChm.DET.getSamplingRatio('col'));
-    	var rowLabels = NgChm.heatMap.getRowLabels().labels;
-    	var colLabels = NgChm.heatMap.getColLabels().labels;
-    	NgChm.UHM.setTableRow(helpContents, ["<u>"+"Data Details"+"</u>", "&nbsp;"], 2);
-    	var matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,row,col);
-     	if (matrixValue >= NgChm.SUM.maxValues) {
-    		matrixValue = "Missing Value";
-    	} else if (matrixValue <= NgChm.SUM.minValues) {
-    		return;
-    	} else {
-    		matrixValue = matrixValue.toFixed(5);
-    	}
-    	if (NgChm.SEL.mode === 'FULL_MAP') {
-    		matrixValue = matrixValue + "<br>(summarized)";
-    	}
-    	NgChm.UHM.setTableRow(helpContents,["&nbsp;Value:", matrixValue]);
-    	NgChm.UHM.setTableRow(helpContents,[ "&nbsp;Row:", rowLabels[row-1]]);
-    	NgChm.UHM.setTableRow(helpContents,["&nbsp;Column:", colLabels[col-1]]);
-    	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
-    	var writeFirstCol = true;
-    	var pos = row;
-		var classBars = NgChm.heatMap.getRowClassificationData(); 
-    	var classBarsOrder = NgChm.heatMap.getRowClassificationOrder();
-       	if (classBarsOrder.length > 0) {
-			NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Row Classifications"+"</u>", "&nbsp;"], 2);
-	    	for (var i = 0;  i < classBarsOrder.length; i++){
-	    		var key = classBarsOrder[i];
-				var displayName = key;
-				var classConfig = NgChm.heatMap.getRowClassificationConfig()[key];
-				if (classConfig.show === 'Y') {
-					if (key.length > 20){
-						displayName = key.substring(0,20) + "...";
-					}
-		    		NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", classBars[key].values[pos-1]]);	
-				}
+    	if ((row <= NgChm.heatMap.getNumRows('d')) && (col <= NgChm.heatMap.getNumColumns('d'))) {
+	    	var rowLabels = NgChm.heatMap.getRowLabels().labels;
+	    	var colLabels = NgChm.heatMap.getColLabels().labels;
+	    	NgChm.UHM.setTableRow(helpContents, ["<u>"+"Data Details"+"</u>", "&nbsp;"], 2);
+	    	var matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,row,col);
+	     	if (matrixValue >= NgChm.SUM.maxValues) {
+	    		matrixValue = "Missing Value";
+	    	} else if (matrixValue <= NgChm.SUM.minValues) {
+	    		return;
+	    	} else {
+	    		matrixValue = matrixValue.toFixed(5);
 	    	}
-       	}
-    	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
-    	pos = col
-		var classBars = NgChm.heatMap.getColClassificationData(); 
-    	var classBarsOrder = NgChm.heatMap.getColClassificationOrder();
-       	if (classBarsOrder.length > 0) {
-			NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Column Classifications"+"</u>", "&nbsp;"], 2);
-	    	for (var i = 0;  i < classBarsOrder.length; i++){
-	    		var key = classBarsOrder[i];
-				var displayName = key;
-				var classConfig = NgChm.heatMap.getColClassificationConfig()[key];
-				if (classConfig.show === 'Y') {
-					if (key.length > 20){
-						displayName = key.substring(0,20) + "...";
-					}
-		    		NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", classBars[key].values[pos-1]]);	
-				}
+	    	if (NgChm.SEL.mode === 'FULL_MAP') {
+	    		matrixValue = matrixValue + "<br>(summarized)";
 	    	}
-       	}
-        helptext.style.display="inherit";
-    	helptext.appendChild(helpContents);
-    	NgChm.UHM.locateHelpBox(helptext);
+	    	NgChm.UHM.setTableRow(helpContents,["&nbsp;Value:", matrixValue]);
+	    	NgChm.UHM.setTableRow(helpContents,[ "&nbsp;Row:", rowLabels[row-1]]);
+	    	NgChm.UHM.setTableRow(helpContents,["&nbsp;Column:", colLabels[col-1]]);
+	    	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
+	    	var writeFirstCol = true;
+	    	var pos = row;
+			var classBars = NgChm.heatMap.getRowClassificationData(); 
+	    	var classBarsOrder = NgChm.heatMap.getRowClassificationOrder();
+	       	if (classBarsOrder.length > 0) {
+				NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Row Classifications"+"</u>", "&nbsp;"], 2);
+		    	for (var i = 0;  i < classBarsOrder.length; i++){
+		    		var key = classBarsOrder[i];
+					var displayName = key;
+					var classConfig = NgChm.heatMap.getRowClassificationConfig()[key];
+					if (classConfig.show === 'Y') {
+						if (key.length > 20){
+							displayName = key.substring(0,20) + "...";
+						}
+			    		NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", classBars[key].values[pos-1]]);	
+					}
+		    	}
+	       	}
+	    	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
+	    	pos = col
+			var classBars = NgChm.heatMap.getColClassificationData(); 
+	    	var classBarsOrder = NgChm.heatMap.getColClassificationOrder();
+	       	if (classBarsOrder.length > 0) {
+				NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Column Classifications"+"</u>", "&nbsp;"], 2);
+		    	for (var i = 0;  i < classBarsOrder.length; i++){
+		    		var key = classBarsOrder[i];
+					var displayName = key;
+					var classConfig = NgChm.heatMap.getColClassificationConfig()[key];
+					if (classConfig.show === 'Y') {
+						if (key.length > 20){
+							displayName = key.substring(0,20) + "...";
+						}
+			    		NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", classBars[key].values[pos-1]]);	
+					}
+		    	}
+	       	}
+	        helptext.style.display="inherit";
+	    	helptext.appendChild(helpContents);
+	    	NgChm.UHM.locateHelpBox(helptext);
+    	}
     } else if ((objectType === "rowClass") || (objectType === "colClass")) {
     	var pos, value, label;
     	var hoveredBar, hoveredBarColorScheme;                                                     //coveredWidth = 0, coveredHeight = 0;
