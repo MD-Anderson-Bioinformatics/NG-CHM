@@ -457,7 +457,7 @@ NgChm.UTIL.shadeColor = function (color, pct) {
 NgChm.UTIL.embedLoaded = false;
 NgChm.UTIL.embedThumbWidth = '150px';
 NgChm.UTIL.embedThumbHeight = '150px';
-NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';      // remove any ?query
+NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';     
 
 /**********************************************************************************
  * FUNCTION - embedCHM: This function is a special pre-processing function for the
