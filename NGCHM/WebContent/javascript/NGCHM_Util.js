@@ -455,7 +455,9 @@ NgChm.UTIL.shadeColor = function (color, pct) {
  * 
  **********************************************************************************/
 NgChm.UTIL.embedLoaded = false;
-NgChm.UTIL.embedThumbSize = '75px';
+NgChm.UTIL.embedThumbWidth = '150px';
+NgChm.UTIL.embedThumbHeight = '150px';
+NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';      // remove any ?query
 
 /**********************************************************************************
  * FUNCTION - embedCHM: This function is a special pre-processing function for the
@@ -481,7 +483,8 @@ NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
  **********************************************************************************/
 NgChm.UTIL.showEmbed = function (baseDiv) {
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
-	NgChm.UTIL.embedThumbSize = embeddedWrapper.style.height;
+	NgChm.UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	NgChm.UTIL.embedThumbHeight = embeddedWrapper.style.height;
 	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	var embeddedMap = document.getElementById('NGCHMEmbed');
 	var iFrame = window.frameElement; // reference to iframe element container
@@ -504,13 +507,11 @@ NgChm.UTIL.showEmbed = function (baseDiv) {
 NgChm.UTIL.hideEmbed = function (baseDiv) {
 	var iFrame = window.frameElement; // reference to iframe element container
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
-	iFrame.style.height = NgChm.UTIL.embedThumbSize;
-	embeddedWrapper.style.height = NgChm.UTIL.embedThumbSize;
-	embeddedWrapper.style.width = NgChm.UTIL.embedThumbSize;
+	iFrame.style.height = NgChm.UTIL.embedThumbHeight;
+	embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
 	var embeddedMap = document.getElementById('NGCHMEmbed');
-	embeddedMap.style.height = NgChm.UTIL.embedThumbSize;
-	embeddedWrapper.style.height = NgChm.UTIL.embedThumbSize;
-	embeddedWrapper.style.width = NgChm.UTIL.embedThumbSize;
+	embeddedMap.style.height = NgChm.UTIL.embedThumbHeight;
+	embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
 	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	embeddedMap.style.display = 'none';
 	embeddedCollapse.style.display = 'none';
@@ -518,29 +519,49 @@ NgChm.UTIL.hideEmbed = function (baseDiv) {
 }
 
 /**********************************************************************************
- * FUNCTION - embedExpandableMap: This function constructs the html for embedding
- * a heat map widget within an iFrame object.  The name of the div that the iframe
- * will reside in, the name of heat map ngchm file, and the name of the thumbnail
- * image file are required parameters.  The size for the thumbnail (in pixels) is
- * an optional parameter. 
+ * FUNCTION - setNgchmWidget: This function allows the user to modify the default
+ * for the nghcmWidget-min.js file to a fully pathed location for that file (which
+ * may be under a different name than the file itself)
  **********************************************************************************/
-NgChm.UTIL.embedExpandableMap = function(baseDiv,ngchmFile,thumbFile,jsDir,thumbSize) {
-	if (typeof thumbSize !== 'undefined') {
-		NgChm.UTIL.embedThumbSize = thumbSize;
-	}
-	var embeddedDiv = document.getElementById(baseDiv);
+NgChm.UTIL.setNgchmWidget = function (path) {NgChm.UTIL.defaultNgchmWidget = path};
+
+/**********************************************************************************
+ * FUNCTION - embedExpandableMap: This function constructs the html for embedding
+ * a heat map widget within an iFrame object.  It takes a javascript object (options)
+ * as an input.  The minimum parameters within this object is the ngchm file entry.
+ * Optional entries may be provided for the thumbnail, height, width, and widget JS
+ * location.
+ **********************************************************************************/
+NgChm.UTIL.embedExpandableMap = function (options) {
+	//Exit if no ngchm has been provided
+	if (options.ngchm === undefined) {return;}
+	
+	//Set all option parameters to defaults if not provided
+	if (options.divId === undefined) options.divId = 'NGCHM';
+    if (options.thumbnail === undefined) options.thumbnail = options.ngchm.replace(/\.ngchm$/, '.png');
+    if (options.thumbnailWidth === undefined) options.thumbnailWidth = '150px';
+    if (options.thumbnailHeight === undefined) options.thumbnailHeight = options.thumbnailWidth;
+    if (options.ngchmWidget === undefined) options.ngchmWidget = NgChm.UTIL.defaultNgchmWidget;
+    
+    //set "memory" variables for width/height for collapse functionality
+    NgChm.UTIL.embedThumbWidth = options.thumbnailWidth;
+    NgChm.UTIL.embedThumbWidth = options.thumbnailHeight;
+
+    //Construct a fully configured embedded iframe and add it to the html page
+	var embeddedDiv = document.getElementById(options.divId);
 	var ngchmIFrame = document.createElement('iframe');
-	ngchmIFrame.id = baseDiv+"_iframe";
+	ngchmIFrame.id = options.divId+"_iframe";
 	ngchmIFrame.scrolling = "no";
-	ngchmIFrame.style = "height:"+NgChm.UTIL.embedThumbSize+"; width:100%; border-style:none; ";
+	ngchmIFrame.style = "height:"+options.thumbnailHeight+"; width:100%; border-style:none; ";
 	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups'; 
 	embeddedDiv.appendChild(ngchmIFrame);
 	var doc = ngchmIFrame.contentWindow.document;
 	doc.open();
-	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+NgChm.UTIL.embedThumbSize+"; width: "+NgChm.UTIL.embedThumbSize+"'><img img id='NGCHMEmbedButton' src='"+thumbFile+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this);' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this);' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 5%; width: 100%; border: 2px solid gray; padding: 5px'></div><script src='"+jsDir+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+ngchmFile+"');<\/script></BODY></HTML>");
+	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this);' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this);' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 5%; width: 100%; border: 2px solid gray; padding: 5px'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML>");
 	doc.close();
-}
+};
 
+    
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
  **********************************************************************************/
