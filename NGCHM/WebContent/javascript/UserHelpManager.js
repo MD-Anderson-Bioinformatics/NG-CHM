@@ -554,6 +554,19 @@ NgChm.UHM.viewerAppVersionExpiredNotification = function(oldVersion, newVersion)
 }
 
 /**********************************************************************************
+ * FUNCTION - hamburgerLinkMissing: This function handles all of the tasks 
+ * necessary display a modal window whenever a user's clicks on a hamburger menu
+ * link that has not had it's callback destination defined. 
+ **********************************************************************************/
+NgChm.UHM.hamburgerLinkMissing = function() {
+	NgChm.UHM.initMessageBox();
+	NgChm.UHM.setMessageBoxHeader("NG-CHM Menu Link Error");
+	NgChm.UHM.setMessageBoxText("<br>No destination has been defined for the menu link.");
+	NgChm.UHM.setMessageBoxButton(1, "images/closeButton.png", "", "NgChm.UHM.messageBoxCancel");
+	document.getElementById('msgBox').style.display = '';
+}
+
+/**********************************************************************************
  * FUNCTION - zipAppDownload: This function calls the Matrix Manager to initiate
  * the download of the NG-CHM File Viewer application. 
  **********************************************************************************/

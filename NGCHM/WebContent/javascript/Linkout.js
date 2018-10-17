@@ -66,6 +66,10 @@ linkouts.simplifyLabels = function (labels) {
         return labels.sort().filter(function(el,i,a){return i===a.indexOf(el);});
 };
 
+linkouts.addHamburgerLinkout = function(params){
+	NgChm.LNK.addHamburgerLinkout(params);
+}
+
 /*******************************************
  * END EXTERNAL INTERFACE
  *******************************************/
@@ -74,6 +78,25 @@ linkouts.simplifyLabels = function (labels) {
 NgChm.createNS('NgChm.LNK');
 //Used to store the label item that the user clicked-on
 NgChm.LNK.selection = 0;
+//Used to place items into the hamburger menu (incremented from starting point of 8 which is just after the gear in the menu
+NgChm.LNK.hamburgerLinkCtr = 8;
+
+//Add a linkout to the Hamburger menu
+NgChm.LNK.addHamburgerLinkout = function(params) {
+	var burgerMenu = document.getElementById('menuPanel');
+	//Verify params and set defaults
+	if (params.name === undefined) {return;}
+	if (params.label === undefined) {params.label = params.name;}
+	if (params.icon === undefined) {params.icon = 'images/link.png';}
+	if (params.action === undefined) {params.action = 'NgChm.UHM.hamburgerLinkMissing();'}
+	//Create linkout div using params
+	var wrapper= document.createElement('div');
+	wrapper.innerHTML= "<div id='"+params.name+"' class='menuitem' onclick='"+params.action+"'> <img id='menu"+params.name+"_btn' class='menuitem' name ='menu"+params.name+"' src='"+params.icon+"' align='middle'>&nbsp;&nbsp;"+params.label+"...<br><br></div>";
+	var burgerLinkDiv= wrapper.firstChild;
+	//Add linkout to burger menu
+	burgerMenu.insertBefore(burgerLinkDiv, burgerMenu.children[NgChm.LNK.hamburgerLinkCtr]);
+	NgChm.LNK.hamburgerLinkCtr++;
+}
 
 //the linkout object
 NgChm.LNK.linkout = function(title, labelType, selectType, reqAttributes, callback){
