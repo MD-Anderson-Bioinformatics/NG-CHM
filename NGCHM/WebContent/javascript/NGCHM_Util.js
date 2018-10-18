@@ -488,6 +488,7 @@ NgChm.UTIL.showEmbed = function (baseDiv) {
 	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	var embeddedMap = document.getElementById('NGCHMEmbed');
 	var iFrame = window.frameElement; // reference to iframe element container
+	iFrame.className='ngchm';
 	iFrame.style.height = '100%';
 	embeddedMap.style.height = '90%';
 	embeddedMap.style.width = '90%';
@@ -506,6 +507,7 @@ NgChm.UTIL.showEmbed = function (baseDiv) {
  **********************************************************************************/
 NgChm.UTIL.hideEmbed = function (baseDiv) {
 	var iFrame = window.frameElement; // reference to iframe element container
+	iFrame.className='ngchmThumbnail';
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
 	iFrame.style.height = NgChm.UTIL.embedThumbHeight;
 	embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
@@ -550,10 +552,11 @@ NgChm.UTIL.embedExpandableMap = function (options) {
     //Construct a fully configured embedded iframe and add it to the html page
 	var embeddedDiv = document.getElementById(options.divId);
 	var ngchmIFrame = document.createElement('iframe');
-	ngchmIFrame.id = options.divId+"_iframe";
+	ngchmIFrame.id = options.divId+"_iframe"; 
 	ngchmIFrame.scrolling = "no";
 	ngchmIFrame.style = "height:"+options.thumbnailHeight+"; width:100%; border-style:none; ";
 	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups'; 
+	ngchmIFrame.className='ngchmThumbnail';
 	embeddedDiv.appendChild(ngchmIFrame);
 	var doc = ngchmIFrame.contentWindow.document;
 	doc.open();

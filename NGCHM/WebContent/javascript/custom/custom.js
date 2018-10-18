@@ -8,10 +8,8 @@
 
 (function(linkouts) {
 
-	//BEGIN SAMPLE Linkouts to the Hamburger Menu
+	/*BEGIN SAMPLE Linkouts to the Hamburger Menu
 	//TODO: replace with "real" hamburger linkout(s)
-	//No Name provided
-	linkouts.addHamburgerLinkout({});  
 	//Using default icon
 	linkouts.addHamburgerLinkout({name: "menuLink2", label: "Execute Menu Link 1", action: "linkoutHelp();"});
 	//Using different icon from server
@@ -22,8 +20,8 @@
 	linkouts.addHamburgerLinkout({name: "menuLink5", action: "openWidgetHelp();"});
 	//No action provided
 	linkouts.addHamburgerLinkout({name: "menuLink6"});
-	//END SAMPLE Linkouts to the Hamburger Menu
-
+	//END SAMPLE Linkouts to the Hamburger Menu*/
+ 
 	//Add Heat Map Linkouts
 	linkouts.addSubtype ("bio.gene.hugo", "bio.pubmed");
     linkouts.addSubtype ("bio.mirna", "bio.pubmed");
@@ -87,8 +85,8 @@
     ]);
 }) (linkouts);
 
-//BEGIN Sample Hamburger Linkout Functions
-//TODO: replace with "real" hamburger linkout function(s)
+/*BEGIN Sample Hamburger Linkout Functions
+ TODO: replace with "real" hamburger linkout function(s)
 function openWidgetHelp () {
 	NgChm.UHM.widgetHelp();
 }
@@ -96,8 +94,8 @@ function openWidgetHelp () {
 function linkoutHelp () {
 	NgChm.UHM.openLinkoutHelp();
 }
-//END Sample Hamburger Linkout Functions
-
+//END Sample Hamburger Linkout Functions*/
+ 
 //==============================================//
 // Amigo plugin                                 //
 //==============================================//
