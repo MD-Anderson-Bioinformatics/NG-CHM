@@ -189,24 +189,34 @@ NgChm.SUM.initSummarySize = function(applying) {
 
 // Sets summary and detail chm to newly adjusted size.
 NgChm.SUM.setSummarySize = function() {
-	var msgButton = document.getElementById('messageOpen_btn');
-	var left = NgChm.SUM.rowDendro.getDivWidth()*NgChm.SUM.widthPct + NgChm.SUM.paddingHeight;
-	var top = NgChm.SUM.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
-	var width = document.getElementById("summary_chm").clientWidth - NgChm.SUM.rowDendro.getDivWidth() - NgChm.SUM.rowTopItemsHeight;
-	var height = document.getElementById("container").clientHeight*NgChm.SUM.heightPct - NgChm.SUM.colDendro.getDivHeight() - NgChm.SUM.colTopItemsWidth;
-
-	NgChm.SUM.canvas.style.left=left;
-	NgChm.SUM.canvas.style.top=top;
-	NgChm.SUM.canvas.style.width=width;
-	NgChm.SUM.canvas.style.height=height;
-	NgChm.SUM.setSelectionDivSize();
-	//The selection box canvas is on top of the webGL canvas but
-	//is always resized to the actual on screen size to draw boxes clearly.
-	NgChm.SUM.boxCanvas.style.left=left;
-	NgChm.SUM.boxCanvas.style.top=NgChm.SUM.canvas.style.top;
-	NgChm.SUM.boxCanvas.width = width+1;
-	NgChm.SUM.boxCanvas.height = height+1;
-	NgChm.DET.setDetCanvasBoxSize();
+	if (NgChm.SUM.canvas !== undefined) {
+		var msgButton = document.getElementById('messageOpen_btn');
+		var rowDendroWidth = 0;
+		if ((NgChm.SUM.rowDendro !== null) && (NgChm.SUM.rowDendro !== undefined)) {
+			rowDendroWidth = NgChm.SUM.rowDendro.getDivWidth();
+		}
+		var colDendroHeight = 0;
+		if ((NgChm.SUM.colDendro !== null) && (NgChm.SUM.colDendro !== undefined)) {
+			colDendroHeight = NgChm.SUM.colDendro.getDivHeight();
+		}
+		var left = rowDendroWidth*NgChm.SUM.widthPct + NgChm.SUM.paddingHeight;
+		var top = colDendroHeight + NgChm.SUM.paddingHeight;
+		var width = document.getElementById("summary_chm").clientWidth - rowDendroWidth - NgChm.SUM.rowTopItemsHeight;
+		var height = document.getElementById("container").clientHeight*NgChm.SUM.heightPct - colDendroHeight - NgChm.SUM.colTopItemsWidth;
+	
+		NgChm.SUM.canvas.style.left=left;
+		NgChm.SUM.canvas.style.top=top;
+		NgChm.SUM.canvas.style.width=width;
+		NgChm.SUM.canvas.style.height=height;
+		NgChm.SUM.setSelectionDivSize();
+		//The selection box canvas is on top of the webGL canvas but
+		//is always resized to the actual on screen size to draw boxes clearly.
+		NgChm.SUM.boxCanvas.style.left=left;
+		NgChm.SUM.boxCanvas.style.top=NgChm.SUM.canvas.style.top;
+		NgChm.SUM.boxCanvas.width = width+1;
+		NgChm.SUM.boxCanvas.height = height+1;
+		NgChm.DET.setDetCanvasBoxSize();
+	}
 }
 
 NgChm.SUM.setTopItemsSize = function (){
@@ -1407,7 +1417,7 @@ NgChm.SUM.calculateSummaryTotalClassBarHeight = function(axis,stopOn) {
 //Selection Label Functions *//
 //***************************//
 NgChm.SUM.summaryResize = function() {
-	if(!NgChm.SEL.isSub){
+	if ((!NgChm.SEL.isSub) && (NgChm.SUM.canvas !== undefined)) {
 		NgChm.SUM.setSummarySize();
 		NgChm.SUM.colDendro.resize();
 		NgChm.SUM.colDendro.draw();

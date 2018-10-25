@@ -1356,10 +1356,19 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 	var dataSelectionColorRGB = colorMap.getHexToRgba(dataLayer.selection_color);
 	var dataSelectionColor = [dataSelectionColorRGB.r/255, dataSelectionColorRGB.g/255, dataSelectionColorRGB.b/255, 1];
 	var regularGridColor = [dataGridColor.r, dataGridColor.g, dataGridColor.b];
+	var cutsColor = colorMap.getHexToRgba(dataLayer.cuts_color);
  
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
-	var gridLine = new Uint8Array(new ArrayBuffer((rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA));
-	var whiteLine = new Uint8Array(new ArrayBuffer((rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA));
+	var linelen = (rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA;
+	var gridLine = new Uint8Array(new ArrayBuffer(linelen));
+	//Build a horizontal cuts line using the cut color defined for the data layer.
+	var cutsLine = new Uint8Array(new ArrayBuffer(linelen));
+	for (var i=0;i<linelen;i++) {
+		cutsLine[i] = cutsColor.r;i++;
+		cutsLine[i] = cutsColor.g;i++;
+		cutsLine[i] = cutsColor.b;i++;
+		cutsLine[i] = cutsColor.a;
+	}
 	if (showGrid == true) {
 		var linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
@@ -1374,7 +1383,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 					if ((k === NgChm.DET.dataBoxWidth - 1) && (nextVal > NgChm.SUM.minValues)) {
 						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
 					} else {
-						gridLine[linePos] = 255; gridLine[linePos+1] = 255; gridLine[linePos+2] = 255;	gridLine[linePos+3] = 0;
+						gridLine[linePos] = cutsColor.r; gridLine[linePos+1] = cutsColor.g; gridLine[linePos+2] = cutsColor.b;	gridLine[linePos+3] = cutsColor.a;
 					}
 				} else {
 					if (k==NgChm.DET.dataBoxWidth-1 && showGrid == true ){ // should the grid line be drawn?
@@ -1422,7 +1431,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 					if (j < detDataPerRow-1) {
 						//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
 						if ((val <= NgChm.SUM.minValues) && (nextVal <= NgChm.SUM.minValues)) {
-							line[linePos] = 255; line[linePos+1] = 255; line[linePos+2] = 255;	line[linePos+3] = 0;
+							line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
 						} else {
 							line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
 						}
@@ -1442,7 +1451,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 					//IF the line being drawn was comprised entirely of cut values, draw an empty white line as the horizontal grid line,
 					//ELSE draw the normal grid line as the horizontal grid line
 					if (isHorizCut === true) {
-						NgChm.DET.texPixels[pos]=whiteLine[k];
+						NgChm.DET.texPixels[pos]=cutsLine[k];
 					} else {
 						NgChm.DET.texPixels[pos]=gridLine[k];
 					}
@@ -1506,18 +1515,20 @@ NgChm.DET.isLineACut = function (row) {
 }
 
 NgChm.DET.detailResize = function () {
-	 NgChm.DET.clearLabels();
-	 NgChm.DET.rowDendro.resize();
-	 NgChm.DET.colDendro.resize();
-	 NgChm.DET.sizeCanvasForLabels();
-	 //Done twice because changing canvas size affects fonts selected for drawing labels
-	 NgChm.DET.sizeCanvasForLabels();
-	 NgChm.DET.drawRowAndColLabels();
-	 NgChm.DET.drawSelections();
-	 NgChm.DET.detailDrawColClassBarLabels();
-	 NgChm.DET.detailDrawRowClassBarLabels();
-	 NgChm.DET.rowDendro.resizeAndDraw();
-	 NgChm.DET.colDendro.resizeAndDraw();
+	 if (NgChm.DET.canvas !== undefined) {
+		 NgChm.DET.clearLabels();
+		 NgChm.DET.rowDendro.resize();
+		 NgChm.DET.colDendro.resize();
+		 NgChm.DET.sizeCanvasForLabels();
+		 //Done twice because changing canvas size affects fonts selected for drawing labels
+		 NgChm.DET.sizeCanvasForLabels();
+		 NgChm.DET.drawRowAndColLabels();
+		 NgChm.DET.drawSelections();
+		 NgChm.DET.detailDrawColClassBarLabels();
+		 NgChm.DET.detailDrawRowClassBarLabels();
+		 NgChm.DET.rowDendro.resizeAndDraw();
+		 NgChm.DET.colDendro.resizeAndDraw();
+	 }
 }
 
 //This function calculates and adjusts the size of the detail canvas and box canvas
@@ -1543,8 +1554,14 @@ NgChm.DET.sizeCanvasForLabels = function() {
 	//Add remainders to width/height for computation
 	var dFullW = dChm.clientWidth + remainW;
 	var dFullH = dChm.clientHeight + remainH;
-	var left = NgChm.DET.rowDendro.getDivWidth();
-	var top = NgChm.DET.colDendro.getDivHeight();
+	var left = 0;
+	if ((NgChm.DET.rowDendro !== null) && (NgChm.DET.rowDendro !== undefined)) {
+		left = NgChm.DET.rowDendro.getDivWidth();
+	}
+	var top = 0;
+	if ((NgChm.DET.colDendro !== null) && (NgChm.DET.colDendro !== undefined)) {
+		top = NgChm.DET.colDendro.getDivHeight();
+	}
 	//Set sizes of canvas and boxCanvas based upon width, label, and an offset for whitespace
 	NgChm.DET.canvas.style.left = left;
 	NgChm.DET.canvas.style.top = top;
