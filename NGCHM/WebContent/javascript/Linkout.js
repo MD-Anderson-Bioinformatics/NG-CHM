@@ -447,7 +447,7 @@ NgChm.LNK.populateLabelMenu = function(axis, axisLabelsLength){
 	} else {
 		//Always add clipboard link at top of list
 		NgChm.LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
-		if (indLinkouts.length > 0) {
+		if ((indLinkouts.length > 0) && (NgChm.LNK.selection !== undefined)) {
 			var addedHeader = false;
 			for (var k=0; k < indLinkouts.length;k++ ) {
 				addedHeader = NgChm.LNK.addMenuItemToTable(axis, table, indLinkouts[k].linkout, addedHeader);

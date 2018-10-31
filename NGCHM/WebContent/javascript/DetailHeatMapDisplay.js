@@ -1579,7 +1579,8 @@ NgChm.DET.sizeCanvasForLabels = function() {
 	colLabelDiv.style.left = 0;
 	colLabelDiv.style.width = dFullW - (NgChm.DET.rowLabelLen + 35);
 	colLabelDiv.style.top = NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.clientHeight;
-	colLabelDiv.style.height =  NgChm.DET.chmElement.clientHeight - NgChm.DET.canvas.offsetTop - NgChm.DET.canvas.clientHeight;
+	var heightCalc = NgChm.DET.chmElement.clientHeight - NgChm.DET.canvas.offsetTop - NgChm.DET.canvas.clientHeight;
+	colLabelDiv.style.height =  heightCalc === 0 ? 11 : heightCalc;
 }
 
 //This function clears all labels on the detail panel and resets the maximum
