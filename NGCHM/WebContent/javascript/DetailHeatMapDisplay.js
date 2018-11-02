@@ -1363,11 +1363,13 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 	var gridLine = new Uint8Array(new ArrayBuffer(linelen));
 	//Build a horizontal cuts line using the cut color defined for the data layer.
 	var cutsLine = new Uint8Array(new ArrayBuffer(linelen));
-	for (var i=0;i<linelen;i++) {
-		cutsLine[i] = cutsColor.r;i++;
-		cutsLine[i] = cutsColor.g;i++;
-		cutsLine[i] = cutsColor.b;i++;
-		cutsLine[i] = cutsColor.a;
+	if ((cutsColor !== null) && (cutsColor !== undefined)) {
+		for (var i=0;i<linelen;i++) {
+			cutsLine[i] = cutsColor.r;i++;
+			cutsLine[i] = cutsColor.g;i++;
+			cutsLine[i] = cutsColor.b;i++;
+			cutsLine[i] = cutsColor.a;
+		}
 	}
 	if (showGrid == true) {
 		var linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
