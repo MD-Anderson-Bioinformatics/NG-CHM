@@ -11,6 +11,7 @@ NgChm.createNS('NgChm.SEL');
 
 //Globals that provide information about heat map position selection.
 NgChm.SEL.mode = 'NORMAL';      // Set to normal or ribbon vertical or ribbon horizontal 
+NgChm.SEL.prevMode = 'NORMAL';  // When the mode changes, keep track of what it used to be 
 NgChm.SEL.currentDl = "dl1";    // Set (default) to Data Layer 1 (set in application by user when flick views are toggled)
 NgChm.SEL.currentRow=null;      // Top row of current selected position
 NgChm.SEL.currentCol=null;      // Left column of the current selected position
@@ -67,6 +68,7 @@ NgChm.SEL.changeMode = function(newMode) {
 	if (!NgChm.SEL.hasSub) {
 		NgChm.SEL.callDetailDrawFunction(newMode);
 	} else {
+		NgChm.SEL.prevMode = NgChm.SEL.mode;
 		NgChm.SEL.mode = newMode;
 		localStorage.removeItem('event');
 		localStorage.setItem('selectedStart', '' + NgChm.SEL.selectedStart);
@@ -75,6 +77,11 @@ NgChm.SEL.changeMode = function(newMode) {
 		localStorage.setItem('event', 'changeMode');
 		localStorage.setItem('selected', JSON.stringify(NgChm.SEL.searchItems));
 	}
+}
+
+NgChm.SEL.setMode = function(newMode) {
+	NgChm.SEL.prevMode = NgChm.SEL.mode;
+	NgChm.SEL.mode = newMode;
 }
 
 /**********************************************************************************

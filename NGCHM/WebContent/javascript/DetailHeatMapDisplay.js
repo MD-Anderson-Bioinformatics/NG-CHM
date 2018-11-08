@@ -799,7 +799,13 @@ NgChm.DET.isOnObject = function (e,type) {
 NgChm.DET.detailDataZoomIn = function () {
 	NgChm.UHM.userHelpClose();	
 	if (NgChm.SEL.mode == 'FULL_MAP') {
-		NgChm.DET.detailNormal();
+		if ((NgChm.SEL.prevMode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
+			NgChm.DET.detailHRibbonButton();
+		} else if  ((NgChm.SEL.prevMode == 'RIBBONV') || (NgChm.SEL.prevMode == 'RIBBONV_DETAIL')) {
+			NgChm.DET.detailVRibbonButton();
+		} else {
+			NgChm.DET.detailNormal();
+		}
 	} else if (NgChm.SEL.mode == 'NORMAL') {
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxWidth);
 		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
@@ -831,22 +837,34 @@ NgChm.DET.detailDataZoomOut = function () {
 			NgChm.DET.setDetailDataSize (NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection();
 		} else {
-			//If we can't zoom out anymore, switch to full map view.
-			NgChm.DET.detailFullMap();	
+			//If we can't zoom out anymore see if ribbon mode would show more of the map or , switch to full map view.
+			if ((current > 0) && (NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) ) {
+				NgChm.DET.detailVRibbonButton();
+			} else if ((current > 0) && (NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) ) {
+				NgChm.DET.detailHRibbonButton();
+			} else {
+				NgChm.DET.detailFullMap();
+			}	
 		}	
-	} else if ((NgChm.SEL.mode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
+	} 
+	if ((NgChm.SEL.mode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxHeight);
 		if ((current > 0) &&
 		    (Math.floor((NgChm.DET.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL))) {
 			NgChm.DET.setDetailDataHeight (NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection();
+		}	else {
+			NgChm.DET.detailFullMap();
 		}	
-	} else if ((NgChm.SEL.mode == 'RIBBONV') || (NgChm.SEL.mode == 'RIBBONV_DETAIL')){
+	} 
+	if ((NgChm.SEL.mode == 'RIBBONV') || (NgChm.SEL.mode == 'RIBBONV_DETAIL')){
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxWidth);
 		if ((current > 0) &&
 		    (Math.floor((NgChm.DET.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))){
 			NgChm.DET.setDetailDataWidth (NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection();
+		}	else {
+			NgChm.DET.detailFullMap();
 		}	
 	}
 }
@@ -910,7 +928,7 @@ NgChm.DET.detailHRibbon = function () {
 	NgChm.DET.saveCol = NgChm.SEL.currentCol;
 	
 		
-	NgChm.SEL.mode='RIBBONH';
+	NgChm.SEL.setMode('RIBBONH');
 	NgChm.DET.setButtons();
 	if (previousMode=='FULL_MAP') {
 		NgChm.DET.setDetailDataHeight(NgChm.DET.zoomBoxSizes[0]);
@@ -942,8 +960,10 @@ NgChm.DET.detailHRibbon = function () {
 	}
 	
 	NgChm.DET.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
-	if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL')) {
-		NgChm.DET.setDetailDataHeight(prevWidth);
+	if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
+		if (previousMode != 'FULL_MAP') {
+			NgChm.DET.setDetailDataHeight(prevWidth);
+		}	
 		NgChm.SEL.currentRow=NgChm.DET.saveRow;
 	}	
 
@@ -965,7 +985,7 @@ NgChm.DET.detailVRibbon = function () {
 	var prevHeight = NgChm.DET.dataBoxHeight;
 	NgChm.DET.saveRow = NgChm.SEL.currentRow;
 	
-	NgChm.SEL.mode='RIBBONV';
+	NgChm.SEL.setMode('RIBBONV');
 	NgChm.DET.setButtons();
 	if (previousMode=='FULL_MAP') {
 		NgChm.DET.setDetailDataWidth(NgChm.DET.zoomBoxSizes[0]);
@@ -986,7 +1006,7 @@ NgChm.DET.detailVRibbon = function () {
 		NgChm.DET.saveRow = NgChm.SEL.selectedStart;
 		var selectionSize = NgChm.SEL.selectedStop - NgChm.SEL.selectedStart + 1;
 		if (selectionSize < 500) {
-			NgChm.SEL.mode = 'RIBBONV_DETAIL';
+			NgChm.SEL.setMode('RIBBONV_DETAIL');
 		} else {
 			var rvRate = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
 			selectionSize = Math.floor(selectionSize / rvRate);			
@@ -998,8 +1018,10 @@ NgChm.DET.detailVRibbon = function () {
 	}
 	
 	NgChm.DET.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
-	if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
-		NgChm.DET.setDetailDataWidth(prevHeight);
+	if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
+		if (previousMode != 'FULL_MAP') {
+			NgChm.DET.setDetailDataWidth(prevHeight);
+		}
 		NgChm.SEL.currentCol = NgChm.DET.saveCol;
 	}
 	
@@ -1020,7 +1042,7 @@ NgChm.DET.detailVRibbon = function () {
 NgChm.DET.detailNormal = function () {
 	NgChm.UHM.userHelpClose();	
 	var previousMode = NgChm.SEL.mode;
-	NgChm.SEL.mode = 'NORMAL';
+	NgChm.SEL.setMode('NORMAL');
 	NgChm.DET.setButtons();
 	NgChm.DET.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
 	NgChm.DET.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
@@ -1063,7 +1085,7 @@ NgChm.DET.detailNormal = function () {
 //Special mode - show the whole map in the detail pane.
 NgChm.DET.detailFullMap = function () {
 	NgChm.UHM.userHelpClose();	
-	NgChm.SEL.mode = 'FULL_MAP';
+	NgChm.SEL.setMode('FULL_MAP');
 	NgChm.DET.saveRow = NgChm.SEL.currentRow;
 	NgChm.DET.saveCol = NgChm.SEL.currentCol;
 	
