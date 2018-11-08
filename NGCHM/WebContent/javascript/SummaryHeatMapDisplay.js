@@ -1748,10 +1748,11 @@ NgChm.SUM.drawTopItems = function(){
 	}
 }
 
-NgChm.SUM.dividerStart = function() {
+NgChm.SUM.dividerStart = function(e) {
 	NgChm.UHM.userHelpClose();
+	e.preventDefault();
 	document.addEventListener('mousemove', NgChm.SUM.dividerMove);
-	document.addEventListener('touchmove', NgChm.SUM.dividerMove);
+	document.addEventListener('touchmove', NgChm.SUM.dividerMove, {passive: false});
 	document.addEventListener('mouseup', NgChm.SUM.dividerEnd);
 	document.addEventListener('touchend',NgChm.SUM.dividerEnd);
 }
@@ -1759,14 +1760,19 @@ NgChm.SUM.dividerStart = function() {
 NgChm.SUM.dividerMove = function(e) {
 	NgChm.heatMap.setUnAppliedChanges(true);
 	e.preventDefault();
+//	e.stopPropagation();
+	var x = e.movementX;
 	var divider = document.getElementById('divider');
 	if (e.touches){
     	if (e.touches.length > 1){
     		return false;
+    	} else {
+    		x = NgChm.DET.getCursorPosition(e).x;
     	}
     }
+	
 	var summary = document.getElementById('summary_chm');
-	var summaryX = summary.offsetWidth + e.movementX;
+	var summaryX = summary.offsetWidth + x;
 	summary.style.width=summaryX+'px';
 	NgChm.SUM.setSummarySize();
 	NgChm.SUM.colDendro.resize();
@@ -1775,7 +1781,7 @@ NgChm.SUM.dividerMove = function(e) {
 		return
 	}
 	var detail = document.getElementById('detail_chm');
-	var detailX = detail.offsetWidth -e.movementX;
+	var detailX = detail.offsetWidth -x;
 	detail.style.width=detailX+'px';
 	if(document.getElementById("missingSumRowClassBars")) document.getElementById("missingSumRowClassBars").remove();
 	if(document.getElementById("missingSumColClassBars")) document.getElementById("missingSumColClassBars").remove();
@@ -1786,6 +1792,7 @@ NgChm.SUM.dividerMove = function(e) {
 }
 
 NgChm.SUM.dividerEnd = function(e) {
+	e.preventDefault();
 	document.removeEventListener('mousemove', NgChm.SUM.dividerMove);
 	document.removeEventListener('mouseup', NgChm.SUM.dividerEnd);
 	document.removeEventListener('touchmove',NgChm.SUM.dividerMove);
