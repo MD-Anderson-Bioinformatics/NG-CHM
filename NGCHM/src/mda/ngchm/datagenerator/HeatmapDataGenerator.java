@@ -1830,7 +1830,7 @@ public class HeatmapDataGenerator {
 		        g2.drawImage(cDendImg, null, imgWDiff+finalDendH+offset, imgHDiff);
 		        g2.drawImage(hmScale, null, imgWDiff+finalDendH+offset, imgHDiff+finalDendH+offset);
 		        g2.dispose();
-		        File outputFile = new File(iData.outputDir+File.separator + "tn.png"); 
+		        File outputFile = new File(iData.outputDir+File.separator + iData.chmName + "_tn.png"); 
 		        ImageIO.write(newImage, "png", outputFile);
 		    } catch (Exception ex) {
 				System.out.println("Exception in HeatmapDataGenerator.buildTnThumbnail: " + ex.toString());  
@@ -1892,7 +1892,7 @@ public class HeatmapDataGenerator {
 		            
 		        }
 		        iData.tnImage = image;
-		        File outputFile = new File(iData.outputDir+File.separator + "tnPre.png"); 
+		        File outputFile = new File(iData.outputDir+File.separator + iData.chmName + "_tnMap.png"); 
 		        ImageIO.write(image, "png", outputFile);
 		    } catch (Exception ex) {
 				System.out.println("Exception in HeatmapDataGenerator.createTnHeatmapImg: " + ex.toString());  

@@ -151,10 +151,10 @@ public class NGCHM_Widgetizer {
 	       	bw.write("var ngChmWidgetMode = '" + mode + "'\n");
     		bw.write("var htmlContent = \"" + finalHtml + "\"\n");
     		bw.write("var embedDiv = document.getElementById(\"NGCHMEmbed\");\n");
-    		bw.write("embedDiv.innerHTML = htmlContent;\n");
+    		bw.write("if (embedDiv !== null) {embedDiv.innerHTML = htmlContent;}\n");
     		bw.write(scriptedLines.toString());
     		//hide split screen and save buttons for "widget mode"
-       		bw.write("document.getElementById('split_btn').style.display = 'none';\n");
+       		bw.write("if (document.getElementById('split_btn') !== null) {document.getElementById('split_btn').style.display = 'none';}\n");
        		if (mode.equals("web")) {
        		    bw.write("document.getElementById('save_btn').style.display = 'none';\n"); 
        		}

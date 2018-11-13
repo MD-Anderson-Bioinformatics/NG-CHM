@@ -78,8 +78,8 @@ linkouts.addHamburgerLinkout = function(params){
 NgChm.createNS('NgChm.LNK');
 //Used to store the label item that the user clicked-on
 NgChm.LNK.selection = 0;
-//Used to place items into the hamburger menu (incremented from starting point of 8 which is just after the gear in the menu
-NgChm.LNK.hamburgerLinkCtr = 8;
+//Used to place items into the hamburger menu (incremented from starting point of 10 which is just after the gear in the menu.  this value MUST be edited if adding an item before the gear)
+NgChm.LNK.hamburgerLinkCtr = 10;
 
 //Add a linkout to the Hamburger menu
 NgChm.LNK.addHamburgerLinkout = function(params) {

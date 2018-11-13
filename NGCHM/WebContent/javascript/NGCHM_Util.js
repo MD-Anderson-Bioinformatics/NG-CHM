@@ -446,6 +446,128 @@ NgChm.UTIL.shadeColor = function (color, pct) {
     return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
 }
 
+/**********************************************************************************
+ * FUNCTION - downloadSummaryPng: This function downloads a PNG image of the 
+ * summary canvas.
+ **********************************************************************************/
+NgChm.UTIL.downloadSummaryMapPng = function () {   
+	  var mapName = NgChm.heatMap.getMapInformation().name;
+	  var dataURL = NgChm.SUM.canvas.toDataURL('image/png');
+	  var dl = document.createElement('a');
+	  NgChm.UTIL.scalePngImage(dataURL, 200, 200, dl, function(canvas){
+			dl.setAttribute('href', canvas.toDataURL('image/png'));
+			dl.setAttribute('download', mapName+'_tnMap.png');
+			dl.click();
+	  });
+}
+
+NgChm.UTIL.downloadSummaryPng = function () { 
+	  var mapName = NgChm.heatMap.getMapInformation().name;
+	  var dataURL = NgChm.SUM.canvas.toDataURL('image/png');
+	  var colDCanvas = document.getElementById("column_dendro_canvas");
+	  var rowDCanvas = document.getElementById("row_dendro_canvas");
+	  var colDURL =  colDCanvas.toDataURL('image/png');
+	  var rowDURL =   rowDCanvas.toDataURL('image/png');
+	  var dl = document.createElement('a');
+	  var colDCImg = new Image();
+	  var colDRImg = new Image();
+	  var mapImg = new Image();
+	  NgChm.UTIL.scalePngImage(colDURL, 200, 50, dl, function(canvas){
+		  colDCImg.onload = function(){
+			  NgChm.UTIL.scalePngImage(rowDURL, 50, 200, dl, function(canvas){
+				  colDRImg.onload = function(){
+					  NgChm.UTIL.scalePngImage(dataURL, 200, 200, dl, function(canvas){
+						  mapImg.onload = function(){
+							  var dl1 = document.createElement('b');
+							  NgChm.UTIL.combinePngImage(colDCImg, colDRImg, mapImg, 200, 200, dl, function(canvas){
+								  dl.setAttribute('href', canvas.toDataURL('image/png'));
+								  dl.setAttribute('download', mapName+'_tn.png');
+								  dl.click();
+							  });
+						  }
+						  mapImg.src = canvas.toDataURL('image/png');
+					  });
+				  }
+				  colDRImg.src = canvas.toDataURL('image/png');
+			  });
+		  }
+		  colDCImg.src = canvas.toDataURL('image/png');
+	  });
+}
+
+
+
+/**********************************************************************************
+ * FUNCTION - combinePngImage: This function takes the scaled row dendro image,
+ * scaled column dendro image, and heat map image and combines them into one
+ * 200x200 image png.
+ **********************************************************************************/
+NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callback) {
+		var rcWidth = NgChm.SUM.rowClassBarWidth === 0 ? 1 : NgChm.SUM.rowClassBarWidth;
+		var ccHeight = NgChm.SUM.colClassBarHeight === 0 ? 1 : NgChm.SUM.colClassBarHeight;
+		var canHeight = NgChm.SUM.canvas.height;
+		var canWidth = NgChm.SUM.canvas.width;
+		var rcRatio = rcWidth/canWidth;
+		var ccRatio = ccHeight/canHeight;
+		var canvas = document.createElement("canvas");
+		ctx = canvas.getContext("2d");
+		ctx.imageSmoothingEnabled = false;
+		var mapWidth = width;
+		var mapHeight = height;
+		//Row covar width
+		var rcWidth = width*rcRatio;
+		//Col covar height
+		var ccHeight = height*ccRatio;
+		var cDWidth = width-rcWidth;
+		var cDHeight = height/4;
+		var rDWidth = width/4;
+		var rDHeight = height-ccHeight;
+		canvas.width = width + rDWidth;
+		canvas.height= height + cDHeight;
+		var cDShow = (NgChm.heatMap.getColDendroConfig().show === 'ALL') || (NgChm.heatMap.getColDendroConfig().show === 'SUMMARY') ? true : false;
+		var rDShow = (NgChm.heatMap.getRowDendroConfig().show === 'ALL') || (NgChm.heatMap.getRowDendroConfig().show === 'SUMMARY') ? true : false;
+		var mapStartX = 0;
+		var mapStartY = 0;
+		// draw the img into canvas
+		if (cDShow === true){
+			ctx.drawImage(img1, rDWidth+rcWidth, 0, cDWidth, cDHeight);
+			mapStartY = cDHeight;
+		} else {
+			mapHeight = mapHeight + cDHeight;
+		}
+		if (rDShow === true){
+			ctx.drawImage(img2, 0, cDHeight+ccHeight, rDWidth, rDHeight);
+			mapStartX = rDWidth;
+		} else {
+			mapWidth = mapWidth + rDWidth;
+		}
+		ctx.drawImage(img3, mapStartX, mapStartY, mapWidth, mapHeight);
+		// Run the callback on what to do with the canvas element.
+		callback(canvas, dl);
+}
+
+/**********************************************************************************
+ * FUNCTION - scaleSummaryPng: This function scales the summary PNG file down to 
+ * the width and height specified (currently this is set to 200x200 pixels).
+ **********************************************************************************/
+NgChm.UTIL.scalePngImage = function (url, width, height, dl, callback) {
+	var img = new Image();
+
+	// When the images is loaded, resize it in canvas.
+	img.onload = function(){
+		var canvas = document.createElement("canvas");
+        ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = false;
+        canvas.width = width;
+        canvas.height= height;
+        // draw the img into canvas
+        ctx.drawImage(img, 0, 0, width, height);
+        // Run the callback on what to do with the canvas element.
+        callback(canvas, dl);
+	};
+
+	img.src = url;
+}
 
 /**********************************************************************************
  * BEGIN: EMBEDDED MAP FUNCTIONS AND GLOBALS
@@ -481,7 +603,7 @@ NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
  * FUNCTION - showEmbed: This function shows the embedded heat map when the
  * user clicks on the embedded map image.
  **********************************************************************************/
-NgChm.UTIL.showEmbed = function (baseDiv) {
+NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight) {
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
 	NgChm.UTIL.embedThumbWidth = embeddedWrapper.style.width;
 	NgChm.UTIL.embedThumbHeight = embeddedWrapper.style.height;
@@ -489,12 +611,21 @@ NgChm.UTIL.showEmbed = function (baseDiv) {
 	var embeddedMap = document.getElementById('NGCHMEmbed');
 	var iFrame = window.frameElement; // reference to iframe element container
 	iFrame.className='ngchm';
-	iFrame.style.height = '100%';
-	embeddedMap.style.height = '90%';
-	embeddedMap.style.width = '90%';
+	iFrame.style.height = dispHeight + '%';
+	iFrame.style.width = dispWidth + '%'
+	if (dispHeight < 90) {
+		embeddedMap.style.height = '89%';
+	} else {
+		embeddedMap.style.height = '93%';
+	}
+	if (dispWidth < 90) {
+		embeddedMap.style.width = '98%';
+	} else {
+		embeddedMap.style.width = '99%';
+	}
 	embeddedMap.style.display = '';
 	embeddedWrapper.style.display = 'none';
-	embeddedCollapse.style.display = '';
+	embeddedCollapse.style.display = ''; 
 	if (NgChm.UTIL.embedLoaded === false) {
 		NgChm.UTIL.embedLoaded = true;
 		NgChm.UTIL.loadLocalModeCHM(false);
@@ -513,7 +644,6 @@ NgChm.UTIL.hideEmbed = function (baseDiv) {
 	embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
 	var embeddedMap = document.getElementById('NGCHMEmbed');
 	embeddedMap.style.height = NgChm.UTIL.embedThumbHeight;
-	embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
 	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	embeddedMap.style.display = 'none';
 	embeddedCollapse.style.display = 'none';
@@ -543,7 +673,14 @@ NgChm.UTIL.embedExpandableMap = function (options) {
     if (options.thumbnail === undefined) options.thumbnail = options.ngchm.replace(/\.ngchm$/, '.png');
     if (options.thumbnailWidth === undefined) options.thumbnailWidth = '150px';
     if (options.thumbnailHeight === undefined) options.thumbnailHeight = options.thumbnailWidth;
-    if (options.ngchmWidget === undefined) options.ngchmWidget = NgChm.UTIL.defaultNgchmWidget;
+    if (options.ngchmWidget === undefined) options.ngchmWidget = NgChm.UTIL.defaultNgchmWidget;   
+    var displayWidth = (options.displayWidth === undefined) ? '100' : options.displayWidth.substring(0,options.displayWidth.length-1);
+    var displayHeight = (options.displayHeight === undefined) ? '100' : options.displayHeight.substring(0,options.displayHeight.length-1);
+    if (displayWidth <= 90) {
+    	displayHeight = 85;
+    } else {
+    	displayHeight = displayWidth;
+    }
     
     //set "memory" variables for width/height for collapse functionality
     NgChm.UTIL.embedThumbWidth = options.thumbnailWidth;
@@ -557,10 +694,10 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	ngchmIFrame.style = "height:"+options.thumbnailHeight+"; width:100%; border-style:none; ";
 	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups'; 
 	ngchmIFrame.className='ngchmThumbnail';
-	embeddedDiv.appendChild(ngchmIFrame);
+	embeddedDiv.appendChild(ngchmIFrame); 
 	var doc = ngchmIFrame.contentWindow.document;
 	doc.open();
-	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this);' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this);' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 5%; width: 100%; border: 2px solid gray; padding: 5px'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML>");
+	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
 	doc.close();
 };
 
