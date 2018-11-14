@@ -116,6 +116,9 @@ NgChm.DDR.SummaryColumnDendrogram = function() {
 		return parseInt(dendroCanvas.clientWidth);
 	}
 	this.getDivHeight = function(){
+		if (dendroConfig.show == "NONE"){
+			return 0;
+		}
 		return parseInt(dendroConfig.height)/dendroDisplaySize*sumChm.clientHeight*NgChm.SUM.heightPct;
 	}
 	this.getBars = function(){
@@ -494,6 +497,9 @@ NgChm.DDR.SummaryRowDendrogram = function() {
 	// public functions
 	this.getDivWidth = function(){
 		// the dendrogram will take up 1/5 of the summary side by default (100% = 1/5 of summary_chm).
+		if (dendroConfig.show == "NONE"){
+			return 0;
+		}
 		return parseInt(dendroConfig.height)/dendroDisplaySize*sumChm.clientWidth;
 	}
 	this.getDivHeight = function(){
