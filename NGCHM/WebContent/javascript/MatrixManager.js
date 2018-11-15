@@ -549,8 +549,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		//Retrieve  all map supporting data (e.g. labels, dendros) from JSON.
 		webFetchJson('mapData', addMapData);
 	} else {
-		//Check file mode viewer software version
-		fileModeFetchVersion();
+		//Check file mode viewer software version (excepting when using embedded widget)
+		if (typeof embedDiv === 'undefined') {
+			fileModeFetchVersion();
+		}
 		//fileSrc is file so get the JSON files from the zip file.
 		//First create a dictionary of all the files in the zip.
 		var zipBR = new zip.BlobReader(chmFile);

@@ -408,7 +408,8 @@ NgChm.UTIL.chmResize = function () {
  		NgChm.DET.detailResize();
  		NgChm.UPM.prefsResize();
  		NgChm.DET.detailResize();
- 		if (document.getElementById('linkBox').style.display !== 'none') {
+ 		var linkbox = document.getElementById('linkBox');
+ 		if ((linkbox !== null) && (linkbox.style.display !== 'none')) { 
  			NgChm.UHM.linkBoxSizing();
  		}
 }
@@ -603,7 +604,7 @@ NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
  * FUNCTION - showEmbed: This function shows the embedded heat map when the
  * user clicks on the embedded map image.
  **********************************************************************************/
-NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight) {
+NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight,customJS) {
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
 	NgChm.UTIL.embedThumbWidth = embeddedWrapper.style.width;
 	NgChm.UTIL.embedThumbHeight = embeddedWrapper.style.height;
@@ -618,7 +619,7 @@ NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight) {
 	} else {
 		embeddedMap.style.height = '93%';
 	}
-	if (dispWidth < 90) {
+	if (dispWidth <= 90) {
 		embeddedMap.style.width = '98%';
 	} else {
 		embeddedMap.style.width = '99%';
@@ -629,6 +630,9 @@ NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight) {
 	if (NgChm.UTIL.embedLoaded === false) {
 		NgChm.UTIL.embedLoaded = true;
 		NgChm.UTIL.loadLocalModeCHM(false);
+		if (customJS !== "") {
+			setTimeout(function(){ NgChm.CUST.addExtraCustomJS(customJS);}, 2000);
+		}
 	}
 }
 
@@ -675,11 +679,10 @@ NgChm.UTIL.embedExpandableMap = function (options) {
     if (options.thumbnailHeight === undefined) options.thumbnailHeight = options.thumbnailWidth;
     if (options.ngchmWidget === undefined) options.ngchmWidget = NgChm.UTIL.defaultNgchmWidget;   
     var displayWidth = (options.displayWidth === undefined) ? '100' : options.displayWidth.substring(0,options.displayWidth.length-1);
-    var displayHeight = (options.displayHeight === undefined) ? '100' : options.displayHeight.substring(0,options.displayHeight.length-1);
+    var customJS = (options.customJS === undefined) ? "" : options.customJS;
+	var displayHeight = displayWidth;
     if (displayWidth <= 90) {
     	displayHeight = 85;
-    } else {
-    	displayHeight = displayWidth;
     }
     
     //set "memory" variables for width/height for collapse functionality
@@ -697,7 +700,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	embeddedDiv.appendChild(ngchmIFrame); 
 	var doc = ngchmIFrame.contentWindow.document;
 	doc.open();
-	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
+	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
 	doc.close();
 };
 

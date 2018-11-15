@@ -147,12 +147,14 @@ NgChm.UPM.setMessage = function(errorMsgTxt) {
  **********************************************************************************/
 NgChm.UPM.prefsResize = function() {
 	var prefprefs = document.getElementById('prefPrefs');
-	if (window.innerHeight > 730) {
-		prefprefs.style.height = "85%";
-	} else if (window.innerHeight > 500) {
-		prefprefs.style.height = "80%";
-	} else {
-		prefprefs.style.height = "70%";
+	if (prefprefs !== null) {
+		if (window.innerHeight > 730) {
+			prefprefs.style.height = "85%";
+		} else if (window.innerHeight > 500) {
+			prefprefs.style.height = "80%";
+		} else {
+			prefprefs.style.height = "70%";
+		}
 	}
 }
 

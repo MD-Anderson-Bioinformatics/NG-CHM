@@ -275,6 +275,18 @@ NgChm.CUST.verbose = false;
 	    setTimeout(function(){ NgChm.CUST.addCustomJS();}, 100);
 	}
     };
+    
+    // Interface accessible to embedded maps that specify a custom js file 
+    // containing plugins.  Load the user specified JS file.
+    NgChm.CUST.addExtraCustomJS = function(customJs) {
+		var head = document.getElementsByTagName('head')[0];
+        var script = document.createElement('script');
+        head.appendChild(script);
+        script.src = customJs;
+        script.onload = NgChm.CUST.definePluginLinkouts;
+        // Internet explorer:
+        script.onreadystatechange = function() { if (this.readyState == 'complete') {     	NgChm.CUST.definePluginLinkouts();   }   };  //Leave this as one line for filemode version app builder
+    }
 
     // Published interface.
     // Define a subtype: any linkouts defined for the supertype will also be defined
