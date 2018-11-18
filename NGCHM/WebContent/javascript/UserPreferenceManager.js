@@ -1975,13 +1975,8 @@ NgChm.UPM.prefsResetButton = function(){
 			var bPrefix = dl + "_breakPt" + i;
 			var breakpt = document.getElementById(bPrefix + "_breakPref");
 			if (breakpt !== null) {
-				breakpt.remove();
-				var colorpt = document.getElementById(dl + "_color" + i + "_colorPref");
-				colorpt.remove();
-				var bAdd = document.getElementById(bPrefix+"_breakAdd");
-				bAdd.remove();
-				var bDel = document.getElementById(bPrefix+"_breakDel");
-				bDel.remove();
+				var elt = breakpt.closest(".chmTblRow");
+				elt.remove();
 			} else {
 				break;
 			}
