@@ -746,9 +746,12 @@ NgChm.UHM.openMenu = function(e) {
 }
 
 NgChm.UHM.closeMenu = function() {
-	if (document.getElementById('barMenu_btn').mouseIsOver < 1) {
-		var menu = document.getElementById('menuPanel');
-		menu.style.display = 'none';
+	var barMenuBtn = document.getElementById('barMenu_btn');
+	if (barMenuBtn !== null) {
+		if (document.getElementById('barMenu_btn').mouseIsOver < 1) {
+			var menu = document.getElementById('menuPanel');
+			menu.style.display = 'none';
+		}
 	}
 }
 

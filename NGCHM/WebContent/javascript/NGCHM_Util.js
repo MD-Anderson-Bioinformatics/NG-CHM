@@ -458,7 +458,9 @@ NgChm.UTIL.downloadSummaryMapPng = function () {
 	  NgChm.UTIL.scalePngImage(dataURL, 200, 200, dl, function(canvas){
 			dl.setAttribute('href', canvas.toDataURL('image/png'));
 			dl.setAttribute('download', mapName+'_tnMap.png');
+			document.body.appendChild(dl);
 			dl.click();
+			dl.remove();
 	  });
 }
 
@@ -483,7 +485,9 @@ NgChm.UTIL.downloadSummaryPng = function () {
 							  NgChm.UTIL.combinePngImage(colDCImg, colDRImg, mapImg, 200, 200, dl, function(canvas){
 								  dl.setAttribute('href', canvas.toDataURL('image/png'));
 								  dl.setAttribute('download', mapName+'_tn.png');
+								  document.body.appendChild(dl);
 								  dl.click();
+								  dl.remove();
 							  });
 						  }
 						  mapImg.src = canvas.toDataURL('image/png');
@@ -566,7 +570,6 @@ NgChm.UTIL.scalePngImage = function (url, width, height, dl, callback) {
         // Run the callback on what to do with the canvas element.
         callback(canvas, dl);
 	};
-
 	img.src = url;
 }
 
