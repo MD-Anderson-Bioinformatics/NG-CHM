@@ -423,10 +423,14 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (fileSrc !== NgChm.MMGR.FILE_SOURCE) {
 			success = webSaveMapProperties(JSON.stringify(mapConfig)); 
 		} else {
-			zipSaveMapProperties();
 			NgChm.UHM.zipSaveNotification(true);
 		}
 		return success;
+	}
+
+	this.zipSaveNgchm = function () {
+		zipSaveMapProperties();
+		NgChm.UHM.messageBoxCancel();
 	}
 
 	// Call download of NGCHM File Viewer application zip

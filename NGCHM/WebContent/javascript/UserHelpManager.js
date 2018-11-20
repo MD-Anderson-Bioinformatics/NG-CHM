@@ -474,7 +474,7 @@ NgChm.UHM.saveHeatMapChanges = function() {
 		} else {
 			// If so, is read only?
 			if (NgChm.heatMap.isReadOnly()) {
-				text = "<br>You have elected to save changes made to this READ-ONLY heat map file. READ-ONLY files cannot be updated.<br><br>However, you may save these changes to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
+				text = "<br>You have elected to save changes made to this READ-ONLY heat map. READ-ONLY heat maps cannot be updated.<br><br>However, you may save these changes to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				NgChm.UHM.setMessageBoxText(text);
 				NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
 				NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "Cancel Save", "NgChm.UHM.messageBoxCancel");
@@ -489,9 +489,9 @@ NgChm.UHM.saveHeatMapChanges = function() {
 	} else {
 		if ((NgChm.MMGR.source!== NgChm.MMGR.WEB_SOURCE) || (typeof NgChm.galaxy !== "undefined")) {
 			if (typeof NgChm.galaxy !== "undefined") {
-				text = "<br>There are no changes to save to this Galaxy heat map file at this time.<br><br>";
+				text = "<br>There are no changes to save to this Galaxy heat map file at this time.<br>";
 			} else {
-				text = "<br>There are no changes to save to this NG-CHM heat map file at this time.<br><br>";
+				text = "<br>There are no changes to save to this NG-CHM heat map file at this time.<br>";
 			}
 			NgChm.UHM.setMessageBoxText(text);
 			NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "OK", "NgChm.UHM.messageBoxCancel");
@@ -529,13 +529,14 @@ NgChm.UHM.zipSaveNotification = function(autoSave) {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("NG-CHM File Viewer");
 	if (autoSave) {
-		text = "<br>The NG-CHM archive file that you have just opened contains out dated heat map configuration information and is being updated.<br><br>In order to avoid the need for this update in the future, you will want to replace the NG-CHM file that you opened with the new file.";
+		text = "<br>This NG-CHM archive file contains an out dated heat map configuration that has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>In order to upgrade the NG-CHM and avoid this notice in the future, you will want to replace your original file with the version now being displayed.<br><br>";
 	} else {
 		text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>" 
 		NgChm.UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", "NgChm.UHM.zipAppDownload");
 	}
 	NgChm.UHM.setMessageBoxText(text);
-	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "", "NgChm.heatMap.zipSaveNgchm");
+	NgChm.UHM.setMessageBoxButton(3, "images/cancelSmall.png", "", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
