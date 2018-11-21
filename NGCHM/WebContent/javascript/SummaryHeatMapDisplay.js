@@ -175,14 +175,13 @@ NgChm.SUM.initSummarySize = function(applying) {
 	//If we are reloading from a preferences apply, leave the divider where it is and do not set it to the saved width
 	if (!applying) {
 		sumPercent = NgChm.heatMap.getMapInformation().summary_width;
+		var detPercent = 100 - sumPercent;
+		
+		summary.style.width = sumPercent + "%";
+		detail.style.width = detPercent + "%";
+		summary.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
+		detail.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
 	}
-	var detPercent = 100 - sumPercent;
-	
-	summary.style.width = sumPercent + "%";
-	detail.style.width = detPercent + "%";
-	summary.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
-	detail.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
-	
 	NgChm.SUM.setTopItemsSize();
 	NgChm.SUM.setSummarySize();
 }
@@ -1797,14 +1796,6 @@ NgChm.SUM.dividerEnd = function(e) {
 	document.removeEventListener('mouseup', NgChm.SUM.dividerEnd);
 	document.removeEventListener('touchmove',NgChm.SUM.dividerMove);
 	document.removeEventListener('touchend',NgChm.SUM.dividerEnd);
-	// set summary and detail canvas sizes to percentages to avoid map getting pushed down on resize
-	var container = document.getElementById('container');
-	var summary = document.getElementById('summary_chm');
-	var sumPercent = 100*summary.clientWidth / container.clientWidth;
-	summary.style.width = sumPercent + "%";
-	var detail = document.getElementById('detail_chm');
-	var detPercent = 100 - sumPercent;
-	detail.style.width = detPercent + "%";
 	NgChm.SUM.summaryResize();
 	NgChm.DET.detailResize();
 	NgChm.DET.drawRowAndColLabels();
