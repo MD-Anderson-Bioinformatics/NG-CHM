@@ -116,7 +116,7 @@ NgChm.DDR.SummaryColumnDendrogram = function() {
 		return parseInt(dendroCanvas.clientWidth);
 	}
 	this.getDivHeight = function(){
-		if (dendroConfig.show == "NONE"){
+		if (dendroConfig.show == "NONE" || dendroConfig.show == "NA"){
 			return 0;
 		}
 		return parseInt(dendroConfig.height)/dendroDisplaySize*sumChm.clientHeight*NgChm.SUM.heightPct;
@@ -280,7 +280,7 @@ NgChm.DDR.SummaryColumnDendrogram = function() {
 	function resize(){
 		dendroCanvas.style.width = NgChm.SUM.canvas.clientWidth*NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth;
 		dendroCanvas.style.left = NgChm.SUM.canvas.offsetLeft + (1-NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth)*NgChm.SUM.canvas.offsetWidth;
-		if (dendroConfig.show !== "NONE"){
+		if (dendroConfig.show !== "NONE" || dendroConfig.show !== "NA"){
 			dendroCanvas.style.height = parseInt(dendroConfig.height)/dendroDisplaySize*sumChm.clientHeight*NgChm.SUM.heightPct; // the dendro should take 1/5 of the height at 100% dendro height
 		}else{
 			dendroCanvas.style.height = 0;
@@ -497,7 +497,7 @@ NgChm.DDR.SummaryRowDendrogram = function() {
 	// public functions
 	this.getDivWidth = function(){
 		// the dendrogram will take up 1/5 of the summary side by default (100% = 1/5 of summary_chm).
-		if (dendroConfig.show == "NONE"){
+		if (dendroConfig.show == "NONE" || dendroConfig.show == "NA"){
 			return 0;
 		}
 		return parseInt(dendroConfig.height)/dendroDisplaySize*sumChm.clientWidth;
@@ -665,7 +665,7 @@ NgChm.DDR.SummaryRowDendrogram = function() {
 	function resize(){
 		dendroCanvas.style.height = NgChm.SUM.canvas.clientHeight*NgChm.SUM.matrixHeight/NgChm.SUM.totalHeight*NgChm.SUM.heightScale;
 		dendroCanvas.style.top = NgChm.SUM.canvas.offsetTop + (NgChm.SUM.totalHeight - NgChm.SUM.matrixHeight*NgChm.SUM.heightScale)/NgChm.SUM.totalHeight*NgChm.SUM.canvas.offsetHeight;
-		if (dendroConfig.show !== "NONE"){
+		if (dendroConfig.show !== "NONE" || dendroConfig.show !== "NA"){
 			dendroCanvas.style.width = dendroConfig.height/dendroDisplaySize*sumChm.clientWidth*NgChm.SUM.widthPct;
 		} else {
 			dendroCanvas.style.width = 0;
