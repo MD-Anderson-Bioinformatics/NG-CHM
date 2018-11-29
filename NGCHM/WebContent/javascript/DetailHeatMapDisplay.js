@@ -27,7 +27,6 @@ NgChm.DET.latestPinchDistance;
 NgChm.DET.latestLabelTap;
 NgChm.DET.latestTapLocation;
 
-
 NgChm.DET.saveRow;
 NgChm.DET.saveCol;
 NgChm.DET.dataBoxHeight;
@@ -50,6 +49,7 @@ NgChm.DET.dataViewBorder = 2;
 NgChm.DET.zoomBoxSizes = [1,2,3,4,6,7,8,9,12,14,18,21,24,28,36,42,56,63,72,84,126,168,252];
 NgChm.DET.minLabelSize = 5;
 NgChm.DET.maxLabelSize = 11;
+NgChm.DET.minPixelsForGrid = 20;	// minimum element size for grid lines to display
 NgChm.DET.currentSearchItem = {};
 NgChm.DET.labelLastClicked = {};
 
@@ -1335,18 +1335,6 @@ NgChm.DET.detailInit = function () {
 	NgChm.DET.initialized = true;
 }
 
-NgChm.DET.showGridByScale = function () {
-	var showGrid = true;
-	var detDataPerRow = NgChm.SEL.getCurrentDetDataPerRow();
-	var detDataPerCol = NgChm.SEL.getCurrentDetDataPerCol();
-	if ((NgChm.SEL.mode == 'NORMAL') || (NgChm.SEL.mode == 'RIBBONV')) {
-		showGrid = detDataPerRow <= 50 ? true : false;
-	} else {
-		showGrid = detDataPerCol <= 50 ? true : false;
-	}
-	return showGrid;
-}
-
 NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip the resize routine and help speed up the drawing routine for some cases
  	
 	NgChm.DET.setDetCanvasBoxSize();
@@ -1364,12 +1352,8 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
 	var dataLayers = NgChm.heatMap.getDataLayers();
 	var dataLayer = dataLayers[NgChm.SEL.currentDl];
-	var showGrid = false;
 	var detDataPerRow = NgChm.SEL.getCurrentDetDataPerRow();
 	var detDataPerCol = NgChm.SEL.getCurrentDetDataPerCol();
-	if ((dataLayer.grid_show === 'Y') && NgChm.DET.showGridByScale()) {
-		showGrid = true;
-	}
 	var rowClassBarWidth = NgChm.DET.calculateTotalClassBarHeight("row");
 	var searchRows = NgChm.DET.getSearchRows();
 	var searchCols = NgChm.DET.getSearchCols();
@@ -1380,6 +1364,12 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 	var regularGridColor = [dataGridColor.r, dataGridColor.g, dataGridColor.b];
 	var cutsColor = colorMap.getHexToRgba(dataLayer.cuts_color);
  
+	var showGrid = dataLayer.grid_show === 'Y';
+	var detWidth = +NgChm.DET.boxCanvas.style.width.replace("px","");
+	var detHeight = +NgChm.DET.boxCanvas.style.height.replace("px","");
+	var showVerticalGrid = showGrid && NgChm.DET.dataBoxWidth > NgChm.DET.minLabelSize && NgChm.DET.minPixelsForGrid*detDataPerRow <= detWidth;
+	var showHorizontalGrid = showGrid && NgChm.DET.dataBoxHeight > NgChm.DET.minLabelSize && NgChm.DET.minPixelsForGrid*detDataPerCol <= detHeight;
+
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
 	var linelen = (rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA;
 	var gridLine = new Uint8Array(new ArrayBuffer(linelen));
@@ -1393,7 +1383,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 			cutsLine[i] = cutsColor.a;
 		}
 	}
-	if (showGrid == true) {
+	if (showHorizontalGrid) {
 		var linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		for (var j = 0; j < detDataPerRow; j++) {
@@ -1410,7 +1400,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 						gridLine[linePos] = cutsColor.r; gridLine[linePos+1] = cutsColor.g; gridLine[linePos+2] = cutsColor.b;	gridLine[linePos+3] = cutsColor.a;
 					}
 				} else {
-					if (k==NgChm.DET.dataBoxWidth-1 && showGrid == true ){ // should the grid line be drawn?
+					if (k==NgChm.DET.dataBoxWidth-1){ // should the grid line be drawn?
 						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
 					} else {
 						gridLine[linePos]=regularGridColor[0]; gridLine[linePos + 1]=regularGridColor[1]; gridLine[linePos + 2]=regularGridColor[2]; gridLine[linePos + 3]=255;
@@ -1451,7 +1441,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 			var color = colorMap.getColor(val);
 			//For each data point, write it several times to get correct data point width.
 			for (var k = 0; k < NgChm.DET.dataBoxWidth; k++) {
-				if (k==NgChm.DET.dataBoxWidth-1 && showGrid == true && NgChm.DET.dataBoxWidth > NgChm.DET.minLabelSize && j < detDataPerRow-1 ){ // should the grid line be drawn?
+				if (showVerticalGrid && k===NgChm.DET.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
 					if (j < detDataPerRow-1) {
 						//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
 						if ((val <= NgChm.SUM.minValues) && (nextVal <= NgChm.SUM.minValues)) {
@@ -1470,7 +1460,7 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		
 		//Write each line several times to get correct data point height.
 		for (dup = 0; dup < NgChm.DET.dataBoxHeight; dup++) {
-			if (dup == NgChm.DET.dataBoxHeight-1 && showGrid == true && NgChm.DET.dataBoxHeight > NgChm.DET.minLabelSize && i > 0){ // do we draw gridlines?
+			if (showHorizontalGrid && dup === NgChm.DET.dataBoxHeight-1 && i > 0){ // do we draw gridlines?
 				for (k = 0; k < line.length; k++) {
 					//IF the line being drawn was comprised entirely of cut values, draw an empty white line as the horizontal grid line,
 					//ELSE draw the normal grid line as the horizontal grid line
