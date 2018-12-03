@@ -303,9 +303,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		}
 	}
 	
-	this.setLayerGridPrefs = function(key, showVal, gridColorVal, selectionColorVal) {
+	this.setLayerGridPrefs = function(key, showVal, gridColorVal, selectionColorVal, gapColorVal) {
 		mapConfig.data_configuration.map_information.data_layer[key].grid_show = showVal ? 'Y' : 'N';
 		mapConfig.data_configuration.map_information.data_layer[key].grid_color = gridColorVal;
+		mapConfig.data_configuration.map_information.data_layer[key].cuts_color = gapColorVal;
 		mapConfig.data_configuration.map_information.data_layer[key].selection_color = selectionColorVal;
 	}
 	
