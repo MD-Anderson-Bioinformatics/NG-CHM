@@ -477,10 +477,15 @@ public class PdfGenerator {
 	public void drawHeaderFooter(PDDocument doc, PDPageContentStream contentStream, String mapName, int pageWidth, int pageHeight) {
         try {
         	//Write heatmap name to header (truncating if necessary)
-        	if (mapName.length() > 40) {
-	        	mapName = mapName.substring(0,40) + "...";
+        	PDFont font = PDF_FONT_BOLD;
+        	int fontSize = 14;
+        	float strWidth = font.getStringWidth(mapName)/1000 * fontSize;
+        	float strSpace = pageWidth - 130-10;
+        	while (strWidth > strSpace) { // trim down 5 letters at a time to fit space allocated for map name
+	        	mapName = mapName.substring(0,mapName.length()-5) + "...";
+	        	strWidth = font.getStringWidth(mapName)/1000 * fontSize;
 	        }
-			writePDFText(contentStream, mapName, 14, PDF_FONT_BOLD, 130, pageHeight - 37, false);
+			writePDFText(contentStream, mapName, fontSize, PDF_FONT_BOLD, 130, pageHeight - 37, false);
 			//Draw MDA logo on header
 			InputStream is = getClass().getResourceAsStream("/images/mdabcblogo262x108.png");
 	        BufferedImage mdaLogoImg = ImageIO.read(is);
