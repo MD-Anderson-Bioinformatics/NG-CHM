@@ -698,7 +698,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	ngchmIFrame.id = options.divId+"_iframe"; 
 	ngchmIFrame.scrolling = "no";
 	ngchmIFrame.style = "height:"+options.thumbnailHeight+"; width:100%; border-style:none; ";
-	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups'; 
+	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms'; 
 	ngchmIFrame.className='ngchmThumbnail';
 	embeddedDiv.appendChild(ngchmIFrame); 
 	var doc = ngchmIFrame.contentWindow.document;

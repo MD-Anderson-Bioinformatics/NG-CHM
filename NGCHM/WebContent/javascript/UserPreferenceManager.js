@@ -481,7 +481,8 @@ NgChm.UPM.prefsApply = function() {
 		var showGrid = document.getElementById(key+'_gridPref');
 		var gridColor = document.getElementById(key+'_gridColorPref');
 		var selectionColor = document.getElementById(key+'_selectionColorPref');
-		NgChm.heatMap.setLayerGridPrefs(key, showGrid.checked,gridColor.value,selectionColor.value)
+		var gapColor = document.getElementById(key+'_gapColorPref');
+		NgChm.heatMap.setLayerGridPrefs(key, showGrid.checked,gridColor.value,selectionColor.value,gapColor.value)
 		NgChm.UPM.prefsApplyBreaks(key,"data");
 		NgChm.UHM.loadColorPreviewDiv(key);
 	}
@@ -906,6 +907,7 @@ NgChm.UPM.setupLayerBreaks = function(e, mapName) {
 	gridShow = gridShow+ " >";
 	var gridColorInput = "<input class='spectrumColor' type='color' name='"+mapName+"_gridColorPref' id='"+mapName+"_gridColorPref' value='"+layer.grid_color+"'>"; 
 	var selectionColorInput = "<input class='spectrumColor' type='color' name='"+mapName+"_selectionColorPref' id='"+mapName+"_selectionColorPref' value='"+layer.selection_color+"'>"; 
+	var gapColorInput = "<input class='spectrumColor' type='color' name='"+mapName+"_gapColorPref' id='"+mapName+"_gapColorPref' value='"+layer.cuts_color+"'>"; 
 	NgChm.UHM.addBlankRow(prefContents, 2)
 	NgChm.UHM.setTableRow(prefContents, ["&nbsp;<u>Breakpoint</u>", "<u><b>Color</b></u>","&nbsp;"]); 
 	var breakpts = document.createElement("TABLE"); 
@@ -941,8 +943,8 @@ NgChm.UPM.setupLayerBreaks = function(e, mapName) {
 	NgChm.UHM.setTableRow(prefContents, [ redWhiteBlue, rainbow, redBlackGreen ]);
 	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Blue Red",  "&nbsp;<b>Rainbow</b>","&nbsp;<b>Green Red</b>"]);
 	NgChm.UHM.addBlankRow(prefContents, 3)
-	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Grid Lines:", gridColorInput, "<b>Show:&nbsp;&nbsp;</b>"+gridShow]); 
-	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Selection Color:", selectionColorInput]);
+	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Grid Lines:", gridColorInput, "<b>Grid Show:&nbsp;&nbsp;</b>"+gridShow]); 
+	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Selection Color:", selectionColorInput, "<b>Gap Color:&nbsp;&nbsp;</b>"+gapColorInput]);
 	
 	NgChm.UHM.addBlankRow(prefContents, 3);
 	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Color Histogram:", "<button type='button' onclick='NgChm.UHM.loadColorPreviewDiv(\""+mapName+"\")'>Update</button>"]);
@@ -2008,6 +2010,8 @@ NgChm.UPM.prefsResetButton = function(){
 		layer.grid_show == "Y" ? gridShow.checked = true : gridShow.checked = false; 
 		var selectionColor = document.getElementById(dl + "_selectionColorPref");
 		selectionColor.value = layer.selection_color;
+		var gapColor = document.getElementById(dl + "_gapColorPref");
+		gapColor.value = layer.cuts_color;
 		NgChm.UHM.loadColorPreviewDiv(dl);
 	}
 	
