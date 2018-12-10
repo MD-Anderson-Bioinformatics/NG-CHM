@@ -487,20 +487,10 @@ NgChm.UHM.saveHeatMapChanges = function() {
 			}
 		}
 	} else {
-		if ((NgChm.MMGR.source!== NgChm.MMGR.WEB_SOURCE) || (typeof NgChm.galaxy !== "undefined")) {
-			if (typeof NgChm.galaxy !== "undefined") {
-				text = "<br>There are no changes to save to this Galaxy heat map file at this time.<br>";
-			} else {
-				text = "<br>There are no changes to save to this NG-CHM heat map file at this time.<br>";
-			}
-			NgChm.UHM.setMessageBoxText(text);
-			NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "OK", "NgChm.UHM.messageBoxCancel");
-		} else {
-			text = "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-			NgChm.UHM.setMessageBoxText(text);
-			NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
-			NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "Cancel Save", "NgChm.UHM.messageBoxCancel");
-		}
+		text = "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
+		NgChm.UHM.setMessageBoxText(text);
+		NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
+		NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "Cancel Save", "NgChm.UHM.messageBoxCancel");
 	}
 	document.getElementById('msgBox').style.display = '';
 }
