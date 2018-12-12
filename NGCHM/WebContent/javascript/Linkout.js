@@ -127,11 +127,22 @@ NgChm.LNK.addLinkout = function(name, labelType, selectType, callback, reqAttrib
 		if (index !== undefined){
 			linkouts[labelType].splice(index, 0, linkout); 
 		}else {
+			NgChm.LNK.dupeLinkout(linkouts[labelType], linkout);
 			linkouts[labelType].push(linkout);
 		}
 	}
 }
 
+//Check to see if the linkout being added already exists.  This would be in a case where a secondary custom.js is being used (embedded NG-CHM)
+//If so, delete the existing linkout and allow the new linkout to be added in its place.
+NgChm.LNK.dupeLinkout = function(linkouts, linkout) {
+	for (var i=0;i<linkouts.length;i++) {
+		var curLink = linkouts[i];
+		if (curLink.title === linkout.title) {
+			linkouts.splice(i,1);
+		}
+	}
+}
 
 NgChm.LNK.addMatrixLinkout = function(name, rowType, colType, selectType, callback, reqAttributes, index){ // this function is used to add linkouts to the matrix menu when the linkout needs a specific criteria for the row and column (ie: same attribute)
         var linkout = new NgChm.LNK.matrixLinkout(name, rowType, colType, selectType,reqAttributes, callback);

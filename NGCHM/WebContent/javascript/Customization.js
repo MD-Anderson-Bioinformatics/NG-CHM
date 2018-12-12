@@ -300,6 +300,12 @@ NgChm.CUST.verbose = false;
     // Published interface.
     // Add the specified plugin.
     linkouts.addPlugin = function ( plugin ) {
+     	for (var i=0;i<NgChm.CUST.customPlugins.length;i++) {
+    		var currPlug = NgChm.CUST.customPlugins[i];
+    		if (currPlug.name === plugin.name) {
+    			NgChm.CUST.customPlugins.splice(i, 1);
+    		}
+    	}
         if (NgChm.CUST.verbose) console.log( 'NgChm.CUST: adding plugin ' + plugin.name );
         NgChm.CUST.customPlugins.push( plugin );
     };
