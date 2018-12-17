@@ -371,12 +371,14 @@ NgChm.UTIL.loadFileModeCHM = function () {
 NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.FILE_SOURCE);
 	zip.useWebWorkers = false;
+	NgChm.UTIL.resetCHM();
 	if (!NgChm.SEL.isSub) {
 		NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
 		NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 		if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
 			NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
 		}
+		NgChm.UTIL.initDisplayVars();
 		NgChm.SUM.initSummaryDisplay();
 	} else { // separated detail browser
 		NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.DET.processDetailMapUpdate, chmFile);			
@@ -420,18 +422,18 @@ NgChm.UTIL.chmResize = function () {
  * from one file-mode heatmap to another
  **********************************************************************************/
 NgChm.UTIL.resetCHM = function () {
-		NgChm.SEL.mode = 'NORMAL';      
-		NgChm.SEL.currentDl = "dl1"; 
-		NgChm.SEL.currentRow=null; 
-		NgChm.SEL.currentCol=null; 
-		NgChm.SEL.dataPerRow=null; 
-		NgChm.SEL.dataPerCol=null; 
-		NgChm.SEL.selectedStart=0; 
-		NgChm.SEL.selectedStop=0; 
-		NgChm.SEL.searchItems={};
-		NgChm.SEL.isSub = false; 
-		NgChm.SEL.hasSub = false;  
-		NgChm.SEL.scrollTime = null; 
+	NgChm.SEL.mode = 'NORMAL';      
+	NgChm.SEL.currentDl = "dl1"; 
+	NgChm.SEL.currentRow=null; 
+	NgChm.SEL.currentCol=null; 
+	NgChm.SEL.dataPerRow=null; 
+	NgChm.SEL.dataPerCol=null; 
+	NgChm.SEL.selectedStart=0; 
+	NgChm.SEL.selectedStop=0; 
+	NgChm.SEL.searchItems={};
+	NgChm.SEL.isSub = false; 
+	NgChm.SEL.hasSub = false;  
+	NgChm.SEL.scrollTime = null; 
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;
 }
@@ -707,6 +709,38 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	doc.close();
 };
 
+/**********************************************************************************
+ * FUNCTION - initDisplayVars: This function reinitializes summary and detail 
+ * display values whenever a file-mode map is opened.  This is done primarily
+ * to reset screens when a second, third, etc. map is opened.  
+ **********************************************************************************/
+NgChm.UTIL.initDisplayVars = function() {
+	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
+	NgChm.SUM.heightScale = 1;
+	NgChm.SUM.rowClassScale = 1;
+	NgChm.SUM.colClassScale = 1;
+	NgChm.DET.initialized = false;
+	NgChm.DET.dataViewHeight = 506;
+	NgChm.DET.dataViewWidth = 506;
+	NgChm.SUM.colTopItemsWidth = 0;
+	NgChm.SUM.rowTopItemsHeight = 0;
+	NgChm.DET.oldMousePos = [0, 0];
+	NgChm.DET.offsetX = 0;
+	NgChm.DET.offsetY = 0;
+	NgChm.DET.pageX = 0;
+	NgChm.DET.pageY = 0;
+	NgChm.DET.dendroHeight = 105;
+	NgChm.DET.dendroWidth = 105;
+	NgChm.DET.currentSearchItem = {};
+	NgChm.DET.labelLastClicked = {};
+	NgChm.DET.mouseDown = false;
+	NgChm.DET.rowLabelLen = 0;
+	NgChm.DET.colLabelLen = 0;
+	NgChm.DET.rowLabelFont = 0;
+	NgChm.DET.colLabelFont = 0;
+	NgChm.DET.colClassLabelFont = 0;
+	NgChm.DET.rowClassLabelFont = 0;
+}
     
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
