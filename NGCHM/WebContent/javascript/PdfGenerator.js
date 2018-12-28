@@ -28,6 +28,71 @@ NgChm.PDF.openPdfPrefs = function(e) {
 }
 
 /**********************************************************************************
+ * FUNCTION - getBuilderCreationLogPDF: This function is called from the NG-CHM
+ * GUI Builder.  It is provided with a heat map name and a text string pre-built for
+ * printing.  It takes that string and loops thru it applying font and style 
+ * formatting to the string and downloads the resulting PDF file to the desktop.
+ **********************************************************************************/
+NgChm.PDF.getBuilderCreationLogPDF = function(name, text) {
+	var doc = new jsPDF("p","pt",[792,612]); 
+	doc.setFont("helvetica");
+	doc.setFontType("bold");
+	doc.setFontSize(15);
+	var lineEndPos = text.indexOf("\n");
+	var headtx = text.substring(0, lineEndPos);
+	doc.text(140,30,headtx);
+	headtx += " (cont)"
+	text = text.substring(lineEndPos + 1, text.length);
+	doc.setFontSize(10);
+	var pos = 40;
+	var pageNbr = 1;
+	while (text.indexOf("\n") >= 0) {
+		lineEndPos = text.indexOf("\n");
+		NgChm.PDF.setBuilderLogText(doc, text, pos, lineEndPos);
+		text = text.substring(lineEndPos + 1, text.length);
+		if ((pos + 15) > 760) {
+			doc.text(550,770,"page " + pageNbr);
+			pageNbr++;
+			NgChm.PDF.addBuilderLogPage(doc, headtx);
+			pos = 60;
+		} else {
+			pos += 15;
+		}
+	}
+	if (pageNbr > 1) {
+		doc.text(550,770,"page " + pageNbr);
+	}
+	doc.save(name+'_HeatMapCreationLog.pdf');
+}
+
+/**********************************************************************************
+ * FUNCTION - addBuilderLogPage: This function adds a page to the NG-CHM Builder
+ * Creation Log and writes a header onto the page.
+ **********************************************************************************/
+NgChm.PDF.addBuilderLogPage = function (doc, headtx) {
+	doc.addPage();
+	doc.setFontType("bold");
+	doc.setFontSize(15);
+	doc.text(120,30,headtx);
+	doc.setFontType("normal");
+	doc.setFontSize(10);
+}
+
+/**********************************************************************************
+ * FUNCTION - setBuilderLogText: This function writes out a builder log entry to 
+ * the NG-CHM GUI Builder creation log pdf.
+ **********************************************************************************/
+NgChm.PDF.setBuilderLogText = function (doc, text, pos, end) {
+	var temptx = text.substring(0, end);
+	var textHeader = temptx.substring(0,temptx.indexOf(":") + 1);
+	var textValue = temptx.substring(temptx.indexOf(":") + 2, temptx.length);
+	doc.setFontType("bold");
+	doc.text(20,pos,textHeader);
+	doc.setFontType("normal");
+	doc.text(165,pos,textValue);
+}
+
+/**********************************************************************************
  * FUNCTION - getPDF: This function is called when the "create pdf" button is pressed.
  * It will check the checkboxes/radio buttons to see how the PDF is to be created using
  * the isChecked function. for a full list of jsPDF functions, visit here:
