@@ -24,10 +24,10 @@
 		This help page provides an introduction to the controls and features of the application.  For information on building heat maps
 		and additional advanced features of the NGCHM viewer, please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a>.
 		</p>
-		<p style="text-align:center;"><img src='images/help/heatmap.png' height="468" width="666"></p>
+		<p style="text-align:center;"><img src='images/help/heatmap.png' height="452" width="800"></p>
 		<p>The NGCHM Heat Map Viewer contains two panels.  The Summary Panel on the left provides a full view of your heat map.  The Detail Panel on the
 		right provides a zoomed in view of a portion of the heat map.  Click anywhere on the summary picture to see the detail of that portion of the 
-		map. The green box on the Summary Panel indicates the portion of the heat map currently displayed in the Detail Panel.  You may zoom in or out
+		map. The colored highlight box on the Summary Panel indicates the portion of the heat map currently displayed in the Detail Panel.  You may zoom in or out
 		with the mouse scroll wheel or zoom in/out buttons to see smaller or larger portions of the map in the Detail View.  When the zoom level permits,
 		row and column labels will be displayed in the Detail Panel.  You may also use arrow keys to move up/down/left/right one row in the Detail Panel.
 		The divider bar may be moved by clicking on it and dragging left or right to change
@@ -97,11 +97,40 @@
 				<td>If you have split the Summary and Detail Panel into two browsers, this will join them back together into a single browser.</td>
 			</tr>	
 			<tr>
+				<td align="center"><img src="images/barColors.png"></td>
+				<td>This button opens opens the heat map display properties panel. It provides quick access for changing heat map display colors as well as access to other heat map configuration settings. Please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a> for details.</td>
+			</tr>	
+			<tr>
+				<td align="center"><img src="images/barMenu.png"></td>
+				<td>The NG-CHM collapsable (hamburger) menu button opens a drop-down menu containing features for performing a variety of tasks related to the displayed heat map.  Please see the NG-CHM Collapsable Menu section below for more information on available menu features.</td>
+			</tr>	
+			<tr>
+				<td align="center"><img src="images/layersOff.png"></td>
+				<td>For advanced maps with multiple data layers, this control allows you to toggle between the different data layers.
+				  Please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a> for details.</td>
+			</tr>			
+		</table>
+	   <h2>NG-CHM Collapsable Menu Button</h2>
+	   
+	   <p>The NG-CHM collapsable (hamburger) menu button opens a drop-down menu containing features for performing a variety of tasks related to the displayed heat map.  It possible for individual NG-CHM systems to be upgraded to place additional menu items into the collapsable menu.</p>
+  		<table class="helpTable" align="center">
+	    	<colgroup>
+	     	  <col span="1" style="width: 20%;">
+	     	  <col span="1" style="width: 80%;">
+	    	</colgroup>
+			<tr>
+				<th>Control</th>
+			    <th>Description</th>
+			</tr>
+			<tr>
 				<td align="center"><img src="images/pdf.png"></td>
-				<td>This button opens up a PDF generation window that allows you to generate a PDF document of the heat map.  The PDF window allows 
+				<td>The PDF button opens up a PDF generation window that allows you to generate a PDF document of the heat map.  The PDF window allows 
 				selection of various options for the generation of the PDF.  The detail window in the generated PDF will be in the same position and
 				zoom level as is currently shown in the viewer.</td>
 			</tr>	
+			<tr>
+				<td align="center"><img src="images/thumbnail.png"></td>
+				<td>The thumb nail button downloads a small .PNG image of the displayed heat map summary panel.</td>
 			<tr>
 				<td align="center"><img src="images/saveButton.png"></td>
 				<td>The save button allows users to save a local copy of a heat map.  Changes made through the configuration panel are saved to the 
@@ -112,13 +141,22 @@
 				<td align="center"><img src="images/gear.png"></td>
 				<td>The gear button opens the heat map display properties panel.  Many items of the heat map can be configured including heat map colors, label
 				sizes, which covariate bars to display, and data layer breakpoints.  Please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a> for details.</td>
+
 			</tr>	
 			<tr>
-				<td align="center"><img src="images/layersOff.png"></td>
-				<td>For advanced maps with multiple data layers, this control allows you to toggle between the different data layers.
-				  Please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a> for details.</td>
-			</tr>			
+				<td align="center"><img src="images/plugin.png"></td>
+				<td>The plug-in button opens the plug-in help dialog containing NG-CHM plug-in information. This dialog displays all active plug-ins for a given heat map as well as those installed in your NG-CHM system.</td>
+			</tr>	
+			<tr>
+				<td align="center"><img src="images/questionMark.png"></td>
+				<td>The help button opens the NG-CHM Viewer Help page. This page provides introductory help information for the viewer as well as links to more detailed help information.</td>
+			</tr>	
+			<tr>
+				<td align="center"><img src="images/aboutNgchm.png"></td>
+				<td>The about button opens the NG-CHM Viewer "about" page which provides version information for the viewer application.</td>
+			</tr>	
 		</table>
+
 	
 	   <h2>Selection</h2>
 	
@@ -142,7 +180,7 @@
 	   can scroll up/down or left/right through dendrogram branch data.  This view is essentially a restricted ribbon view.  To get out of the sub-dendrogram view, click on the
 	   normal mode button.
 	   
-	   <p style="text-align:center;"><img src='images/help/DendroSelect.png'></p>
+	   <p style="text-align:center;"><img src='images/help/DendroSelect.png' ></p>
 	   
 	   </div>
    </body>

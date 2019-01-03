@@ -51,7 +51,8 @@ NgChm.PDF.getBuilderCreationLogPDF = function(name, text) {
 		NgChm.PDF.setBuilderLogText(doc, text, pos, lineEndPos);
 		text = text.substring(lineEndPos + 1, text.length);
 		if ((pos + 15) > 760) {
-			doc.text(550,770,"page " + pageNbr);
+			doc.text(20,780,"* Bold-italicized responses represent changes from NG-CHM defaults");
+			doc.text(550,780,"page " + pageNbr);
 			pageNbr++;
 			NgChm.PDF.addBuilderLogPage(doc, headtx);
 			pos = 60;
@@ -59,8 +60,9 @@ NgChm.PDF.getBuilderCreationLogPDF = function(name, text) {
 			pos += 15;
 		}
 	}
+	doc.text(20,780,"* Bold-italicized responses represent changes from NG-CHM defaults");
 	if (pageNbr > 1) {
-		doc.text(550,770,"page " + pageNbr);
+		doc.text(550,780,"page " + pageNbr);
 	}
 	doc.save(name+'_HeatMapCreationLog.pdf');
 }
@@ -83,13 +85,22 @@ NgChm.PDF.addBuilderLogPage = function (doc, headtx) {
  * the NG-CHM GUI Builder creation log pdf.
  **********************************************************************************/
 NgChm.PDF.setBuilderLogText = function (doc, text, pos, end) {
+	var isChanged =  text.substring(0,1) === "*" ? true : false;
 	var temptx = text.substring(0, end);
+	if (isChanged === true) {
+		temptx = text.substring(1, end);
+	}
 	var textHeader = temptx.substring(0,temptx.indexOf(":") + 1);
 	var textValue = temptx.substring(temptx.indexOf(":") + 2, temptx.length);
-	doc.setFontType("bold");
+	doc.setFontType("bold");  
 	doc.text(20,pos,textHeader);
-	doc.setFontType("normal");
+	if (isChanged === true) {
+		doc.setFontType("bolditalic"); 
+	} else {
+		doc.setFontType("normal");
+	}
 	doc.text(165,pos,textValue);
+	doc.setFontType("normal");
 }
 
 /**********************************************************************************
