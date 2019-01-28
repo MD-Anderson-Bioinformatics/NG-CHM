@@ -41,6 +41,7 @@ public final class ImportConstants {
 	public static String BRACE_CLOSE = "}";
 	public static String BRACKET_OPEN = "[";
 	public static String BRACKET_CLOSE = "]";
+	public static String PIPE = "|";
 	public static String FILE_SEP = File.separator + File.separator;
 	
 	//Covariate Bar Types

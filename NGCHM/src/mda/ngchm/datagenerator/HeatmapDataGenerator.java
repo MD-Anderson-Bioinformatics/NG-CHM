@@ -776,10 +776,10 @@ public class HeatmapDataGenerator {
 			label = EMPTY;
 		} 
 		//Add extra label information for labels that apply
-		int pipeIdx = label.indexOf("|");
+		int pipeIdx = label.indexOf(PIPE);
 		String visibleLabel = pipeIdx > 0 ? label.substring(0, pipeIdx) : label;
 		if (extraLabelInfo.containsKey(visibleLabel)) {
-			label = (label + "|" + extraLabelInfo.get(visibleLabel));
+			label = (label + PIPE + extraLabelInfo.get(visibleLabel));
 		}
 		return label;
 	}

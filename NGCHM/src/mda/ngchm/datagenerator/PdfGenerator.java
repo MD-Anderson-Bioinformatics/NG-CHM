@@ -660,6 +660,12 @@ public class PdfGenerator {
 	        int startRowPosition = posArray[PDF_ROW_POS] + mapHeight;
 	        for (int i = 0; i < iData.rowData.classArray.length; i++) {
 		        String itemVal = iData.rowData.classArray[i];
+		        if (itemVal != null) {
+		    		int pipeIdx = itemVal.indexOf(PIPE);
+		    		if (pipeIdx > 0) {
+				        itemVal = itemVal.substring(0,itemVal.indexOf(PIPE));
+		    		}
+		        }
 		        int textLoc = i*5 - 1;
 		        if (itemVal != null && itemVal != CUT_VALUE) {
 			        writePDFText(contentStream, itemVal, 5, PDF_FONT_BOLD, colStartPos, startRowPosition - textLoc, false);
@@ -702,6 +708,12 @@ public class PdfGenerator {
 	        int startColPosition = posArray[PDF_COL_POS];
 	        for (int i = 0; i < iData.colData.classArray.length; i++) {
 		        String itemVal = (String) iData.colData.classArray[i];
+		        if (itemVal != null) {
+		    		int pipeIdx = itemVal.indexOf(PIPE);
+		    		if (pipeIdx > 0) {
+				        itemVal = itemVal.substring(0,itemVal.indexOf(PIPE));
+		    		}
+		        }
 		        int textLoc = Math.round((int)i*5)-5;
 		        if (itemVal != null && itemVal != CUT_VALUE) {
 			        writePDFText(contentStream, itemVal, 5, PDF_FONT_BOLD, startColPosition+textLoc, rowStartPos, true);

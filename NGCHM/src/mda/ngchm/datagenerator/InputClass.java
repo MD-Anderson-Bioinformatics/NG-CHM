@@ -252,7 +252,7 @@ public class InputClass {
 	        	  }
 	        	  // If we don't find a match and the label has hidden fields, try to 
 	        	  // match without the hidden fields.
-	        	  if ((classification == null) && (orderStr != null) && orderStr.contains("|")) {
+	        	  if ((classification == null) && (orderStr != null) && orderStr.contains(PIPE)) {
 	        		  orderStr = orderStr.substring(0, orderStr.indexOf('|'));
 	        		  classification = origData.get(orderStr);
 	        	  }
