@@ -1263,6 +1263,13 @@ NgChm.DET.processDetailMapUpdate = function (event, level) {
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		NgChm.DET.detailInit();
 		NgChm.heatMap.configureButtonBar();
+		//If URL search parameter has been specified, execute search upon initialization of the detail panel
+		var searchParam = NgChm.UTIL.getURLParameter('search')
+		if (searchParam !== "") {
+			var searchElement = document.getElementById('search_text');
+			searchElement.value = searchParam;
+			NgChm.DET.detailSearch();
+		}
 	} else {
 		//Data tile update - wait a bit to see if we get another new tile quickly, then draw
 		if (NgChm.DET.eventTimer != 0) {
