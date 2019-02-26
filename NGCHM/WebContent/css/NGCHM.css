@@ -204,6 +204,7 @@ div.mdaServiceHeaderLogo img
     z-index: 10000;
     text-align: center;
     box-shadow: 5px 5px 5px #777777;
+    position: absolute;
 }
 
 #helpprefs {
@@ -444,11 +445,11 @@ th.breakpointContainer {
 	border-bottom-style: solid;
 }
 
-#prefsPanel {
+#prefs {
 	height: 100%;
 	width: 420px;
 	overflow: none;
-	position: fixed;
+	position: absolute;
 	top: 0;
 	background-color: #CBDBF6; 
 	border-left: 1px solid black; 
@@ -483,9 +484,11 @@ th.breakpointContainer {
     color: red;
 }
 
-#pdfPrefsPanel, #msgBox, #linkBox {
-    margin: 5px !important;
-    right: 5%;
+#pdfPrefs, #msgBox, #linkBox {
+	position: absolute;
+	margin: 5px !important;
+    top: 10%;
+    left: 35%;
     padding: 2px 2px 2px 2px !important;
     border: 1px solid #1a1a1a;
     border-radius: 15px;
@@ -506,7 +509,8 @@ th.breakpointContainer {
     box-sizing: border-box
 }
 
-#prefsHeader, #pdfPrefsHeader, #msgBoxHdr, #linkBoxHdr{
+#prefsHdr, #pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
+	cursor: move;
     display: table;
     font-size: 18px;
     font-weight: bold;
@@ -519,7 +523,7 @@ th.breakpointContainer {
     background: #CBD1EA;
 }
 
-#pdfPrefsHeader, #msgBoxHdr, #linkBoxHdr{
+#pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
 }
@@ -632,3 +636,21 @@ table.helpTable th {
   transform: translate(-50%, -50%);
   text-align: center;
 }
+
+#bubbleHelp {
+    margin: 5px !important;
+    padding: 5px 10px 5px 10px !important;
+    border: 1px solid #1a1a1a;
+    border-radius: 15px;
+    font-size: 90% !important;
+    font-family: Arial;
+    font-weight: normal;
+    background: #ffffed;
+    color: #000000;
+    min-width: 30px;
+    z-index: 10000;
+    text-align: left;
+    box-shadow: 5px 5px 5px #777777;
+    position: absolute;
+}
+

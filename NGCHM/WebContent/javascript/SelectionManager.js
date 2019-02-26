@@ -128,7 +128,7 @@ NgChm.SEL.handleScroll = function(evt) {
 
 
 NgChm.SEL.keyNavigate = function(e) {
-	NgChm.UHM.userHelpClose();
+	NgChm.UHM.hlpC();
     clearTimeout(NgChm.DET.detailPoint);
     if (e.target.type != "text" && e.target.type != "textarea"){
 		switch(e.keyCode){ // prevent default added redundantly to each case so that other key inputs won't get ignored

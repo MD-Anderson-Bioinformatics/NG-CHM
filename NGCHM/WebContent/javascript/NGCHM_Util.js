@@ -576,6 +576,54 @@ NgChm.UTIL.scalePngImage = function (url, width, height, dl, callback) {
 }
 
 /**********************************************************************************
+ * FUNCTION - setDragPanels: This function configures selected DIV panels as "drag
+ * panels", allowing them to be moved on the screen.
+ **********************************************************************************/
+NgChm.UTIL.setDragPanels = function () {
+	NgChm.UTIL.dragElement(document.getElementById("prefs"));
+	NgChm.UTIL.dragElement(document.getElementById("pdfPrefs"));
+	NgChm.UTIL.dragElement(document.getElementById("msgBox"));
+	NgChm.UTIL.dragElement(document.getElementById("linkBox"));
+}
+
+/**********************************************************************************
+ * FUNCTION - dragElement: This function adds drag/move functionality to the DIV
+ * passed in.
+ **********************************************************************************/
+NgChm.UTIL.dragElement = function (elmnt) {
+	  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+	  if (document.getElementById(elmnt.id + "Hdr")) {
+	    /* if present, the header is where you move the DIV from:*/
+	    document.getElementById(elmnt.id + "Hdr").onmousedown = dragMouseDown;
+	  }
+
+	  function dragMouseDown(e) {
+	    e = e || window.event;
+	    e.preventDefault();
+	    // get the mouse cursor position at startup:
+	    pos3 = e.clientX;
+	    pos4 = e.clientY;
+	    document.onmouseup = closeDragElement;
+	    // call a function whenever the cursor moves:
+	    document.onmousemove = elementDrag;
+	  }
+
+	  function elementDrag(e) {
+	    e = e || window.event;
+	    e.preventDefault();
+	    // calculate the new cursor position:
+	    elmnt.style.top = e.clientY + 'px';
+	    elmnt.style.left = e.clientX + 'px';
+	  }
+
+	  function closeDragElement() {
+	    /* stop moving when mouse button is released:*/
+	    document.onmouseup = null;
+	    document.onmousemove = null;
+	  }
+	}
+
+/**********************************************************************************
  * BEGIN: EMBEDDED MAP FUNCTIONS AND GLOBALS
  * 
  * embedLoaded: Global for whether a given iFrame's heat map has been loaded already.  
@@ -745,4 +793,6 @@ NgChm.UTIL.initDisplayVars = function() {
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
  **********************************************************************************/
+
+
 

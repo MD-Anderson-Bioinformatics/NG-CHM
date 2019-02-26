@@ -47,7 +47,7 @@ NgChm.UPM.hasClasses = false;
  **********************************************************************************/
 NgChm.UPM.editPreferences = function(e,errorMsg) {
 	NgChm.UHM.closeMenu();
-	NgChm.UHM.userHelpClose();
+	NgChm.UHM.hlpC();
 	var rowClassBarsOrder = NgChm.heatMap.getRowClassificationOrder();
 	var colClassBarsOrder = NgChm.heatMap.getColClassificationOrder();
 	if ((colClassBarsOrder.length > 0) || (rowClassBarsOrder.length > 0)) {
@@ -73,7 +73,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	
 	NgChm.UPM.resetVal = NgChm.UPM.getResetVals();
 	
-	var prefspanel = document.getElementById("prefsPanel");
+	var prefspanel = document.getElementById("prefs");
 	prefspanel.style.right = 0;
 	prefspanel.style.left = "";
 	var prefprefs = document.getElementById("prefPrefs");
@@ -127,7 +127,6 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		NgChm.UPM.showLayerBreak(NgChm.SEL.currentDl);
 		NgChm.UPM.showLayerPrefs();
 	}
-	
 	errorMsg = null;
 }
 
@@ -242,7 +241,7 @@ NgChm.UPM.prefsCancelButton = function() {
 	}
 	NgChm.UPM.removeSettingsPanels();
 	//Hide the preferences panel
-	document.getElementById('prefsPanel').style.display= 'none';
+	document.getElementById('prefs').style.display= 'none';
 	NgChm.UPM.searchPerformed = false;
 }
 
@@ -251,8 +250,8 @@ NgChm.UPM.prefsCancelButton = function() {
  * editing panel from the left side of the screen to the right (or vice-versa).
  **********************************************************************************/
 NgChm.UPM.prefsMoveButton = function() {
-	NgChm.UHM.userHelpClose();
-	var prefspanel = document.getElementById("prefsPanel");
+	NgChm.UHM.hlpC();
+	var prefspanel = document.getElementById("prefs");
 	var moveBtn = document.getElementById("prefsMove_btn");
 	if (moveBtn.name === 'moveLeft') {
 		moveBtn.setAttribute('src', 'images/prefsRight.png');
@@ -1746,19 +1745,6 @@ NgChm.UPM.setupRowColPrefs = function(e, prefprefs) {
 
 	var topRowItemData = NgChm.heatMap.getRowConfig().top_items.toString();
 	var topRowItemsStyle = "style='font-family: sans-serif;font-size: 80%;";
-	if (NgChm.SUM.rowTopItems.length == 1 && NgChm.SUM.rowTopItems[0] == ""){
-		//do nothing
-	}else if (NgChm.SUM.rowTopItems.length > 0 && NgChm.SUM.rowTopItemsIndex.length == 0){
-		topRowItemsStyle += "background-color:rgba(255, 0, 0, 0.3)";
-		topRowItemsStyle += " onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,\"No items were found\",160)'";
-	} else if (NgChm.SUM.rowTopItemsIndex.dupe){
-		topRowItemsStyle = "background-color:rgba(255, 255, 0, 0.3)";
-		topRowItemsStyle += " onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,\"Duplicate items were found\",160)'";
-	} else if (NgChm.SUM.rowTopItems.length > NgChm.SUM.rowTopItemsIndex.length && NgChm.SUM.rowTopItemsIndex.length > 0){
-		topRowItemsStyle = "background-color:rgba(255, 255, 0, 0.3)";
-		topRowItemsStyle += " onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,\"Some items were not found\",160)'";
-	}
-	topRowItemsStyle += "';";
 	var topRowItems = "&nbsp;&nbsp;<textarea name='rowTopItems' id='rowTopItems' " + topRowItemsStyle +" rows='3', cols='80'>"+topRowItemData+"</textarea>";
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Top Rows:"]);
 	NgChm.UHM.setTableRow(prefContents,[topRowItems],2);
@@ -1789,19 +1775,6 @@ NgChm.UPM.setupRowColPrefs = function(e, prefprefs) {
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Trim Label Text From:",colLabelAbbrevSelect]);
 	var topColItemData = NgChm.heatMap.getColConfig().top_items.toString();
 	var topColItemsStyle = "style='font-family: sans-serif;font-size: 80%;";
-	if (NgChm.SUM.colTopItems.length == 1 && NgChm.SUM.colTopItems[0] == ""){
-		//do nothing
-	}else if (NgChm.SUM.colTopItems.length > 0 && NgChm.SUM.colTopItemsIndex.length == 0){ 
-		var topColItemsStyle = "background-color:rgba(255, 0, 0, 0.3)";
-		topColItemsStyle += " onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,\"No items were found\",160)'";
-	} else if (NgChm.SUM.colTopItemsIndex.dupe){
-		var topColItemsStyle = "background-color:rgba(255, 255, 0, 0.3)";
-		topColItemsStyle += " onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,\"Duplicate items were found\",160)'";
-	} else if (NgChm.SUM.colTopItems.length > NgChm.SUM.colTopItemsIndex.length && NgChm.SUM.colTopItemsIndex.length > 0){
-		var topColItemsStyle = "background-color:rgba(255, 255, 0, 0.3)";
-		topColItemsStyle += " onmouseout='NgChm.UHM.userHelpClose();' onmouseover='NgChm.UHM.detailDataToolHelp(this,\"Some items were not found\",160)'";
-	}
-	topColItemsStyle += "';";
 	var topColItems = "&nbsp;&nbsp;<textarea name='colTopItems' id='colTopItems' " + topColItemsStyle +" rows='3', cols='80'>"+topColItemData+"</textarea>";
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Top Columns:"]);
 	NgChm.UHM.setTableRow(prefContents,[topColItems],2);

@@ -1748,7 +1748,7 @@ NgChm.SUM.drawTopItems = function(){
 }
 
 NgChm.SUM.dividerStart = function(e) {
-	NgChm.UHM.userHelpClose();
+	NgChm.UHM.hlpC();
 	e.preventDefault();
 	document.addEventListener('mousemove', NgChm.SUM.dividerMove);
 	document.addEventListener('touchmove', NgChm.SUM.dividerMove, {passive: false});

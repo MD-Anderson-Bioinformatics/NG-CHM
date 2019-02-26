@@ -12,14 +12,14 @@ NgChm.createNS('NgChm.UHM');
  * classification bars.  
  **********************************************************************************/
 NgChm.UHM.userHelpOpen = function() {
-    NgChm.UHM.userHelpClose();
+    NgChm.UHM.hlpC();
     clearTimeout(NgChm.DET.detailPoint);
 	var helpContents = document.createElement("TABLE");
 	helpContents.id = 'helpTable';
     var orgW = window.innerWidth+window.pageXOffset;
     var orgH = window.innerHeight+window.pageYOffset;
     var helptext = NgChm.UHM.getDivElement("helptext");    
-    helptext.innerHTML=("<a href='javascript:void(pasteHelpContents())' align='left'>Copy To Clipboard</a><img id='redX_btn' src='images/redX.png' alt='Close Help' onclick='NgChm.UHM.userHelpClose();' align='right'>");
+    helptext.innerHTML=("<a href='javascript:void(pasteHelpContents())' align='left'>Copy To Clipboard</a><img id='redX_btn' src='images/redX.png' alt='Close Help' onclick='NgChm.UHM.hlpC();' align='right'>");
     helptext.style.position = "absolute";
     document.getElementsByTagName('body')[0].appendChild(helptext);
     var rowElementSize = NgChm.DET.dataBoxWidth * NgChm.DET.canvas.clientWidth/NgChm.DET.canvas.width; // px/Glpoint
@@ -311,55 +311,74 @@ NgChm.UHM.locateHelpBox = function(helptext) {
 }
 
 /**********************************************************************************
- * FUNCTION - detailDataToolHelp: The purpose of this function is to generate a 
+ * FUNCTION - hlp: The purpose of this function is to generate a 
  * pop-up help panel for the tool buttons at the top of the detail pane. It receives
  * text from chm.html. If the screen has been split, it changes the test for the 
  * split screen button
  **********************************************************************************/
-NgChm.UHM.detailDataToolHelp = function(e,text,width,align) {
-	NgChm.UHM.userHelpClose();
-	NgChm.DET.detailPoint = setTimeout(function(){
-		if (typeof width === "undefined") {
-			width=text.length*8;
-		}
-		if ((NgChm.SEL.isSub) && (text == "Split Into Two Windows")) {
-			text = "Join Screens";
-		}
-	    var helptext = NgChm.UHM.getDivElement("helptext");
-	    if (typeof align !== 'undefined') {
-	    	helptext.style.textAlign= align;
+NgChm.UHM.hlp = function(e,text, width, reverse) {
+	NgChm.UHM.hlpC();
+    var helptext = document.createElement('div');
+    helptext.id = 'bubbleHelp';
+    helptext.style.display="none";
+    NgChm.UHM.detailPoint = setTimeout(function(){
+	    var elemPos = NgChm.UHM.getElemPosition(e);
+	    var bodyElem = document.getElementsByTagName('body')[0];
+	    if (bodyElem) {
+	    	bodyElem.appendChild(helptext);
 	    }
-	    helptext.style.position = "absolute";
-	    if (e.parentElement) e.parentElement.appendChild(helptext);
-//	    helptext.style.display="inherit";
-	    
-//	    if (helptext.offsetParent == e.parentElement){ // in most cases, this will be true
-	    	if (2*width + e.getBoundingClientRect().right > document.body.offsetWidth-50){ // 2*width and -50 from window width to force elements close to right edge to move
-		    	if (e.offsetLeft < 5) {
-			    	helptext.style.left = e.offsetLeft + 50;
-		    	} else {
-			    	helptext.style.left = e.offsetLeft - (width*1.5);  
-		    	}
-		    } else {
-		    	if (e.offsetLeft !== 0) {
-		    		helptext.style.left = e.offsetLeft ;
-		    	}
-		    }
-		    // Unless close to the bottom, set help text below cursor
-		    // Else, set to right of cursor.
-	    	if (e.offsetTop > 10) {
-	    		helptext.style.top = e.offsetTop + 20;
-	    	} else {
-	    		helptext.style.top = e.offsetTop + 45;
-	    	}
-//	    } else { // in tables (td,tr or anything where e.parentElement does not have position: relative or absolute) the positioning logic above will fail, so we don't move it at all
-//	    
-//	    }
+	    if (reverse !== undefined) {
+	    	helptext.style.left = elemPos.left - width;
+	    } else {
+	    	helptext.style.left = elemPos.left;
+	    }
+    	helptext.style.top = elemPos.top + 20;
 	    helptext.style.width = width;
 		var htmlclose = "</font></b>";
 		helptext.innerHTML = "<b><font size='2' color='#0843c1'>"+text+"</font></b>";
 		helptext.style.display="inherit"; 
-	},1000);
+	},1500);
+}
+
+/**********************************************************************************
+ * FUNCTION - getElemPosition: This function finds the help element selected's 
+ * position on the screen and passes it back to the help function for display. 
+ * The position returned is the position on the entire screen (not the panel that
+ * the control is embedded in).  In this way, the help text bubble may be placed
+ * on the document body.
+ **********************************************************************************/
+NgChm.UHM.getElemPosition = function(el) {
+    var _x = 0;
+    var _y = 0;
+    while( el && !isNaN( el.offsetLeft ) && !isNaN( el.offsetTop ) ) {
+        _x += el.offsetLeft - el.scrollLeft;
+        _y += el.offsetTop - el.scrollTop;
+        el = el.offsetParent;
+    }
+    return { top: _y, left: _x };
+}
+
+/**********************************************************************************
+ * FUNCTION - hlpC: This function clears any bubble help box displayed on the screen.
+ **********************************************************************************/
+NgChm.UHM.hlpC = function() {
+	clearTimeout(NgChm.UHM.detailPoint);
+	var helptext = document.getElementById('bubbleHelp');
+	if (helptext){
+		helptext.remove();
+	}
+}
+
+/**********************************************************************************
+ * FUNCTION - userHelpClose: The purpose of this function is to close any open 
+ * user help pop-ups and any active timeouts associated with those pop-up panels.
+ **********************************************************************************/
+NgChm.UHM.userHelpClose = function() {
+	clearTimeout(NgChm.DET.detailPoint);
+	var helptext = document.getElementById('bubbleHelp');
+	if (helptext){
+		helptext.remove();
+	}
 }
 
 /**********************************************************************************
@@ -419,19 +438,6 @@ NgChm.UHM.addBlankRow = function(addDiv, rowCnt) {
 	return;
 }
 
-/**********************************************************************************
- * FUNCTION - userHelpClose: The purpose of this function is to close any open 
- * user help pop-ups and any active timeouts associated with those pop-up panels.
- **********************************************************************************/
-NgChm.UHM.userHelpClose = function() {
-	NgChm.UHM.previewDiv = null;
-	clearTimeout(NgChm.DET.detailPoint);
-	var helptext = document.getElementById('helptext');
-	if (helptext){
-		helptext.remove();
-	}
-}
-
 NgChm.UHM.showSearchError = function(type) {
 	var searchError = NgChm.UHM.getDivElement('searchError');
 	searchError.style.display = 'inherit';
@@ -443,7 +449,7 @@ NgChm.UHM.showSearchError = function(type) {
 		case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + NgChm.DET.currentSearchItem.label;break;
 		case 2: searchError.innerHTML = "All " + NgChm.DET.currentSearchItem.axis +  " items are visible. Change the view mode to see " + NgChm.DET.currentSearchItem.label;break;
 	}
-	NgChm.UHM.userHelpClose();
+	NgChm.UHM.hlpC();
 	document.body.appendChild(searchError);
 	setTimeout(function(){
 		searchError.remove();
@@ -670,7 +676,6 @@ NgChm.UHM.initMessageBox = function() {
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	document.getElementById('loader').style.display = 'none'
 	msgBox.style.top = headerpanel.offsetTop + 15;
-	msgBox.style.right = "5%";
 	
 	document.getElementById('msgBox').style.display = 'none';
 	document.getElementById('msgBoxBtnImg_1').style.display = 'none';
@@ -802,7 +807,7 @@ NgChm.UHM.ribbonVBtnOver = function(btn,val) {
  * possible warnings may be displayed in the box.
  **********************************************************************************/
 NgChm.UHM.displayStartupWarnings = function() {
-	NgChm.UHM.userHelpClose();
+	NgChm.UHM.hlpC();
 	NgChm.UHM.initMessageBox();
 	var headingText = "NG-CHM Startup Warning";
 	var warningText = "";
@@ -1070,6 +1075,7 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	NgChm.UHM.hideAllLinks();
 	NgChm.UHM.showMapPlugins();
 	document.getElementById('linkBox').style.display = '';
+//	NgChm.UTIL.dragElement(document.getElementById("linkBox"));
 }
 
 /**********************************************************************************

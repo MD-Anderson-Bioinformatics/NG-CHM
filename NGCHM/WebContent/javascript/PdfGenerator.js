@@ -18,8 +18,8 @@ NgChm.PDF.mdaLogo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQYAAABsCAYAA
 NgChm.PDF.openPdfPrefs = function(e) {
 	NgChm.UHM.closeMenu();
 	maxRows = 0;
-	NgChm.UHM.userHelpClose();
-	var prefspanel = document.getElementById('pdfPrefsPanel');
+	NgChm.UHM.hlpC();
+	var prefspanel = document.getElementById('pdfPrefs');
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	//Add prefspanel table to the main preferences DIV and set position and display
 	prefspanel.style.top = headerpanel.offsetTop + 15;
@@ -1096,7 +1096,7 @@ NgChm.PDF.getPDF = function() {
  **********************************************************************************/
 NgChm.PDF.pdfCancelButton = function() {
 	document.getElementById('pdfErrorMessage').style.display="none";
-	var prefspanel = document.getElementById('pdfPrefsPanel');
+	var prefspanel = document.getElementById('pdfPrefs');
 	prefspanel.style.display = "none";
     NgChm.DET.canvas.focus();
 }

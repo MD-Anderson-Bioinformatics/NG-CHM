@@ -105,7 +105,7 @@ NgChm.DET.initDetailDisplay = function () {
 	
 	
 	NgChm.DET.canvas.addEventListener("touchstart", function(e){
-		NgChm.UHM.userHelpClose();
+		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		var timesince = now - NgChm.DET.latestTap;
 		if((timesince < 600) && (timesince > 0) && e.touches.length == 1){ // double tap
@@ -160,7 +160,7 @@ NgChm.DET.initDetailDisplay = function () {
 				var diffMax = Math.max(diffX,diffY);
 				if (timesince > 500 && diffMax < 20){
 					clearTimeout(NgChm.DET.eventTimer);
-					NgChm.UHM.userHelpClose();
+					NgChm.UHM.hlpC();
 					NgChm.DET.matrixRightClick(e);
 				} else if (timesince < 500 && diffMax < 20){
 					NgChm.UHM.userHelpOpen();
@@ -175,7 +175,7 @@ NgChm.DET.initDetailDisplay = function () {
 	var colLabelDiv = document.getElementById("colLabelDiv");
 	
 	rowLabelDiv.addEventListener("touchstart", function(e){
-		NgChm.UHM.userHelpClose();
+		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		NgChm.DET.latestLabelTap = now;
 	});
@@ -191,7 +191,7 @@ NgChm.DET.initDetailDisplay = function () {
 	});
 	
 	colLabelDiv.addEventListener("touchstart", function(e){
-		NgChm.UHM.userHelpClose();
+		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		NgChm.DET.latestLabelTap = now;
 	});
@@ -240,7 +240,7 @@ NgChm.DET.clickStart = function (e) {
 	e.preventDefault();
 	NgChm.SUM.mouseEventActive = true;
 	var clickType = NgChm.DET.getClickType(e);
-	NgChm.UHM.userHelpClose();
+	NgChm.UHM.hlpC();
 	if (clickType === 0) { 
 		NgChm.DET.canvas = document.getElementById('detail_canvas');
 		var coords = NgChm.DET.getCursorPosition(e);
@@ -303,7 +303,7 @@ NgChm.DET.clickEnd = function (e) {
 NgChm.DET.dblClick = function(e) {
 	//turn off single click help if double click
 	clearTimeout(NgChm.DET.eventTimer);
-	NgChm.UHM.userHelpClose();
+	NgChm.UHM.hlpC();
 	//Get cursor position and convert to matrix row / column
 	var rowElementSize = NgChm.DET.dataBoxWidth * NgChm.DET.canvas.clientWidth/NgChm.DET.canvas.width; 
 	var colElementSize = NgChm.DET.dataBoxHeight * NgChm.DET.canvas.clientHeight/NgChm.DET.canvas.height;
@@ -797,7 +797,7 @@ NgChm.DET.isOnObject = function (e,type) {
 }	
 
 NgChm.DET.detailDataZoomIn = function () {
-	NgChm.UHM.userHelpClose();	
+	NgChm.UHM.hlpC();	
 	if (NgChm.SEL.mode == 'FULL_MAP') {
 		if ((NgChm.SEL.prevMode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
 			NgChm.DET.detailHRibbonButton();
@@ -828,7 +828,7 @@ NgChm.DET.detailDataZoomIn = function () {
 }	
 
 NgChm.DET.detailDataZoomOut = function () {
-	NgChm.UHM.userHelpClose();	
+	NgChm.UHM.hlpC();	
 	if (NgChm.SEL.mode == 'NORMAL') {
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxWidth);
 		if ((current > 0) &&
@@ -922,7 +922,7 @@ NgChm.DET.detailVRibbonButton = function () {
 //ribbon view if the user clicks on the dendrogram.  If a dendrogram selection is in effect, then
 //selectedStart and selectedStop will be set.
 NgChm.DET.detailHRibbon = function () {
-	NgChm.UHM.userHelpClose();	
+	NgChm.UHM.hlpC();	
 	var previousMode = NgChm.SEL.mode;
 	var prevWidth = NgChm.DET.dataBoxWidth;
 	NgChm.DET.saveCol = NgChm.SEL.currentCol;
@@ -980,7 +980,7 @@ NgChm.DET.detailHRibbon = function () {
 }
 
 NgChm.DET.detailVRibbon = function () {
-	NgChm.UHM.userHelpClose();	
+	NgChm.UHM.hlpC();	
 	var previousMode = NgChm.SEL.mode;
 	var prevHeight = NgChm.DET.dataBoxHeight;
 	NgChm.DET.saveRow = NgChm.SEL.currentRow;
@@ -1040,7 +1040,7 @@ NgChm.DET.detailVRibbon = function () {
 }
 
 NgChm.DET.detailNormal = function () {
-	NgChm.UHM.userHelpClose();	
+	NgChm.UHM.hlpC();	
 	var previousMode = NgChm.SEL.mode;
 	NgChm.SEL.setMode('NORMAL');
 	NgChm.DET.setButtons();
@@ -1084,7 +1084,7 @@ NgChm.DET.detailNormal = function () {
 
 //Special mode - show the whole map in the detail pane.
 NgChm.DET.detailFullMap = function () {
-	NgChm.UHM.userHelpClose();	
+	NgChm.UHM.hlpC();	
 	NgChm.SEL.setMode('FULL_MAP');
 	NgChm.DET.saveRow = NgChm.SEL.currentRow;
 	NgChm.DET.saveCol = NgChm.SEL.currentCol;
@@ -1169,7 +1169,7 @@ NgChm.DET.setDetCanvasBoxSize = function () {
 //Called when split/join button is pressed
 NgChm.DET.detailSplit = function () {
 	if (!NgChm.heatMap.getUnAppliedChanges()) {
-		NgChm.UHM.userHelpClose();
+		NgChm.UHM.hlpC();
 		NgChm.heatMap.setFlickInitialized(false);
 		// If the summary and detail are in a single browser window, this is a split action.  
 		if (!NgChm.SEL.isSub) {
@@ -1837,10 +1837,10 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 	if (text !== "<" && text !== "..." && text.length > 0){
 		div.addEventListener('click',NgChm.DET.labelClick ,false);
 		div.addEventListener('contextmenu',NgChm.DET.labelRightClick,false);
-		div.onmouseover = function(){NgChm.UHM.detailDataToolHelp(this,longText);}
-		div.onmouseleave = NgChm.UHM.userHelpClose;
+ 		div.onmouseover = function(){NgChm.UHM.hlp(this,longText,longText.length*7,0);}
+		div.onmouseleave = NgChm.UHM.hlpC;
 		div.addEventListener("touchstart", function(e){
-			NgChm.UHM.userHelpClose();
+			NgChm.UHM.hlpC();
 			var now = new Date().getTime();
 			var timesince = now - NgChm.DET.latestTap;
 			NgChm.DET.labelLastClicked[this.getAttribute("axis")] = this.getAttribute("index");
@@ -1859,7 +1859,10 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 	}
 	if (text == "..."){
 		div.addEventListener('mouseover', (function() {
-		    return function(e) {NgChm.UHM.detailDataToolHelp(this, "Some covariate bars are hidden"); };
+		    return function(e) {NgChm.UHM.hlp(this,"Some covariate bars are hidden",160,0); };
+		}) (this), false);
+		div.addEventListener('mouseleave', (function() {
+		    return function(e) {NgChm.UHM.hlpC(); };
 		}) (this), false);
 	}   
 }
