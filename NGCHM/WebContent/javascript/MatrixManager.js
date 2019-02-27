@@ -266,11 +266,19 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return mapConfig.data_configuration.map_information.data_layer;
 	}
 	
-	this.setDividerPref = function() {
-		var container = document.getElementById('container');
-		var summary = document.getElementById('summary_chm');
-		var sumPercent = Math.ceil(100*summary.clientWidth / container.clientWidth);
+	this.setDividerPref = function(sumSize) {
+		var sumPercent = 50;
+		if (sumSize === undefined) {
+			var container = document.getElementById('container');
+			var summary = document.getElementById('summary_chm');
+			sumPercent = Math.ceil(100*summary.clientWidth / container.clientWidth);
+			sumPercent = Math.ceil(sumPercent/5)*5 > 90 ? 90 :  Math.ceil(sumPercent/5)*5;
+			
+		} else {
+			sumPercent = sumSize;
+		}
 		mapConfig.data_configuration.map_information.summary_width = sumPercent;
+		mapConfig.data_configuration.map_information.detail_width = 100 - sumPercent;
 	}
 	
 	this.setClassificationPrefs = function(classname, type, showVal, heightVal) {
@@ -302,7 +310,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			}
 		}
 	}
-	
+
 	this.setLayerGridPrefs = function(key, showVal, gridColorVal, selectionColorVal, gapColorVal) {
 		mapConfig.data_configuration.map_information.data_layer[key].grid_show = showVal ? 'Y' : 'N';
 		mapConfig.data_configuration.map_information.data_layer[key].grid_color = gridColorVal;

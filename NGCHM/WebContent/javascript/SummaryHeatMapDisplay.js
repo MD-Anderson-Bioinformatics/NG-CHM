@@ -171,17 +171,12 @@ NgChm.SUM.summaryInit = function(applying) {
 NgChm.SUM.initSummarySize = function(applying) {
 	var summary = document.getElementById('summary_chm');
 	var detail = document.getElementById('detail_chm');
-	var sumPercent = Math.ceil(100*summary.clientWidth / container.clientWidth);
-	//If we are reloading from a preferences apply, leave the divider where it is and do not set it to the saved width
-	if (!applying) {
-		sumPercent = NgChm.heatMap.getMapInformation().summary_width;
-		var detPercent = 100 - sumPercent;
-		
-		summary.style.width = sumPercent + "%";
-		detail.style.width = detPercent + "%";
-		summary.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
-		detail.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
-	}
+	var sumPercent = NgChm.heatMap.getMapInformation().summary_width;
+	var detPercent = 100 - sumPercent;
+	summary.style.width = sumPercent + "%";
+	detail.style.width = detPercent + "%";
+	summary.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
+	detail.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
 	NgChm.SUM.setTopItemsSize();
 	NgChm.SUM.setSummarySize();
 }
@@ -1791,6 +1786,7 @@ NgChm.SUM.dividerMove = function(e) {
 }
 
 NgChm.SUM.dividerEnd = function(e) {
+	NgChm.heatMap.setDividerPref();
 	e.preventDefault();
 	document.removeEventListener('mousemove', NgChm.SUM.dividerMove);
 	document.removeEventListener('mouseup', NgChm.SUM.dividerEnd);

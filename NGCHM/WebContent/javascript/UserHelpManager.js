@@ -464,7 +464,6 @@ NgChm.UHM.showSearchError = function(type) {
 NgChm.UHM.saveHeatMapChanges = function() {
 	NgChm.UHM.closeMenu();
 	NgChm.UHM.initMessageBox();
-	NgChm.heatMap.setDividerPref();
 	NgChm.UHM.setMessageBoxHeader("Save Heat Map");
 	//Have changes been made?
 	if (NgChm.heatMap.getUnAppliedChanges()) {
