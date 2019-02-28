@@ -624,6 +624,31 @@ NgChm.UTIL.dragElement = function (elmnt) {
 	}
 
 /**********************************************************************************
+ * FUNCTION - roundUpDown: The purpose of this function is to take an input number
+ * and round it up OR down depending upon where it is in the range either between
+ * 1 and 5 OR 1 and 10 depending on the limit set.  For example:  16 becomes 15 if
+ * limit set to 5 but 20 with a limit of 10).
+ **********************************************************************************/
+NgChm.UTIL.roundUpDown = function(inVal, limit) {
+	var roundedVal = inVal;
+	var lastDigit = inVal % 10;
+	if (limit === 5) {
+		if (((lastDigit < 5) && (lastDigit >= 3)) ||  ((lastDigit > 5) && (lastDigit >= 7))) {
+			roundedVal = Math.ceil(inVal/5)*5;
+		} else {
+			roundedVal = Math.floor(inVal/5)*5;
+		}
+	} else if (limit === 10) {
+		if (lastDigit >= 5) {
+			roundedVal = Math.ceil(inVal/10)*10;
+		} else {
+			roundedVal = Math.floor(inVal/10)*10;
+		}
+	} 
+	return roundedVal; 
+}
+
+/**********************************************************************************
  * BEGIN: EMBEDDED MAP FUNCTIONS AND GLOBALS
  * 
  * embedLoaded: Global for whether a given iFrame's heat map has been loaded already.  

@@ -272,8 +272,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			var container = document.getElementById('container');
 			var summary = document.getElementById('summary_chm');
 			sumPercent = Math.ceil(100*summary.clientWidth / container.clientWidth);
-			sumPercent = Math.ceil(sumPercent/5)*5 > 90 ? 90 :  Math.ceil(sumPercent/5)*5;
-			
 		} else {
 			sumPercent = sumSize;
 		}

@@ -1796,7 +1796,9 @@ NgChm.UPM.showDendroSelections = function() {
 	var rowDendroConfig = NgChm.heatMap.getRowDendroConfig();
 	var rowOrganization = NgChm.heatMap.getRowOrganization();
 	var rowOrder = rowOrganization['order_method'];
-	document.getElementById("summaryDisplayPref").value = NgChm.heatMap.getMapInformation().summary_width;
+	var sumPercent = NgChm.UTIL.roundUpDown(NgChm.heatMap.getMapInformation().summary_width,5);
+	sumPercent = sumPercent > 90 ? 90 :  sumPercent;
+	document.getElementById("summaryDisplayPref").value = sumPercent;
 	if (rowOrder === "Hierarchical") {
 		var dendroShowVal = rowDendroConfig.show;
 		document.getElementById("rowDendroShowPref").value = dendroShowVal;
@@ -1929,7 +1931,9 @@ NgChm.UPM.getResetVals = function(){
 
 NgChm.UPM.prefsResetButton = function(){
 	var resetVal = JSON.parse(NgChm.UPM.resetVal);
-	document.getElementById("summaryDisplayPref").value = resetVal.matrix.summary_width;
+	var sumPercent = NgChm.UTIL.roundUpDown(resetVal.matrix.summary_width,5);
+	sumPercent = sumPercent > 90 ? 90 :  sumPercent;
+	document.getElementById("summaryDisplayPref").value = sumPercent;
 	// Reset the Row/Col panel items
 	if (document.getElementById("rowDendroShowPref") !== null) {
 		document.getElementById("rowDendroShowPref").value = resetVal.rowDendroConfig.show;
