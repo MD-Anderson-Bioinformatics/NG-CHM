@@ -12,7 +12,7 @@ NgChm.createNS('NgChm.UHM');
  * classification bars.  
  **********************************************************************************/
 NgChm.UHM.userHelpOpen = function() {
-    NgChm.UHM.hlpC();
+	NgChm.UHM.hlpC();
     clearTimeout(NgChm.DET.detailPoint);
 	var helpContents = document.createElement("TABLE");
 	helpContents.id = 'helpTable';
@@ -364,6 +364,9 @@ NgChm.UHM.getElemPosition = function(el) {
 NgChm.UHM.hlpC = function() {
 	clearTimeout(NgChm.UHM.detailPoint);
 	var helptext = document.getElementById('bubbleHelp');
+	if (helptext === null) {
+		var helptext = document.getElementById('helptext');
+	}
 	if (helptext){
 		helptext.remove();
 	}
@@ -375,7 +378,7 @@ NgChm.UHM.hlpC = function() {
  **********************************************************************************/
 NgChm.UHM.userHelpClose = function() {
 	clearTimeout(NgChm.DET.detailPoint);
-	var helptext = document.getElementById('bubbleHelp');
+	var helptext = document.getElementById('helptext');
 	if (helptext){
 		helptext.remove();
 	}
