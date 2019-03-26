@@ -511,7 +511,7 @@ NgChm.UHM.widgetHelp = function() {
 	document.getElementById('ngchmLogos').style.display = '';
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("About NG-CHM Viewer");
-	var text = "<br>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.<br><br><a href='http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview' target='_blank'>Additional NG-CHM Information and Help</a><br><br><b>Software Version: </b>" + NgChm.CM.version+"<br><b>Map Version: </b>" +NgChm.heatMap.getMapInformation().version_id+"<br><br>";
+	var text = "<br>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.<br><br><a href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>Additional NG-CHM Information and Help</a><br><br><b>Software Version: </b>" + NgChm.CM.version+"<br><b>Map Version: </b>" +NgChm.heatMap.getMapInformation().version_id+"<br><br>";
 	NgChm.UHM.setMessageBoxText(text);
 	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
