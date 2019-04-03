@@ -108,7 +108,7 @@ div.mdaServiceHeaderLogo img
     position:relative;
 }
 
-#summary_canvas {
+.summary_canvas {
 	position:absolute;
 	zIndex:1;
 	image-rendering: pixelated;

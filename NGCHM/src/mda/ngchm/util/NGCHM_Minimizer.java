@@ -56,7 +56,7 @@ public class NGCHM_Minimizer {
 					line = br.readLine();
 					line = br.readLine();
 					line = br.readLine();
-				} else if (line.contains("NgChm.PDF.getPDF = function()")) {
+				} else if (line.contains("NgChm.PDF.getViewerHeatmapPDF = function()")) {
 					combinedWidget.write(line + "\n");
 					combinedWidget.write("NgChm.PDF.isWidget = true;\n");
 				} else {

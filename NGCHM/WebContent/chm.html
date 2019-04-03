@@ -135,7 +135,9 @@
    	        <img id='messageOpen_btn' style="position:absolute; display: none;" src='images/messageButton.png' alt='Open Alert' onmouseout="NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.hlp(this,"Display Startup Warnings",100)' onclick='NgChm.UHM.displayStartupWarnings();' align="top"   />
 			<canvas id='column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
 			<canvas id='row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
-			<canvas id='summary_canvas'></canvas>
+			<canvas id='row_class_canvas' class='summary_canvas'></canvas>
+			<canvas id='col_class_canvas' class='summary_canvas'></canvas>
+			<canvas id='summary_canvas' class='summary_canvas'></canvas>
 			<canvas id='summary_box_canvas' ></canvas>
 			<canvas id=summary_col_top_items_canvas class='selection_canvas' style='padding-top:2px;'></canvas>
 			<canvas id='summary_row_top_items_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
@@ -199,7 +201,7 @@
 										<td style="font-weight: bold;">
 											<div id="pref_buttons" align="right">
 												<img id="prefCancel_btn" src="images/prefCancel.png" alt="Cancel changes" onclick="NgChm.PDF.pdfCancelButton();" align="top">&nbsp;&nbsp;
-												<img id="prefCreate_btn" src="images/createPdf.png" alt="Create PDF" onclick="NgChm.PDF.getPDF();" align="top">
+												<img id="prefCreate_btn" src="images/createPdf.png" alt="Create PDF" onclick="NgChm.PDF.getViewerHeatmapPDF();" align="top">
 											</div>
 										</td>
 									</tr>
