@@ -36,6 +36,7 @@ import static mda.ngchm.datagenerator.ImportConstants.*;
 
 public class ImportData { 
 	public String chmName;
+	public String builderVersion;
 	public String chmDescription;
 	public int importRows;
 	public int importCols;
@@ -162,6 +163,12 @@ public class ImportData {
        			readOnly = readonly;
        		}
        		String mapname = (String) jsonObject.get(CHM_NAME);
+       		String builderV = (String) jsonObject.get(BUILDER_VER);
+       		if (builderV != null) {
+       			builderVersion = builderV;
+       		} else {
+       			builderVersion = NA;
+       		};
        		//Cleanup slashes in mapname and replace with underscore char
        		mapname = mapname.replace("/","_");
        		mapname = mapname.replace("\\","_");

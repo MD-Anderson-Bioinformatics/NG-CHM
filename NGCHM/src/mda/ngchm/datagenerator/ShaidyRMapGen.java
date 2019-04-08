@@ -20,6 +20,7 @@ import org.json.simple.parser.ParseException;
 //various configuration / data files produced by R and stored in different directories into a
 //heatmap.json and runs HeatmapDataGenerator to create the files needed by the NGCHM viewer.
 public class ShaidyRMapGen {
+	private static String BUILDER_VER = "ShaidyR 2.0.0";
 	private static String FILE_SEP = File.separator + File.separator; // On windows "\" path separator characters need to be doubled in json strings
 	
 	
@@ -397,6 +398,7 @@ public class ShaidyRMapGen {
 			if (readOnly != null) {
 				fileout.println("\t\"read_only\": \"" + readOnly + "\","); 
 			}
+			fileout.println("\t\"builder_version\": \"" + BUILDER_VER + "\","); 
 
 			//The properties field in the shady R contains various map attributes.  
 			JSONArray properties = (JSONArray)chmRJson.get("properties");

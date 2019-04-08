@@ -88,6 +88,7 @@ public final class ImportConstants {
 	public static String DISTANCE_METRIC_LABEL = "\"distance_metric\" :";	
 	public static String NAME_LABEL = "\"name\" :";	
 	public static String DESC_LABEL = "\"description\" :";	
+	public static String BUILDER_VER_LABEL = "\"builder_version\" :";	
 	public static String ATTRS_LABEL = "\"attributes\" :";	
 	public static String DATA_LAYERS_LABEL = "\"data_layers\" :";	
 	public static String DENDROGRAM_LABEL = "\"dendrogram\" :";	
@@ -228,6 +229,7 @@ public final class ImportConstants {
 	public static String ROW_CONFIGURATION =  "row_configuration";
 	public static String COL_CONFIGURATION =  "col_configuration";
 	public static String CHM_NAME = "chm_name";
+	public static String BUILDER_VER = "builder_version";
 	public static String CHM_DESC = "chm_description";
 	public static String CHM_ATTRS = "chm_attributes"; 
 	public static String COLORMAP =  "color_map";

@@ -393,7 +393,9 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 NgChm.UTIL.builderViewSizing = function (event, level) {
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		document.getElementById('detail_chm').style.width = '4%';
-		document.getElementById('summary_chm').style.width = '75%';
+		document.getElementById('summary_chm').style.width = '96%';
+		document.getElementById('summary_chm').style.left = 150;
+		document.getElementById('summary_chm').style.top = 0;
 		NgChm.SUM.summaryResize();  
 	 }
 }

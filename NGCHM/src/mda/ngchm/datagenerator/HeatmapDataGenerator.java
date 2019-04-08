@@ -1030,6 +1030,7 @@ public class HeatmapDataGenerator {
         fw.write(MAP_INFO_LABEL+BRACE_OPEN);
         fw.write(NAME_LABEL+QUOTE+iData.chmName+QUOTE+COMMA);
         fw.write(DESC_LABEL+QUOTE+iData.chmDescription+QUOTE+COMMA);
+        fw.write(BUILDER_VER_LABEL+QUOTE+iData.builderVersion+QUOTE+COMMA);
         fw.write(READ_ONLY_LABEL+QUOTE+iData.readOnly+QUOTE+COMMA);
         fw.write(VERSION_LABEL+QUOTE+CURRENT_GENERATOR_VERSION+QUOTE+COMMA);
         fw.write(LABEL_LENGTH_LABEL+LABEL_LENGTH_DEFAULT+COMMA);

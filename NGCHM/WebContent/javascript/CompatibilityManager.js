@@ -10,7 +10,7 @@ NgChm.CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\
 		    "\"dendrogram\": {\"show\": \"ALL\",\"height\": \"100\"},\"label_display_length\": \"20\",\"label_display_method\": \"END\",\"top_items\": \"[]\"},\"data_configuration\": {\"map_information\": {\"data_layer\": {"+
 		    "\"name\": \"Data Layer\",\"grid_show\": \"Y\",\"grid_color\": \"#FFFFFF\",\"selection_color\": \"#00FF38\",\"cuts_color\": \"#FFFFFF" +
 		    "\"},\"name\": \"CHM Name\",\"description\": \""+
-		    "Full length description of this heatmap\",\"summary_width\": \"50\",\"summary_height\": \"100\",\"detail_width\": \"50\",\"detail_height\": \"100\",\"read_only\": \"N\",\"version_id\": \"1.0.0\",\"map_cut_rows\": \"0\",\"map_cut_cols\": \"0\"}}}";
+		    "Full length description of this heatmap\",\"summary_width\": \"50\",\"builder_version\": \"NA\",\"summary_height\": \"100\",\"detail_width\": \"50\",\"detail_height\": \"100\",\"read_only\": \"N\",\"version_id\": \"1.0.0\",\"map_cut_rows\": \"0\",\"map_cut_cols\": \"0\"}}}";
 
 // CURRENT VERSION NUMBER
 NgChm.CM.version = "2.7.0";

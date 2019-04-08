@@ -1199,8 +1199,6 @@ NgChm.SUM.drawRowClassBarLabels = function () {
 	var classBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
 	var totalHeight = 0;
 	var matrixWidth = colCanvas.width;
-	var canvasWidth = parseInt(sumCanvas.style.width,10);
-	var covarWidth = canvasWidth - matrixWidth;
 	//Calc total width of all covariate bars
 	for (var i = 0; i < classBarConfigOrder.length; i++) {
 		var key = classBarConfigOrder[i];
@@ -1210,7 +1208,7 @@ NgChm.SUM.drawRowClassBarLabels = function () {
 		}
 	}
 	//Set starting horizontal covariate position to the left edge of Summary canvas PLUS the font height of the label text
-	var covPos = parseInt(NgChm.SUM.canvas.style.left) + 10;
+	var covPos = parseInt(NgChm.SUM.rCCanvas.offsetLeft) + 10;  
 	//Set starting vertical covariate position to the bottom edge of Summary canvas PLUS a space factor adjustment
 	var topPos = rowCanvas.offsetTop+rowCanvas.offsetHeight+5;
 	//Loop thru the class bars retrieving label (truncating where necessary), figuring the percentage of the total width of bars
@@ -1222,7 +1220,7 @@ NgChm.SUM.drawRowClassBarLabels = function () {
 			var covLabel = NgChm.UTIL.getLabelText(key,'COL');
 			var covPct = parseInt(currentClassBar.height) / totalHeight;
 			//scaled width of current bar
-			var barWidth = (covarWidth*covPct);
+			var barWidth = (NgChm.SUM.rCCanvas.width*covPct);
 			//half the bar width minus half the font size for centered placement
 			var halfBar = (barWidth / 2) - 5;
 			NgChm.SUM.setLabelDivElement(key+"RowLabel",covLabel,topPos,(covPos+halfBar),true);
@@ -1267,12 +1265,12 @@ NgChm.SUM.drawColClassBarLabels = function () {
 NgChm.SUM.drawColClassBarLabel = function(key,currentClassBar,prevHeight,totalHeight, fewClasses) {
 	//calculate where covariate bars end and heatmap begins by using the top items canvas (which is lined up with the heatmap)
 	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
-	var classHgt = NgChm.SUM.canvas.offsetHeight - rowCanvas.offsetHeight;
+	var classHgt =  NgChm.SUM.cCCanvas.height;
 	//calculate where the previous bar ends and the current one begins.
 	var prevEndPct = prevHeight/totalHeight;
 	var currEndPct = (prevHeight+parseInt(currentClassBar.height))/totalHeight;
 	//calculate where covariate bars begin and end and use that to calculate the total covariate bars height
-	var beginClasses = NgChm.SUM.canvas.offsetTop-6;
+	var beginClasses = NgChm.SUM.cCCanvas.offsetTop-6;
 	var endClasses = beginClasses+classHgt-2;
 	var classHeight = endClasses-beginClasses;
 	//get your horizontal start position (to the right of bars)
@@ -1766,6 +1764,8 @@ NgChm.SUM.drawTopItems = function(){
 			for (var i = 0; i < colTopItemsIndex.length;i++){ // check for rightside overlap. move overlapping items to the left
  				var start = colTopItemsStart[i]+colAdjust;    
 				var moveTo = colPositionArray[colTopItemsIndex[i]]*colCanvas.width;
+//				if (Math.abs(start - moveTo < 3)) { moveTo = start}
+//				colCtx.translate(0.5, 0.5);
 				colCtx.moveTo(start,0);
 				colCtx.bezierCurveTo(start,5,moveTo,5,moveTo,10);
 				placeTopItemDiv(i, "col");
