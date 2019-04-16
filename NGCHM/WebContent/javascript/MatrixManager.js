@@ -711,7 +711,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	function zipMapProperties(jsonData) {
 		var success = "";
-		var name = "ZippedMap?map=" + heatMapName; 
+		var name = NgChm.CFG.api + "ZippedMap?map=" + heatMapName; 
 		callServlet("POST", name, jsonData);
 		return true;
 	}
