@@ -10,6 +10,19 @@ NgChm.UTIL.getURLParameter = function(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||'';
 }
 
+
+/**********************************************************************************
+ * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
+ * wegGl canvases in the viewer. It is called to deal with blurring issues occuring
+ * on the canvases when modal panels are drawn over the viewer canvases.
+ **********************************************************************************/
+NgChm.UTIL.redrawCanvases = function () {
+	NgChm.SUM.drawHeatMap();
+	NgChm.DET.drawDetailHeatMap();
+    NgChm.SUM.drawRowClassBars();
+    NgChm.SUM.drawColClassBars();
+}
+
 /**********************************************************************************
  * FUNCTION - toTitleCase: The purpose of this function is to change the case of
  * the first letter of the first word in each sentence passed in.
@@ -466,6 +479,7 @@ NgChm.UTIL.downloadSummaryMapPng = function () {
 			dl.click();
 			dl.remove();
 	  });
+    NgChm.UTIL.redrawCanvases();
 }
 
 NgChm.UTIL.downloadSummaryPng = function () { 

@@ -23,6 +23,7 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	prefspanel.style.top = headerpanel.offsetTop + 15;
 	prefspanel.style.display="inherit";
 	document.getElementById("pdfInputFont"). value = parseInt(document.getElementsByClassName("DynamicLabel")[0].style["font-size"]);
+    NgChm.UTIL.redrawCanvases();
 }
 
 /**********************************************************************************

@@ -1626,7 +1626,7 @@ NgChm.SUM.summaryResize = function() {
 //		NgChm.SUM.drawColClassBarLegends(true); Removed for the time being
 //		NgChm.SUM.drawRowClassBarLegends(true);
 	}
-	NgChm.SUM.summaryInit(false);
+	NgChm.UTIL.redrawCanvases();
 }
 
 NgChm.SUM.drawRowSelectionMarks = function() {

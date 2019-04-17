@@ -266,7 +266,7 @@ NgChm.UHM.userHelpOpen = function() {
     } else {  
     	// on the blank area in the top left corner
     }
-
+    NgChm.UTIL.redrawCanvases();
 }
 
 /**********************************************************************************
@@ -690,6 +690,7 @@ NgChm.UHM.initMessageBox = function() {
 	document.getElementById('msgBoxBtnImg_4')['onclick'] = null;
 	var msgButton = document.getElementById('messageOpen_btn');
 	msgButton.style.display = 'none'; 
+    NgChm.UTIL.redrawCanvases();
 }
 
 NgChm.UHM.setMessageBoxHeader = function(headerText) {
@@ -723,6 +724,7 @@ NgChm.UHM.openHelp = function() {
 		var url = location.origin+location.pathname;
 		window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
 	}
+    NgChm.UTIL.redrawCanvases();
 }
 
 NgChm.UHM.openMenu = function(e) {
@@ -740,7 +742,8 @@ NgChm.UHM.openMenu = function(e) {
 		}
 	} else {
 		menu.style.display = 'none';
-	}
+    }
+    NgChm.UTIL.redrawCanvases();
 }
 
 NgChm.UHM.closeMenu = function() {
@@ -839,6 +842,7 @@ NgChm.UHM.displayStartupWarnings = function() {
 	NgChm.UHM.setMessageBoxText(warningText);
 	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
+    NgChm.UTIL.redrawCanvases();
 }
 
 /*===========================================================
@@ -858,6 +862,7 @@ NgChm.UHM.openLinkoutHelp = function() {
 	var mapLinksTbl = NgChm.UHM.openMapLinkoutsHelp();
 	var allLinksTbl = NgChm.UHM.openAllLinkoutsHelp();
 	NgChm.UHM.linkoutHelp(mapLinksTbl,allLinksTbl);
+    NgChm.UTIL.redrawCanvases();
 }
 
 /**********************************************************************************

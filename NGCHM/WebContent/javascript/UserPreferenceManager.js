@@ -128,6 +128,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		NgChm.UPM.showLayerPrefs();
 	}
 	errorMsg = null;
+    NgChm.UTIL.redrawCanvases();
 }
 
 /**********************************************************************************
