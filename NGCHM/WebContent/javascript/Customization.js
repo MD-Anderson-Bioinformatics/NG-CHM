@@ -266,7 +266,7 @@ NgChm.CUST.verbose = false;
 	    var script = document.createElement('script');
 	    head.appendChild(script);
 	    script.type = 'text/javascript';
-	    script.src = 'javascript/custom/custom.js';
+	    script.src = NgChm.CFG.custom_script;
         // Most browsers:   NOTE: The next 2 lines of code are replaced when building ngchmApp.html and ngchmWidget-min.js (the "file mode" and "widget" versions of the application)
         script.onload = NgChm.CUST.definePluginLinkouts;
         // Internet explorer:

@@ -680,7 +680,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	function webSaveMapProperties(jsonData) {
 		var success = "false";
-		var name = "SaveMapProperties?map=" + heatMapName;
+		var name = NgChm.CFG.api + "SaveMapProperties?map=" + heatMapName;
 		var req = new XMLHttpRequest();
 		req.open("POST", name, false);
 		req.setRequestHeader("Content-Type", "application/json");
@@ -710,7 +710,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	function zipMapProperties(jsonData) {
 		var success = "";
-		var name = "ZippedMap?map=" + heatMapName; 
+		var name = NgChm.CFG.api + "ZippedMap?map=" + heatMapName; 
 		callServlet("POST", name, jsonData);
 		return true;
 	}
@@ -878,7 +878,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			var req = new XMLHttpRequest();
 			var name = "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
 			if (fileSrc == NgChm.MMGR.WEB_SOURCE) {
-				req.open("GET", "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName, true);
+				req.open("GET", NgChm.CFG.api + "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName, true);
 			} else {
 				req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+layer+"/"+level+"/"+tileName+".bin");
 				
@@ -928,7 +928,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (fileSrc !== NgChm.MMGR.WEB_SOURCE) {
 			req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+jsonFile+".json");
 		} else {
-			req.open("GET", "GetDescriptor?map=" + heatMapName + "&type=" + jsonFile, true);
+			req.open("GET", NgChm.CFG.api + "GetDescriptor?map=" + heatMapName + "&type=" + jsonFile, true);
 		}
 		req.onreadystatechange = function () {
 			if (req.readyState == req.DONE) {
