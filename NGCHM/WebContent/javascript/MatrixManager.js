@@ -609,7 +609,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 						var keyVal = Object.keys(zipFiles)[fileIndex];
 						var entry = zipFiles[keyVal];
 						if (fileIndex < zipLen) {
-							if (keyVal.indexOf('bin') < 0) {
+							if ((keyVal.indexOf('bin') < 0) && (keyVal.indexOf('tile') < 0)) {
 								// Directly add all text zip entries directly to the new zip file
 								// except for mapConfig.  For this entry, add the modified config data.
 								if (keyVal.indexOf('mapConfig') > -1) {
@@ -699,7 +699,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 
 	function zipAppFileMode() {
-		var success = "";
 		var name = "";
 		if (fileSrc === NgChm.MMGR.FILE_SOURCE){
 			name += NgChm.CM.viewerAppUrl;

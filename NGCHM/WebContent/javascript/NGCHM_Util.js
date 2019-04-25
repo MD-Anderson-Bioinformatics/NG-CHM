@@ -17,10 +17,16 @@ NgChm.UTIL.getURLParameter = function(name) {
  * on the canvases when modal panels are drawn over the viewer canvases.
  **********************************************************************************/
 NgChm.UTIL.redrawCanvases = function () {
-	NgChm.SUM.drawHeatMap();
-	NgChm.DET.drawDetailHeatMap();
-    NgChm.SUM.drawRowClassBars();
-    NgChm.SUM.drawColClassBars();
+    if (NgChm.UTIL.getBrowserType() !== "Firefox") {
+        NgChm.SUM.drawHeatMap();
+        NgChm.DET.drawDetailHeatMap();
+        if (NgChm.SUM.rCCanvas.width > 0) {
+            NgChm.SUM.drawRowClassBars();
+        }
+        if (NgChm.SUM.cCCanvas.height > 0) {
+            NgChm.SUM.drawColClassBars();
+        }
+    }
 }
 
 /**********************************************************************************
@@ -406,7 +412,7 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 NgChm.UTIL.builderViewSizing = function (event, level) {
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		document.getElementById('detail_chm').style.width = '4%';
-		document.getElementById('summary_chm').style.width = '96%';
+		document.getElementById('summary_chm').style.width = '50%';
 		document.getElementById('summary_chm').style.left = 150;
 		document.getElementById('summary_chm').style.top = 0;
 		NgChm.SUM.summaryResize();  

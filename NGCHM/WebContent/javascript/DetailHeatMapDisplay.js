@@ -866,7 +866,8 @@ NgChm.DET.detailDataZoomOut = function () {
 		}	else {
 			NgChm.DET.detailFullMap();
 		}	
-	}
+    }
+    NgChm.UTIL.redrawCanvases();
 }
 
 //How big each data point should be in the detail pane.  

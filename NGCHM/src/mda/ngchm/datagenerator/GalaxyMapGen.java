@@ -18,6 +18,7 @@ import static mda.ngchm.datagenerator.ImportConstants.*;
 public class GalaxyMapGen {
 	
 public static boolean debugOutput = false;
+private static String BUILDER_VER = "Galaxy 2.3";
 
 
 	public static void main(String[] args){
@@ -70,18 +71,13 @@ public static boolean debugOutput = false;
 		}
 		try {
 			String matrixFile = args[4];
-	/*		String errMsg = MatrixValidator.validateMatrixFile(matrixFile);
-			if (errMsg != null) {
-				System.out.println(errMsg);
-				throw new Exception(errMsg);
-			} 
-			*/
 			PrintWriter fileout = new PrintWriter( "heatmapProperties.json", "UTF-8" );
 			if (debugOutput) {
 				System.out.println("BEGIN properties file");
 			}
 			writeHeatmapPropertiesEntry(fileout, "{");
 			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_name\": \"" + name + "\",");
+			writeHeatmapPropertiesEntry(fileout, "\t\t\"builder_version\": \"" + BUILDER_VER + "\",");
 			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_description\": \"" + args[2] + "\",");
 			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_attributes\": [");
 			boolean first = true;
@@ -309,17 +305,13 @@ public static boolean debugOutput = false;
 		
 		try {
 			String matrixFile = args[4];
-/*			String errMsg = MatrixValidator.validateMatrixFile(matrixFile);
-			if (errMsg != null) {
-				System.out.println(errMsg);
-				throw new Exception(errMsg);
-			} */
 			PrintWriter fileout = new PrintWriter( "heatmapProperties.json", "UTF-8" );
 			if (debugOutput) {
 				System.out.println("BEGIN properties file");
 			}
 			writeHeatmapPropertiesEntry(fileout, "{");
 			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_name\": \"" + name + "\",");
+			writeHeatmapPropertiesEntry(fileout, "\t\t\"builder_version\": \"" + BUILDER_VER + "\",");
 			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_description\": \"" + args[2] + "\",");
 			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_attributes\": [],");
 			writeHeatmapPropertiesEntry(fileout, "\t\"matrix_files\": [");

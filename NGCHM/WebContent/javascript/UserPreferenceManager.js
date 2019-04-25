@@ -601,7 +601,7 @@ NgChm.UPM.prefsValidateBreakPoints = function(colorMapName,prefPanel) {
 	var charBreak = false;
 	var dupeBreak = false;
 	var breakOrder = false;
-	var prevBreakValue = -99999;
+	var prevBreakValue = NgChm.SUM.minValues;
 	var errorMsg = null;
 	//Loop thru colormap thresholds and validate for order and duplicates
 	for (var i = 0; i < thresholds.length; i++) {
@@ -1716,7 +1716,7 @@ NgChm.UPM.setupRowColPrefs = function(e, prefprefs) {
 	var prefContents = document.createElement("TABLE");
 	NgChm.UHM.addBlankRow(prefContents);
 	NgChm.UHM.setTableRow(prefContents,["MAP INFORMATION:"], 2);
-	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Software Version:", NgChm.CM.version]);
+	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Viewer Version:", NgChm.CM.version]);
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Map Version:", NgChm.heatMap.getMapInformation().version_id]);
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Builder Version:", NgChm.heatMap.getMapInformation().builder_version]);
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Read Only:", NgChm.heatMap.getMapInformation().read_only]);
