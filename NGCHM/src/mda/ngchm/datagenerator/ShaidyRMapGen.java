@@ -317,7 +317,12 @@ public class ShaidyRMapGen {
 					String k = metadata[0].trim();
 					if (labelPosition.containsKey(k)) {
 						int idx = labelPosition.get(k);
-						values[idx] = metadata[1].trim();
+                                                if (metadata.length < 2) {
+                                                    // Don't crash here on bad meta data.  Errors will cause a halt later.
+						    values[idx] = "";
+                                                } else {
+						    values[idx] = metadata[1].trim();
+                                                }
 						if (keys[idx].equals(EmptyString)) { keys[idx] = k; }
 					}
 					line = br.readLine();
