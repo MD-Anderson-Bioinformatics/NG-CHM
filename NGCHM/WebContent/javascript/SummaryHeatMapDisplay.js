@@ -1220,7 +1220,7 @@ NgChm.SUM.drawRowClassBarLabels = function () {
 			var covLabel = NgChm.UTIL.getLabelText(key,'COL');
 			var covPct = parseInt(currentClassBar.height) / totalHeight;
 			//scaled width of current bar
-			var barWidth = (NgChm.SUM.rCCanvas.width*covPct);
+			var barWidth = (NgChm.SUM.rowClassBarWidth*covPct);
 			//half the bar width minus half the font size for centered placement
 			var halfBar = (barWidth / 2) - 5;
 			NgChm.SUM.setLabelDivElement(key+"RowLabel",covLabel,topPos,(covPos+halfBar),true);
@@ -1264,8 +1264,8 @@ NgChm.SUM.drawColClassBarLabels = function () {
 
 NgChm.SUM.drawColClassBarLabel = function(key,currentClassBar,prevHeight,totalHeight, fewClasses) {
 	//calculate where covariate bars end and heatmap begins by using the top items canvas (which is lined up with the heatmap)
-	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
-	var classHgt =  NgChm.SUM.cCCanvas.height;
+    var rowCanvas = document.getElementById("summary_row_top_items_canvas");
+	var classHgt =  NgChm.SUM.colClassBarHeight;
 	//calculate where the previous bar ends and the current one begins.
 	var prevEndPct = prevHeight/totalHeight;
 	var currEndPct = (prevHeight+parseInt(currentClassBar.height))/totalHeight;
