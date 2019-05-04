@@ -313,12 +313,10 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 			}
 			NgChm.DET.initDetailDisplay();
 		}
-
-		NgChm.SEL.setupLocalStorage();
-		document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);	
-		document.getElementById("detail_canvas").focus();
+        NgChm.SEL.setupLocalStorage();
 	} // NewTemp
-
+    document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);	
+    document.getElementById("detail_canvas").focus();
 }
 
 /**********************************************************************************

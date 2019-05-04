@@ -802,7 +802,7 @@ NgChm.DET.detailDataZoomIn = function () {
 		if ((NgChm.SEL.prevMode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
 			NgChm.DET.detailHRibbonButton();
 		} else if  ((NgChm.SEL.prevMode == 'RIBBONV') || (NgChm.SEL.prevMode == 'RIBBONV_DETAIL')) {
-			NgChm.DET.detailVRibbonButton();
+            NgChm.DET.detailVRibbonButton();
 		} else {
 			NgChm.DET.detailNormal();
 		}
@@ -854,7 +854,9 @@ NgChm.DET.detailDataZoomOut = function () {
 			NgChm.DET.setDetailDataHeight (NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection();
 		}	else {
-			NgChm.DET.detailFullMap();
+            if (NgChm.SEL.mode == 'RIBBONH') {
+			    NgChm.DET.detailFullMap();
+            }
 		}	
 	} 
 	if ((NgChm.SEL.mode == 'RIBBONV') || (NgChm.SEL.mode == 'RIBBONV_DETAIL')){
@@ -864,7 +866,9 @@ NgChm.DET.detailDataZoomOut = function () {
 			NgChm.DET.setDetailDataWidth (NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection();
 		}	else {
-			NgChm.DET.detailFullMap();
+            if (NgChm.SEL.mode == 'RIBBONV') {
+                NgChm.DET.detailFullMap();
+            }
 		}	
     }
     NgChm.UTIL.redrawCanvases();
@@ -914,11 +918,6 @@ NgChm.DET.detailHRibbonButton = function () {
 	NgChm.DET.detailHRibbon();
 }
 
-NgChm.DET.detailVRibbonButton = function () {
-	NgChm.DDR.clearDendroSelection();
-	NgChm.DET.detailVRibbon();
-}
-
 //Change to horizontal ribbon view.  Note there is a standard full ribbon view and also a sub-selection
 //ribbon view if the user clicks on the dendrogram.  If a dendrogram selection is in effect, then
 //selectedStart and selectedStop will be set.
@@ -931,9 +930,9 @@ NgChm.DET.detailHRibbon = function () {
 		
 	NgChm.SEL.setMode('RIBBONH');
 	NgChm.DET.setButtons();
-	if (previousMode=='FULL_MAP') {
-		NgChm.DET.setDetailDataHeight(NgChm.DET.zoomBoxSizes[0]);
-	}
+//	if (previousMode=='FULL_MAP') {
+//		NgChm.DET.setDetailDataHeight(NgChm.DET.zoomBoxSizes[0]);
+//	}
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
 	if (NgChm.SEL.selectedStart == null || NgChm.SEL.selectedStart == 0) {
@@ -964,7 +963,9 @@ NgChm.DET.detailHRibbon = function () {
 	if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
 		if (previousMode != 'FULL_MAP') {
 			NgChm.DET.setDetailDataHeight(prevWidth);
-		}	
+		} else {
+            NgChm.DET.setDetailDataHeight(NgChm.DET.zoomBoxSizes[0]);
+        }	
 		NgChm.SEL.currentRow=NgChm.DET.saveRow;
 	}	
 
@@ -980,6 +981,11 @@ NgChm.DET.detailHRibbon = function () {
 	NgChm.SEL.updateSelection();
 }
 
+NgChm.DET.detailVRibbonButton = function () {
+	NgChm.DDR.clearDendroSelection();
+	NgChm.DET.detailVRibbon();
+}
+
 NgChm.DET.detailVRibbon = function () {
 	NgChm.UHM.hlpC();	
 	var previousMode = NgChm.SEL.mode;
@@ -988,9 +994,9 @@ NgChm.DET.detailVRibbon = function () {
 	
 	NgChm.SEL.setMode('RIBBONV');
 	NgChm.DET.setButtons();
-	if (previousMode=='FULL_MAP') {
-		NgChm.DET.setDetailDataWidth(NgChm.DET.zoomBoxSizes[0]);
-	}
+//	if (previousMode=='FULL_MAP') {
+//		NgChm.DET.setDetailDataWidth(NgChm.DET.zoomBoxSizes[0]);
+//	}
 
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
@@ -1022,7 +1028,9 @@ NgChm.DET.detailVRibbon = function () {
 	if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
 		if (previousMode != 'FULL_MAP') {
 			NgChm.DET.setDetailDataWidth(prevHeight);
-		}
+		} else {
+ 		    NgChm.DET.setDetailDataWidth(NgChm.DET.zoomBoxSizes[0]);
+        }
 		NgChm.SEL.currentCol = NgChm.DET.saveCol;
 	}
 	

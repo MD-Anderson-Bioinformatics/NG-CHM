@@ -689,8 +689,10 @@ NgChm.UHM.initMessageBox = function() {
 	document.getElementById('msgBoxBtnImg_3')['onclick'] = null;
 	document.getElementById('msgBoxBtnImg_4')['onclick'] = null;
 	var msgButton = document.getElementById('messageOpen_btn');
-	msgButton.style.display = 'none'; 
-    NgChm.UTIL.redrawCanvases();
+    msgButton.style.display = 'none'; 
+    if (NgChm.SUM.texHmProgram !== undefined) {
+        NgChm.UTIL.redrawCanvases();
+    }
 }
 
 NgChm.UHM.setMessageBoxHeader = function(headerText) {
