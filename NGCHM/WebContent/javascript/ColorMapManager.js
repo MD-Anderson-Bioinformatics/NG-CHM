@@ -192,6 +192,9 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 		var lowerColor = rgbaColors[bounds["lower"]];
 		var upperColor = rgbaColors[bounds["upper"]];
 		// lowerColor and upperColor should be in { r:###, g:###, b:### } format
+                if (!lowerColor || !upperColor) {
+                    console.log ('Color limit missing');
+                }
 		var color = {};
 		color["r"] = Math.round(lowerColor["r"] * (1.0 - ratio) + upperColor["r"] * ratio);
 	    color["g"] = Math.round(lowerColor["g"] * (1.0 - ratio) + upperColor["g"] * ratio);
