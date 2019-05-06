@@ -1384,17 +1384,18 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 	var showVerticalGrid = showGrid && NgChm.DET.dataBoxWidth > NgChm.DET.minLabelSize && NgChm.DET.minPixelsForGrid*detDataPerRow <= detWidth;
 	var showHorizontalGrid = showGrid && NgChm.DET.dataBoxHeight > NgChm.DET.minLabelSize && NgChm.DET.minPixelsForGrid*detDataPerCol <= detHeight;
 
+        const cutsColorBytes = [ cutsColor.r, cutsColor.g, cutsColor.b, cutsColor.a ];
+        const searchGridColorBytes = [ searchGridColor[0], searchGridColor[1], searchGridColor[2], 255 ];
+        const regGridColorBytes = [ regularGridColor[0], regularGridColor[1], regularGridColor[2], 255 ];
+
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
 	var linelen = (rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA;
 	var gridLine = new Uint8Array(new ArrayBuffer(linelen));
 	//Build a horizontal cuts line using the cut color defined for the data layer.
 	var cutsLine = new Uint8Array(new ArrayBuffer(linelen));
 	if ((cutsColor !== null) && (cutsColor !== undefined)) {
-		for (var i=0;i<linelen;i++) {
-			cutsLine[i] = cutsColor.r;i++;
-			cutsLine[i] = cutsColor.g;i++;
-			cutsLine[i] = cutsColor.b;i++;
-			cutsLine[i] = cutsColor.a;
+		for (var i=0;i<linelen;i+=4) {
+                        cutsLine.set(cutsColorBytes, i);
 		}
 	}
 	if (showHorizontalGrid) {
@@ -1404,20 +1405,20 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 			//When building grid line check for vertical cuts by grabbing value of currentRow (any row really) and column being iterated to
 			var val = NgChm.heatMap.getValue(level, currDetRow, currDetCol+j);
 			var nextVal = NgChm.heatMap.getValue(level, currDetRow, currDetCol+j+1);
-			var gridColor = ((searchCols.indexOf(NgChm.SEL.currentCol+j) > -1) || (searchCols.indexOf(NgChm.SEL.currentCol+j+1) > -1)) ? searchGridColor : regularGridColor;
+			const gridColorBytes = ((searchCols.indexOf(NgChm.SEL.currentCol+j) > -1) || (searchCols.indexOf(NgChm.SEL.currentCol+j+1) > -1)) ? searchGridColorBytes : regGridColorBytes;
 			for (var k = 0; k < NgChm.DET.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
 				if (val <= NgChm.SUM.minValues) {
 					if ((k === NgChm.DET.dataBoxWidth - 1) && (nextVal > NgChm.SUM.minValues)) {
-						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
+                                                gridLine.set(gridColorBytes, linePos);
 					} else {
-						gridLine[linePos] = cutsColor.r; gridLine[linePos+1] = cutsColor.g; gridLine[linePos+2] = cutsColor.b;	gridLine[linePos+3] = cutsColor.a;
+                                                gridLine.set(cutsColorBytes, linePos);
 					}
 				} else {
-					if (k==NgChm.DET.dataBoxWidth-1){ // should the grid line be drawn?
-						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
+					if (k === NgChm.DET.dataBoxWidth-1) { // should the grid line be drawn?
+                                                gridLine.set(gridColorBytes, linePos);
 					} else {
-						gridLine[linePos]=regularGridColor[0]; gridLine[linePos + 1]=regularGridColor[1]; gridLine[linePos + 2]=regularGridColor[2]; gridLine[linePos + 3]=255;
+                                                gridLine.set(regGridColorBytes, linePos);
 					}
 				}
 				linePos += NgChm.SUM.BYTE_PER_RGBA;
@@ -1427,11 +1428,8 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 	}
 	
 	//Spacer
-	var pos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
-	for (var i = 0; i < NgChm.DET.dataViewWidth; i++) {
-		pos+=NgChm.SUM.BYTE_PER_RGBA;
-	}
-	
+	var pos = (rowClassBarWidth + NgChm.DET.dataViewWidth)*NgChm.SUM.BYTE_PER_RGBA;
+
 	// create the search objects outside of the for-loops so we don't have to use indexOf for a potentially large array in the loop
 	var searchRowObj = {};
 	for (var idx = 0; idx < searchRows.length; idx++){
@@ -1442,7 +1440,8 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		searchColObj[searchCols[idx]] = 1;
 	}
 	//Needs to go backward because WebGL draws bottom up.
-	var line = new Uint8Array(new ArrayBuffer((rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA));
+	const line = new Uint8Array(new ArrayBuffer((rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA));
+	const totalCols = NgChm.heatMap.getTotalCols();
 	for (var i = detDataPerCol-1; i >= 0; i--) {
 		var linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
 		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the 
@@ -1451,21 +1450,17 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		for (var j = 0; j < detDataPerRow; j++) { // for every data point...
 			var val = NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j);
-			var nextVal = NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j+1);
+			// Determine if the current value being drawn into the line is a cut value.
+                        const isCut = val <= NgChm.SUM.minValues && currDetCol+j+1 <= totalCols &&
+			               NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j+1) <= NgChm.SUM.minValues;
 			var color = colorMap.getColor(val);
+                        const colorBytes = [ color.r, color.g, color.b, color.a ];
 			//For each data point, write it several times to get correct data point width.
 			for (var k = 0; k < NgChm.DET.dataBoxWidth; k++) {
 				if (showVerticalGrid && k===NgChm.DET.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
-					if (j < detDataPerRow-1) {
-						//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
-						if ((val <= NgChm.SUM.minValues) && (nextVal <= NgChm.SUM.minValues)) {
-							line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
-						} else {
-							line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
-						}
-					}
+                                        line.set (isCut ? cutsColorBytes : regGridColorBytes, linePos);
 				} else {
-					line[linePos] = color['r'];	line[linePos + 1] = color['g'];	line[linePos + 2] = color['b'];	line[linePos + 3] = color['a'];
+                                        line.set (colorBytes, linePos);
 				}
 				linePos += NgChm.SUM.BYTE_PER_RGBA;
 			}
@@ -1473,32 +1468,20 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		
 		//Write each line several times to get correct data point height.
-		for (dup = 0; dup < NgChm.DET.dataBoxHeight; dup++) {
+		for (let dup = 0; dup < NgChm.DET.dataBoxHeight; dup++) {
 			if (showHorizontalGrid && dup === NgChm.DET.dataBoxHeight-1 && i > 0){ // do we draw gridlines?
-				for (k = 0; k < line.length; k++) {
-					//IF the line being drawn was comprised entirely of cut values, draw an empty white line as the horizontal grid line,
-					//ELSE draw the normal grid line as the horizontal grid line
-					if (isHorizCut === true) {
-						NgChm.DET.texPixels[pos]=cutsLine[k];
-					} else {
-						NgChm.DET.texPixels[pos]=gridLine[k];
-					}
-					pos++;
-				}
+				//IF the line being drawn was comprised entirely of cut values, draw an empty white line as the horizontal grid line,
+				//ELSE draw the normal grid line as the horizontal grid line
+                                NgChm.DET.texPixels.set (isHorizCut ? cutsLine : gridLine, pos);
 			} else {
-				for (k = 0; k < line.length; k++) {
-					NgChm.DET.texPixels[pos]=line[k];
-					pos++;
-				}
+                                NgChm.DET.texPixels.set (line, pos);
 			}
-		} 
+			pos += line.length;
+		}
 	}
 
 	//Spacer Row
-	pos += (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
-	for (var i = 0; i < NgChm.DET.dataViewWidth; i++) {
-		pos+=NgChm.SUM.BYTE_PER_RGBA;
-	}
+	pos += (rowClassBarWidth +  NgChm.DET.dataViewWidth)*NgChm.SUM.BYTE_PER_RGBA;
 
 	NgChm.DET.colDendro.draw();
 	NgChm.DET.rowDendro.draw();
