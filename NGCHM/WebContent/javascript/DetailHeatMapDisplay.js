@@ -552,12 +552,11 @@ NgChm.DET.getDetCanvasXFromCol = function (col) {
  * 2 arrays is empty, lines will be drawn otherwise boxes.  
  *********************************************************************************************/
 NgChm.DET.drawSelections = function () {
-	var ctx=NgChm.DET.boxCanvas.getContext("2d");
+	const ctx=NgChm.DET.boxCanvas.getContext("2d");
 	ctx.clearRect(0, 0, NgChm.DET.boxCanvas.width, NgChm.DET.boxCanvas.height);
 
 	//Draw the border
 	if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0) {
-		var ctx=NgChm.DET.boxCanvas.getContext("2d");
 		var boxX = (NgChm.DET.calculateTotalClassBarHeight("row") / NgChm.DET.canvas.width) * NgChm.DET.boxCanvas.width;
 		var boxY = (NgChm.DET.calculateTotalClassBarHeight("column") / NgChm.DET.canvas.height) * NgChm.DET.boxCanvas.height;
 		var boxW = NgChm.DET.boxCanvas.width-boxX;
@@ -581,7 +580,7 @@ NgChm.DET.drawSelections = function () {
 				var range = colRanges[i];
 				var colStart = range[0];
 				var colEnd = range[1];
-				NgChm.DET.drawSearchBox(0,NgChm.heatMap.getNumRows('d'),colStart,colEnd);
+				NgChm.DET.drawSearchBox(ctx, 0,NgChm.heatMap.getNumRows('d'),colStart,colEnd);
 			}
 		} else if (colRanges.length === 0) {
 			//Draw vertical lines across entire heatMap
@@ -589,7 +588,7 @@ NgChm.DET.drawSelections = function () {
 				var range = rowRanges[i];
 				var rowStart = range[0];
 				var rowEnd = range[1];
-				NgChm.DET.drawSearchBox(rowStart,rowEnd,0,NgChm.heatMap.getNumColumns('d'));
+				NgChm.DET.drawSearchBox(ctx, rowStart,rowEnd,0,NgChm.heatMap.getNumColumns('d'));
 			}
 		} else {
 			for (var i=0;i<rowRanges.length;i++) {
@@ -601,8 +600,8 @@ NgChm.DET.drawSelections = function () {
 					var colRange = colRanges[j];
 					var colStart = colRange[0];
 					var colEnd = colRange[1];
-					NgChm.DET.drawSearchBox(rowStart,rowEnd,colStart,colEnd);
-				}				
+					NgChm.DET.drawSearchBox(ctx, rowStart,rowEnd,colStart,colEnd);
+				}
 			}
 		}
 	}
@@ -649,7 +648,7 @@ NgChm.DET.getContigSearchRanges = function (searchArr) {
  * This function draws lines on the heatMap detail box canvas for each contiguous search 
  * range that the user has specified (by click dragging, label selecting, or dendro clicking).
  *********************************************************************************************/
-NgChm.DET.drawSearchBox = function (csRowStart, csRowEnd, csColStart, csColEnd) {
+NgChm.DET.drawSearchBox = function (ctx, csRowStart, csRowEnd, csColStart, csColEnd) {
 
 	//top-left corner of visible area
 	var topX = ((NgChm.DET.calculateTotalClassBarHeight("row") / NgChm.DET.canvas.width) * NgChm.DET.boxCanvas.width);
@@ -690,19 +689,19 @@ NgChm.DET.drawSearchBox = function (csRowStart, csRowEnd, csColStart, csColEnd) 
 
 	// draw top horizontal line
 	if (NgChm.DET.isHorizLineVisible(topY, boxY)) {
-		NgChm.DET.drawHorizLine(topX,boxX, boxX2, boxY);
+		NgChm.DET.drawHorizLine(ctx, topX,boxX, boxX2, boxY);
 	}
 	// draw left side line
 	if (NgChm.DET.isVertLineVisible(topX, boxX)) {
-		NgChm.DET.drawVertLine(topY, boxY, boxY2, boxX);
+		NgChm.DET.drawVertLine(ctx, topY, boxY, boxY2, boxX);
 	}
 	// draw bottom line
 	if (NgChm.DET.isHorizLineVisible(topY, boxY2)) {
-		NgChm.DET.drawHorizLine(topX,boxX, boxX2, boxY2);
+		NgChm.DET.drawHorizLine(ctx, topX,boxX, boxX2, boxY2);
 	}
 	// draw right side line
 	if (NgChm.DET.isVertLineVisible(topX, boxX2)) {
-		NgChm.DET.drawVertLine(topY, boxY, boxY2, boxX2);
+		NgChm.DET.drawVertLine(ctx, topY, boxY, boxY2, boxX2);
 	}
 }
 
@@ -727,19 +726,19 @@ NgChm.DET.isVertLineVisible = function (topX, boxX) {
  * viewport.   If only a portion of the line is visible on the top or left border, the length 
  * of the line will be amended to stop at the border.
  *********************************************************************************************/
-NgChm.DET.drawHorizLine = function (topX, boxX, boxX2, boxY) {
+NgChm.DET.drawHorizLine = function (ctx, topX, boxX, boxX2, boxY) {
 	var lineStart = boxX >= topX ? boxX : topX;
 	var lineEnd = boxX2 >= topX ? boxX2 : topX;
 	if (lineStart !== lineEnd) {
-		NgChm.DET.strokeLine(lineStart,boxY,lineEnd, boxY);
+		NgChm.DET.strokeLine(ctx, lineStart,boxY,lineEnd, boxY);
 	}
 }
 
-NgChm.DET.drawVertLine = function (topY, boxY, boxY2, boxX) {
+NgChm.DET.drawVertLine = function (ctx, topY, boxY, boxY2, boxX) {
 	var lineStart = boxY >= topY ? boxY : topY;
 	var lineEnd = boxY2 >= topY ? boxY2 : topY;
 	if (lineStart !== lineEnd) {
-		NgChm.DET.strokeLine(boxX,lineStart,boxX, lineEnd);
+		NgChm.DET.strokeLine(ctx,boxX,lineStart,boxX, lineEnd);
 	}
 }
 
@@ -749,8 +748,7 @@ NgChm.DET.drawVertLine = function (topY, boxY, boxY2, boxX) {
  * This function draws lines on the heatMap detail box canvas for each contiguous search 
  * range that the user has specified (by click dragging, label selecting, or dendro clicking).
  *********************************************************************************************/
-NgChm.DET.strokeLine = function (fromX, fromY, toX,toY) {
-	var ctx=NgChm.DET.boxCanvas.getContext("2d");
+NgChm.DET.strokeLine = function (ctx, fromX, fromY, toX,toY) {
 	ctx.beginPath();
 	ctx.moveTo(fromX,fromY);
 	ctx.lineTo(toX, toY); 
