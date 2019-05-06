@@ -1527,16 +1527,23 @@ NgChm.DET.isLineACut = function (row) {
 
 NgChm.DET.detailResize = function () {
 	 if (NgChm.DET.canvas !== undefined) {
-		 NgChm.DET.clearLabels();
 		 NgChm.DET.rowDendro.resize();
 		 NgChm.DET.colDendro.resize();
 		 NgChm.DET.sizeCanvasForLabels();
 		 //Done twice because changing canvas size affects fonts selected for drawing labels
 		 NgChm.DET.sizeCanvasForLabels();
+
+		 // Temporarily hide labelElement while we update labels.
+		 const oldDisplayStyle = NgChm.DET.labelElement.style.display;
+		 NgChm.DET.labelElement.style.setProperty('display', 'none');
+		 NgChm.DET.clearLabels();
 		 NgChm.DET.drawRowAndColLabels();
-		 NgChm.DET.drawSelections();
 		 NgChm.DET.detailDrawColClassBarLabels();
 		 NgChm.DET.detailDrawRowClassBarLabels();
+		 // Restore visibilty of labelElement
+		 NgChm.DET.labelElement.style.setProperty('display', oldDisplayStyle);
+
+		 NgChm.DET.drawSelections();
 		 NgChm.DET.rowDendro.resizeAndDraw();
 		 NgChm.DET.colDendro.resizeAndDraw();
 	 }
@@ -1684,31 +1691,47 @@ NgChm.DET.calcColLabels = function (fontSize) {
 	}
 }
 
-//This function creates a complete div for a given label item, assesses the 
-//size of the label and increases the row/col label length if the label
-//is larger than those already processed.  rowLabelLen and colLabelLen
-//are used to size the detail screen to accomodate labels on both axes
+/* Memoize label sizes to avoid repeatedly calculating
+ * label widths.
+ */
+const labelSizeCache = {};
+/* Create a div just for calculating label widths.
+ */
+const labelSizeWidthCalcDiv = (function() {
+    const div = document.createElement('div');
+    div.className = 'DynamicLabel';
+    div.style.position = "absolute";
+    div.style.fontFamily = 'sans-serif';
+    div.style.fontWeight = 'bold';
+    return div;
+})();
+
+// This function assesses the size of the label and  increases the
+// row/col label length if the label is larger than those already processed.
+// rowLabelLen and colLabelLen are used to size the detail screen
+// to accomodate labels on both axes.
 NgChm.DET.calcLabelDiv = function (text, fontSize, axis) {
-	var div = document.createElement('div');
-	var divFontColor = "#FFFFFF";
-	div.className = 'DynamicLabel';
-	div.style.position = "absolute";
-	div.style.fontSize = fontSize.toString() +'pt';
-	div.style.fontFamily = 'sans-serif';
-	div.style.fontWeight = 'bold';
-	div.innerHTML = text;
-	
-	NgChm.DET.labelElement.appendChild(div);
+        const key = text + fontSize.toString();
+        if (!labelSizeCache.hasOwnProperty(key)) {
+                // Haven't this this combination of font and fontSize before.
+                // Set the contents of our label size div and calculate its width.
+		labelSizeWidthCalcDiv.style.fontSize = fontSize.toString() +'pt';
+		labelSizeWidthCalcDiv.innerText = text;
+		NgChm.DET.labelElement.appendChild(labelSizeWidthCalcDiv);
+		labelSizeCache[key] = labelSizeWidthCalcDiv.clientWidth;
+		NgChm.DET.labelElement.removeChild(labelSizeWidthCalcDiv);
+        }
+
+        const w = labelSizeCache[key];
 	if (axis == 'ROW') {
-		if (div.clientWidth > NgChm.DET.rowLabelLen) {
-			NgChm.DET.rowLabelLen = div.clientWidth;
+		if (w > NgChm.DET.rowLabelLen) {
+			NgChm.DET.rowLabelLen = w;
 		}
 	} else {
-		if (div.clientWidth > NgChm.DET.colLabelLen) {
-			NgChm.DET.colLabelLen = div.clientWidth;
+		if (w > NgChm.DET.colLabelLen) {
+			NgChm.DET.colLabelLen = w;
 		}
 	}
-	NgChm.DET.labelElement.removeChild(div);
 }
 
 //This function determines if labels are to be drawn on each axis and calls the appropriate
@@ -1727,47 +1750,51 @@ NgChm.DET.drawRowAndColLabels = function () {
 }
 
 NgChm.DET.drawRowLabels = function (fontSize) {
-	var headerSize = 0;
-	var colHeight = NgChm.DET.calculateTotalClassBarHeight("column");
+	let headerSize = 0;
+	const colHeight = NgChm.DET.calculateTotalClassBarHeight("column");
 	if (colHeight > 0) {
 		headerSize = NgChm.DET.canvas.clientHeight * (colHeight / (NgChm.DET.dataViewHeight + colHeight));
 	}
-	var skip = (NgChm.DET.canvas.clientHeight - headerSize) / NgChm.SEL.dataPerCol;
-	var start = Math.max((skip - fontSize)/2, 0) + headerSize-2;
-	var labels = NgChm.heatMap.getRowLabels()["labels"];
-	
+	const skip = (NgChm.DET.canvas.clientHeight - headerSize) / NgChm.SEL.dataPerCol;
+
 	if (skip > NgChm.DET.minLabelSize) {
-		var xPos = NgChm.DET.canvas.offsetLeft + NgChm.DET.canvas.clientWidth + 3;
-		for (var i = NgChm.SEL.currentRow; i < NgChm.SEL.currentRow + NgChm.SEL.dataPerCol; i++) {
-			var yPos = NgChm.DET.canvas.offsetTop + start + ((i-NgChm.SEL.currentRow) * skip);
-			if (labels[i-1] == undefined){ // an occasional problem in subdendro view
+		const start = Math.max((skip - fontSize)/2, 0) + headerSize-2;
+		const labels = NgChm.heatMap.getRowLabels()["labels"];
+		const xPos = NgChm.DET.canvas.offsetLeft + NgChm.DET.canvas.clientWidth + 3;
+		for (let i = NgChm.SEL.currentRow; i < NgChm.SEL.currentRow + NgChm.SEL.dataPerCol; i++) {
+                        let actualLabel = labels[i-1];
+			if (actualLabel === undefined){ // an occasional problem in subdendro view
 				continue;
 			}
-			var shownLabel = NgChm.UTIL.getLabelText(labels[i-1].split("|")[0],'ROW');
-			NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_row' + i, 'DynamicLabel', shownLabel, labels[i-1].split("|")[0], xPos, yPos, fontSize, 'F',i,"Row");
+                        actualLabel = actualLabel.split("|")[0];
+			const yPos = NgChm.DET.canvas.offsetTop + start + ((i-NgChm.SEL.currentRow) * skip);
+			const shownLabel = NgChm.UTIL.getLabelText(actualLabel,'ROW');
+			NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_row' + i, 'DynamicLabel', shownLabel, actualLabel, xPos, yPos, fontSize, 'F',i,"Row");
 		}
 	}
 }
 
 NgChm.DET.drawColLabels = function (fontSize) {
-	var headerSize = 0;
-	var rowHeight = NgChm.DET.calculateTotalClassBarHeight("row");
+	let headerSize = 0;
+	const rowHeight = NgChm.DET.calculateTotalClassBarHeight("row");
 	if (rowHeight > 0) {
 		headerSize = NgChm.DET.canvas.clientWidth * (rowHeight / (NgChm.DET.dataViewWidth + rowHeight));
 	}
-	var skip = (NgChm.DET.canvas.clientWidth - headerSize) / NgChm.SEL.dataPerRow;
-	var start = headerSize + fontSize + Math.max((skip - fontSize)/2, 0) + 3;
-	var labels = NgChm.heatMap.getColLabels()["labels"];
-		
+	const skip = (NgChm.DET.canvas.clientWidth - headerSize) / NgChm.SEL.dataPerRow;
+
 	if (skip > NgChm.DET.minLabelSize) {
-		var yPos = NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.clientHeight + 3;
+		const start = headerSize + fontSize + Math.max((skip - fontSize)/2, 0) + 3;
+		const labels = NgChm.heatMap.getColLabels()["labels"];
+		const yPos = NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.clientHeight + 3;
 		for (var i = NgChm.SEL.currentCol; i < NgChm.SEL.currentCol + NgChm.SEL.dataPerRow; i++) {
-			var xPos = NgChm.DET.canvas.offsetLeft + start + ((i-NgChm.SEL.currentCol) * skip);
-			if (labels[i-1] == undefined){ // an occasional problem in subdendro view
+                        let actualLabel = labels[i-1];
+			if (actualLabel === undefined){ // an occasional problem in subdendro view
 				continue;
 			}
-			var shownLabel = NgChm.UTIL.getLabelText(labels[i-1].split("|")[0],'COL');
-			NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_col' + i, 'DynamicLabel', shownLabel, labels[i-1].split("|")[0], xPos, yPos, fontSize, 'T',i,"Column");
+                        actualLabel = actualLabel.split("|")[0];
+			const shownLabel = NgChm.UTIL.getLabelText(actualLabel,'COL');
+			const xPos = NgChm.DET.canvas.offsetLeft + start + ((i-NgChm.SEL.currentCol) * skip);
+			NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_col' + i, 'DynamicLabel', shownLabel, actualLabel, xPos, yPos, fontSize, 'T',i,"Column");
 			if (shownLabel.length > NgChm.DET.colLabelLen) {
 				NgChm.DET.colLabelLen = shownLabel.length;
 			}
@@ -1820,8 +1847,8 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 	div.style.fontSize = fontSize.toString() +'pt';
 	div.style.fontFamily = 'sans-serif';
 	div.style.fontWeight = 'bold';
-	div.innerHTML = text;
-	
+	div.innerText = text;
+
 	parent.appendChild(div);
 	
 	if (text !== "<" && text !== "..." && text.length > 0){
@@ -1847,7 +1874,7 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 		});
 		div.addEventListener("touchmove", NgChm.DET.labelDrag);
 	}
-	if (text == "..."){
+	if (text === "..."){
 		div.addEventListener('mouseover', (function() {
 		    return function(e) {NgChm.UHM.hlp(this,"Some covariate bars are hidden",160,0); };
 		}) (this), false);
