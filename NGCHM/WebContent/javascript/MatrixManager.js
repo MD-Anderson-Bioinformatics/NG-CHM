@@ -1000,16 +1000,21 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		arrayData = tileCache[NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol];   
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
+            let retval;
 	    if (arrayData != undefined) {
 	    	//for end tiles, the # of columns can be less than the colsPerTile - figure out the correct num columns.
 			var thisTileColsPerRow = tileCol == numTileColumns ? ((this.totalColumns % colsPerTile) == 0 ? colsPerTile : this.totalColumns % colsPerTile) : colsPerTile; 
 			//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
-	    	return arrayData[(row-1)%rowsPerTile * thisTileColsPerRow + (column-1)%colsPerTile];
+		retval = arrayData[(row-1)%rowsPerTile * thisTileColsPerRow + (column-1)%colsPerTile];
 	    } else if (lowerLevel != null) {
-	    	return lowerLevel.getValue(Math.floor(row/rowToLower) + 1, Math.floor(column/colToLower) + 1);
+		retval = lowerLevel.getValue(Math.floor((row-1)/rowToLower) + 1, Math.floor((column-1)/colToLower) + 1);
 	    } else {
-	    	return 0;
+		retval = 0;
 	    }	
+            if (retval === undefined) {
+                console.log ('getValue undefined');
+            }
+            return retval;
 	};
 
 	// External user of the matix data lets us know where they plan to read.
