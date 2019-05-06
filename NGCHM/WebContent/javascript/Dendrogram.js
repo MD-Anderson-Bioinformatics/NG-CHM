@@ -47,17 +47,18 @@ NgChm.DDR.DendroMatrix = function(numRows, numCols,isRow){
 	//For performance on large maps, it is faster to reduce the matrix and draw than it is to
 	//draw with scaling.  This function creates a reduced size representation of the matrix
 	this.scaleMatrix =  function(newRows, newCols) {
-		var newMatrix = new NgChm.DDR.DendroMatrix(newRows, newCols, isRow);
+		const newMatrix = new NgChm.DDR.DendroMatrix(newRows, newCols, isRow);
 		
-		var yRatio = newRows/numRows;
-		var xRatio = newCols/numCols;
-		var position = 0;
+		const yRatio = newRows/numRows;
+		const xRatio = newCols/numCols;
+		let position = 0;
 		
-		for (var y=0; y<numRows; y++){
-			for (var x=0; x<numCols; x++){
-				val = matrixData[position];
+		for (let y=0; y<numRows; y++){
+                        const yPosn = Math.floor(y*yRatio);
+			for (let x=0; x<numCols; x++){
+				const val = matrixData[position];
 				if (val > 0){
-					newMatrix.setTrue(Math.floor(y*yRatio),Math.floor(x*xRatio),val==2)
+					newMatrix.setTrue(yPosn,Math.floor(x*xRatio),val==2)
 				}
 				position++;
 			}
@@ -72,13 +73,13 @@ NgChm.DDR.DendroMatrix = function(numRows, numCols,isRow){
 	//When a matrix is scaled up, sometimes the horizontal lines get holes. This routine
 	//patches up the holes in the dendro matrix.
 	this.fillHoles = function() {
-		for (var y=numRows; y>0; y--){
-			for (var x=0; x<numCols; x++){
-				val = this.get(y, x);
+		for (let y=numRows; y>0; y--){
+			for (let x=0; x<numCols; x++){
+				const val = this.get(y, x);
 				if (val > 0 && y > 1){
-					below = this.get(y-1,x);
-					above = this.get(y+1,x);
-					left = this.get(y,x-1);
+					const below = this.get(y-1,x);
+					const above = this.get(y+1,x);
+					const left = this.get(y,x-1);
 					if (below == 0 && this.get(y, x+1) == 0 && this.getNumCols()%(x+1) !==0){ // check to see if this is a gap in a cross bar
 						this.setTrue(y, x+1, val==2);
 					} else if (below > 0 && above == 0 && left ==0 && this.get(y,x+1)==0){ // check to see if this is a gap in a left branch
