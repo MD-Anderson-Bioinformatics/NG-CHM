@@ -84,6 +84,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	//This holds the various zoom levels of data.
 	var mapConfig = null;
 	var mapData = null;
+        var mapDataComputed = {};
 	var datalevels = {};
 	var tileCache = {};
 	var zipFiles = {};
@@ -354,13 +355,43 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	this.getRowDendroData = function() {
-		return mapData.row_data.dendrogram ? mapData.row_data.dendrogram : [];
+		if (!mapDataComputed.hasOwnProperty('row_dendrogram_data')) {
+		    mapDataComputed.row_dendrogram_data = (mapData.row_data.dendrogram || [])
+                    .map(entry => {
+			const tokes = entry.split(",");
+                        // index is the location of the bar in the clustered data
+                        return { left: Number(tokes[0]), right: Number(tokes[1]), height: Number(tokes[2]) };
+                    });
+                }
+		return mapDataComputed.row_dendrogram_data;
 	}
 	
 	this.getColDendroData = function() {
-		return mapData.col_data.dendrogram ? mapData.col_data.dendrogram : [];
+		if (!mapDataComputed.hasOwnProperty('col_dendrogram_data')) {
+		    mapDataComputed.col_dendrogram_data = (mapData.col_data.dendrogram || [])
+                    .map(entry => {
+			const tokes = entry.split(",");
+                        // index is the location of the bar in the clustered data
+                        return { left: Number(tokes[0]), right: Number(tokes[1]), height: Number(tokes[2]) };
+                    });
+                }
+		return mapDataComputed.col_dendrogram_data;
 	}
-	
+
+        this.getRowDendroMaxHeight = function() {
+		if (!mapDataComputed.hasOwnProperty('row_dendrogram_max_height')) {
+			mapDataComputed.row_dendrogram_max_height = this.getRowDendroData().reduce((max,entry) => entry.height > max ? entry.height : max, 0);
+                }
+                return mapDataComputed.row_dendrogram_max_height;
+        }
+
+        this.getColDendroMaxHeight = function() {
+		if (!mapDataComputed.hasOwnProperty('col_dendrogram_max_height')) {
+			mapDataComputed.col_dendrogram_max_height = this.getColDendroData().reduce((max,entry) => entry.height > max ? entry.height : max, 0);
+                }
+                return mapDataComputed.col_dendrogram_max_height;
+        }
+
 	this.setRowDendrogramShow = function(value) {
 		mapConfig.row_configuration.dendrogram.show = value;
 	}
@@ -816,6 +847,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	function addMapData(md) {
 		mapData = md;
+                mapDataComputed = {};
 		NgChm.CM.mapDataCompatibility(mapData);
 		sendCallBack(NgChm.MMGR.Event_JSON);
 	}
