@@ -84,7 +84,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	//This holds the various zoom levels of data.
 	var mapConfig = null;
 	var mapData = null;
-        var mapDataComputed = {};
 	var datalevels = {};
 	var tileCache = {};
 	var zipFiles = {};
@@ -355,43 +354,13 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	this.getRowDendroData = function() {
-		if (!mapDataComputed.hasOwnProperty('row_dendrogram_data')) {
-		    mapDataComputed.row_dendrogram_data = (mapData.row_data.dendrogram || [])
-                    .map(entry => {
-			const tokes = entry.split(",");
-                        // index is the location of the bar in the clustered data
-                        return { left: Number(tokes[0]), right: Number(tokes[1]), height: Number(tokes[2]) };
-                    });
-                }
-		return mapDataComputed.row_dendrogram_data;
+		return mapData.row_data.dendrogram ? mapData.row_data.dendrogram : [];
 	}
 	
 	this.getColDendroData = function() {
-		if (!mapDataComputed.hasOwnProperty('col_dendrogram_data')) {
-		    mapDataComputed.col_dendrogram_data = (mapData.col_data.dendrogram || [])
-                    .map(entry => {
-			const tokes = entry.split(",");
-                        // index is the location of the bar in the clustered data
-                        return { left: Number(tokes[0]), right: Number(tokes[1]), height: Number(tokes[2]) };
-                    });
-                }
-		return mapDataComputed.col_dendrogram_data;
+		return mapData.col_data.dendrogram ? mapData.col_data.dendrogram : [];
 	}
-
-        this.getRowDendroMaxHeight = function() {
-		if (!mapDataComputed.hasOwnProperty('row_dendrogram_max_height')) {
-			mapDataComputed.row_dendrogram_max_height = this.getRowDendroData().reduce((max,entry) => entry.height > max ? entry.height : max, 0);
-                }
-                return mapDataComputed.row_dendrogram_max_height;
-        }
-
-        this.getColDendroMaxHeight = function() {
-		if (!mapDataComputed.hasOwnProperty('col_dendrogram_max_height')) {
-			mapDataComputed.col_dendrogram_max_height = this.getColDendroData().reduce((max,entry) => entry.height > max ? entry.height : max, 0);
-                }
-                return mapDataComputed.col_dendrogram_max_height;
-        }
-
+	
 	this.setRowDendrogramShow = function(value) {
 		mapConfig.row_configuration.dendrogram.show = value;
 	}
@@ -847,7 +816,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	function addMapData(md) {
 		mapData = md;
-                mapDataComputed = {};
 		NgChm.CM.mapDataCompatibility(mapData);
 		sendCallBack(NgChm.MMGR.Event_JSON);
 	}
@@ -1032,21 +1000,16 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		arrayData = tileCache[NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol];   
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
-            let retval;
 	    if (arrayData != undefined) {
 	    	//for end tiles, the # of columns can be less than the colsPerTile - figure out the correct num columns.
 			var thisTileColsPerRow = tileCol == numTileColumns ? ((this.totalColumns % colsPerTile) == 0 ? colsPerTile : this.totalColumns % colsPerTile) : colsPerTile; 
 			//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
-		retval = arrayData[(row-1)%rowsPerTile * thisTileColsPerRow + (column-1)%colsPerTile];
+	    	return arrayData[(row-1)%rowsPerTile * thisTileColsPerRow + (column-1)%colsPerTile];
 	    } else if (lowerLevel != null) {
-		retval = lowerLevel.getValue(Math.floor((row-1)/rowToLower) + 1, Math.floor((column-1)/colToLower) + 1);
+	    	return lowerLevel.getValue(Math.floor(row/rowToLower) + 1, Math.floor(column/colToLower) + 1);
 	    } else {
-		retval = 0;
+	    	return 0;
 	    }	
-            if (retval === undefined) {
-                console.log ('getValue undefined');
-            }
-            return retval;
 	};
 
 	// External user of the matix data lets us know where they plan to read.
