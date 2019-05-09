@@ -1,3 +1,5 @@
+"use strict";
+
 /**********************************************************************************
  * USER HELP FUNCTIONS:  The following functions handle the processing 
  * for user help popup windows for the detail canvas and the detail canvas buttons.
@@ -5,6 +7,73 @@
 
 //Define Namespace for NgChm UserHelpManager
 NgChm.createNS('NgChm.UHM');
+
+NgChm.UHM.postMapDetails = false;	// Should we post map details to an enclosing document?
+NgChm.UHM.postMapToWhom = null;		// Identity of the window to post map details to
+NgChm.UHM.myNonce = '';			// Shared secret for vetting message sender
+
+// This function is called when the NgChm receives a message.  It is intended for
+// customizing behavior when the NgChm is included in an iFrame.
+//
+// If the message includes override: 'ShowMapDetail' we will post map details to the
+// enclosing window instead of displaying them within the NGCHM.
+//
+NgChm.UHM.processMessage = function (e) {
+	//console.log ('Got message');
+	//console.log (e);
+
+	// We should only process messages from the enclosing origin.
+
+	// I tried using document.location.ancestorOrigins.
+	// At least chrome knows about this, but at least firefox doesn't.
+	// if (!document.location.ancestorOrigins || document.location.ancestorOrigins.length < 1 ||
+	//     document.location.ancestorOrigins[0] != e.origin) {
+	//     console.log ("Who's that?");
+	//     return;
+	// }
+	// We could perhaps use document.referrer instead, but we would have to parse it.
+
+	// Instead, we require that the enclosing document passes a secret nonce in our URL.
+	// We only accept any messages that contain this secret.
+	if (NgChm.UHM.myNonce === '') NgChm.UHM.myNonce = NgChm.UTIL.getURLParameter('nonce');
+	if (NgChm.UHM.myNonce === '' || !e.data || e.data.nonce !== NgChm.UHM.myNonce) {
+		//console.log ("What's that?");
+		return;
+	}
+
+	if (e.data.override === 'ShowMapDetail') {
+		// Parent wants to display map details itself.
+		NgChm.UHM.postMapDetails = true;
+		NgChm.UHM.postMapToWhom = e.origin;
+	}
+}
+window.addEventListener('message', NgChm.UHM.processMessage, false);
+
+/* Format the pixel information for display in the helpContents table.
+ */
+NgChm.UHM.displayMapDetails = function (helpContents, pixelInfo) {
+	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
+	NgChm.UHM.setTableRow(helpContents, ["<u>"+"Data Details"+"</u>", "&nbsp;"], 2);
+	NgChm.UHM.setTableRow(helpContents,["&nbsp;Value:", pixelInfo.value]);
+	NgChm.UHM.setTableRow(helpContents,[ "&nbsp;Row:", pixelInfo.rowLabel]);
+	NgChm.UHM.setTableRow(helpContents,["&nbsp;Column:", pixelInfo.colLabel]);
+	if (pixelInfo.rowCovariates.length > 0) {
+		helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
+		NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Row Covariates"+"</u>", "&nbsp;"], 2);
+		pixelInfo.rowCovariates.forEach ( cv => {
+			const displayName = cv.name.length > 20 ? cv.name.substring(0,20) + "..." : cv.name;
+			NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", cv.value]);
+		});
+	}
+	if (pixelInfo.colCovariates.length > 0) {
+		helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
+		NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Column Covariates"+"</u>", "&nbsp;"], 2);
+		pixelInfo.colCovariates.forEach ( cv => {
+			const displayName = cv.name.length > 20 ? cv.name.substring(0,20) + "..." : cv.name;
+			NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", cv.value]);
+		});
+	}
+}
 
 /**********************************************************************************
  * FUNCTION - userHelpOpen: This function handles all of the tasks necessary to 
@@ -44,71 +113,63 @@ NgChm.UHM.userHelpOpen = function() {
     	}
     }
     if (objectType === "map") {
-    	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
     	var row = Math.floor(NgChm.SEL.currentRow + (mapLocY/colElementSize)*NgChm.DET.getSamplingRatio('row'));
     	var col = Math.floor(NgChm.SEL.currentCol + (mapLocX/rowElementSize)*NgChm.DET.getSamplingRatio('col'));
     	if ((row <= NgChm.heatMap.getNumRows('d')) && (col <= NgChm.heatMap.getNumColumns('d'))) {
-	    	var rowLabels = NgChm.heatMap.getRowLabels().labels;
-	    	var colLabels = NgChm.heatMap.getColLabels().labels;
-	    	NgChm.UHM.setTableRow(helpContents, ["<u>"+"Data Details"+"</u>", "&nbsp;"], 2);
-	    	var matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,row,col);
+		// Gather the information about the current pixel.
+		let matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,row,col);
 	     	if (matrixValue >= NgChm.SUM.maxValues) {
 	    		matrixValue = "Missing Value";
 	    	} else if (matrixValue <= NgChm.SUM.minValues) {
-	    		return;
+			return; // A gap.
 	    	} else {
 	    		matrixValue = matrixValue.toFixed(5);
 	    	}
 	    	if (NgChm.SEL.mode === 'FULL_MAP') {
 	    		matrixValue = matrixValue + "<br>(summarized)";
 	    	}
-	    	NgChm.UHM.setTableRow(helpContents,["&nbsp;Value:", matrixValue]);
-	    	NgChm.UHM.setTableRow(helpContents,[ "&nbsp;Row:", rowLabels[row-1]]);
-	    	NgChm.UHM.setTableRow(helpContents,["&nbsp;Column:", colLabels[col-1]]);
-	    	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
-	    	var writeFirstCol = true;
-	    	var pos = row;
-			var classBars = NgChm.heatMap.getRowClassificationData(); 
-	    	var classBarsOrder = NgChm.heatMap.getRowClassificationOrder();
-	       	if (classBarsOrder.length > 0) {
-				NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Row Classifications"+"</u>", "&nbsp;"], 2);
-		    	for (var i = 0;  i < classBarsOrder.length; i++){
-		    		var key = classBarsOrder[i];
-					var displayName = key;
-					var classConfig = NgChm.heatMap.getRowClassificationConfig()[key];
-					if (classConfig.show === 'Y') {
-						if (key.length > 20){
-							displayName = key.substring(0,20) + "...";
-						}
-			    		NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", classBars[key].values[pos-1]]);	
-					}
-		    	}
-	       	}
-	    	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
-	    	pos = col
-			var classBars = NgChm.heatMap.getColClassificationData(); 
-	    	var classBarsOrder = NgChm.heatMap.getColClassificationOrder();
-	       	if (classBarsOrder.length > 0) {
-				NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Column Classifications"+"</u>", "&nbsp;"], 2);
-		    	for (var i = 0;  i < classBarsOrder.length; i++){
-		    		var key = classBarsOrder[i];
-					var displayName = key;
-					var classConfig = NgChm.heatMap.getColClassificationConfig()[key];
-					if (classConfig.show === 'Y') {
-						if (key.length > 20){
-							displayName = key.substring(0,20) + "...";
-						}
-			    		NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", classBars[key].values[pos-1]]);	
-					}
-		    	}
-	       	}
-	        helptext.style.display="inherit";
-	    	helptext.appendChild(helpContents);
-	    	NgChm.UHM.locateHelpBox(helptext);
+
+		const rowLabels = NgChm.heatMap.getRowLabels().labels;
+		const colLabels = NgChm.heatMap.getColLabels().labels;
+		const pixelInfo = {
+			value: matrixValue,
+			rowLabel: rowLabels[row-1],
+			colLabel: colLabels[col-1]
+		};
+		const rowClassBars = NgChm.heatMap.getRowClassificationData();
+		const rowClassConfig = NgChm.heatMap.getRowClassificationConfig();
+		pixelInfo.rowCovariates = NgChm.heatMap
+			.getRowClassificationOrder()
+			.filter(key => rowClassConfig[key].show === 'Y')
+			.map(key => ({
+				name: key,
+				value: rowClassBars[key].values[row-1]
+			}));
+		const colClassBars = NgChm.heatMap.getColClassificationData();
+		const colClassConfig = NgChm.heatMap.getColClassificationConfig();
+		pixelInfo.colCovariates = NgChm.heatMap
+			.getColClassificationOrder()
+			.filter(key => colClassConfig[key].show === 'Y')
+			.map(key => ({
+				name: key,
+				value: colClassBars[key].values[col-1]
+			}));
+
+		// If the enclosing window wants to display the pixel info, send it to them.
+		// Otherwise, display it ourselves.
+                if (NgChm.UHM.postMapDetails) {
+			const msg = { nonce: NgChm.UHM.myNonce, msg: 'ShowMapDetail', data: pixelInfo };
+			window.parent.postMessage (msg, NgChm.UHM.postMapToWhom);
+                } else {
+			NgChm.UHM.formatMapDetails (helpContents, pixelInfo);
+			helptext.style.display="inherit";
+			helptext.appendChild(helpContents);
+			NgChm.UHM.locateHelpBox(helptext);
+		}
     	}
     } else if ((objectType === "rowClass") || (objectType === "colClass")) {
     	var pos, value, label;
-    	var hoveredBar, hoveredBarColorScheme;                                                     //coveredWidth = 0, coveredHeight = 0;
+	var hoveredBar, hoveredBarColorScheme, hoveredBarValues;
     	if (objectType === "colClass") {
         	var col = Math.floor(NgChm.SEL.currentCol + (mapLocX/rowElementSize)*NgChm.DET.getSamplingRatio('col'));
         	var colLabels = NgChm.heatMap.getColLabels().labels;
@@ -208,7 +269,7 @@ NgChm.UHM.userHelpOpen = function() {
         	
         	//Count classification value occurrences within each breakpoint.
         	for (var j = 0; j < valTotal; j++) {
-        		classBarVal = hoveredBarValues[j];
+			let classBarVal = hoveredBarValues[j];
         		if (classType == 'continuous') {
             		// Count based upon location in threshold array
             		// 1. For first threshhold, count those values <= threshold.
