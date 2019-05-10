@@ -51,7 +51,7 @@ window.addEventListener('message', NgChm.UHM.processMessage, false);
 
 /* Format the pixel information for display in the helpContents table.
  */
-NgChm.UHM.displayMapDetails = function (helpContents, pixelInfo) {
+NgChm.UHM.formatMapDetails = function (helpContents, pixelInfo) {
 	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
 	NgChm.UHM.setTableRow(helpContents, ["<u>"+"Data Details"+"</u>", "&nbsp;"], 2);
 	NgChm.UHM.setTableRow(helpContents,["&nbsp;Value:", pixelInfo.value]);
