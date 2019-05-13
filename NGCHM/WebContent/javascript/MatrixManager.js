@@ -94,6 +94,13 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	var unAppliedChanges = false;
 	NgChm.MMGR.source= fileSrc;
 	
+	this.isMapLoaded = function () {
+		if (mapConfig !== null)  
+			return true;
+		else
+			return false;
+	}
+	
 	this.isFileMode = function () {
 		if (NgChm.MMGR.source=== NgChm.MMGR.FILE_SOURCE) 
 			return true;

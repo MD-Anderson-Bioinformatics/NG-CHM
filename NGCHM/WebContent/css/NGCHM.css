@@ -568,7 +568,7 @@ table.helpTable th {
     position: absolute;
 }
 
-#barMenu_btn {
+.farRightButton {
 	right: 0px;
 	top: 0px;
     position: absolute;

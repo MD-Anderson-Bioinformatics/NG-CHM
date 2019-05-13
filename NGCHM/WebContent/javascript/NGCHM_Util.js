@@ -17,7 +17,7 @@ NgChm.UTIL.getURLParameter = function(name) {
  * on the canvases when modal panels are drawn over the viewer canvases.
  **********************************************************************************/
 NgChm.UTIL.redrawCanvases = function () {
-    if (NgChm.UTIL.getBrowserType() !== "Firefox") {
+    if ((NgChm.UTIL.getBrowserType() !== "Firefox") && (NgChm.heatMap !== null)) {
         NgChm.SUM.drawHeatMap();
         NgChm.DET.drawDetailHeatMap();
         if (NgChm.SUM.rCCanvas.width > 0) {
