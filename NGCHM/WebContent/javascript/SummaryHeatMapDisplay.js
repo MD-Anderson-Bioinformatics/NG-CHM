@@ -183,7 +183,7 @@ NgChm.SUM.summaryInit = function(applying) {
 	NgChm.SUM.drawRowSelectionMarks();
 	NgChm.SUM.drawColSelectionMarks();
 	NgChm.SUM.drawTopItems();
-	//Labels only re-drawn in NGCHM_GUI_Builder and split screen mode
+	//Labels only re-drawn in NGCHM_GUI_Builder
 	if (document.getElementById('divider').style.display === 'none') {
 	 	NgChm.SUM.drawColClassBarLabels(); 
 		NgChm.SUM.drawRowClassBarLabels(); 
@@ -1604,7 +1604,7 @@ NgChm.SUM.calculateSummaryTotalClassBarHeight = function(axis,stopOn) {
 //Selection Label Functions *//
 //***************************//
 NgChm.SUM.summaryResize = function() {
-	if ((!NgChm.SEL.isSub) && (NgChm.SUM.canvas !== undefined)) {
+	if  (NgChm.SUM.canvas !== undefined) {
 		NgChm.SUM.setSummarySize();
 		NgChm.SUM.colDendro.resize();
 		NgChm.SUM.colDendro.draw();
@@ -1618,7 +1618,7 @@ NgChm.SUM.summaryResize = function() {
 		NgChm.SUM.drawMissingRowClassBarsMark();
 		NgChm.SUM.drawMissingColClassBarsMark();
 		NgChm.SUM.drawTopItems();
-		//Labels only drawn in NGCHM_GUI_Builder and split screen mode
+		//Labels only drawn in NGCHM_GUI_Builder
 		if (document.getElementById('divider').style.display === 'none') {
 		 	NgChm.SUM.drawColClassBarLabels(); 
 			NgChm.SUM.drawRowClassBarLabels(); 

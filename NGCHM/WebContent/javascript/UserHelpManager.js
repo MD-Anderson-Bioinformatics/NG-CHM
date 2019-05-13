@@ -313,8 +313,7 @@ NgChm.UHM.locateHelpBox = function(helptext) {
 /**********************************************************************************
  * FUNCTION - hlp: The purpose of this function is to generate a 
  * pop-up help panel for the tool buttons at the top of the detail pane. It receives
- * text from chm.html. If the screen has been split, it changes the test for the 
- * split screen button
+ * text from chm.html. 
  **********************************************************************************/
 NgChm.UHM.hlp = function(e,text, width, reverse) {
 	NgChm.UHM.hlpC();
@@ -574,41 +573,6 @@ NgChm.UHM.zipAppDownload = function() {
 	dlButton.style.display = 'none';
 	NgChm.heatMap.downloadFileApplication();
 }
-
-/**********************************************************************************
- * FUNCTION - unappliedChangeNotification: This function handles all of the tasks necessary 
- * display a modal window whenever an unapplied change notification is required when
- * attempting to split screens after preferences have been applied.  
- **********************************************************************************/
-NgChm.UHM.unappliedChangeNotification = function() {
-	var text;
-	NgChm.UHM.initMessageBox();
-	NgChm.UHM.setMessageBoxHeader("Split Screen Preference Conflict");
-	if (NgChm.heatMap.isReadOnly()) {
-		text = "<br>There are un-applied preference changes that prevent the split-screen process from completing.<br><br>Since this is a READ-ONLY heatmap, you will need to reload the map without preference changes to access split screen mode.";
-	} else {
-		text = "<br>There are un-applied preference changes that prevent the split-screen process from completing.<br><br>You will need to either save them or cancel the process before the screen may be split.";
-		NgChm.UHM.setMessageBoxButton(1, "images/prefSave.png", "Save Unapplied Changes", "NgChm.UHM.unappliedChangeSave");
-	} 
-	NgChm.UHM.setMessageBoxText(text);
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "", "NgChm.UHM.messageBoxCancel");
-	document.getElementById('msgBox').style.display = '';
-}
-
-/**********************************************************************************
- * FUNCTION - unappliedChangeSave: This function performs a heatmap preferences 
- * save when the user chooses to save unapplied changes when performing a split
- * screen operation.  
- **********************************************************************************/
-NgChm.UHM.unappliedChangeSave = function() {
-	var success = NgChm.heatMap.saveHeatMapToServer();
-	if (success === "true") {
-		NgChm.heatMap.setUnAppliedChanges(false);
-		NgChm.DET.detailSplit();
-	}
-	NgChm.UHM.initMessageBox();
-}
-
 
 /**********************************************************************************
  * FUNCTION - noWebGlContext: This function displays an error when no WebGl context

@@ -74,16 +74,6 @@ NgChm.DET.initDetailDisplay = function () {
 	NgChm.DET.labelElement = document.getElementById('labelDiv');
 	NgChm.DET.chmElement = document.getElementById('detail_chm');
 
-	if (NgChm.SEL.isSub) {
- 		document.getElementById('summary_chm').style.display = 'none';
- 		document.getElementById('divider').style.display = 'none';
- 		document.getElementById('detail_chm').style.width = '100%';
- 		document.getElementById('flicks').style.display = '';
- 		document.getElementById('detail_buttons').style.display = '';
- 		document.getElementById('split_btn').src= "images/join.png";
- 		document.getElementById('gear_btn').src= "images/gearDis.png";
- 		document.getElementById('pdf_btn').style.display = 'none';
-	}
 	if (NgChm.heatMap.isInitialized() > 0) {
  		document.getElementById('flicks').style.display = '';
 		document.getElementById('detail_buttons').style.display = '';
@@ -491,18 +481,14 @@ NgChm.DET.handleSelectDrag = function (e) {
     	for (var i = startCol; i <= endCol; i++){
     		NgChm.SEL.searchItems["Column"][i] = 1;
     	}
-    	if (NgChm.SEL.isSub){
-    		localStorage.setItem('selected', JSON.stringify(NgChm.SEL.searchItems));
-    	} else {
-    		NgChm.SUM.drawRowSelectionMarks();
-    		NgChm.SUM.drawColSelectionMarks();
-    		NgChm.SUM.drawTopItems();
-    	}
-	   	 NgChm.DET.clearLabels();
-		 NgChm.DET.drawSelections();
-		 NgChm.DET.drawRowAndColLabels();
-		 NgChm.DET.detailDrawColClassBarLabels();
-		 NgChm.DET.detailDrawRowClassBarLabels();
+        NgChm.SUM.drawRowSelectionMarks();
+        NgChm.SUM.drawColSelectionMarks();
+        NgChm.SUM.drawTopItems();
+        NgChm.DET.clearLabels();
+        NgChm.DET.drawSelections();
+        NgChm.DET.drawRowAndColLabels();
+        NgChm.DET.detailDrawColClassBarLabels();
+        NgChm.DET.detailDrawRowClassBarLabels();
     }
 }	
 
@@ -799,7 +785,7 @@ NgChm.DET.isOnObject = function (e,type) {
 NgChm.DET.detailDataZoomIn = function () {
 	NgChm.UHM.hlpC();	
 	if (NgChm.SEL.mode == 'FULL_MAP') {
-		if ((NgChm.SEL.prevMode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
+		if ((NgChm.SEL.prevMode == 'RIBBONH') || (NgChm.SEL.prevMode == 'RIBBONH_DETAIL')) {
 			NgChm.DET.detailHRibbonButton();
 		} else if  ((NgChm.SEL.prevMode == 'RIBBONV') || (NgChm.SEL.prevMode == 'RIBBONV_DETAIL')) {
             NgChm.DET.detailVRibbonButton();
@@ -846,29 +832,23 @@ NgChm.DET.detailDataZoomOut = function () {
 				NgChm.DET.detailFullMap();
 			}	
 		}	
-	} 
-	if ((NgChm.SEL.mode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
+	} else if ((NgChm.SEL.mode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxHeight);
 		if ((current > 0) &&
 		    (Math.floor((NgChm.DET.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL))) {
 			NgChm.DET.setDetailDataHeight (NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection();
 		}	else {
-            if (NgChm.SEL.mode == 'RIBBONH') {
-			    NgChm.DET.detailFullMap();
-            }
+            NgChm.DET.detailFullMap();
 		}	
-	} 
-	if ((NgChm.SEL.mode == 'RIBBONV') || (NgChm.SEL.mode == 'RIBBONV_DETAIL')){
+	} else if ((NgChm.SEL.mode == 'RIBBONV') || (NgChm.SEL.mode == 'RIBBONV_DETAIL')){
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxWidth);
 		if ((current > 0) &&
 		    (Math.floor((NgChm.DET.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))){
 			NgChm.DET.setDetailDataWidth (NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection();
 		}	else {
-            if (NgChm.SEL.mode == 'RIBBONV') {
-                NgChm.DET.detailFullMap();
-            }
+            NgChm.DET.detailFullMap();
 		}	
     }
     NgChm.UTIL.redrawCanvases();
@@ -930,9 +910,9 @@ NgChm.DET.detailHRibbon = function () {
 		
 	NgChm.SEL.setMode('RIBBONH');
 	NgChm.DET.setButtons();
-//	if (previousMode=='FULL_MAP') {
-//		NgChm.DET.setDetailDataHeight(NgChm.DET.zoomBoxSizes[0]);
-//	}
+	if (previousMode=='FULL_MAP') {
+		NgChm.DET.setDetailDataHeight(NgChm.DET.zoomBoxSizes[0]);
+	}
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
 	if (NgChm.SEL.selectedStart == null || NgChm.SEL.selectedStart == 0) {
@@ -947,12 +927,12 @@ NgChm.DET.detailHRibbon = function () {
 	} else {
 		NgChm.DET.saveCol = NgChm.SEL.selectedStart;
 		var selectionSize = NgChm.SEL.selectedStop - NgChm.SEL.selectedStart + 1;
-		if (selectionSize < 500) {
+//		if (selectionSize < 500) {
 			NgChm.SEL.mode='RIBBONH_DETAIL'
-		} else {
-			var rvRate = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
-			selectionSize = Math.floor(selectionSize/rvRate);
-		}
+//		} else {
+//			var rvRate = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
+//			selectionSize = Math.floor(selectionSize/rvRate);
+//		}
 		var width = Math.max(1, Math.floor(500/selectionSize));
 		NgChm.DET.dataViewWidth = (selectionSize * width) + NgChm.DET.dataViewBorder;
 		NgChm.DET.setDetailDataWidth(width);	
@@ -994,9 +974,6 @@ NgChm.DET.detailVRibbon = function () {
 	
 	NgChm.SEL.setMode('RIBBONV');
 	NgChm.DET.setButtons();
-//	if (previousMode=='FULL_MAP') {
-//		NgChm.DET.setDetailDataWidth(NgChm.DET.zoomBoxSizes[0]);
-//	}
 
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
@@ -1091,22 +1068,25 @@ NgChm.DET.detailNormal = function () {
     document.getElementById("viewport").setAttribute("content", "");
 }
 
-//Special mode - show the whole map in the detail pane.
+//Special mode - show the whole map in the detail pane. Processes ribbon h/v differently.
+//In these cases, one axis is kept static so that the "full view" stays within the selected
+//sub-dendro.
 NgChm.DET.detailFullMap = function () {
 	NgChm.UHM.hlpC();	
-	NgChm.SEL.setMode('FULL_MAP');
 	NgChm.DET.saveRow = NgChm.SEL.currentRow;
 	NgChm.DET.saveCol = NgChm.SEL.currentCol;
 	
 	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more 
 	//than 1 pixel, scale calculates the appropriate height/width.
-	scale = Math.max(Math.floor(500/NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL)), 1)
-	NgChm.DET.dataViewWidth=(NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL) * scale) + NgChm.DET.dataViewBorder;
-	NgChm.DET.setDetailDataWidth(scale);
-
-	scale = Math.max(Math.floor(500/NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL)), 1)
-	NgChm.DET.dataViewHeight= (NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL) * scale) + NgChm.DET.dataViewBorder;
-	NgChm.DET.setDetailDataHeight(scale);
+    if (NgChm.DDR.subDendroView === 'column') {
+        NgChm.DET.scaleViewHeight();
+    } else if (NgChm.DDR.subDendroView === 'row') {
+        NgChm.DET.scaleViewWidth();
+    } else {
+        NgChm.SEL.setMode('FULL_MAP');
+        NgChm.DET.scaleViewHeight();
+        NgChm.DET.scaleViewWidth();
+    }
 
 	//Canvas is adjusted to fit the number of rows/columns and matrix height/width of each element.
 	NgChm.DET.canvas.width =  (NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
@@ -1114,6 +1094,23 @@ NgChm.DET.detailFullMap = function () {
 	NgChm.DET.detSetupGl();
 	NgChm.DET.detInitGl();
 	NgChm.SEL.updateSelection();	
+}
+
+//For maps that have less rows/columns than the size of the detail panel, matrix elements get  width more 
+//than 1 pixel, scale calculates the appropriate height/width.
+NgChm.DET.scaleViewWidth = function () {
+    scale = Math.max(Math.floor(500/NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL)), 1)
+    NgChm.DET.dataViewWidth=(NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL) * scale) + NgChm.DET.dataViewBorder;
+    NgChm.DET.setDetailDataWidth(scale);
+}
+
+//For maps that have less rows/columns than the size of the detail panel, matrix elements get height more 
+//than 1 pixel, scale calculates the appropriate height/width.
+NgChm.DET.scaleViewHeight = function () {
+    scale = Math.max(Math.floor(500/NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL)), 1)
+    NgChm.DET.dataViewHeight= (NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL) * scale) + NgChm.DET.dataViewBorder;
+    NgChm.DET.setDetailDataHeight(scale);
+    
 }
 
 NgChm.DET.getNearestBoxSize = function (sizeToGet) {
@@ -1174,96 +1171,6 @@ NgChm.DET.setDetCanvasBoxSize = function () {
 	NgChm.DET.boxCanvas.style.left=NgChm.DET.canvas.style.left;
 	NgChm.DET.boxCanvas.style.top=NgChm.DET.canvas.style.top;
 }
-
-//Called when split/join button is pressed
-NgChm.DET.detailSplit = function () {
-	if (!NgChm.heatMap.getUnAppliedChanges()) {
-		NgChm.UHM.hlpC();
-		NgChm.heatMap.setFlickInitialized(false);
-		// If the summary and detail are in a single browser window, this is a split action.  
-		if (!NgChm.SEL.isSub) {
-			//Set flick button to top selection for later screen join
-			var flickBtn = document.getElementById("flick_btn");
-			flickBtn.setAttribute('src', 'images/toggleUp.png');
-			//Write current selection settings to the local storage
-			NgChm.SEL.hasSub=true;
-			NgChm.DET.clearLabels();
-			NgChm.SUM.clearSelectionMarks();
-			NgChm.SEL.updateSelection();
-			//Create a new detail browser window
-			detWindow = window.open(window.location.href + '&sub=true', '_blank', 'modal=yes, width=' + (window.screen.availWidth / 2) + ', height='+ window.screen.availHeight + ',top=0, left=' + (window.screen.availWidth / 2));
-			detWindow.moveTo(window.screen.availWidth / 2, 0);
-			detWindow.onbeforeunload = function(){NgChm.SEL.rejoinNotice(),NgChm.SEL.hasSub=false,NgChm.DET.detailJoin();} // when you close the subwindow, it will return to the original window
-			var detailDiv = document.getElementById('detail_chm');
-			detailDiv.style.display = 'none';
-			var dividerDiv = document.getElementById('divider');
-			dividerDiv.style.display = 'none';
-			//In summary window, hide the action buttons and expand the summary to 100% of the window.
-			var detailButtonDiv = document.getElementById('bottom_buttons');
-			var detailFlickDiv = document.getElementById('flicks');
-			detailButtonDiv.style.display = 'none';
-			detailFlickDiv.style.display = 'none';
-			var summaryDiv = document.getElementById('summary_chm');
-			summaryDiv.style.width = '90%';
-			NgChm.SUM.setSummarySize();
-			NgChm.SUM.rowDendro.draw();
-			NgChm.SUM.colDendro.draw();
-			NgChm.SUM.clearSelectionMarks();
-			NgChm.SUM.setSelectionDivSize();
-			NgChm.SUM.drawMissingRowClassBarsMark();
-			NgChm.SUM.drawMissingColClassBarsMark();
-			NgChm.SUM.drawRowSelectionMarks();
-			NgChm.SUM.drawColSelectionMarks();
-			NgChm.SUM.drawTopItems();
-	 		document.getElementById('pdf_gear').style.display = 'none';
-		 	NgChm.SUM.drawColClassBarLabels(); 
-			NgChm.SUM.drawRowClassBarLabels(); 
-		} else {
-			NgChm.SEL.updateSelection();
-			NgChm.SEL.rejoinNotice();
-			window.close();
-		}
-	} else {
-		NgChm.UHM.unappliedChangeNotification();
-	}
-}
-
-//Called when a separate detail window is joined back into the main window.
-NgChm.DET.detailJoin = function () {
-	var detailDiv = document.getElementById('detail_chm');
-	detailDiv.style.display = '';
-	var detailButtonDiv = document.getElementById('bottom_buttons');
-	detailButtonDiv.style.display = '';
-	var dividerDiv = document.getElementById('divider');
-	dividerDiv.style.display = '';
-	NgChm.SUM.initSummarySize();
-	NgChm.SUM.rowDendro.draw();
-	NgChm.SUM.colDendro.draw();
-	NgChm.SEL.initFromLocalStorage();
-	NgChm.SUM.setSummarySize();
-	NgChm.SUM.clearSelectionMarks();
-	NgChm.SUM.setSelectionDivSize();
-	NgChm.SUM.drawMissingRowClassBarsMark();
-	NgChm.SUM.drawMissingColClassBarsMark();
-	NgChm.SUM.drawRowSelectionMarks();
-	NgChm.SUM.drawColSelectionMarks();
-	NgChm.SUM.drawTopItems();
-	NgChm.heatMap.configureFlick();
-	NgChm.SEL.flickToggleOff();
-	document.getElementById('pdf_gear').style.display = '';
-	if (NgChm.SEL.flickExists()){
-		document.getElementById('pdf_gear').style.minWidth = '340px';
-	} else {
-		document.getElementById('pdf_gear').style.minWidth = '140px';
-	}
-	//Remove class labels
-	var classLabels = document.getElementsByClassName("classLabel");
-	while (classLabels.length > 0) {
-		classLabels[0].parentNode.removeChild(classLabels[0]);
-	}
-	NgChm.SEL.updateSelection();
-}
-
 
 // Callback that is notified every time there is an update to the heat map 
 // initialize, new data, etc.  This callback draws the summary heat map.
@@ -1335,11 +1242,7 @@ NgChm.DET.detailInit = function () {
 	
 	NgChm.DET.detSetupGl();
 	NgChm.DET.detInitGl();
-	if (NgChm.SEL.isSub)  {
-		NgChm.SEL.initFromLocalStorage();
-	} else {
-		NgChm.SEL.updateSelection();
-	}
+    NgChm.SEL.updateSelection();
 	if (NgChm.UTIL.getURLParameter("selected") !== ""){
 		var selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
 		document.getElementById("search_text").value = selected;
@@ -1930,14 +1833,9 @@ NgChm.DET.labelClick = function (e) {
 	NgChm.DET.detailDrawColClassBarLabels();
 	NgChm.DET.drawRowAndColLabels();
 	NgChm.SEL.updateSelection();
-	if (NgChm.SEL.isSub){
-		localStorage.setItem('selected', JSON.stringify(NgChm.SEL.searchItems));
-	}
-	if (!NgChm.SEL.isSub){
-		NgChm.SUM.drawRowSelectionMarks();
-		NgChm.SUM.drawColSelectionMarks();
-		NgChm.SUM.drawTopItems();
-	}
+    NgChm.SUM.drawRowSelectionMarks();
+    NgChm.SUM.drawColSelectionMarks();
+    NgChm.SUM.drawTopItems();
 	NgChm.DET.showSearchResults();	
 }
 
@@ -1979,14 +1877,9 @@ NgChm.DET.labelDrag = function(e){
 	NgChm.DET.detailDrawColClassBarLabels();
 	NgChm.DET.drawRowAndColLabels();
 	NgChm.SEL.updateSelection();
-	if (NgChm.SEL.isSub){
-		localStorage.setItem('selected', JSON.stringify(NgChm.SEL.searchItems));
-	}
-	if (!NgChm.SEL.isSub){
-		NgChm.SUM.drawRowSelectionMarks();
-		NgChm.SUM.drawColSelectionMarks();
-		NgChm.SUM.drawTopItems();
-	}
+    NgChm.SUM.drawRowSelectionMarks();
+    NgChm.SUM.drawColSelectionMarks();
+    NgChm.SUM.drawTopItems();
 	NgChm.DET.showSearchResults();	
 	return;
 }
@@ -2338,13 +2231,11 @@ NgChm.DET.detailDrawColClassBarLabels = function () {
 						var y = NgChm.DET.canvas.offsetTop-15;
 						NgChm.DET.addLabelDiv(NgChm.DET.labelElement, "missingDetColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
 					}
-					if (!NgChm.SEL.isSub) {  //we can't draw on the summary side from a split screen detail window
-						if (!document.getElementById("missingSumColClassBars") && NgChm.SUM.canvas){
-							var x = NgChm.SUM.canvas.offsetLeft + NgChm.SUM.canvas.offsetWidth + 2;
-							var y = NgChm.SUM.canvas.offsetTop + NgChm.SUM.canvas.clientHeight/NgChm.SUM.totalHeight - 10;
-							NgChm.DET.addLabelDiv(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
-						}	
-					}
+                    if (!document.getElementById("missingSumColClassBars") && NgChm.SUM.canvas){
+                        var x = NgChm.SUM.canvas.offsetLeft + NgChm.SUM.canvas.offsetWidth + 2;
+                        var y = NgChm.SUM.canvas.offsetTop + NgChm.SUM.canvas.clientHeight/NgChm.SUM.totalHeight - 10;
+                        NgChm.DET.addLabelDiv(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
+                    }	
 				}
 			}	
 		}
@@ -2696,11 +2587,9 @@ NgChm.DET.detailSearch = function () {
 		return;
 	}
 	NgChm.DET.searchNext(true);
-	if (!NgChm.SEL.isSub){
-		NgChm.SUM.drawRowSelectionMarks();
-		NgChm.SUM.drawColSelectionMarks();
-		NgChm.SUM.drawTopItems();
-	}
+    NgChm.SUM.drawRowSelectionMarks();
+    NgChm.SUM.drawColSelectionMarks();
+    NgChm.SUM.drawTopItems();
 	if (NgChm.DET.currentSearchItem.index && NgChm.DET.currentSearchItem.axis){
 		if (itemsFound.length != tmpSearchItems.length && itemsFound.length > 0) {
 			searchElement.style.backgroundColor = "rgba(255,255,0,0.3)";
@@ -2828,12 +2717,7 @@ NgChm.DET.clearSearch = function (event) {
 	NgChm.SEL.createEmptySearchItems();
 	NgChm.SUM.rowDendro.clearSelectedBars();
 	NgChm.SUM.colDendro.clearSelectedBars();
-	if (NgChm.SEL.isSub){
-		localStorage.setItem('selected', JSON.stringify(NgChm.SEL.searchItems));
-		NgChm.SEL.updateSelection();
-	} else {
-		NgChm.SUM.clearSelectionMarks();
-	}
+    NgChm.SUM.clearSelectionMarks();
 	NgChm.DET.clearSrchBtns(event);
 	NgChm.SEL.updateSelection();
 }

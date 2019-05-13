@@ -156,8 +156,7 @@ public class NGCHM_Widgetizer {
     		bw.write("if (embedDiv !== null) {embedDiv.innerHTML = htmlContent;}\n");
     		bw.write("document.body.addEventListener('click', NgChm.UHM.closeMenu,true);\n");
     		bw.write(scriptedLines.toString());
-    		//hide split screen and save buttons for "widget mode"
-       		bw.write("if (document.getElementById('split_btn') !== null) {document.getElementById('split_btn').style.display = 'none';}\n");
+    		//hide save button for "widget mode"
        		if (mode.equals("web")) {
        		    bw.write("document.getElementById('save_btn').style.display = 'none';\n"); 
        		}

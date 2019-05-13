@@ -57,7 +57,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	// If helpPrefs element already exists, the user is pressing the gear button
 	// when preferences are already open. Disregard.
 	var helpExists = document.getElementById('rowsColsprefs');
-	if ((NgChm.SEL.isSub) || (helpExists !== null)) {
+	if (helpExists !== null) {
 		return;
 	}
 

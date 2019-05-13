@@ -304,17 +304,12 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 				dataSource = NgChm.MMGR.LOCAL_SOURCE;
 			}
 			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
-			if (!NgChm.SEL.isSub) {
-				NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
-				NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
-				NgChm.SUM.initSummaryDisplay();
-			} else {  // separated detail browser 
-				NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.DET.processDetailMapUpdate);
-			}
+            NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
+            NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+            NgChm.SUM.initSummaryDisplay();
 			NgChm.DET.initDetailDisplay();
 		}
-        NgChm.SEL.setupLocalStorage();
-	} // NewTemp
+ 	} 
     document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);	
     document.getElementById("detail_canvas").focus();
 }
@@ -389,17 +384,13 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.FILE_SOURCE);
 	zip.useWebWorkers = false;
 	NgChm.UTIL.resetCHM();
-	if (!NgChm.SEL.isSub) {
-		NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
-		NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
-		if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
-			NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
-		}
-		NgChm.UTIL.initDisplayVars();
-		NgChm.SUM.initSummaryDisplay();
-	} else { // separated detail browser
-		NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.DET.processDetailMapUpdate, chmFile);			
-	}	
+    NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
+    NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+    if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
+        NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
+    }
+    NgChm.UTIL.initDisplayVars();
+    NgChm.SUM.initSummaryDisplay();
 	NgChm.DET.initDetailDisplay();
 }
 
@@ -450,8 +441,6 @@ NgChm.UTIL.resetCHM = function () {
 	NgChm.SEL.selectedStart=0; 
 	NgChm.SEL.selectedStop=0; 
 	NgChm.SEL.searchItems={};
-	NgChm.SEL.isSub = false; 
-	NgChm.SEL.hasSub = false;  
 	NgChm.SEL.scrollTime = null; 
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;

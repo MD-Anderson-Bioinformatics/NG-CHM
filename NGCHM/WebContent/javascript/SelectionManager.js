@@ -20,8 +20,6 @@ NgChm.SEL.dataPerCol=null;      // How many columns in the current selection
 NgChm.SEL.selectedStart=0;      // If dendrogram selection is used to limit ribbon view - which position to start selection.
 NgChm.SEL.selectedStop=0;       // If dendrogram selection is used to limit ribbon view - which position is last of selection.
 NgChm.SEL.searchItems={};
-NgChm.SEL.isSub = NgChm.UTIL.getURLParameter('sub') == 'true';  //isSub will be set to true if windows are split and this is the child.
-NgChm.SEL.hasSub = false;       //hasSub set to true if windows are split and this is the parent.
 NgChm.SEL.scrollTime = null; // timer for scroll events to prevent multiple events firing after scroll ends
 
 /* This function is called on detailInit to initialize the searchItems arrays */
@@ -36,47 +34,15 @@ NgChm.SEL.createEmptySearchItems = function() {
  * and dataPerCol as desired. This method does redrawing and notification as necessary.  
  */
 NgChm.SEL.updateSelection = function() {
-	if (!NgChm.SEL.isSub) {
-		//We have the summary heat map so redraw the yellow selection box.
-		NgChm.SUM.drawLeftCanvasBox();
-	} 
-	if (!NgChm.SEL.hasSub) {
-		// Redraw based on mode type and selection. 
-		NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),NgChm.SEL.getCurrentDetRow(),NgChm.SEL.getCurrentDetCol(),NgChm.SEL.getCurrentDetDataPerCol(),NgChm.SEL.getCurrentDetDataPerRow());
-		NgChm.DET.drawDetailHeatMap();
-	} 
-	
- 	//If summary and detail as split into two browsers.  Communicate the selection change
-	//to the other browser.
-	if (NgChm.SEL.isSub || NgChm.SEL.hasSub) {
-		localStorage.removeItem('event');
-		localStorage.setItem('currentDl', '' + NgChm.SEL.currentDl);
-		localStorage.setItem('currentRow', '' + NgChm.SEL.currentRow);
-		localStorage.setItem('currentCol', '' + NgChm.SEL.currentCol);
-		localStorage.setItem('dataPerRow', '' + NgChm.SEL.dataPerRow);
-		localStorage.setItem('dataPerCol', '' + NgChm.SEL.dataPerCol); 
-		localStorage.setItem('selectedStart', '' + NgChm.SEL.selectedStart);
-		localStorage.setItem('selectedStop', '' + NgChm.SEL.selectedStop);
-		localStorage.setItem('mode', NgChm.SEL.mode);
-		localStorage.setItem('selected', JSON.stringify(NgChm.SEL.searchItems));
-		localStorage.setItem('event', 'changePosition');
-	}		
+    //We have the summary heat map so redraw the yellow selection box.
+    NgChm.SUM.drawLeftCanvasBox();
+    // Redraw based on mode type and selection. 
+    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),NgChm.SEL.getCurrentDetRow(),NgChm.SEL.getCurrentDetCol(),NgChm.SEL.getCurrentDetDataPerCol(),NgChm.SEL.getCurrentDetDataPerRow());
+    NgChm.DET.drawDetailHeatMap();
 }
 
 NgChm.SEL.changeMode = function(newMode) {
-	
-	if (!NgChm.SEL.hasSub) {
-		NgChm.SEL.callDetailDrawFunction(newMode);
-	} else {
-		NgChm.SEL.prevMode = NgChm.SEL.mode;
-		NgChm.SEL.mode = newMode;
-		localStorage.removeItem('event');
-		localStorage.setItem('selectedStart', '' + NgChm.SEL.selectedStart);
-		localStorage.setItem('selectedStop', '' + NgChm.SEL.selectedStop);
-		localStorage.setItem('mode', newMode);
-		localStorage.setItem('event', 'changeMode');
-		localStorage.setItem('selected', JSON.stringify(NgChm.SEL.searchItems));
-	}
+    NgChm.SEL.callDetailDrawFunction(newMode);
 }
 
 NgChm.SEL.setMode = function(newMode) {
@@ -108,19 +74,9 @@ NgChm.SEL.handleScroll = function(evt) {
 	if (NgChm.SEL.scrollTime == null || evt.timeStamp - NgChm.SEL.scrollTime > 150){
 		NgChm.SEL.scrollTime = evt.timeStamp;
 		if (evt.wheelDelta < -30 || evt.deltaY > 0 || evt.scale < 1) { //Zoom out
-			if (!NgChm.SEL.hasSub)
-				NgChm.DET.detailDataZoomOut();
-			else {
-				localStorage.removeItem('event');
-				localStorage.setItem('event', 'zoomOut' )
-			}
+            NgChm.DET.detailDataZoomOut();
 		} else if ((evt.wheelDelta > 30 || evt.deltaY < 0 || evt.scale > 1)){ // Zoom in
-			if (!NgChm.SEL.hasSub)
-				NgChm.DET.zoomAnimation();
-			else {
-				localStorage.removeItem('event');
-				localStorage.setItem('event', 'zoomIn' );
-			}
+            NgChm.DET.zoomAnimation();
 		}	
 	}
 	return false;
@@ -220,100 +176,6 @@ NgChm.SEL.keyNavigate = function(e) {
     NgChm.SEL.updateSelection();
 }
 
-/*==============================================================================================
- * 
- * LOCAL STORAGE (SPLIT SCREEN) FUNCTIONS
- * 
- *=============================================================================================*/
-
-/************************************************************************************************
- * FUNCTION: setupLocalStorage - Local storage is used to communicate between two browser windows 
- * when the display is split. Setup an event to be notified when contents of local storage are 
- * modified.
- ***********************************************************************************************/ 
-NgChm.SEL.setupLocalStorage = function() {
-	window.addEventListener('storage', function (evt) {
-		//console.log('localstorage event ' + evt.key);  USE FOR DEBUGGING SPLIT SCREEN (when necessary)
-		if (evt.key == 'event') {
-			NgChm.SEL.handleLocalStorageEvent(evt);
-		} 
-	}, false);
-}
-
-/************************************************************************************************
- * FUNCTION: handleLocalStorageEvent - When the detail pane is in a separate window, local storage 
- * is used to send it updates from clicks in the summary view.
- ***********************************************************************************************/ 
-NgChm.SEL.handleLocalStorageEvent = function(evt) {
-	if (evt.newValue == null)
-		return;
-	
-	var type = localStorage.getItem('event');
-
-	if (type == 'changePosition') {
-		NgChm.SEL.currentRow = Number(localStorage.getItem('currentRow'));
-		NgChm.SEL.currentCol = Number(localStorage.getItem('currentCol'));
-		NgChm.SEL.dataPerRow = Number(localStorage.getItem('dataPerRow'));
-		NgChm.SEL.dataPerCol = Number(localStorage.getItem('dataPerCol'));
-		NgChm.SEL.selectedStart = Number(localStorage.getItem('selectedStart'));
-		NgChm.SEL.selectedStop = Number(localStorage.getItem('selectedStop'));
-		NgChm.DET.dataBoxHeight = (NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.dataViewBorder)/NgChm.SEL.dataPerCol;
-		NgChm.DET.dataBoxWidth = (NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.dataViewBorder)/NgChm.SEL.dataPerRow;
-		if (NgChm.SEL.mode != localStorage.getItem('mode') && NgChm.SEL.selectedStart == 0 && NgChm.SEL.selectedStop == 0){
-			NgChm.DDR.clearDendroSelection();
-		}
-		NgChm.SEL.mode = localStorage.getItem('mode');
-		if (NgChm.SEL.hasSub) {
-			if (NgChm.SEL.currentDl != localStorage.getItem('currentDl')) {
-				NgChm.SEL.currentDl = localStorage.getItem('currentDl');
-				NgChm.SUM.buildSummaryTexture();
-			}
-			// if the selection changes, redraw the selection marks
-			NgChm.SEL.searchItems = JSON.parse(localStorage.getItem('selected'));
-			NgChm.SUM.clearSelectionMarks();
-			NgChm.SUM.drawRowSelectionMarks();
-			NgChm.SUM.drawColSelectionMarks();
-			// Redraw the yellow selection box.
-			NgChm.SUM.drawLeftCanvasBox();
-		} 
-		if (NgChm.SEL.isSub) {
-			NgChm.SEL.callDetailDrawFunction(NgChm.SEL.mode);
-		} 
-	} else if (type == 'zoomIn'){
-		NgChm.DET.zoomAnimation();
-	} else if (type == 'zoomOut') {
-		NgChm.DET.detailDataZoomOut();
-	} else if ((type == 'changeMode') && (NgChm.SEL.isSub))	{
-		NgChm.DDR.clearDendroSelection();
-		var newMode = localStorage.getItem('mode');
-		NgChm.SEL.selectedStart = Number(localStorage.getItem('selectedStart'));
-		NgChm.SEL.selectedStop = Number(localStorage.getItem('selectedStop'));
-		NgChm.SEL.searchItems = JSON.parse(localStorage.getItem('selected'));
-		NgChm.SEL.callDetailDrawFunction(newMode);
-	} else if ((type == 'join') && NgChm.SEL.hasSub) {
-		NgChm.SEL.hasSub=false;
-		NgChm.DET.detailJoin();
-	}
-}
-
-/************************************************************************************************
- * FUNCTION: initFromLocalStorage - If a second detail browser window is launched, use local 
- * storage when first setting up the detail chm to get current mode and selection settings.
- ***********************************************************************************************/ 
-NgChm.SEL.initFromLocalStorage = function() {
-	NgChm.SEL.getLocalStorageValues();
-	if (NgChm.heatMap.showColDendrogram("DETAIL")) {
-		NgChm.SUM.colDendro = new NgChm.DDR.SummaryColumnDendrogram(); 
-	} 
-	if (NgChm.heatMap.showRowDendrogram("DETAIL")) {
-		NgChm.SUM.rowDendro = new NgChm.DDR.SummaryRowDendrogram ();
-	}
-	NgChm.heatMap.configureFlick();
-	var nameDiv = document.getElementById("mapName");
-	nameDiv.innerHTML = "<b>NG-CHM Heat Map:</b>&nbsp;&nbsp;"+NgChm.heatMap.getMapInformation().name;
-	NgChm.SEL.callDetailDrawFunction(NgChm.SEL.mode);
-}
-
 NgChm.SEL.callDetailDrawFunction = function(modeVal) {
 	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
 		NgChm.DET.detailHRibbon();
@@ -324,32 +186,6 @@ NgChm.SEL.callDetailDrawFunction = function(modeVal) {
 	if (modeVal == 'NORMAL') {
 		NgChm.DET.detailNormal();	
 	}
-}
-
-NgChm.SEL.getLocalStorageValues = function() {
-	NgChm.SEL.currentDl = localStorage.getItem('currentDl');
-	NgChm.SEL.currentRow = Number(localStorage.getItem('currentRow'));
-	NgChm.SEL.currentCol = Number(localStorage.getItem('currentCol'));
-	NgChm.SEL.dataPerRow = Number(localStorage.getItem('dataPerRow'));
-	NgChm.SEL.dataPerCol = Number(localStorage.getItem('dataPerCol'));
-	NgChm.SEL.selectedStart = Number(localStorage.getItem('selectedStart'));
-	NgChm.SEL.selectedStop = Number(localStorage.getItem('selectedStop'));
-	NgChm.SEL.searchItems = JSON.parse(localStorage.getItem('selected'));
-	NgChm.SEL.mode = localStorage.getItem('mode');
-
-	NgChm.heatMap.configureFlick();
-
-	NgChm.DET.dataBoxHeight = (NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.dataViewBorder)/NgChm.SEL.dataPerCol;
-	NgChm.DET.dataBoxWidth = (NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.dataViewBorder)/NgChm.SEL.dataPerRow;
-}
-
-/************************************************************************************************
- * FUNCTION: rejoinNotice - Called when a separate detail map window is joined back into the 
- * main chm browser window.
- ***********************************************************************************************/ 
-NgChm.SEL.rejoinNotice = function() {
-	localStorage.removeItem('event');
-	localStorage.setItem('event', 'join');	
 }
 
 /*==============================================================================================
@@ -471,7 +307,7 @@ NgChm.SEL.getCurrentDetCol = function() {
  * view where the value needs to be scaled in one dimension.
  **********************************************************************************/
 NgChm.SEL.getCurrentDetDataPerRow = function() {
-	// make sure dataPerCol is the correct value. split screen can cause issues with values updating properly.
+	// make sure dataPerCol is the correct value. 
 	var	detDataPerRow = NgChm.SEL.dataPerRow;
 	if ((NgChm.SEL.mode == 'RIBBONH') || (NgChm.SEL.mode == 'FULL_MAP')) {
 		var rate = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
@@ -481,7 +317,7 @@ NgChm.SEL.getCurrentDetDataPerRow = function() {
 }
 // Follow similar methodology for Column as is used in above row based function
 NgChm.SEL.getCurrentDetDataPerCol = function() {
-	// make sure dataPerCol is the correct value. split screen can cause issues with values updating properly.
+	// make sure dataPerCol is the correct value. 
 	var	detDataPerCol = NgChm.SEL.dataPerCol;
 	if ((NgChm.SEL.mode == 'RIBBONV') || (NgChm.SEL.mode == 'FULL_MAP')) {
 		var rate = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
@@ -554,7 +390,7 @@ NgChm.SEL.flickIsOn = function() {
 NgChm.SEL.flickToggleOn = function() {
 	var flickDrop1 = document.getElementById("flick1");
 	var flickDrop2 = document.getElementById("flick2");
-	//Make sure upon return from split screen that dropdowns contain different
+	//Make sure that dropdowns contain different
 	//options (with the selected option in the top box)
 	if (flickDrop1.selectedIndex === flickDrop2.selectedIndex) {
 		if (flickDrop1.selectedIndex === 0) {
@@ -643,14 +479,7 @@ NgChm.SEL.flickChange = function(fromList) {
 		}
 	} 
 	NgChm.SEL.flickInit();
-	
-	if (!NgChm.SEL.isSub) {
-		NgChm.SUM.buildSummaryTexture();
-	} else {
-		localStorage.removeItem('event');
-		localStorage.setItem('currentDl', NgChm.SEL.currentDl);
-		localStorage.setItem('event', 'changePosition');
-	}
+    NgChm.SUM.buildSummaryTexture();
 	NgChm.DET.drawDetailHeatMap();
 	NgChm.SEL.updateSelection();
 }

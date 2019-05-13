@@ -1,6 +1,8 @@
 //Define Namespace for NgChm Dendrogram
 NgChm.createNS('NgChm.DDR');
 
+NgChm.DDR.subDendroView = 'none';
+
 //Class used to hold an in memory 2D boolean matrix of the dendrogram 
 NgChm.DDR.DendroMatrix = function(numRows, numCols,isRow){
 	// We've moved away from using a 2D matrix and have opted to use one long array for performance purposes.
@@ -252,7 +254,8 @@ NgChm.DDR.SummaryColumnDendrogram = function() {
 	}
 	
 	function subDendroClick(event){
-		var clickX = event.offsetX, clickY = this.height-event.offsetY;
+        NgChm.DDR.subDendroView = 'column';		
+        var clickX = event.offsetX, clickY = this.height-event.offsetY;
 		var matrixX = Math.round(clickX/(this.width/dendroMatrix.getNumCols())), matrixY = Math.round(clickY/(this.height/dendroMatrix.getNumRows()));
 		NgChm.SUM.clearColSelectionMarks();
 		NgChm.SUM.rowDendro.clearSelection();
@@ -269,13 +272,11 @@ NgChm.DDR.SummaryColumnDendrogram = function() {
 		chosenBar = {};
 		NgChm.SEL.selectedStart = 0;
 		NgChm.SEL.selectedStop = 0;
-		if (!NgChm.SEL.isSub) {
-			dendroBoxLeftTopArray = new Float32Array([0, 0]);
-			dendroBoxRightBottomArray = new Float32Array([0, 0]);
-			if (NgChm.heatMap.showColDendrogram("summary")) {
-				dendroMatrix = buildMatrix();
-			}
-		}
+        dendroBoxLeftTopArray = new Float32Array([0, 0]);
+        dendroBoxRightBottomArray = new Float32Array([0, 0]);
+        if (NgChm.heatMap.showColDendrogram("summary")) {
+            dendroMatrix = buildMatrix();
+        }
 	}
 	function resize(){
 		dendroCanvas.style.width = NgChm.SUM.canvas.clientWidth*NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth;
@@ -637,8 +638,10 @@ NgChm.DDR.SummaryRowDendrogram = function() {
 	
 	// internal functions
 	function subDendroClick(event){
+         NgChm.DDR.subDendroView = 'row';		
 		var clickX = event.offsetX, clickY = event.offsetY;
-		var matrixX = Math.round(clickY/(this.height/dendroMatrix.getNumCols())), matrixY = Math.round((this.width-clickX)/(this.width/dendroMatrix.getNumRows()));
+        var matrixX = Math.round(clickY/(this.height/dendroMatrix.getNumCols()));
+        var matrixY = Math.round((this.width-clickX)/(this.width/dendroMatrix.getNumRows()));
 		NgChm.SUM.clearRowSelectionMarks();
 		NgChm.SUM.colDendro.clearSelection();
 		NgChm.SUM.rowDendro.clearSelection();
@@ -653,13 +656,11 @@ NgChm.DDR.SummaryRowDendrogram = function() {
 		chosenBar = {};
 		NgChm.SEL.selectedStart = 0;
 		NgChm.SEL.selectedStop = 0;
-		if (!NgChm.SEL.isSub) {
-			dendroBoxLeftTopArray = new Float32Array([0, 0]);
-			dendroBoxRightBottomArray = new Float32Array([0, 0]);
-			if (NgChm.heatMap.showRowDendrogram("summary")) {
-				dendroMatrix = buildMatrix();
-			}
-		}
+        dendroBoxLeftTopArray = new Float32Array([0, 0]);
+        dendroBoxRightBottomArray = new Float32Array([0, 0]);
+        if (NgChm.heatMap.showRowDendrogram("summary")) {
+            dendroMatrix = buildMatrix();
+        }
 	}
 	
 	function resize(){
@@ -969,19 +970,18 @@ NgChm.DDR.clearDendroSelection = function() {
 	if (NgChm.SEL.selectedStart != 0) {
 		NgChm.SEL.selectedStart = 0;
 		NgChm.SEL.selectedStop = 0;
-		if (!NgChm.SEL.isSub) {
-			dendroBoxLeftTopArray = new Float32Array([0, 0]);
-			dendroBoxRightBottomArray = new Float32Array([0, 0]);
-			if (NgChm.heatMap.showRowDendrogram("summary")) {
-				NgChm.SUM.rowDendro.rebuildMatrix();
-				NgChm.SUM.rowDendro.draw();
-			}
-			if (NgChm.heatMap.showColDendrogram("summary")) {
-				NgChm.SUM.colDendro.rebuildMatrix();
-				NgChm.SUM.colDendro.draw();
-			}
-		}
+        dendroBoxLeftTopArray = new Float32Array([0, 0]);
+        dendroBoxRightBottomArray = new Float32Array([0, 0]);
+        if (NgChm.heatMap.showRowDendrogram("summary") &&  (NgChm.DDR.subDendroView === 'row')) {
+            NgChm.SUM.rowDendro.rebuildMatrix();
+            NgChm.SUM.rowDendro.draw();
+        }
+        if (NgChm.heatMap.showColDendrogram("summary")  &&  (NgChm.DDR.subDendroView === 'column')) {
+            NgChm.SUM.colDendro.rebuildMatrix();
+            NgChm.SUM.colDendro.draw();
+        }
 	}
+     NgChm.DDR.subDendroView = 'none';  
 }
 
 NgChm.DDR.matrixToAsciiPrint = function(matrix) { // this is just a debug function to see if the dendrogram looks correct. paste "line" into a text editor and decrease the font. input is the dendrogram matrix.
