@@ -551,7 +551,8 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 				classBarData = colClassBarData[key];
 			}
 			var barHeight = classBarLegendTextSize + 3;
-			var counts = {}, maxCount = 0, maxLabelLength = doc.getStringUnitWidth("Missing Value")*classBarLegendTextSize;
+            var counts = {}, maxCount = 0;
+		    maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
 			// get the number N in each threshold
 			var cutValues = 0;
 			for(var i = 0; i< classBarData.values.length; i++) {
@@ -651,7 +652,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		// get the number N in each threshold
 		var counts = {};
 		var maxCount = 0;
-		maxLabelLength = doc.getStringUnitWidth("Missing Value")*classBarLegendTextSize;
+		maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
 
 		// get the continuous thresholds and find the counts for each bucket
 		var cutValues = 0;
