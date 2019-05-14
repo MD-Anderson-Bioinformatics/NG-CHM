@@ -454,11 +454,6 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * stretch/compress the image much.  Prevents blurry images on some heat maps.
 	 **********************************************************************************/
 	function configureCanvas(newCanvas, origCanvas, newWidth, newHeight) {
-		//Dimensions of summary canvas are sometimes a poor match for the size it will be in the PDF.
-		//Create a temporary canvas matching the PDF summary image dimensions, turn off image smoothing
-		//and copy the current summary canvas to the temporary one.  This will resize the image without
-		//smoothing to the target size so the PDF viewer will not need to stretch/compress the image
-		//much.  Prevents blurry summary on some heat maps.
 		newCanvas.width = newWidth;
 		newCanvas.height = newHeight;
 		var destCtx = newCanvas.getContext("2d");

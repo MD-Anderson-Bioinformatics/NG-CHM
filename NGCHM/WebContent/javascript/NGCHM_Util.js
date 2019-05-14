@@ -476,39 +476,35 @@ NgChm.UTIL.downloadSummaryMapPng = function () {
 }
 
 NgChm.UTIL.downloadSummaryPng = function () { 
-	  var mapName = NgChm.heatMap.getMapInformation().name;
-	  var dataURL = NgChm.SUM.canvas.toDataURL('image/png');
-	  var colDCanvas = document.getElementById("column_dendro_canvas");
-	  var rowDCanvas = document.getElementById("row_dendro_canvas");
-	  var colDURL =  colDCanvas.toDataURL('image/png');
-	  var rowDURL =   rowDCanvas.toDataURL('image/png');
-	  var dl = document.createElement('a');
-	  var colDCImg = new Image();
-	  var colDRImg = new Image();
-	  var mapImg = new Image();
-	  NgChm.UTIL.scalePngImage(colDURL, 200, 50, dl, function(canvas){
-		  colDCImg.onload = function(){
-			  NgChm.UTIL.scalePngImage(rowDURL, 50, 200, dl, function(canvas){
-				  colDRImg.onload = function(){
-					  NgChm.UTIL.scalePngImage(dataURL, 200, 200, dl, function(canvas){
-						  mapImg.onload = function(){
-							  var dl1 = document.createElement('b');
-							  NgChm.UTIL.combinePngImage(colDCImg, colDRImg, mapImg, 200, 200, dl, function(canvas){
-								  dl.setAttribute('href', canvas.toDataURL('image/png'));
-								  dl.setAttribute('download', mapName+'_tn.png');
-								  document.body.appendChild(dl);
-								  dl.click();
-								  dl.remove();
-							  });
-						  }
-						  mapImg.src = canvas.toDataURL('image/png');
-					  });
-				  }
-				  colDRImg.src = canvas.toDataURL('image/png');
-			  });
-		  }
-		  colDCImg.src = canvas.toDataURL('image/png');
-	  });
+    var mapName = NgChm.heatMap.getMapInformation().name;
+    var colDCanvas = document.getElementById("column_dendro_canvas");
+    var rowDCanvas = document.getElementById("row_dendro_canvas");
+    var dl = document.createElement('a');
+    var colDCImg = new Image();
+    var colDRImg = new Image();
+    var mapImg = new Image();
+    NgChm.UTIL.scalePngImage(colDCanvas, 200, 50, dl, function(canvas){
+        colDCImg.onload = function(){
+            NgChm.UTIL.scalePngImage(rowDCanvas, 50, 200, dl, function(canvas){
+                colDRImg.onload = function(){
+                    NgChm.UTIL.scalePngImage(NgChm.SUM.canvas, 200, 200, dl, function(canvas){
+                        mapImg.onload = function(){
+                            NgChm.UTIL.combinePngImage(colDCImg, colDRImg, mapImg, 200, 200, dl, function(canvas){
+                                dl.setAttribute('href', canvas.toDataURL('image/png'));
+                                dl.setAttribute('download', mapName+'_tn.png');
+                                document.body.appendChild(dl);
+                                dl.click();
+                                dl.remove();
+                            });
+                        }
+                        mapImg.src = canvas.toDataURL('image/png');
+                    });
+                }
+                colDRImg.src = canvas.toDataURL('image/png');
+            });
+        }
+        colDCImg.src = canvas.toDataURL('image/png');
+    });
 }
 
 
@@ -519,25 +515,15 @@ NgChm.UTIL.downloadSummaryPng = function () {
  * 200x200 image png.
  **********************************************************************************/
 NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callback) {
-		var rcWidth = NgChm.SUM.rowClassBarWidth === 0 ? 1 : NgChm.SUM.rowClassBarWidth;
-		var ccHeight = NgChm.SUM.colClassBarHeight === 0 ? 1 : NgChm.SUM.colClassBarHeight;
-		var canHeight = NgChm.SUM.canvas.height;
-		var canWidth = NgChm.SUM.canvas.width;
-		var rcRatio = rcWidth/canWidth;
-		var ccRatio = ccHeight/canHeight;
 		var canvas = document.createElement("canvas");
 		ctx = canvas.getContext("2d");
 		ctx.imageSmoothingEnabled = false;
 		var mapWidth = width;
 		var mapHeight = height;
-		//Row covar width
-		var rcWidth = width*rcRatio;
-		//Col covar height
-		var ccHeight = height*ccRatio;
-		var cDWidth = width-rcWidth;
+		var cDWidth = width;
 		var cDHeight = height/4;
 		var rDWidth = width/4;
-		var rDHeight = height-ccHeight;
+		var rDHeight = height;
 		canvas.width = width + rDWidth;
 		canvas.height= height + cDHeight;
 		var cDShow = (NgChm.heatMap.getColDendroConfig().show === 'ALL') || (NgChm.heatMap.getColDendroConfig().show === 'SUMMARY') ? true : false;
@@ -546,13 +532,13 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 		var mapStartY = 0;
 		// draw the img into canvas
 		if (cDShow === true){
-			ctx.drawImage(img1, rDWidth+rcWidth, 0, cDWidth, cDHeight);
+			ctx.drawImage(img1, rDWidth, 0, cDWidth, cDHeight);
 			mapStartY = cDHeight;
 		} else {
 			mapHeight = mapHeight + cDHeight;
 		}
 		if (rDShow === true){
-			ctx.drawImage(img2, 0, cDHeight+ccHeight, rDWidth, rDHeight);
+			ctx.drawImage(img2, 0, cDHeight, rDWidth, rDHeight);
 			mapStartX = rDWidth;
 		} else {
 			mapWidth = mapWidth + rDWidth;
@@ -566,20 +552,37 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
  * FUNCTION - scaleSummaryPng: This function scales the summary PNG file down to 
  * the width and height specified (currently this is set to 200x200 pixels).
  **********************************************************************************/
-NgChm.UTIL.scalePngImage = function (url, width, height, dl, callback) {
+NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
 	var img = new Image();
+    var url = origCanvas.toDataURL('image/png');
 
 	// When the images is loaded, resize it in canvas.
 	img.onload = function(){
 		var canvas = document.createElement("canvas");
         ctx = canvas.getContext("2d");
-        ctx.imageSmoothingEnabled = false;
-        canvas.width = width;
-        canvas.height= height;
+        ctx.imageSmoothingQuality = "high";
+		ctx.mozImageSmoothingEnabled = false;
+		ctx.imageSmoothingEnabled = false;
+        canvas.width = width*2;
+        canvas.height= height*2;
         // draw the img into canvas
-        ctx.drawImage(img, 0, 0, width, height);
-        // Run the callback on what to do with the canvas element.
-        callback(canvas, dl);
+        ctx.drawImage(img, 0, 0, width*2, height*2);
+        var img2 = new Image();
+        img2.onload = function(){
+            var canvas2 = document.createElement("canvas");
+            ctx2 = canvas2.getContext("2d");
+            ctx2.imageSmoothingQuality = "high";
+            ctx2.mozImageSmoothingEnabled = false;
+            ctx2.imageSmoothingEnabled = false;
+            canvas2.width = width;
+            canvas2.height= height;
+            // draw the img into canvas
+            ctx2.drawImage(img2, 0, 0, width, height);
+            // Run the callback on what to do with the canvas element.
+            callback(canvas2, dl);
+        };
+
+        img2.src = canvas.toDataURL('image/png');
 	};
 	img.src = url;
 }
