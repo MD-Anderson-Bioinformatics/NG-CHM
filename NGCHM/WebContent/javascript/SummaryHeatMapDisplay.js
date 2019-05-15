@@ -2032,10 +2032,8 @@ NgChm.SUM.onMouseUpSelRowCanvas = function(evt) {
 	//When doing a shift drag, this block will actually do the selection on mouse up.
 	var sumOffsetX = evt.touches ? evt.layerX : evt.offsetX;
 	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
-	var rowClassXLimit = NgChm.SUM.rowClassBarWidth/NgChm.SUM.canvas.width*NgChm.SUM.canvas.clientWidth;
-	var colClassYLimit = NgChm.SUM.colClassBarHeight/NgChm.SUM.canvas.height*NgChm.SUM.canvas.clientHeight;
-	var xPos = NgChm.SUM.getCanvasX(sumOffsetX) + NgChm.SUM.rowClassBarWidth;
-	var yPos = NgChm.SUM.getCanvasY(sumOffsetY) + NgChm.SUM.colClassBarHeight;
+	var xPos = NgChm.SUM.getCanvasX(sumOffsetX);
+	var yPos = NgChm.SUM.getCanvasY(sumOffsetY);
 	var sumRow = NgChm.SUM.canvasToMatrixRow(yPos) - Math.floor(NgChm.SEL.getCurrentSumDataPerCol()/2);
 	NgChm.SEL.setCurrentRowFromSum(sumRow);
 	NgChm.SEL.updateSelection();
@@ -2053,10 +2051,8 @@ NgChm.SUM.onMouseUpSelColCanvas = function(evt) {
 	//When doing a shift drag, this block will actually do the selection on mouse up.
 	var sumOffsetX = evt.touches ? evt.layerX : evt.offsetX;
 	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
-	var rowClassXLimit = NgChm.SUM.rowClassBarWidth/NgChm.SUM.canvas.width*NgChm.SUM.canvas.clientWidth;
-	var colClassYLimit = NgChm.SUM.colClassBarHeight/NgChm.SUM.canvas.height*NgChm.SUM.canvas.clientHeight;
-	var xPos = NgChm.SUM.getCanvasX(sumOffsetX) + NgChm.SUM.rowClassBarWidth;
-	var yPos = NgChm.SUM.getCanvasY(sumOffsetY) + NgChm.SUM.colClassBarHeight;
+	var xPos = NgChm.SUM.getCanvasX(sumOffsetX);
+	var yPos = NgChm.SUM.getCanvasY(sumOffsetY);
 	var sumCol = NgChm.SUM.canvasToMatrixCol(xPos) - Math.floor(NgChm.SEL.getCurrentSumDataPerRow()/2);
 	NgChm.SEL.setCurrentColFromSum(sumCol); 
 	NgChm.SEL.updateSelection();
