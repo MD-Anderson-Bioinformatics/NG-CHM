@@ -337,7 +337,6 @@ NgChm.DET.dblClick = function(e) {
 				NgChm.DET.detailDataZoomOut();
 			} else {
 				NgChm.DET.zoomAnimation(clickRow, clickCol);
-//				NgChm.DET.detailDataZoomIn();
 			}
 			//Center the map on the cursor position
 			NgChm.SEL.checkRow();
@@ -399,8 +398,11 @@ NgChm.DET.handleMouseMove = function (e) {
 		//If mouse is down and shift key is pressed, perform a drag selection
 		//Else perform a drag move
 		if (e.shiftKey) {
-			NgChm.DET.clearSearch(e);
-			NgChm.DET.handleSelectDrag(e);
+	        //process select drag only if the mouse is down AND the cursor is on the heat map.
+            if((NgChm.DET.mouseDown) && (NgChm.DET.isOnObject(e,"map"))) {
+			    NgChm.DET.clearSearch(e);
+			    NgChm.DET.handleSelectDrag(e);
+            }
 	    }
 	    else {
     		NgChm.DET.handleMoveDrag(e);
@@ -454,8 +456,6 @@ NgChm.DET.handleMoveDrag = function (e) {
  * on the Summary heatmap are drawn and the detail heat map is re-drawn 
  *********************************************************************************************/
 NgChm.DET.handleSelectDrag = function (e) {
-	//Disregard select drag if the mouse is not down OR the cursor is NOT on the heat map.
-    if((!NgChm.DET.mouseDown) || (!NgChm.DET.isOnObject(e,"map"))) return;
 	NgChm.DET.canvas.style.cursor="crosshair";
     var rowElementSize = NgChm.DET.dataBoxWidth * NgChm.DET.canvas.clientWidth/NgChm.DET.canvas.width;
     var colElementSize = NgChm.DET.dataBoxHeight * NgChm.DET.canvas.clientHeight/NgChm.DET.canvas.height;
@@ -467,7 +467,7 @@ NgChm.DET.handleSelectDrag = function (e) {
 	var coords = NgChm.DET.getCursorPosition(e);
     var xDrag = e.touches ? e.touches[0].layerX - NgChm.DET.dragOffsetX : coords.x - NgChm.DET.dragOffsetX;
     var yDrag = e.touches ? e.touches[0].layerY - NgChm.DET.dragOffsetY : coords.y - NgChm.DET.dragOffsetY;
-    
+   
     if ((Math.abs(xDrag/rowElementSize) > 1) || (Math.abs(yDrag/colElementSize) > 1)) {
     	//Retrieve drag corners but set to max/min values in case user is dragging
     	//bottom->up or left->right.
@@ -501,7 +501,6 @@ NgChm.DET.handleSelectDrag = function (e) {
  * mouse location.  They utilize event.layerY/X for the mouse position.
  *********************************************************************************************/
 NgChm.DET.getRowFromLayerY = function (layerY) {
-    var rowElementSize = NgChm.DET.dataBoxWidth * NgChm.DET.canvas.clientWidth/NgChm.DET.canvas.width; // px/Glpoint
     var colElementSize = NgChm.DET.dataBoxHeight * NgChm.DET.canvas.clientHeight/NgChm.DET.canvas.height;
 	var colClassHeightPx = NgChm.DET.getColClassPixelHeight();
 	var mapLocY = layerY - colClassHeightPx;
@@ -510,7 +509,6 @@ NgChm.DET.getRowFromLayerY = function (layerY) {
 
 NgChm.DET.getColFromLayerX = function (layerX) {
     var rowElementSize = NgChm.DET.dataBoxWidth * NgChm.DET.canvas.clientWidth/NgChm.DET.canvas.width; // px/Glpoint
-    var colElementSize = NgChm.DET.dataBoxHeight * NgChm.DET.canvas.clientHeight/NgChm.DET.canvas.height;
 	var rowClassWidthPx = NgChm.DET.getRowClassPixelWidth();
 	var mapLocX = layerX - rowClassWidthPx;
 	return Math.floor(NgChm.SEL.currentCol + (mapLocX/rowElementSize)*NgChm.DET.getSamplingRatio('col'));
@@ -768,8 +766,8 @@ NgChm.DET.isOnObject = function (e,type) {
     var rowDendroWidthPx =  NgChm.DET.getRowDendroPixelWidth();
     var colDendroHeightPx = NgChm.DET.getColDendroPixelHeight();
 	var coords = NgChm.DET.getCursorPosition(e);
-    if (coords.y > colClassHeightPx + colDendroHeightPx) { 
-    	if  ((type == "map") && coords.x > rowClassWidthPx + rowDendroWidthPx) {
+    if (coords.y > colClassHeightPx) { 
+        if  ((type == "map") && coords.x > rowClassWidthPx) {
     		return true;
     	}
     	if  ((type == "rowClass") && coords.x < rowClassWidthPx + rowDendroWidthPx && coords.x > rowDendroWidthPx) {
@@ -2711,7 +2709,7 @@ NgChm.DET.searchPrev = function () {
 
 //Called when red 'X' is clicked.
 NgChm.DET.clearSearch = function (event) {
-	NgChm.DET.hideSearchResults();
+ 	NgChm.DET.hideSearchResults();
 	var searchElement = document.getElementById('search_text');
 	searchElement.value = "";
 	NgChm.DET.currentSearchItem = {};
