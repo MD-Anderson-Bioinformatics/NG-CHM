@@ -114,6 +114,44 @@ NgChm.SUM.processSummaryMapUpdate = function(event, level) {
 	//Ignore updates to other tile types.
 }
 
+NgChm.SUM.rowDendroResize = function() {
+	const dendroCanvas = NgChm.SUM.rowDendro.dendroCanvas;
+	const sumChm = document.getElementById("summary_chm");
+
+	const width = NgChm.SUM.rowDendro.getConfigSize() * sumChm.clientWidth*NgChm.SUM.widthPct;
+	const height = NgChm.SUM.canvas.clientHeight*NgChm.SUM.matrixHeight/NgChm.SUM.totalHeight*NgChm.SUM.heightScale;
+	const top = NgChm.SUM.canvas.offsetTop + (NgChm.SUM.totalHeight - NgChm.SUM.matrixHeight*NgChm.SUM.heightScale)/NgChm.SUM.totalHeight*NgChm.SUM.canvas.offsetHeight;
+
+	dendroCanvas.style.height = height;
+	dendroCanvas.style.top = top;
+	if (NgChm.SUM.rowDendro.isVisible()){
+		dendroCanvas.style.width = width;
+		dendroCanvas.height = Math.round(height);
+		dendroCanvas.width = Math.round(width);
+	} else {
+		dendroCanvas.style.width = 0;
+	}
+};
+
+NgChm.SUM.colDendroResize = function() {
+	const dendroCanvas = NgChm.SUM.colDendro.dendroCanvas;
+	const sumChm = document.getElementById("summary_chm");
+
+	const height = NgChm.SUM.colDendro.getConfigSize() * sumChm.clientHeight*NgChm.SUM.heightPct;
+	const width = NgChm.SUM.canvas.clientWidth*NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth;
+	const left = NgChm.SUM.canvas.offsetLeft + (1-NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth)*NgChm.SUM.canvas.offsetWidth;
+
+	dendroCanvas.style.width = width;
+	dendroCanvas.style.left = left;
+	if (NgChm.SUM.colDendro.isVisible()){
+		dendroCanvas.style.height = height;
+		dendroCanvas.width = Math.round(width);
+		dendroCanvas.height = Math.round(height);
+	}else{
+		dendroCanvas.style.height = 0;
+	}
+};
+
 // Perform all initialization functions for Summary heat map
 NgChm.SUM.summaryInit = function(applying) {
 	
@@ -144,6 +182,8 @@ NgChm.SUM.summaryInit = function(applying) {
 		NgChm.SUM.heightScale = Math.max(2,Math.ceil(NgChm.SUM.minDimensionSize /NgChm.SUM.matrixHeight));
 	}
 	NgChm.SUM.calcTotalSize();
+	NgChm.SUM.rowDendroResize();
+	NgChm.SUM.colDendroResize();
 	//Resize summary area for small or skewed maps.
 	NgChm.SUM.canvas.width =  NgChm.SUM.totalWidth;
 	NgChm.SUM.canvas.height = NgChm.SUM.totalHeight;
@@ -152,10 +192,8 @@ NgChm.SUM.summaryInit = function(applying) {
 	NgChm.SUM.cCCanvas.width =  NgChm.SUM.totalWidth;
 	NgChm.SUM.cCCanvas.height = NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale;
 	NgChm.SUM.initSummarySize(applying);
-	NgChm.SUM.rowDendro.resize();
-	NgChm.SUM.rowDendro.draw();
-	NgChm.SUM.colDendro.resize();
-	NgChm.SUM.colDendro.draw();
+	NgChm.SUM.rowDendroResize();
+	NgChm.SUM.colDendroResize();
 	var nameDiv = document.getElementById("mapName");  
 	var mapName = NgChm.heatMap.getMapInformation().name;
 	if (mapName.length > 80){
@@ -183,6 +221,8 @@ NgChm.SUM.summaryInit = function(applying) {
 	NgChm.SUM.drawRowSelectionMarks();
 	NgChm.SUM.drawColSelectionMarks();
 	NgChm.SUM.drawTopItems();
+	NgChm.SUM.rowDendro.draw();
+	NgChm.SUM.colDendro.draw();
 	//Labels only re-drawn in NGCHM_GUI_Builder
 	if (document.getElementById('divider').style.display === 'none') {
 	 	NgChm.SUM.drawColClassBarLabels(); 
@@ -1606,9 +1646,9 @@ NgChm.SUM.calculateSummaryTotalClassBarHeight = function(axis,stopOn) {
 NgChm.SUM.summaryResize = function() {
 	if  (NgChm.SUM.canvas !== undefined) {
 		NgChm.SUM.setSummarySize();
-		NgChm.SUM.colDendro.resize();
+		NgChm.SUM.colDendroResize();
 		NgChm.SUM.colDendro.draw();
-		NgChm.SUM.rowDendro.resize();
+		NgChm.SUM.rowDendroResize();
 		NgChm.SUM.rowDendro.draw();
 		NgChm.SUM.drawLeftCanvasBox();
 		NgChm.SUM.clearSelectionMarks();
@@ -1964,8 +2004,8 @@ NgChm.SUM.dividerMove = function(e) {
 	var summaryX = summary.offsetWidth + x;
 	summary.style.width=summaryX+'px';
 	NgChm.SUM.setSummarySize();
-	NgChm.SUM.colDendro.resize();
-	NgChm.SUM.rowDendro.resize();
+	NgChm.SUM.colDendroResize();
+	NgChm.SUM.rowDendroResize();
 	if (summary.style.width == summary.style.maxWidth){
 		return
 	}

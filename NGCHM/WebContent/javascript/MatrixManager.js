@@ -363,11 +363,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	this.getRowDendroData = function() {
-		return mapData.row_data.dendrogram ? mapData.row_data.dendrogram : [];
+		return parseDendroData (mapData.row_data.dendrogram);
 	}
 	
 	this.getColDendroData = function() {
-		return mapData.col_data.dendrogram ? mapData.col_data.dendrogram : [];
+		return parseDendroData (mapData.col_data.dendrogram);
 	}
 	
 	this.setRowDendrogramShow = function(value) {
@@ -600,7 +600,15 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		});	
 	}
 	
-	
+	// Parse dendrogram data.
+	function parseDendroData (data) {
+		return (data || [])
+		.map(entry => {
+			const tokes = entry.split(",");
+			return { left: Number(tokes[0]), right: Number(tokes[1]), height: Number(tokes[2]) };
+		});
+	}
+
 	function zipSaveMapProperties() {
 
 		  function onProgress(a, b) {
