@@ -1,3 +1,5 @@
+"use strict";
+
 //
 // MatrixManager is responsible for retrieving clustered heat map data.  Heat map
 // data is available at different 'zoom' levels - Summary, Ribbon Vertical, Ribbon
@@ -212,7 +214,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (typeof showOnly === 'undefined') {
 			return rowClassBarsOrder;
 		} else {
-			filterRowClassBarsOrder = [];
+			const filterRowClassBarsOrder = [];
 			for (var i = 0; i < rowClassBarsOrder.length; i++) {
 				var newKey = rowClassBarsOrder[i];
 				var currConfig = mapConfig.row_configuration.classifications[newKey];
@@ -241,7 +243,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (typeof showOnly === 'undefined') {
 			return colClassBarsOrder;
 		} else {
-			filterColClassBarsOrder = [];
+			const filterColClassBarsOrder = [];
 			for (var i = 0; i < colClassBarsOrder.length; i++) {
 				var newKey = colClassBarsOrder[i];
 				var currConfig = mapConfig.col_configuration.classifications[newKey];
@@ -722,7 +724,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return true;
 	}
 	
-	callServlet = function(verb, url, data) {
+	const callServlet = function(verb, url, data) {
 		  var form = document.createElement("form");
 		  form.action = url;
 		  form.method = verb;
@@ -743,8 +745,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	function addDataLayers(mapConfig) {
 		//Create heat map data objects for each data level.  All maps should have thumb nail and full level.
 		//Each data layer keeps a pointer to the next lower level data layer.
-		levels = mapConfig.data_configuration.map_information.levels;
-		datalayers = mapConfig.data_configuration.map_information.data_layer
+		const levels = mapConfig.data_configuration.map_information.levels;
+		const datalayers = mapConfig.data_configuration.map_information.data_layer
         
         //Thumb nail
 		if (levels.tn !== undefined) {
@@ -1004,7 +1006,7 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		//Calculate which tile holds the row / column we are looking for.
 		var tileRow = Math.floor((row-1)/rowsPerTile) + 1;
 		var tileCol = Math.floor((column-1)/colsPerTile) + 1;
-		arrayData = tileCache[NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol];   
+		const arrayData = tileCache[NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol];
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {
