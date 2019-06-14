@@ -6,14 +6,15 @@
     <property name="js.dir" value="${web.dir}javascript/"/>
     <property name="dir.jarfile" value="./WebContent/WEB-INF/lib"/>
     <property name="java.dir" value="./src/mda/ngchm/util/"/>
-
+    <property name="closure.compiler.jar" value="${dir.jarfile}/closure-compiler/closure-compiler-v20190528.jar"/>
     <target name="minimize_custom_js">
 	<apply executable="java" parallel="false">
 	    <fileset dir="${js.dir}" includes="custom/custom.js"/>
 	    <arg line="-jar"/>
-	    <arg path="${dir.jarfile}/yuicompressor-2.4.2.jar"/>
+	    <arg path="${closure.compiler.jar}"/>
+	    <arg line="--js"/>
 	    <srcfile/>
-	    <arg line="-o"/>
+	    <arg line="--js_output_file"/>
 	    <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
 	    <targetfile/>
 	</apply>
@@ -38,9 +39,10 @@
         <apply executable="java" parallel="false">
             <fileset dir="${js.dir}" includes="ngchm.js"/>
             <arg line="-jar"/>
-            <arg path="${dir.jarfile}/yuicompressor-2.4.2.jar"/>
+            <arg path="${closure.compiler.jar}"/>
+            <arg line="--js"/>
             <srcfile/>
-            <arg line="-o"/>
+            <arg line="--js_output_file"/>
             <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
             <targetfile/>
         </apply>
