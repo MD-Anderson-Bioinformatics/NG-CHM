@@ -640,7 +640,7 @@ NgChm.SUM.buildRowClassTexture = function() {
 	var classBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
 	var classBarsData = NgChm.heatMap.getRowClassificationData(); 
 	var colorMapMgr = NgChm.heatMap.getColorMapManager();
-	if (document.getElementById("missingSumRowClassBars"))document.getElementById("missingSumRowClassBars").remove();
+	NgChm.DET.removeLabel ("missingSumRowClassBars");
 	var offset = 0;
 	for (var i = 0; i < classBarConfigOrder.length; i++) {
 		var remainingWidth = NgChm.SUM.rowClassBarWidth;
@@ -677,7 +677,7 @@ NgChm.SUM.buildRowClassTexture = function() {
 //Draws Column Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
 NgChm.SUM.buildColClassTexture = function() {
 	var dataBuffer = NgChm.SUM.texCcPixels;
-	if (document.getElementById("missingSumColClassBars"))document.getElementById("missingSumColClassBars").remove();
+	NgChm.DET.removeLabel ("missingSumColClassBars");
 	var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
 	var classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
 	var classBarsData = NgChm.heatMap.getColClassificationData(); 
@@ -1663,7 +1663,7 @@ NgChm.SUM.drawColSelectionMarks = function() {
 
 NgChm.SUM.drawMissingRowClassBarsMark = function (){
 	if (document.getElementById("missingSumRowClassBars")){
-		document.getElementById("missingSumRowClassBars").remove();
+		NgChm.DET.removeLabel ("missingSumRowClassBars");
 		var x = NgChm.SUM.canvas.offsetLeft;
 		var y = NgChm.SUM.canvas.offsetTop + NgChm.SUM.canvas.clientHeight + 2;
 		NgChm.DET.addLabelDiv(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
@@ -1672,7 +1672,7 @@ NgChm.SUM.drawMissingRowClassBarsMark = function (){
 
 NgChm.SUM.drawMissingColClassBarsMark = function (){
 	if (document.getElementById("missingSumColClassBars")){
-		document.getElementById("missingSumColClassBars").remove();
+		NgChm.DET.removeLabel ("missingSumColClassBars");
 		var x = NgChm.SUM.canvas.offsetLeft + NgChm.SUM.canvas.offsetWidth + 2;
 		var y = NgChm.SUM.canvas.offsetTop + NgChm.SUM.canvas.clientHeight/NgChm.SUM.totalHeight - 10;
 		NgChm.DET.addLabelDiv(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Col");
@@ -1972,9 +1972,8 @@ NgChm.SUM.dividerMove = function(e) {
 	var detail = document.getElementById('detail_chm');
 	var detailX = detail.offsetWidth -x;
 	detail.style.width=detailX+'px';
-	if(document.getElementById("missingSumRowClassBars")) document.getElementById("missingSumRowClassBars").remove();
-	if(document.getElementById("missingSumColClassBars")) document.getElementById("missingSumColClassBars").remove();
-	NgChm.DET.clearLabels();
+	if(document.getElementById("missingSumRowClassBars")) NgChm.DET.removeLabel ("missingSumRowClassBars");
+	if(document.getElementById("missingSumColClassBars")) NgChm.DET.removeLabel ("missingSumColClassBars");
 	NgChm.SUM.clearSelectionMarks();
 	NgChm.SUM.clearTopItems();
 	NgChm.SUM.setSelectionDivSize();
@@ -1989,7 +1988,6 @@ NgChm.SUM.dividerEnd = function(e) {
 	document.removeEventListener('touchend',NgChm.SUM.dividerEnd);
 	NgChm.SUM.summaryResize();
 	NgChm.DET.detailResize();
-	NgChm.DET.drawRowAndColLabels();
 	NgChm.SUM.setSelectionDivSize();
 	NgChm.SUM.drawRowSelectionMarks();
 	NgChm.SUM.drawColSelectionMarks();

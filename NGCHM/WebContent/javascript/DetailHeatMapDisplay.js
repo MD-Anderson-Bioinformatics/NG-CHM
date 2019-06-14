@@ -14,6 +14,8 @@ NgChm.DET.canvasTranslateArray = new Float32Array([0, 0]);
 
 NgChm.DET.labelElement; 
 NgChm.DET.chmElement;
+NgChm.DET.rowLabelDiv;
+NgChm.DET.colLabelDiv;
 NgChm.DET.oldMousePos = [0, 0];
 NgChm.DET.eventTimer = 0; // Used to delay draw updates
 NgChm.DET.offsetX = 0;
@@ -73,6 +75,8 @@ NgChm.DET.initDetailDisplay = function () {
 	NgChm.DET.boxCanvas = document.getElementById('detail_box_canvas');
 	NgChm.DET.labelElement = document.getElementById('labelDiv');
 	NgChm.DET.chmElement = document.getElementById('detail_chm');
+	NgChm.DET.rowLabelDiv = document.getElementById("rowLabelDiv");
+	NgChm.DET.colLabelDiv = document.getElementById("colLabelDiv");
 
 	if (NgChm.heatMap.isInitialized() > 0) {
  		document.getElementById('flicks').style.display = '';
@@ -162,16 +166,14 @@ NgChm.DET.initDetailDisplay = function () {
 	
 	
 	// set up touch events for row and column labels
-	var rowLabelDiv = document.getElementById("rowLabelDiv");
-	var colLabelDiv = document.getElementById("colLabelDiv");
 	
-	rowLabelDiv.addEventListener("touchstart", function(e){
+	NgChm.DET.rowLabelDiv.addEventListener("touchstart", function(e){
 		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		NgChm.DET.latestLabelTap = now;
 	});
 	
-	rowLabelDiv.addEventListener("touchend", function(e){
+	NgChm.DET.rowLabelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
 			var now = new Date().getTime();
 			var timesince = now - NgChm.DET.latestLabelTap;
@@ -181,13 +183,13 @@ NgChm.DET.initDetailDisplay = function () {
 		}
 	});
 	
-	colLabelDiv.addEventListener("touchstart", function(e){
+	NgChm.DET.colLabelDiv.addEventListener("touchstart", function(e){
 		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		NgChm.DET.latestLabelTap = now;
 	});
 	
-	colLabelDiv.addEventListener("touchend", function(e){
+	NgChm.DET.colLabelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
 			var now = new Date().getTime();
 			var timesince = now - NgChm.DET.latestLabelTap;
@@ -485,11 +487,8 @@ NgChm.DET.handleSelectDrag = function (e) {
         NgChm.SUM.drawRowSelectionMarks();
         NgChm.SUM.drawColSelectionMarks();
         NgChm.SUM.drawTopItems();
-        NgChm.DET.clearLabels();
+        NgChm.DET.updateLabels();
         NgChm.DET.drawSelections();
-        NgChm.DET.drawRowAndColLabels();
-        NgChm.DET.detailDrawColClassBarLabels();
-        NgChm.DET.detailDrawRowClassBarLabels();
     }
 }	
 
@@ -1136,7 +1135,7 @@ NgChm.DET.getNearestBoxHeight = function (sizeToGet) {
 	//to encompass user-selected area
 	for (var i=NgChm.DET.zoomBoxSizes.length-1; i>=0;i--) {
 		boxSize = NgChm.DET.zoomBoxSizes[i];
-		boxCalcVal = (NgChm.DET.dataViewHeight-NgChm.DET.dataViewBorder)/boxSize;
+		const boxCalcVal = (NgChm.DET.dataViewHeight-NgChm.DET.dataViewBorder)/boxSize;
 		if (boxCalcVal >= sizeToGet) {
 			//Down size box if greater than map dimensions.
 			if (boxCalcVal > Math.min(NgChm.heatMap.getTotalRows(),NgChm.heatMap.getTotalCols())) {
@@ -1449,16 +1448,13 @@ NgChm.DET.isLineACut = function (row) {
 
 NgChm.DET.detailResize = function () {
 	 if (NgChm.DET.canvas !== undefined) {
-		 NgChm.DET.clearLabels();
 		 NgChm.DET.rowDendro.resize();
 		 NgChm.DET.colDendro.resize();
 		 NgChm.DET.sizeCanvasForLabels();
 		 //Done twice because changing canvas size affects fonts selected for drawing labels
 		 NgChm.DET.sizeCanvasForLabels();
-		 NgChm.DET.drawRowAndColLabels();
+		 NgChm.DET.updateDisplayedLabels();
 		 NgChm.DET.drawSelections();
-		 NgChm.DET.detailDrawColClassBarLabels();
-		 NgChm.DET.detailDrawRowClassBarLabels();
 		 NgChm.DET.rowDendro.resizeAndDraw();
 		 NgChm.DET.colDendro.resizeAndDraw();
 	 }
@@ -1473,8 +1469,6 @@ NgChm.DET.sizeCanvasForLabels = function() {
 	var dChm = document.getElementById('detail_chm');
 	var sChm = document.getElementById('summary_chm');
 	var div = document.getElementById('divider');
-	var rowLabelDiv = document.getElementById("rowLabelDiv");
-	var colLabelDiv = document.getElementById("colLabelDiv");
 		
 	//Calculate the total horizontal width of the screen
 	var sumWidths = sChm.clientWidth + div.clientWidth + dChm.clientWidth;
@@ -1505,24 +1499,20 @@ NgChm.DET.sizeCanvasForLabels = function() {
 	NgChm.DET.boxCanvas.style.width = dFullW - (NgChm.DET.rowLabelLen + 35) - left;
 	NgChm.DET.boxCanvas.style.height = dFullH - (NgChm.DET.colLabelLen + 15) - top;
 	// Set sizes for the label divs
-	rowLabelDiv.style.top = NgChm.DET.chmElement.offsetTop;
-	rowLabelDiv.style.height = dFullH - (NgChm.DET.colLabelLen + 15);
-	rowLabelDiv.style.left = NgChm.DET.canvas.offsetLeft + NgChm.DET.canvas.clientWidth;
-	rowLabelDiv.style.width = NgChm.DET.chmElement.clientWidth - NgChm.DET.canvas.offsetLeft - NgChm.DET.canvas.clientWidth;
-	colLabelDiv.style.left = 0;
-	colLabelDiv.style.width = dFullW - (NgChm.DET.rowLabelLen + 35);
-	colLabelDiv.style.top = NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.clientHeight;
+	NgChm.DET.rowLabelDiv.style.top = NgChm.DET.chmElement.offsetTop;
+	NgChm.DET.rowLabelDiv.style.height = dFullH - (NgChm.DET.colLabelLen + 15);
+	NgChm.DET.rowLabelDiv.style.left = NgChm.DET.canvas.offsetLeft + NgChm.DET.canvas.clientWidth;
+	NgChm.DET.rowLabelDiv.style.width = NgChm.DET.chmElement.clientWidth - NgChm.DET.canvas.offsetLeft - NgChm.DET.canvas.clientWidth;
+	NgChm.DET.colLabelDiv.style.left = 0;
+	NgChm.DET.colLabelDiv.style.width = dFullW - (NgChm.DET.rowLabelLen + 35);
+	NgChm.DET.colLabelDiv.style.top = NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.clientHeight;
 	var heightCalc = NgChm.DET.chmElement.clientHeight - NgChm.DET.canvas.offsetTop - NgChm.DET.canvas.clientHeight;
-	colLabelDiv.style.height =  heightCalc === 0 ? 11 : heightCalc;
+	NgChm.DET.colLabelDiv.style.height =  heightCalc === 0 ? 11 : heightCalc;
 }
 
-//This function clears all labels on the detail panel and resets the maximum
+//This function resets the maximum
 //label size variables for each axis in preparation for a screen redraw.
-NgChm.DET.clearLabels = function () {
-	var oldLabels = document.getElementsByClassName("DynamicLabel");
-	while (oldLabels.length > 0) {
-		NgChm.DET.labelElement.removeChild(oldLabels[0]);
-	}
+NgChm.DET.resetLabelLengths = function () {
 	NgChm.DET.rowLabelLen = 0;
 	NgChm.DET.colLabelLen = 0;
 }
@@ -1574,14 +1564,10 @@ NgChm.DET.calcRowLabels = function (fontSize) {
 		headerSize = NgChm.DET.canvas.clientHeight * (colHeight / (NgChm.DET.dataViewHeight + colHeight));
 	}
 	var skip = (NgChm.DET.canvas.clientHeight - headerSize) / NgChm.SEL.dataPerCol;
-	var labels = NgChm.heatMap.getRowLabels()["labels"];
 	if (skip > NgChm.DET.minLabelSize) {
-		for (var i = NgChm.SEL.currentRow; i < NgChm.SEL.currentRow + NgChm.SEL.dataPerCol; i++) {
-			if (labels[i-1] == undefined){ // an occasional problem in subdendro view
-				continue;
-			}
-			var shownLabel = NgChm.UTIL.getLabelText(labels[i-1].split("|")[0],'ROW');
-			NgChm.DET.calcLabelDiv(shownLabel, fontSize, 'ROW');
+		const shownLabels = NgChm.UTIL.getShownLabels('ROW');
+		for (let i = NgChm.SEL.currentRow; i < NgChm.SEL.currentRow + NgChm.SEL.dataPerCol; i++) {
+			NgChm.DET.calcLabelDiv(shownLabels[i-1], fontSize, 'ROW');
 		}
 	}
 }
@@ -1594,44 +1580,129 @@ NgChm.DET.calcColLabels = function (fontSize) {
 		headerSize = NgChm.DET.canvas.clientWidth * (rowHeight / (NgChm.DET.dataViewWidth + rowHeight));
 	}
 	var skip = (NgChm.DET.canvas.clientWidth - headerSize) / NgChm.SEL.dataPerRow;
-	var labels = NgChm.heatMap.getColLabels()["labels"];
 	if (skip > NgChm.DET.minLabelSize) {
-		for (var i = NgChm.SEL.currentCol; i < NgChm.SEL.currentCol + NgChm.SEL.dataPerRow; i++) {
-			if (labels[i-1] == undefined){ // an occasional problem in subdendro view
-				continue;
-			}
-			var shownLabel = NgChm.UTIL.getLabelText(labels[i-1].split("|")[0],'COL');
-			NgChm.DET.calcLabelDiv(shownLabel, fontSize, 'COL');
+		const shownLabels = NgChm.UTIL.getShownLabels('COLUMN');
+		for (let i = NgChm.SEL.currentCol; i < NgChm.SEL.currentCol + NgChm.SEL.dataPerRow; i++) {
+			NgChm.DET.calcLabelDiv(shownLabels[i], fontSize, 'COL');
 		}
 	}
 }
 
-//This function creates a complete div for a given label item, assesses the 
-//size of the label and increases the row/col label length if the label
-//is larger than those already processed.  rowLabelLen and colLabelLen
-//are used to size the detail screen to accomodate labels on both axes
+/* Memoize label sizes to avoid repeatedly calculating
+ * label widths.
+ */
+const labelSizeCache = {};
+/* Create a div just for calculating label widths.
+ */
+const labelSizeWidthCalcDiv = (function() {
+    const div = document.createElement('div');
+    div.className = 'DynamicLabel';
+    div.style.position = "absolute";
+    div.style.fontFamily = 'sans-serif';
+    div.style.fontWeight = 'bold';
+    return div;
+})();
+
+// This function assesses the size of the label and  increases the
+// row/col label length if the label is larger than those already processed.
+// rowLabelLen and colLabelLen are used to size the detail screen
+// to accomodate labels on both axes.
 NgChm.DET.calcLabelDiv = function (text, fontSize, axis) {
-	var div = document.createElement('div');
-	var divFontColor = "#FFFFFF";
-	div.className = 'DynamicLabel';
-	div.style.position = "absolute";
-	div.style.fontSize = fontSize.toString() +'pt';
-	div.style.fontFamily = 'sans-serif';
-	div.style.fontWeight = 'bold';
-	div.innerHTML = text;
-	
-	NgChm.DET.labelElement.appendChild(div);
-	if (axis == 'ROW') {
-		if (div.clientWidth > NgChm.DET.rowLabelLen) {
-			NgChm.DET.rowLabelLen = div.clientWidth;
+        const key = text + fontSize.toString();
+        if (!labelSizeCache.hasOwnProperty(key)) {
+                // Haven't seen this combination of font and fontSize before.
+                // Set the contents of our label size div and calculate its width.
+		labelSizeWidthCalcDiv.style.fontSize = fontSize.toString() +'pt';
+		labelSizeWidthCalcDiv.innerText = text;
+		NgChm.DET.labelElement.appendChild(labelSizeWidthCalcDiv);
+        	labelSizeCache[key] = labelSizeWidthCalcDiv.clientWidth;
+		NgChm.DET.labelElement.removeChild(labelSizeWidthCalcDiv);
+        }
+ 
+        const w = labelSizeCache[key];
+	if (w > 1000) {
+		console.log('Ridiculous label length ' + w + ' ' + key);
+	}
+	if (axis === 'ROW') {
+		if (w > NgChm.DET.rowLabelLen) {
+			NgChm.DET.rowLabelLen = w;
 		}
 	} else {
-		if (div.clientWidth > NgChm.DET.colLabelLen) {
-			NgChm.DET.colLabelLen = div.clientWidth;
+		if (w > NgChm.DET.colLabelLen) {
+			NgChm.DET.colLabelLen = w;
 		}
 	}
-	NgChm.DET.labelElement.removeChild(div);
 }
+
+// All new labels are added to NgChm.DET.labelElements.  It enables
+// existing label elements to be reused when updating the labels.
+// Entries are of the form:
+// label: { div, parent }
+// where div is the div element created for the label
+// and parent is the enclosing div to which it's added.
+NgChm.DET.labelElements = {};
+
+// Remove a label element.
+NgChm.DET.removeLabel = function (label) {
+	if (NgChm.DET.labelElements.hasOwnProperty (label)) {
+		console.log ('Removing label ' + label);
+		const e = NgChm.DET.oldLabelElements[label];
+		e.parent.removeChild(e.div);
+		delete NgChm.DET.oldLabelElements[label];
+	}
+};
+
+// Update displayed labels, reusing existing label elements where possible.
+//
+// The existing labels are first moved to oldLabelElements.
+// Adding a label will first check to see if the label element already exists
+// in oldLabelElements and if so update it and move it to labelElements.
+// After all elements have been added/updated, any remaining dynamic labels
+// in oldElements will be removed.
+NgChm.DET.oldLabelElements = {};
+NgChm.DET.updateDisplayedLabels = function () {
+	const debug = false;
+
+	const prevNumLabels = Object.keys(NgChm.DET.labelElements).length;
+	NgChm.DET.oldLabelElements = NgChm.DET.labelElements;
+	NgChm.DET.labelElements = {};
+
+	// Temporarily hide labelElement while we update labels.
+	const oldDisplayStyle = NgChm.DET.labelElement.style.display;
+	NgChm.DET.labelElement.style.setProperty('display', 'none');
+
+	// Update existing labels / draw new labels.
+	NgChm.DET.resetLabelLengths();
+	NgChm.DET.detailDrawRowClassBarLabels();
+	NgChm.DET.detailDrawColClassBarLabels();
+	NgChm.DET.drawRowAndColLabels();
+
+	// Remove old dynamic labels that did not get updated.
+	for (let oldEl in NgChm.DET.oldLabelElements) {
+		const e = NgChm.DET.oldLabelElements[oldEl];
+		if (e.div.classList.contains('DynamicLabel')) {
+			try {
+				e.parent.removeChild(e.div);
+			} catch (err) {
+				console.log({ m: 'Unable to remove old label element ', oldEl, e });
+				console.error(err);
+			}
+		} else {
+			// Move non-dynamic labels (e.g. missingCovariateBar indicators) to current labels.
+			NgChm.DET.labelElements[oldEl] = e;
+			delete NgChm.DET.oldLabelElements[oldEl];
+		}
+	}
+	if (debug) {
+		const currNumLabels = Object.keys(NgChm.DET.labelElements).length;
+		const numOldLabels = Object.keys(NgChm.DET.oldLabelElements).length;
+		console.log({ m: 'DET.updateDisplayedLabels', prevNumLabels, currNumLabels, numOldLabels });
+	}
+	NgChm.DET.oldLabelElements = {};
+
+	// Restore visibilty of labelElement
+	NgChm.DET.labelElement.style.setProperty('display', oldDisplayStyle);
+};
 
 //This function determines if labels are to be drawn on each axis and calls the appropriate
 //function to draw those labels on the screen.
@@ -1656,17 +1727,16 @@ NgChm.DET.drawRowLabels = function (fontSize) {
 	}
 	var skip = (NgChm.DET.canvas.clientHeight - headerSize) / NgChm.SEL.dataPerCol;
 	var start = Math.max((skip - fontSize)/2, 0) + headerSize-2;
-	var labels = NgChm.heatMap.getRowLabels()["labels"];
 	
 	if (skip > NgChm.DET.minLabelSize) {
+		const actualLabels = NgChm.UTIL.getActualLabels('ROW');
+		const shownLabels = NgChm.UTIL.getShownLabels('ROW');
 		var xPos = NgChm.DET.canvas.offsetLeft + NgChm.DET.canvas.clientWidth + 3;
 		for (var i = NgChm.SEL.currentRow; i < NgChm.SEL.currentRow + NgChm.SEL.dataPerCol; i++) {
 			var yPos = NgChm.DET.canvas.offsetTop + start + ((i-NgChm.SEL.currentRow) * skip);
-			if (labels[i-1] == undefined){ // an occasional problem in subdendro view
-				continue;
+			if (actualLabels[i-1] !== undefined){ // an occasional problem in subdendro view
+				NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_row' + i, 'DynamicLabel', shownLabels[i-1], actualLabels[i-1], xPos, yPos, fontSize, 'F',i,"Row");
 			}
-			var shownLabel = NgChm.UTIL.getLabelText(labels[i-1].split("|")[0],'ROW');
-			NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_row' + i, 'DynamicLabel', shownLabel, labels[i-1].split("|")[0], xPos, yPos, fontSize, 'F',i,"Row");
 		}
 	}
 }
@@ -1679,29 +1749,97 @@ NgChm.DET.drawColLabels = function (fontSize) {
 	}
 	var skip = (NgChm.DET.canvas.clientWidth - headerSize) / NgChm.SEL.dataPerRow;
 	var start = headerSize + fontSize + Math.max((skip - fontSize)/2, 0) + 3;
-	var labels = NgChm.heatMap.getColLabels()["labels"];
-		
+
 	if (skip > NgChm.DET.minLabelSize) {
+		const actualLabels = NgChm.UTIL.getActualLabels('COLUMN');
+		const shownLabels = NgChm.UTIL.getShownLabels('COLUMN');
 		var yPos = NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.clientHeight + 3;
 		for (var i = NgChm.SEL.currentCol; i < NgChm.SEL.currentCol + NgChm.SEL.dataPerRow; i++) {
 			var xPos = NgChm.DET.canvas.offsetLeft + start + ((i-NgChm.SEL.currentCol) * skip);
-			if (labels[i-1] == undefined){ // an occasional problem in subdendro view
-				continue;
-			}
-			var shownLabel = NgChm.UTIL.getLabelText(labels[i-1].split("|")[0],'COL');
-			NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_col' + i, 'DynamicLabel', shownLabel, labels[i-1].split("|")[0], xPos, yPos, fontSize, 'T',i,"Column");
-			if (shownLabel.length > NgChm.DET.colLabelLen) {
-				NgChm.DET.colLabelLen = shownLabel.length;
+			if (actualLabels[i-1] !== undefined){ // an occasional problem in subdendro view
+				NgChm.DET.addLabelDiv(NgChm.DET.labelElement, 'detail_col' + i, 'DynamicLabel', shownLabels[i-1], actualLabels[i-1], xPos, yPos, fontSize, 'T',i,"Column");
+				if (shownLabels[i-1].length > NgChm.DET.colLabelLen) {
+					NgChm.DET.colLabelLen = shownLabels[i-1].length;
+				}
 			}
 		}
 	}
 }
 
+NgChm.DET.updateLabelDiv = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
+	if (NgChm.DET.oldLabelElements[id].parent !== parent) {
+		console.error (new Error ('updateLabelDiv: parent elements do not match'));
+		console.log ({ id, parent, oldElement: NgChm.DET.oldLabelElements[id] });
+	}
+	// Get existing label element and move from old to current collection.
+	const div = NgChm.DET.oldLabelElements[id].div;
+	NgChm.DET.labelElements[id] = { div, parent };
+	delete NgChm.DET.oldLabelElements[id];
+
+	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
+	const dataLayer = NgChm.heatMap.getDataLayers()[NgChm.SEL.currentDl];
+	const selectionRgba = colorMap.getHexToRgba(dataLayer.selection_color);
+	const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
+	const divFontColor = colorMap.isColorDark(selColor) ? "#000000" : "#FFFFFF";
+
+	// Assumes the properties defined by the commented out code below don't change:
+	// div.id = id;
+	// div.className = className;
+	// div.setAttribute("index",index)
+	// if (div.classList.contains('ClassBar')){
+		// div.setAttribute('axis','ColumnCovar');
+	// } else {
+		// div.setAttribute('axis', 'Row');
+	// }
+	if (NgChm.DET.labelIndexInSearch(index,axis)) {
+		div.style.backgroundColor = dataLayer.selection_color;
+		div.style.color = divFontColor;
+	} else {
+		div.style.removeProperty('background-color');
+		div.style.removeProperty('color');
+	}
+	//if (text == "<") {
+	//	div.style.color = divFontColor;
+	//	div.style.backgroundColor = "rgba("+selectionRgba.r+","+selectionRgba.g+","+selectionRgba.b+",0.2)";
+	//}
+	//if (rotate == 'T') {
+	//	div.style.transformOrigin = 'left top';
+	//	div.style.transform = 'rotate(90deg)';
+	//	div.style.webkitTransformOrigin = "left top";
+	//	div.style.webkitTransform = "rotate(90deg)";
+	//	if (div.classList.contains('ClassBar')){
+	//		div.setAttribute('axis','RowCovar');
+	//	} else {
+	//		div.setAttribute('axis','Column');
+	//	}
+	//}
+	
+	//div.style.position = "absolute";
+	div.style.left = left;
+	div.style.top = top;
+	div.style.fontSize = fontSize.toString() +'pt';
+	//div.style.fontFamily = 'sans-serif';
+	//div.style.fontWeight = 'bold';
+	//div.innerText = text;
+}
+
 NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
+	if (NgChm.DET.oldLabelElements.hasOwnProperty(id)) {
+	    NgChm.DET.updateLabelDiv (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
+	    return;
+	}
+	div = document.getElementById (id);
+	if (div) {
+	    console.log ('Error: element ' + id + ' unexpectedly exists');
+	    NgChm.DET.oldLabelElements[id] = { div, parent: div.parentElement };
+	    NgChm.DET.updateLabelDiv (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
+	    return;
+	}
 	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
 	var dataLayer = NgChm.heatMap.getDataLayers()[NgChm.SEL.currentDl];
 	var selectionRgba = colorMap.getHexToRgba(dataLayer.selection_color);
 	var div = document.createElement('div');
+	NgChm.DET.labelElements[id] = { div, parent };
 	var divFontColor = "#FFFFFF";
 	var selColor = colorMap.getHexToRgba(dataLayer.selection_color);
 	if (colorMap.isColorDark(selColor)) {
@@ -1827,15 +1965,12 @@ NgChm.DET.labelClick = function (e) {
 	document.getElementById('prev_btn').style.display='';
 	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
-	NgChm.DET.clearLabels();
 	NgChm.SUM.clearSelectionMarks();
-	NgChm.DET.detailDrawRowClassBarLabels();
-	NgChm.DET.detailDrawColClassBarLabels();
-	NgChm.DET.drawRowAndColLabels();
+	NgChm.DET.updateDisplayedLabels();
 	NgChm.SEL.updateSelection();
-    NgChm.SUM.drawRowSelectionMarks();
-    NgChm.SUM.drawColSelectionMarks();
-    NgChm.SUM.drawTopItems();
+	NgChm.SUM.drawRowSelectionMarks();
+	NgChm.SUM.drawColSelectionMarks();
+	NgChm.SUM.drawTopItems();
 	NgChm.DET.showSearchResults();	
 }
 
@@ -1870,16 +2005,13 @@ NgChm.DET.labelDrag = function(e){
 	document.getElementById('prev_btn').style.display='';
 	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
-	NgChm.DET.clearLabels();
+	NgChm.DET.updateDisplayedLabels();
 	NgChm.SUM.clearSelectionMarks();
 	NgChm.DET.showSearchResults();	
-	NgChm.DET.detailDrawRowClassBarLabels();
-	NgChm.DET.detailDrawColClassBarLabels();
-	NgChm.DET.drawRowAndColLabels();
 	NgChm.SEL.updateSelection();
-    NgChm.SUM.drawRowSelectionMarks();
-    NgChm.SUM.drawColSelectionMarks();
-    NgChm.SUM.drawTopItems();
+	NgChm.SUM.drawRowSelectionMarks();
+	NgChm.SUM.drawColSelectionMarks();
+	NgChm.SUM.drawTopItems();
 	NgChm.DET.showSearchResults();	
 	return;
 }
@@ -2196,7 +2328,7 @@ NgChm.DET.calcColClassBarLabels = function () {
 
 // This function draws column class bar labels on the detail panel
 NgChm.DET.detailDrawColClassBarLabels = function () {
-	if (document.getElementById("missingDetColClassBars"))document.getElementById("missingDetColClassBars").remove();
+	NgChm.DET.removeLabel ("missingDetColClassBars");
 	var scale =  NgChm.DET.canvas.clientHeight / (NgChm.DET.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
 	var colClassBarConfig = NgChm.heatMap.getColClassificationConfig();
 	var colClassBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
@@ -2246,14 +2378,14 @@ NgChm.DET.detailDrawColClassBarLabels = function () {
 // a size greater than 7.  Those <= 7 are ignored as they will have "..." placed next to them as labels.
 NgChm.DET.getClassBarLabelFontSize = function (classBarConfig,scale) {
 	var minFont = 999;
-	for (key in classBarConfig) {
+	for (let key in classBarConfig) {
 		var classBar = classBarConfig[key];
 		var fontSize = Math.min(((classBar.height - NgChm.DET.paddingHeight) * scale) - 1, 10);
 		if ((fontSize > NgChm.DET.minLabelSize) && (fontSize < minFont)) {
 			minFont = fontSize;
 		}
 	}
-	return minFont;
+	return minFont === 999 ? NgChm.DET.minLabelSize : minFont;
 }
 
 // This function calculates the appropriate font size for row class bar labels
@@ -2424,7 +2556,7 @@ NgChm.DET.calcRowClassBarLabels = function () {
 //This function draws row class bar labels on the detail panel
 NgChm.DET.detailDrawRowClassBarLabels = function () {
 	var rowClassBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
-	if (document.getElementById("missingDetRowClassBars"))document.getElementById("missingDetRowClassBars").remove();
+	NgChm.DET.removeLabel ("missingDetRowClassBars");
 	var scale =  NgChm.DET.canvas.clientWidth / (NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
 	var classBarAreaWidth = NgChm.DET.calculateTotalClassBarHeight("row")*scale;
 	var dataAreaWidth = NgChm.DET.dataViewWidth*scale;
@@ -2527,7 +2659,7 @@ NgChm.DET.detailSearch = function () {
 	NgChm.SEL.createEmptySearchItems();
 	NgChm.SUM.clearSelectionMarks();
 	var tmpSearchItems = searchString.split(/[;, ]+/);
-	itemsFound = [];
+	const itemsFound = [];
 	
 	//Put labels into the global search item list if they match a user search string.
 	//Regular expression is built for partial matches if the search string contains '*'.

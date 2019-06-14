@@ -81,6 +81,35 @@ NgChm.UTIL.reverseObject = function(Obj) {
     return NewObj;
 }
 
+NgChm.UTIL.actualAxisLabels = {};
+NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
+NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
+NgChm.UTIL.getActualLabels = function (axis) {
+	axis = axis.toUpperCase();
+	if (!NgChm.UTIL.actualAxisLabels.hasOwnProperty(axis)) {
+		const labels = NgChm.heatMap.getAxisLabels(axis)["labels"];
+		NgChm.UTIL.actualAxisLabels[axis] = labels.map(text => {
+			return text === undefined ? undefined : text.split("|")[0];
+		});
+	}
+	return NgChm.UTIL.actualAxisLabels[axis];
+};
+NgChm.UTIL.getShownLabels = function (axis) {
+	axis = axis.toUpperCase();
+	const config = NgChm.heatMap.getAxisConfig(axis);
+	// Recalculate shown labels if parameters affecting them have changed.
+	if (NgChm.UTIL.shownAxisLabelParams[axis].label_display_length !== config.label_display_length ||
+	    NgChm.UTIL.shownAxisLabelParams[axis].label_display_method !== config.label_display_method) {
+		NgChm.UTIL.shownAxisLabelParams[axis].label_display_length = config.label_display_length;
+		NgChm.UTIL.shownAxisLabelParams[axis].label_display_method = config.label_display_method;
+		const labels = NgChm.UTIL.getActualLabels(axis);
+		NgChm.UTIL.shownAxisLabels[axis] = labels.map(text => {
+			return text === undefined ? "" : NgChm.UTIL.getLabelText (text, axis);
+		});
+	}
+	return NgChm.UTIL.shownAxisLabels[axis];
+};
+
 /**********************************************************************************
  * FUNCTION - getLabelText: The purpose of this function examine label text and 
  * shorten the text if the label exceeds the 20 character allowable length.  If the
