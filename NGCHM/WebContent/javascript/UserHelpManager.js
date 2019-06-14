@@ -525,6 +525,7 @@ NgChm.UHM.showSearchError = function(type) {
  * display a modal window whenever the user requests to save heat map changes.  
  **********************************************************************************/
 NgChm.UHM.saveHeatMapChanges = function() {
+	var text;
 	NgChm.UHM.closeMenu();
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("Save Heat Map");
@@ -555,7 +556,7 @@ NgChm.UHM.saveHeatMapChanges = function() {
 			}
 		}
 	} else {
-		const text = "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
+		text = "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 		NgChm.UHM.setMessageBoxText(text);
 		NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
 		NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "Cancel Save", "NgChm.UHM.messageBoxCancel");
