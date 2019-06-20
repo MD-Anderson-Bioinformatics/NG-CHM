@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 
@@ -101,6 +102,18 @@ public class InputFile {
 		ColorMap cMap = new ColorMap();
 		cMap.id = id; 
 		if (jocm != null) {
+			JSONArray breaks = (JSONArray) jocm.get(COLORMAP_THRESHOLDS);
+ 			if (breaks != null) {
+	        	float preValue = Float.valueOf(breaks.get(0).toString());
+		        for (int i=1; i < breaks.size();i++) {
+		        	float curValue = Float.valueOf(breaks.get(i).toString());
+		        	if (curValue <= preValue) {
+		        		System.out.println("GALAXY PARAMETER ERROR: Supplied Matrix Breakpoint values are not in ascending order. Heat map generation halted.");
+		        		break;
+		        	}
+		        	preValue = curValue;
+		        }
+			}
 			map = ColorMapGenerator.getJsonColors(jocm, cMap);
 		} else {
 			cMap.type = COLORTYPE_LINEAR;
@@ -117,6 +130,7 @@ public class InputFile {
 		reorgMatrix = new float[rows+1][cols+1];   
 		initMatrix(reorgMatrix);
 		setReorderedInputMatrix(rowData, colData, origCols);
+
 		//If map was not defined on original JSON, generate default map colors
 		if (map.colors.isEmpty()) {
 			map = ColorMapGenerator.getDefaultMapColors(map,this);

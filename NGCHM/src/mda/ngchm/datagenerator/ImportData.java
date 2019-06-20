@@ -188,18 +188,20 @@ public class ImportData {
 				detailHeight = detHgt;
 			}
             JSONArray tags = (JSONArray) jsonObject.get(CHM_ATTRS);
-            for (int i=0; i < tags.size();i++) {
-           		JSONObject jo = (JSONObject) tags.get(i);
-				@SuppressWarnings("unchecked")
-				Set<String> keyset = jo.keySet();
-            	Iterator<String> ki = keyset.iterator();
-                while(ki.hasNext()) {
-                    String elem = ki.next();
-                    String elemVal = (String) jo.get(elem);
-                    AttributeData aData = new AttributeData(elem, elemVal);
-                    chmAttributes.add(aData);
-                 }
-        	}
+            if (tags != null) {
+	            for (int i=0; i < tags.size();i++) {
+	           		JSONObject jo = (JSONObject) tags.get(i);
+					@SuppressWarnings("unchecked")
+					Set<String> keyset = jo.keySet();
+	            	Iterator<String> ki = keyset.iterator();
+	                while(ki.hasNext()) {
+	                    String elem = ki.next();
+	                    String elemVal = (String) jo.get(elem);
+	                    AttributeData aData = new AttributeData(elem, elemVal);
+	                    chmAttributes.add(aData);
+	                 }
+	        	}
+            }
             JSONObject rowConfigData = (JSONObject) jsonObject.get(ROW_CONFIGURATION);
             InputFile iFile = matrixFiles.get(0);
             rowData = new RowColData(ROW, importRows,rowConfigData, iFile);
@@ -239,7 +241,7 @@ public class ImportData {
         		}
         	}
             propsFile.close();
-        } catch (FileNotFoundException e) {
+       } catch (FileNotFoundException e) {
             System.out.println("heatmapProperties.JSON file not found. Terminating HeatmapDataGenerator");
             e.printStackTrace();
         } catch (IOException e) {

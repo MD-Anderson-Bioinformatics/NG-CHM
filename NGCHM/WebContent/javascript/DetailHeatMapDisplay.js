@@ -1356,24 +1356,27 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		for (var j = 0; j < detDataPerRow; j++) { // for every data point...
 			var val = NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j);
-			var nextVal = NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j+1);
-			var color = colorMap.getColor(val);
-			//For each data point, write it several times to get correct data point width.
-			for (var k = 0; k < NgChm.DET.dataBoxWidth; k++) {
-				if (showVerticalGrid && k===NgChm.DET.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
-					if (j < detDataPerRow-1) {
-						//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
-						if ((val <= NgChm.SUM.minValues) && (nextVal <= NgChm.SUM.minValues)) {
-							line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
-						} else {
-							line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
+            var nextVal = NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j+1);
+            if (val !== undefined) {
+	            var color = colorMap.getColor(val);
+	            
+				//For each data point, write it several times to get correct data point width.
+				for (var k = 0; k < NgChm.DET.dataBoxWidth; k++) {
+					if (showVerticalGrid && k===NgChm.DET.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
+						if (j < detDataPerRow-1) {
+							//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
+							if ((val <= NgChm.SUM.minValues) && (nextVal <= NgChm.SUM.minValues)) {
+								line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
+							} else {
+								line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
+							}
 						}
+					} else {
+						line[linePos] = color['r'];	line[linePos + 1] = color['g'];	line[linePos + 2] = color['b'];	line[linePos + 3] = color['a'];
 					}
-				} else {
-					line[linePos] = color['r'];	line[linePos + 1] = color['g'];	line[linePos + 2] = color['b'];	line[linePos + 3] = color['a'];
+					linePos += NgChm.SUM.BYTE_PER_RGBA;
 				}
-				linePos += NgChm.SUM.BYTE_PER_RGBA;
-			}
+            }
 		}
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		
