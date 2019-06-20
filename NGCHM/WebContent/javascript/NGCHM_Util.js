@@ -263,7 +263,22 @@ NgChm.UTIL.convertToArray = function(value) {
 	var valArr = [];
 	valArr.push(value);
 	return valArr;
-}
+};
+
+/**********************************************************************************
+ * Perform Early Initializations.
+ *
+ * Perform latency sensitive initializations.  Note that the complete sources
+ * have not loaded yet.
+ **********************************************************************************/
+(function () {
+	//Call functions that enable viewing in IE.
+	NgChm.UTIL.iESupport();
+
+	if (NgChm.MMGR.embeddedMapName === null && NgChm.UTIL.getURLParameter('map') !== '') {
+		NgChm.MMGR.createWebTileLoader();
+	}
+})();
 
 /**********************************************************************************
  * FUNCTION - onLoadCHM: This function performs "on load" processing for the NG_CHM
@@ -271,8 +286,6 @@ NgChm.UTIL.convertToArray = function(value) {
  * viewer.  
  **********************************************************************************/
 NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
-	//Call functions that enable viewing in IE.
-	NgChm.UTIL.iESupport();
 	NgChm.UTIL.setBrowserMinFontSize();
 	//Run startup checks that enable startup warnings button.
 	NgChm.UTIL.startupChecks();
