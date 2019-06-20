@@ -783,9 +783,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	function addDataLayers(mapConfig) {
 		//Create heat map data objects for each data level.  All maps should have thumb nail and full level.
 		//Each data layer keeps a pointer to the next lower level data layer.
-		levels = mapConfig.data_configuration.map_information.levels;
-		datalayers = mapConfig.data_configuration.map_information.data_layer
-        
+		const levels = mapConfig.data_configuration.map_information.levels;
+		const datalayers = mapConfig.data_configuration.map_information.data_layer
+
         //Thumb nail
 		if (levels.tn !== undefined) {
 			datalevels[NgChm.MMGR.THUMBNAIL_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
@@ -795,8 +795,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
                                                          null,
 							 getTileCacheData,
                                                          getTile); //special callback for thumb nail.
-			//Kickoff retrieve of thumb nail data tile.
-			datalevels[NgChm.MMGR.THUMBNAIL_LEVEL].loadTiles(levels.tn.tile_rows, levels.tn.tile_cols);
 		}
       
 
@@ -809,8 +807,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
                                                        datalevels[NgChm.MMGR.THUMBNAIL_LEVEL],
 						       getTileCacheData,
                                                        getTile);
-			//Kickoff retrieve of summary data tiles.
-			datalevels[NgChm.MMGR.SUMMARY_LEVEL].loadTiles(levels.s.tile_rows, levels.s.tile_cols);
 		} else {			
 			//If no summary level, set the summary to be the thumb nail.
 			datalevels[NgChm.MMGR.SUMMARY_LEVEL] = datalevels[NgChm.MMGR.THUMBNAIL_LEVEL];
@@ -857,10 +853,45 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		} else {
 			datalevels[NgChm.MMGR.RIBBON_HOR_LEVEL] = datalevels[NgChm.MMGR.DETAIL_LEVEL];
 		}
-		
+
+		prefetchInitialTiles(datalayers, datalevels, levels);
 		sendCallBack(NgChm.MMGR.Event_INITIALIZED);
 	}
-	
+
+	function prefetchInitialTiles(datalayers, datalevels, levels) {
+		const layerNames = Object.keys(datalayers);
+		const layers1 = [layerNames[0]];
+		const otherLayers = layerNames.slice(1);
+
+		// Prefetch tiles for initial (first) layer.
+		if (levels.tn !== undefined) {
+			//Kickoff retrieve of thumb nail data tile.
+			datalevels[NgChm.MMGR.THUMBNAIL_LEVEL].loadTiles(layers1, levels.tn.tile_rows, levels.tn.tile_cols);
+		}
+		if (levels.d !== undefined) {
+			// Initial tile for detail pane only. (Assume top-left tile.)
+			datalevels[NgChm.MMGR.DETAIL_LEVEL].loadTiles(layers1, 1, 1);
+		}
+		if (levels.s !== undefined) {
+			//Kickoff retrieve of summary data tiles.
+			datalevels[NgChm.MMGR.SUMMARY_LEVEL].loadTiles(layers1, levels.s.tile_rows, levels.s.tile_cols);
+		}
+
+		if (otherLayers.length > 0) {
+			setTimeout (function prefetchOtherLayers() {
+		// Prefetch tiles for other layers.
+		if (levels.tn !== undefined) {
+			//Kickoff retrieve of thumb nail data tile.
+			datalevels[NgChm.MMGR.THUMBNAIL_LEVEL].loadTiles(otherLayers, levels.tn.tile_rows, levels.tn.tile_cols);
+		}
+		if (levels.s !== undefined) {
+			//Kickoff retrieve of summary data tiles.
+			datalevels[NgChm.MMGR.SUMMARY_LEVEL].loadTiles(otherLayers, levels.s.tile_rows, levels.s.tile_cols);
+		}
+			}, 0);
+		}
+	}
+
 	function addMapData(md) {
 		mapData = md;
 		NgChm.CM.mapDataCompatibility(mapData);
@@ -883,7 +914,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	NgChm.MMGR.showTileCacheStats = function () {
 		for (const tileCacheName in tileCache) {
 			const e = tileCache[tileCacheName];
-			if (e.status === 'loaded') {
+			if (e.state === 'loaded') {
 				const loadTime = e.loadTime - e.fetchTime;
 				const loadTimePerKByte = loadTime / e.data.length * 1024;
 				console.log ({ tileCacheName, KBytes: e.data.length / 1024, loadTime, loadTimePerKByte });
@@ -1144,17 +1175,16 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
     	}
     }
 
-	// External user of the matix data lets us know where they plan to read.
+	// External user of the matrix data lets us know where they plan to read.
 	// Pull tiles for that area if we don't already have them.
-    this.loadTiles = function(rowTiles, colTiles) {
-    	for (var key in datalayers){
-        	var layer = key;
-        	for (var i = 1; i <= rowTiles; i++) {
-        		for (var j = 1; j <= colTiles; j++) {
-				getTile(key, level, i, j);
+	this.loadTiles = function(datalayers, rowTiles, colTiles) {
+		datalayers.forEach(dlayer => {
+			for (let i = 1; i <= rowTiles; i++) {
+				for (let j = 1; j <= colTiles; j++) {
+					getTile(dlayer, level, i, j);
+				}
 			}
-		}
-	}
-    }
+		});
+	};
 
 };
