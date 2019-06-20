@@ -99,7 +99,7 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 			if (typeof dl.cuts_color !== 'undefined') {
 				color = this.getHexToRgba(dl.cuts_color);
 			} else {
-				color = (255, 255, 255, 0);
+				color = {r: 255, g: 255, b: 255, a: 255};
 			}
 		}else if(value <= thresholds[0]){
 			color = rgbaColors[0]; // return color for lowest threshold if value is below range
@@ -116,7 +116,7 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 	this.getClassificationColor = function(value){
 		var color;
 		if (value == "!CUT!") {
-			return (255, 255, 255, 0);
+			return ({r: 255, g: 255, b: 255, a: 255});
 		}
 		if (type == "discrete"){
 			for (var i = 0; i < thresholds.length; i++){

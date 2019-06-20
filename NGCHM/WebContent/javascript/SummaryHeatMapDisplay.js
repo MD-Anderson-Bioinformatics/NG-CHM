@@ -4,47 +4,47 @@ NgChm.createNS('NgChm.SUM');
 NgChm.SUM.BYTE_PER_RGBA = 4;   
 
 //WebGl Canvas, Context, and Pixel Arrays
-NgChm.SUM.canvas; //Primary Heat Map Canvas
-NgChm.SUM.rCCanvas; //Row Class Bar Canvas
-NgChm.SUM.cCCanvas;  //Column Class Bar Canvas
-NgChm.SUM.boxCanvas;  //Secondary Heat Map Selection Box Canvas 
-NgChm.SUM.gl; // WebGL Heat Map context
-NgChm.SUM.rcGl; // WebGL Row Class Bar context
-NgChm.SUM.ccGl; // WebGL Column Class Bar context
-NgChm.SUM.texHmParams;
-NgChm.SUM.texRcParams;
-NgChm.SUM.texCcParams;
-NgChm.SUM.texHmPixels;
-NgChm.SUM.texRcPixels;
-NgChm.SUM.texCcPixels;
-NgChm.SUM.texHmProgram;
-NgChm.SUM.texRcProgram;
-NgChm.SUM.texCcProgram;
+NgChm.SUM.canvas = null; //Primary Heat Map Canvas
+NgChm.SUM.rCCanvas = null; //Row Class Bar Canvas
+NgChm.SUM.cCCanvas = null;  //Column Class Bar Canvas
+NgChm.SUM.boxCanvas = null;  //Secondary Heat Map Selection Box Canvas 
+NgChm.SUM.gl = null; // WebGL Heat Map context
+NgChm.SUM.rcGl = null; // WebGL Row Class Bar context
+NgChm.SUM.ccGl = null; // WebGL Column Class Bar context
+NgChm.SUM.texHmParams = null;
+NgChm.SUM.texRcParams = null;
+NgChm.SUM.texCcParams = null;
+NgChm.SUM.texHmPixels = null;
+NgChm.SUM.texRcPixels = null;
+NgChm.SUM.texCcPixels = null;
+NgChm.SUM.texHmProgram = null;
+NgChm.SUM.texRcProgram = null;
+NgChm.SUM.texCcProgram = null;
 
 //Size of heat map components
 NgChm.SUM.heightPct = .96; // this is the amount of vertical space the col dendro and the map should take up on the summary chm div (taken from the css)
 NgChm.SUM.widthPct = .90; // this is the amount of horizontal space the row dendro and the map should take up on the summary chm div (taken from the css)
 NgChm.SUM.paddingHeight = 2;
 
-NgChm.SUM.colDendro;
-NgChm.SUM.rowDendro;
-NgChm.SUM.colTopItems;
-NgChm.SUM.rowTopItems;
-NgChm.SUM.colTopItemsIndex;
-NgChm.SUM.rowTopItemsIndex;
+NgChm.SUM.colDendro = null;
+NgChm.SUM.rowDendro = null;
+NgChm.SUM.colTopItems = null;
+NgChm.SUM.rowTopItems = null;
+NgChm.SUM.colTopItemsIndex = null;
+NgChm.SUM.rowTopItemsIndex = null;
 NgChm.SUM.colTopItemsWidth = 0;
 NgChm.SUM.rowTopItemsHeight = 0;
 
 NgChm.SUM.rowClassPadding = 2;          // space between classification bars
 NgChm.SUM.colClassPadding = 2;          // space between classification bars
-NgChm.SUM.rowClassBarWidth;
-NgChm.SUM.colClassBarHeight;
+NgChm.SUM.rowClassBarWidth = null;
+NgChm.SUM.colClassBarHeight = null;
 NgChm.SUM.rowClassScale = 1;
 NgChm.SUM.colClassScale = 1;
-NgChm.SUM.matrixWidth;
-NgChm.SUM.matrixHeight;
-NgChm.SUM.totalHeight;
-NgChm.SUM.totalWidth;
+NgChm.SUM.matrixWidth = null;
+NgChm.SUM.matrixHeight = null;
+NgChm.SUM.totalHeight = null;
+NgChm.SUM.totalWidth = null;
 NgChm.SUM.minDimensionSize = 100; // minimum size the data matrix canvas can be
 NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
 NgChm.SUM.heightScale = 1;

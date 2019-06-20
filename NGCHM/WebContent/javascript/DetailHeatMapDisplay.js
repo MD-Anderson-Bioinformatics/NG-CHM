@@ -1,19 +1,19 @@
 //Define Namespace for NgChm DetailHeatMapDisplay
 NgChm.createNS('NgChm.DET');
 
-NgChm.DET.canvas;
-NgChm.DET.boxCanvas;  //canvas on top of WebGL canvas for selection box 
-NgChm.DET.gl; // WebGL contexts
-NgChm.DET.textureParams;
-NgChm.DET.texPixels;
-NgChm.DET.uScale;
-NgChm.DET.uTranslate;
+NgChm.DET.canvas = null;
+NgChm.DET.boxCanvas = null;  //canvas on top of WebGL canvas for selection box 
+NgChm.DET.gl = null; // WebGL contexts
+NgChm.DET.textureParams = null;
+NgChm.DET.texPixels = null;
+NgChm.DET.uScale = null;
+NgChm.DET.uTranslate = null;
 
 NgChm.DET.canvasScaleArray = new Float32Array([1.0, 1.0]);
 NgChm.DET.canvasTranslateArray = new Float32Array([0, 0]);
 
-NgChm.DET.labelElement; 
-NgChm.DET.chmElement;
+NgChm.DET.labelElement = null; 
+NgChm.DET.chmElement = null;
 NgChm.DET.oldMousePos = [0, 0];
 NgChm.DET.eventTimer = 0; // Used to delay draw updates
 NgChm.DET.offsetX = 0;
@@ -21,25 +21,25 @@ NgChm.DET.offsetY = 0;
 NgChm.DET.pageX = 0;
 NgChm.DET.pageY = 0;
 
-NgChm.DET.latestTap;
-NgChm.DET.latestDoubleTap;
-NgChm.DET.latestPinchDistance;
-NgChm.DET.latestLabelTap;
-NgChm.DET.latestTapLocation;
+NgChm.DET.latestTap = null;
+NgChm.DET.latestDoubleTap = null;
+NgChm.DET.latestPinchDistance = null;
+NgChm.DET.latestLabelTap = null;
+NgChm.DET.latestTapLocation = null;
 
-NgChm.DET.saveRow;
-NgChm.DET.saveCol;
-NgChm.DET.dataBoxHeight;
-NgChm.DET.dataBoxWidth;
+NgChm.DET.saveRow = null;
+NgChm.DET.saveCol = null;
+NgChm.DET.dataBoxHeight = null;
+NgChm.DET.dataBoxWidth = null;
 
 NgChm.DET.paddingHeight = 2;          // space between classification bars
-NgChm.DET.rowDendro;
-NgChm.DET.colDendro;
+NgChm.DET.rowDendro = null;
+NgChm.DET.colDendro = null;
 NgChm.DET.dendroHeight = 105;
 NgChm.DET.dendroWidth = 105;
 NgChm.DET.normDendroMatrixHeight = 200;
-NgChm.DET.rowDendroMatrix
-NgChm.DET.colDendroMatrix;
+NgChm.DET.rowDendroMatrix = null;
+NgChm.DET.colDendroMatrix = null;
 NgChm.DET.rowZoomLevel = 1;
 NgChm.DET.colZoomLevel = 1;
 NgChm.DET.SIZE_NORMAL_MODE = 506;
@@ -54,9 +54,9 @@ NgChm.DET.currentSearchItem = {};
 NgChm.DET.labelLastClicked = {};
 
 NgChm.DET.mouseDown = false;
-NgChm.DET.dragOffsetX;
-NgChm.DET.dragOffsetY;
-NgChm.DET.detailPoint;
+NgChm.DET.dragOffsetX = null;
+NgChm.DET.dragOffsetY = null;
+NgChm.DET.detailPoint = null;
 NgChm.DET.initialized = false;
 
 NgChm.DET.rowLabelLen = 0;
@@ -2644,13 +2644,13 @@ NgChm.DET.findNextSearchItem = function (index, axis) {
 	var otherAxis = axis == "Row" ? "Column" : "Row";
 	var otherAxisLength = axis == "Column" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
 	var curr = index;
-	while( !NgChm.SEL.searchItems[axis][++curr] && curr <  axisLength); // find first searchItem in row
+	while( !NgChm.SEL.searchItems[axis][++curr] && curr <  axisLength){}; // find first searchItem in row
 	if (curr >= axisLength){ // if no searchItems exist in first axis, move to other axis
 		curr = -1;
-		while( !NgChm.SEL.searchItems[otherAxis][++curr] && curr <  otherAxisLength);
+		while( !NgChm.SEL.searchItems[otherAxis][++curr] && curr <  otherAxisLength){};
 		if (curr >=otherAxisLength){ // if no matches in the other axis, check the earlier indices of the first axis (loop back)
 			curr = -1;
-			while( !NgChm.SEL.searchItems[axis][++curr] && curr <  index);
+			while( !NgChm.SEL.searchItems[axis][++curr] && curr <  index){};
 			if (curr < index && index != -1){
 				NgChm.DET.currentSearchItem["axis"] = axis;
 				NgChm.DET.currentSearchItem["index"] = curr;
@@ -2671,16 +2671,16 @@ NgChm.DET.findPrevSearchItem = function (index, axis) {
 	var otherAxis = axis == "Row" ? "Column" : "Row";
 	var otherAxisLength = axis == "Column" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
 	var curr = index;
-	while( !NgChm.SEL.searchItems[axis][--curr] && curr > -1 ); // find first searchItem in row
+	while( !NgChm.SEL.searchItems[axis][--curr] && curr > -1 ){}; // find first searchItem in row
 	if (curr < 0){ // if no searchItems exist in first axis, move to other axis
 		curr = otherAxisLength;
-		while( !NgChm.SEL.searchItems[otherAxis][--curr] && curr > -1);
+		while( !NgChm.SEL.searchItems[otherAxis][--curr] && curr > -1){};
 		if (curr > 0){
 			NgChm.DET.currentSearchItem["axis"] = otherAxis;
 			NgChm.DET.currentSearchItem["index"] = curr;
 		} else {
 			curr = axisLength;
-			while( !NgChm.SEL.searchItems[axis][--curr] && curr > index );
+			while( !NgChm.SEL.searchItems[axis][--curr] && curr > index ){};
 			if (curr > index){
 				NgChm.DET.currentSearchItem["axis"] = axis;
 				NgChm.DET.currentSearchItem["index"] = curr;
@@ -2805,7 +2805,6 @@ NgChm.DET.getDetVertexShader = function (theGL) {
 		         '  v_texPosition = texCoord;                               ' +
 		         '}';
     //'  v_texPosition = position * 0.5 + 0.5;                   ' +
-	[ 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1 ]
 
 	var shader = theGL.createShader(theGL.VERTEX_SHADER);
 	theGL.shaderSource(shader, source);

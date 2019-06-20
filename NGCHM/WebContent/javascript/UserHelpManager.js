@@ -1,5 +1,3 @@
-"use strict";
-
 /**********************************************************************************
  * USER HELP FUNCTIONS:  The following functions handle the processing 
  * for user help popup windows for the detail canvas and the detail canvas buttons.
