@@ -11,9 +11,9 @@
 	<apply executable="java" parallel="false">
 	    <fileset dir="${js.dir}" includes="custom/custom.js"/>
 	    <arg line="-jar"/>
-	    <arg path="${dir.jarfile}/yuicompressor-2.4.2.jar"/>
+	    <arg path="${dir.jarfile}/closure-compiler-v20190528.jar"/>
 	    <srcfile/>
-	    <arg line="-o"/>
+		<arg line="--js_output_file"/>
 	    <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
 	    <targetfile/>
 	</apply>
