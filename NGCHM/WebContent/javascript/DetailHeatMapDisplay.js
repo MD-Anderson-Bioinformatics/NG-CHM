@@ -1832,7 +1832,6 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 	}
 	div = document.getElementById (id);
 	if (div) {
-	    console.log ('Error: element ' + id + ' unexpectedly exists');
 	    NgChm.DET.oldLabelElements[id] = { div, parent: div.parentElement };
 	    NgChm.DET.updateLabelDiv (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
 	    return;
