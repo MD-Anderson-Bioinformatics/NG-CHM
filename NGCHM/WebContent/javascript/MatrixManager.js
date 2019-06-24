@@ -175,6 +175,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return colorMapMgr;
 	}
 	
+	this.getAxisConfig = function(axis) {
+		return axis.toUpperCase() === "ROW" ? this.getRowConfig() : this.getColConfig();
+	};
+
 	this.getRowConfig = function() {
 		return mapConfig.row_configuration;
 	}
@@ -332,6 +336,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return mapConfig.row_configuration.organization;
 	}
 	
+	//Get Axis Labels
+	this.getAxisLabels = function(axis) {
+		return axis.toUpperCase() === 'ROW' ? mapData.row_data.label : mapData.col_data.label;
+	};
+
 	//Get Row Labels
 	this.getRowLabels = function() {
 		return mapData.row_data.label;

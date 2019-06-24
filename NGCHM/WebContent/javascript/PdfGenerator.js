@@ -918,8 +918,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	function resizeDetailDendroCanvases(detMapW,detMapH, rowDendroW, colDendroH){
 		NgChm.DET.canvas.style.height = detMapH;
 		NgChm.DET.canvas.style.width = detMapW;
-		NgChm.DET.clearLabels();
-		NgChm.DET.drawRowAndColLabels();  
+		NgChm.DET.updateDisplayedLabels();
 		document.getElementById('detail_row_dendro_canvas').height = detMapH;
 		document.getElementById('detail_row_dendro_canvas').style.height = detMapH;
 		document.getElementById('detail_row_dendro_canvas').width = rowDendroW;
