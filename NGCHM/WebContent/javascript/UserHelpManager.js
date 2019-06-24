@@ -1,5 +1,3 @@
-"use strict";
-
 /**********************************************************************************
  * USER HELP FUNCTIONS:  The following functions handle the processing 
  * for user help popup windows for the detail canvas and the detail canvas buttons.
@@ -573,7 +571,7 @@ NgChm.UHM.widgetHelp = function() {
 	NgChm.UHM.initMessageBox();
     NgChm.UHM.setMessageBoxHeader("About NG-CHM Viewer");
     var mapVersion = ((NgChm.heatMap !== null) && NgChm.heatMap.isMapLoaded()) === true ? NgChm.heatMap.getMapInformation().version_id : "N/A";
-	var text = "<br>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.<br><br><a href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>Additional NG-CHM Information and Help</a><br><br><b>Software Version: </b>" + NgChm.CM.version+"<br><b>Map Version: </b>" +mapVersion+"<br><br>";
+	var text = "<br>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.<br><br><a href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>Additional NG-CHM Information and Help</a><br><br><b>Software Version: </b>" + NgChm.CM.version+"<br><b>Map Version: </b>" +mapVersion+"<br><br><b>Citation:</b>  Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a><br><br>The NG-CHM Viewer is also available for a variety of other platforms.<br><br>";
 	NgChm.UHM.setMessageBoxText(text);
 	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';

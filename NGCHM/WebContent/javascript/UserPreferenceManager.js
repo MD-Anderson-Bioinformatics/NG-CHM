@@ -8,7 +8,7 @@ NgChm.createNS('NgChm.UPM');
 
 //Global variables for preference processing
 NgChm.UPM.bkpColorMaps = null;
-NgChm.UPM.filterVal;
+NgChm.UPM.filterVal = null;
 NgChm.UPM.searchPerformed = false;
 NgChm.UPM.resetVal = {};
 NgChm.UPM.applyDone = true;
@@ -661,7 +661,6 @@ NgChm.UPM.prefsValidateBreakColors = function(colorMapName,type, prefPanel) {
 	var colors = colorMap.getColors();
 	var dupeColor = false;
 	for (var i = 0; i < colors.length; i++) {
-		c
 		for (var j = 0; j < thresholds.length; j++) {
 			var ce = document.getElementById(key+"_color"+j+"_colorPref"); 
 			if (i != j) {
@@ -1081,7 +1080,7 @@ NgChm.UPM.setupLayerBreaksToPreset = function(e, mapName, preset, missingColor,a
 		elemName += "_"+axis;
 	}
 	var i = 0; // find number of breakpoints in the 
-	while(document.getElementById(elemName+"_color"+ ++i+"_colorPref"));
+	while(document.getElementById(elemName+"_color"+ ++i+"_colorPref")){};
 	var lastShown = i-1;
 	// create dummy colorScheme
 	var thresh = [];

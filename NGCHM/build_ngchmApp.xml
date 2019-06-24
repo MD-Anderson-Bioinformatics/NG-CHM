@@ -11,9 +11,9 @@
 	<apply executable="java" parallel="false">
 	    <fileset dir="${js.dir}" includes="custom/custom.js"/>
 	    <arg line="-jar"/>
-	    <arg path="${dir.jarfile}/yuicompressor-2.4.2.jar"/>
+	    <arg path="${dir.jarfile}/closure-compiler-v20190528.jar"/>
 	    <srcfile/>
-	    <arg line="-o"/>
+		<arg line="--js_output_file"/>
 	    <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
 	    <targetfile/>
 	</apply>
@@ -38,9 +38,9 @@
         <apply executable="java" parallel="false">
             <fileset dir="${js.dir}" includes="ngchm.js"/>
             <arg line="-jar"/>
-            <arg path="${dir.jarfile}/yuicompressor-2.4.2.jar"/>
+            <arg path="${dir.jarfile}/closure-compiler-v20190528.jar"/>
             <srcfile/>
-            <arg line="-o"/>
+            <arg line="--js_output_file"/>
             <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
             <targetfile/>
         </apply>
@@ -69,7 +69,6 @@
 	
     <target name="build_ngchm_app" depends="create_app_html">
 	<delete>
-            <fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>
@@ -77,7 +76,6 @@
 	
     <target name="build_ngchm_widget" depends="create_widget_js">
 	<delete>
-            <fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>
@@ -85,7 +83,6 @@
 
     <target name="build_ngchm_all" depends="create_app_html,create_widget_js">
 	<delete>
-            <fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>

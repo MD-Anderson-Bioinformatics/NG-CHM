@@ -14,378 +14,82 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import static mda.ngchm.datagenerator.ImportConstants.*;
 
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
+
 /* Wrapper class to connect the HeatmapDataGenerator into a Galaxy tool */
 public class GalaxyMapGen {
 	
 public static boolean debugOutput = false;
-private static String BUILDER_VER = "Galaxy 2.3";
+private static String BUILDER_VERSION = "Galaxy 2.7.0";
 
 
 	public static void main(String[] args){
-		
-		if (debugOutput) {
-			writeOutArgsAndParams(args);
-		}
-		if (args[0].equals("advanced")) {
-			performAdvancedMapGeneration(args);
-		} else if (args[0].equals("standard")) {
-			performStandardMapGeneration(args);
-		} else {
-			System.out.println("Error: No proper type (standard/advanced) provided on Galaxy heat map request. Exiting.");
-			System.exit(1);
-		}
-	}
-	
-	public static void performAdvancedMapGeneration(String[] args){
-		
-		if (args.length < 24) {
-			System.out.println("Usage: GalaxyMapGen "
-					+ "<chm name> <chm description> <data layer name> <matrix file> <matrix coloring type> <row lable type> <column label type> "
-					+ "<row order method> <row distance> <row agglomeration> <row order file> <row dendro file> <row tree cuts> <row top items>"
-					+ "<col order method> <col distance> <col agglomeration> <col order file> <col dendro file> <col tree cuts> <col top items>"
-					+ "<summary method> <matrix attribs>"
-					+ "[<classification name> <classification file> <classification bar type> <classification type>] "
-					+ "<output file>");
-			System.exit(1);
-		}
-		System.out.println("START Galaxy Interface Advanced Heat Map Generation: " + new Date()); 
-		//Used to keep pdfBox warning messages out of the log (specifically for Galaxy)
-		java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.SEVERE);
-		//Create an output directory - this should be a heatmap name.
-		String dir = ""+ new Date().getTime();
-		File tDir = new File(dir);
-		tDir.mkdir();
-		String name = args[1].replace(' ', '_');
-		//Truncate name to 40 characters
-		if (name.length() > 40) {
-			name = name.substring(0,40);
-		}
-		String subdir = dir + File.separator + File.separator + name;
-		File sub = new File(subdir);
-		sub.mkdir();
-		subdir = subdir + File.separator + File.separator;
-		//Optional heat map attributes are passed as a string with ";" as attribute separator and ":" as attrib/value separator
-		String attribs[] = args[23].trim().split("[\\s;]+");
-		if (attribs[0].equalsIgnoreCase("None") || attribs[0].equalsIgnoreCase("")) {
-			attribs = new String[0];
-		}
+
 		try {
-			String matrixFile = args[4];
-			PrintWriter fileout = new PrintWriter( "heatmapProperties.json", "UTF-8" );
-			if (debugOutput) {
-				System.out.println("BEGIN properties file");
-			}
-			writeHeatmapPropertiesEntry(fileout, "{");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_name\": \"" + name + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"builder_version\": \"" + BUILDER_VER + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_description\": \"" + args[2] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_attributes\": [");
-			boolean first = true;
-			for (String attrib : attribs) {
-				if (!first) {
-					writeHeatmapPropertiesEntry(fileout, ",");
-				}
-				String[] attr = attrib.split(":");
-				if (attr.length == 2) {
-					if ((!attr[0].equals("")) && (!attr[1].equals(""))) {
-						writeHeatmapPropertiesEntry(fileout, "\t\t\t\t{\"" + attr[0] + "\":\"" + attr[1] + "\"}");
-					} else {
-						System.out.println("WARNING: Errant attribute found and skipped. Parameter data must be entered for both the key and value for an attribute pair.");
-					}
-				} else {
-					System.out.println("WARNING: Errant attribute found and skipped. Parameter data must be entered for both the key and value for an attribute pair.");
-				}
-				first=false;
-			} 		
-			writeHeatmapPropertiesEntry(fileout, "\t\t],");
-			writeHeatmapPropertiesEntry(fileout, "\t\"matrix_files\": [");
-			writeHeatmapPropertiesEntry(fileout, "\t\t{");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"name\": \"" + args[3] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"path\":  \"" + matrixFile + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"color_type\": \"" + args[5] + "\"");
-			writeHeatmapPropertiesEntry(fileout, "\t\t}");
-			writeHeatmapPropertiesEntry(fileout, "\t],");
-
-			writeHeatmapPropertiesEntry(fileout, "\t\"row_configuration\": ");
-			writeHeatmapPropertiesEntry(fileout, "\t\t{");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"data_type\": [\"" + args[6] + "\"],");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"order_method\": \"" + args[8] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"distance_metric\":  \"" + args[9] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"agglomeration_method\": \"" + args[10] + "\",");
-			String rowCutsVal = args[13].substring(2, args[13].length());
-			int isTree = rowCutsVal.lastIndexOf("t");
-			if (isTree > 0) {
-				String[] cutValues = rowCutsVal.split("t");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"tree_cuts\": \"" + cutValues[0] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
-			} else if (!rowCutsVal.equals("None") && !rowCutsVal.equals("0") && !rowCutsVal.equals(EMPTY)) {
-				String[] toks = rowCutsVal.split(",");
-				boolean cutsValid = true;
-				for (int j=0;j<toks.length;j++) {
-					String tokVal = toks[j].trim();
-					if (!MatrixValidator.isInteger(tokVal)) {
-						cutsValid = false;
-						System.out.println("Warning: Row Gap Locations parameter invalid and skipped. Must contain only a comma-delimited string of integer values.");
-						break;
-					}
-				}
-				if (cutsValid) {
-					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_locations\": [" + rowCutsVal + "],");
-					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
-				}
-			}
-			String rowTopItems = args[14].substring(2, args[14].length());
-			if ((!rowTopItems.equals("None")) && (!rowTopItems.equals(EMPTY))) {
-	            String[] toks = rowTopItems.split(",");
-	            String rowTops = "\"";
-	            if (toks.length > 10) {
-					System.out.println("Warning: Row Top Items exceed limit of 10 items. Remaining items have been skipped.");
-	            }
-	            int topLen = toks.length > 10 ? 10 : toks.length;
-	            for (int i=0; i<topLen;i++) {
-	            	rowTops += toks[i]+"\"";
-	            	if (i<topLen-1) {
-	            		rowTops += ",\"";
-	            	}
-	            }
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"top_items\": [" + rowTops + "],");
-			}
-			if (args[8].equals("Hierarchical")) {
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"order_file\": \"" + args[11] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"dendro_file\": \"" + args[12] + "\"");
-			}
-			writeHeatmapPropertiesEntry(fileout, "\t\t}");
-			writeHeatmapPropertiesEntry(fileout, "\t,");
-
-			writeHeatmapPropertiesEntry(fileout, "\t\"col_configuration\": ");
-			writeHeatmapPropertiesEntry(fileout, "\t\t{");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"data_type\": [\"" + args[7] + "\"],");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"order_method\": \"" + args[15] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"distance_metric\":  \"" + args[16] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"agglomeration_method\": \"" + args[17] + "\",");
-			String colCutsVal = args[20].substring(2, args[20].length());
-			isTree = colCutsVal.lastIndexOf("t");
-			if (isTree > 0) {
-				String[] cutValues = colCutsVal.split("t");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"tree_cuts\": \"" + cutValues[0] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
-			} else if (!colCutsVal.equals("None") && !colCutsVal.equals("0") && !colCutsVal.equals(EMPTY)) {
-				String[] toks = colCutsVal.split(",");
-				boolean cutsValid = true;
-				for (int j=0;j<toks.length;j++) {
-					String tokVal = toks[j].trim();
-					if (!MatrixValidator.isInteger(tokVal)) {
-						cutsValid = false;
-						System.out.println("Warning: Column Gap Locations parameter invalid and skipped. Must contain only a comma-delimited string of integer values.");
-						break;
-					}
-				}
-				if (cutsValid) {
-					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_locations\": [" + colCutsVal + "],");
-					writeHeatmapPropertiesEntry(fileout, "\t\t\"cut_width\": \"5\",");
-				}
-			}
-			String colTopItems = args[21].substring(2, args[21].length());
-			if ((!colTopItems.equals("None"))  && (!colTopItems.equals(EMPTY))) {
-	            String[] toks = colTopItems.split(",");
-	            String colTops = "\"";
-	            if (toks.length > 10) {
-					System.out.println("Warning: Column Top Items exceed limit of 10 items. Remaining items have been skipped.");
-	            }
-	            int topLen = toks.length > 10 ? 10 : toks.length;
-	            for (int i=0; i<topLen;i++) {
-	            	colTops += toks[i]+"\"";
-	            	if (i<topLen-1){
-	            		colTops += ",\"";
-	            	}
-	            }
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"top_items\": [" + colTops + "],");
-			}
-			if (args[15].equals("Hierarchical")) {
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"order_file\": \"" + args[18] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"dendro_file\": \"" + args[19] + "\"");
-			}
-			writeHeatmapPropertiesEntry(fileout, "\t\t}");
-			writeHeatmapPropertiesEntry(fileout, "\t,");
-
-			writeHeatmapPropertiesEntry(fileout, "\t\"classification_files\": [");
-			for (int pos = 24; pos < args.length-3; pos+=4) {
-				String type = "column";
-				String colorType = "discrete";
-				if (args[pos+2].contains("row")) {
-					type = "row";
-				}
-				if (args[pos+2].contains("continuous")) {
-					colorType = "continuous";
-				}
-				String barType = args[pos+3];
-				if ((colorType.equals("discrete")) && (!barType.equals("color_plot"))){
-					barType = "color_plot";
-					System.out.println("WARNING: Bar Plot and Scatter Plot display types are only available for continuous data.  The Bar Type for covariate bar ("+ args[pos] +") has been changed to color_plot");
-				}
-				if (debugOutput) {
-					System.out.println("CLASSES args[pos]: " + args[pos] + " args[pos+1]: " + args[pos+1] + " args[pos+2]: " + args[pos+2] + "  args[pos+3]: " + args[pos+3]);
-					System.out.println("CLASSES pos: " + pos + " position: " + type + " barType: " + barType + " name: " + args[pos] + " path: " + args[pos+1]);
-				}
-				writeHeatmapPropertiesEntry(fileout, "\t\t{");
-				String fileName = new File(args[pos+1]).getName();
-				if (fileName.contains("."))
-					fileName = fileName.substring(0,fileName.lastIndexOf("."));
-				String className = args[pos];
-				if (className.length() > 25) {
-					className = className.substring(0, 25);
-				}
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"name\": \"" + className + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"path\": \"" + args[pos+1] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"position\": \"" + type + "\",");
-				if (!barType.equals("color_plot")) {
-					writeHeatmapPropertiesEntry(fileout, "\t\t\"bar_type\": \"" + barType + "\",");
-					writeHeatmapPropertiesEntry(fileout, "\t\t\"height\": \"50\",");
-				}
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"color_map\": {");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"type\": \"" + colorType + "\"}");
-				if (pos == args.length-4) {
-					writeHeatmapPropertiesEntry(fileout, "\t\t}");
-				} else {
-					writeHeatmapPropertiesEntry(fileout, "\t\t},");
-				}
-			}
-			writeHeatmapPropertiesEntry(fileout, "\t],");
-			writeHeatmapPropertiesEntry(fileout, "\t\"output_location\": \"" + subdir + "\"");
-			writeHeatmapPropertiesEntry(fileout, "}");
-			if (debugOutput) {
-				System.out.println("END properties file");
-			}
-			
-			fileout.close();
-
-			String genArgs[] = new String[] {"heatmapProperties.json"};
-			String errMsg = HeatmapDataGenerator.processHeatMap(genArgs);
-			if ((errMsg != EMPTY) && (errMsg.contains("BUILD ERROR"))) {
-				System.out.println( "ERROR in GalaxyMapGen e= "+ errMsg);
-				System.exit(1);
-			} else {
-				//Zip results
-				zipDirectory(tDir, args[args.length-1]);
-				System.exit(0);
-			}
-		} catch(Exception e) {
-			e.printStackTrace();
-			System.out.println( "Error in GalaxyMapGen e= "+ e.getMessage());
+	        JSONParser parser = new JSONParser();
+	        Object obj = parser.parse(args[0]); 
+	        JSONObject jsonObject =  (JSONObject) obj;
+    		if (debugOutput) {
+    			System.out.println("Galaxy JSON Arguments: " + args[0]);
+    		}
+    		performMapGeneration(jsonObject);
+		} catch(ParseException e) {
+			System.out.println("FATAL ERROR: GalaxyMapGen could not parse JSON arguments: " + args[0]);
 			System.exit(1);
 		}
 	}
 
-	public static void performStandardMapGeneration(String[] args){
-	
-		if (args.length < 19) {
-			System.out.println("Usage: GalaxyMapGen "
-					+ "<chm name> <chm description> <data layer name> <matrix file> <matrix coloring type> <row lable type> <column label type> "
-					+ "<row order method> <row distance> <row agglomeration> <row order file> <row dendro file> "
-					+ "<col order method> <col distance> <col agglomeration> <col order file> <col dendro file> "
-					+ "<summary method> "
-					+ "[<classification name> <classification file> <classification type>] "
-					+ "<output file>");
-			System.exit(1);
-		}		
+	public static void performMapGeneration(JSONObject jsonObject){
 		System.out.println("START Galaxy Interface Heat Map Generation: " + new Date()); 
-		//Create an output directory - this should be a heatmap name.
-		String dir = ""+ new Date().getTime();
-		File tDir = new File(dir);
-		tDir.mkdir();
-		String name = args[1].replace(' ', '_');
-		//Truncate name to 40 characters
-		if (name.length() > 40) {
-			name = name.substring(0,40);
-		}
-		String subdir = dir + File.separator + File.separator + name;
-		File sub = new File(subdir);
-		sub.mkdir();
-		subdir = subdir + File.separator + File.separator;
-		
 		try {
-			String matrixFile = args[4];
+			//Used to keep pdfBox warning messages out of the log (specifically for Galaxy)
+			java.util.logging.Logger.getLogger("org.apache.pdfbox").setLevel(java.util.logging.Level.SEVERE);
+	
+			//Create an output directory - this should be a heatmap name.
+			String dir = ""+ new Date().getTime();
+			File tDir = new File(dir);
+			tDir.mkdir();
+			String hmName = (String) jsonObject.get(CHM_NAME);
+			
+			//Get contents of JSON output location from Galaxy and then remove from JSON (for use as zip output location)
+			String outputLocation = (String) jsonObject.get(OUTPUT_LOC);
+			jsonObject.remove(OUTPUT_LOC);
+
+			//Construct subdir string for heatmap output and place on JSON object
+			String name = hmName.replace(' ', '_');
+			//Truncate name to 40 characters
+			if (name.length() > 40) {
+				name = name.substring(0,40);
+			}
+			String subdir = dir + File.separator + File.separator + name;
+			File sub = new File(subdir);
+			sub.mkdir();
+			subdir = subdir + File.separator + File.separator;
+			
+			//Add heatmap output subdirectory and galaxy version number to heatmapProperties JSON
+			jsonObject.put(OUTPUT_LOC,subdir);
+			jsonObject.put(BUILDER_VER,BUILDER_VERSION);
+
+			//Fix org.simple.JSON escaping of forward slashes throughout JSON
+			String jsonString = jsonObject.toString();
+			jsonString=jsonString.replaceAll("\\\\","");
+			
+			//Write json string to heatmapProperties.json file
 			PrintWriter fileout = new PrintWriter( "heatmapProperties.json", "UTF-8" );
 			if (debugOutput) {
 				System.out.println("BEGIN properties file");
 			}
-			writeHeatmapPropertiesEntry(fileout, "{");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_name\": \"" + name + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"builder_version\": \"" + BUILDER_VER + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_description\": \"" + args[2] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"chm_attributes\": [],");
-			writeHeatmapPropertiesEntry(fileout, "\t\"matrix_files\": [");
-			writeHeatmapPropertiesEntry(fileout, "\t\t{");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"name\": \"" + args[3] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"path\":  \"" + matrixFile + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\"summary_method\": \"" + args[18] + "\"");
-			writeHeatmapPropertiesEntry(fileout, "\t\t}");
-			writeHeatmapPropertiesEntry(fileout, "\t],");
-		
-			writeHeatmapPropertiesEntry(fileout, "\t\"row_configuration\": ");
-			writeHeatmapPropertiesEntry(fileout, "\t\t{");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"data_type\": [\"" + args[6] + "\"],");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"order_method\": \"" + args[8] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"distance_metric\":  \"" + args[9] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"agglomeration_method\": \"" + args[10] + "\",");
-			if (args[8].equals("Hierarchical")) {
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"order_file\": \"" + args[11] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"dendro_file\": \"" + args[12] + "\"");
-			}
-			writeHeatmapPropertiesEntry(fileout, "\t\t}");
-			writeHeatmapPropertiesEntry(fileout, "\t,");
-		
-			writeHeatmapPropertiesEntry(fileout, "\t\"col_configuration\": ");
-			writeHeatmapPropertiesEntry(fileout, "\t\t{");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"data_type\": [\"" + args[7] + "\"],");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"order_method\": \"" + args[13] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"distance_metric\":  \"" + args[14] + "\",");
-			writeHeatmapPropertiesEntry(fileout, "\t\t\"agglomeration_method\": \"" + args[15] + "\",");
-			if (args[13].equals("Hierarchical")) {
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"order_file\": \"" + args[16] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"dendro_file\": \"" + args[17] + "\"");
-			}
-			writeHeatmapPropertiesEntry(fileout, "\t\t}");
-			writeHeatmapPropertiesEntry(fileout, "\t,");
-		
-			writeHeatmapPropertiesEntry(fileout, "\t\"classification_files\": [");
-			for (int pos = 19; pos < args.length-3; pos+=3) {
-				String type = "column";
-				String colorType = "discrete";
-				if (args[pos+2].contains("row")) {
-					type = "row";
-				}
-				if (args[pos+2].contains("continuous")) {
-					colorType = "continuous";
-				}
-				writeHeatmapPropertiesEntry(fileout, "\t\t{");
-				String fileName = new File(args[pos+1]).getName();
-				if (fileName.contains("."))
-					fileName = fileName.substring(0,fileName.lastIndexOf("."));
-				String className = args[pos];
-				if (className.length() > 25) {
-					className = className.substring(0, 25);
-				}
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"name\": \"" + className + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"path\": \"" + args[pos+1] + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"position\": \"" + type + "\",");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"color_map\": {");
-				writeHeatmapPropertiesEntry(fileout, "\t\t\"type\": \"" + colorType + "\"}");
-				if (pos == args.length-4) {
-					writeHeatmapPropertiesEntry(fileout, "\t\t}");
-				} else {
-					writeHeatmapPropertiesEntry(fileout, "\t\t},");
-				}
-			}
-			writeHeatmapPropertiesEntry(fileout, "\t],");
-			writeHeatmapPropertiesEntry(fileout, "\t\"output_location\": \"" + subdir + "\"");
-			writeHeatmapPropertiesEntry(fileout, "}");
+			writeHeatmapPropertiesEntry(fileout, jsonString);
 			if (debugOutput) {
 				System.out.println("END properties file");
 			}
-			
 			fileout.close();
 		
+			//Execute heatmap data generator to create heat map
 			String genArgs[] = new String[] {"heatmapProperties.json"};
 			String errMsg = HeatmapDataGenerator.processHeatMap(genArgs);
 			if ((errMsg != EMPTY) && (errMsg.contains("BUILD ERROR"))) {
@@ -393,12 +97,12 @@ private static String BUILDER_VER = "Galaxy 2.3";
 				System.exit(1);
 			} else {
 				//Zip results
-				zipDirectory(tDir, args[args.length-1]);
+				zipDirectory(tDir, outputLocation);
 				System.exit(0);
 			}
 		} catch(Exception e) {
 			e.printStackTrace();
-			System.out.println( "Error in GalaxyMapGen e= "+ e.getMessage());
+			System.out.println( "FATAL ERROR: In GalaxyMapGen e= "+ e.getMessage());
 			System.exit(1);
 		}
 	}
@@ -409,64 +113,6 @@ private static String BUILDER_VER = "Galaxy 2.3";
 			System.out.println(dataOut);
 		}
 	}
-
-	public static void writeOutArgsAndParams(String[] args) {
-		System.out.println("BEGIN args");
-		for (int i=0;i<args.length;i++) {
-			System.out.println("args[" + i + "]: " + args[i]);
-		}
-		System.out.println("END args");
-		if (args[0].equals("advanced")) {
-			System.out.println("INSIDE ADVANCED MAP GENERATION");
-			System.out.println("<chm name> " + args[1]);
-			System.out.println("<chm description> " + args[2]);
-			System.out.println("<data layer name> " + args[3]);
-			System.out.println("<matrix file> " + args[4]);
-			System.out.println("<matrix coloring type> " + args[5]);
-			System.out.println("<row lable type> " + args[6]);
-			System.out.println("<column label type> " + args[7]);
-			System.out.println("<row order method> " + args[8]);
-			System.out.println("<row distance> " + args[9]);
-			System.out.println("<row agglomeration> " + args[10]);
-			System.out.println("<row order file> " + args[11]);
-			System.out.println("<row dendro file> " + args[12]);
-			System.out.println("<row tree cuts> " + args[13]);
-			System.out.println("<row top items> " + args[14]);
-			System.out.println("<col order method> " + args[15]);
-			System.out.println("<col distance> " + args[16]);
-			System.out.println("<col agglomeration> " + args[17]);
-			System.out.println("<col order file> " + args[18]);
-			System.out.println("<col dendro file> " + args[19]);
-			System.out.println("<col tree cuts> " + args[20]);
-			System.out.println("<col top items> " + args[21]);
-			System.out.println("<summary method> " + args[22]);
-			System.out.println("<matrix attribs> " + args[23]);
-			System.out.println("<classifications> " + args[24]);
-		} else {
-			System.out.println("INSIDE STANDARD MAP GENERATION");
-			System.out.println("<chm name> " + args[1]);
-			System.out.println("<chm description> " + args[2]);
-			System.out.println("<data layer name> " + args[3]);
-			System.out.println("<matrix file> " + args[4]);
-			System.out.println("<matrix coloring type> " + args[5]);
-			System.out.println("<row lable type> " + args[6]);
-			System.out.println("<column label type> " + args[7]);
-			System.out.println("<row order method> " + args[8]);
-			System.out.println("<row distance> " + args[9]);
-			System.out.println("<row agglomeration> " + args[10]);
-			System.out.println("<row order file> " + args[11]);
-			System.out.println("<row dendro file> " + args[12]);
-			System.out.println("<col order method> " + args[13]);
-			System.out.println("<col distance> " + args[14]);
-			System.out.println("<col agglomeration> " + args[15]);
-			System.out.println("<col order file> " + args[16]);
-			System.out.println("<col dendro file> " + args[17]);
-			System.out.println("<summary method> " + args[18]);
-			System.out.println("<classifications> " + args[19]);
-		}
-		System.out.println("BEGIN heatmapProperties.json");
-	}
-
 
 	public static void zipDirectory(File directoryToZip, String zipFileName) throws IOException {
 
