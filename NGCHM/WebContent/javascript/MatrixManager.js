@@ -830,6 +830,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 								getTile);
 			} else if (altLevelId) {
 				datalevels[levelId] = datalevels[altLevelId];
+				// Record all levels for which altLevelId is serving as an immediate alternate.
+				if (!alternateLevels.hasOwnProperty(altLevelId)) {
+					alternateLevels[altLevelId] = [];
+				}
+				alternateLevels[altLevelId].push (levelId);
 			}
 		}
 
@@ -897,9 +902,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 
 	// Display statistics about each loaded tile cache entry.
 	NgChm.MMGR.showTileCacheStats = function () {
-		for (const tileCacheName in tileCache) {
+		for (let tileCacheName in tileCache) {
 			const e = tileCache[tileCacheName];
-			if (e.state === 'loaded') {
+			if (e.state === 'ready') {
 				const loadTime = e.loadTime - e.fetchTime;
 				const loadTimePerKByte = loadTime / e.data.length * 1024;
 				console.log ({ tileCacheName, KBytes: e.data.length / 1024, loadTime, loadTimePerKByte });
@@ -915,7 +920,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	// Get the data for a tile, if it's loaded.
 	function getTileCacheData (tileCacheName) {
 		const entry = tileCache[tileCacheName];
-		if (entry && entry.state === 'loaded') {
+		if (entry && entry.state === 'ready') {
 			return entry.data;
 		} else {
 			return null;
@@ -924,13 +929,13 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 
 	// Set the data for the specified tile.
 	// Also broadcasts a message that the tile has been received.
-	function setTileCacheEntry (tileCacheName, arrayData) {
+	function setTileCacheData (tileCacheName, arrayData) {
 		const entry = tileCache[tileCacheName];
 		entry.loadTime = performance.now();
 		entry.data = arrayData;
-		entry.state = 'loaded';
-		const [ layer, level, row, col ] = tileCacheName.split('.');
-		sendCallBack(NgChm.MMGR.Event_NEWDATA, { layer, level, row, col });
+
+		entry.state = 'ready';
+		sendCallBack(NgChm.MMGR.Event_NEWDATA, Object.assign({},entry.props));
 	}
 
 	// Handle replies from tileio worker.
@@ -940,7 +945,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			if (debug) console.log({ m: 'Received message from tileLoader', e });
 			if (e.data.op === 'tileLoaded') {
 				const tiledata = new Float32Array(e.data.buffer);
-				setTileCacheEntry (e.data.job.tileCacheName, tiledata);
+				setTileCacheData (e.data.job.tileCacheName, tiledata);
 			} else if (e.data.op === 'tileLoadFailed') {
 				removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
 			} else {
@@ -951,23 +956,21 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	};
 
 	// Create the specified cache entry.
-	// Initiate loading of the tile data from URL, if supplied.
-	function createTileCacheEntry (tileCacheName, URL) {
-		tileCache[tileCacheName] = {
-			state: 'fetching',
+	function createTileCacheEntry (tileCacheName) {
+		const [ layer, level, row, col ] = tileCacheName.split('.');
+		return tileCache[tileCacheName] = {
+			state: 'new',
 			data: null,
+			props: { layer, level, row: row|0, col: col|0 },
 			fetchTime: performance.now(),
 			loadTime: 0.0	// Placeholder
 		};
-		if (URL) {
-			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
-		}
 	}
 
 	// Return true iff the specified tile has completed loading into the tile cache.
 	function haveTileData (tileCacheName) {
 		const td = tileCache[tileCacheName];
-		return td && td.state === 'loaded';
+		return td && td.state === 'ready';
 	}
 	
 	//Call the users call back function to let them know the chm is initialized or updated.
@@ -997,11 +1000,31 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 }	
 	//send to all event listeners
 	function sendAllListeners(event, tile){
-		for (var i = 0; i < eventListeners.length; i++) {
-			eventListeners[i](event, tile);
+		sendAll (event, tile);
+		if (event === NgChm.MMGR.Event_NEWDATA) {
+			// Also broadcast NEWDATA events to all layers for which tile.level is an alternate.
+			const { layer, level: mylevel, row, col } = tile;
+			const alts = getAllAlternateLevels (mylevel);
+			while (alts.length > 0) {
+				const level = alts.shift();
+				sendAll (NgChm.MMGR.Event_NEWDATA, {layer, level, row, col});
+			}
+		}
+
+		function sendAll (event, tile) {
+			for (var i = 0; i < eventListeners.length; i++) {
+				eventListeners[i](event, tile);
+			}
 		}
 	}
-	
+
+	// Recursively determine all levels for which level is an alternate.
+	function getAllAlternateLevels (level) {
+		const altlevs = alternateLevels.hasOwnProperty (level) ? alternateLevels[level] : [];
+		const pal = altlevs.map(lev => getAllAlternateLevels(lev));
+		return [...new Set(pal.concat(altlevs).flat())];  // Use [...Set] to ensure uniqueness
+	}
+
 	//Fetch a data tile if needed.
 	function getTile(layer, level, tileRow, tileColumn) {
 		var tileCacheName=layer + "." +level + "." + tileRow + "." + tileColumn;
@@ -1009,6 +1032,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			//Already have tile in cache - do nothing.
 			return;
 		}
+		createTileCacheEntry (tileCacheName);
+
 		var tileName=level + "." + tileRow + "." + tileColumn;  
 
   	//ToDo: need to limit the number of tiles retrieved.
@@ -1028,9 +1053,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 				URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+layer+"/"+level+"/"+tileName+".bin";
 
 			}
-			createTileCacheEntry (tileCacheName, URL);
+			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
 		} else {
-			createTileCacheEntry (tileCacheName, null);
 			//File fileSrc - get tile from zip
 			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.tile'];
 			if (typeof entry == 'undefined') {
@@ -1043,7 +1067,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			        var arrayBuffer = fr.result;
 			        var far32 = new Float32Array(arrayBuffer);
 			    	  
-			        setTileCacheEntry(tileCacheName, far32);
+			        setTileCacheData(tileCacheName, far32);
 			     }
 
 			     fr.readAsArrayBuffer(blob);		
