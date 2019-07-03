@@ -175,6 +175,7 @@ NgChm.UTIL.getBrowserType = function () {
  * size accordingly.
  **********************************************************************************/
 NgChm.UTIL.setBrowserMinFontSize = function () {
+	const minMinLabelSize = 5;
 	  var minSettingFound = 0;
 	  var el = document.createElement('div');
 	  document.body.appendChild(el);
@@ -185,7 +186,7 @@ NgChm.UTIL.setBrowserMinFontSize = function () {
 	  var least = 0;
 	  var most = 64;
 	  var middle; 
-	  for (var i = 0; i < 32; ++i) {
+	for (var i = 0; i < 32 && most >= minMinLabelSize; ++i) {
 	    middle = (least + most)/2;
 	    el.style.fontSize = middle + 'px';
 	    if (el.offsetHeight === minimumHeight) {
@@ -194,7 +195,7 @@ NgChm.UTIL.setBrowserMinFontSize = function () {
 	      most = middle;
 	    }
 	  }
-	  if (middle > 5) {
+	  if (middle > minMinLabelSize) {
 		  minSettingFound = middle;
 		  NgChm.DET.minLabelSize = Math.floor(middle) - 1;
 	  }
