@@ -1645,7 +1645,7 @@ NgChm.DET.labelElements = {};
 
 // Remove a label element.
 NgChm.DET.removeLabel = function (label) {
-	if (NgChm.DET.labelElements.hasOwnProperty (label)) {
+	if (NgChm.DET.oldLabelElements.hasOwnProperty (label)) {
 		console.log ('Removing label ' + label);
 		const e = NgChm.DET.oldLabelElements[label];
 		e.parent.removeChild(e.div);
