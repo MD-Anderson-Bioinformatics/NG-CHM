@@ -11,7 +11,7 @@ NgChm.SUM.boxCanvas = null;  //Secondary Heat Map Selection Box Canvas
 NgChm.SUM.gl = null; // WebGL Heat Map context
 NgChm.SUM.rcGl = null; // WebGL Row Class Bar context
 NgChm.SUM.ccGl = null; // WebGL Column Class Bar context
-NgChm.SUM.texHm = null;
+NgChm.SUM.summaryHeatMapCache = {};	// Cached summary heat maps for each layer
 NgChm.SUM.texRc = null;
 NgChm.SUM.texCc = null;
 NgChm.SUM.texHmProgram = null;
@@ -486,7 +486,6 @@ NgChm.SUM.initHeatMapGl = function() {
 			NgChm.SUM.gl.TEXTURE_MAG_FILTER, 
 			NgChm.SUM.gl.NEAREST);
 	
-	NgChm.SUM.texHm = NgChm.DRAW.createRenderBuffer (NgChm.SUM.totalWidth*NgChm.SUM.widthScale, NgChm.SUM.totalHeight*NgChm.SUM.heightScale, 1.0);
 }
 
 //Initialize webGl for the Row Class Bar Canvas
@@ -573,14 +572,21 @@ NgChm.SUM.initColClassGl = function() {
 
 // Create a summary heat map for the current data layer and display it.
 NgChm.SUM.buildSummaryTexture = function() {
+	let renderBuffer;
+	if (NgChm.SUM.summaryHeatMapCache.hasOwnProperty(NgChm.SEL.currentDl)) {
+		renderBuffer = NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl];
+	} else {
+		renderBuffer = NgChm.DRAW.createRenderBuffer (NgChm.SUM.totalWidth*NgChm.SUM.widthScale, NgChm.SUM.totalHeight*NgChm.SUM.heightScale, 1.0);
+		NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl] = renderBuffer;
+	}
 	NgChm.SUM.eventTimer = 0;
-	NgChm.SUM.renderSummaryHeatmap(NgChm.SUM.texHm);
-	NgChm.SUM.drawHeatMapRenderBuffer(NgChm.SUM.texHm);
+	NgChm.SUM.renderSummaryHeatmap(renderBuffer);
+	NgChm.SUM.drawHeatMapRenderBuffer(renderBuffer);
 };
 
 // Redisplay the summary heat map for the current data layer.
 NgChm.SUM.drawHeatMap = function() {
-	NgChm.SUM.drawHeatMapRenderBuffer (NgChm.SUM.texHm);
+	NgChm.SUM.drawHeatMapRenderBuffer (NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl]);
 };
 
 // Renders the Summary Heat Map for the current data layer into the specified renderBuffer.
