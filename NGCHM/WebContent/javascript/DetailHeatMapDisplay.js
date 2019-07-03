@@ -1237,18 +1237,20 @@ NgChm.DET.detailInit = function () {
 		NgChm.DET.setDetailDataSize(12);
 	}
 	
-	NgChm.DET.detSetupGl();
-	NgChm.DET.detInitGl();
-    NgChm.SEL.updateSelection();
-	if (NgChm.UTIL.getURLParameter("selected") !== ""){
-		var selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
-		document.getElementById("search_text").value = selected;
-		NgChm.DET.detailSearch();
-		NgChm.SUM.drawRowSelectionMarks();
-		NgChm.SUM.drawColSelectionMarks();
-		NgChm.SUM.drawTopItems();
-	}
-	NgChm.DET.initialized = true;
+	setTimeout (function() {
+		NgChm.DET.detSetupGl();
+		NgChm.DET.detInitGl();
+		NgChm.SEL.updateSelection();
+		if (NgChm.UTIL.getURLParameter("selected") !== ""){
+			var selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
+			document.getElementById("search_text").value = selected;
+			NgChm.DET.detailSearch();
+			NgChm.SUM.drawRowSelectionMarks();
+			NgChm.SUM.drawColSelectionMarks();
+			NgChm.SUM.drawTopItems();
+		}
+		NgChm.DET.initialized = true;
+	}, 1);
 }
 
 NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip the resize routine and help speed up the drawing routine for some cases

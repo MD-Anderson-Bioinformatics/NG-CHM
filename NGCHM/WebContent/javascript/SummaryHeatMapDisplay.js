@@ -162,33 +162,36 @@ NgChm.SUM.summaryInit = function(applying) {
 	}
 
 	nameDiv.innerHTML = "<b>NG-CHM Heat Map:</b>&nbsp;&nbsp;"+mapName;
-	NgChm.SUM.setupHeatMapGl();
-	NgChm.SUM.initHeatMapGl();
-	NgChm.SUM.buildSummaryTexture();
-	if (NgChm.SUM.rCCanvas.width > 0) {
-		NgChm.SUM.setupRowClassGl();
-		NgChm.SUM.initRowClassGl();
-		NgChm.SUM.buildRowClassTexture();
-	}
-	if (NgChm.SUM.cCCanvas.height > 0) {
-		NgChm.SUM.setupColClassGl();
-		NgChm.SUM.initColClassGl();
-		NgChm.SUM.buildColClassTexture();
-	}
-	NgChm.SUM.drawLeftCanvasBox();
 
-	NgChm.SUM.setSelectionDivSize();
-	NgChm.SUM.clearSelectionMarks();
-	NgChm.SUM.drawRowSelectionMarks();
-	NgChm.SUM.drawColSelectionMarks();
-	NgChm.SUM.drawTopItems();
-	//Labels only re-drawn in NGCHM_GUI_Builder
-	if (document.getElementById('divider').style.display === 'none') {
-	 	NgChm.SUM.drawColClassBarLabels(); 
-		NgChm.SUM.drawRowClassBarLabels(); 
-	}
- 	//NgChm.SUM.drawColClassBarLegends(true); Temporarily removed legends from summary
-	//NgChm.SUM.drawRowClassBarLegends(true); they may or may not come back later
+	setTimeout (function() {
+		NgChm.SUM.setupHeatMapGl();
+		NgChm.SUM.initHeatMapGl();
+		NgChm.SUM.buildSummaryTexture();
+		if (NgChm.SUM.rCCanvas.width > 0) {
+			NgChm.SUM.setupRowClassGl();
+			NgChm.SUM.initRowClassGl();
+			NgChm.SUM.buildRowClassTexture();
+		}
+		if (NgChm.SUM.cCCanvas.height > 0) {
+			NgChm.SUM.setupColClassGl();
+			NgChm.SUM.initColClassGl();
+			NgChm.SUM.buildColClassTexture();
+		}
+		NgChm.SUM.drawLeftCanvasBox();
+
+		NgChm.SUM.setSelectionDivSize();
+		NgChm.SUM.clearSelectionMarks();
+		NgChm.SUM.drawRowSelectionMarks();
+		NgChm.SUM.drawColSelectionMarks();
+		NgChm.SUM.drawTopItems();
+		//Labels only re-drawn in NGCHM_GUI_Builder
+		if (document.getElementById('divider').style.display === 'none') {
+			NgChm.SUM.drawColClassBarLabels(); 
+			NgChm.SUM.drawRowClassBarLabels(); 
+		}
+		//NgChm.SUM.drawColClassBarLegends(true); Temporarily removed legends from summary
+		//NgChm.SUM.drawRowClassBarLegends(true); they may or may not come back later
+	}, 1);
 }
 
 // Sets summary and detail chm to the config height and width.
