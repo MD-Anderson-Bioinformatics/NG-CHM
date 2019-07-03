@@ -1170,7 +1170,7 @@ NgChm.DET.setDetCanvasBoxSize = function () {
 
 // Callback that is notified every time there is an update to the heat map 
 // initialize, new data, etc.  This callback draws the summary heat map.
-NgChm.DET.processDetailMapUpdate = function (event, level) {
+NgChm.DET.processDetailMapUpdate = function (event, tile) {
 
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		NgChm.DET.detailInit();

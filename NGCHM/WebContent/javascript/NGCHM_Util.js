@@ -440,7 +440,7 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
  * FUNCTION - builderViewSizing: This function handles the resizing of the summary
  * panel for the builder in cases where ONLY the summary panel is being drawn.  
  **********************************************************************************/
-NgChm.UTIL.builderViewSizing = function (event, level) {
+NgChm.UTIL.builderViewSizing = function (event, tile) {
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		document.getElementById('detail_chm').style.width = '4%';
 		document.getElementById('summary_chm').style.width = '50%';

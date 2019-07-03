@@ -953,7 +953,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		entry.data = arrayData;
 		entry.state = 'loaded';
 		const [ layer, level, row, col ] = tileCacheName.split('.');
-		sendCallBack(NgChm.MMGR.Event_NEWDATA, level, layer);
+		sendCallBack(NgChm.MMGR.Event_NEWDATA, { layer, level, row, col });
 	}
 
 	// Handle replies from tileio worker.
@@ -994,11 +994,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	//Call the users call back function to let them know the chm is initialized or updated.
-	function sendCallBack(event, level, tileDl) {
+	function sendCallBack(event, tile) {
 
 		//Initialize event
 		if ((event == NgChm.MMGR.Event_INITIALIZED) || (event == NgChm.MMGR.Event_JSON) ||
-			((event == NgChm.MMGR.Event_NEWDATA) && (level == NgChm.MMGR.THUMBNAIL_LEVEL))) {
+			((event == NgChm.MMGR.Event_NEWDATA) && (tile.level == NgChm.MMGR.THUMBNAIL_LEVEL))) {
 			//Only send initialized status if several conditions are met: need all summary JSON and thumb nail.
 			if ((mapData != null) &&
 				(mapConfig != null) &&
@@ -1011,19 +1011,17 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			//Unlikely, but possible to get init finished after all the summary tiles.
 			//As a back stop, if we already have the top left summary tile, send a data update event too.
 			if (haveTileData(NgChm.SEL.currentDl+"."+NgChm.MMGR.SUMMARY_LEVEL+".1.1")) {
-				sendAllListeners(NgChm.MMGR.Event_NEWDATA, NgChm.MMGR.SUMMARY_LEVEL);
+				sendAllListeners(NgChm.MMGR.Event_NEWDATA, { layer: NgChm.SEL.currentDl, level: NgChm.MMGR.SUMMARY_LEVEL, row: 1, col: 1});
 			}
 		} else	if ((event == NgChm.MMGR.Event_NEWDATA) && (initialized == 1)) {
 			//Got a new tile, notify drawing code via callback.
-			 if (tileDl == NgChm.SEL.currentDl) {
-				sendAllListeners(event, level);
-			 }
+			sendAllListeners(event, tile);
 		}
 }	
 	//send to all event listeners
-	function sendAllListeners(event, level){
+	function sendAllListeners(event, tile){
 		for (var i = 0; i < eventListeners.length; i++) {
-			eventListeners[i](event, level);
+			eventListeners[i](event, tile);
 		}
 	}
 	
