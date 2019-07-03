@@ -56,15 +56,8 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 			classOrderFound = true;
 		}
 		var searchValue = configObj[key];
-		var found = false;
-		for (var key in mapObj) {
-			if (key === searchItem) {
-					found = true;
-					break;
-			}
-		}
 		//If config object not found in heatmap config, add object with default
-		if (!found) {
+		if (!mapObj.hasOwnProperty(searchItem)) {
 	    	if (!classOrderFound) { 
 				var searchPath = searchItem.substring(1, searchItem.lastIndexOf("."));
 				var newItem = searchItem.substring(searchItem.lastIndexOf(".")+1, searchItem.length);
