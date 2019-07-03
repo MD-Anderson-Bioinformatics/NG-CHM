@@ -812,78 +812,34 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	function addDataLayers(mapConfig) {
 		//Create heat map data objects for each data level.  All maps should have thumb nail and full level.
 		//Each data layer keeps a pointer to the next lower level data layer.
-		const levels = mapConfig.data_configuration.map_information.levels;
+		const levelsConf = mapConfig.data_configuration.map_information.levels;
 		const datalayers = mapConfig.data_configuration.map_information.data_layer
-        
-        //Thumb nail
-		if (levels.tn !== undefined) {
-			datalevels[NgChm.MMGR.THUMBNAIL_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-                                                         NgChm.MMGR.THUMBNAIL_LEVEL,
-                                                         levels.tn,
-                                                         datalayers,
-                                                         null,
-                                                         getTileCacheData,
-                                                         getTile); //special callback for thumb nail.
-		}
-      
 
-		//Summary
-		if (levels.s !== undefined) {
-			datalevels[NgChm.MMGR.SUMMARY_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-                                                       NgChm.MMGR.SUMMARY_LEVEL,
-                                                       levels.s,
-                                                       datalayers,
-                                                       datalevels[NgChm.MMGR.THUMBNAIL_LEVEL],
-                                                       getTileCacheData,
-                                                       getTile);
-		} else {			
-			//If no summary level, set the summary to be the thumb nail.
-			datalevels[NgChm.MMGR.SUMMARY_LEVEL] = datalevels[NgChm.MMGR.THUMBNAIL_LEVEL];
+		// Create a HeatMapData object for level levelId if it's defined in the map configuration.
+		// Set the level's lower level to the HeatMapData object for lowerLevelId (if it's defined).
+		// If levelId is not defined in the map configuration, create an alias to the
+		// HeatMapData object for altLevelId (if it's defined).
+		function createLevel (levelId, lowerLevelId, altLevelId) {
+			if (levelsConf.hasOwnProperty (levelId)) {
+				datalevels[levelId] = new NgChm.MMGR.HeatMapData(heatMapName,
+								levelId,
+								levelsConf[levelId],
+								datalayers,
+								lowerLevelId ? datalevels[lowerLevelId] : null,
+								getTileCacheData,
+								getTile);
+			} else if (altLevelId) {
+				datalevels[levelId] = datalevels[altLevelId];
+			}
 		}
 
-		//Detail level
-		if (levels.d !== undefined) {
-			datalevels[NgChm.MMGR.DETAIL_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-                                                    NgChm.MMGR.DETAIL_LEVEL,
-                                                    levels.d,
-                                                    datalayers,
-                                                    datalevels[NgChm.MMGR.SUMMARY_LEVEL],
-                                                    getTileCacheData,
-                                                    getTile);
-		} else {
-			//If no detail layer, set it to summary.
-			datalevels[NgChm.MMGR.DETAIL_LEVEL] = datalevels[NgChm.MMGR.SUMMARY_LEVEL];
-		}
+		createLevel (NgChm.MMGR.THUMBNAIL_LEVEL);
+		createLevel (NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.THUMBNAIL_LEVEL, NgChm.MMGR.THUMBNAIL_LEVEL);
+		createLevel (NgChm.MMGR.DETAIL_LEVEL, NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.SUMMARY_LEVEL);
+		createLevel (NgChm.MMGR.RIBBON_VERT_LEVEL, NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.DETAIL_LEVEL);
+		createLevel (NgChm.MMGR.RIBBON_HOR_LEVEL, NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.DETAIL_LEVEL);
 
-		
-				
-		//Ribbon Vertical
-		if (levels.rv !== undefined) {
-			datalevels[NgChm.MMGR.RIBBON_VERT_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-	        		                                         NgChm.MMGR.RIBBON_VERT_LEVEL,
-	        		                                         levels.rv,
-	                                                         datalayers,
-	        		                                         datalevels[NgChm.MMGR.SUMMARY_LEVEL],
-	        		                                         getTileCacheData,
-	        		                                         getTile);
-		} else {
-			datalevels[NgChm.MMGR.RIBBON_VERT_LEVEL] = datalevels[NgChm.MMGR.DETAIL_LEVEL];
-		}
-      
-		//Ribbon Horizontal
-		if (levels.rh !== undefined) {
-			datalevels[NgChm.MMGR.RIBBON_HOR_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-	        		                                         NgChm.MMGR.RIBBON_HOR_LEVEL,
-	        		                                         levels.rh,
-	                                                         datalayers,
-	        		                                         datalevels[NgChm.MMGR.SUMMARY_LEVEL],
-	        		                                         getTileCacheData,
-	        		                                         getTile);
-		} else {
-			datalevels[NgChm.MMGR.RIBBON_HOR_LEVEL] = datalevels[NgChm.MMGR.DETAIL_LEVEL];
-		}	
-		
-		prefetchInitialTiles(datalayers, datalevels, levels);
+		prefetchInitialTiles(datalayers, datalevels, levelsConf);
 		sendCallBack(NgChm.MMGR.Event_INITIALIZED);
 	}
 	
