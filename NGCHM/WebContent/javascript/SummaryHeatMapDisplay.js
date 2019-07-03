@@ -11,12 +11,9 @@ NgChm.SUM.boxCanvas = null;  //Secondary Heat Map Selection Box Canvas
 NgChm.SUM.gl = null; // WebGL Heat Map context
 NgChm.SUM.rcGl = null; // WebGL Row Class Bar context
 NgChm.SUM.ccGl = null; // WebGL Column Class Bar context
-NgChm.SUM.texHmParams = null;
-NgChm.SUM.texRcParams = null;
-NgChm.SUM.texCcParams = null;
-NgChm.SUM.texHmPixels = null;
-NgChm.SUM.texRcPixels = null;
-NgChm.SUM.texCcPixels = null;
+NgChm.SUM.texHm = null;
+NgChm.SUM.texRc = null;
+NgChm.SUM.texCc = null;
 NgChm.SUM.texHmProgram = null;
 NgChm.SUM.texRcProgram = null;
 NgChm.SUM.texCcProgram = null;
@@ -489,14 +486,7 @@ NgChm.SUM.initHeatMapGl = function() {
 			NgChm.SUM.gl.TEXTURE_MAG_FILTER, 
 			NgChm.SUM.gl.NEAREST);
 	
-	NgChm.SUM.texHmParams = {};
-	var texWidth = null, texHeight = null, texData;
-	texWidth = NgChm.SUM.totalWidth*NgChm.SUM.widthScale;
-	texHeight = NgChm.SUM.totalHeight*NgChm.SUM.heightScale;
-	texData = new ArrayBuffer(texWidth * texHeight * NgChm.SUM.BYTE_PER_RGBA);
-	NgChm.SUM.texHmPixels = new Uint8Array(texData);
-	NgChm.SUM.texHmParams['width'] = texWidth;
-	NgChm.SUM.texHmParams['height'] = texHeight;
+	NgChm.SUM.texHm = NgChm.DRAW.createRenderBuffer (NgChm.SUM.totalWidth*NgChm.SUM.widthScale, NgChm.SUM.totalHeight*NgChm.SUM.heightScale, 1.0);
 }
 
 //Initialize webGl for the Row Class Bar Canvas
@@ -537,14 +527,7 @@ NgChm.SUM.initRowClassGl = function() {
 			NgChm.SUM.rcGl.TEXTURE_MAG_FILTER, 
 			NgChm.SUM.rcGl.NEAREST);
 	
-	NgChm.SUM.texRcParams = {};
-	var texWidth = null, texHeight = null, texData;
-	texWidth = NgChm.SUM.rowClassBarWidth*NgChm.SUM.widthScale;
-	texHeight = NgChm.SUM.totalHeight;
-	texData = new ArrayBuffer(texWidth * texHeight * NgChm.SUM.BYTE_PER_RGBA);
-	NgChm.SUM.texRcPixels = new Uint8Array(texData);
-	NgChm.SUM.texRcParams['width'] = texWidth;
-	NgChm.SUM.texRcParams['height'] = texHeight;
+	NgChm.SUM.texRc = NgChm.DRAW.createRenderBuffer (NgChm.SUM.rowClassBarWidth*NgChm.SUM.widthScale, NgChm.SUM.totalHeight, 1.0);
 }
 
 //Initialize webGl for the Column Class Bar Canvas
@@ -585,14 +568,7 @@ NgChm.SUM.initColClassGl = function() {
 			NgChm.SUM.ccGl.TEXTURE_MAG_FILTER, 
 			NgChm.SUM.ccGl.NEAREST);
 	
-	NgChm.SUM.texCcParams = {};
-	var texWidth = null, texHeight = null, texData;
-	texWidth = NgChm.SUM.totalWidth*NgChm.SUM.widthScale;
-	texHeight = NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale;
-	texData = new ArrayBuffer(texWidth * texHeight * NgChm.SUM.BYTE_PER_RGBA);
-	NgChm.SUM.texCcPixels = new Uint8Array(texData);
-	NgChm.SUM.texCcParams['width'] = texWidth;
-	NgChm.SUM.texCcParams['height'] = texHeight;
+	NgChm.SUM.texCc = NgChm.DRAW.createRenderBuffer (NgChm.SUM.totalWidth*NgChm.SUM.widthScale, NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale, 1.0);
 }
 
 //Draws Heat Map into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
@@ -624,7 +600,7 @@ NgChm.SUM.buildSummaryTexture = function() {
 		}
 		for (var j = 0; j < NgChm.SUM.heightScale*NgChm.SUM.widthScale; j++) { // why is this heightScale * widthScale? why can't it just be heightScale??
 			for (var k = 0; k < line.length; k++){
-				NgChm.SUM.texHmPixels[pos] = line[k];
+				NgChm.SUM.texHm.pixels[pos] = line[k];
 				pos++;
 			}
 		}
@@ -635,7 +611,7 @@ NgChm.SUM.buildSummaryTexture = function() {
 
 //Draws Row Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
 NgChm.SUM.buildRowClassTexture = function() {
-	var dataBuffer = NgChm.SUM.texRcPixels;
+	var dataBuffer = NgChm.SUM.texRc.pixels;
 	var classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
 	var classBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
 	var classBarsData = NgChm.heatMap.getRowClassificationData(); 
@@ -676,7 +652,7 @@ NgChm.SUM.buildRowClassTexture = function() {
 	
 //Draws Column Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
 NgChm.SUM.buildColClassTexture = function() {
-	var dataBuffer = NgChm.SUM.texCcPixels;
+	var dataBuffer = NgChm.SUM.texCc.pixels;
 	NgChm.DET.removeLabel ("missingSumColClassBars");
 	var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
 	var classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
@@ -735,12 +711,12 @@ NgChm.SUM.drawHeatMap = function() {
 			NgChm.SUM.gl.TEXTURE_2D, 
 			0, 
 			NgChm.SUM.gl.RGBA, 
-			NgChm.SUM.texHmParams['width'], 
-			NgChm.SUM.texHmParams['height'], 
+			NgChm.SUM.texHm.width,
+			NgChm.SUM.texHm.height,
 			0, 
 			NgChm.SUM.gl.RGBA,
 			NgChm.SUM.gl.UNSIGNED_BYTE, 
-			NgChm.SUM.texHmPixels);
+			NgChm.SUM.texHm.pixels);
 	NgChm.SUM.gl.drawArrays(NgChm.SUM.gl.TRIANGLE_STRIP, 0, NgChm.SUM.gl.buffer.numItems);
 }
 
@@ -764,12 +740,12 @@ NgChm.SUM.drawRowClassBars = function() {
 			NgChm.SUM.rcGl.TEXTURE_2D, 
 			0, 
 			NgChm.SUM.rcGl.RGBA, 
-			NgChm.SUM.texRcParams['width'], 
-			NgChm.SUM.texRcParams['height'], 
+			NgChm.SUM.texRc.width,
+			NgChm.SUM.texRc.height,
 			0, 
 			NgChm.SUM.rcGl.RGBA,
 			NgChm.SUM.rcGl.UNSIGNED_BYTE, 
-			NgChm.SUM.texRcPixels);
+			NgChm.SUM.texRc.pixels);
 	NgChm.SUM.rcGl.drawArrays(NgChm.SUM.rcGl.TRIANGLE_STRIP, 0, NgChm.SUM.rcGl.buffer.numItems);
 }
 
@@ -793,12 +769,12 @@ NgChm.SUM.drawColClassBars = function() {
 			NgChm.SUM.ccGl.TEXTURE_2D, 
 			0, 
 			NgChm.SUM.ccGl.RGBA, 
-			NgChm.SUM.texCcParams['width'], 
-			NgChm.SUM.texCcParams['height'], 
+			NgChm.SUM.texCc.width,
+			NgChm.SUM.texCc.height,
 			0, 
 			NgChm.SUM.ccGl.RGBA,
 			NgChm.SUM.ccGl.UNSIGNED_BYTE, 
-			NgChm.SUM.texCcPixels);
+			NgChm.SUM.texCc.pixels);
 	NgChm.SUM.ccGl.drawArrays(NgChm.SUM.ccGl.TRIANGLE_STRIP, 0, NgChm.SUM.ccGl.buffer.numItems);
 }
 

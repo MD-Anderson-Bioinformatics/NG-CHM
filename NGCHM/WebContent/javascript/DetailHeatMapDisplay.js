@@ -4,8 +4,7 @@ NgChm.createNS('NgChm.DET');
 NgChm.DET.canvas = null;
 NgChm.DET.boxCanvas = null;  //canvas on top of WebGL canvas for selection box 
 NgChm.DET.gl = null; // WebGL contexts
-NgChm.DET.textureParams = null;
-NgChm.DET.texPixels = null;
+NgChm.DET.texHm = null;
 NgChm.DET.uScale = null;
 NgChm.DET.uTranslate = null;
 
@@ -1385,15 +1384,15 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 					//IF the line being drawn was comprised entirely of cut values, draw an empty white line as the horizontal grid line,
 					//ELSE draw the normal grid line as the horizontal grid line
 					if (isHorizCut === true) {
-						NgChm.DET.texPixels[pos]=cutsLine[k];
+						NgChm.DET.texHm.pixels[pos]=cutsLine[k];
 					} else {
-						NgChm.DET.texPixels[pos]=gridLine[k];
+						NgChm.DET.texHm.pixels[pos]=gridLine[k];
 					}
 					pos++;
 				}
 			} else {
 				for (k = 0; k < line.length; k++) {
-					NgChm.DET.texPixels[pos]=line[k];
+					NgChm.DET.texHm.pixels[pos]=line[k];
 					pos++;
 				}
 			}
@@ -1421,12 +1420,12 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 			NgChm.DET.gl.TEXTURE_2D, 
 			0, 
 			NgChm.DET.gl.RGBA, 
-			NgChm.DET.textureParams['width'], 
-			NgChm.DET.textureParams['height'], 
+			NgChm.DET.texHm.width,
+			NgChm.DET.texHm.height,
 			0, 
 			NgChm.DET.gl.RGBA,
 			NgChm.DET.gl.UNSIGNED_BYTE, 
-			NgChm.DET.texPixels);
+			NgChm.DET.texHm.pixels);
 	NgChm.DET.gl.uniform2fv(NgChm.DET.uScale, NgChm.DET.canvasScaleArray);
 	NgChm.DET.gl.uniform2fv(NgChm.DET.uTranslate, NgChm.DET.canvasTranslateArray);
 	NgChm.DET.gl.drawArrays(NgChm.DET.gl.TRIANGLE_STRIP, 0, NgChm.DET.gl.buffer.numItems);
@@ -2174,7 +2173,7 @@ NgChm.DET.drawColorPlotColClassBar = function(pos, rowClassBarWidth, start, leng
 	for (var j = 0; j < currentClassBar.height-NgChm.DET.paddingHeight; j++){ // draw the class bar into the dataBuffer
 		pos += (rowClassBarWidth + 1)*NgChm.SUM.BYTE_PER_RGBA;
 		for (var k = 0; k < line.length; k++) { 
-			NgChm.DET.texPixels[pos] = line[k];
+			NgChm.DET.texHm.pixels[pos] = line[k];
 			pos++;
 		}
 		pos+=NgChm.SUM.BYTE_PER_RGBA;
@@ -2198,21 +2197,21 @@ NgChm.DET.drawScatterBarPlotColClassBar = function(pos, height, classBarValues, 
 			var posVal = row[k];
 			for (var j = 0; j < NgChm.DET.dataBoxWidth; j++) {
 				if (posVal == 1) {
-					NgChm.DET.texPixels[pos] = barFgColor['r'];
-					NgChm.DET.texPixels[pos+1] = barFgColor['g'];
-					NgChm.DET.texPixels[pos+2] = barFgColor['b'];
-					NgChm.DET.texPixels[pos+3] = barFgColor['a'];
+					NgChm.DET.texHm.pixels[pos] = barFgColor['r'];
+					NgChm.DET.texHm.pixels[pos+1] = barFgColor['g'];
+					NgChm.DET.texHm.pixels[pos+2] = barFgColor['b'];
+					NgChm.DET.texHm.pixels[pos+3] = barFgColor['a'];
 				} else if (posVal == 2) {
-					NgChm.DET.texPixels[pos] = barCutColor['r'];
-					NgChm.DET.texPixels[pos+1] = barCutColor['g'];
-					NgChm.DET.texPixels[pos+2] = barCutColor['b'];
-					NgChm.DET.texPixels[pos+3] = barCutColor['a'];
+					NgChm.DET.texHm.pixels[pos] = barCutColor['r'];
+					NgChm.DET.texHm.pixels[pos+1] = barCutColor['g'];
+					NgChm.DET.texHm.pixels[pos+2] = barCutColor['b'];
+					NgChm.DET.texHm.pixels[pos+3] = barCutColor['a'];
 				} else {
 					if (currentClassBar.subBgColor !== "#FFFFFF") {
-						NgChm.DET.texPixels[pos] = barBgColor['r'];
-						NgChm.DET.texPixels[pos+1] = barBgColor['g'];
-						NgChm.DET.texPixels[pos+2] = barBgColor['b'];
-						NgChm.DET.texPixels[pos+3] = barBgColor['a'];
+						NgChm.DET.texHm.pixels[pos] = barBgColor['r'];
+						NgChm.DET.texHm.pixels[pos+1] = barBgColor['g'];
+						NgChm.DET.texHm.pixels[pos+2] = barBgColor['b'];
+						NgChm.DET.texHm.pixels[pos+3] = barBgColor['a'];
 					}
 				}
 				pos+=NgChm.SUM.BYTE_PER_RGBA;
@@ -2474,10 +2473,10 @@ NgChm.DET.drawColorPlotRowClassBar = function(pos, start, length, currentClassBa
 		var color = colorMap.getClassificationColor(val);
 		for (var boxRows = 0; boxRows < NgChm.DET.dataBoxHeight; boxRows++) { // draw this color to the proper height
 			for (var k = 0; k < currentClassBar.height-NgChm.DET.paddingHeight; k++){ // draw this however thick it needs to be
-				NgChm.DET.texPixels[pos] = color['r'];
-				NgChm.DET.texPixels[pos + 1] = color['g'];
-				NgChm.DET.texPixels[pos + 2] = color['b'];
-				NgChm.DET.texPixels[pos + 3] = color['a'];
+				NgChm.DET.texHm.pixels[pos] = color['r'];
+				NgChm.DET.texHm.pixels[pos + 1] = color['g'];
+				NgChm.DET.texHm.pixels[pos + 2] = color['b'];
+				NgChm.DET.texHm.pixels[pos + 3] = color['a'];
 				pos+=NgChm.SUM.BYTE_PER_RGBA;	// 4 bytes per color
 			}
 			// padding between class bars
@@ -2499,21 +2498,21 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(pos, start, length, height, c
 				var row = matrix[i];
 				var posVal = row[h];
 				if (posVal == 1) {
-					NgChm.DET.texPixels[pos] = barFgColor['r'];
-					NgChm.DET.texPixels[pos+1] = barFgColor['g'];
-					NgChm.DET.texPixels[pos+2] = barFgColor['b'];
-					NgChm.DET.texPixels[pos+3] = barFgColor['a'];
+					NgChm.DET.texHm.pixels[pos] = barFgColor['r'];
+					NgChm.DET.texHm.pixels[pos+1] = barFgColor['g'];
+					NgChm.DET.texHm.pixels[pos+2] = barFgColor['b'];
+					NgChm.DET.texHm.pixels[pos+3] = barFgColor['a'];
 				} else if (posVal == 2) {
-					NgChm.DET.texPixels[pos] = barCutColor['r'];
-					NgChm.DET.texPixels[pos+1] = barCutColor['g'];
-					NgChm.DET.texPixels[pos+2] = barCutColor['b'];
-					NgChm.DET.texPixels[pos+3] = barCutColor['a'];
+					NgChm.DET.texHm.pixels[pos] = barCutColor['r'];
+					NgChm.DET.texHm.pixels[pos+1] = barCutColor['g'];
+					NgChm.DET.texHm.pixels[pos+2] = barCutColor['b'];
+					NgChm.DET.texHm.pixels[pos+3] = barCutColor['a'];
 				} else {
 					if (currentClassBar.subBgColor !== "#FFFFFF") {
-						NgChm.DET.texPixels[pos] = barBgColor['r'];
-						NgChm.DET.texPixels[pos+1] = barBgColor['g'];
-						NgChm.DET.texPixels[pos+2] = barBgColor['b'];
-						NgChm.DET.texPixels[pos+3] = barBgColor['a'];
+						NgChm.DET.texHm.pixels[pos] = barBgColor['r'];
+						NgChm.DET.texHm.pixels[pos+1] = barBgColor['g'];
+						NgChm.DET.texHm.pixels[pos+2] = barBgColor['b'];
+						NgChm.DET.texHm.pixels[pos+3] = barBgColor['a'];
 					}
 				}
 				pos+=NgChm.SUM.BYTE_PER_RGBA;
@@ -3017,15 +3016,9 @@ NgChm.DET.detInitGl = function () {
 			NgChm.DET.gl.TEXTURE_MAG_FILTER, 
 			NgChm.DET.gl.NEAREST);
 	
-	NgChm.DET.textureParams = {};
-
-	var texWidth = null, texHeight = null, texData;
-	texWidth = NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
-	texHeight = NgChm.DET.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column");
-	texData = new ArrayBuffer(texWidth * texHeight * 4);
-	NgChm.DET.texPixels = new Uint8Array(texData);
-	NgChm.DET.textureParams['width'] = texWidth;
-	NgChm.DET.textureParams['height'] = texHeight; 
+	const texWidth = NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
+	const texHeight = NgChm.DET.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column");
+	NgChm.DET.texHm = NgChm.DRAW.createRenderBuffer (texWidth, texHeight, 1.0);
 }
 
 
