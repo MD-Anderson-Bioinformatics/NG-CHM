@@ -88,19 +88,31 @@ NgChm.MMGR.createWebTileLoader = function () {
 	// Define worker script.
 	let wS = `"use strict";`
 	wS += `const debug = ${debug};`;
+	wS += `const maxActiveRequests = 2;`; // Maximum number of tile requests that can be in flight concurrently
+	wS += `var active = 0;`;              // Number of tile requests in flight
+	wS += `const pending = [];`;          // Additional tile requests
 
 	// The following function is stringified and sent to the web loader.
-	function loadTile (tileCacheName, URL) {
+	function loadTile (job) {
+		if (active === maxActiveRequests) {
+			pending.push(job);
+			return;
+		}
+		active++;
 		const req = new XMLHttpRequest();
-		req.open("GET", URL, true);
+		req.open("GET", job.URL, true);
 		req.responseType = "arraybuffer";
 		req.onreadystatechange = function () {
 			if (req.readyState == req.DONE) {
+				active--;
+				if (pending.length > 0) {
+					loadTile (pending.shift());
+				}
 				if (req.status != 200) {
-					postMessage({ op: 'tileLoadFailed', tileCacheName });
+					postMessage({ op: 'tileLoadFailed', job });
 				} else {
 					// Transfer buffer to main thread.
-					postMessage({ op: 'tileLoaded', tileCacheName, buffer: req.response }, [req.response]);
+					postMessage({ op: 'tileLoaded', job, buffer: req.response }, [req.response]);
 				}
 			}
 		};
@@ -111,7 +123,7 @@ NgChm.MMGR.createWebTileLoader = function () {
 	// This function will be stringified and sent to the web loader.
 	function handleMessage(e) {
 		if (debug) console.log({ m: 'Worker: got message', e, t: performance.now() });
-		if (e.data.op === 'loadTile') { loadTile (e.data.tileCacheName, e.data.URL); }
+		if (e.data.op === 'loadTile') { loadTile (e.data.job); }
 	}
 	wS += handleMessage.toString();
 
@@ -972,9 +984,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			if (debug) console.log({ m: 'Received message from tileLoader', e });
 			if (e.data.op === 'tileLoaded') {
 				const tiledata = new Float32Array(e.data.buffer);
-				setTileCacheEntry (e.data.tileCacheName, tiledata);
+				setTileCacheEntry (e.data.job.tileCacheName, tiledata);
 			} else if (e.data.op === 'tileLoadFailed') {
-				removeTileCacheEntry (e.data.tileCacheName);  // Allow another fetch attempt.
+				removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
 			} else {
 				console.log({ m: 'connectWebTileLoader: unknown op', e });
 			}
@@ -992,7 +1004,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			loadTime: 0.0	// Placeholder
 		};
 		if (URL) {
-			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', tileCacheName, URL });
+			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
 		}
 	}
 
