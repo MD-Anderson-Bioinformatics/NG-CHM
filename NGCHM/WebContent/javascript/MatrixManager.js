@@ -144,6 +144,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	var mapConfig = null;
 	var mapData = null;
 	var datalevels = {};
+	const alternateLevels = {};
 	var tileCache = {};
 	var zipFiles = {};
 	var colorMapMgr;
