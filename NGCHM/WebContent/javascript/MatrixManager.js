@@ -87,26 +87,35 @@ NgChm.MMGR.createWebTileLoader = function () {
 
 	// Define worker script.
 	let wS = `"use strict";`
-	wS += `function loadTile (tileCacheName, URL) {
-const req = new XMLHttpRequest();
-req.open("GET", URL, true);
-req.responseType = "arraybuffer";
-req.onreadystatechange = function () {
-	if (req.readyState == req.DONE) {
-		if (req.status != 200) {
-			postMessage({ op: 'tileLoadFailed', tileCacheName });
-		} else {
-			// Transfer buffer to main thread.
-			postMessage({ op:'tileLoaded', tileCacheName, buffer: req.response }, [req.response]);
-		}
+	wS += `const debug = ${debug};`;
+
+	// The following function is stringified and sent to the web loader.
+	function loadTile (tileCacheName, URL) {
+		const req = new XMLHttpRequest();
+		req.open("GET", URL, true);
+		req.responseType = "arraybuffer";
+		req.onreadystatechange = function () {
+			if (req.readyState == req.DONE) {
+				if (req.status != 200) {
+					postMessage({ op: 'tileLoadFailed', tileCacheName });
+				} else {
+					// Transfer buffer to main thread.
+					postMessage({ op: 'tileLoaded', tileCacheName, buffer: req.response }, [req.response]);
+				}
+			}
+		};
+		req.send();
 	}
-};
-req.send();
-}`;
-	wS += `onmessage = function (e) {`;
-	if (debug) wS += `console.log({ m: 'Worker: got message', e, t: performance.now() });`;
-	wS += `if (e.data.op === 'loadTile') { loadTile (e.data.tileCacheName, e.data.URL); }`;
-	wS += `};`;
+	wS += loadTile.toString();
+
+	// This function will be stringified and sent to the web loader.
+	function handleMessage(e) {
+		if (debug) console.log({ m: 'Worker: got message', e, t: performance.now() });
+		if (e.data.op === 'loadTile') { loadTile (e.data.tileCacheName, e.data.URL); }
+	}
+	wS += handleMessage.toString();
+
+	wS += `onmessage = handleMessage;`;
 	if (debug) wS += `console.log ({ m:'TileLoader loaded', t: performance.now() });`;
 
 	// Create blob and start worker.
