@@ -571,9 +571,20 @@ NgChm.SUM.initColClassGl = function() {
 	NgChm.SUM.texCc = NgChm.DRAW.createRenderBuffer (NgChm.SUM.totalWidth*NgChm.SUM.widthScale, NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale, 1.0);
 }
 
-//Draws Heat Map into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
+// Create a summary heat map for the current data layer and display it.
 NgChm.SUM.buildSummaryTexture = function() {
 	NgChm.SUM.eventTimer = 0;
+	NgChm.SUM.renderSummaryHeatmap(NgChm.SUM.texHm);
+	NgChm.SUM.drawHeatMapRenderBuffer(NgChm.SUM.texHm);
+};
+
+// Redisplay the summary heat map for the current data layer.
+NgChm.SUM.drawHeatMap = function() {
+	NgChm.SUM.drawHeatMapRenderBuffer (NgChm.SUM.texHm);
+};
+
+// Renders the Summary Heat Map for the current data layer into the specified renderBuffer.
+NgChm.SUM.renderSummaryHeatmap = function (renderBuffer) {
 	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
 	var colors = colorMap.getColors();
 	var missing = colorMap.getMissingColor();
@@ -600,14 +611,13 @@ NgChm.SUM.buildSummaryTexture = function() {
 		}
 		for (var j = 0; j < NgChm.SUM.heightScale*NgChm.SUM.widthScale; j++) { // why is this heightScale * widthScale? why can't it just be heightScale??
 			for (var k = 0; k < line.length; k++){
-				NgChm.SUM.texHm.pixels[pos] = line[k];
+				renderBuffer.pixels[pos] = line[k];
 				pos++;
 			}
 		}
 	}
 	NgChm.SUM.avgValue = (NgChm.SUM.avgValue / (NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL) * NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL)));
-	NgChm.SUM.drawHeatMap();
-}
+};
 
 //Draws Row Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
 NgChm.SUM.buildRowClassTexture = function() {
@@ -692,7 +702,7 @@ NgChm.SUM.buildColClassTexture = function() {
 } 
 
 //WebGL code to draw the Summary Heat Map.
-NgChm.SUM.drawHeatMap = function() {
+NgChm.SUM.drawHeatMapRenderBuffer = function(renderBuffer) {
 	NgChm.SUM.gl.useProgram(NgChm.SUM.texHmProgram);
 	var buffer = NgChm.SUM.gl.createBuffer();
 	NgChm.SUM.gl.buffer = buffer;
@@ -711,17 +721,21 @@ NgChm.SUM.drawHeatMap = function() {
 			NgChm.SUM.gl.TEXTURE_2D, 
 			0, 
 			NgChm.SUM.gl.RGBA, 
-			NgChm.SUM.texHm.width,
-			NgChm.SUM.texHm.height,
+			renderBuffer.width,
+			renderBuffer.height,
 			0, 
 			NgChm.SUM.gl.RGBA,
 			NgChm.SUM.gl.UNSIGNED_BYTE, 
-			NgChm.SUM.texHm.pixels);
+			renderBuffer.pixels);
 	NgChm.SUM.gl.drawArrays(NgChm.SUM.gl.TRIANGLE_STRIP, 0, NgChm.SUM.gl.buffer.numItems);
-}
+};
+
+NgChm.SUM.drawRowClassBars = function() {
+	NgChm.SUM.drawRowClassBarsRenderBuffer(NgChm.SUM.texRc);
+};
 
 //WebGL code to draw the Row Class Bars.
-NgChm.SUM.drawRowClassBars = function() {
+NgChm.SUM.drawRowClassBarsRenderBuffer = function(renderBuffer) {
 	NgChm.SUM.rcGl.useProgram(NgChm.SUM.texRcProgram);
 	var buffer = NgChm.SUM.rcGl.createBuffer();
 	NgChm.SUM.rcGl.buffer = buffer;
@@ -740,17 +754,21 @@ NgChm.SUM.drawRowClassBars = function() {
 			NgChm.SUM.rcGl.TEXTURE_2D, 
 			0, 
 			NgChm.SUM.rcGl.RGBA, 
-			NgChm.SUM.texRc.width,
-			NgChm.SUM.texRc.height,
+			renderBuffer.width,
+			renderBuffer.height,
 			0, 
 			NgChm.SUM.rcGl.RGBA,
 			NgChm.SUM.rcGl.UNSIGNED_BYTE, 
-			NgChm.SUM.texRc.pixels);
+			renderBuffer.pixels);
 	NgChm.SUM.rcGl.drawArrays(NgChm.SUM.rcGl.TRIANGLE_STRIP, 0, NgChm.SUM.rcGl.buffer.numItems);
-}
+};
 
 //WebGL code to draw the Column Class Bars.
 NgChm.SUM.drawColClassBars = function() {
+	NgChm.SUM.drawColClassBarsRenderBuffer (NgChm.SUM.texCc);
+};
+
+NgChm.SUM.drawColClassBarsRenderBuffer = function (renderBuffer) {
 	NgChm.SUM.ccGl.useProgram(NgChm.SUM.texCcProgram);
 	var buffer = NgChm.SUM.ccGl.createBuffer();
 	NgChm.SUM.ccGl.buffer = buffer;
@@ -769,14 +787,14 @@ NgChm.SUM.drawColClassBars = function() {
 			NgChm.SUM.ccGl.TEXTURE_2D, 
 			0, 
 			NgChm.SUM.ccGl.RGBA, 
-			NgChm.SUM.texCc.width,
-			NgChm.SUM.texCc.height,
+			renderBuffer.width,
+			renderBuffer.height,
 			0, 
 			NgChm.SUM.ccGl.RGBA,
 			NgChm.SUM.ccGl.UNSIGNED_BYTE, 
-			NgChm.SUM.texCc.pixels);
+			renderBuffer.pixels);
 	NgChm.SUM.ccGl.drawArrays(NgChm.SUM.ccGl.TRIANGLE_STRIP, 0, NgChm.SUM.ccGl.buffer.numItems);
-}
+};
 
 NgChm.SUM.onMouseDownCanvas = function(evt) {
 	NgChm.SUM.mouseEventActive = true;
