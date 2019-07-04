@@ -1631,23 +1631,19 @@ NgChm.SUM.buildScatterBarPlotMatrix = function(height, classBarValues, start, cl
 	return matrix;
 }
 
-NgChm.SUM.calculateSummaryTotalClassBarHeight = function(axis,stopOn) {
-	var totalHeight = 0;
-	if (axis === "row") {
-		var classBars = NgChm.heatMap.getRowClassificationConfig();
-	} else {
-		var classBars = NgChm.heatMap.getColClassificationConfig();
-	}
-	for (var key in classBars){
-		if ((typeof stopOn != 'undefined') && (key === stopOn)) {
-			break;
-		}
-		if (classBars[key].show === 'Y') {
-		   totalHeight += NgChm.SUM.getScaledHeight(parseInt(classBars[key].height), axis);
-		}
-	}
-	return totalHeight;
-}
+// Return the scaled heights of all covariate bars on the specified axis.
+// Hidden bars will have height zero.  The order of entries is fixed but
+// not specified.
+NgChm.SUM.getSummaryCovariateBarHeights = function (axis) {
+	return NgChm.heatMap.getCovariateBarHeights(axis)
+	.map(h => h === 0 ? 0 : NgChm.SUM.getScaledHeight(h,axis));
+};
+
+// Return the total scaled heights of all covariate bars on the specified axis.
+NgChm.SUM.calculateSummaryTotalClassBarHeight = function(axis) {
+	return NgChm.SUM.getSummaryCovariateBarHeights(axis)
+	.reduce((t,h) => t+h, 0);
+};
 
 //***************************//
 //Selection Label Functions *//

@@ -83,7 +83,7 @@ NgChm.MMGR.MatrixManager = function(fileSrc) {
 //thread allows the large tile I/O to overlap extended periods of heavy
 //computation.
 NgChm.MMGR.createWebTileLoader = function () {
-	const debug = true;
+	const debug = false;
 
 	// Define worker script.
 	let wS = `"use strict";`
@@ -247,6 +247,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return mapConfig.col_configuration;
 	}
 	
+	this.getAxisCovariateConfig = function (axis) {
+		return this.getAxisConfig(axis).classifications;
+	};
+
 	this.getRowClassificationConfig = function() {
 		return mapConfig.row_configuration.classifications;
 	}
@@ -263,6 +267,19 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return mapConfig.col_configuration.classifications_order;
 	}
 	
+	// Return an array of the display heights of all covariate bars on an axis.
+	// Hidden bars have a height of zero.  The order of entries is fixed but not
+	// specified.
+	this.getCovariateBarHeights = function (axis) {
+		return Object.entries(this.getAxisCovariateConfig(axis))
+		.map(([key,config]) => config.show === 'Y' ? (config.height|0) : 0)
+	};
+
+	// Return the total display height of all covariate bars on an axis.
+	this.calculateTotalClassBarHeight = function (axis) {
+		return this.getCovariateBarHeights(axis).reduce((t,h) => t+h, 0);
+	};
+
 	this.getRowClassificationOrder = function(showOnly) {
 		var rowClassBarsOrder = mapConfig.row_configuration.classifications_order;
 		// If configuration not found, create order from classifications config

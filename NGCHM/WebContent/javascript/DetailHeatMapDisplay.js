@@ -2605,20 +2605,11 @@ NgChm.DET.detailDrawRowClassBarLabels = function () {
 	}
 }
 
+// Covariate bars in the detail pane are just their specified height,
+// with no rescaling.
 NgChm.DET.calculateTotalClassBarHeight = function (axis) {
-	var totalHeight = 0;
-	if (axis === "row") {
-		var classBars = NgChm.heatMap.getRowClassificationConfig();
-	} else {
-		var classBars = NgChm.heatMap.getColClassificationConfig();
-	}
-	for (var key in classBars){
-		if (classBars[key].show === 'Y') {
-		   totalHeight += parseInt(classBars[key].height);
-		}
-	}
-	return totalHeight;
-}
+	return NgChm.heatMap.calculateTotalClassBarHeight (axis);
+};
 
 /******************************************************
  *****  DETAIL DENDROGRAM FUNCTIONS START HERE!!! *****
