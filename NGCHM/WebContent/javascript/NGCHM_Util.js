@@ -19,7 +19,7 @@ NgChm.UTIL.getURLParameter = function(name) {
 NgChm.UTIL.redrawCanvases = function () {
     if ((NgChm.UTIL.getBrowserType() !== "Firefox") && (NgChm.heatMap !== null)) {
         NgChm.SUM.drawHeatMap();
-        NgChm.DET.drawDetailHeatMap();
+        NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
         if (NgChm.SUM.rCCanvas.width > 0) {
             NgChm.SUM.drawRowClassBars();
         }
