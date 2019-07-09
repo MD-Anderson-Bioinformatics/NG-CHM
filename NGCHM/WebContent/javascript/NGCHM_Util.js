@@ -237,10 +237,12 @@ NgChm.UTIL.startupChecks = function () {
     	warningsRequired = true;
     }
     
-    if (warningsRequired) {
-    	msgButton.style.display = ''; 
-    } else {
-    	msgButton.style.display = 'none'; 
+    if (msgButton != undefined) {
+        if (warningsRequired) {
+             msgButton.style.display = '';
+         } else {
+             msgButton.style.display = 'none';
+         }
     }
 }
 
