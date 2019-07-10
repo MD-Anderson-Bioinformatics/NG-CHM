@@ -487,7 +487,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		var success = true;
 		if (fileSrc !== NgChm.MMGR.FILE_SOURCE) {
 			success = webSaveMapProperties(JSON.stringify(mapConfig)); 
-		} else {
+		} else if (NgChm.MMGR.embeddedMapName === null) {
 			NgChm.UHM.zipSaveNotification(true);
 		}
 		return success;

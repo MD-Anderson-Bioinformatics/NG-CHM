@@ -8,7 +8,7 @@ NgChm.createNS('NgChm.UHM');
 
 NgChm.UHM.postMapDetails = false;	// Should we post map details to an enclosing document?
 NgChm.UHM.postMapToWhom = null;		// Identity of the window to post map details to
-NgChm.UHM.myNonce = '';			// Shared secret for vetting message sender
+NgChm.UHM.myNonce = 'N';			// Shared secret for vetting message sender
 
 // This function is called when the NgChm receives a message.  It is intended for
 // customizing behavior when the NgChm is included in an iFrame.
@@ -43,6 +43,11 @@ NgChm.UHM.processMessage = function (e) {
 		// Parent wants to display map details itself.
 		NgChm.UHM.postMapDetails = true;
 		NgChm.UHM.postMapToWhom = e.origin;
+	}
+	
+	//If caller provided a unique ID to be returned with data point messages, save it.
+	if (e.data.ngchm_id != null ) {
+		NgChm.UHM.postID = e.data.ngchm_id;
 	}
 }
 window.addEventListener('message', NgChm.UHM.processMessage, false);
@@ -155,10 +160,15 @@ NgChm.UHM.userHelpOpen = function() {
 
 		// If the enclosing window wants to display the pixel info, send it to them.
 		// Otherwise, display it ourselves.
-                if (NgChm.UHM.postMapDetails) {
-			const msg = { nonce: NgChm.UHM.myNonce, msg: 'ShowMapDetail', data: pixelInfo };
+        if (NgChm.UHM.postMapDetails) {
+			var msg = { nonce: NgChm.UHM.myNonce, msg: 'ShowMapDetail', data: pixelInfo };
+			//If a unique identifier was provided, return it in the message.
+			if (NgChm.UHM.postID != null) {
+				msg["id"] = NgChm.UHM.postID;
+			} 
+
 			window.parent.postMessage (msg, NgChm.UHM.postMapToWhom);
-                } else {
+        } else {
 			NgChm.UHM.formatMapDetails (helpContents, pixelInfo);
 			helptext.style.display="inherit";
 			helptext.appendChild(helpContents);
