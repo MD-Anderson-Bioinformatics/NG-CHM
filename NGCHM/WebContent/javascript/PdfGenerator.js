@@ -889,8 +889,8 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		//Redraw the summary canvases so that they may be used in creating PDF images
 		NgChm.SUM.drawHeatMap();
 		NgChm.SUM.drawTopItems();
-		NgChm.SUM.colDendro.drawNoResize();
-		NgChm.SUM.rowDendro.drawNoResize();
+		NgChm.SUM.colDendro.draw();
+		NgChm.SUM.rowDendro.draw();
 	}
 	
 	/**********************************************************************************
@@ -907,8 +907,8 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		document.getElementById('column_dendro_canvas').height = NgChm.PDF.colDendroHeight;
 		NgChm.SUM.drawHeatMap();
 		NgChm.SUM.drawTopItems();
-		NgChm.SUM.colDendro.drawNoResize();
-		NgChm.SUM.rowDendro.drawNoResize();
+		NgChm.SUM.colDendro.draw();
+		NgChm.SUM.rowDendro.draw();
 	}
 
 	/**********************************************************************************

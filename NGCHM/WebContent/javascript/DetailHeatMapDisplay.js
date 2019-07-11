@@ -486,7 +486,7 @@ NgChm.DET.handleSelectDrag = function (e) {
         NgChm.SUM.drawRowSelectionMarks();
         NgChm.SUM.drawColSelectionMarks();
         NgChm.SUM.drawTopItems();
-        NgChm.DET.updateLabels();
+        NgChm.DET.updateDisplayedLabels();
         NgChm.DET.drawSelections();
     }
 }	
@@ -1448,17 +1448,52 @@ NgChm.DET.isLineACut = function (row) {
 	return true;
 }
 
+NgChm.DET.rowDendroResize = function() {
+	const dendroCanvas = NgChm.DET.rowDendro.dendroCanvas;
+
+	const top = NgChm.DET.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
+	dendroCanvas.style.top = top + NgChm.DET.canvas.clientHeight * (1-NgChm.DET.dataViewHeight/NgChm.DET.canvas.height);
+	if (NgChm.DET.rowDendro.isVisible()){
+		const width = NgChm.DET.rowDendro.getConfigSize() * document.getElementById('detail_chm').clientWidth+ NgChm.SUM.paddingHeight;
+		dendroCanvas.style.width = width;
+		dendroCanvas.style.height = NgChm.DET.canvas.clientHeight * (NgChm.DET.dataViewHeight/NgChm.DET.canvas.height)-2;
+		dendroCanvas.width = Math.round(width);
+		dendroCanvas.height = Math.round(NgChm.DET.canvas.clientHeight * (NgChm.DET.dataViewHeight/NgChm.DET.canvas.height));
+	} else {
+		dendroCanvas.style.width = 0;
+	}
+}
+
+NgChm.DET.colDendroResize = function() {
+	const dendroCanvas = NgChm.DET.colDendro.dendroCanvas;
+
+	const left = NgChm.DET.canvas.offsetLeft;
+	dendroCanvas.style.left = left + NgChm.DET.canvas.clientWidth * (1-NgChm.DET.dataViewWidth/NgChm.DET.canvas.width);
+	if (NgChm.DET.colDendro.isVisible()){
+		const height = NgChm.DET.colDendro.getConfigSize() * document.getElementById('detail_chm').clientHeight + NgChm.SUM.paddingHeight;
+		dendroCanvas.style.height = height;
+		dendroCanvas.style.width = NgChm.DET.canvas.clientWidth * (NgChm.DET.dataViewWidth/NgChm.DET.canvas.width);
+		dendroCanvas.height = Math.round(height);
+		dendroCanvas.width = Math.round(NgChm.DET.canvas.clientWidth * (NgChm.DET.dataViewWidth/NgChm.DET.canvas.width));
+	} else {
+		dendroCanvas.style.height = 0;
+	}
+}
+
+
 NgChm.DET.detailResize = function () {
 	 if (NgChm.DET.canvas !== undefined) {
-		 NgChm.DET.rowDendro.resize();
-		 NgChm.DET.colDendro.resize();
+		 NgChm.DET.rowDendroResize();
+		 NgChm.DET.colDendroResize();
 		 NgChm.DET.sizeCanvasForLabels();
 		 //Done twice because changing canvas size affects fonts selected for drawing labels
 		 NgChm.DET.sizeCanvasForLabels();
 		 NgChm.DET.updateDisplayedLabels();
 		 NgChm.DET.drawSelections();
-		 NgChm.DET.rowDendro.resizeAndDraw();
-		 NgChm.DET.colDendro.resizeAndDraw();
+		 NgChm.DET.rowDendroResize();
+		 NgChm.DET.colDendroResize();
+		 NgChm.DET.rowDendro.draw();
+		 NgChm.DET.colDendro.draw();
 	 }
 }
 
