@@ -479,13 +479,17 @@ public class InputClass {
             while (Float.parseFloat(classBreaks.get(i)) <= eVal && i < classBreaks.size()-1){
             	i++;
             };
-            Color lowCol = classColors.get(i-1);
-            Color hiCol = classColors.get(i);
-            float low = Float.parseFloat(classBreaks.get(i-1));
-            float hi = Float.parseFloat(classBreaks.get(i));
-            float ratio = (hi-eVal)/(hi-low);
-            Color breakColor = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
-            rgb = breakColor.getRGB();
+            if (i == 0) {
+        		rgb = classColors.get(i).getRGB();
+    	    } else {           
+    	    	Color lowCol = classColors.get(i-1);
+	            Color hiCol = classColors.get(i);
+	            float low = Float.parseFloat(classBreaks.get(i-1));
+	            float hi = Float.parseFloat(classBreaks.get(i));
+	            float ratio = (hi-eVal)/(hi-low);
+	            Color breakColor = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
+	            rgb = breakColor.getRGB();
+    	    }
     	}
     	return rgb;
 	}

@@ -4,8 +4,6 @@ NgChm.createNS('NgChm.DET');
 NgChm.DET.canvas = null;
 NgChm.DET.boxCanvas = null;  //canvas on top of WebGL canvas for selection box 
 NgChm.DET.gl = null; // WebGL contexts
-NgChm.DET.textureParams = null;
-NgChm.DET.texPixels = null;
 NgChm.DET.uScale = null;
 NgChm.DET.uTranslate = null;
 
@@ -50,8 +48,9 @@ NgChm.DET.dataViewBorder = 2;
 NgChm.DET.zoomBoxSizes = [1,2,3,4,6,7,8,9,12,14,18,21,24,28,36,42,56,63,72,84,126,168,252];
 NgChm.DET.minLabelSize = 5;
 NgChm.DET.maxLabelSize = 11;
+NgChm.DET.redrawSelectionTimeout = 0;   // Drawing delay in ms after the view has changed.
+NgChm.DET.redrawUpdateTimeout = 10;	// Drawing delay in ms after a tile update (if needed).
 NgChm.DET.minPixelsForGrid = 20;	// minimum element size for grid lines to display
-NgChm.DET.currentSearchItem = {};
 NgChm.DET.labelLastClicked = {};
 
 NgChm.DET.mouseDown = false;
@@ -1171,7 +1170,7 @@ NgChm.DET.setDetCanvasBoxSize = function () {
 
 // Callback that is notified every time there is an update to the heat map 
 // initialize, new data, etc.  This callback draws the summary heat map.
-NgChm.DET.processDetailMapUpdate = function (event, level) {
+NgChm.DET.processDetailMapUpdate = function (event, tile) {
 
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		NgChm.DET.detailInit();
@@ -1184,12 +1183,7 @@ NgChm.DET.processDetailMapUpdate = function (event, level) {
 			NgChm.DET.detailSearch();
 		}
 	} else {
-		//Data tile update - wait a bit to see if we get another new tile quickly, then draw
-		if (NgChm.DET.eventTimer != 0) {
-			//New tile arrived - reset timer
-			clearTimeout(NgChm.DET.eventTimer);
-		}
-		NgChm.DET.eventTimer = setTimeout(NgChm.DET.drawDetailHeatMap, 200);
+		NgChm.DET.flushDrawingCache(tile);
 	} 
 }
 
@@ -1238,60 +1232,240 @@ NgChm.DET.detailInit = function () {
 		NgChm.DET.setDetailDataSize(12);
 	}
 	
-	NgChm.DET.detSetupGl();
-	NgChm.DET.detInitGl();
-    NgChm.SEL.updateSelection();
-	if (NgChm.UTIL.getURLParameter("selected") !== ""){
-		var selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
-		document.getElementById("search_text").value = selected;
-		NgChm.DET.detailSearch();
-		NgChm.SUM.drawRowSelectionMarks();
-		NgChm.SUM.drawColSelectionMarks();
-		NgChm.SUM.drawTopItems();
-	}
-	NgChm.DET.initialized = true;
-}
+	setTimeout (function() {
+		NgChm.DET.detSetupGl();
+		NgChm.DET.detInitGl();
+		NgChm.SEL.updateSelection();
+		if (NgChm.UTIL.getURLParameter("selected") !== ""){
+			var selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
+			document.getElementById("search_text").value = selected;
+			NgChm.DET.detailSearch();
+			NgChm.SUM.drawRowSelectionMarks();
+			NgChm.SUM.drawColSelectionMarks();
+			NgChm.SUM.drawTopItems();
+		}
+		NgChm.DET.initialized = true;
+	}, 1);}
 
-NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip the resize routine and help speed up the drawing routine for some cases
- 	
-	NgChm.DET.setDetCanvasBoxSize();
-	// create these variables now to prevent having to call them in the for-loop
-	var level = NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL);
-	var currDetRow = NgChm.SEL.getCurrentDetRow();
-	var currDetCol = NgChm.SEL.getCurrentDetCol();
-	if ((NgChm.SEL.currentRow == null) || (NgChm.SEL.currentRow == 0)) {
-		return;
+//We keep a copy of the last rendered detail heat map for each layer.
+//This enables quickly redrawing the heatmap when flicking between layers, which
+//needs to be nearly instant to be effective.
+//The copy will be invalidated and require drawing if any parameter affecting
+//drawing of that heat map is changed or if a new tile that could affect it
+//is received.
+NgChm.DET.detailHeatMapCache = {};      // Last rendered detail heat map for each layer
+NgChm.DET.detailHeatMapLevel = {};      // Level of last rendered heat map for each layer
+NgChm.DET.detailHeatMapValidator = {};  // Encoded drawing parameters used to check heat map is current
+
+//This function is called when any new data tile is received.
+//It causes any cached heat map affected by the new tile to be
+//redrawn the next time it is displayed.  The currently
+//displayed heat map will be redrawn after a short delay
+//if it might be affected by the tile.
+NgChm.DET.flushDrawingCache = function (tile) {
+	// The cached heat map for the tile's layer will be
+	// invalidated if the tile's level matches the level
+	// of the cached heat map.
+	//
+	// This assumes that only updates to the same level require an update.
+	// Reasonable here since the only possible lower levels (thumbnail
+	// and summary) are fully prefetched at initialization.
+	// In any case, data for the drawing window's level should also arrive soon
+	// and the heat map would be redrawn then.
+	if (NgChm.DET.detailHeatMapCache.hasOwnProperty (tile.layer) &&
+	    NgChm.DET.detailHeatMapLevel[tile.layer] === tile.level) {
+		NgChm.DET.detailHeatMapValidator[tile.layer] = '';
+		if (tile.layer === NgChm.SEL.currentDl) {
+			// Redraw 'now' if the tile is for the currently displayed layer.
+			NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawUpdateTimeout);
+		}
 	}
+};
+
+//This function will redraw the detail heatmap after ms milliseconds.
+//
+//noResize is used to skip the resize routine and help speed up the drawing routine for some cases
+//If noResize is true for every call to setDrawDetailTimeout, the resize routine
+//will be skipped on the next redraw.
+NgChm.DET.resizeOnNextDraw = false;
+NgChm.DET.setDrawDetailTimeout = function (ms, noResize) {
+	console.log("NgChm.DET.setDrawDetailTimeout");
+	if (NgChm.DET.drawEventTimer) {
+		clearTimeout (NgChm.DET.drawEventTimer);
+	}
+	if (!noResize) NgChm.DET.resizeOnNextDraw = true;
+
+	const drawWin = NgChm.DET.getDetailWindow();
+
+	NgChm.DET.drawEventTimer = setTimeout(function drawDetailTimeout () {
+		NgChm.DET.drawDetailHeatMap(drawWin);
+	}, ms);
+};
+
+
+//Get the layer, level, and selected region of the current detail
+//heat map display.
+NgChm.DET.getDetailWindow = function() {
+	console.log("NgChm.DET.getDetailWindow");
+	return {
+		layer: NgChm.SEL.currentDl,
+		level: NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),
+		firstRow: NgChm.SEL.getCurrentDetRow(),
+		firstCol: NgChm.SEL.getCurrentDetCol(),
+		numRows: NgChm.SEL.getCurrentDetDataPerCol(),
+		numCols: NgChm.SEL.getCurrentDetDataPerRow()
+	};
+};
+
+
+//Draw the region of the NGCHM specified by drawWin to the detail heat map
+//pane.
+NgChm.DET.drawDetailHeatMap = function (drawWin) {
+	console.log("NgChm.DET.drawDetailHeatMap");
+
 	NgChm.DET.setDendroShow();
-	if (!noResize){
+	if (NgChm.DET.resizeOnNextDraw) {
 		NgChm.DET.detailResize();
+		NgChm.DET.resizeOnNextDraw = false;
 	}
-	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
-	var dataLayers = NgChm.heatMap.getDataLayers();
-	var dataLayer = dataLayers[NgChm.SEL.currentDl];
-	var detDataPerRow = NgChm.SEL.getCurrentDetDataPerRow();
-	var detDataPerCol = NgChm.SEL.getCurrentDetDataPerCol();
-	var rowClassBarWidth = NgChm.DET.calculateTotalClassBarHeight("row");
-	var searchRows = NgChm.DET.getSearchRows();
-	var searchCols = NgChm.DET.getSearchCols();
-	var searchGridColor = [0,0,0];
-	var dataGridColor = colorMap.getHexToRgba(dataLayer.grid_color);
-	var dataSelectionColorRGB = colorMap.getHexToRgba(dataLayer.selection_color);
+	NgChm.DET.setDetCanvasBoxSize();
+
+	// Together with the data, these parameters determine the color of a matrix value.
+	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", drawWin.layer);
+	const pixelColorScheme = {
+		colors: colorMap.getColors(),
+		thresholds: colorMap.getThresholds(),
+		missingColor: colorMap.getMissingColor()
+	};
+
+	// Determine all the parameters that can affect the generated heat map.
+	const params = {
+		pixelColorScheme,
+		mapWidth: NgChm.DET.dataViewWidth,
+		mapHeight: NgChm.DET.dataViewHeight,
+		dataBoxWidth: NgChm.DET.dataBoxWidth,
+		dataBoxHeight: NgChm.DET.dataBoxHeight,
+		rowBarWidths: NgChm.heatMap.getCovariateBarHeights("row"),
+		colBarHeights: NgChm.heatMap.getCovariateBarHeights("column"),
+
+		searchRows: NgChm.DET.getSearchRows(),
+		searchCols: NgChm.DET.getSearchCols(),
+		searchGridColor: [0,0,0]
+	};
+
+	// Set parameters that depend on the data layer properties.
+	{
+		const dataLayers = NgChm.heatMap.getDataLayers();
+		const dataLayer = dataLayers[drawWin.layer];
+		const showGrid = dataLayer.grid_show === 'Y';
+		const detWidth = +NgChm.DET.boxCanvas.style.width.replace("px","");
+		const detHeight = +NgChm.DET.boxCanvas.style.height.replace("px","");
+		params.showVerticalGrid = showGrid && params.dataBoxWidth > NgChm.DET.minLabelSize && NgChm.DET.minPixelsForGrid*drawWin.numCols <= detWidth;
+		params.showHorizontalGrid = showGrid && params.dataBoxHeight > NgChm.DET.minLabelSize && NgChm.DET.minPixelsForGrid*drawWin.numRows <= detHeight;
+		params.grid_color = dataLayer.grid_color;
+		params.selection_color = dataLayer.selection_color;
+		params.cuts_color = dataLayer.cuts_color;
+	}
+
+	const renderBuffer = NgChm.DET.getDetailHeatMap (drawWin, params);
+
+	//WebGL code to draw the summary heat map.
+	NgChm.DET.gl.activeTexture(NgChm.DET.gl.TEXTURE0);
+	NgChm.DET.gl.texImage2D(
+			NgChm.DET.gl.TEXTURE_2D,
+			0,
+			NgChm.DET.gl.RGBA,
+			renderBuffer.width,
+			renderBuffer.height,
+			0,
+			NgChm.DET.gl.RGBA,
+			NgChm.DET.gl.UNSIGNED_BYTE,
+			renderBuffer.pixels);
+	NgChm.DET.gl.uniform2fv(NgChm.DET.uScale, NgChm.DET.canvasScaleArray);
+	NgChm.DET.gl.uniform2fv(NgChm.DET.uTranslate, NgChm.DET.canvasTranslateArray);
+	NgChm.DET.gl.drawArrays(NgChm.DET.gl.TRIANGLE_STRIP, 0, NgChm.DET.gl.buffer.numItems);
+
+	// Draw the dendrograms
+	NgChm.DET.colDendro.draw();
+	NgChm.DET.rowDendro.draw();
+
+	//Draw any selection boxes defined by SearchRows/SearchCols
+	NgChm.DET.drawSelections();
+};
+
+
+//Returns a renderBuffer containing an image of the region of the NGCHM
+//specified by drawWin rendered using the parameters in params.
+NgChm.DET.getDetailHeatMap = function (drawWin, params) {
+	console.log("NgChm.DET.getDetailHeatMap");
+
+	const layer = drawWin.layer;
+	const paramCheck = JSON.stringify({ drawWin, params });
+	if (NgChm.DET.detailHeatMapValidator[layer] === paramCheck) {
+		//Cached image exactly matches what we need.
+		return NgChm.DET.detailHeatMapCache[layer];
+	}
+
+	// Determine size of required image.
+	const rowClassBarWidth = params.rowBarWidths.reduce((t,w) => t+w, 0);
+	const colClassBarHeight = params.colBarHeights.reduce((t,h) => t+h, 0);
+	const texWidth = params.mapWidth + rowClassBarWidth;
+	const texHeight = params.mapHeight + colClassBarHeight;
+
+	if (NgChm.DET.detailHeatMapCache.hasOwnProperty(layer)) {
+		// Resize the existing renderBuffer if needed.
+		NgChm.DET.detailHeatMapCache[layer].resize (texWidth, texHeight);
+	} else {
+		// Or create a new one if needed.
+		NgChm.DET.detailHeatMapCache[layer] = NgChm.DRAW.createRenderBuffer (texWidth, texHeight, 1.0);
+	}
+	// Save data needed for determining if the heat map image will match the next request.
+	NgChm.DET.detailHeatMapValidator[layer] = paramCheck;
+	NgChm.DET.detailHeatMapLevel[layer] = drawWin.level;
+
+	// create these variables now to prevent having to call them in the for-loop
+	const currDetRow = drawWin.firstRow;
+	const currDetCol = drawWin.firstCol;
+	const detDataPerRow = drawWin.numCols;
+	const detDataPerCol = drawWin.numRows;
+
+	// Define a function for outputting reps copy of line
+	// to the renderBuffer for this layer.
+	const renderBuffer = NgChm.DET.detailHeatMapCache[layer];
+	const emitLines = (function() {
+		// Start outputting data to the renderBuffer after one line
+		// of blank space.
+		// Line must be renderBuffer.width pixels wide.
+		// Using |0 ensures values are converted to integers.
+		const lineBytes = (renderBuffer.width * NgChm.SUM.BYTE_PER_RGBA)|0;
+		let pos = lineBytes; // Start with one line of blank space.
+		return function emitLines (line, reps) {
+			reps = reps | 0;
+			// Output required number of replicas of line.
+			while (reps > 0) {
+				for (let k = 0; k < lineBytes; k++) {
+					renderBuffer.pixels[pos+k] = line[k];
+				}
+				pos += lineBytes;
+				reps--;
+			}
+		};
+	})();
+
+	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",layer);
+
+	var dataGridColor = colorMap.getHexToRgba(params.grid_color);
+	var dataSelectionColorRGB = colorMap.getHexToRgba(params.selection_color);
 	var dataSelectionColor = [dataSelectionColorRGB.r/255, dataSelectionColorRGB.g/255, dataSelectionColorRGB.b/255, 1];
 	var regularGridColor = [dataGridColor.r, dataGridColor.g, dataGridColor.b];
-	var cutsColor = colorMap.getHexToRgba(dataLayer.cuts_color);
- 
-	var showGrid = dataLayer.grid_show === 'Y';
-	var detWidth = +NgChm.DET.boxCanvas.style.width.replace("px","");
-	var detHeight = +NgChm.DET.boxCanvas.style.height.replace("px","");
-	var showVerticalGrid = showGrid && NgChm.DET.dataBoxWidth > NgChm.DET.minLabelSize && NgChm.DET.minPixelsForGrid*detDataPerRow <= detWidth;
-	var showHorizontalGrid = showGrid && NgChm.DET.dataBoxHeight > NgChm.DET.minLabelSize && NgChm.DET.minPixelsForGrid*detDataPerCol <= detHeight;
+	var cutsColor = colorMap.getHexToRgba(params.cuts_color);
+
 
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
-	var linelen = (rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA;
-	var gridLine = new Uint8Array(new ArrayBuffer(linelen));
+	const linelen = texWidth * NgChm.SUM.BYTE_PER_RGBA;
+	const gridLine = new Uint8Array(new ArrayBuffer(linelen));
 	//Build a horizontal cuts line using the cut color defined for the data layer.
-	var cutsLine = new Uint8Array(new ArrayBuffer(linelen));
+	const cutsLine = new Uint8Array(new ArrayBuffer(linelen));
 	if ((cutsColor !== null) && (cutsColor !== undefined)) {
 		for (var i=0;i<linelen;i++) {
 			cutsLine[i] = cutsColor.r;i++;
@@ -1300,14 +1474,14 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 			cutsLine[i] = cutsColor.a;
 		}
 	}
-	if (showHorizontalGrid) {
+	if (params.showHorizontalGrid) {
 		var linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		for (var j = 0; j < detDataPerRow; j++) {
 			//When building grid line check for vertical cuts by grabbing value of currentRow (any row really) and column being iterated to
-			var val = NgChm.heatMap.getValue(level, currDetRow, currDetCol+j);
-			var nextVal = NgChm.heatMap.getValue(level, currDetRow, currDetCol+j+1);
-			var gridColor = ((searchCols.indexOf(NgChm.SEL.currentCol+j) > -1) || (searchCols.indexOf(NgChm.SEL.currentCol+j+1) > -1)) ? searchGridColor : regularGridColor;
+			var val = NgChm.heatMap.getValue(drawWin.level, currDetRow, currDetCol+j);
+			var nextVal = NgChm.heatMap.getValue(drawWin.level, currDetRow, currDetCol+j+1);
+			var gridColor = ((params.searchCols.indexOf(NgChm.SEL.currentCol+j) > -1) || (params.searchCols.indexOf(NgChm.SEL.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (var k = 0; k < NgChm.DET.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
 				if (val <= NgChm.SUM.minValues) {
@@ -1329,23 +1503,9 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 	}
 	
-	//Spacer
-	var pos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
-	for (var i = 0; i < NgChm.DET.dataViewWidth; i++) {
-		pos+=NgChm.SUM.BYTE_PER_RGBA;
-	}
-	
-	// create the search objects outside of the for-loops so we don't have to use indexOf for a potentially large array in the loop
-	var searchRowObj = {};
-	for (var idx = 0; idx < searchRows.length; idx++){
-		searchRowObj[searchRows[idx]] = 1;
-	}
-	var searchColObj = {};
-	for (var idx = 0; idx < searchCols.length; idx++){
-		searchColObj[searchCols[idx]] = 1;
-	}
-	//Needs to go backward because WebGL draws bottom up.
 	var line = new Uint8Array(new ArrayBuffer((rowClassBarWidth + NgChm.DET.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA));
+
+	//Needs to go backward because WebGL draws bottom up.
 	for (var i = detDataPerCol-1; i >= 0; i--) {
 		var linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
 		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the 
@@ -1353,14 +1513,14 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 		var isHorizCut = NgChm.DET.isLineACut(i) && NgChm.DET.isLineACut(i-1);
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		for (var j = 0; j < detDataPerRow; j++) { // for every data point...
-			var val = NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j);
-            var nextVal = NgChm.heatMap.getValue(level, currDetRow+i, currDetCol+j+1);
-            if (val !== undefined) {
+			var val = NgChm.heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j);
+         var nextVal = NgChm.heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1);
+         if (val !== undefined) {
 	            var color = colorMap.getColor(val);
 	            
 				//For each data point, write it several times to get correct data point width.
 				for (var k = 0; k < NgChm.DET.dataBoxWidth; k++) {
-					if (showVerticalGrid && k===NgChm.DET.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
+					if (params.showVerticalGrid && k===NgChm.DET.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
 						if (j < detDataPerRow-1) {
 							//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
 							if ((val <= NgChm.SUM.minValues) && (nextVal <= NgChm.SUM.minValues)) {
@@ -1374,64 +1534,22 @@ NgChm.DET.drawDetailHeatMap = function (noResize) { // noResize is used to skip 
 					}
 					linePos += NgChm.SUM.BYTE_PER_RGBA;
 				}
-            }
+         }
 		}
 		linePos+=NgChm.SUM.BYTE_PER_RGBA;
 		
 		//Write each line several times to get correct data point height.
-		for (dup = 0; dup < NgChm.DET.dataBoxHeight; dup++) {
-			if (showHorizontalGrid && dup === NgChm.DET.dataBoxHeight-1 && i > 0){ // do we draw gridlines?
-				for (k = 0; k < line.length; k++) {
-					//IF the line being drawn was comprised entirely of cut values, draw an empty white line as the horizontal grid line,
-					//ELSE draw the normal grid line as the horizontal grid line
-					if (isHorizCut === true) {
-						NgChm.DET.texPixels[pos]=cutsLine[k];
-					} else {
-						NgChm.DET.texPixels[pos]=gridLine[k];
-					}
-					pos++;
-				}
-			} else {
-				for (k = 0; k < line.length; k++) {
-					NgChm.DET.texPixels[pos]=line[k];
-					pos++;
-				}
-			}
-		} 
+		const numGridLines = params.showHorizontalGrid && i > 0 ? 1 : 0;
+		emitLines (line, NgChm.DET.dataBoxHeight - numGridLines)
+		emitLines (isHorizCut ? cutsLine : gridLine, numGridLines);
 	}
 
-	//Spacer Row
-	pos += (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
-	for (var i = 0; i < NgChm.DET.dataViewWidth; i++) {
-		pos+=NgChm.SUM.BYTE_PER_RGBA;
-	}
+	//Draw covariate bars.
+	NgChm.DET.detailDrawColClassBars(renderBuffer.pixels);
+	NgChm.DET.detailDrawRowClassBars(renderBuffer.pixels);
 
-	NgChm.DET.colDendro.draw();
-	NgChm.DET.rowDendro.draw();
-	//Draw column classification bars.
-	NgChm.DET.detailDrawColClassBars();
-	NgChm.DET.detailDrawRowClassBars();
-	
-	//Draw any selection boxes defined by SearchRows/SearchCols
-	NgChm.DET.drawSelections();
-	
-	//WebGL code to draw the summary heat map.
-	NgChm.DET.gl.activeTexture(NgChm.DET.gl.TEXTURE0);
-	NgChm.DET.gl.texImage2D(
-			NgChm.DET.gl.TEXTURE_2D, 
-			0, 
-			NgChm.DET.gl.RGBA, 
-			NgChm.DET.textureParams['width'], 
-			NgChm.DET.textureParams['height'], 
-			0, 
-			NgChm.DET.gl.RGBA,
-			NgChm.DET.gl.UNSIGNED_BYTE, 
-			NgChm.DET.texPixels);
-	NgChm.DET.gl.uniform2fv(NgChm.DET.uScale, NgChm.DET.canvasScaleArray);
-	NgChm.DET.gl.uniform2fv(NgChm.DET.uTranslate, NgChm.DET.canvasTranslateArray);
-	NgChm.DET.gl.drawArrays(NgChm.DET.gl.TRIANGLE_STRIP, 0, NgChm.DET.gl.buffer.numItems);
+	return renderBuffer;
 }
-
 NgChm.DET.isLineACut = function (row) {
 	var lineIsCut = true;
 	var level = NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL);
@@ -1681,7 +1799,7 @@ NgChm.DET.labelElements = {};
 
 // Remove a label element.
 NgChm.DET.removeLabel = function (label) {
-	if (NgChm.DET.labelElements.hasOwnProperty (label)) {
+	if (NgChm.DET.oldLabelElements.hasOwnProperty (label)) {
 		console.log ('Removing label ' + label);
 		const e = NgChm.DET.oldLabelElements[label];
 		e.parent.removeChild(e.div);
@@ -2152,7 +2270,7 @@ NgChm.DET.getSearchLabelsByAxis = function (axis, labelType) {
 
 
 //This function draws column class bars on the detail heat map canvas
-NgChm.DET.detailDrawColClassBars = function () {
+NgChm.DET.detailDrawColClassBars = function (pixels) {
 	var colClassBarConfig = NgChm.heatMap.getColClassificationConfig();
 	var colClassBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
 	var colClassBarData = NgChm.heatMap.getColClassificationData();
@@ -2183,16 +2301,16 @@ NgChm.DET.detailDrawColClassBars = function () {
 			    start = Math.ceil(start/rhRate);
 			}
 			if (currentClassBar.bar_type === 'color_plot') {
-				pos = NgChm.DET.drawColorPlotColClassBar(pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap);
+				pos = NgChm.DET.drawColorPlotColClassBar(pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap);
 			} else {
-				pos = NgChm.DET.drawScatterBarPlotColClassBar(pos, currentClassBar.height-NgChm.DET.paddingHeight, classBarValues, start, length, currentClassBar, colorMap);
+				pos = NgChm.DET.drawScatterBarPlotColClassBar(pixels, pos, currentClassBar.height-NgChm.DET.paddingHeight, classBarValues, start, length, currentClassBar, colorMap);
 			}
 		  }
 
 	}
-
 }
-NgChm.DET.drawColorPlotColClassBar = function(pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap) {
+
+NgChm.DET.drawColorPlotColClassBar = function(pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap) {
 	var line = new Uint8Array(new ArrayBuffer(classBarLength * NgChm.SUM.BYTE_PER_RGBA)); // save a copy of the class bar
 	var loc = 0;
 	for (var k = start; k <= start + length -1; k++) { 
@@ -2209,7 +2327,7 @@ NgChm.DET.drawColorPlotColClassBar = function(pos, rowClassBarWidth, start, leng
 	for (var j = 0; j < currentClassBar.height-NgChm.DET.paddingHeight; j++){ // draw the class bar into the dataBuffer
 		pos += (rowClassBarWidth + 1)*NgChm.SUM.BYTE_PER_RGBA;
 		for (var k = 0; k < line.length; k++) { 
-			NgChm.DET.texPixels[pos] = line[k];
+			pixels[pos] = line[k];
 			pos++;
 		}
 		pos+=NgChm.SUM.BYTE_PER_RGBA;
@@ -2217,7 +2335,7 @@ NgChm.DET.drawColorPlotColClassBar = function(pos, rowClassBarWidth, start, leng
 	return pos;
 }
 
-NgChm.DET.drawScatterBarPlotColClassBar = function(pos, height, classBarValues, start, length, currentClassBar, colorMap) {
+NgChm.DET.drawScatterBarPlotColClassBar = function(pixels, pos, height, classBarValues, start, length, currentClassBar, colorMap) {
 	var barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
 	var barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
 	var barCutColor = colorMap.getHexToRgba("#FFFFFF");
@@ -2233,21 +2351,21 @@ NgChm.DET.drawScatterBarPlotColClassBar = function(pos, height, classBarValues, 
 			var posVal = row[k];
 			for (var j = 0; j < NgChm.DET.dataBoxWidth; j++) {
 				if (posVal == 1) {
-					NgChm.DET.texPixels[pos] = barFgColor['r'];
-					NgChm.DET.texPixels[pos+1] = barFgColor['g'];
-					NgChm.DET.texPixels[pos+2] = barFgColor['b'];
-					NgChm.DET.texPixels[pos+3] = barFgColor['a'];
+					pixels[pos] = barFgColor['r'];
+					pixels[pos+1] = barFgColor['g'];
+					pixels[pos+2] = barFgColor['b'];
+					pixels[pos+3] = barFgColor['a'];
 				} else if (posVal == 2) {
-					NgChm.DET.texPixels[pos] = barCutColor['r'];
-					NgChm.DET.texPixels[pos+1] = barCutColor['g'];
-					NgChm.DET.texPixels[pos+2] = barCutColor['b'];
-					NgChm.DET.texPixels[pos+3] = barCutColor['a'];
+					pixels[pos] = barCutColor['r'];
+					pixels[pos+1] = barCutColor['g'];
+					pixels[pos+2] = barCutColor['b'];
+					pixels[pos+3] = barCutColor['a'];
 				} else {
 					if (currentClassBar.subBgColor !== "#FFFFFF") {
-						NgChm.DET.texPixels[pos] = barBgColor['r'];
-						NgChm.DET.texPixels[pos+1] = barBgColor['g'];
-						NgChm.DET.texPixels[pos+2] = barBgColor['b'];
-						NgChm.DET.texPixels[pos+3] = barBgColor['a'];
+						pixels[pos] = barBgColor['r'];
+						pixels[pos+1] = barBgColor['g'];
+						pixels[pos+2] = barBgColor['b'];
+						pixels[pos+3] = barBgColor['a'];
 					}
 				}
 				pos+=NgChm.SUM.BYTE_PER_RGBA;
@@ -2433,7 +2551,7 @@ NgChm.DET.rowClassBarLabelFont = function() {
 }
 
 //This function draws row class bars on the detail heat map canvas
-NgChm.DET.detailDrawRowClassBars = function () {
+NgChm.DET.detailDrawRowClassBars = function (pixels) {
 	var rowClassBarConfig = NgChm.heatMap.getRowClassificationConfig();
 	var rowClassBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
 	var rowClassBarData = NgChm.heatMap.getRowClassificationData();
@@ -2463,9 +2581,9 @@ NgChm.DET.detailDrawRowClassBars = function () {
 			}
 			var pos = offset; // move past the dendro and the other class bars...
 			if (currentClassBar.bar_type === 'color_plot') {
-				pos = NgChm.DET.drawColorPlotRowClassBar(pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap);
+				pos = NgChm.DET.drawColorPlotRowClassBar(pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap);
 			} else {
-				pos = NgChm.DET.drawScatterBarPlotRowClassBar(pos, start, length, currentClassBar.height-NgChm.DET.paddingHeight, classBarValues, mapWidth, colorMap, currentClassBar);
+				pos = NgChm.DET.drawScatterBarPlotRowClassBar(pixels, pos, start, length, currentClassBar.height-NgChm.DET.paddingHeight, classBarValues, mapWidth, colorMap, currentClassBar);
 			}
 			offset+= currentClassBar.height*NgChm.SUM.BYTE_PER_RGBA;
 		}
@@ -2503,16 +2621,16 @@ NgChm.DET.drawRowClassBarLegend = function(key,currentClassBar,prevHeight,totalH
 	NgChm.SUM.setLegendDivElement(key+"legendDetHigh","-"+highVal,topPos,endPos,true,false);
 }
 
-NgChm.DET.drawColorPlotRowClassBar = function(pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap) {
+NgChm.DET.drawColorPlotRowClassBar = function(pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap) {
 	for (var j = start + length - 1; j >= start; j--){ // for each row shown in the detail panel
 		var val = classBarValues[j-1];
 		var color = colorMap.getClassificationColor(val);
 		for (var boxRows = 0; boxRows < NgChm.DET.dataBoxHeight; boxRows++) { // draw this color to the proper height
 			for (var k = 0; k < currentClassBar.height-NgChm.DET.paddingHeight; k++){ // draw this however thick it needs to be
-				NgChm.DET.texPixels[pos] = color['r'];
-				NgChm.DET.texPixels[pos + 1] = color['g'];
-				NgChm.DET.texPixels[pos + 2] = color['b'];
-				NgChm.DET.texPixels[pos + 3] = color['a'];
+				pixels[pos] = color['r'];
+				pixels[pos + 1] = color['g'];
+				pixels[pos + 2] = color['b'];
+				pixels[pos + 3] = color['a'];
 				pos+=NgChm.SUM.BYTE_PER_RGBA;	// 4 bytes per color
 			}
 			// padding between class bars
@@ -2523,7 +2641,7 @@ NgChm.DET.drawColorPlotRowClassBar = function(pos, start, length, currentClassBa
 	return pos;
 }
 
-NgChm.DET.drawScatterBarPlotRowClassBar = function(pos, start, length, height, classBarValues, mapWidth, colorMap, currentClassBar) {
+NgChm.DET.drawScatterBarPlotRowClassBar = function(pixels, pos, start, length, height, classBarValues, mapWidth, colorMap, currentClassBar) {
 	var barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
 	var barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
 	var barCutColor = colorMap.getHexToRgba("#FFFFFF");
@@ -2534,21 +2652,21 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(pos, start, length, height, c
 				var row = matrix[i];
 				var posVal = row[h];
 				if (posVal == 1) {
-					NgChm.DET.texPixels[pos] = barFgColor['r'];
-					NgChm.DET.texPixels[pos+1] = barFgColor['g'];
-					NgChm.DET.texPixels[pos+2] = barFgColor['b'];
-					NgChm.DET.texPixels[pos+3] = barFgColor['a'];
+					pixels[pos] = barFgColor['r'];
+					pixels[pos+1] = barFgColor['g'];
+					pixels[pos+2] = barFgColor['b'];
+					pixels[pos+3] = barFgColor['a'];
 				} else if (posVal == 2) {
-					NgChm.DET.texPixels[pos] = barCutColor['r'];
-					NgChm.DET.texPixels[pos+1] = barCutColor['g'];
-					NgChm.DET.texPixels[pos+2] = barCutColor['b'];
-					NgChm.DET.texPixels[pos+3] = barCutColor['a'];
+					pixels[pos] = barCutColor['r'];
+					pixels[pos+1] = barCutColor['g'];
+					pixels[pos+2] = barCutColor['b'];
+					pixels[pos+3] = barCutColor['a'];
 				} else {
 					if (currentClassBar.subBgColor !== "#FFFFFF") {
-						NgChm.DET.texPixels[pos] = barBgColor['r'];
-						NgChm.DET.texPixels[pos+1] = barBgColor['g'];
-						NgChm.DET.texPixels[pos+2] = barBgColor['b'];
-						NgChm.DET.texPixels[pos+3] = barBgColor['a'];
+						pixels[pos] = barBgColor['r'];
+						pixels[pos+1] = barBgColor['g'];
+						pixels[pos+2] = barBgColor['b'];
+						pixels[pos+3] = barBgColor['a'];
 					}
 				}
 				pos+=NgChm.SUM.BYTE_PER_RGBA;
@@ -2639,19 +2757,10 @@ NgChm.DET.detailDrawRowClassBarLabels = function () {
 	}
 }
 
+//Covariate bars in the detail pane are just their specified height,
+//with no rescaling.
 NgChm.DET.calculateTotalClassBarHeight = function (axis) {
-	var totalHeight = 0;
-	if (axis === "row") {
-		var classBars = NgChm.heatMap.getRowClassificationConfig();
-	} else {
-		var classBars = NgChm.heatMap.getColClassificationConfig();
-	}
-	for (var key in classBars){
-		if (classBars[key].show === 'Y') {
-		   totalHeight += parseInt(classBars[key].height);
-		}
-	}
-	return totalHeight;
+	return NgChm.heatMap.calculateTotalClassBarHeight (axis);
 }
 
 /******************************************************
@@ -3051,16 +3160,6 @@ NgChm.DET.detInitGl = function () {
 			NgChm.DET.gl.TEXTURE_2D, 
 			NgChm.DET.gl.TEXTURE_MAG_FILTER, 
 			NgChm.DET.gl.NEAREST);
-	
-	NgChm.DET.textureParams = {};
-
-	var texWidth = null, texHeight = null, texData;
-	texWidth = NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
-	texHeight = NgChm.DET.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column");
-	texData = new ArrayBuffer(texWidth * texHeight * 4);
-	NgChm.DET.texPixels = new Uint8Array(texData);
-	NgChm.DET.textureParams['width'] = texWidth;
-	NgChm.DET.textureParams['height'] = texHeight; 
 }
 
 

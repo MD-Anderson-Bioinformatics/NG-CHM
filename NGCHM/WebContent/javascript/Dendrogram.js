@@ -1,5 +1,3 @@
-"use strict";
-
 // Define Namespace for NgChm Dendrogram
 NgChm.createNS('NgChm.DDR');
 

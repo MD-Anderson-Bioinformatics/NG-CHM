@@ -38,7 +38,7 @@ NgChm.SEL.updateSelection = function() {
     NgChm.SUM.drawLeftCanvasBox();
     // Redraw based on mode type and selection. 
     NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),NgChm.SEL.getCurrentDetRow(),NgChm.SEL.getCurrentDetCol(),NgChm.SEL.getCurrentDetDataPerCol(),NgChm.SEL.getCurrentDetDataPerRow());
-    NgChm.DET.drawDetailHeatMap();
+    NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
 }
 
 NgChm.SEL.changeMode = function(newMode) {
@@ -480,7 +480,7 @@ NgChm.SEL.flickChange = function(fromList) {
 	} 
 	NgChm.SEL.flickInit();
     NgChm.SUM.buildSummaryTexture();
-	NgChm.DET.drawDetailHeatMap();
+	NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
 	NgChm.SEL.updateSelection();
 }
 

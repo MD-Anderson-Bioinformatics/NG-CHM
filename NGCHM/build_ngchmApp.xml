@@ -69,6 +69,7 @@
 	
     <target name="build_ngchm_app" depends="create_app_html">
 	<delete>
+        	<fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>
@@ -76,6 +77,7 @@
 	
     <target name="build_ngchm_widget" depends="create_widget_js">
 	<delete>
+    		<fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>
@@ -83,6 +85,7 @@
 
     <target name="build_ngchm_all" depends="create_app_html,create_widget_js">
 	<delete>
+    		<fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>

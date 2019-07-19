@@ -369,7 +369,7 @@ NgChm.UPM.prefsSuccess = function() {
 	//and formally apply all changes to the heat map, re-draw, and exit preferences.
 	NgChm.UPM.bkpColorMaps = null;
 	NgChm.SUM.summaryInit(true);  //we set this to true so that the separator bar will not move on an apply.
-	NgChm.DET.drawDetailHeatMap();
+	NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
 	NgChm.SEL.callDetailDrawFunction(NgChm.SEL.mode);
 	NgChm.UPM.applyDone = true;
 	NgChm.UPM.setMessage("");

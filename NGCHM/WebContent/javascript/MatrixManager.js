@@ -79,34 +79,56 @@ NgChm.MMGR.MatrixManager = function(fileSrc) {
 	}	
 };    	
 
+
 //Create a worker thread to request/receive tiles.  Using a separate
 //thread allows the large tile I/O to overlap extended periods of heavy
 //computation.
 NgChm.MMGR.createWebTileLoader = function () {
-	const debug = true;
+	const debug = false;
 
 	// Define worker script.
-	let wS = `"use strict";`
-	wS += `function loadTile (tileCacheName, URL) {
-const req = new XMLHttpRequest();
-req.open("GET", URL, true);
-req.responseType = "arraybuffer";
-req.onreadystatechange = function () {
-	if (req.readyState == req.DONE) {
-		if (req.status != 200) {
-			postMessage({ op: 'tileLoadFailed', tileCacheName });
-		} else {
-			// Transfer buffer to main thread.
-			postMessage({ op:'tileLoaded', tileCacheName, buffer: req.response }, [req.response]);
+//	let wS = `"use strict";`
+let	wS = `const debug = ${debug};`;
+	wS += `const maxActiveRequests = 2;`; // Maximum number of tile requests that can be in flight concurrently
+	wS += `var active = 0;`;              // Number of tile requests in flight
+	wS += `const pending = [];`;          // Additional tile requests
+
+	// The following function is stringified and sent to the web loader.
+	function loadTile (job) {
+		if (active === maxActiveRequests) {
+			pending.push(job);
+			return;
 		}
+		active++;
+		const req = new XMLHttpRequest();
+		req.open("GET", job.URL, true);
+		req.responseType = "arraybuffer";
+		req.onreadystatechange = function () {
+			if (req.readyState == req.DONE) {
+				active--;
+				if (pending.length > 0) {
+					loadTile (pending.shift());
+				}
+				if (req.status != 200) {
+					postMessage({ op: 'tileLoadFailed', job });
+				} else {
+					// Transfer buffer to main thread.
+					postMessage({ op: 'tileLoaded', job, buffer: req.response }, [req.response]);
+				}
+			}
+		};
+		req.send();
 	}
-};
-req.send();
-}`;
-	wS += `onmessage = function (e) {`;
-	if (debug) wS += `console.log({ m: 'Worker: got message', e, t: performance.now() });`;
-	wS += `if (e.data.op === 'loadTile') { loadTile (e.data.tileCacheName, e.data.URL); }`;
-	wS += `};`;
+	wS += loadTile.toString();
+
+	// This function will be stringified and sent to the web loader.
+	function handleMessage(e) {
+		if (debug) console.log({ m: 'Worker: got message', e, t: performance.now() });
+		if (e.data.op === 'loadTile') { loadTile (e.data.job); }
+	}
+	wS += handleMessage.toString();
+
+	wS += `onmessage = handleMessage;`;
 	if (debug) wS += `console.log ({ m:'TileLoader loaded', t: performance.now() });`;
 
 	// Create blob and start worker.
@@ -123,6 +145,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	var mapConfig = null;
 	var mapData = null;
 	var datalevels = {};
+	const alternateLevels = {};	
 	var tileCache = {};
 	var zipFiles = {};
 	var colorMapMgr;
@@ -225,6 +248,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return mapConfig.col_configuration;
 	}
 	
+	this.getAxisCovariateConfig = function (axis) {
+		return this.getAxisConfig(axis).classifications;
+	}
+	
 	this.getRowClassificationConfig = function() {
 		return mapConfig.row_configuration.classifications;
 	}
@@ -239,6 +266,19 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	this.getColClassificationConfigOrder = function() {
 		return mapConfig.col_configuration.classifications_order;
+	}
+	
+	// Return an array of the display heights of all covariate bars on an axis.
+	// Hidden bars have a height of zero.  The order of entries is fixed but not
+	// specified.
+	this.getCovariateBarHeights = function (axis) {
+		return Object.entries(this.getAxisCovariateConfig(axis))
+		.map(([key,config]) => config.show === 'Y' ? (config.height|0) : 0)
+	}
+
+	// Return the total display height of all covariate bars on an axis.
+	this.calculateTotalClassBarHeight = function (axis) {
+		return this.getCovariateBarHeights(axis).reduce((t,h) => t+h, 0);
 	}
 	
 	this.getRowClassificationOrder = function(showOnly) {
@@ -795,83 +835,43 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		};
 	
 	//  Initialize the data layers once we know the tile structure.
-	//  JSON structure object describing available data layers passed in.
-	function addDataLayers(mapConfig) {
-		//Create heat map data objects for each data level.  All maps should have thumb nail and full level.
-		//Each data layer keeps a pointer to the next lower level data layer.
-		const levels = mapConfig.data_configuration.map_information.levels;
-		const datalayers = mapConfig.data_configuration.map_information.data_layer
-        
-        //Thumb nail
-		if (levels.tn !== undefined) {
-			datalevels[NgChm.MMGR.THUMBNAIL_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-                                                         NgChm.MMGR.THUMBNAIL_LEVEL,
-                                                         levels.tn,
-                                                         datalayers,
-                                                         null,
-                                                         getTileCacheData,
-                                                         getTile); //special callback for thumb nail.
-		}
-      
+		//  JSON structure object describing available data layers passed in.
+		function addDataLayers(mapConfig) {
+			//Create heat map data objects for each data level.  All maps should have thumb nail and full level.
+			//Each data layer keeps a pointer to the next lower level data layer.
+			const levelsConf = mapConfig.data_configuration.map_information.levels;
+			const datalayers = mapConfig.data_configuration.map_information.data_layer
 
-		//Summary
-		if (levels.s !== undefined) {
-			datalevels[NgChm.MMGR.SUMMARY_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-                                                       NgChm.MMGR.SUMMARY_LEVEL,
-                                                       levels.s,
-                                                       datalayers,
-                                                       datalevels[NgChm.MMGR.THUMBNAIL_LEVEL],
-                                                       getTileCacheData,
-                                                       getTile);
-		} else {			
-			//If no summary level, set the summary to be the thumb nail.
-			datalevels[NgChm.MMGR.SUMMARY_LEVEL] = datalevels[NgChm.MMGR.THUMBNAIL_LEVEL];
-		}
+			// Create a HeatMapData object for level levelId if it's defined in the map configuration.
+			// Set the level's lower level to the HeatMapData object for lowerLevelId (if it's defined).
+			// If levelId is not defined in the map configuration, create an alias to the
+			// HeatMapData object for altLevelId (if it's defined).
+			function createLevel (levelId, lowerLevelId, altLevelId) {
+				if (levelsConf.hasOwnProperty (levelId)) {
+					datalevels[levelId] = new NgChm.MMGR.HeatMapData(heatMapName,
+									levelId,
+									levelsConf[levelId],
+									datalayers,
+									lowerLevelId ? datalevels[lowerLevelId] : null,
+									getTileCacheData,
+									getTile);
+				} else if (altLevelId) {
+					datalevels[levelId] = datalevels[altLevelId];
+					// Record all levels for which altLevelId is serving as an immediate alternate.
+					if (!alternateLevels.hasOwnProperty(altLevelId)) {
+						alternateLevels[altLevelId] = [];
+					}
+					alternateLevels[altLevelId].push (levelId);				}
+			}
 
-		//Detail level
-		if (levels.d !== undefined) {
-			datalevels[NgChm.MMGR.DETAIL_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-                                                    NgChm.MMGR.DETAIL_LEVEL,
-                                                    levels.d,
-                                                    datalayers,
-                                                    datalevels[NgChm.MMGR.SUMMARY_LEVEL],
-                                                    getTileCacheData,
-                                                    getTile);
-		} else {
-			//If no detail layer, set it to summary.
-			datalevels[NgChm.MMGR.DETAIL_LEVEL] = datalevels[NgChm.MMGR.SUMMARY_LEVEL];
-		}
+			createLevel (NgChm.MMGR.THUMBNAIL_LEVEL);
+			createLevel (NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.THUMBNAIL_LEVEL, NgChm.MMGR.THUMBNAIL_LEVEL);
+			createLevel (NgChm.MMGR.DETAIL_LEVEL, NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.SUMMARY_LEVEL);
+			createLevel (NgChm.MMGR.RIBBON_VERT_LEVEL, NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.DETAIL_LEVEL);
+			createLevel (NgChm.MMGR.RIBBON_HOR_LEVEL, NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.DETAIL_LEVEL);
 
-		
-				
-		//Ribbon Vertical
-		if (levels.rv !== undefined) {
-			datalevels[NgChm.MMGR.RIBBON_VERT_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-	        		                                         NgChm.MMGR.RIBBON_VERT_LEVEL,
-	        		                                         levels.rv,
-	                                                         datalayers,
-	        		                                         datalevels[NgChm.MMGR.SUMMARY_LEVEL],
-	        		                                         getTileCacheData,
-	        		                                         getTile);
-		} else {
-			datalevels[NgChm.MMGR.RIBBON_VERT_LEVEL] = datalevels[NgChm.MMGR.DETAIL_LEVEL];
-		}
-      
-		//Ribbon Horizontal
-		if (levels.rh !== undefined) {
-			datalevels[NgChm.MMGR.RIBBON_HOR_LEVEL] = new NgChm.MMGR.HeatMapData(heatMapName, 
-	        		                                         NgChm.MMGR.RIBBON_HOR_LEVEL,
-	        		                                         levels.rh,
-	                                                         datalayers,
-	        		                                         datalevels[NgChm.MMGR.SUMMARY_LEVEL],
-	        		                                         getTileCacheData,
-	        		                                         getTile);
-		} else {
-			datalevels[NgChm.MMGR.RIBBON_HOR_LEVEL] = datalevels[NgChm.MMGR.DETAIL_LEVEL];
-		}	
-		
-		prefetchInitialTiles(datalayers, datalevels, levels);
-		sendCallBack(NgChm.MMGR.Event_INITIALIZED);
+			prefetchInitialTiles(datalayers, datalevels, levelsConf);
+			sendCallBack(NgChm.MMGR.Event_INITIALIZED);
 	}
 	
 	function addMapData(md) {
@@ -928,9 +928,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 
 	// Display statistics about each loaded tile cache entry.
 	NgChm.MMGR.showTileCacheStats = function () {
-		for (const tileCacheName in tileCache) {
+		for (let tileCacheName in tileCache) {
 			const e = tileCache[tileCacheName];
-			if (e.state === 'loaded') {
+			if (e.state === 'ready') {
 				const loadTime = e.loadTime - e.fetchTime;
 				const loadTimePerKByte = loadTime / e.data.length * 1024;
 				console.log ({ tileCacheName, KBytes: e.data.length / 1024, loadTime, loadTimePerKByte });
@@ -946,7 +946,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	// Get the data for a tile, if it's loaded.
 	function getTileCacheData (tileCacheName) {
 		const entry = tileCache[tileCacheName];
-		if (entry && entry.state === 'loaded') {
+		if (entry && entry.state === 'ready') {
 			return entry.data;
 		} else {
 			return null;
@@ -959,11 +959,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		const entry = tileCache[tileCacheName];
 		entry.loadTime = performance.now();
 		entry.data = arrayData;
-		entry.state = 'loaded';
-		const [ layer, level, row, col ] = tileCacheName.split('.');
-		sendCallBack(NgChm.MMGR.Event_NEWDATA, level, layer);
-	}
 
+		entry.state = 'ready';
+		sendCallBack(NgChm.MMGR.Event_NEWDATA, Object.assign({},entry.props));
+	}
+	
 	// Handle replies from tileio worker.
 	function connectWebTileLoader () {
 		const debug = false;
@@ -971,9 +971,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			if (debug) console.log({ m: 'Received message from tileLoader', e });
 			if (e.data.op === 'tileLoaded') {
 				const tiledata = new Float32Array(e.data.buffer);
-				setTileCacheEntry (e.data.tileCacheName, tiledata);
+				setTileCacheEntry (e.data.job.tileCacheName, tiledata);
 			} else if (e.data.op === 'tileLoadFailed') {
-				removeTileCacheEntry (e.data.tileCacheName);  // Allow another fetch attempt.
+				removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
 			} else {
 				console.log({ m: 'connectWebTileLoader: unknown op', e });
 			}
@@ -982,31 +982,29 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	};
 
 	// Create the specified cache entry.
-	// Initiate loading of the tile data from URL, if supplied.
-	function createTileCacheEntry (tileCacheName, URL) {
-		tileCache[tileCacheName] = {
-			state: 'fetching',
+	function createTileCacheEntry (tileCacheName) {
+		const [ layer, level, row, col ] = tileCacheName.split('.');
+		return tileCache[tileCacheName] = {
+			state: 'new',
 			data: null,
+			props: { layer, level, row: row|0, col: col|0 },
 			fetchTime: performance.now(),
 			loadTime: 0.0	// Placeholder
 		};
-		if (URL) {
-			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', tileCacheName, URL });
-		}
 	}
-
+	
 	// Return true iff the specified tile has completed loading into the tile cache.
 	function haveTileData (tileCacheName) {
 		const td = tileCache[tileCacheName];
-		return td && td.state === 'loaded';
+		return td && td.state === 'ready';
 	}
 	
 	//Call the users call back function to let them know the chm is initialized or updated.
-	function sendCallBack(event, level, tileDl) {
+	function sendCallBack(event, tile) {
 
 		//Initialize event
-		if ((event == NgChm.MMGR.Event_INITIALIZED) || (event == NgChm.MMGR.Event_JSON) ||
-			((event == NgChm.MMGR.Event_NEWDATA) && (level == NgChm.MMGR.THUMBNAIL_LEVEL))) {
+		if ((event === NgChm.MMGR.Event_INITIALIZED) || (event === NgChm.MMGR.Event_JSON) ||
+			((event === NgChm.MMGR.Event_NEWDATA) && (tile.level === NgChm.MMGR.THUMBNAIL_LEVEL))) {
 			//Only send initialized status if several conditions are met: need all summary JSON and thumb nail.
 			if ((mapData != null) &&
 				(mapConfig != null) &&
@@ -1019,21 +1017,39 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			//Unlikely, but possible to get init finished after all the summary tiles.
 			//As a back stop, if we already have the top left summary tile, send a data update event too.
 			if (haveTileData(NgChm.SEL.currentDl+"."+NgChm.MMGR.SUMMARY_LEVEL+".1.1")) {
-				sendAllListeners(NgChm.MMGR.Event_NEWDATA, NgChm.MMGR.SUMMARY_LEVEL);
+				sendAllListeners(NgChm.MMGR.Event_NEWDATA, { layer: NgChm.SEL.currentDl, level: NgChm.MMGR.SUMMARY_LEVEL, row: 1, col: 1});
 			}
-		} else	if ((event == NgChm.MMGR.Event_NEWDATA) && (initialized == 1)) {
-			//Got a new tile, notify drawing code via callback.
-			 if (tileDl == NgChm.SEL.currentDl) {
-				sendAllListeners(event, level);
-			 }
+		} else	if ((event === NgChm.MMGR.Event_NEWDATA) && (initialized === 1)) {
+			sendAllListeners(event, tile);
 		}
-}	
+	}	
+	
 	//send to all event listeners
-	function sendAllListeners(event, level){
-		for (var i = 0; i < eventListeners.length; i++) {
-			eventListeners[i](event, level);
+	function sendAllListeners(event, tile){
+		sendAll (event, tile);
+		if (event === NgChm.MMGR.Event_NEWDATA) {
+			// Also broadcast NEWDATA events to all layers for which tile.level is an alternate.
+			const { layer, level: mylevel, row, col } = tile;
+			const alts = getAllAlternateLevels (mylevel);
+			while (alts.length > 0) {
+				const level = alts.shift();
+				sendAll (NgChm.MMGR.Event_NEWDATA, {layer, level, row, col});
+			}
+		}
+
+		function sendAll (event, tile) {
+			for (var i = 0; i < eventListeners.length; i++) {
+				eventListeners[i](event, tile);
+			}
 		}
 	}
+
+	// Recursively determine all levels for which level is an alternate.
+	function getAllAlternateLevels (level) {
+		const altlevs = alternateLevels.hasOwnProperty (level) ? alternateLevels[level] : [];
+		const pal = altlevs.map(lev => getAllAlternateLevels(lev));
+		return [...new Set(pal.concat(altlevs).flat())];  // Use [...Set] to ensure uniqueness
+	}	
 	
 	//Fetch a data tile if needed.
 	function getTile(layer, level, tileRow, tileColumn) {
@@ -1042,6 +1058,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			//Already have tile in cache - do nothing.
 			return;
 		}
+		createTileCacheEntry(tileCacheName);
 		var tileName=level + "." + tileRow + "." + tileColumn;  
 
   	//ToDo: need to limit the number of tiles retrieved.
@@ -1061,9 +1078,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 				URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+layer+"/"+level+"/"+tileName+".bin";
 
 			}
-			createTileCacheEntry (tileCacheName, URL);
+			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
 		} else {
-			createTileCacheEntry (tileCacheName, null);
 			//File fileSrc - get tile from zip
 			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.tile'];
 			if (typeof entry == 'undefined') {

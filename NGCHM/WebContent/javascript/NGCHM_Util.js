@@ -19,7 +19,7 @@ NgChm.UTIL.getURLParameter = function(name) {
 NgChm.UTIL.redrawCanvases = function () {
     if ((NgChm.UTIL.getBrowserType() !== "Firefox") && (NgChm.heatMap !== null)) {
         NgChm.SUM.drawHeatMap();
-        NgChm.DET.drawDetailHeatMap();
+        NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
         if (NgChm.SUM.rCCanvas.width > 0) {
             NgChm.SUM.drawRowClassBars();
         }
@@ -175,6 +175,7 @@ NgChm.UTIL.getBrowserType = function () {
  * size accordingly.
  **********************************************************************************/
 NgChm.UTIL.setBrowserMinFontSize = function () {
+	  const minMinLabelSize = 5;
 	  var minSettingFound = 0;
 	  var el = document.createElement('div');
 	  document.body.appendChild(el);
@@ -185,7 +186,7 @@ NgChm.UTIL.setBrowserMinFontSize = function () {
 	  var least = 0;
 	  var most = 64;
 	  var middle; 
-	  for (var i = 0; i < 32; ++i) {
+	  for (var i = 0; i < 32 && most >= minMinLabelSize; ++i) {
 	    middle = (least + most)/2;
 	    el.style.fontSize = middle + 'px';
 	    if (el.offsetHeight === minimumHeight) {
@@ -194,7 +195,7 @@ NgChm.UTIL.setBrowserMinFontSize = function () {
 	      most = middle;
 	    }
 	  }
-	  if (middle > 5) {
+	  if (middle > minMinLabelSize) {
 		  minSettingFound = middle;
 		  NgChm.DET.minLabelSize = Math.floor(middle) - 1;
 	  }
@@ -428,12 +429,12 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.FILE_SOURCE);
 	zip.useWebWorkers = false;
 	NgChm.UTIL.resetCHM();
+    NgChm.UTIL.initDisplayVars();
     NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
     NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
         NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
     }
-    NgChm.UTIL.initDisplayVars();
     NgChm.SUM.initSummaryDisplay();
 	NgChm.DET.initDetailDisplay();
 }
@@ -442,7 +443,7 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
  * FUNCTION - builderViewSizing: This function handles the resizing of the summary
  * panel for the builder in cases where ONLY the summary panel is being drawn.  
  **********************************************************************************/
-NgChm.UTIL.builderViewSizing = function (event, level) {
+NgChm.UTIL.builderViewSizing = function (event, tile) {
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		document.getElementById('detail_chm').style.width = '4%';
 		document.getElementById('summary_chm').style.width = '50%';
@@ -488,6 +489,60 @@ NgChm.UTIL.resetCHM = function () {
 	NgChm.SEL.scrollTime = null; 
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;
+}
+
+/**********************************************************************************
+ * FUNCTION - removeElementsByClass: This function removes all DOM elements with
+ * a given className.  
+ **********************************************************************************/
+NgChm.UTIL.removeElementsByClass = function(className) {
+    var elements = document.getElementsByClassName(className);
+    while(elements.length > 0){
+        elements[0].parentNode.removeChild(elements[0]);
+    }
+}
+
+/**********************************************************************************
+ * FUNCTION - initDisplayVars: This function reinitializes summary and detail 
+ * display values whenever a file-mode map is opened.  This is done primarily
+ * to reset screens when a second, third, etc. map is opened.  
+ **********************************************************************************/
+NgChm.UTIL.initDisplayVars = function() {
+	NgChm.UTIL.removeElementsByClass("DynamicLabel");
+	NgChm.SUM.summaryHeatMapCache = {};
+	NgChm.DET.detailHeatMapCache = {};      
+	NgChm.DET.detailHeatMapLevel = {};      
+	NgChm.DET.detailHeatMapValidator = {};  
+	NgChm.UTIL.actualAxisLabels = {};
+	NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
+	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	NgChm.DET.colDendro = null;
+	NgChm.DET.rowDendro = null;
+	NgChm.DET.labelElements = {};
+	NgChm.DET.oldLabelElements = {};
+	NgChm.DET.resetLabelLengths();  
+	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
+	NgChm.SUM.heightScale = 1;
+	NgChm.DET.initialized = false;
+	NgChm.DET.dataViewHeight = 506;
+	NgChm.DET.dataViewWidth = 506;
+	NgChm.SUM.colTopItemsWidth = 0;
+	NgChm.SUM.rowTopItemsHeight = 0;
+	NgChm.DET.oldMousePos = [0, 0];
+	NgChm.DET.offsetX = 0;
+	NgChm.DET.offsetY = 0;
+	NgChm.DET.pageX = 0;
+	NgChm.DET.pageY = 0;
+	NgChm.DET.dendroHeight = 105;
+	NgChm.DET.dendroWidth = 105;
+	NgChm.DET.currentSearchItem = {};
+	NgChm.DET.labelLastClicked = {};
+	NgChm.DET.mouseDown = false;
+	NgChm.DET.rowLabelLen = 0;
+	NgChm.DET.colLabelLen = 0;
+	NgChm.DET.rowLabelFont = 0;
+	NgChm.DET.colLabelFont = 0;
+	NgChm.DET.colClassLabelFont = 0;
+	NgChm.DET.rowClassLabelFont = 0;
 }
 
 /**********************************************************************************
@@ -636,10 +691,13 @@ NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
  * panels", allowing them to be moved on the screen.
  **********************************************************************************/
 NgChm.UTIL.setDragPanels = function () {
-	NgChm.UTIL.dragElement(document.getElementById("prefs"));
-	NgChm.UTIL.dragElement(document.getElementById("pdfPrefs"));
-	NgChm.UTIL.dragElement(document.getElementById("msgBox"));
-	NgChm.UTIL.dragElement(document.getElementById("linkBox"));
+	var panel = document.getElementById("prefs");
+	if (panel !== null) {
+		NgChm.UTIL.dragElement(document.getElementById("prefs"));
+		NgChm.UTIL.dragElement(document.getElementById("pdfPrefs"));
+		NgChm.UTIL.dragElement(document.getElementById("msgBox"));
+		NgChm.UTIL.dragElement(document.getElementById("linkBox"));
+	}
 }
 
 /**********************************************************************************
@@ -838,36 +896,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	doc.close();
 };
 
-/**********************************************************************************
- * FUNCTION - initDisplayVars: This function reinitializes summary and detail 
- * display values whenever a file-mode map is opened.  This is done primarily
- * to reset screens when a second, third, etc. map is opened.  
- **********************************************************************************/
-NgChm.UTIL.initDisplayVars = function() {
-	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
-	NgChm.SUM.heightScale = 1;
-	NgChm.DET.initialized = false;
-	NgChm.DET.dataViewHeight = 506;
-	NgChm.DET.dataViewWidth = 506;
-	NgChm.SUM.colTopItemsWidth = 0;
-	NgChm.SUM.rowTopItemsHeight = 0;
-	NgChm.DET.oldMousePos = [0, 0];
-	NgChm.DET.offsetX = 0;
-	NgChm.DET.offsetY = 0;
-	NgChm.DET.pageX = 0;
-	NgChm.DET.pageY = 0;
-	NgChm.DET.dendroHeight = 105;
-	NgChm.DET.dendroWidth = 105;
-	NgChm.DET.currentSearchItem = {};
-	NgChm.DET.labelLastClicked = {};
-	NgChm.DET.mouseDown = false;
-	NgChm.DET.rowLabelLen = 0;
-	NgChm.DET.colLabelLen = 0;
-	NgChm.DET.rowLabelFont = 0;
-	NgChm.DET.colLabelFont = 0;
-	NgChm.DET.colClassLabelFont = 0;
-	NgChm.DET.rowClassLabelFont = 0;
-}
+
     
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
