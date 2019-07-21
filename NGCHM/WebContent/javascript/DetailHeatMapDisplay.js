@@ -1732,8 +1732,9 @@ NgChm.DET.calcRowLabels = function (fontSize) {
 	if (skip > NgChm.DET.minLabelSize) {
 		const shownLabels = NgChm.UTIL.getShownLabels('ROW');
 		for (let i = NgChm.SEL.currentRow; i < NgChm.SEL.currentRow + NgChm.SEL.dataPerCol; i++) {
-			NgChm.DET.calcLabelDiv(shownLabels[i-1], fontSize, 'ROW');
+			NgChm.DET.addTmpLabelForSizeCalc(shownLabels[i-1], fontSize);
 		}
+		NgChm.DET.calcLabelDiv('ROW');
 	}
 }
 
@@ -1748,8 +1749,9 @@ NgChm.DET.calcColLabels = function (fontSize) {
 	if (skip > NgChm.DET.minLabelSize) {
 		const shownLabels = NgChm.UTIL.getShownLabels('COLUMN');
 		for (let i = NgChm.SEL.currentCol; i < NgChm.SEL.currentCol + NgChm.SEL.dataPerRow; i++) {
-			NgChm.DET.calcLabelDiv(shownLabels[i], fontSize, 'COL');
+			NgChm.DET.addTmpLabelForSizeCalc(shownLabels[i-1], fontSize);
 		}
+		NgChm.DET.calcLabelDiv('COL');
 	}
 }
 
@@ -1757,47 +1759,90 @@ NgChm.DET.calcColLabels = function (fontSize) {
  * label widths.
  */
 const labelSizeCache = {};
-/* Create a div just for calculating label widths.
+/* Create a pool of divs just for calculating label widths.
  */
-const labelSizeWidthCalcDiv = (function() {
-    const div = document.createElement('div');
-    div.className = 'DynamicLabel';
-    div.style.position = "absolute";
-    div.style.fontFamily = 'sans-serif';
-    div.style.fontWeight = 'bold';
-    return div;
-})();
+const labelSizeWidthCalcPool = [];
 
-// This function assesses the size of the label and  increases the
-// row/col label length if the label is larger than those already processed.
-// rowLabelLen and colLabelLen are used to size the detail screen
-// to accomodate labels on both axes.
-NgChm.DET.calcLabelDiv = function (text, fontSize, axis) {
-        const key = text + fontSize.toString();
-        if (!labelSizeCache.hasOwnProperty(key)) {
-                // Haven't seen this combination of font and fontSize before.
-                // Set the contents of our label size div and calculate its width.
-		labelSizeWidthCalcDiv.style.fontSize = fontSize.toString() +'pt';
-		labelSizeWidthCalcDiv.innerText = text;
-		NgChm.DET.labelElement.appendChild(labelSizeWidthCalcDiv);
-        	labelSizeCache[key] = labelSizeWidthCalcDiv.clientWidth;
-		NgChm.DET.labelElement.removeChild(labelSizeWidthCalcDiv);
-        }
- 
-        const w = labelSizeCache[key];
-	if (w > 1000) {
-		console.log('Ridiculous label length ' + w + ' ' + key);
-	}
-	if (axis === 'ROW') {
-		if (w > NgChm.DET.rowLabelLen) {
-			NgChm.DET.rowLabelLen = w;
-		}
+/* Get a labelSizeWidthCalc div from the pool if possible.
+ * Otherwise create and return a new pool element.
+ */
+function getPoolElement () {
+	if (labelSizeWidthCalcPool.length > 0) {
+		return labelSizeWidthCalcPool.pop();
 	} else {
-		if (w > NgChm.DET.colLabelLen) {
-			NgChm.DET.colLabelLen = w;
-		}
+		const div = document.createElement('div');
+		div.className = 'DynamicLabel';
+		div.style.position = "absolute";
+		div.style.fontFamily = 'sans-serif';
+		div.style.fontWeight = 'bold';
+		return div;
 	}
 }
+
+/* Temporary label elements that have been added to the document for width calculation.
+ * Each entry consists of:
+ *  - key: a key for labelSizeCache, and
+ *  - el:  null if labelSizeCache already contains key, or a pool element for
+ *         calculating the width for key.
+ */
+const tmpLabelSizeElements = [];
+
+// This function adds an entry to tmpLabelSizeElements for the specified text
+// and fontSize.  If the combination of text and fontSize has not been seen
+// before, a pool label element for performing the width calculation is also
+// created.
+NgChm.DET.addTmpLabelForSizeCalc = function (text, fontSize) {
+        const key = text + fontSize.toString();
+        if (labelSizeCache.hasOwnProperty(key)) {
+		tmpLabelSizeElements.push({ key, el: null });
+	} else {
+                // Haven't seen this combination of font and fontSize before.
+                // Set the contents of our label size div and calculate its width.
+		const el = getPoolElement();
+		el.style.fontSize = fontSize.toString() +'pt';
+		el.innerText = text;
+		NgChm.DET.labelElement.appendChild(el);
+		tmpLabelSizeElements.push({ key, el });
+        }
+};
+
+// This function assesses the size of the entries that have been
+// added to tmpLabelSizeElements and increases the row/col label
+// length if the longest label is longer than those already processed.
+// rowLabelLen and colLabelLen are used to size the detail screen
+// to accomodate labels on both axes.
+NgChm.DET.calcLabelDiv = function (axis) {
+	let maxLen = axis === 'ROW' ? NgChm.DET.rowLabelLen : NgChm.DET.colLabelLen;
+	let w;
+
+	for (let ii = 0; ii < tmpLabelSizeElements.length; ii++) {
+		const { key, el } = tmpLabelSizeElements[ii];
+		if (el === null) {
+			w = labelSizeCache[key];
+		} else {
+			labelSizeCache[key] = w = el.clientWidth;
+		}
+		if (w > 1000) {
+			console.log('Ridiculous label length ' + w + ' ' + key);
+		}
+		if (w > maxLen) {
+			maxLen = w;
+		}
+	}
+	if (axis === 'ROW') {
+		if (maxLen > NgChm.DET.rowLabelLen) NgChm.DET.rowLabelLen = maxLen;
+	} else {
+		if (maxLen > NgChm.DET.colLabelLen) NgChm.DET.colLabelLen = maxLen;
+	}
+	// Remove and return tmp label divs to the pool.
+	while (tmpLabelSizeElements.length > 0) {
+		const { key, el } = tmpLabelSizeElements.pop();
+		if (el) {
+			NgChm.DET.labelElement.removeChild(el);
+			labelSizeWidthCalcPool.push (el);
+		}
+	}
+};
 
 // All new labels are added to NgChm.DET.labelElements.  It enables
 // existing label elements to be reused when updating the labels.
@@ -2491,9 +2536,10 @@ NgChm.DET.calcColClassBarLabels = function () {
 					if (containsLegend) {
 						labelText = "XXXX"+labelText; //calculate spacing for bar legend
 					}
-					NgChm.DET.calcLabelDiv(labelText, NgChm.DET.colClassLabelFont, 'ROW');
+					NgChm.DET.addTmpLabelForSizeCalc(labelText, NgChm.DET.colClassLabelFont);
 				} 
 			}	
+			NgChm.DET.calcLabelDiv('ROW');
 		}
 	}
 }
@@ -2718,9 +2764,10 @@ NgChm.DET.calcRowClassBarLabels = function () {
 					if (containsLegend) {
 						labelText = "XXX"+labelText; //calculate spacing for bar legend
 					}
-					NgChm.DET.calcLabelDiv(labelText, NgChm.DET.rowClassLabelFont, 'COL');
+					NgChm.DET.addTmpLabelForSizeCalc(labelText, NgChm.DET.rowClassLabelFont);
 				} 
 			} 
+			NgChm.DET.calcLabelDiv('COL');
 		}	
 	}
 }
