@@ -297,22 +297,22 @@ NgChm.LNK.labelHelpClose = function(axis){
     newTableBody.className = tempClass;
     tableBody.parentElement.replaceChild(newTableBody,tableBody);
     if (labelMenu){
-    	labelMenu.style.display = 'none';
+	labelMenu.classList.add ('hide');
     }
 }
 
 NgChm.LNK.labelHelpOpen = function(axis, e){
 	//Get the label item that the user clicked on (by axis) and save that value for use in NgChm.LNK.selection
-    var index = e.target.getAttribute("index");
+    var index = e.target.dataset.index;
     NgChm.LNK.selection = '';
     if (axis === "Row") {
         NgChm.LNK.selection = NgChm.heatMap.getRowLabels().labels[index-1];
     } else if (axis === "Column") {
         NgChm.LNK.selection = NgChm.heatMap.getColLabels().labels[index-1];
     } else if (axis === "RowCovar"){
-    	NgChm.LNK.selection = NgChm.heatMap.getRowClassificationConfigOrder()[index];
+	NgChm.LNK.selection = NgChm.heatMap.getRowClassificationConfigOrder()[index];
     } else if (axis === "ColumnCovar"){
-    	NgChm.LNK.selection = NgChm.heatMap.getColClassificationConfigOrder()[index];
+	NgChm.LNK.selection = NgChm.heatMap.getColClassificationConfigOrder()[index];
     }
 
 	var labelMenu =  axis !== "Matrix" ? document.getElementById(axis + 'LabelMenu') : document.getElementById("MatrixMenu");
@@ -321,23 +321,25 @@ NgChm.LNK.labelHelpOpen = function(axis, e){
     var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
     var row = header.getElementsByTagName('TR')[0];
     if (((axisLabelsLength > 0) || (NgChm.LNK.selection !== '')) && axis !== "Matrix"){
-    	row.innerHTML = "Selected " + axis.replace("Covar"," Classification") + "s : " + axisLabelsLength;
-    	labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
-    	NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
+	row.innerHTML = "Selected " + axis.replace("Covar"," Classification") + "s : " + axisLabelsLength;
+	labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
+	NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
     } else if (axisLabelsLength["Row"] > 0 && axisLabelsLength["Column"] > 0 && axis == "Matrix"){
-    	row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
-    	NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
+	row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
+	NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
     } else {
-    	row.innerHTML = "Please select a " + axis.replace("Covar"," Classification");
-    	labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
+	row.innerHTML = "Please select a " + axis.replace("Covar"," Classification");
+	labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
     }
     
     if (labelMenu){
-    	labelMenu.style.display = 'inherit';
-    	var pageX = e.changedTouches ? e.changedTouches[0].pageX : e.pageX;
-    	var pageY = e.changedTouches ? e.changedTouches[0].pageY : e.pageY;
-    	labelMenu.style.left = pageX + labelMenu.offsetWidth > window.innerWidth ? window.innerWidth-labelMenu.offsetWidth-15 : pageX; // -15 added in for the scroll bars
-    	labelMenu.style.top = pageY + labelMenu.offsetHeight > window.innerHeight ? window.innerHeight-labelMenu.offsetHeight-15 : pageY;
+	labelMenu.classList.remove('hide');
+	var pageX = e.changedTouches ? e.changedTouches[0].pageX : e.pageX;
+	var pageY = e.changedTouches ? e.changedTouches[0].pageY : e.pageY;
+	const left = pageX + labelMenu.offsetWidth > window.innerWidth ? window.innerWidth-labelMenu.offsetWidth-15 : pageX; // -15 added in for the scroll bars
+	const top = pageY + labelMenu.offsetHeight > window.innerHeight ? window.innerHeight-labelMenu.offsetHeight-15 : pageY;
+	labelMenu.style.left = left + 'px';
+	labelMenu.style.top = top + 'px';
     }
 }
 
@@ -345,13 +347,16 @@ NgChm.LNK.labelHelpOpen = function(axis, e){
 NgChm.LNK.createLabelMenu = function(axis){
 	var labelMenu = axis !== "Matrix" ? NgChm.UHM.getDivElement(axis + 'LabelMenu') : NgChm.UHM.getDivElement(axis + 'Menu');
 	document.body.appendChild(labelMenu);
+	labelMenu.style.display = 'block';
 	labelMenu.style.position = 'absolute';
 	labelMenu.classList.add('labelMenu');
+	labelMenu.classList.add('hide');
 	var topDiv = document.createElement("DIV");
 	topDiv.classList.add("labelMenuCaption");
 	topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Classification") + ' Label Menu:' : axis + ' Menu';
 	var closeMenu = document.createElement("IMG");
 	closeMenu.src = "images/closeButton.png";
+	closeMenu.alt = "close menu";
 	closeMenu.classList.add('labelMenuClose')
 	closeMenu.addEventListener('click', function(){NgChm.LNK.labelHelpClose(axis)},false);
 	var table = document.createElement("TABLE");

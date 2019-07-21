@@ -2,6 +2,14 @@
 /**
  *  */
 
+body {
+	margin: 8px;
+	width: calc(100vw - 16px);
+	height: calc(100vh - 16px);
+	display: flex;
+	flex-direction: column;
+}
+
 div.mdaServiceHeader
 {
 	position: relative;
@@ -31,7 +39,7 @@ div.mdaServiceHeaderLogo img
 
 #container{
 	display: flex;
-	height: 90%;
+	flex-grow: 1;
 }
 
 .resizerHelper {
@@ -76,22 +84,28 @@ div.mdaServiceHeaderLogo img
 
 
 .menuItem {
-    padding: 1px 10px 1px 10px;
-	}
+	padding: 1px 10px 1px 10px;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+}
 
 .menuItemBorder {
 	border-bottom: 1px solid gray; 
-    padding: 0px 5px 5px 10px;
+	padding: 0px 5px 5px 10px;
 }
 
 .menuItemTop {
-    padding: 5px 10px 1px 10px;
+	padding: 5px 10px 1px 10px;
 }
 
-.menuitem:hover {
+.menuItem:hover {
      background-color: LightGray;
 }
 
+.menuItem img {
+	vertical-align: middle;
+	margin-right: 1em;
+}
 
 #row_dendro_canvas, #column_dendro_canvas{
 	position: absolute;
@@ -195,7 +209,7 @@ div.mdaServiceHeaderLogo img
     padding: 10px 10px 10px 10px !important;
     border: 1px solid #1a1a1a;
     border-radius: 15px;
-    font-size: 90% !important;
+    font-size: 0.90rem !important;
     font-family: Arial;
     font-weight: normal;
     background: #dddddd;
@@ -212,7 +226,7 @@ div.mdaServiceHeaderLogo img
     padding: 8px 8px 8px 8px !important;
     border: 1px solid #1a1a1a;
     border-radius: 15px;
-    font-size: 90% !important;
+    font-size: 0.90rem !important;
     font-family: Arial;
     font-weight: normal;
     background: #dddddd;
@@ -242,29 +256,29 @@ div.mdaServiceHeaderLogo img
 }
 
 .chmTblRow {
-	display: 'none';
+	display: table-row;
     height: 0px;
 	padding: 0px;
-    font-size: 80% !important;
+    font-size: 0.80rem !important;
     font-family: Arial;
     font-weight: normal;
     color: #0843c1;
-    vertical-align: center;
+    vertical-align: middle;
 }
 
 .chmHdrRow tr {
-	display: 'none';
+	display: none;
     height: 0px;
 	padding: 0px;
-    font-size: 80% !important;
+    font-size: 0.80rem !important;
     font-family: Arial;
     font-weight: normal;
     color: #0843c1;
-    vertical-align: center;
+    vertical-align: middle;
 }
 
 .chmHdrRow td {
-	font-size: 80% !important;
+	font-size: 0.80rem !important;
     font-family: Arial;
     font-weight: bold;
     color: #FFFFFF;
@@ -331,7 +345,7 @@ div.mdaServiceHeaderLogo img
 #searchError{
 	border: 1px solid #1a1a1a;
     border-radius: 10px;
-    font-size: 90% !important;
+    font-size: 0.90rem !important;
     font-family: Arial;
     font-weight: normal;
     background: #dddddd;
@@ -346,7 +360,7 @@ div.mdaServiceHeaderLogo img
 .labelMenu{
     border: 1px solid #1a1a1a;
     border-radius: 10px;
-    font-size: 90% !important;
+    font-size: 0.90rem !important;
     font-family: Arial;
     font-weight: normal;
     background: #dddddd;
@@ -361,7 +375,7 @@ div.mdaServiceHeaderLogo img
 	padding: .4em 1em;
 	background: #0843c1;
 	color: #ffffff;
-	font-size: 90% !important;
+	font-size: 0.90rem !important;
     font-family: Arial;
     font-weight: bold;
     text-align: left;
@@ -383,7 +397,7 @@ div.mdaServiceHeaderLogo img
 	background: #f8f3f1; 
 	color: #0843c1;
 	text-align: left;
-	font-size: 90% !important;
+	font-size: 0.90rem !important;
     font-family: Arial;
     font-weight: normal;
 	border-radius: 10px;
@@ -395,7 +409,7 @@ div.mdaServiceHeaderLogo img
 .labelMenuBody td{
 	height:20px;
 	position: absolute;
-	font-size: 80% !important;
+	font-size: 0.80rem !important;
     font-family: Arial;
     font-weight: normal;
     color: #0843c1;
@@ -438,8 +452,12 @@ th.breakpointContainer {
     border-collapse: collapse;    
 }
 
+#linkTabButtons {
+	text-align: left;
+}
+
 #prefTabButtons, #linkTabButtons {
-	align: top;
+	vertical-align: top;
 	border-bottom-width: 2px;
 	border-bottom-color: #0843c1;
 	border-bottom-style: solid;
@@ -448,9 +466,9 @@ th.breakpointContainer {
 #prefs {
 	height: 100%;
 	width: 420px;
-	overflow: none;
+	overflow: hidden;
 	position: absolute;
-	top: 0;
+	top: 0px;
 	background-color: #CBDBF6; 
 	border-left: 1px solid black; 
 	border-right: 1px solid black; 
@@ -458,10 +476,28 @@ th.breakpointContainer {
 }
 
 #prefTabButtons {
-	align: top;
+	vertical-align: top;
 	border-bottom-width: 2px;
 	border-bottom-color: #0843c1;
 	border-bottom-style: solid;
+}
+
+#linkBoxTxt, #linkBoxAllTxt {
+	font-size: 12px;
+	background-color: #FFFFFF;
+	overflow-y: auto;
+}
+
+#linkBoxFoot {
+	padding: 1em 0em 1em 1em;
+	text-align: left;
+}
+
+#linkBoxButton img,
+#linkTabButtons img,
+#prefTabButtons img {
+	vertical-align: top;
+	margin-left: 0.25em;
 }
 
 #prefPrefs {
@@ -474,9 +510,8 @@ th.breakpointContainer {
 
 #prefActions {
 	position: absolute;
-	bottom: 5;
-	left: 32;
-	align: right;
+	bottom: 1em;
+	width: 100%;
 	background-color: #CBDBF6; 
     font-family: Arial;
     font-weight: bold;
@@ -492,21 +527,44 @@ th.breakpointContainer {
     padding: 2px 2px 2px 2px !important;
     border: 1px solid #1a1a1a;
     border-radius: 15px;
-    font-size: 90% !important;
+    font-size: 0.90rem !important;
     font-family: Arial;
     font-weight: normal;
     background: #dddddd;
     color: #000000;
     z-index: 10000;
     text-align: center;
-    height: auto;
-    width: auto;
+    max-height: 80vh;
+    max-width: 80vw;
     box-shadow: 5px 5px 5px #777777;
     white-space: nowrap;
-    box-sizing: border-box
+    box-sizing: border-box;
+    text-align: left;
 }
 #msgBoxTxt {
     box-sizing: border-box
+}
+
+.msgBoxButton {
+	vertical-align: top;
+	display: inherit;
+}
+
+#linkBox {
+	display: flex;
+	flex-direction: column;
+	width: 800px !important;
+	max-height: calc(100vh - 16px);
+}
+
+#msgBox p {
+    white-space: normal;
+}
+
+#pdfPrefs {
+    display: flex;
+    flex-direction: column;
+    background-color: rgb(203, 219, 246);
 }
 
 #prefsHdr, #pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
@@ -533,26 +591,18 @@ th.breakpointContainer {
 	height: 99%;
 	background-color: #CBDBF6; 
     display: none;
-    overflow: none;
+    overflow: hidden;
     border: 2px solid #CBDBF6;
 }
 
 
-.hide{
-
-display: none
-
-}
-
-.show{
-
-display: ''
-
+.hide {
+	display: none !important;
 }
 
 table.helpTable { 
   border-collapse: collapse; 
-  width: 90%;
+  width: 0.90rem;
 }
   
 table.helpTable td, 
@@ -576,6 +626,10 @@ table.helpTable th {
 
 .tdTop {
     vertical-align: text-top;
+}
+
+.tdTop img {
+	vertical-align: top;
 }
 
 .editableText_btn {
@@ -642,7 +696,7 @@ table.helpTable th {
     padding: 5px 10px 5px 10px !important;
     border: 1px solid #1a1a1a;
     border-radius: 15px;
-    font-size: 90% !important;
+    font-size: 0.90rem !important;
     font-family: Arial;
     font-weight: normal;
     background: #ffffed;
@@ -654,3 +708,12 @@ table.helpTable th {
     position: absolute;
 }
 
+p.boxCaption {
+	font-weight: bold;
+	padding: 0.5em;
+	margin: 0em;
+	color: #0843c1;
+	width: calc(100% - 1em);
+	white-space: normal;
+	text-align: left;
+}

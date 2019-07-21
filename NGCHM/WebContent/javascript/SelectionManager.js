@@ -153,7 +153,7 @@ NgChm.SEL.keyNavigate = function(e) {
 			case 113: // F2 key 
 				if (NgChm.SEL.flickIsOn()) {
 					var flickBtn = document.getElementById("flick_btn");
-					if (flickBtn.name === 'flickUp') {
+					if (flickBtn.dataset.state === 'flickUp') {
 						NgChm.SEL.flickChange("toggle2");
 					} else {
 						NgChm.SEL.flickChange("toggle1");
@@ -430,7 +430,7 @@ NgChm.SEL.flickInit = function() {
 	var flickBtn = document.getElementById("flick_btn");
 	var flickDrop1 = document.getElementById("flick1");
 	var flickDrop2 = document.getElementById("flick2");
-	if ((flickBtn.name === 'flickUp')) {
+	if ((flickBtn.dataset.state === 'flickUp')) {
 		flickDrop1.style.backgroundColor="yellow";
 		flickDrop2.style.backgroundColor="white";
 	} else {
@@ -452,27 +452,27 @@ NgChm.SEL.flickChange = function(fromList) {
 	var flickDrop1 = document.getElementById("flick1");
 	var flickDrop2 = document.getElementById("flick2");
 	if (typeof fromList === 'undefined') {
-		if (flickBtn.name === 'flickUp') {
+		if (flickBtn.dataset.state === 'flickUp') {
 			flickBtn.setAttribute('src', 'images/toggleDown.png');
-			flickBtn.name = 'flickDown';
+			flickBtn.dataset.state = 'flickDown';
 			NgChm.SEL.currentDl = flickDrop2.value;
 		} else {
 			flickBtn.setAttribute('src', 'images/toggleUp.png');
-			flickBtn.name = 'flickUp';
+			flickBtn.dataset.state = 'flickUp';
 			NgChm.SEL.currentDl = flickDrop1.value;
 		}
 	} else {
-		if ((fromList === "flick1") && (flickBtn.name === 'flickUp')) {
+		if ((fromList === "flick1") && (flickBtn.dataset.state === 'flickUp')) {
 			NgChm.SEL.currentDl = document.getElementById(fromList).value;
-		} else if ((fromList === "flick2") && (flickBtn.name === 'flickDown')) {
+		} else if ((fromList === "flick2") && (flickBtn.dataset.state === 'flickDown')) {
 			NgChm.SEL.currentDl = document.getElementById(fromList).value;
-		} else if ((fromList === "toggle1") && (flickBtn.name === 'flickDown')) {
+		} else if ((fromList === "toggle1") && (flickBtn.dataset.state === 'flickDown')) {
 			flickBtn.setAttribute('src', 'images/toggleUp.png');
-			flickBtn.name = 'flickUp';
+			flickBtn.dataset.state = 'flickUp';
 			NgChm.SEL.currentDl = flickDrop1.value;
-		} else if ((fromList === "toggle2") && (flickBtn.name === 'flickUp')) {
+		} else if ((fromList === "toggle2") && (flickBtn.dataset.state === 'flickUp')) {
 			flickBtn.setAttribute('src', 'images/toggleDown.png');
-			flickBtn.name = 'flickDown';
+			flickBtn.dataset.state = 'flickDown';
 			NgChm.SEL.currentDl = flickDrop2.value;
 		} else {
 			return;

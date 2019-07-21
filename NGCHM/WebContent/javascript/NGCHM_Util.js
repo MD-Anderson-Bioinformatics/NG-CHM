@@ -10,6 +10,19 @@ NgChm.UTIL.getURLParameter = function(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||'';
 }
 
+// Set the position and size of the DOM element el to the size in vp.
+// If el is a canvas and styleOnly is not truthy, set the canvas
+// width and height properties to the same width and height as el.
+NgChm.UTIL.setElementPositionSize = function (el, vp, styleOnly) {
+	if (vp.left) el.style.left = vp.left + 'px';
+	if (vp.top) el.style.top = vp.top + 'px';
+	el.style.width = vp.width + 'px';
+	el.style.height = vp.height + 'px';
+	if (!styleOnly && el.tagName === 'CANVAS') {
+		el.width = Math.round (vp.width);
+		el.height = Math.round (vp.height);
+	}
+};
 
 /**********************************************************************************
  * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
@@ -447,8 +460,8 @@ NgChm.UTIL.builderViewSizing = function (event, tile) {
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		document.getElementById('detail_chm').style.width = '4%';
 		document.getElementById('summary_chm').style.width = '50%';
-		document.getElementById('summary_chm').style.left = 150;
-		document.getElementById('summary_chm').style.top = 0;
+		document.getElementById('summary_chm').style.left = 150 + 'px';
+		document.getElementById('summary_chm').style.top = 0 + 'px';
 		NgChm.SUM.summaryResize();  
 	 }
 }
