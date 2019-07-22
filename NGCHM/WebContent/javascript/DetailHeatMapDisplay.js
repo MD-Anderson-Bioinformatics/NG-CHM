@@ -1166,8 +1166,8 @@ NgChm.DET.setButtons = function () {
 }
 
 NgChm.DET.setDetCanvasBoxSize = function () {
-	NgChm.DET.boxCanvas.width =  NgChm.DET.canvas.clientWidth + 'px';
-	NgChm.DET.boxCanvas.height = NgChm.DET.canvas.clientHeight + 'px';
+	NgChm.DET.boxCanvas.width =  NgChm.DET.canvas.clientWidth;
+	NgChm.DET.boxCanvas.height = NgChm.DET.canvas.clientHeight;
 	NgChm.DET.boxCanvas.style.left=NgChm.DET.canvas.style.left;
 	NgChm.DET.boxCanvas.style.top=NgChm.DET.canvas.style.top;
 }
