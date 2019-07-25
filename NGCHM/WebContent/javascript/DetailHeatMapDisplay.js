@@ -1289,7 +1289,6 @@ NgChm.DET.flushDrawingCache = function (tile) {
 //will be skipped on the next redraw.
 NgChm.DET.resizeOnNextDraw = false;
 NgChm.DET.setDrawDetailTimeout = function (ms, noResize) {
-	console.log("NgChm.DET.setDrawDetailTimeout");
 	if (NgChm.DET.drawEventTimer) {
 		clearTimeout (NgChm.DET.drawEventTimer);
 	}
@@ -1306,7 +1305,6 @@ NgChm.DET.setDrawDetailTimeout = function (ms, noResize) {
 //Get the layer, level, and selected region of the current detail
 //heat map display.
 NgChm.DET.getDetailWindow = function() {
-	console.log("NgChm.DET.getDetailWindow");
 	return {
 		layer: NgChm.SEL.currentDl,
 		level: NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),
@@ -1321,7 +1319,6 @@ NgChm.DET.getDetailWindow = function() {
 //Draw the region of the NGCHM specified by drawWin to the detail heat map
 //pane.
 NgChm.DET.drawDetailHeatMap = function (drawWin) {
-	console.log("NgChm.DET.drawDetailHeatMap");
 
 	NgChm.DET.setDendroShow();
 	if (NgChm.DET.resizeOnNextDraw) {
@@ -1397,7 +1394,6 @@ NgChm.DET.drawDetailHeatMap = function (drawWin) {
 //Returns a renderBuffer containing an image of the region of the NGCHM
 //specified by drawWin rendered using the parameters in params.
 NgChm.DET.getDetailHeatMap = function (drawWin, params) {
-	console.log("NgChm.DET.getDetailHeatMap");
 
 	const layer = drawWin.layer;
 	const paramCheck = JSON.stringify({ drawWin, params });
