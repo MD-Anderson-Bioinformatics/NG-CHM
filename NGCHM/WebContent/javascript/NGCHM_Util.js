@@ -10,6 +10,19 @@ NgChm.UTIL.getURLParameter = function(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||'';
 }
 
+// Set the position and size of the DOM element el to the size in vp.
+// If el is a canvas and styleOnly is not truthy, set the canvas
+// width and height properties to the same width and height as el.
+NgChm.UTIL.setElementPositionSize = function (el, vp, styleOnly) {
+	if (vp.left) el.style.left = vp.left + 'px';
+	if (vp.top) el.style.top = vp.top + 'px';
+	el.style.width = vp.width + 'px';
+	el.style.height = vp.height + 'px';
+	if (!styleOnly && el.tagName === 'CANVAS') {
+		el.width = Math.round (vp.width);
+		el.height = Math.round (vp.height);
+	}
+};
 
 /**********************************************************************************
  * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
@@ -447,8 +460,8 @@ NgChm.UTIL.builderViewSizing = function (event, tile) {
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		document.getElementById('detail_chm').style.width = '4%';
 		document.getElementById('summary_chm').style.width = '50%';
-		document.getElementById('summary_chm').style.left = 150;
-		document.getElementById('summary_chm').style.top = 0;
+		document.getElementById('summary_chm').style.left = 150 + 'px';
+		document.getElementById('summary_chm').style.top = 0 + 'px';
 		NgChm.SUM.summaryResize();  
 	 }
 }
@@ -804,19 +817,21 @@ NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight,customJS) {
 	var embeddedMap = document.getElementById('NGCHMEmbed');
 	var iFrame = window.frameElement; // reference to iframe element container
 	iFrame.className='ngchm';
-	iFrame.style.height = dispHeight + '%';
-	iFrame.style.width = dispWidth + '%'
-	if (dispHeight < 90) {
-		embeddedMap.style.height = '89%';
-	} else {
-		embeddedMap.style.height = '93%';
+	var wid = 100;
+	if (dispWidth < 100) {
+		wid = wid*(dispWidth/100);
 	}
-	if (dispWidth <= 90) {
-		embeddedMap.style.width = '98%';
-	} else {
-		embeddedMap.style.width = '99%';
+	var hgt = 100;
+	if (dispHeight < 100) {
+		hgt = hgt*(dispHeight/100);
 	}
-	embeddedMap.style.display = '';
+	iFrame.style.height = hgt + 'vh';
+	iFrame.style.width = wid + 'vw';
+	iFrame.style.display = 'flex';
+	embeddedMap.style.height = '92vh';
+	embeddedMap.style.width = '97vw';
+	embeddedMap.style.display = 'flex';
+	embeddedMap.style.flexDirection = 'column';
 	embeddedWrapper.style.display = 'none';
 	embeddedCollapse.style.display = ''; 
 	if (NgChm.UTIL.embedLoaded === false) {
@@ -873,8 +888,8 @@ NgChm.UTIL.embedExpandableMap = function (options) {
     var displayWidth = (options.displayWidth === undefined) ? '100' : options.displayWidth.substring(0,options.displayWidth.length-1);
     var customJS = (options.customJS === undefined) ? "" : options.customJS;
 	var displayHeight = displayWidth;
-    if (displayWidth <= 90) {
-    	displayHeight = 85;
+    if (displayWidth <= 70) {
+    	displayHeight = 70;
     }
     
     //set "memory" variables for width/height for collapse functionality
@@ -887,20 +902,15 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	ngchmIFrame.id = options.divId+"_iframe"; 
 	ngchmIFrame.scrolling = "no";
 	ngchmIFrame.style = "height:"+options.thumbnailHeight+"; width:100%; border-style:none; ";
-	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms'; 
+	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals'; 
 	ngchmIFrame.className='ngchmThumbnail';
 	embeddedDiv.appendChild(ngchmIFrame); 
 	var doc = ngchmIFrame.contentWindow.document;
 	doc.open();
-	doc.write("<HTML><BODY style='margin:0px'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
+	doc.write("<!DOCTYPE html><HTML><BODY style='margin:0px;width:100vw;height: 100vh;display: flex;flex-direction: column;'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
 	doc.close();
 };
-
-
     
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
  **********************************************************************************/
-
-
-

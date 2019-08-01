@@ -805,7 +805,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		var name = "";
 		if (fileSrc === NgChm.MMGR.FILE_SOURCE){
 			name += NgChm.CM.viewerAppUrl;
-		}
+		} else {
+			name = NgChm.CFG.api;
+		}		
 		name += "ZipAppDownload"; 
 		callServlet("POST", name, false);
 		return true;

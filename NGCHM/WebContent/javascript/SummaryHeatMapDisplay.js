@@ -4,6 +4,7 @@ NgChm.createNS('NgChm.SUM');
 NgChm.SUM.BYTE_PER_RGBA = 4;   
 
 //WebGl Canvas, Context, and Pixel Arrays
+NgChm.SUM.chmElement = null; // div containing summary heatmap
 NgChm.SUM.canvas = null; //Primary Heat Map Canvas
 NgChm.SUM.rCCanvas = null; //Row Class Bar Canvas
 NgChm.SUM.cCCanvas = null;  //Column Class Bar Canvas
@@ -60,6 +61,7 @@ NgChm.SUM.mouseEventActive = false;
 NgChm.SUM.initSummaryDisplay = function() {
 	NgChm.CUST.addCustomJS();
     
+	NgChm.SUM.chmElement = document.getElementById('summary_chm');
 	NgChm.SUM.canvas = document.getElementById('summary_canvas');
 	NgChm.SUM.boxCanvas = document.getElementById('summary_box_canvas');
 	NgChm.SUM.rCCanvas = document.getElementById('row_class_canvas');
@@ -88,6 +90,12 @@ NgChm.SUM.initSummaryDisplay = function() {
 	if (NgChm.UTIL.getURLParameter("column") !== "" && !isNaN(Number(NgChm.UTIL.getURLParameter("column")))){
 		NgChm.SEL.currentCol = Number(NgChm.UTIL.getURLParameter("column"))
 	}
+
+	NgChm.SUM.summaryHeatMapCache = {};
+	NgChm.SUM.widthScale = 1;
+	NgChm.SUM.heightScale = 1;
+	NgChm.SUM.colTopItemsWidth = 0;
+	NgChm.SUM.rowTopItemsHeight = 0;
 };
 
 // Callback that is notified every time there is an update to the heat map 
@@ -115,27 +123,19 @@ NgChm.SUM.processSummaryMapUpdate = function(event, tile) {
 
 NgChm.SUM.rowDendroResize = function() {
 	const dendroCanvas = NgChm.SUM.rowDendro.dendroCanvas;
-	const sumChm = document.getElementById("summary_chm");
-	const width = NgChm.SUM.rowDendro.getConfigSize() * sumChm.clientWidth*NgChm.SUM.widthPct;
+	const width = NgChm.SUM.rowDendro.getConfigSize() * NgChm.SUM.chmElement.clientWidth*NgChm.SUM.widthPct;
 	const height = NgChm.SUM.canvas.clientHeight*NgChm.SUM.matrixHeight/NgChm.SUM.totalHeight*NgChm.SUM.heightScale;
 	const top = NgChm.SUM.canvas.offsetTop + (NgChm.SUM.totalHeight - NgChm.SUM.matrixHeight*NgChm.SUM.heightScale)/NgChm.SUM.totalHeight*NgChm.SUM.canvas.offsetHeight;
 
-	dendroCanvas.style.height = height;
-	dendroCanvas.style.top = top;
-	if (NgChm.SUM.rowDendro.isVisible()){
-		dendroCanvas.style.width = width;
-		dendroCanvas.height = Math.round(height);
-		dendroCanvas.width = Math.round(width);
-	} else {
-		dendroCanvas.style.width = 0;
-	}
+	NgChm.UTIL.setElementPositionSize (dendroCanvas, {
+		top, height,
+		width: NgChm.SUM.rowDendro.isVisible() ? width : 0
+	}, false);
 }
 
 NgChm.SUM.colDendroResize = function() {
 	const dendroCanvas = NgChm.SUM.colDendro.dendroCanvas;
-	const sumChm = document.getElementById("summary_chm");
-
-	const height = NgChm.SUM.colDendro.getConfigSize() * sumChm.clientHeight*NgChm.SUM.heightPct;
+	const height = NgChm.SUM.colDendro.getConfigSize() * NgChm.SUM.chmElement.clientHeight*NgChm.SUM.heightPct;
 	const width = NgChm.SUM.canvas.clientWidth*NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth;
 	const left = NgChm.SUM.canvas.offsetLeft + (1-NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth)*NgChm.SUM.canvas.offsetWidth;
 
@@ -234,14 +234,12 @@ NgChm.SUM.summaryInit = function(applying) {
 
 // Sets summary and detail chm to the config height and width.
 NgChm.SUM.initSummarySize = function(applying) {
-	var summary = document.getElementById('summary_chm');
-	var detail = document.getElementById('detail_chm');
 	var sumPercent = NgChm.heatMap.getMapInformation().summary_width;
 	var detPercent = 100 - sumPercent;
-	summary.style.width = sumPercent + "%";
-	detail.style.width = detPercent + "%";
-	summary.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
-	detail.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
+	NgChm.SUM.chmElement.style.width = sumPercent + "%";
+	NgChm.DET.chmElement.style.width = detPercent + "%";
+	NgChm.SUM.chmElement.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
+	NgChm.DET.chmElement.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
 	NgChm.SUM.setTopItemsSize();
 	NgChm.SUM.setSummarySize();
 }
@@ -264,37 +262,42 @@ NgChm.SUM.setSummarySize = function() {
 		var height = document.getElementById("container").clientHeight*NgChm.SUM.heightPct - colDendroHeight - NgChm.SUM.colTopItemsWidth - NgChm.SUM.colClassBarHeight;
 	
 		//Size Row Dendrogram Canvas
-		NgChm.SUM.rowDendro.dendroCanvas.style.top=top;
-		NgChm.SUM.rowDendro.dendroCanvas.style.width=rowDendroWidth;
-		NgChm.SUM.rowDendro.dendroCanvas.style.height=height;
+		NgChm.UTIL.setElementPositionSize (NgChm.SUM.rowDendro.dendroCanvas, {
+			top,
+			width: rowDendroWidth,
+			height
+		}, true);
 
 		//Size Column Dendrogram Canvas
-		NgChm.SUM.colDendro.dendroCanvas.style.left=left;
-		NgChm.SUM.colDendro.dendroCanvas.style.width=width;
-		NgChm.SUM.colDendro.dendroCanvas.style.height=colDendroHeight;
+		NgChm.UTIL.setElementPositionSize (NgChm.SUM.colDendro.dendroCanvas, {
+			left, width,
+			height: colDendroHeight
+		}, true);
 
 		//Size Heat Map Canvas
-		NgChm.SUM.canvas.style.left=left;
-		NgChm.SUM.canvas.style.top=top;
-		NgChm.SUM.canvas.style.width=width;
-		NgChm.SUM.canvas.style.height=height;
+		NgChm.UTIL.setElementPositionSize (NgChm.SUM.canvas, {
+			top, left, width, height
+		}, true);
 
 		//Size Row Class Bar Canvas
-		NgChm.SUM.rCCanvas.style.left = left - NgChm.SUM.rowClassBarWidth;
-		NgChm.SUM.rCCanvas.style.top = top;
-		NgChm.SUM.rCCanvas.style.width = NgChm.SUM.rowClassBarWidth;
-		NgChm.SUM.rCCanvas.style.height = height;
+		NgChm.UTIL.setElementPositionSize (NgChm.SUM.rCCanvas, {
+			top,
+			left: left - NgChm.SUM.rowClassBarWidth,
+			width: NgChm.SUM.rowClassBarWidth,
+			height
+		}, true);
 
 		//Size Column Class Bar Canvas
-		NgChm.SUM.cCCanvas.style.left = left;
-		NgChm.SUM.cCCanvas.style.top = top - NgChm.SUM.colClassBarHeight;
-		NgChm.SUM.cCCanvas.style.width = width;
-		NgChm.SUM.cCCanvas.style.height = NgChm.SUM.colClassBarHeight;
+		NgChm.UTIL.setElementPositionSize (NgChm.SUM.cCCanvas, {
+			top: top - NgChm.SUM.colClassBarHeight,
+			left, width,
+			height: NgChm.SUM.colClassBarHeight
+		}, true);
 
 		NgChm.SUM.setSelectionDivSize();
 		//The selection box canvas is on top of the webGL canvas but
 		//is always resized to the actual on screen size to draw boxes clearly.
-		NgChm.SUM.boxCanvas.style.left=left;
+		NgChm.SUM.boxCanvas.style.left=left + 'px';
 		NgChm.SUM.boxCanvas.style.top=NgChm.SUM.canvas.style.top;
 		NgChm.SUM.boxCanvas.width = width+1;
 		NgChm.SUM.boxCanvas.height = height+1;
@@ -303,7 +306,6 @@ NgChm.SUM.setSummarySize = function() {
 }
 
 NgChm.SUM.setTopItemsSize = function (){
-	var sumChm = document.getElementById("summary_chm");
 	var colLabels = NgChm.heatMap.getColLabels()["labels"];
 	var rowLabels = NgChm.heatMap.getRowLabels()["labels"];
 	var colTopItemsIndex = [];
@@ -317,7 +319,7 @@ NgChm.SUM.setTopItemsSize = function (){
 			var p = document.createElement("p");
 			p.innerHTML = NgChm.UTIL.getLabelText(NgChm.SUM.colTopItems[i].split("|")[0],"col");
 			p.className = "topItems";
-			sumChm.appendChild(p);
+			NgChm.SUM.chmElement.appendChild(p);
 			for (var j = 0; j < colLabels.length; j++){
 				if (NgChm.SUM.colTopItems[i] == colLabels[j].split("|")[0] && colTopItemsIndex.length < 10){ // limit 10 items per axis
 					foundLabel = true;
@@ -329,7 +331,7 @@ NgChm.SUM.setTopItemsSize = function (){
 			if (foundLabel && p.clientWidth > NgChm.SUM.colTopItemsWidth){
 				NgChm.SUM.colTopItemsWidth = p.clientWidth+10; // + 5 to add a margin in case of overlap
 			}
-			sumChm.removeChild(p);
+			NgChm.SUM.chmElement.removeChild(p);
 		}
 	}
 	if (NgChm.SUM.rowTopItems){
@@ -339,7 +341,7 @@ NgChm.SUM.setTopItemsSize = function (){
 			var p = document.createElement("p");
 			p.innerHTML = NgChm.UTIL.getLabelText(NgChm.SUM.rowTopItems[i].split("|")[0],"row");
 			p.className = "topItems";
-			sumChm.appendChild(p);
+			NgChm.SUM.chmElement.appendChild(p);
 			for (var j = 0; j < rowLabels.length; j++){
 				if (NgChm.SUM.rowTopItems[i] == rowLabels[j].split("|")[0] && rowTopItemsIndex.length < 10){ // limit 10 items per axis
 					foundLabel = true;
@@ -351,7 +353,7 @@ NgChm.SUM.setTopItemsSize = function (){
 			if (foundLabel && p.clientWidth > NgChm.SUM.rowTopItemsHeight){
 				NgChm.SUM.rowTopItemsHeight = p.clientWidth+10; // + 5 to add a margin in case of overlap
 			}
-			sumChm.removeChild(p);
+			NgChm.SUM.chmElement.removeChild(p);
 		}
 	}
 }
@@ -368,33 +370,34 @@ NgChm.SUM.setSelectionDivSize = function(width, height){ // input params used fo
 	var colTI = document.getElementById("summary_col_top_items_canvas");
 	var rowTI = document.getElementById("summary_row_top_items_canvas");
 	//Size and position Column Selections Canvas
+	const colSelVP = {
+		top: NgChm.SUM.colDendro.getDivHeight() + (NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale) + NgChm.SUM.canvas.clientHeight,
+		width: NgChm.SUM.canvas.clientWidth,
+		height: 10
+	};
 	colSel.style.left = NgChm.SUM.canvas.style.left;
-	colSel.style.top = NgChm.SUM.colDendro.getDivHeight() + (NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale) + NgChm.SUM.canvas.clientHeight; 
-	colSel.style.width = NgChm.SUM.canvas.clientWidth;
-	colSel.style.height = 10;
+	NgChm.UTIL.setElementPositionSize (colSel, colSelVP, true);
 	colSel.width = NgChm.heatMap.getNumColumns("d");
 	colSel.height = 10;
 
 	//Size and position Column Top Items Canvas
 	colTI.style.left = NgChm.SUM.canvas.style.left;
-	colTI.style.top = NgChm.SUM.colDendro.getDivHeight() + (NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale) + NgChm.SUM.canvas.clientHeight; 
-	colTI.style.width = NgChm.SUM.canvas.clientWidth;
-	colTI.style.height = 10;
+	NgChm.UTIL.setElementPositionSize (colTI, colSelVP, true);
 	colTI.height = 10;
 	
 	//Size and position Row Selection Canvas
-	rowSel.style.left = NgChm.SUM.canvas.offsetLeft+NgChm.SUM.canvas.offsetWidth;
-	rowSel.style.top = NgChm.SUM.canvas.offsetTop;
-	rowSel.style.width = 10;
-	rowSel.style.height = NgChm.SUM.canvas.clientHeight;
+	const rowSelVP = {
+		top: NgChm.SUM.canvas.offsetTop,
+		left: NgChm.SUM.canvas.offsetLeft+NgChm.SUM.canvas.offsetWidth,
+		width: 10,
+		height: NgChm.SUM.canvas.clientHeight
+	};
+	NgChm.UTIL.setElementPositionSize (rowSel, rowSelVP, true);
 	rowSel.width = 10;
 	rowSel.height = NgChm.heatMap.getNumRows("d");
 	
 	//Size and position Row Top Items Canvas
-	rowTI.style.left = NgChm.SUM.canvas.offsetLeft+NgChm.SUM.canvas.offsetWidth;
-	rowTI.style.top = NgChm.SUM.canvas.offsetTop;
-	rowTI.style.width = 10;
-	rowTI.style.height = NgChm.SUM.canvas.clientHeight;
+	NgChm.UTIL.setElementPositionSize (rowTI, rowSelVP, true);
 	rowTI.width = 10;
 	rowTI.height = height ? height*NgChm.SUM.heightScale*NgChm.SUM.matrixHeight/NgChm.SUM.canvas.height :Math.round(NgChm.SUM.canvas.clientHeight*((NgChm.SUM.canvas.height-NgChm.SUM.calculateSummaryTotalClassBarHeight("col"))/NgChm.SUM.canvas.height));
 }
@@ -1413,10 +1416,10 @@ NgChm.SUM.setLabelDivElement = function (itemId,boundVal,topVal,leftVal,isRowVal
 		} else {
 			itemElem.className = "classLabel";
 		}
-		document.getElementById("summary_chm").appendChild(itemElem);
+		NgChm.SUM.chmElement.appendChild(itemElem);
 	}
-	itemElem.style.top = topVal;
-	itemElem.style.left = leftVal;
+	itemElem.style.top = topVal + 'px';
+	itemElem.style.left = leftVal + 'px';
 }
 
 NgChm.SUM.drawColClassBarLegends = function (isSummary) {
@@ -1620,15 +1623,15 @@ NgChm.SUM.setLegendDivElement = function (itemId,boundVal,topVal,leftVal,isRowVa
 			if (isRowVal) {
 				itemElem.style.transform = "rotate(90deg)";
 			}
-			document.getElementById("summary_chm").appendChild(itemElem);
+			NgChm.SUM.chmElement.appendChild(itemElem);
 		} else {
 			itemElem.className = "DynamicLabel ClassBar";
 			if (isRowVal) {
 				itemElem.style.transform = 'rotate(90deg)';
 				itemElem.style.webkitTransform = "rotate(90deg)";
-				itemElem.setAttribute('axis','RowCovar');
+				itemElem.dataset.axis = 'RowCovar';
 			} else {
-				itemElem.setAttribute('axis','ColumnCovar');
+				itemElem.dataset.axis = 'ColumnCovar';
 			}
 			itemElem.style.position = "absolute";
 			itemElem.style.fontSize = '5pt';
@@ -1637,8 +1640,8 @@ NgChm.SUM.setLegendDivElement = function (itemId,boundVal,topVal,leftVal,isRowVa
 			NgChm.DET.labelElement.appendChild(itemElem);
 		} 
 	}
-	itemElem.style.top = topVal;
-	itemElem.style.left = leftVal;
+	itemElem.style.top = topVal + 'px';
+	itemElem.style.left = leftVal + 'px';
 }
 
 NgChm.SUM.buildScatterBarPlotMatrix = function(height, classBarValues, start, classBarLength, currentClassBar, barSize, isSummary) {
@@ -1839,7 +1842,7 @@ NgChm.SUM.drawTopItems = function(){
 	var referenceItem = document.createElement("Div"); // create a reference top item div to space the elements properly. removed at end
 	referenceItem.className = "topItems";
 	referenceItem.innerHTML = "SampleItem";
-	document.getElementById("summary_chm").appendChild(referenceItem);
+	NgChm.SUM.chmElement.appendChild(referenceItem);
 	
 	// draw the column top items
 	if (NgChm.SUM.colTopItems){
@@ -2036,9 +2039,9 @@ NgChm.SUM.drawTopItems = function(){
 		if (!isRow){
 			item.style.transform = "rotate(90deg)";
 		}
-		document.getElementById("summary_chm").appendChild(item);
-		item.style.top = isRow ? rowCanvas.offsetTop + positionArray[topItemIndex[index]]*rowCanvas.clientHeight - item.offsetHeight/2 : colTop + item.offsetWidth/2;
-		item.style.left = isRow ? rowLeft: colCanvas.offsetLeft+ positionArray[topItemIndex[index]]*colCanvas.clientWidth - item.offsetWidth/2;
+		NgChm.SUM.chmElement.appendChild(item);
+		item.style.top = (isRow ? rowCanvas.offsetTop + positionArray[topItemIndex[index]]*rowCanvas.clientHeight - item.offsetHeight/2 : colTop + item.offsetWidth/2) + 'px';
+		item.style.left = (isRow ? rowLeft: colCanvas.offsetLeft+ positionArray[topItemIndex[index]]*colCanvas.clientWidth - item.offsetWidth/2) + 'px';
 		return item;
 	}
 }
@@ -2055,7 +2058,6 @@ NgChm.SUM.dividerStart = function(e) {
 NgChm.SUM.dividerMove = function(e) {
 	NgChm.heatMap.setUnAppliedChanges(true);
 	e.preventDefault();
-//	e.stopPropagation();
 	var x = e.movementX;
 	var divider = document.getElementById('divider');
 	if (e.touches){
@@ -2066,18 +2068,15 @@ NgChm.SUM.dividerMove = function(e) {
     	}
     }
 	
-	var summary = document.getElementById('summary_chm');
-	var summaryX = summary.offsetWidth + x;
-	summary.style.width=summaryX+'px';
+	var summaryX = NgChm.SUM.chmElement.offsetWidth + x;
+	NgChm.SUM.chmElement.style.width=summaryX+'px';
 	NgChm.SUM.setSummarySize();
-	NgChm.SUM.colDendroResize();
-	NgChm.SUM.rowDendroResize();
-	if (summary.style.width == summary.style.maxWidth){
+	if (NgChm.SUM.chmElement.style.width == NgChm.SUM.chmElement.style.maxWidth){
 		return
 	}
-	var detail = document.getElementById('detail_chm');
-	var detailX = detail.offsetWidth -x;
-	detail.style.width=detailX+'px';
+
+	var detailX = NgChm.DET.chmElement.offsetWidth - x;
+	NgChm.DET.chmElement.style.width=detailX+'px';
 	if(document.getElementById("missingSumRowClassBars")) NgChm.DET.removeLabel ("missingSumRowClassBars");
 	if(document.getElementById("missingSumColClassBars")) NgChm.DET.removeLabel ("missingSumColClassBars");
 	NgChm.SUM.clearSelectionMarks();

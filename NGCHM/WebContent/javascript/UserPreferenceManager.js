@@ -74,7 +74,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	NgChm.UPM.resetVal = NgChm.UPM.getResetVals();
 	
 	var prefspanel = document.getElementById("prefs");
-	prefspanel.style.right = 0;
+	prefspanel.style.right = "0px";
 	prefspanel.style.left = "";
 	var prefprefs = document.getElementById("prefPrefs");
 
@@ -254,15 +254,15 @@ NgChm.UPM.prefsMoveButton = function() {
 	NgChm.UHM.hlpC();
 	var prefspanel = document.getElementById("prefs");
 	var moveBtn = document.getElementById("prefsMove_btn");
-	if (moveBtn.name === 'moveLeft') {
+	if (moveBtn.dataset.state === 'moveLeft') {
 		moveBtn.setAttribute('src', 'images/prefsRight.png');
-		moveBtn.name = 'moveRight';
+		moveBtn.dataset.state = 'moveRight';
 		prefspanel.style.right = "";
-		prefspanel.style.left = 0;
+		prefspanel.style.left = "0px";
 	} else {
 		moveBtn.setAttribute('src', 'images/prefsLeft.png');
-		moveBtn.name = 'moveLeft';
-		prefspanel.style.right = 0;
+		moveBtn.dataset.state = 'moveLeft';
+		prefspanel.style.right = "0px";
 		prefspanel.style.left = "";
 	}
 }
@@ -1059,7 +1059,7 @@ NgChm.UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 	svg+= missingRect;
 	svg+="</svg>";
 	var binNums = "";//"<p class='previewLegend' style='position:absolute;left:0;top:100;font-size:10;'>0</p><p class='previewLegend' style='position:absolute;left:0;top:0;font-size:10;'>"+binMax+"</p>"
-	var boundNums = "<p class='previewLegend' style='position:absolute;left:10;top:110;font-size:10;'>"+lowBP.toFixed(2)+"</p><p class='previewLegend' style='position:absolute;left:90;top:110;font-size:10;'>"+highBP.toFixed(2)+"</p>"
+	var boundNums = "<p class='previewLegend' style='position:absolute;left:10px;top:110px;font-size:10px;'>"+lowBP.toFixed(2)+"</p><p class='previewLegend' style='position:absolute;left:90px;top:110px;font-size:10px;'>"+highBP.toFixed(2)+"</p>"
 	
 	var preview = "<div id='previewMainColor"+mapName+"' style='height: 100px; width:100px;background:"+gradient+";position:absolute; left: 10px; top: 20px;'></div>"
 		+"<div id='previewMissingColor"+mapName+"'style='height: 100px; width:10px;background:"+cm.missing+";position:absolute;left:110px;top:20px;'></div>"
@@ -1604,14 +1604,20 @@ NgChm.UPM.filterAllClassesTable = function(hiddenItems) {
     var table=document.getElementById('tableAllClasses');
     for(var i=0; i<table.rows.length;i++){
         var row  = table.rows[i];
-        row.className = "show";
         var td = row.cells[0];
         var tdText = td.innerHTML.replace(/&nbsp;/g,'');
+	let hidden = false;
         for (var j=0;j<hiddenItems.length;j++) {
         	if (hiddenItems[j] === tdText) {
-            	row.className = "hide";
+			hidden = true;
+			break;
         	}
         }
+	if (hidden) {
+		row.classList.add ("hide");
+	} else {
+		row.classList.remove ("hide");
+	}
      }
 }
 

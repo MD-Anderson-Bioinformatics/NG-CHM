@@ -363,7 +363,7 @@ NgChm.UHM.locateHelpBox = function(helptext) {
 	if (mapLocX > (mapW / 2)) {
 		boxLeft = NgChm.DET.pageX - helptext.clientWidth - 10;
 	}
-	helptext.style.left = boxLeft;
+	helptext.style.left = boxLeft + 'px';
 	var boxTop = NgChm.DET.pageY;
 	if ((boxTop+helptext.clientHeight) > NgChm.DET.canvas.clientHeight + 90) {
 		if (helptext.clientHeight > NgChm.DET.pageY) {
@@ -376,7 +376,7 @@ NgChm.UHM.locateHelpBox = function(helptext) {
 	if (boxTop < 0) {
 		boxTop = 0;
 	}
-	helptext.style.top = boxTop;
+	helptext.style.top = boxTop + 'px';
 }
 
 /**********************************************************************************
@@ -384,28 +384,27 @@ NgChm.UHM.locateHelpBox = function(helptext) {
  * pop-up help panel for the tool buttons at the top of the detail pane. It receives
  * text from chm.html. 
  **********************************************************************************/
-NgChm.UHM.hlp = function(e,text, width, reverse) {
+NgChm.UHM.hlp = function(e, text, width, reverse) {
 	NgChm.UHM.hlpC();
-    var helptext = document.createElement('div');
-    helptext.id = 'bubbleHelp';
-    helptext.style.display="none";
-    NgChm.UHM.detailPoint = setTimeout(function(){
-	    var elemPos = NgChm.UHM.getElemPosition(e);
-	    var bodyElem = document.getElementsByTagName('body')[0];
-	    if (bodyElem) {
-	    	bodyElem.appendChild(helptext);
-	    }
-	    if (reverse !== undefined) {
-	    	helptext.style.left = elemPos.left - width;
-	    } else {
-	    	helptext.style.left = elemPos.left;
-	    }
-    	helptext.style.top = elemPos.top + 20;
-	    helptext.style.width = width;
-		var htmlclose = "</font></b>";
+	const helptext = document.createElement('div');
+	helptext.id = 'bubbleHelp';
+	helptext.style.display = "none";
+	NgChm.UHM.detailPoint = setTimeout(function(){
+		const elemPos = NgChm.UHM.getElemPosition(e);
+		const bodyElem = document.getElementsByTagName('body')[0];
+		if (bodyElem) {
+			bodyElem.appendChild(helptext);
+		}
+		if (reverse !== undefined) {
+			helptext.style.left = (elemPos.left - width) + 'px';
+		} else {
+			helptext.style.left = elemPos.left + 'px';
+		}
+		helptext.style.top = (elemPos.top + 20) + 'px';
+		helptext.style.width = width + 'px';
 		helptext.innerHTML = "<b><font size='2' color='#0843c1'>"+text+"</font></b>";
-		helptext.style.display="inherit"; 
-	},1500);
+		helptext.style.display = "inherit";
+	}, 1500);
 }
 
 /**********************************************************************************
@@ -513,8 +512,8 @@ NgChm.UHM.showSearchError = function(type) {
 	var searchError = NgChm.UHM.getDivElement('searchError');
 	searchError.style.display = 'inherit';
 	var searchBar = document.getElementById('search_text');
-	searchError.style.top = searchBar.offsetTop + searchBar.offsetHeight;
-	searchError.style.left = searchBar.offsetLeft + searchBar.offsetWidth;
+	searchError.style.top = (searchBar.offsetTop + searchBar.offsetHeight) + 'px';
+	searchError.style.left = (searchBar.offsetLeft + searchBar.offsetWidth) + 'px';
 	switch (type){
 		case 0: searchError.innerHTML = "No matching labels found"; break;
 		case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + NgChm.DET.currentSearchItem.label;break;
@@ -581,9 +580,9 @@ NgChm.UHM.widgetHelp = function() {
 	NgChm.UHM.initMessageBox();
     NgChm.UHM.setMessageBoxHeader("About NG-CHM Viewer");
     var mapVersion = ((NgChm.heatMap !== null) && NgChm.heatMap.isMapLoaded()) === true ? NgChm.heatMap.getMapInformation().version_id : "N/A";
-	var text = "<br>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.<br><br><a href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>Additional NG-CHM Information and Help</a><br><br><b>Software Version: </b>" + NgChm.CM.version+"<br><b>Map Version: </b>" +mapVersion+"<br><br><b>Citation:</b>  Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a><br><br>The NG-CHM Viewer is also available for a variety of other platforms.<br><br>";
+	var text = "<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.</p><p><a href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>Additional NG-CHM Information and Help</a></p><p><b>Software Version: </b>" + NgChm.CM.version+"</p><p><b>Map Version: </b>" +mapVersion+"</p><p><b>Citation:</b> Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a></p><p>The NG-CHM Viewer is also available for a variety of other platforms.</p>";
 	NgChm.UHM.setMessageBoxText(text);
-	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "Close button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -598,13 +597,13 @@ NgChm.UHM.zipSaveNotification = function(autoSave) {
 	NgChm.UHM.setMessageBoxHeader("NG-CHM File Viewer");
 	if (autoSave) {
 		text = "<br>This NG-CHM archive file contains an out dated heat map configuration that has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>In order to upgrade the NG-CHM and avoid this notice in the future, you will want to replace your original file with the version now being displayed.<br><br>";
-		NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "", "NgChm.heatMap.zipSaveNgchm");
+		NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save NG-CHM button", "NgChm.heatMap.zipSaveNgchm");
 	} else {
 		text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>" 
 		NgChm.UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", "NgChm.UHM.zipAppDownload");
 	}
 	NgChm.UHM.setMessageBoxText(text);
-	NgChm.UHM.setMessageBoxButton(3, "images/cancelSmall.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, "images/cancelSmall.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -618,7 +617,7 @@ NgChm.UHM.viewerAppVersionExpiredNotification = function(oldVersion, newVersion)
 	NgChm.UHM.setMessageBoxHeader("New NG-CHM File Viewer Version Available");
 	NgChm.UHM.setMessageBoxText("<br>The version of the NG-CHM File Viewer application that you are running ("+oldVersion+") has been superceded by a newer version ("+newVersion+"). You will be able to view all pre-existing heat maps with this new backward-compatible version. However, you may wish to download the latest version of the viewer.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>");
 	NgChm.UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", "NgChm.UHM.zipAppDownload");
-	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -631,7 +630,7 @@ NgChm.UHM.hamburgerLinkMissing = function() {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("NG-CHM Menu Link Error");
 	NgChm.UHM.setMessageBoxText("<br>No destination has been defined for the menu link.");
-	NgChm.UHM.setMessageBoxButton(1, "images/closeButton.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(1, "images/closeButton.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -657,7 +656,7 @@ NgChm.UHM.noWebGlContext = function(isDisabled) {
 	} else {
 		NgChm.UHM.setMessageBoxText("<br>No WebGL context is available.  The NG-CHM Application requires the WebGL Javascript API in order to render images of Next Generation Clustered Heat Maps. Most web browsers and graphics processors support WebGL.<br><br>Please ensure that the browser that you are using and your computer's processor are WebGL compatible.");
 	}
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -669,7 +668,7 @@ NgChm.UHM.mapNotFound = function(heatMapName) {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("Requested Heat Map Not Found");
 	NgChm.UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you requested cannot be found OR connectivity to the Heat Map repository has been interrupted.<br><br>Please check the Heat Map name and try again.");
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -680,7 +679,7 @@ NgChm.UHM.linkoutError = function(msgText) {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("Heat Map Linkout"); 
 	NgChm.UHM.setMessageBoxText(msgText);
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -693,7 +692,7 @@ NgChm.UHM.invalidFileFormat = function() {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("Invalid File Format");
 	NgChm.UHM.setMessageBoxText("<br>The file chosen is not an NG-CHM file.<br><br>Please select a .ngchm file and try again.");
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -712,7 +711,7 @@ NgChm.UHM.initMessageBox = function() {
 	var msgBox = document.getElementById('msgBox');
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	document.getElementById('loader').style.display = 'none'
-	msgBox.style.top = headerpanel.offsetTop + 15;
+	msgBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	
 	document.getElementById('msgBox').style.display = 'none';
 	document.getElementById('msgBoxBtnImg_1').style.display = 'none';
@@ -768,14 +767,12 @@ NgChm.UHM.openMenu = function(e) {
 	var menu = document.getElementById('menuPanel');
 	var parent = menu.parentElement;
 	var parentTop = parent.offsetTop+50;
-	menu.style.top = parentTop;
+	menu.style.top = parentTop + 'px';
 	if (menu.style.display === 'none') {
 		menu.style.display = '';
 		if (NgChm.MMGR.source !== NgChm.MMGR.WEB_SOURCE) {
 			document.getElementById('menuAbout').style.display = 'none';
 			document.getElementById('menuSpaceAbout').style.display = 'none';
-			document.getElementById('spaceAboutBr').style.display = 'none';
-			document.getElementById('aboutBr').style.display = 'none';
 		}
 	} else {
 		menu.style.display = 'none';
@@ -877,7 +874,7 @@ NgChm.UHM.displayStartupWarnings = function() {
 	}
 	NgChm.UHM.setMessageBoxHeader(headingText); 
 	NgChm.UHM.setMessageBoxText(warningText);
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
     NgChm.UTIL.redrawCanvases();
 }
@@ -1105,8 +1102,8 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	var pluginCtr = allLinksTbl.rows.length;
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	document.getElementById('loader').style.display = 'none'
-	linkBox.style.display = 'none';
-	linkBox.style.top = headerpanel.offsetTop + 15;
+	linkBox.classList.add ('hide');
+	linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	linkBox.style.right = "5%";
 	linkBoxHdr.innerHTML = "NG-CHM Plug-in Information";
 	linkBoxTxt.innerHTML = "";
@@ -1118,7 +1115,7 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	NgChm.UHM.linkBoxSizing();
 	NgChm.UHM.hideAllLinks();
 	NgChm.UHM.showMapPlugins();
-	document.getElementById('linkBox').style.display = '';
+	linkBox.classList.remove ('hide');
 //	NgChm.UTIL.dragElement(document.getElementById("linkBox"));
 }
 
@@ -1128,7 +1125,7 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
  **********************************************************************************/
 NgChm.UHM.linkBoxCancel = function() {
 	var linkBox = document.getElementById('linkBox');
-	linkBox.style.display = 'none';
+	linkBox.classList.add ('hide');
 }
 
 /**********************************************************************************
@@ -1143,7 +1140,7 @@ NgChm.UHM.showMapPlugins = function() {
 	var linkBoxTxt = document.getElementById('linkBoxTxt');
 	var mapLinksBtn = document.getElementById("mapLinks_btn");
 	mapLinksBtn.setAttribute('src', 'images/mapLinksOn.png');
-	linkBoxTxt.style.display="block";
+	linkBoxTxt.classList.remove('hide');
 }
 
 /**********************************************************************************
@@ -1158,7 +1155,7 @@ NgChm.UHM.showAllPlugins = function() {
 	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
 	var allLinksBtn = document.getElementById("allLinks_btn");
 	allLinksBtn.setAttribute('src', 'images/allLinksOn.png');
-	linkBoxAllTxt.style.display="block";
+	linkBoxAllTxt.classList.remove ('hide');
 }
 
 /**********************************************************************************
@@ -1171,9 +1168,9 @@ NgChm.UHM.hideAllLinks = function() {
 	var mapLinksBtn = document.getElementById("mapLinks_btn");
 	var allLinksBtn = document.getElementById("allLinks_btn");
 	mapLinksBtn.setAttribute('src', 'images/mapLinksOff.png');
-	linkBoxTxt.style.display="none";
+	linkBoxTxt.classList.add ('hide');
 	allLinksBtn.setAttribute('src', 'images/allLinksOff.png');
-	linkBoxAllTxt.style.display="none";
+	linkBoxAllTxt.classList.add ('hide');
 }
 
 /**********************************************************************************

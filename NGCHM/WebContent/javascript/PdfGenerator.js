@@ -20,8 +20,8 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	var prefspanel = document.getElementById('pdfPrefs');
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	//Add prefspanel table to the main preferences DIV and set position and display
-	prefspanel.style.top = headerpanel.offsetTop + 15;
-	prefspanel.style.display="inherit";
+	prefspanel.style.top = (headerpanel.offsetTop + 15) + 'px';
+	prefspanel.classList.remove ('hide');
 	document.getElementById("pdfInputFont"). value = parseInt(document.getElementsByClassName("DynamicLabel")[0].style["font-size"]);
     NgChm.UTIL.redrawCanvases();
 }
@@ -33,7 +33,7 @@ NgChm.PDF.openPdfPrefs = function(e) {
 NgChm.PDF.pdfCancelButton = function() {
 	document.getElementById('pdfErrorMessage').style.display="none";
 	var prefspanel = document.getElementById('pdfPrefs');
-	prefspanel.style.display = "none";
+	prefspanel.classList.add ('hide');
     NgChm.DET.canvas.focus();
 }
 
@@ -356,7 +356,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		longestColLabelUnits = 1;
 		for (var i = 0; i < allLabels.length; i++){ // go through all the labels and find the one that takes the most space
 			var label = allLabels[i];
-			if (label.getAttribute('axis') == "Row" || label.getAttribute('axis') == "ColumnCovar"){
+			if (label.dataset.axis == "Row" || label.dataset.axis == "ColumnCovar"){
 				longestRowLabelUnits = Math.max(doc.getStringUnitWidth(label.innerHTML),longestRowLabelUnits);
 			} else {
 				longestColLabelUnits = Math.max(doc.getStringUnitWidth(label.innerHTML),longestColLabelUnits);
@@ -568,7 +568,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 				maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val,classBarLegendTextSize)*classBarLegendTextSize);
 			}
 				
-			// NOTE: missingCount will contain all elements that are not accounted for in the thresholds
+			// NOTE: missingCount will contain all elements that are not accounted for in the thresholds
 			// ie: thresholds = [type1, type2, type3], typeX will get included in the missingCount
 			var missingCount = classBarData.values.length-cutValues;
 			// Get maximum length of threshhold title for use in separating counts from title
@@ -1061,13 +1061,13 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		var selectedColor = colorMap.getHexToRgba(layer.selection_color);
 		for (var i = 0; i < allLabels.length; i++){
 			var label = allLabels[i];
-			if (label.getAttribute("axis") == "Row"){
+			if (label.dataset.axis == "Row"){
 				if (NgChm.DET.labelIndexInSearch(NgChm.SEL.currentRow+i,"Row")) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 					doc.rect((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, longestRowLabelUnits+2, theFont,'F');
 				}
 				rowLabels++;
-			} else if (label.getAttribute("axis") == "Column") {
+			} else if (label.dataset.axis == "Column") {
 				if (NgChm.DET.labelIndexInSearch(NgChm.SEL.currentCol+i-rowLabels,"Column")) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 					doc.rect((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth-2, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight,  theFont+2.5, longestColLabelUnits+2,'F'); 
@@ -1083,14 +1083,14 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	function drawDetailLabels(detClient2PdfWRatio,detClient2PdfHRatio) {
 		for (var i = 0; i < allLabels.length; i++){
 			var label = allLabels[i];
-			if ((label.getAttribute("axis") == "Row") || (label.getAttribute("axis") == "ColumnCovar")) {
+			if ((label.dataset.axis == "Row") || (label.dataset.axis == "ColumnCovar")) {
 				if (label.id.indexOf("legendDet") > -1) {
 					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight+theFont*.75-1, label.innerHTML, null);
 				} else {
 					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight+theFont*.75, label.innerHTML, null);
 				}
 				
-			} else if ((label.getAttribute("axis") == "Column") || (label.getAttribute("axis") == "RowCovar")) {
+			} else if ((label.dataset.axis == "Column") || (label.dataset.axis == "RowCovar")) {
 				if (label.id.indexOf("legendDet") > -1) {
 					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, label.innerHTML, null, 270);
 				} else {
@@ -1302,4 +1302,3 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	}
 	
 }
-
