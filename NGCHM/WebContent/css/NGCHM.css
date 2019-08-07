@@ -264,6 +264,7 @@ div.mdaServiceHeaderLogo img
     font-weight: normal;
     color: #0843c1;
     vertical-align: middle;
+    text-align: left;
 }
 
 .chmHdrRow tr {
@@ -579,6 +580,10 @@ th.breakpointContainer {
     line-height: 30px;
     text-align: center;
     background: #CBD1EA;
+}
+
+#prefsMove_btn, #redX_btn {
+	cursor: default;
 }
 
 #pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{

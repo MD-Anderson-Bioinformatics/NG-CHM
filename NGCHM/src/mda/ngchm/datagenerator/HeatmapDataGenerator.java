@@ -1818,12 +1818,13 @@ public class HeatmapDataGenerator {
 		        
 		        // Create a new buffer for completed thumbnail image
 		        BufferedImage newImage = new BufferedImage(TN_THUMB_WIDTH,TN_THUMB_WIDTH, BufferedImage.TYPE_INT_ARGB);
+		        
 		        Graphics2D g2 = newImage.createGraphics();
 		        Color oldColor = g2.getColor();
 		        
 		        // Fill background of thumbnail with white
 		        g2.setPaint(Color.WHITE);
-		        g2.fillRect(0, 0, finalHmW, finalHmW);
+		        g2.fillRect(0, 0, TN_THUMB_WIDTH, TN_THUMB_WIDTH);
 		        
 		        // Draw thumbnail image from heat map and dendros
 		        g2.setColor(oldColor);

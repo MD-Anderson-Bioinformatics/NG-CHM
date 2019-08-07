@@ -681,14 +681,14 @@ NgChm.SUM.buildSummaryTexture = function() {
 		if (debug) console.log('Rendering summary heatmap finished at ' + performance.now());
 		NgChm.SUM.summaryHeatMapValidator[NgChm.SEL.currentDl] = validator;
 	}
-	if (NgChm.SUM.gl) { 
+	if ((NgChm.SUM.gl) && (renderBuffer !== null)) { 
 		NgChm.SUM.drawHeatMapRenderBuffer(renderBuffer);
 	}
 }
 
 // Redisplay the summary heat map for the current data layer.
 NgChm.SUM.drawHeatMap = function() {
-	if (NgChm.SUM.gl) {
+	if ((NgChm.SUM.gl)  && (NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl] !== null)) {
 		NgChm.SUM.drawHeatMapRenderBuffer (NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl]);
 	}
 }

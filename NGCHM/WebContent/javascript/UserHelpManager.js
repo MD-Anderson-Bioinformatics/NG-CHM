@@ -170,7 +170,7 @@ NgChm.UHM.userHelpOpen = function() {
 			window.parent.postMessage (msg, NgChm.UHM.postMapToWhom);
         } else {
 			NgChm.UHM.formatMapDetails (helpContents, pixelInfo);
-			helptext.style.display="inherit";
+			helptext.style.display="inline";
 			helptext.appendChild(helpContents);
 			NgChm.UHM.locateHelpBox(helptext);
 		}
@@ -329,7 +329,7 @@ NgChm.UHM.userHelpOpen = function() {
     	} else {
 			NgChm.UHM.setTableRow(helpContents, ["<div> </div></div>", "Missing Color (n = " + valSelected + ", " + selPct+ "%)"]);
     	}
-		helptext.style.display="inherit";
+		helptext.style.display="inline";
     	helptext.appendChild(helpContents);
     	NgChm.UHM.locateHelpBox(helptext);
     } else {  
@@ -458,7 +458,7 @@ NgChm.UHM.userHelpClose = function() {
 NgChm.UHM.getDivElement = function(elemName) {
     var divElem = document.createElement('div');
     divElem.id = elemName;
-    divElem.style.backgroundColor = 'CBDBF6'; 
+    divElem.style.backgroundColor = '#CBDBF6'; 
     divElem.style.display="none";
     return divElem;
 }
