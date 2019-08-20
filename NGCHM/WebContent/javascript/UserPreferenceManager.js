@@ -371,6 +371,7 @@ NgChm.UPM.prefsSuccess = function() {
 	NgChm.SUM.summaryInit(true);  //we set this to true so that the separator bar will not move on an apply.
 	NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
 	NgChm.SEL.callDetailDrawFunction(NgChm.SEL.mode);
+	document.getElementById("summaryDisplayPref").value = NgChm.heatMap.getMapInformation().summary_width;
 	NgChm.UPM.applyDone = true;
 	NgChm.UPM.setMessage("");
 }

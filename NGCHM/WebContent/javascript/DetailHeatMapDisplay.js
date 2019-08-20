@@ -796,19 +796,19 @@ NgChm.DET.detailDataZoomIn = function () {
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxWidth);
 		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
 			NgChm.DET.setDetailDataSize (NgChm.DET.zoomBoxSizes[current+1]);
-			NgChm.SEL.updateSelection();
+			NgChm.SEL.updateSelection(true);
 		}
 	} else if ((NgChm.SEL.mode == 'RIBBONH') || (NgChm.SEL.mode == 'RIBBONH_DETAIL')) {
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxHeight);
 		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
 			NgChm.DET.setDetailDataHeight (NgChm.DET.zoomBoxSizes[current+1]);
-			NgChm.SEL.updateSelection();
+			NgChm.SEL.updateSelection(true);
 		}
 	} else if ((NgChm.SEL.mode == 'RIBBONV') || (NgChm.SEL.mode == 'RIBBONV_DETAIL')) {
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxWidth);
 		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
 			NgChm.DET.setDetailDataWidth(NgChm.DET.zoomBoxSizes[current+1]);
-			NgChm.SEL.updateSelection();
+			NgChm.SEL.updateSelection(true);
 		}
 	}
 }	
@@ -1294,17 +1294,27 @@ NgChm.DET.flushDrawingCache = function (tile) {
 //will be skipped on the next redraw.
 NgChm.DET.resizeOnNextDraw = false;
 NgChm.DET.setDrawDetailTimeout = function (ms, noResize) {
-	//console.log("NgChm.DET.setDrawDetailTimeout");
 	if (NgChm.DET.drawEventTimer) {
 		clearTimeout (NgChm.DET.drawEventTimer);
 	}
-	if (!noResize) NgChm.DET.resizeOnNextDraw = true;
-
 	const drawWin = NgChm.DET.getDetailWindow();
 
+	if (noResize) {
+		NgChm.DET.drawDetailHeatMap(drawWin);
+	} else {
+		NgChm.DET.resizeOnNextDraw = true;
+		NgChm.DET.drawEventTimer = setTimeout(function drawDetailTimeout () {
+			NgChm.DET.drawDetailHeatMap(drawWin);
+		}, ms);
+	}
+
+	
+//	NgChm.DET.drawDetailHeatMap(drawWin);
+/*
 	NgChm.DET.drawEventTimer = setTimeout(function drawDetailTimeout () {
 		NgChm.DET.drawDetailHeatMap(drawWin);
 	}, ms);
+*/
 };
 
 

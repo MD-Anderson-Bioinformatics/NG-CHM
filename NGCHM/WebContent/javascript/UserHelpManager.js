@@ -1180,7 +1180,10 @@ NgChm.UHM.hideAllLinks = function() {
  **********************************************************************************/
 NgChm.UHM.linkBoxSizing = function() {
 	var linkBox = document.getElementById('linkBox');
-	var pluginCtr = document.getElementById('allPlugins').rows.length;
+	var pluginCtr = 0;
+	if (document.getElementById('allPlugins') !== null) {
+		pluginCtr = document.getElementById('allPlugins').rows.length;
+	}
 	var linkBoxTxt = document.getElementById('linkBoxTxt');
 	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
 	var contHeight = container.offsetHeight;

@@ -503,237 +503,6 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	}
 	
 	/**********************************************************************************
-	 * FUNCTION - getBarGraphForDiscreteClassBar: This functiio places the classBar legend 
-	 * using the variables leftOff and topOff, which are updated after every classBar legend.
-	 * inputs: classBar object, colorMap object, and string for name
-	 **********************************************************************************/
-	function getBarGraphForDiscreteClassBar(key, type){
-		var foundMissing = 0;
-		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
-		var bartop = topOff+5 + (splitTitle.length-1)*classBarLegendTextSize*2;
-		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap(type, key);
-		var thresholds = colorMap.getThresholds();
-		if (isChecked("pdfInputPortrait") && (thresholds.length > 56)) {
-			doc.setFontType("bold");
-		    doc.text(leftOff, topOff, splitTitle);
-			doc.setFontType("normal");
-			doc.text(leftOff + 15, bartop + classBarLegendTextSize, "This discrete covariate bar contains too", null);
-			doc.text(leftOff +15, bartop + classBarLegendTextSize+12, "many categories to print.", null);
-			setClassBarFigureH(2,'discrete',0);   
-		} else if (isChecked("pdfInputLandscape") && (thresholds.length > 40)) {
-			doc.setFontType("bold");
-		    doc.text(leftOff, topOff, splitTitle);
-			doc.setFontType("normal");
-			doc.text(leftOff +15, bartop + classBarLegendTextSize,    "This discrete covariate bar contains too", null);
-			doc.text(leftOff +15, bartop + classBarLegendTextSize+12, "many categories to print. You may try", null);
-			doc.text(leftOff +15, bartop + classBarLegendTextSize+24, "printing in portrait mode.", null);
-			setClassBarFigureH(3,'discrete',0);   
-		} else {
-			if ((topOff + (thresholds.length*13) > pageHeight) && !isLastClassBarToBeDrawn(key,type)) {
-				doc.addPage(); // ... make a new page and reset topOff
-				createHeader(theFont, sectionHeader + " (continued)");
-				topOff = paddingTop + 15;
-				leftOff = 20; // ...reset leftOff...
-			}
-			bartop = topOff+5 + (splitTitle.length - 1)*(classBarLegendTextSize*2);
-			//Adjustment for multi-line covariate headers
-			if(splitTitle.length > 1) {
-				classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  //TEST
-			}
-			doc.setFontType("bold");
-		    doc.text(leftOff, topOff, splitTitle);
-			doc.setFontType("normal");
-		    
-			var classBarConfig = rowClassBarConfig[key];
-			var classBarData = rowClassBarData[key];
-			if (type !== 'row') {
-				classBarConfig = colClassBarConfig[key];
-				classBarData = colClassBarData[key];
-			}
-			var barHeight = classBarLegendTextSize + 3;
-            var counts = {}, maxCount = 0;
-		    maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
-			// get the number N in each threshold
-			var cutValues = 0;
-			for(var i = 0; i< classBarData.values.length; i++) {
-			    var num = classBarData.values[i];
-			    if (num !== '!CUT!') {
-			    	counts[num] = counts[num] ? counts[num]+1 : 1;
-			    } else {
-			    	cutValues++;
-			    }
-			}
-			for (var val in counts){
-				maxCount = Math.max(maxCount, counts[val]);
-				maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val,classBarLegendTextSize)*classBarLegendTextSize);
-			}
-				
-			// NOTE: missingCount will contain all elements that are not accounted for in the thresholds
-			// ie: thresholds = [type1, type2, type3], typeX will get included in the missingCount
-			var missingCount = classBarData.values.length-cutValues;
-			// Get maximum length of threshhold title for use in separating counts from title
-			var threshMaxLen = getThreshMaxLength(thresholds,classBarLegendTextSize);
-			// Indent threshholds from class bar title
-			leftOff += 10;
-			// draw the bars
-			for (var j = 0; j < thresholds.length; j++){ // make a gradient stop (and also a bucket for continuous)
-				var rgb = colorMap.getClassificationColor(thresholds[j]);
-				doc.setFillColor(rgb.r,rgb.g,rgb.b);
-				doc.setDrawColor(0,0,0);
-				var count = counts[thresholds[j]] ? counts[thresholds[j]] : 0;
-				if (condenseClassBars){
-					var barW = 10;
-					doc.rect(leftOff, bartop, barW, barHeight, "FD");
-					doc.setFontSize(classBarLegendTextSize);
-					doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, thresholds[j].toString(), null);
-					doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + count, null);
-				} else {
-					var barW = (count/maxCount*classBarFigureW)*.65;  //scale bars to fit page
-					doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD");
-					doc.setFontSize(classBarLegendTextSize);
-					doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth(thresholds[j].toString())*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, thresholds[j].toString() , null);
-					doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + count , null);
-				
-				
-				}
-				missingCount -= count;
-				bartop+=barHeight;
-			}
-			// Draw missing values bar IF missing values > 0
-			missingCount = Math.max(0,missingCount); // just in case missingCount goes negative...
-			if (missingCount > 0) {
-				foundMissing = 1;
-				var rgb = colorMap.getClassificationColor("Missing Value");
-				doc.setFillColor(rgb.r,rgb.g,rgb.b);
-				doc.setDrawColor(0,0,0);
-				drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen);
-			}
-			
-			if (thresholds.length * barHeight > classBarFigureH){ // in case a discrete classbar has over 15 categories, make the topOff increment bigger
-				topSkip = (thresholds.length+1) * barHeight+classBarHeaderSize;
-			}
-			setClassBarFigureH(thresholds.length,'discrete',foundMissing);   
-		}
-		// adjust the location for the next class bar figure
-		adjustForNextClassBar(key,type,maxLabelLength);
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION - getBarGraphForContinousClassBar: This function places the classBar 
-	 * legend using the variables leftOff and topOff, which are updated after every 
-	 * classBar legend. inputs: classBar object, colorMap object, and string for name
-	 **********************************************************************************/
-	function getBarGraphForContinuousClassBar(key, type){
-		var foundMissing = 0;
-		// Write class bar name to PDF
-		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
-		doc.setFontType("bold");
-		doc.text(leftOff, topOff, splitTitle);
-		doc.setFontType("normal");
-		var classBars = NgChm.heatMap.getColClassificationConfig();
-		if (type === 'row') {
-			classBars = NgChm.heatMap.getRowClassificationConfig();
-		}
-		var classBar = classBars[key];
-		//Adjustment for multi-line covariate headers
-		if(splitTitle.length > 1) {
-			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
-		}
-		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap(type, key);
-		var classBarConfig = rowClassBarConfig[key];
-		var classBarData = rowClassBarData[key];
-		if (type !== 'row') {
-			classBarConfig = colClassBarConfig[key];
-			classBarData = colClassBarData[key];
-		}
-		var thresholds = colorMap.getContinuousThresholdKeys();
-		var barHeight = classBarLegendTextSize + 3;
-
-		// get the number N in each threshold
-		var counts = {};
-		var maxCount = 0;
-		maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
-
-		// get the continuous thresholds and find the counts for each bucket
-		var cutValues = 0;
-		for(var i = 0; i < classBarData.values.length; i++) {
-		    var num = classBarData.values[i];
-		    if (num !== '!CUT!') {
-			    for (var k = 0; k < thresholds.length; k++){
-					var thresh = thresholds[k];
-					if (k == 0 && num < thresholds[k]){
-						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
-					} else if (k == thresholds.length-1 && num > thresholds[thresholds.length-1]){
-						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
-					} else if (num <= thresh){
-						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
-						break;
-					}
-				}
-		    } else {
-		    	cutValues++;
-		    }
-		}
-		
-		// find the longest label length
-		for (var val in counts){
-			maxCount = Math.max(maxCount, counts[val]);
-			maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val.length)*classBarLegendTextSize);
-		}
-		
-		var bartop = topOff+5 + (splitTitle.length-1)*classBarLegendTextSize*2;
-		var missingCount = classBarData.values.length - cutValues; // start at total number of labels and work down
-		var value;
-		// Get maximum length of threshhold title for use in separating counts from title
-		var threshMaxLen = getThreshMaxLength(thresholds,classBarLegendTextSize);
-		// Indent threshholds from class bar title
-		leftOff += 10;
-		for (var j = 0; j < thresholds.length-1; j++){
-			var rgb = colorMap.getClassificationColor(thresholds[j]);
-			if (classBar.bar_type !== 'color_plot') {
-				rgb = colorMap.getClassificationColor(thresholds[thresholds.length-1]);
-			}
-			doc.setFillColor(rgb.r,rgb.g,rgb.b);
-			doc.setDrawColor(0,0,0);
-			value = counts[thresholds[j]];
-			if (isNaN(value) || value == undefined){
-				value = 0;
-			}
-			var valLabel = thresholds[j].toString();
-			var decimalVal = 4; // go out to 3 decimal places
-			if (valLabel.indexOf(".") > 0){
-				valLabel = valLabel.substring(0, valLabel.indexOf(".") + decimalVal);
-			}
-			if (condenseClassBars){ // square
-				var barW = 10;
-				doc.rect(leftOff, bartop, barW, barHeight, "FD"); // make the square
-				doc.setFontSize(classBarLegendTextSize);
-				doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, valLabel, null);
-				doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value , null);
-			} else { // histogram
-				var barW = (value/maxCount*classBarFigureW)*.65;  //scale bars to fit page
-				doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD"); // make the histo bar
-				doc.setFontSize(classBarLegendTextSize);
-				doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth(valLabel)*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, valLabel , null);
-				doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + value , null);
-			}
-			missingCount -= value; 
-			bartop+=barHeight; // adjust top position for the next bar
-		}
-		// Draw missing values bar IF missing values > 0
-		missingCount = Math.max(0,missingCount); // just in case missingCount goes negative...
-		if (missingCount > 0) {
-			foundMissing = 1;
-			var rgb = colorMap.getClassificationColor("Missing Value");
-			doc.setFillColor(rgb.r,rgb.g,rgb.b);
-			doc.setDrawColor(0,0,0);
-			drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen);
-		}
-		setClassBarFigureH(0,'continuous',foundMissing);   
-		adjustForNextClassBar(key,type,maxLabelLength);
-	}
-
-	/**********************************************************************************
 	 * FUNCTION - setClassBarFigureH: This function will set classification bar figure
 	 * height for the class bar legend page.  
 	 **********************************************************************************/
@@ -1251,19 +1020,21 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			leftOff = 20; // ...reset leftOff...
 			topSkip  = classBarFigureH + classBarHeaderSize + classBarTitleSize + 20; // return class bar height to original value in case it got changed in this row
 			topOff += topSkip; // ... and move the next figure to the line below
-			createHeader(theFont);
-			doc.setFontSize(classBarHeaderSize);
-			doc.setFontType("bold");
-			doc.text(10, topOff, sectionHeader , null);
-			doc.setFontType("normal");
-			var leftOff = 20;
 			classBarFigureH = 0;   
 			topOff += classBarTitleSize + 5;
 			for (var i = 0; i < rowBarsToDraw.length;i++){
 				var key = rowBarsToDraw[i];
 				var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("row", key);
 				doc.setFontSize(classBarTitleSize);
-				if (rowClassBarConfig[key].color_map.type === 'discrete') {
+				var isDiscrete = rowClassBarConfig[key].color_map.type === 'discrete';
+				var colorCount = 10;
+				if (isDiscrete) {
+					colorCount = rowClassBarConfig[key].color_map.colors.length;
+				}
+				if (i === 0) {
+					drawLegendSubSectionHeader(sectionHeader, colorCount);
+				}
+				if (isDiscrete) {
 					getBarGraphForDiscreteClassBar(key, 'row'); 
 				} else {
 					getBarGraphForContinuousClassBar(key, 'row');
@@ -1282,17 +1053,21 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		if (colBarsToDraw.length > 0){
 			topSkip  = classBarFigureH + classBarHeaderSize + classBarTitleSize + 20; // return class bar height to original value in case it got changed in this row
 			topOff += topSkip; // ... and move the next figure to the line below
-			doc.setFontSize(classBarHeaderSize);
-			doc.setFontType("bold");
-			doc.text(10, topOff, sectionHeader , null);
-			doc.setFontType("normal");
-			var leftOff=20;
 			classBarFigureH = 0;   
 			topOff += classBarTitleSize + 5;
 			for (var i = 0; i < colBarsToDraw.length;i++){
 				var key = colBarsToDraw[i];
 				doc.setFontSize(classBarTitleSize);
-				if (colClassBarConfig[key].color_map.type === 'discrete') {
+				var colorCount = 10;
+				var isDiscrete = colClassBarConfig[key].color_map.type === 'discrete';
+				var colorCount = 10;
+				if (isDiscrete) {
+					colorCount = colClassBarConfig[key].color_map.colors.length;
+				}
+				if (i === 0) {
+					drawLegendSubSectionHeader(sectionHeader, colorCount);
+				}
+				if (isDiscrete) {
 					getBarGraphForDiscreteClassBar(key, 'col');
 				} else {
 					getBarGraphForContinuousClassBar(key, 'col');
@@ -1300,5 +1075,257 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			}
 		}
 	}
+	
+	/**********************************************************************************
+	 * FUNCTION:  drawLegendSubSectionHeader - This function draws bolded sub-section
+	 * header on the legend page(s).  If the next group of legends breaks across a 
+	 * page boundary, a new page is created.
+	 **********************************************************************************/
+    function drawLegendSubSectionHeader(headerText, categories) {
+    	if ((topOff + (categories*13) > pageHeight)) {
+    		doc.addPage(); // ... make a new page and reset topOff
+    		createHeader(theFont, sectionHeader);
+    		topOff = paddingTop + 15;
+    	} else {
+			doc.setFontSize(classBarHeaderSize);
+			doc.setFontType("bold");
+			doc.text(10, topOff, sectionHeader , null);
+    	}
+		doc.setFontType("normal");
+		topOff += classBarTitleSize + 5;
+		leftOff = 20; // ...reset leftOff...
+    }
+
+	/**********************************************************************************
+	 * FUNCTION - getBarGraphForDiscreteClassBar: This functiio places the classBar legend 
+	 * using the variables leftOff and topOff, which are updated after every classBar legend.
+	 * inputs: classBar object, colorMap object, and string for name
+	 **********************************************************************************/
+	function getBarGraphForDiscreteClassBar(key, type){
+		var foundMissing = 0;
+		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
+		var bartop = topOff+5 + (splitTitle.length-1)*classBarLegendTextSize*2;
+		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap(type, key);
+		var thresholds = colorMap.getThresholds();
+		if (isChecked("pdfInputPortrait") && (thresholds.length > 56)) {
+			doc.setFontType("bold");
+		    doc.text(leftOff, topOff, splitTitle);
+			doc.setFontType("normal");
+			doc.text(leftOff + 15, bartop + classBarLegendTextSize, "This discrete covariate bar contains too", null);
+			doc.text(leftOff +15, bartop + classBarLegendTextSize+12, "many categories to print.", null);
+			setClassBarFigureH(2,'discrete',0);   
+		} else if (isChecked("pdfInputLandscape") && (thresholds.length > 40)) {
+			doc.setFontType("bold");
+		    doc.text(leftOff, topOff, splitTitle);
+			doc.setFontType("normal");
+			doc.text(leftOff +15, bartop + classBarLegendTextSize,    "This discrete covariate bar contains too", null);
+			doc.text(leftOff +15, bartop + classBarLegendTextSize+12, "many categories to print. You may try", null);
+			doc.text(leftOff +15, bartop + classBarLegendTextSize+24, "printing in portrait mode.", null);
+			setClassBarFigureH(3,'discrete',0);   
+		} else {
+			if ((topOff + (thresholds.length*13) > pageHeight) && !isLastClassBarToBeDrawn(key,type)) {
+				doc.addPage(); // ... make a new page and reset topOff
+				createHeader(theFont, sectionHeader + " (continued)");
+				topOff = paddingTop + 15;
+				leftOff = 20; // ...reset leftOff...
+			}  
+			bartop = topOff+5 + (splitTitle.length - 1)*(classBarLegendTextSize*2);
+			//Adjustment for multi-line covariate headers
+			if(splitTitle.length > 1) {
+				classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  //TEST
+			}
+			doc.setFontType("bold");
+		    doc.text(leftOff, topOff, splitTitle);
+			doc.setFontType("normal");
+		    
+			var classBarConfig = rowClassBarConfig[key];
+			var classBarData = rowClassBarData[key];
+			if (type !== 'row') {
+				classBarConfig = colClassBarConfig[key];
+				classBarData = colClassBarData[key];
+			}
+			var barHeight = classBarLegendTextSize + 3;
+            var counts = {}, maxCount = 0;
+		    maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
+			// get the number N in each threshold
+			var cutValues = 0;
+			for(var i = 0; i< classBarData.values.length; i++) {
+			    var num = classBarData.values[i];
+			    if (num !== '!CUT!') {
+			    	counts[num] = counts[num] ? counts[num]+1 : 1;
+			    } else {
+			    	cutValues++;
+			    }
+			}
+			for (var val in counts){
+				maxCount = Math.max(maxCount, counts[val]);
+				maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val,classBarLegendTextSize)*classBarLegendTextSize);
+			}
+				
+			// NOTE: missingCount will contain all elements that are not accounted for in the thresholds
+			// ie: thresholds = [type1, type2, type3], typeX will get included in the missingCount
+			var missingCount = classBarData.values.length-cutValues;
+			// Get maximum length of threshhold title for use in separating counts from title
+			var threshMaxLen = getThreshMaxLength(thresholds,classBarLegendTextSize);
+			// Indent threshholds from class bar title
+			leftOff += 10;
+			// draw the bars
+			for (var j = 0; j < thresholds.length; j++){ // make a gradient stop (and also a bucket for continuous)
+				var rgb = colorMap.getClassificationColor(thresholds[j]);
+				doc.setFillColor(rgb.r,rgb.g,rgb.b);
+				doc.setDrawColor(0,0,0);
+				var count = counts[thresholds[j]] ? counts[thresholds[j]] : 0;
+				if (condenseClassBars){
+					var barW = 10;
+					doc.rect(leftOff, bartop, barW, barHeight, "FD");
+					doc.setFontSize(classBarLegendTextSize);
+					doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, thresholds[j].toString(), null);
+					doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + count, null);
+				} else {
+					var barW = (count/maxCount*classBarFigureW)*.65;  //scale bars to fit page
+					doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD");
+					doc.setFontSize(classBarLegendTextSize);
+					doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth(thresholds[j].toString())*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, thresholds[j].toString() , null);
+					doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + count , null);
+				
+				
+				}
+				missingCount -= count;
+				bartop+=barHeight;
+			}
+			// Draw missing values bar IF missing values > 0
+			missingCount = Math.max(0,missingCount); // just in case missingCount goes negative...
+			if (missingCount > 0) {
+				foundMissing = 1;
+				var rgb = colorMap.getClassificationColor("Missing Value");
+				doc.setFillColor(rgb.r,rgb.g,rgb.b);
+				doc.setDrawColor(0,0,0);
+				drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen);
+			}
+			
+			if (thresholds.length * barHeight > classBarFigureH){ // in case a discrete classbar has over 15 categories, make the topOff increment bigger
+				topSkip = (thresholds.length+1) * barHeight+classBarHeaderSize;
+			}
+			setClassBarFigureH(thresholds.length,'discrete',foundMissing);   
+		}
+		// adjust the location for the next class bar figure
+		adjustForNextClassBar(key,type,maxLabelLength);
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - getBarGraphForContinousClassBar: This function places the classBar 
+	 * legend using the variables leftOff and topOff, which are updated after every 
+	 * classBar legend. inputs: classBar object, colorMap object, and string for name
+	 **********************************************************************************/
+	function getBarGraphForContinuousClassBar(key, type){
+		var foundMissing = 0;
+		// Write class bar name to PDF
+		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
+		doc.setFontType("bold");
+		doc.text(leftOff, topOff, splitTitle);
+		doc.setFontType("normal");
+		var classBars = NgChm.heatMap.getColClassificationConfig();
+		if (type === 'row') {
+			classBars = NgChm.heatMap.getRowClassificationConfig();
+		}
+		var classBar = classBars[key];
+		//Adjustment for multi-line covariate headers
+		if(splitTitle.length > 1) {
+			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
+		}
+		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap(type, key);
+		var classBarConfig = rowClassBarConfig[key];
+		var classBarData = rowClassBarData[key];
+		if (type !== 'row') {
+			classBarConfig = colClassBarConfig[key];
+			classBarData = colClassBarData[key];
+		}
+		var thresholds = colorMap.getContinuousThresholdKeys();
+		var barHeight = classBarLegendTextSize + 3;
+
+		// get the number N in each threshold
+		var counts = {};
+		var maxCount = 0;
+		maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
+
+		// get the continuous thresholds and find the counts for each bucket
+		var cutValues = 0;
+		for(var i = 0; i < classBarData.values.length; i++) {
+		    var num = classBarData.values[i];
+		    if (num !== '!CUT!') {
+			    for (var k = 0; k < thresholds.length; k++){
+					var thresh = thresholds[k];
+					if (k == 0 && num < thresholds[k]){
+						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
+					} else if (k == thresholds.length-1 && num > thresholds[thresholds.length-1]){
+						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
+					} else if (num <= thresh){
+						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
+						break;
+					}
+				}
+		    } else {
+		    	cutValues++;
+		    }
+		}
+		
+		// find the longest label length
+		for (var val in counts){
+			maxCount = Math.max(maxCount, counts[val]);
+			maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val.length)*classBarLegendTextSize);
+		}
+		
+		var bartop = topOff+5 + (splitTitle.length-1)*classBarLegendTextSize*2;
+		var missingCount = classBarData.values.length - cutValues; // start at total number of labels and work down
+		var value;
+		// Get maximum length of threshhold title for use in separating counts from title
+		var threshMaxLen = getThreshMaxLength(thresholds,classBarLegendTextSize);
+		// Indent threshholds from class bar title
+		leftOff += 10;
+		for (var j = 0; j < thresholds.length-1; j++){
+			var rgb = colorMap.getClassificationColor(thresholds[j]);
+			if (classBar.bar_type !== 'color_plot') {
+				rgb = colorMap.getClassificationColor(thresholds[thresholds.length-1]);
+			}
+			doc.setFillColor(rgb.r,rgb.g,rgb.b);
+			doc.setDrawColor(0,0,0);
+			value = counts[thresholds[j]];
+			if (isNaN(value) || value == undefined){
+				value = 0;
+			}
+			var valLabel = thresholds[j].toString();
+			var decimalVal = 4; // go out to 3 decimal places
+			if (valLabel.indexOf(".") > 0){
+				valLabel = valLabel.substring(0, valLabel.indexOf(".") + decimalVal);
+			}
+			if (condenseClassBars){ // square
+				var barW = 10;
+				doc.rect(leftOff, bartop, barW, barHeight, "FD"); // make the square
+				doc.setFontSize(classBarLegendTextSize);
+				doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, valLabel, null);
+				doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value , null);
+			} else { // histogram
+				var barW = (value/maxCount*classBarFigureW)*.65;  //scale bars to fit page
+				doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD"); // make the histo bar
+				doc.setFontSize(classBarLegendTextSize);
+				doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth(valLabel)*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, valLabel , null);
+				doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + value , null);
+			}
+			missingCount -= value; 
+			bartop+=barHeight; // adjust top position for the next bar
+		}
+		// Draw missing values bar IF missing values > 0
+		missingCount = Math.max(0,missingCount); // just in case missingCount goes negative...
+		if (missingCount > 0) {
+			foundMissing = 1;
+			var rgb = colorMap.getClassificationColor("Missing Value");
+			doc.setFillColor(rgb.r,rgb.g,rgb.b);
+			doc.setDrawColor(0,0,0);
+			drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen);
+		}
+		setClassBarFigureH(0,'continuous',foundMissing);   
+		adjustForNextClassBar(key,type,maxLabelLength);
+	}
+
 	
 }

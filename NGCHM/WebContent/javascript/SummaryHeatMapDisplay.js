@@ -190,6 +190,7 @@ NgChm.SUM.summaryInit = function(applying) {
 	NgChm.SUM.initSummarySize(applying);
 	NgChm.SUM.rowDendroResize();
 	NgChm.SUM.colDendroResize();
+	
 	var nameDiv = document.getElementById("mapName");  
 	var mapName = NgChm.heatMap.getMapInformation().name;
 	if (mapName.length > 80){
@@ -229,19 +230,43 @@ NgChm.SUM.summaryInit = function(applying) {
 	}, 1);
 }
 
-
-
-
-// Sets summary and detail chm to the config height and width.
 NgChm.SUM.initSummarySize = function(applying) {
+	//reset minimum summary chm width 
+	NgChm.SUM.chmElement.style.minWidth = '100px';
+	var minSumWidth = NgChm.SUM.rCCanvas.width + 100;
 	var sumPercent = NgChm.heatMap.getMapInformation().summary_width;
-	var detPercent = 100 - sumPercent;
 	NgChm.SUM.chmElement.style.width = sumPercent + "%";
+
+	//Modify summary width if too small to show dendro, covars, and map
+	if (minSumWidth > 100) {
+		sumPercent = NgChm.SUM.setMinimumSummaryWidth(minSumWidth);
+	}
+		
+	var detPercent = 100 - sumPercent;
 	NgChm.DET.chmElement.style.width = detPercent + "%";
 	NgChm.SUM.chmElement.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
 	NgChm.DET.chmElement.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
 	NgChm.SUM.setTopItemsSize();
 	NgChm.SUM.setSummarySize();
+}
+
+//This function checks to see if the proposed summary width will allow for covariate bars,
+//dendrogram, and some portion of the summary map.  If not, the minimum summary size is 
+//reset to a larger size and the configuration for summary minimum width is updated. The
+//mimimum width is also set for the summary chm so that the divider bar cannot be dragged
+//further to the left.
+NgChm.SUM.setMinimumSummaryWidth = function(minSumWidth) {
+	var sumPct = NgChm.heatMap.getMapInformation().summary_width;
+	while (NgChm.SUM.chmElement.offsetWidth < minSumWidth) {
+		sumPct = parseInt(sumPct) + 5;
+		NgChm.SUM.chmElement.style.width = sumPct + "%";
+	}
+	if (parseInt(NgChm.heatMap.getMapInformation().summary_width) < sumPct) {
+		NgChm.heatMap.setDividerPref(sumPct.toString());
+	}
+	NgChm.SUM.chmElement.style.minWidth = minSumWidth + 'px';
+
+	return sumPct;
 }
 
 // Sets summary and detail chm to newly adjusted size.
@@ -681,14 +706,14 @@ NgChm.SUM.buildSummaryTexture = function() {
 		if (debug) console.log('Rendering summary heatmap finished at ' + performance.now());
 		NgChm.SUM.summaryHeatMapValidator[NgChm.SEL.currentDl] = validator;
 	}
-	if ((NgChm.SUM.gl) && (renderBuffer !== null)) { 
+	if ((NgChm.SUM.gl) && (renderBuffer !== undefined)) { 
 		NgChm.SUM.drawHeatMapRenderBuffer(renderBuffer);
 	}
 }
 
 // Redisplay the summary heat map for the current data layer.
 NgChm.SUM.drawHeatMap = function() {
-	if ((NgChm.SUM.gl)  && (NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl] !== null)) {
+	if ((NgChm.SUM.gl)  && (NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl] !== undefined)) {
 		NgChm.SUM.drawHeatMapRenderBuffer (NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl]);
 	}
 }
@@ -728,10 +753,6 @@ NgChm.SUM.renderSummaryHeatmap = function (renderBuffer) {
 	}
 	NgChm.SUM.avgValue[NgChm.SEL.currentDl] = (NgChm.SUM.avgValue[NgChm.SEL.currentDl] / (NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL) * NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL)));
 };
-
-
-	
-
 
 //WebGL code to draw the Summary Heat Map.
 NgChm.SUM.drawHeatMapRenderBuffer = function(renderBuffer) {
@@ -1355,43 +1376,25 @@ NgChm.SUM.drawColClassBarLabels = function () {
 	var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
 	var classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
 	var classBarsData = NgChm.heatMap.getColClassificationData(); 
-	var totalHeight = 0;
-	for (var i = 0; i < classBarConfigOrder.length; i++) {
-		var key = classBarConfigOrder[i];
-		var currentClassBar = classBarsConfig[key];
-		if (currentClassBar.show === 'Y') {
-			totalHeight += parseInt(currentClassBar.height);
-		}
-	}
 	var prevHeight = 0;
-	var fewClasses = classBarConfigOrder.length < 7 ? 2 : 0;
 	for (var i = 0; i < classBarConfigOrder.length; i++) {
 		var key = classBarConfigOrder[i];
 		var currentClassBar = classBarsConfig[key];
 		if (currentClassBar.show === 'Y') {
-			NgChm.SUM.drawColClassBarLabel(key, currentClassBar,prevHeight,totalHeight, fewClasses);
+			NgChm.SUM.drawColClassBarLabel(key, currentClassBar,prevHeight);
 			prevHeight += parseInt(currentClassBar.height);
 		}
 	}
 }
 
-NgChm.SUM.drawColClassBarLabel = function(key,currentClassBar,prevHeight,totalHeight, fewClasses) {
+NgChm.SUM.drawColClassBarLabel = function(key, currentClassBar, prevHeight) {
 	//calculate where covariate bars end and heatmap begins by using the top items canvas (which is lined up with the heatmap)
-    var rowCanvas = document.getElementById("summary_row_top_items_canvas");
-	var classHgt =  NgChm.SUM.colClassBarHeight;
-	//calculate where the previous bar ends and the current one begins.
-	var prevEndPct = prevHeight/totalHeight;
-	var currEndPct = (prevHeight+parseInt(currentClassBar.height))/totalHeight;
-	//calculate where covariate bars begin and end and use that to calculate the total covariate bars height
-	var beginClasses = NgChm.SUM.cCCanvas.offsetTop-6;
-	var endClasses = beginClasses+classHgt-2;
-	var classHeight = endClasses-beginClasses;
+	var beginClasses = NgChm.SUM.cCCanvas.offsetTop;
 	//get your horizontal start position (to the right of bars)
 	var leftPos = NgChm.SUM.canvas.offsetLeft + NgChm.SUM.canvas.offsetWidth + 2;
 	//find the first, middle, and last vertical positions for the bar legend being drawn
-	var topPos =  beginClasses+(classHeight*prevEndPct)+fewClasses;
-	var endPos =  beginClasses+(classHeight*currEndPct)+fewClasses;
-	var midPos =  topPos+((endPos-topPos)/2);
+	var topPos =  beginClasses+prevHeight;
+	var midPos =  topPos+((currentClassBar.height-15)/2)-1;
 	var midVal = NgChm.UTIL.getLabelText(key,'ROW'); 
 	//Create div and place mid legend value
 	NgChm.SUM.setLabelDivElement(key+"ColLabel",midVal,midPos,leftPos,false);

@@ -33,12 +33,12 @@ NgChm.SEL.createEmptySearchItems = function() {
  * It is assumed that the caller modified currentRow, currentCol, dataPerRow,
  * and dataPerCol as desired. This method does redrawing and notification as necessary.  
  */
-NgChm.SEL.updateSelection = function() {
+NgChm.SEL.updateSelection = function(noResize) {
     //We have the summary heat map so redraw the yellow selection box.
     NgChm.SUM.drawLeftCanvasBox();
     // Redraw based on mode type and selection. 
     NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),NgChm.SEL.getCurrentDetRow(),NgChm.SEL.getCurrentDetCol(),NgChm.SEL.getCurrentDetDataPerCol(),NgChm.SEL.getCurrentDetDataPerRow());
-    NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
+    NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout,noResize);
 }
 
 NgChm.SEL.changeMode = function(newMode) {
