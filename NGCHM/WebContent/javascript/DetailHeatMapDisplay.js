@@ -1300,6 +1300,7 @@ NgChm.DET.setDrawDetailTimeout = function (ms, noResize) {
 	const drawWin = NgChm.DET.getDetailWindow();
 
 	if (noResize) {
+		NgChm.DET.resizeOnNextDraw = true;
 		NgChm.DET.drawDetailHeatMap(drawWin);
 	} else {
 		NgChm.DET.resizeOnNextDraw = true;
@@ -1307,21 +1308,12 @@ NgChm.DET.setDrawDetailTimeout = function (ms, noResize) {
 			NgChm.DET.drawDetailHeatMap(drawWin);
 		}, ms);
 	}
-
-	
-//	NgChm.DET.drawDetailHeatMap(drawWin);
-/*
-	NgChm.DET.drawEventTimer = setTimeout(function drawDetailTimeout () {
-		NgChm.DET.drawDetailHeatMap(drawWin);
-	}, ms);
-*/
 };
 
 
 //Get the layer, level, and selected region of the current detail
 //heat map display.
 NgChm.DET.getDetailWindow = function() {
-	//console.log("NgChm.DET.getDetailWindow");
 	return {
 		layer: NgChm.SEL.currentDl,
 		level: NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),
@@ -1336,8 +1328,6 @@ NgChm.DET.getDetailWindow = function() {
 //Draw the region of the NGCHM specified by drawWin to the detail heat map
 //pane.
 NgChm.DET.drawDetailHeatMap = function (drawWin) {
-	//console.log("NgChm.DET.drawDetailHeatMap");
-
 	NgChm.DET.setDendroShow();
 	if (NgChm.DET.resizeOnNextDraw) {
 		NgChm.DET.detailResize();

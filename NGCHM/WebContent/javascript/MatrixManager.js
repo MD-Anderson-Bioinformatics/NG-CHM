@@ -1084,23 +1084,25 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		} else {
 			//File fileSrc - get tile from zip
 			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.tile'];
-			if (typeof entry == 'undefined') {
-				entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.bin'];
+			if (entry !== undefined) {
+				if (typeof entry == 'undefined') {
+					entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.bin'];
+				}
+				entry.getData(new zip.BlobWriter(), function(blob) {
+					var fr = new FileReader();
+					
+					fr.onload = function(e) {
+				        var arrayBuffer = fr.result;
+				        var far32 = new Float32Array(arrayBuffer);
+				    	  
+				        setTileCacheEntry(tileCacheName, far32);
+				     }
+	
+				     fr.readAsArrayBuffer(blob);		
+				}, function(current, total) {
+					// onprogress callback
+				});		
 			}
-			entry.getData(new zip.BlobWriter(), function(blob) {
-				var fr = new FileReader();
-				
-				fr.onload = function(e) {
-			        var arrayBuffer = fr.result;
-			        var far32 = new Float32Array(arrayBuffer);
-			    	  
-			        setTileCacheEntry(tileCacheName, far32);
-			     }
-
-			     fr.readAsArrayBuffer(blob);		
-			}, function(current, total) {
-				// onprogress callback
-			});		
 		}
 	};	
 	

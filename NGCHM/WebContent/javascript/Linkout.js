@@ -238,10 +238,12 @@ NgChm.LNK.getLabelsByType = function(axis, linkout){
 	// 'label' is the full row/column label, and 'indexes' is an array that tells you how  to put the searchLabel together
 	function generateSearchLabel(label,indexes){
 		var searchLabel = "";
-		for (var i = 0; i < indexes.length; i++){
-			searchLabel += label.split("|")[indexes[i]] + "|";
+		if (label !== undefined) {
+			for (var i = 0; i < indexes.length; i++){
+				searchLabel += label.split("|")[indexes[i]] + "|";
+			}
+			searchLabel = searchLabel.slice(0,-1); // remove the last character (the extra "|")
 		}
-		searchLabel = searchLabel.slice(0,-1); // remove the last character (the extra "|")
 		return searchLabel;
 	}
 }

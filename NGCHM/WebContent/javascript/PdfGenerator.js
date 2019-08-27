@@ -1032,7 +1032,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 					colorCount = rowClassBarConfig[key].color_map.colors.length;
 				}
 				if (i === 0) {
-					drawLegendSubSectionHeader(sectionHeader, colorCount);
+					drawLegendSubSectionHeader(sectionHeader, colorCount, key);
 				}
 				if (isDiscrete) {
 					getBarGraphForDiscreteClassBar(key, 'row'); 
@@ -1060,12 +1060,11 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 				doc.setFontSize(classBarTitleSize);
 				var colorCount = 10;
 				var isDiscrete = colClassBarConfig[key].color_map.type === 'discrete';
-				var colorCount = 10;
 				if (isDiscrete) {
 					colorCount = colClassBarConfig[key].color_map.colors.length;
 				}
 				if (i === 0) {
-					drawLegendSubSectionHeader(sectionHeader, colorCount);
+					drawLegendSubSectionHeader(sectionHeader, colorCount, key);
 				}
 				if (isDiscrete) {
 					getBarGraphForDiscreteClassBar(key, 'col');
@@ -1081,8 +1080,13 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * header on the legend page(s).  If the next group of legends breaks across a 
 	 * page boundary, a new page is created.
 	 **********************************************************************************/
-    function drawLegendSubSectionHeader(headerText, categories) {
-    	if ((topOff + (categories*13) > pageHeight)) {
+    function drawLegendSubSectionHeader(headerText, categories, key) {
+		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
+		//Adjustment for multi-line covariate headers
+		if(splitTitle.length > 1) {
+			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
+		}
+    	if ((topOff + classBarHeaderHeight + (categories*13) > pageHeight)) {
     		doc.addPage(); // ... make a new page and reset topOff
     		createHeader(theFont, sectionHeader);
     		topOff = paddingTop + 15;
@@ -1123,7 +1127,11 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			doc.text(leftOff +15, bartop + classBarLegendTextSize+24, "printing in portrait mode.", null);
 			setClassBarFigureH(3,'discrete',0);   
 		} else {
-			if ((topOff + (thresholds.length*13) > pageHeight) && !isLastClassBarToBeDrawn(key,type)) {
+			//Adjustment for multi-line covariate headers
+			if(splitTitle.length > 1) {
+				classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  //TEST
+			}
+			if ((topOff + classBarHeaderHeight + (thresholds.length*13) > pageHeight) && !isLastClassBarToBeDrawn(key,type)) {
 				doc.addPage(); // ... make a new page and reset topOff
 				createHeader(theFont, sectionHeader + " (continued)");
 				topOff = paddingTop + 15;
@@ -1221,6 +1229,16 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		var foundMissing = 0;
 		// Write class bar name to PDF
 		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
+		//Adjustment for multi-line covariate headers
+		if(splitTitle.length > 1) {
+			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
+		}
+		if ((topOff + classBarHeaderHeight + 130) > pageHeight) {
+			doc.addPage(); // ... make a new page and reset topOff
+			createHeader(theFont, sectionHeader + " (continued)");
+			topOff = paddingTop + 15;
+			leftOff = 20; // ...reset leftOff...
+		}  
 		doc.setFontType("bold");
 		doc.text(leftOff, topOff, splitTitle);
 		doc.setFontType("normal");
