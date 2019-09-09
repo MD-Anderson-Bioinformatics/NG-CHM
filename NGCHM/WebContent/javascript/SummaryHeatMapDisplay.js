@@ -1716,6 +1716,10 @@ NgChm.SUM.calculateSummaryTotalClassBarHeight = function(axis) {
 //Selection Label Functions *//
 //***************************//
 NgChm.SUM.summaryResize = function() {
+	var embedDiv = document.getElementById("NGCHMEmbed");
+	if ((embedDiv !== null) && (embedDiv.style.display === 'none')) {
+		return;
+	}
 	if  (NgChm.SUM.canvas !== undefined) {
 		NgChm.SUM.setSummarySize();
 		NgChm.SUM.colDendroResize();

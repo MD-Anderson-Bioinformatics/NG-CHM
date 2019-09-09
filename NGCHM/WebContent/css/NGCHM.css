@@ -663,6 +663,19 @@ table.helpTable th {
   opacity: .75;
 }
 
+#NGCHMEmbedCollapse {
+  display: flex;
+}
+
+#NGCHMEmbedCollapse>div {
+  min-width: 0; /* why? see below. */
+}
+
+#NGCHMEmbedCollapse>div>img {
+  max-width: 100%;
+  height: auto;
+}
+
 #NGCHMEmbedButton {
   display: block;
   height: 100%;

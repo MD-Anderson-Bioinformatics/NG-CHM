@@ -1572,35 +1572,37 @@ NgChm.DET.isLineACut = function (row) {
 }
 
 NgChm.DET.rowDendroResize = function() {
-	const dendroCanvas = NgChm.DET.rowDendro.dendroCanvas;
-
-	const top = NgChm.DET.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
-	dendroCanvas.style.top = (top + NgChm.DET.canvas.clientHeight * (1-NgChm.DET.dataViewHeight/NgChm.DET.canvas.height)) + 'px';
-	if (NgChm.DET.rowDendro.isVisible()){
-		const width = NgChm.DET.rowDendro.getConfigSize() * NgChm.DET.chmElement.clientWidth + NgChm.SUM.paddingHeight;
-		const height = NgChm.DET.canvas.clientHeight * (NgChm.DET.dataViewHeight/NgChm.DET.canvas.height);
-		dendroCanvas.style.width = width + 'px';
-		dendroCanvas.style.height = (height-2) + 'px';
-		dendroCanvas.width = Math.round(width);
-		dendroCanvas.height = Math.round(height);
-	} else {
-		dendroCanvas.style.width = '0px';
+	if (NgChm.DET.rowDendro.dendroCanvas !== null) {
+		const dendroCanvas = NgChm.DET.rowDendro.dendroCanvas;
+		const top = NgChm.DET.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
+		dendroCanvas.style.top = (top + NgChm.DET.canvas.clientHeight * (1-NgChm.DET.dataViewHeight/NgChm.DET.canvas.height)) + 'px';
+		if (NgChm.DET.rowDendro.isVisible()){
+			const width = NgChm.DET.rowDendro.getConfigSize() * NgChm.DET.chmElement.clientWidth + NgChm.SUM.paddingHeight;
+			const height = NgChm.DET.canvas.clientHeight * (NgChm.DET.dataViewHeight/NgChm.DET.canvas.height);
+			dendroCanvas.style.width = width + 'px';
+			dendroCanvas.style.height = (height-2) + 'px';
+			dendroCanvas.width = Math.round(width);
+			dendroCanvas.height = Math.round(height);
+		} else {
+			dendroCanvas.style.width = '0px';
+		}
 	}
 }
 
 NgChm.DET.colDendroResize = function() {
-	const dendroCanvas = NgChm.DET.colDendro.dendroCanvas;
-
-	const left = NgChm.DET.canvas.offsetLeft;
-	dendroCanvas.style.left = (left + NgChm.DET.canvas.clientWidth * (1-NgChm.DET.dataViewWidth/NgChm.DET.canvas.width)) + 'px';
-	if (NgChm.DET.colDendro.isVisible()){
-		const height = NgChm.DET.colDendro.getConfigSize() * NgChm.DET.chmElement.clientHeight + NgChm.SUM.paddingHeight;
-		dendroCanvas.style.height = height + 'px';
-		dendroCanvas.style.width = (NgChm.DET.canvas.clientWidth * (NgChm.DET.dataViewWidth/NgChm.DET.canvas.width)) + 'px';
-		dendroCanvas.height = Math.round(height);
-		dendroCanvas.width = Math.round(NgChm.DET.canvas.clientWidth * (NgChm.DET.dataViewWidth/NgChm.DET.canvas.width));
-	} else {
-		dendroCanvas.style.height = '0px';
+	if (NgChm.DET.colDendro.dendroCanvas !== null) {
+		const dendroCanvas = NgChm.DET.colDendro.dendroCanvas;
+		const left = NgChm.DET.canvas.offsetLeft;
+		dendroCanvas.style.left = (left + NgChm.DET.canvas.clientWidth * (1-NgChm.DET.dataViewWidth/NgChm.DET.canvas.width)) + 'px';
+		if (NgChm.DET.colDendro.isVisible()){
+			const height = NgChm.DET.colDendro.getConfigSize() * NgChm.DET.chmElement.clientHeight + NgChm.SUM.paddingHeight;
+			dendroCanvas.style.height = height + 'px';
+			dendroCanvas.style.width = (NgChm.DET.canvas.clientWidth * (NgChm.DET.dataViewWidth/NgChm.DET.canvas.width)) + 'px';
+			dendroCanvas.height = Math.round(height);
+			dendroCanvas.width = Math.round(NgChm.DET.canvas.clientWidth * (NgChm.DET.dataViewWidth/NgChm.DET.canvas.width));
+		} else {
+			dendroCanvas.style.height = '0px';
+		}
 	}
 }
 
