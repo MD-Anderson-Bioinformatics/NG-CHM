@@ -155,44 +155,18 @@ public class InputClass {
 	 * file from the matrix that the data was embedded in.
 	 ******************************************************************/
 	private Map<String,String> extractClassDataFromMatrix(InputFile iFile) throws Exception {
-		Map<String, String> origData = new HashMap<String, String>();
-		String matrix[][] = iFile.origMatrix;
+		Map<String,String> classBar = null;
 		try {
-			if (position.equals("row")) {
-		    	String colLabels[] = matrix[0];
-		    	int classPosition = 0;
-		    	for (int i=1;i<iFile.rowCovs+1;i++) {
-		    		if (colLabels[i].toLowerCase().equals(name.toLowerCase())) {
-		    			classPosition = i;
-		    			break;
-		    		}
-		    	}
-		    	int rowStart = iFile.colCovs+1;
-		    	for (int i=rowStart;i<matrix.length;i++) {
-		    		String rowValues[] = matrix[i];
-                   	origData.put(rowValues[0], rowValues[classPosition]);
-		    	}
+			if (position.equals("column")) {
+				classBar = iFile.readEmbeddedColClass(name);
 			} else {
-		    	int classPosition = 0;
-		    	for (int i=1;i<iFile.colCovs+1;i++) {
-		    		String rowValues[] = matrix[i];
-		    		if (rowValues[0].toLowerCase().equals(name.toLowerCase())) {
-		    			classPosition = i;
-		    			break;
-		    		}
-		    	}
-		    	String colLabels[] = matrix[0];
-		    	String colValues[] = matrix[classPosition];
-		    	int colStart = iFile.rowCovs+1;
-		    	for (int i=colStart;i<colLabels.length;i++) {
-                   	origData.put(colLabels[i], colValues[i]);
-		    	}
+				classBar = iFile.readEmbeddedRowClass(name);
 			}
     	} catch (Exception ex) { 
     		System.out.println("ERROR extracting class data from matrix for the Class: (" + name + ")  Message: " + ex.toString());
     		throw ex;
-	    }
-        return origData;
+	    } 
+        return classBar;
 	}
 	
 	/*******************************************************************

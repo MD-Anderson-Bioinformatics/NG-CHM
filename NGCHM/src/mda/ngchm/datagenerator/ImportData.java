@@ -80,8 +80,8 @@ public class ImportData {
 		
 		//Get rows/cols values after adding cut rows and columns
 		InputFile iFile = this.matrixFiles.get(0);
-		int rows = iFile.reorgMatrix.length-1; //rows     
-		int cols = iFile.reorgMatrix[0].length-1; // cols 
+		int rows = iFile.rows;     
+		int cols = iFile.cols; 
 		if (colData.dendroFile != null) {
 			colData.generateDendroMatrix(cols);
 		}

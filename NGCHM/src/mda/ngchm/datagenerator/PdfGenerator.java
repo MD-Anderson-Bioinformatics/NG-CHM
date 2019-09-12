@@ -635,7 +635,7 @@ public class PdfGenerator {
         try {
 	       int colStartPos = posArray[PDF_COL_POS] + PDF_MAP_SIZE + 1;
 	        BufferedImage bI = iData.rowData.topItemImage;
-	        int matrixLen = iData.matrixFiles.get(0).reorgMatrix.length;  
+	        int matrixLen = iData.matrixFiles.get(0).rows;  
 	        PDImageXObject  pdImageClassXObjectR = LosslessFactory.createFromImage(doc, bI);
 	        contentStream.drawImage(pdImageClassXObjectR, colStartPos, posArray[PDF_ROW_POS], PDF_CLASS_HEIGHT*2, PDF_MAP_SIZE);
 	        Float increment = new Float(PDF_MAP_SIZE) / new Float(matrixLen-1);
@@ -682,7 +682,7 @@ public class PdfGenerator {
         try {
 			int colStartPos = posArray[PDF_COL_POS];
 	        int rowStartPos = (posArray[PDF_ROW_POS] - PDF_CLASS_HEIGHT*3) - 1;
-	        int matrixLen = iData.matrixFiles.get(0).reorgMatrix[0].length;  
+	        int matrixLen = iData.matrixFiles.get(0).cols;  
 	        BufferedImage bI = iData.colData.topItemImage;
 	        PDImageXObject  pdImageClassXObjectR = LosslessFactory.createFromImage(doc, bI);
 	        contentStream.drawImage(pdImageClassXObjectR, colStartPos, rowStartPos, PDF_MAP_SIZE, PDF_CLASS_HEIGHT*3);

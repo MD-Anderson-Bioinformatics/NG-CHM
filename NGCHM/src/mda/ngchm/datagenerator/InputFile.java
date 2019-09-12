@@ -20,6 +20,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 import org.json.simple.JSONArray;
@@ -36,9 +39,11 @@ public class InputFile {
 	public boolean hasHorizontalRibbon = false;
 	public boolean hasVerticalRibbon = false;
 	public ColorMap map;
-	public float reorgMatrix[][];
+//	public float reorgMatrix[][];
 	public int rows;
 	public int cols;
+	public int origRows;
+	public int origCols;
 	public int rowStart = 0;
 	public int colStart = 0;
 	public int rowEnd = 0;
@@ -52,7 +57,6 @@ public class InputFile {
 	public String cutsColor = COLOR_WHITE;
 	public String selectionColor = COLOR_LIME;
 	public ArrayList<ImportLayerData> importLayers = new ArrayList<>();
-	public String origMatrix[][];
 	public BufferedImage distributionLegend;
 	public int[] distributionCounts;
 	public int missingCount;
@@ -65,6 +69,8 @@ public class InputFile {
 		file = (String) jo.get(PATH);
 		rows = importRows;
 		cols = importCols;
+		origCols = cols;
+		origRows = rows;
 		String sumMeth = (String) jo.get(SUMMARY_METHOD);
 		if (sumMeth != null) {
 	        summaryMethod = sumMeth.trim();
@@ -96,8 +102,7 @@ public class InputFile {
    		colDataStart = colStart+rowCovs;
    		rowStart--;colStart--;
 	   		
-   		origMatrix = readInputMatrix();
-		//Construct colorMap if map provided on JSON
+   		//Construct colorMap if map provided on JSON
 		JSONObject jocm = (JSONObject) jo.get(COLORMAP);
 		ColorMap cMap = new ColorMap();
 		cMap.id = id; 
@@ -122,21 +127,9 @@ public class InputFile {
 	}
 	  
 	public void processInputFile(RowColData rowData, RowColData colData) throws Exception { 
-		int origCols = cols;
 		//update input file rows and columns to account for cuts added to the matrix
 	    cols += colData.cutLocations.length*colData.cutWidth;
 	    rows += rowData.cutLocations.length*rowData.cutWidth;
-		// Re-order the matrix file into the clustered order supplied be the R cluster order files 
-		reorgMatrix = new float[rows+1][cols+1];   
-		initMatrix(reorgMatrix);
-		setReorderedInputMatrix(rowData, colData, origCols);
-
-		//If map was not defined on original JSON, generate default map colors
-		if (map.colors.isEmpty()) {
-			map = ColorMapGenerator.getDefaultMapColors(map,this);
-		}
-		
-		createDistributionLegendImg();
 		// Create thumbnail level ImportDataLayer
 		ImportLayerData ild = new ImportLayerData(LAYER_THUMBNAIL, rows, cols);
 		importLayers.add(ild);
@@ -165,41 +158,39 @@ public class InputFile {
 				importLayers.add(ild);
 			}
 		}
+		
 	}
 	  
-	/*******************************************************************
-	 * METHOD: initMatrix
+	/*====================================================================
+	 * BEGIN: ORIGINAL MATRIX READ  METHODS
 	 *
-	 * This method initializes a 2 dimensional float matrix to contain
-	 * low values in every data cell (excluding header row/col cells).
-	 ******************************************************************/
-	private void initMatrix(float matrix[][]) throws Exception {
-        for (int i = 1; i < matrix.length; i++) {
-	        for (int j = 1; j < matrix[0].length; j++) {
-	        	matrix[i][j] = MIN_VALUES;
-	        }
-        }
+	 * The methods that follow are concerned with reading the original 
+	 * matrix file provided by the user.  The primary method here is 
+	 * readInputMatrix which is called one time for each data layer,
+	 * and creates a float array that is processed for reordering and then
+	 * deleted. Methods for reading row/col embedded 
+	 * classifications and labels are only called under specific 
+	 * circumstances.  The embedded class methods when the matrix has
+	 * classification data placed within and the label methods when
+	 * ordering is Original or Random (i.e. NOT clustered)
+	 *====================================================================*/
 
-	}
-	
 	/*******************************************************************
-	 * METHOD: readInputMatrix
+	 * METHOD: getReorderedInputMatrix
 	 *
-	 * This method reads in the data matrix file, finds the top left 
-	 * corner of the matrix (which may be somewhere other than row 1, col 1),
-	 * and writes JUST the matrix labels, covariate data (if app), and matrix
-	 * data into a 2-dimensional array that will be stored on the InputFile
-	 * object as the origData array.
+	 * This method reads in the data matrix file, converts matrix data 
+	 * from string to float and re-orders the incoming data matrix into
+	 * clustered order using the row/col clustering tsv files.  
 	 ******************************************************************/
-	private String[][] readInputMatrix() throws Exception {
+	public float[][] getReorderedInputMatrix(RowColData rowData, RowColData colData) throws Exception {
 		String errMsg = null;
-		int rowCount = rows+colCovs+1, colCount = cols+rowCovs+1;
         if (!(new File(file).exists())) {
         	throw new Exception("ERROR: Data matrix file cannot be found");
         }
         FileInputStream inputStream = null;
         Scanner sc = null;
-        String matrix[][] = new String[rowCount][colCount];
+		float[][] matrix = new float[rows+1][cols+1];
+		initializeMatrix(matrix);
 	    try {
 	        inputStream = new FileInputStream(file);
 	        sc = new Scanner(inputStream, "UTF-8");
@@ -224,7 +215,7 @@ public class InputFile {
 		        // offset by one to the left.  If the latter case is true, add a TAB to the line. 
 	            if (pos == 0) {
 		            String headerCols[] = line.split("\t");
-		            if ((headerCols.length-rowCovs-colStart) < (cols+1)) {
+		            if ((headerCols.length-rowCovs-colStart) < (origCols+1)) {
 		        		  line = TAB+line;
 		            } 
 		            headerLength = line.split("\t").length;
@@ -236,39 +227,53 @@ public class InputFile {
             			throw new Exception(errMsg);
              		}
 	            }
-	        	String toks[] = line.split("\t",-1);
-	        	int lineLen = (pos == 0 && headerLength < toks.length) ? headerLength : toks.length;
-	            for (int i = colStart; i < lineLen; i++) {
-	            	if (pos == 0) {
-		            	if ((i > colStart) && (i < headerLength)) {
-		            		errMsg = MatrixValidator.validateMatrixLabelValue(toks[i], false);
-		            		if (errMsg != null) {
-			            		errMsg += (i+1);
-			            		break;
+	    		if ((pos == 0) || (pos>colCovs)) {
+		        	String toks[] = line.split("\t",-1);
+		        	int lineLen = (pos == 0 && headerLength < toks.length) ? headerLength : toks.length;
+		    		//new row position based on clustering order file
+	    			int yPos = pos == 0 ? 0 : pos-colCovs;
+	    			int newRow = rowData.orderArray[yPos];
+		            for (int i = colStart; i < lineLen; i++) {
+	        			float fVal = 0;
+		            	if (pos == 0) {
+			            	if ((i > colStart) && (i < headerLength)) {
+			            		errMsg = MatrixValidator.validateMatrixLabelValue(toks[i], false);
+			            		if (errMsg != null) {
+				            		errMsg += (i+1);
+				            		break;
+			            		}
+			            	}
+		            	} else {
+		            		if (i == colStart) {
+			            		errMsg = MatrixValidator.validateMatrixLabelValue(toks[i], true);
+			            		if (errMsg != null) {
+				            		errMsg += (pos+rowStart+1);
+				            		break;
+			            		}
+		            		} else if ((pos > colCovs) && (i >= colDataStart)) {
+			            		errMsg = MatrixValidator.validateMatrixDataValue(toks[i]);
+			            		if (errMsg != null) {
+				            		errMsg += " Row: " + (pos+rowStart+1) + " Column: " + (i+1);
+				            		break;
+			            		} else {
+			            			if (NA_VALUES.contains(toks[i])) {
+			            				fVal = MAX_VALUES;
+			            			} else {
+			            				fVal = (float) Float.parseFloat(toks[i]);
+			            			}
+			            		}
 		            		}
 		            	}
-	            	} else {
-	            		if (i == colStart) {
-		            		errMsg = MatrixValidator.validateMatrixLabelValue(toks[i], true);
-		            		if (errMsg != null) {
-			            		errMsg += (pos+rowStart+1);
-			            		break;
-		            		}
-	            		} else if ((pos > colCovs) && (i >= colDataStart)) {
-		            		errMsg = MatrixValidator.validateMatrixDataValue(toks[i]);
-		            		if (errMsg != null) {
-			            		errMsg += " Row: " + (pos+rowStart+1) + " Column: " + (i+1);
-			            		break;
-		            		}
-	            		}
-	            	}
-            		matrix[pos][i-colStart] = toks[i];
-	            }
-	            // If data in matrix file ends before last line (i.e. there is anything after the matrix data including another matrix)
-	            // stop pulling data for this layer
-	            if((rowEnd>0) && (pos==(rowEnd-1) - rowStart)) {  
-	            	break;
-	            }
+			    		int xPos = i == 0 ? 0 : i-rowCovs;
+			    		int newCol = colData.orderArray[xPos];
+	            		matrix[newRow][newCol] = fVal;
+	 	            }
+		            // If data in matrix file ends before last line (i.e. there is anything after the matrix data including another matrix)
+		            // stop pulling data for this layer
+		            if((rowEnd>0) && (pos==(rowEnd-1) - rowStart)) {  
+		            	break;
+		            }
+	    		}
                 pos++;
 		        // note that Scanner suppresses exceptions
 		        if (sc.ioException() != null) {
@@ -290,75 +295,417 @@ public class InputFile {
 	        }
 	    }
 	    return matrix;
-	}
-
+	}	
+	
 	/*******************************************************************
-	 * METHOD: setReorderedInputMatrix
+	 * METHOD: readEmbeddedColClass
 	 *
-	 * This method re-orders the incoming data matrix into clustered order
-	 * using the row/col clustering tsv files.  The output will be a matrix 
-	 * with a matching number of rows and columns to the original but one that 
-	 * is completely re-ordered using information in the order tsv files.  
-	 * The result will be stored as a 2D String array (reorgMatrix) 
-	 * on this ImportData object.
+	 * This method reads in the data matrix file and returns a map 
+	 * containing matching string pairs with the column label and 
+	 * classification data for a column covariate bar.
 	 ******************************************************************/
-	private void setReorderedInputMatrix(RowColData rowData, RowColData colData, int origCols) throws Exception {
-		int rowCount = rows+1, colCount = cols+1;
+	public Map<String,String> readEmbeddedColClass(String name) throws Exception {
+		String errMsg = null;
         if (!(new File(file).exists())) {
         	throw new Exception("ERROR: Data matrix file cannot be found");
         }
-        float matrix[][] = new float[rowCount][colCount];
-        initMatrix(matrix);
+		Map<String, String> classBar = new HashMap<String, String>();
+        FileInputStream inputStream = null;
+        Scanner sc = null;
+        String colLabels[]= new String[origCols];
+        String colValues[]= new String[origCols];
 	    try {
-	    	for (int i=0;i<origMatrix.length;i++) {
-	    		if ((i == 0) || (i>colCovs)) {
-		    		String[] matrixRow = origMatrix[i];
-		    		for (int j=0;j<matrixRow.length;j++) {
-			    		if ((j == 0) || (j>rowCovs)) {
-			            	float val = 0;
-			            	try {
-			            		if (NA_VALUES.contains(matrixRow[j]))	 {
-			            			val = MAX_VALUES;
-			            		} else {
-			            			val = Float.parseFloat(matrixRow[j]);
-			            		}
-			            	} catch (NumberFormatException e) {
-			            		if ((i != 0) && (j != 0)) {
-			            			val = MAX_VALUES;
-				            		System.out.println("Exception in InputFile.setReorderedInputMatrix Non-numeric or NA data found in matrix. Column: " + i + " Value: "+ matrixRow[j]); 
-			            		}
+	        inputStream = new FileInputStream(file);
+	        sc = new Scanner(inputStream, "UTF-8");
+	        int pos = 0;
+		    //Move to beginning of matrix data
+		    for (int i=0;i<rowStart;i++) {
+		    	sc.nextLine();
+		    }
+		    int headerLength = 0;
+	        while (sc.hasNextLine()) {
+        		if (errMsg != null) {
+					throw new Exception(errMsg);
+        		}
+	            String line = sc.nextLine();
+				if (!line.contains("\t")) {
+			    	errMsg = "Matrix file ("+ name +") is not tab delimited";
+					break; 
+				}
+		        // Check to see if the column headers are lined up over the data or are
+		        // offset by one to the left.  If the latter case is true, add a TAB to the line. 
+	            if (pos == 0) {
+		            String headerCols[] = line.split("\t");
+		            if ((headerCols.length-rowCovs-colStart) < (origCols+1)) {
+		        		  line = TAB+line;
+		            } 
+		            headerLength = line.split("\t").length;
+		        } else if (pos >= rowDataStart - rowStart) {
+		        	int dataRowLen = line.split("\t",-1).length;
+	            	errMsg = MatrixValidator.validateMatrixRowLength(headerLength, dataRowLen);
+            		if (errMsg != null) {
+            			errMsg += " Matrix Row: " + (pos + rowStart + 1);
+            			throw new Exception(errMsg);
+             		}
+	            }
+	        	String toks[] = line.split("\t",-1);
+	        	int lineLen = (pos == 0 && headerLength < toks.length) ? headerLength : toks.length;
+	            for (int i = colStart; i < lineLen; i++) {
+	            	if (pos == 0) {
+		            	if ((i > colStart) && (i < headerLength)) {
+			            	if ((i > (colStart+rowCovs)) && (i < headerLength)) {
+			            		colLabels[i-(colStart+rowCovs+1)] = toks[i];
 			            	}
-				    		int yPos = i == 0 ? 0 : i-colCovs;
-				    		int xPos = j == 0 ? 0 : j-rowCovs;
-				    		matrix[yPos][xPos]= val;
-			    		}
-			    		
-		    		}
-		    		
-	    		}
+		            	}
+	            	} else {
+	            		if (i == colStart) {  //right here we check label for column covar
+		            		if (!name.contentEquals(toks[i])) {
+			            		break;
+		            		}
+	            		} else if(i >= colDataStart) {  //if 
+		            		colValues[i-(colStart+rowCovs+1)] = toks[i];
+	            		}
+	            	}
+	            }
+	            // If data in matrix file ends before last line (i.e. there is anything after the matrix data including another matrix)
+	            // stop pulling data for this layer
+	            if((rowEnd>0) && (pos==(rowEnd-1) - rowStart)) {  
+	            	break;
+	            }
+                pos++;
+		        // note that Scanner suppresses exceptions
+		        if (sc.ioException() != null) {
+		            //do nothing
+		        }
 	         }
-	        // Create a new 2D string array and populate it with data from the 
-	        // initial 2D array placing it in the clustered row order.
-	        float reorg[][] = new float[rowCount][colCount];
-	        initMatrix(reorg);
-	        for (int row = 0; row < rowData.orderArray.length; row++) {
-	              reorg[rowData.orderArray[row]] = matrix[row];
+	        
+	    	for (int i=0;i<colLabels.length;i++) {
+               	classBar.put(colLabels[i], colValues[i]);
+	    	}
+		 } catch (Exception e) {
+			 throw e;
+		 } finally {
+	        if (inputStream != null) {
+	        	try {
+	        		inputStream.close();
+	        	} catch (Exception ex) {
+	        		//do nothing
+	        	}
 	        }
-	
-	        // Create a new 2D string array and populate it with data from the 
-	        // row-ordered 2D array placing it in the clustered column order.
-	        for (int col = 0; col < colData.orderArray.length; col++) {
-	              int newCol = colData.orderArray[col];
-	              for (int row = 0; row < reorg.length; row++) {
-	            	  reorgMatrix[row][newCol] = reorg[row][col];
-	              }
+	        if (sc != null) {
+	            sc.close();
 	        }
-		} catch (Exception ex) {
-	    	System.out.println("Exception in InputFile.setReorderedInputMatrix: Reading Matrix. "+ ex.toString());
-	        throw ex;
 	    }
+	    return classBar;
 	}
 	
+	/*******************************************************************
+	 * METHOD: readEmbeddedRowClass
+	 *
+	 * This method reads in the data matrix file and returns a map 
+	 * containing matching string pairs with the row label and 
+	 * classification data for a row covariate bar.
+	 ******************************************************************/
+	public Map<String,String> readEmbeddedRowClass(String name) throws Exception {
+		String errMsg = null;
+        if (!(new File(file).exists())) {
+        	throw new Exception("ERROR: Data matrix file cannot be found");
+        }
+		Map<String, String> classBar = new HashMap<String, String>();
+        FileInputStream inputStream = null;
+        Scanner sc = null;
+        String rowLabels[]= new String[origRows];
+        String rowValues[]= new String[origRows];
+	    try {
+	        inputStream = new FileInputStream(file);
+	        sc = new Scanner(inputStream, "UTF-8");
+	        // Construct a 2 dimensional array containing the data from the incoming
+	        // (user provided) data matrix.
+	        int pos = 0;
+		    //Move to beginning of matrix data
+		    for (int i=0;i<rowStart;i++) {
+		    	sc.nextLine();
+		    }
+		    int headerLength = 0;
+		    int dataCol = 0;
+	        while (sc.hasNextLine()) {
+        		if (errMsg != null) {
+					throw new Exception(errMsg);
+        		}
+	            String line = sc.nextLine();
+				if (!line.contains("\t")) {
+			    	errMsg = "Matrix file ("+ name +") is not tab delimited";
+					break; 
+				}
+		        // Check to see if the column headers are lined up over the data or are
+		        // offset by one to the left.  If the latter case is true, add a TAB to the line. 
+	            if (pos == 0) {
+		            String headerCols[] = line.split("\t");
+		            if ((headerCols.length-rowCovs-colStart) < (origCols+1)) {
+		        		  line = TAB+line;
+		            } 
+		            headerLength = line.split("\t").length;
+		        } else if (pos >= rowDataStart - rowStart) {
+		        	int dataRowLen = line.split("\t",-1).length;
+	            	errMsg = MatrixValidator.validateMatrixRowLength(headerLength, dataRowLen);
+            		if (errMsg != null) {
+            			errMsg += " Matrix Row: " + (pos + rowStart + 1);
+            			throw new Exception(errMsg);
+             		}
+	            }
+	        	String toks[] = line.split("\t",-1);
+	        	int lineLen = (pos == 0 && headerLength < toks.length) ? headerLength : toks.length;
+	            for (int i = colStart; i < lineLen; i++) {
+	            	if (pos == 0) {
+		            	if ((i > colStart) && (i < headerLength)) {
+			            	if (name.equals(toks[i])) {
+			            		dataCol = i;
+			            		break;
+			            	}
+		            	}
+	            	} else if (pos > (rowStart+colCovs)) {
+	            		if (i == colStart) {  //right here we check label for column covar
+		            		rowLabels[pos-(colCovs+1)] = toks[i];
+	            		} else if (i == dataCol) {  //if 
+		            		rowValues[pos-(colCovs+1)] = toks[i];
+	            		}
+	            	}
+	            }
+	            // If data in matrix file ends before last line (i.e. there is anything after the matrix data including another matrix)
+	            // stop pulling data for this layer
+	            if((rowEnd>0) && (pos==(rowEnd-1) - rowStart)) {  
+	            	break;
+	            }
+                pos++;
+		        // note that Scanner suppresses exceptions
+		        if (sc.ioException() != null) {
+		            //do nothing
+		        }
+	         }
+	        
+	    	for (int i=0;i<rowLabels.length;i++) {
+               	classBar.put(rowLabels[i], rowValues[i]);
+	    	}
+		 } catch (Exception e) {
+			 throw e;
+		 } finally {
+	        if (inputStream != null) {
+	        	try {
+	        		inputStream.close();
+	        	} catch (Exception ex) {
+	        		//do nothing
+	        	}
+	        }
+	        if (sc != null) {
+	            sc.close();
+	        }
+	    }
+	    return classBar;
+	}
+	
+	/*******************************************************************
+	 * METHOD: readRowLabels
+	 *
+	 * This method reads in the data matrix file and returns a string 
+	 * array containing the row labels from the matrix.
+	 ******************************************************************/
+	public String[] readRowLabels() throws Exception {
+		System.out.println("Begin readRowLabels: " + id + " @: " + new Date());  
+		String errMsg = null;
+        if (!(new File(file).exists())) {
+        	throw new Exception("ERROR: Data matrix file cannot be found");
+        }
+        FileInputStream inputStream = null;
+        Scanner sc = null;
+        String rowLabels[]= new String[origRows];
+	    try {
+	        inputStream = new FileInputStream(file);
+	        sc = new Scanner(inputStream, "UTF-8");
+	        // Construct a 2 dimensional array containing the data from the incoming
+	        // (user provided) data matrix.
+	        int pos = 0;
+		    //Move to beginning of matrix data
+		    for (int i=0;i<rowStart;i++) {
+		    	sc.nextLine();
+		    }
+		    int headerLength = 0;
+	        while (sc.hasNextLine()) {
+        		if (errMsg != null) {
+					throw new Exception(errMsg);
+        		}
+	            String line = sc.nextLine();
+				if (!line.contains("\t")) {
+			    	errMsg = "Matrix file ("+ name +") is not tab delimited";
+					break; 
+				}
+		        // Check to see if the column headers are lined up over the data or are
+		        // offset by one to the left.  If the latter case is true, add a TAB to the line. 
+	            if (pos == 0) {
+		            String headerCols[] = line.split("\t");
+		            if ((headerCols.length-rowCovs-colStart) < (origCols+1)) {
+		        		  line = TAB+line;
+		            } 
+		            headerLength = line.split("\t").length;
+		        } else if (pos >= rowDataStart - rowStart) {
+		        	int dataRowLen = line.split("\t",-1).length;
+	            	errMsg = MatrixValidator.validateMatrixRowLength(headerLength, dataRowLen);
+            		if (errMsg != null) {
+            			errMsg += " Matrix Row: " + (pos + rowStart + 1);
+            			throw new Exception(errMsg);
+             		}
+	            }
+	        	String toks[] = line.split("\t",-1);
+	        	int lineLen = (pos == 0 && headerLength < toks.length) ? headerLength : toks.length;
+	            for (int i = colStart; i < lineLen; i++) {
+	            	if (pos > (rowStart+colCovs)) {
+	            		if (i == colStart) {  //right here we check label for column covar
+		            		rowLabels[pos-(colCovs+1)] = toks[i];
+	            		} else {
+	            			break;
+	            		}
+	            	} else {
+	            		break;
+	            	}
+	            }
+	            // If data in matrix file ends before last line (i.e. there is anything after the matrix data including another matrix)
+	            // stop pulling data for this layer
+	            if((rowEnd>0) && (pos==(rowEnd-1) - rowStart)) {  
+	            	break;
+	            }
+                pos++;
+		        // note that Scanner suppresses exceptions
+		        if (sc.ioException() != null) {
+		            //do nothing
+		        }
+	         }
+			System.out.println("End readRowLabels: " + id + " @: " + new Date());  
+		 } catch (Exception e) {
+			 throw e;
+		 } finally {
+	        if (inputStream != null) {
+	        	try {
+	        		inputStream.close();
+	        	} catch (Exception ex) {
+	        		//do nothing
+	        	}
+	        }
+	        if (sc != null) {
+	            sc.close();
+	        }
+	    }
+	    return rowLabels;
+	}
+	
+	/*******************************************************************
+	 * METHOD: readColLabels
+	 *
+	 * This method reads in the data matrix file and returns a string 
+	 * array containing the column labels from the matrix.
+	 ******************************************************************/
+	public String[] readColLabels() throws Exception {
+		System.out.println("Begin readColLabels: " + id + " @: " + new Date());  
+		String errMsg = null;
+        if (!(new File(file).exists())) {
+        	throw new Exception("ERROR: Data matrix file cannot be found");
+        }
+        FileInputStream inputStream = null;
+        Scanner sc = null;
+        String colLabels[]= new String[origCols];
+	    try {
+	        inputStream = new FileInputStream(file);
+	        sc = new Scanner(inputStream, "UTF-8");
+	        // Construct a 2 dimensional array containing the data from the incoming
+	        // (user provided) data matrix.
+	        int pos = 0;
+		    //Move to beginning of matrix data
+		    for (int i=0;i<rowStart;i++) {
+		    	sc.nextLine();
+		    }
+		    int headerLength = 0;
+	        while ((sc.hasNextLine() && pos < 1)) {
+        		if (errMsg != null) {
+					throw new Exception(errMsg);
+        		}
+	            String line = sc.nextLine();
+				if (!line.contains("\t")) {
+			    	errMsg = "Matrix file ("+ name +") is not tab delimited";
+					break; 
+				}
+		        // Check to see if the column headers are lined up over the data or are
+		        // offset by one to the left.  If the latter case is true, add a TAB to the line. 
+	            if (pos == 0) {
+		            String headerCols[] = line.split("\t");
+		            if ((headerCols.length-rowCovs-colStart) < (origCols+1)) {
+		        		  line = TAB+line;
+		            } 
+		            headerLength = line.split("\t").length;
+		        } else if (pos >= rowDataStart - rowStart) {
+		        	int dataRowLen = line.split("\t",-1).length;
+	            	errMsg = MatrixValidator.validateMatrixRowLength(headerLength, dataRowLen);
+            		if (errMsg != null) {
+            			errMsg += " Matrix Row: " + (pos + rowStart + 1);
+            			throw new Exception(errMsg);
+             		}
+	            }
+	        	String toks[] = line.split("\t",-1);
+	        	int lineLen = (pos == 0 && headerLength < toks.length) ? headerLength : toks.length;
+	            for (int i = colStart; i < lineLen; i++) {
+	            	if (pos == 0) {
+		            	if ((i > colStart) && (i < headerLength)) {
+			            	if ((i > (colStart+rowCovs)) && (i < headerLength)) {
+			            		colLabels[i-(colStart+rowCovs+1)] = toks[i];
+			            	}
+		            	}
+	            	} 
+	            }
+	            // If data in matrix file ends before last line (i.e. there is anything after the matrix data including another matrix)
+	            // stop pulling data for this layer
+	            if((rowEnd>0) && (pos==(rowEnd-1) - rowStart)) {  
+	            	break;
+	            }
+                pos++;
+		        // note that Scanner suppresses exceptions
+		        if (sc.ioException() != null) {
+		            //do nothing
+		        }
+	         }
+			System.out.println("End readColLabels: " + id + " @: " + new Date());  
+		 } catch (Exception e) {
+			 throw e;
+		 } finally {
+	        if (inputStream != null) {
+	        	try {
+	        		inputStream.close();
+	        	} catch (Exception ex) {
+	        		//do nothing
+	        	}
+	        }
+	        if (sc != null) {
+	            sc.close();
+	        }
+	    }
+	    return colLabels;
+	}
+	
+	/*====================================================================
+	 * END: ORIGINAL MATRIX READ  METHODS
+	 *==================================================================*/
+
+	/*******************************************************************
+	 * METHOD: initializeMatrix
+	 *
+	 * This method initializes a 2 dimensional float matrix to contain
+	 * low values in every data cell (excluding header row/col cells).
+	 ******************************************************************/
+	private void initializeMatrix(float matrix[][]) throws Exception {
+        for (int i = 1; i < matrix.length; i++) {
+	        for (int j = 1; j < matrix[0].length; j++) {
+	        	matrix[i][j] = MIN_VALUES;
+	        }
+        }
+
+	}
+
 	/*******************************************************************
 	 * METHOD: createDistributionLegendImg
 	 *
@@ -366,7 +713,7 @@ public class InputFile {
 	 * classification bar using summary level info its color map. It is
 	 * used in generating the heat map PDF.
 	 ******************************************************************/
-	public void createDistributionLegendImg() throws Exception {
+	public void createDistributionLegendImg(float[][] clusteredMatrix) throws Exception {
 		
 		ColorMap cm = getMap();
         float lowBP = Float.parseFloat(cm.breaks.get(0));
@@ -383,11 +730,11 @@ public class InputFile {
         }
         int asdf = 0;
         asdf = asdf +1;
-        for (int i = 1; i < reorgMatrix.length; i++) {
-     	   for (int j = 1; j < reorgMatrix[i].length; j++) {
-     		   float v = reorgMatrix[i][j];
+        for (int i = 1; i < clusteredMatrix.length; i++) {
+     	   for (int j = 1; j < clusteredMatrix[i].length; j++) {
+     		   float v = clusteredMatrix[i][j];
      		   boolean gap = v == MIN_VALUES ? true : false;
-     		   if (NA_VALUES.contains(v) || v == MAX_VALUES) {
+     		   if (v == MAX_VALUES) {
      			  missingNum ++;
      		   } else if (gap) {
      			   gapCount ++;
@@ -472,10 +819,11 @@ public class InputFile {
 		}
 		missingCount = missingNum;
 		distributionCounts = countBins;
-        distributionBreaks = thresh;
-    	distributionLegend = image;
+		distributionBreaks = thresh;
+		distributionLegend = image;
 	}
 	
+
 	public ColorMap getMap() {
 		return map;
 	}

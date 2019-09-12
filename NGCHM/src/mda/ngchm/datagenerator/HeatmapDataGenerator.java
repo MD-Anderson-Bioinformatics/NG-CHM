@@ -238,9 +238,6 @@ public class HeatmapDataGenerator {
 			}
         }
 
-		if (DEBUG) {
-			writeClusteredDebugFile(iData);
-		}
 		if (iData.rowData.configWarnings.size() > 0) {
 			for (int i=0;i<iData.rowData.configWarnings.size();i++) {
 				errMsg = errMsg + iData.rowData.configWarnings.get(i) + "\n";
@@ -267,7 +264,6 @@ public class HeatmapDataGenerator {
 		try {     
 	        JSONParser parser = new JSONParser();
 	        parser.parse(configFile);
-//	        parser.parse(new FileReader(config));
 	        configFile.close();
 	    } catch (FileNotFoundException ex) {
 	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: heatmapProperties.JSON file not found." );
@@ -306,6 +302,14 @@ public class HeatmapDataGenerator {
 		try {
 			// Loop thru ImportData object processing for each ImportDataLayer
 			InputFile iFile = iData.matrixFiles.get(position);
+			float[][] clusteredMatrix = iFile.getReorderedInputMatrix(iData.rowData, iData.colData);
+
+			if (iFile.map.colors.isEmpty()) {
+				iFile.map = ColorMapGenerator.getDefaultMapColors(iFile, clusteredMatrix);
+			}
+			if (iData.generateFullPDF) {
+				iFile.createDistributionLegendImg(clusteredMatrix);
+			}
 			ArrayList<ImportLayerData> iLayers = iFile.importLayers;
 			for (int i=0; i < iLayers.size(); i++) {
 				ImportLayerData ilData = iLayers.get(i);
@@ -339,9 +343,14 @@ public class HeatmapDataGenerator {
 				// ImportTileData objects writing out a tile for each
 				for (int j=0; j < ilData.importTiles.size(); j++){
 					ImportTileData itData = ilData.importTiles.get(j);
-					writeTileFile(iData, ilData, itData, position);
+					writeTileFile(iData, ilData, itData, position, clusteredMatrix);
 				}
 			}
+			if (DEBUG) {
+				writeClusteredDebugFile(iData, iFile, clusteredMatrix, (position+1));
+			}
+	    	clusteredMatrix = null;
+	    	System.gc();
 		} catch (Exception ex) {
 	    	System.out.println("Exception writing tile files: "+ ex.toString());
 			throw ex;
@@ -357,11 +366,12 @@ public class HeatmapDataGenerator {
 	 * and writing out individual binary float values using the ImportLayerData 
 	 * and ImportTileData objects as a guideline.
 	 ******************************************************************/
-	private static void writeTileFile(ImportData iData, ImportLayerData ilData, ImportTileData itData, int position) throws Exception {
+	private static void writeTileFile(ImportData iData, ImportLayerData ilData, ImportTileData itData, int position, float[][] clusteredMatrix) throws Exception {
 	    try {
 			InputFile iFile = iData.matrixFiles.get(position);
 			String dlDir = "dl"+(position+1);
-	    	//If tile destination dir does not exist, create directory.
+
+			//If tile destination dir does not exist, create directory.
 	    	File dataDir = new File(iData.outputDir+File.separator+dlDir+File.separator+ilData.layer);
 	    	if (!dataDir.exists()) {
 	    		dataDir.mkdirs();
@@ -384,7 +394,7 @@ public class HeatmapDataGenerator {
 					if (DEBUG) { valprint = Integer.toString(row); } //For debugging: writes out file
 					for (int col = colStart; col < colEnd; col++) {
 						if (col == nextColWrite) {
-							float v = getMatrixValue(iData,ilData,iFile,row,col); 
+							float v = getMatrixValue(iData,ilData,iFile,row,col,clusteredMatrix); 
 							if (ilData.layer.equals(LAYER_THUMBNAIL)) {
 								if (iFile.position.equals("DataLayer1")) {
 									iData.tnMatrix[rowctr][colctr] = v;
@@ -437,7 +447,6 @@ public class HeatmapDataGenerator {
 			}
 	    	if (DEBUG) { writeRow.close(); } //For debugging: writes out file
 	    	write.close();
-	//    	System.out.println("File " + itData.fileName + " writes: " + writes + " time: " + new Date()); 
 	    } catch (NumberFormatException ex) {
 	    	System.out.println("Exception in HeatmapDataGenerator.writeTileFile: Non-numeric data found in matrix "+ ex.toString());
 	       throw ex;
@@ -457,27 +466,27 @@ public class HeatmapDataGenerator {
 	 * method is "predominance", the value that re-occurs the most in the
 	 * array is returned. 
 	 ******************************************************************/
-	private static float getMatrixValue(ImportData iData, ImportLayerData ilData, InputFile iFile, int row, int col) throws Exception
+	private static float getMatrixValue(ImportData iData, ImportLayerData ilData, InputFile iFile, int row, int col, float[][] clusteredMatrix) throws Exception
 	{  
 	  float value = 0;
 	  if (iFile.summaryMethod.equals(METHOD_SAMPLE)) {
-		  value = iFile.reorgMatrix[row][col];
+		  value = clusteredMatrix[row][col];
 	  }	else  {
 		  int rowInter = ilData.rowInterval;
 		  int colInter = ilData.colInterval;
 		  if (rowInter+colInter == 2) {
-			  value = iFile.reorgMatrix[row][col];
+			  value = clusteredMatrix[row][col];
 		  } else {
 			  //We must check if we are going past the max row/cols and adjust the 
 			  //boundary for our loop AND the interval value that will be used for averaging.
 			  int rowBoundary = row+ilData.rowInterval;
 			  int colBoundary = col+ilData.colInterval;
-			  if (rowBoundary>=iFile.reorgMatrix.length) {
-				  rowBoundary = iFile.reorgMatrix.length;
+			  if (rowBoundary>= clusteredMatrix.length) {
+				  rowBoundary = clusteredMatrix.length;
 				  rowInter = rowBoundary - row;
 			  }
-			  if (colBoundary>=iFile.reorgMatrix[0].length) {
-				  colBoundary = iFile.reorgMatrix[0].length;
+			  if (colBoundary>= clusteredMatrix[0].length) {
+				  colBoundary = clusteredMatrix[0].length;
 				  colInter = colBoundary - col;
 			  }
 			  int combInter = (rowInter*colInter);
@@ -486,7 +495,7 @@ public class HeatmapDataGenerator {
 			  // Grab all values in the prescribed bounded range and place them in an array
 			  for (int i = row; i < rowBoundary;i++) {
 				  for (int j = col; j < colBoundary;j++) {
-					  valArr[valArrIdx] = iFile.reorgMatrix[i][j];
+					  valArr[valArrIdx] = clusteredMatrix[i][j];
 					  valArrIdx++;
 				  }
 			  }
@@ -1335,29 +1344,26 @@ public class HeatmapDataGenerator {
 	 * This method is for debugging.  It writes out the clustered
 	 * data matrix to a file called clustered.txt in the matrix data dir.
 	 ******************************************************************/
-	private static void writeClusteredDebugFile(ImportData iData) {	
+	private static void writeClusteredDebugFile(ImportData iData, InputFile iFile, float[][] clusteredMatrix, int fileNo) {	
 		DataOutputStream writeRow = null;
 		OutputStreamWriter w = null;
 		try {
-			for (int i=0; i < iData.matrixFiles.size();i++) {
-				InputFile iFile = iData.matrixFiles.get(i);
-				String dlDir = "dl"+(i+1);
-				writeRow = new DataOutputStream(new FileOutputStream(iData.outputDir+File.separator+dlDir+File.separator+"clustered.txt"));
-				w = new OutputStreamWriter(writeRow, UTF8);
-		        for (int row = 0; row < iFile.reorgMatrix.length; row++) {
-			        for (int col = 0; col < iFile.reorgMatrix[0].length; col++) {
-			        	float val = iFile.reorgMatrix[row][col];
-			        	w.write(String.valueOf(val));
-						if (col < (iFile.reorgMatrix[0].length-1)) {
-							w.write(TAB);
-						} else {
-							w.write(LINE_FEED);
-						}
-			        }
+			String dlDir = "dl"+fileNo;
+			writeRow = new DataOutputStream(new FileOutputStream(iData.outputDir+File.separator+dlDir+File.separator+"clustered.txt"));
+			w = new OutputStreamWriter(writeRow, UTF8);
+	        for (int row = 0; row < clusteredMatrix.length; row++) {
+		        for (int col = 0; col < clusteredMatrix[0].length; col++) {
+		        	float val = clusteredMatrix[row][col];
+		        	w.write(String.valueOf(val));
+					if (col < (clusteredMatrix[0].length-1)) {
+						w.write(TAB);
+					} else {
+						w.write(LINE_FEED);
+					}
 		        }
-				w.close();
-				writeRow.close();
-			}
+	        }
+			w.close();
+			writeRow.close();
 	    } catch (Exception ex) {
 			System.out.println("Exception in HeatmapDataGenerator.writeClusteredDebugFile: " + ex.toString());  
 	        ex.printStackTrace();
@@ -1781,7 +1787,6 @@ public class HeatmapDataGenerator {
 	 public static void buildTnThumbnail(ImportData iData) {
 	        //do some calculate first
 	        int offset  = 1;
-	        int finalHmW = TN_WIDTH;
 	        int finalDendH = TN_HEIGHT;
 	        Graphics g = null;
 	        try {

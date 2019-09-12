@@ -668,7 +668,7 @@ table.helpTable th {
 }
 
 #NGCHMEmbedCollapse>div {
-  min-width: 0; /* why? see below. */
+  min-width: 0; 
 }
 
 #NGCHMEmbedCollapse>div>img {

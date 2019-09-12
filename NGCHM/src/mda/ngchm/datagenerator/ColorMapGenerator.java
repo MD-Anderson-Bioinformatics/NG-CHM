@@ -155,13 +155,14 @@ public class ColorMapGenerator {
 	 * This method returns a default colorMap object for a heat map data
 	 * matrix file.
 	 ******************************************************************/
-    public static ColorMap getDefaultMapColors(ColorMap cm, InputFile iFile) throws Exception {
+    public static ColorMap getDefaultMapColors(InputFile iFile, float[][] clusteredMatrix) throws Exception {
+    	ColorMap cm = iFile.map;
         if (!cm.type.equals(COLORTYPE_LINEAR) && !cm.type.equals(COLORTYPE_QUANTILE)) {
            return null;
         }
         cm.missingColor = hex2Rgb(COLOR_MISSING);
         if (cm.type.equals(COLORTYPE_LINEAR)) {
-        	ArrayList<String> range = getDataRangeMeans(iFile);  
+        	ArrayList<String> range = getDataRangeMeans(iFile, clusteredMatrix);  
         	cm.breaks.add(range.get(0)); //min
         	cm.breaks.add(range.get(1)); //mid
         	cm.breaks.add(range.get(2)); //max
@@ -355,7 +356,7 @@ public class ColorMapGenerator {
 	 * Get the mean range of data in a data matrix.  Used for linear color maps
 	 * when processing an Input File.
 	 ******************************************************************/
-	private static ArrayList<String> getDataRangeMeans(InputFile iFile) throws Exception {
+	private static ArrayList<String> getDataRangeMeans(InputFile iFile, float[][] clusteredMatrix) throws Exception {
 		ArrayList<String> result = new ArrayList<String>();
 		Double minMeanCalc = new Double(0);
 		Double maxMeanCalc = new Double(0);
@@ -366,7 +367,7 @@ public class ColorMapGenerator {
 			for (int i = 1; i < iFile.rows; i++) {
 				float value = 0;
 				try {
-					value = iFile.reorgMatrix[i][j];
+					value = clusteredMatrix[i][j];
 					//ignore cuts
 					if ((value != MAX_VALUES) && (value != MIN_VALUES)) {
 						if (value < minValue) {

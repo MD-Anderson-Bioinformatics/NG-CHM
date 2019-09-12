@@ -142,7 +142,6 @@ public class RowColData {
 	 ******************************************************************/
 	private void processCutLocations(int length, JSONObject configData) throws Exception
 	{
-		String warningMsgs = null;
 		int[] propCuts = jsonArrayToIntArray((JSONArray)configData.get(CUT_LOCATIONS)); 
 		if (propCuts.length == 0) {
 			cutLocations = propCuts;
@@ -392,18 +391,15 @@ public class RowColData {
 			if (orderMethod.equals(ORDER_RANDOM)) {
 				shuffleArray(posArr);
 			}
-	        String matrix[][] = iFile.origMatrix;
 		    if (orderType.equals(COL)) {
-		    	String colHeaders[] = matrix[0];
-		    	int colStart = 1+iFile.rowCovs;
-		    	for (int i=0;i<colHeaders.length-colStart;i++) {
-		    		orderArr[i] = colHeaders[colStart+i]+"\t"+posArr[i];  
+		    	String colHeaders[] = iFile.readColLabels();
+		    	for (int i=0;i<colHeaders.length;i++) {
+		    		orderArr[i] = colHeaders[i]+"\t"+posArr[i];  
 		    	}
 		    } else if (orderType.equals(ROW)) {
-		    	int rowStart = 1+iFile.colCovs;
-		    	for (int i=rowStart;i<matrix.length;i++) {
-			    	String rowData[] = matrix[i];
-		    		orderArr[i-rowStart] = rowData[0]+"\t"+posArr[i-rowStart];  
+		    	String rowHeaders[] = iFile.readRowLabels();
+		    	for (int i=0;i<rowHeaders.length;i++) {
+		    		orderArr[i] = rowHeaders[i]+"\t"+posArr[i];  
 		    	}
 		    }        
 		} catch (Exception ex) {
