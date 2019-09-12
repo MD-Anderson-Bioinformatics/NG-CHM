@@ -329,9 +329,22 @@ NgChm.UHM.userHelpOpen = function() {
     	} else {
 			NgChm.UHM.setTableRow(helpContents, ["<div> </div></div>", "Missing Color (n = " + valSelected + ", " + selPct+ "%)"]);
     	}
-		helptext.style.display="inline";
-    	helptext.appendChild(helpContents);
-    	NgChm.UHM.locateHelpBox(helptext);
+    	
+		// If the enclosing window wants to display the covarate info, send it to them.
+		// Otherwise, display it ourselves.
+        if (NgChm.UHM.postMapDetails) {
+			var msg = { nonce: NgChm.UHM.myNonce, msg: 'ShowCovarDetail', data: helpContents.innerHTML };
+			//If a unique identifier was provided, return it in the message.
+			if (NgChm.UHM.postID != null) {
+				msg["id"] = NgChm.UHM.postID;
+			} 
+
+			window.parent.postMessage (msg, NgChm.UHM.postMapToWhom);
+        } else {
+        	helptext.style.display="inline";
+        	helptext.appendChild(helpContents);
+        	NgChm.UHM.locateHelpBox(helptext);
+        }	
     } else {  
     	// on the blank area in the top left corner
     }

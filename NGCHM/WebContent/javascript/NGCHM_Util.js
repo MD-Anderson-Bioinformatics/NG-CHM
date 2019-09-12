@@ -353,7 +353,6 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 			if (embedButton !== null) {
 				document.getElementById('NGCHMEmbed').style.display = 'none';
 			} else {
-				document.getElementById('NGCHMEmbed').style.display = '';
 				NgChm.UTIL.loadLocalModeCHM(sizeBuilderView);
 			}
 		} else {  
