@@ -1072,7 +1072,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 				if (NgChm.CFG.api !== "") {
 					URL = NgChm.CFG.api + "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
 				} else {
-					URL = "NGCHM/GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
+					var appPath = window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/'));
+					URL = appPath + "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
 				}
 				// Tile worker doesn't share our origin, so prepend it to URL.
 				URL = document.location.origin + (URL[0] === '/' ? '' : '/') + URL;
