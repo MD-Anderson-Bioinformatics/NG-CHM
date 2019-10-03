@@ -455,16 +455,19 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
  * FUNCTION - builderViewSizing: This function handles the resizing of the summary
  * panel for the builder in cases where ONLY the summary panel is being drawn.  
  **********************************************************************************/
-NgChm.UTIL.builderViewSizing = function (event, tile) {
-	if (event == NgChm.MMGR.Event_INITIALIZED) {
+NgChm.UTIL.builderViewSizing = function (event) {
+	if ((typeof event !== 'undefined') && (event !== NgChm.MMGR.Event_INITIALIZED)) {
+		return;
+	}
+	if (document.getElementById('detail_chm').style.width !== '4%') {
 		document.getElementById('detail_chm').style.width = '4%';
-		document.getElementById('summary_chm').style.width = '50%';
+		document.getElementById('summary_chm').style.width = '40vw';
 		document.getElementById('summary_chm').style.left = 150 + 'px';
 		document.getElementById('summary_chm').style.top = 0 + 'px';
+		document.getElementById('mdaServiceHeader').style.height = '0px';
 		NgChm.SUM.summaryResize();  
 	 }
 }
-
 
 /**********************************************************************************
  * FUNCTION - chmResize: This function handles the resizing of the NG-CHM Viewer.  
@@ -473,6 +476,7 @@ NgChm.UTIL.chmResize = function () {
 		if ((NgChm.SUM.rowDendro === null) || (NgChm.SUM.colDendro === null)) {
 			return;
 		}
+		NgChm.SUM.setChmSize();
  		NgChm.SUM.summaryResize();
  		NgChm.DET.detailResize();
  		NgChm.UPM.prefsResize();
@@ -480,6 +484,9 @@ NgChm.UTIL.chmResize = function () {
  		var linkbox = document.getElementById('linkBox');
  		if ((linkbox !== null) && (linkbox.style.display !== 'none')) { 
  			NgChm.UHM.linkBoxSizing();
+ 		}
+ 		if ((typeof NgChmGui !== 'undefined') && (typeof NgChmGui.isHalfScreen !== 'undefined')) {
+ 			NgChm.UTIL.builderViewSizing();
  		}
 }
 

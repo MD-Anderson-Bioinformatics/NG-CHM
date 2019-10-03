@@ -302,7 +302,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 
 	// Reset Summary and Detail Panels on Viewer Screen
 	NgChm.DET.canvas.focus();
-	NgChm.SUM.summaryInit(false);
+	NgChm.SUM.summaryInit();
 	NgChm.DET.detailResize();
 	
 	// Save the PDF document 

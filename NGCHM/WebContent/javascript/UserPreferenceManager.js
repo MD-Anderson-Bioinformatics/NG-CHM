@@ -368,7 +368,7 @@ NgChm.UPM.prefsSuccess = function() {
 	//Remove the backup color map (used to reinstate colors if user cancels)
 	//and formally apply all changes to the heat map, re-draw, and exit preferences.
 	NgChm.UPM.bkpColorMaps = null;
-	NgChm.SUM.summaryInit(true);  //we set this to true so that the separator bar will not move on an apply.
+	NgChm.SUM.summaryInit();  
 	NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
 	NgChm.SEL.callDetailDrawFunction(NgChm.SEL.mode);
 	document.getElementById("summaryDisplayPref").value = NgChm.heatMap.getMapInformation().summary_width;

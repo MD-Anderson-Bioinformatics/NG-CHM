@@ -108,7 +108,7 @@ NgChm.SUM.processSummaryMapUpdate = function(event, tile) {
 		if (NgChm.MMGR.source !== NgChm.MMGR.LOCAL_SOURCE) {
 			document.title = NgChm.heatMap.getMapInformation().name;
 		}
-		NgChm.SUM.summaryInit(false);  
+		NgChm.SUM.summaryInit();  
 	} else if (event === NgChm.MMGR.Event_NEWDATA && tile.level === NgChm.MMGR.SUMMARY_LEVEL){
 		//Summary tile - wait a bit to see if we get another tile quickly, then draw
 		if (NgChm.SUM.eventTimer != 0) {
@@ -151,7 +151,7 @@ NgChm.SUM.colDendroResize = function() {
 }
 
 // Perform all initialization functions for Summary heat map
-NgChm.SUM.summaryInit = function(applying) {
+NgChm.SUM.summaryInit = function() {
 	
 	if (!NgChm.SUM.colDendro){
 		NgChm.SUM.colDendro = new NgChm.DDR.SummaryColumnDendrogram();
@@ -187,7 +187,7 @@ NgChm.SUM.summaryInit = function(applying) {
 	NgChm.SUM.rCCanvas.height = NgChm.SUM.totalHeight;
 	NgChm.SUM.cCCanvas.width =  NgChm.SUM.totalWidth;
 	NgChm.SUM.cCCanvas.height = NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale;
-	NgChm.SUM.initSummarySize(applying);
+	NgChm.SUM.initSummarySize();
 	NgChm.SUM.rowDendroResize();
 	NgChm.SUM.colDendroResize();
 	
@@ -228,26 +228,6 @@ NgChm.SUM.summaryInit = function(applying) {
 	 	//NgChm.SUM.drawColClassBarLegends(true); Temporarily removed legends from summary
 		//NgChm.SUM.drawRowClassBarLegends(true); they may or may not come back later
 	}, 1);
-}
-
-NgChm.SUM.initSummarySize = function(applying) {
-	//reset minimum summary chm width 
-	NgChm.SUM.chmElement.style.minWidth = '100px';
-	var minSumWidth = NgChm.SUM.rCCanvas.width + 100;
-	var sumPercent = NgChm.heatMap.getMapInformation().summary_width;
-	NgChm.SUM.chmElement.style.width = sumPercent + "%";
-
-	//Modify summary width if too small to show dendro, covars, and map
-	if (minSumWidth > 100) {
-		sumPercent = NgChm.SUM.setMinimumSummaryWidth(minSumWidth);
-	}
-		
-	var detPercent = 100 - sumPercent;
-	NgChm.DET.chmElement.style.width = detPercent + "%";
-	NgChm.SUM.chmElement.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
-	NgChm.DET.chmElement.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
-	NgChm.SUM.setTopItemsSize();
-	NgChm.SUM.setSummarySize();
 }
 
 //This function checks to see if the proposed summary width will allow for covariate bars,
@@ -1745,6 +1725,28 @@ NgChm.SUM.summaryResize = function() {
 	NgChm.UTIL.redrawCanvases();
 }
 
+NgChm.SUM.initSummarySize = function() {
+	NgChm.SUM.setChmSize();
+	NgChm.SUM.setTopItemsSize();
+	NgChm.SUM.setSummarySize();
+}
+
+
+NgChm.SUM.setChmSize = function() {
+	NgChm.SUM.chmElement.style.minWidth = '100px';
+	var minSumWidth = NgChm.SUM.rCCanvas.width + 100;
+	var sumPercent = NgChm.heatMap.getMapInformation().summary_width;
+	NgChm.SUM.chmElement.style.width = sumPercent + "%";
+	//Modify summary width if too small to show dendro, covars, and map
+	if (minSumWidth > 100) {
+		sumPercent = NgChm.SUM.setMinimumSummaryWidth(minSumWidth);
+	}
+	var detPercent = 100 - sumPercent;
+	NgChm.DET.chmElement.style.width = detPercent + "%";
+//	NgChm.SUM.chmElement.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().summary_height)/100 + "px";
+//	NgChm.DET.chmElement.style.height = container.clientHeight*parseFloat(NgChm.heatMap.getMapInformation().detail_height)/100 + "px";
+}
+
 NgChm.SUM.drawRowSelectionMarks = function() {
 	var selectedRows = NgChm.DET.getSearchRows();
 	var dataLayers = NgChm.heatMap.getDataLayers();
@@ -2098,8 +2100,7 @@ NgChm.SUM.dividerEnd = function(e) {
 	document.removeEventListener('mouseup', NgChm.SUM.dividerEnd);
 	document.removeEventListener('touchmove',NgChm.SUM.dividerMove);
 	document.removeEventListener('touchend',NgChm.SUM.dividerEnd);
-	NgChm.SUM.summaryResize();
-	NgChm.DET.detailResize();
+	NgChm.UTIL.chmResize();
 	NgChm.SUM.setSelectionDivSize();
 	NgChm.SUM.drawRowSelectionMarks();
 	NgChm.SUM.drawColSelectionMarks();

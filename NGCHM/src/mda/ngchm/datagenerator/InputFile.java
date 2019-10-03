@@ -510,7 +510,6 @@ public class InputFile {
 	 * array containing the row labels from the matrix.
 	 ******************************************************************/
 	public String[] readRowLabels() throws Exception {
-		System.out.println("Begin readRowLabels: " + id + " @: " + new Date());  
 		String errMsg = null;
         if (!(new File(file).exists())) {
         	throw new Exception("ERROR: Data matrix file cannot be found");
@@ -578,7 +577,6 @@ public class InputFile {
 		            //do nothing
 		        }
 	         }
-			System.out.println("End readRowLabels: " + id + " @: " + new Date());  
 		 } catch (Exception e) {
 			 throw e;
 		 } finally {
@@ -603,7 +601,6 @@ public class InputFile {
 	 * array containing the column labels from the matrix.
 	 ******************************************************************/
 	public String[] readColLabels() throws Exception {
-		System.out.println("Begin readColLabels: " + id + " @: " + new Date());  
 		String errMsg = null;
         if (!(new File(file).exists())) {
         	throw new Exception("ERROR: Data matrix file cannot be found");
@@ -669,7 +666,6 @@ public class InputFile {
 		            //do nothing
 		        }
 	         }
-			System.out.println("End readColLabels: " + id + " @: " + new Date());  
 		 } catch (Exception e) {
 			 throw e;
 		 } finally {
