@@ -145,7 +145,10 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 
 	// Header
 	var header = document.getElementById('mdaLogo');
-	var headerHeight = header.clientHeight + 5;
+	var headerHeight = 5;
+	if (header !== null) {
+		headerHeight = headerHeight + header.clientHeight;
+	}
 
 	// Set up PDF Page Dimension variables (These are the variables that we will be using repeatedly to place items)
 	var paddingLeft = 10;
@@ -522,19 +525,19 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * FUNCTION - drawMissingColor: This function will set the missing color line for
 	 * either type (row/col) of classification bar.
 	 **********************************************************************************/
-	function drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen) {
+	function drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, totalValues) {
 		if (condenseClassBars){
 			var barW = 10;
 			doc.rect(leftOff, bartop, barW, barHeight, "FD");
 			doc.setFontSize(classBarLegendTextSize);
 			doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, "Missing Value", null);
-			doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + missingCount , null);
+			doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/totalValues*100).toFixed(2) + "%)" , null);
 		} else {
 			var barW = missingCount/maxCount*classBarFigureW;
 			doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD");
 			doc.setFontSize(classBarLegendTextSize);
 			doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth("Missing Value")*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, "Missing Value" , null);
-			doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + missingCount , null);
+			doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/totalValues*100).toFixed(2) + "%)" , null);
 		}
 	}
 	
@@ -960,14 +963,14 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 				doc.rect(leftOff + threshMaxLen-2, bartop+barHeight, 2, 1, "FD"); // make break bar
 				doc.setFontSize(classBarLegendTextSize);
 				doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth(breaks[j].toString())*classBarLegendTextSize - 4, bartop + classBarLegendTextSize + barHeight/2, breaks[j].toString() , null);
-				doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value , null);
+				doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
 			} else { // histogram
 				var barW = (value/binMax*classBarFigureW)*.65;  //scale bars to fit page
 				doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the histo bar
 				doc.rect(leftOff + threshMaxLen-2, bartop+barHeight, 2, 1, "FD"); // make break bar
 				doc.setFontSize(classBarLegendTextSize);
 				doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth(breaks[j].toString())*classBarLegendTextSize - 4, bartop + classBarLegendTextSize + barHeight/2, breaks[j].toString() , null);
-				doc.text(leftOff + threshMaxLen +barW + 5, bartop + classBarLegendTextSize, "n = " + value , null);
+				doc.text(leftOff + threshMaxLen +barW + 5, bartop + classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
 			}
 			missingCount -= value; 
 			bartop+=barHeight; // adjust top position for the next bar
@@ -984,12 +987,12 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			var barW = 10;
 			doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the square
 			doc.setFontSize(classBarLegendTextSize);
-			doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value , null);
+			doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
 		} else { // histogram
 			var barW = (value/binMax*classBarFigureW)*.65;  //scale bars to fit page
 			doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the histo bar
 			doc.setFontSize(classBarLegendTextSize);
-			doc.text(leftOff + threshMaxLen +barW + 5, bartop + classBarLegendTextSize, "n = " + value , null);
+			doc.text(leftOff + threshMaxLen +barW + 5, bartop + classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
 		}
 		missingCount -= value; 
 		bartop+=barHeight; // adjust top position for the next bar
@@ -1001,10 +1004,13 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
 			var barW = missingCount/binMax*classBarFigureW;
+			if (condenseClassBars) {
+				barW = 10;
+			}
 			doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD");
 			doc.setFontSize(classBarLegendTextSize);
 			doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth("Missing Value")*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, "Missing Value" , null);
-			doc.text(leftOff + threshMaxLen +barW + 5, bartop + classBarLegendTextSize, "n = " + missingCount , null);
+			doc.text(leftOff + threshMaxLen +barW + 5, bartop + classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/total*100).toFixed(2) + "%)" , null);
 		}
 		var foundMissing = 0;
 		setClassBarFigureH(10,'discrete',false);   
@@ -1188,13 +1194,13 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 					doc.rect(leftOff, bartop, barW, barHeight, "FD");
 					doc.setFontSize(classBarLegendTextSize);
 					doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, thresholds[j].toString(), null);
-					doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + count, null);
+					doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + count + " (" + (count/classBarData.values.length*100).toFixed(2) + "%)", null);
 				} else {
 					var barW = (count/maxCount*classBarFigureW)*.65;  //scale bars to fit page
 					doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD");
 					doc.setFontSize(classBarLegendTextSize);
 					doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth(thresholds[j].toString())*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, thresholds[j].toString() , null);
-					doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + count , null);
+					doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + count + " (" + (count/classBarData.values.length*100).toFixed(2) + "%)" , null);
 				
 				
 				}
@@ -1208,7 +1214,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 				var rgb = colorMap.getClassificationColor("Missing Value");
 				doc.setFillColor(rgb.r,rgb.g,rgb.b);
 				doc.setDrawColor(0,0,0);
-				drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen);
+				drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
 			}
 			
 			if (thresholds.length * barHeight > classBarFigureH){ // in case a discrete classbar has over 15 categories, make the topOff increment bigger
@@ -1258,7 +1264,20 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			classBarConfig = colClassBarConfig[key];
 			classBarData = colClassBarData[key];
 		}
+
+		// For Continuous Classifications: 
+    	// 1. Retrieve continuous threshold array from colorMapManager
+    	// 2. Retrieve threshold range size divided by 2 (1/2 range size)
+    	// 3. If remainder of half range > .75 set threshold value up to next value, Else use floor value.
 		var thresholds = colorMap.getContinuousThresholdKeys();
+		var threshSize = colorMap.getContinuousThresholdKeySize()/2;
+		if ((threshSize%1) > .5) {
+			// Used to calculate modified threshold size for all but first and last threshold
+			// This modified value will be used for color and display later.
+			thresholdSize = Math.floor(threshSize)+1;
+		} else {
+			thresholdSize = Math.floor(threshSize);
+		}
 		var barHeight = classBarLegendTextSize + 3;
 
 		// get the number N in each threshold
@@ -1269,24 +1288,36 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		// get the continuous thresholds and find the counts for each bucket
 		var cutValues = 0;
 		for(var i = 0; i < classBarData.values.length; i++) {
-		    var num = classBarData.values[i];
+		    var num = parseInt(classBarData.values[i]);
+		    if (num === 89) {
+		    	var stophere = 1;
+		    }
 		    if (num !== '!CUT!') {
+		    	var prevThresh = 0;
 			    for (var k = 0; k < thresholds.length; k++){
 					var thresh = thresholds[k];
 					if (k == 0 && num < thresholds[k]){
-						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
-					} else if (k == thresholds.length-1 && num > thresholds[thresholds.length-1]){
-						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
-					} else if (num <= thresh){
-						counts[thresh] = counts[thresh] ? counts[thresh]+1 : 1;
+						counts[k] = counts[k] ? counts[k]+1 : 1;
+						break;
+					} else if (k == thresholds.length-2 && ((num < thresh) && (num > prevThresh))) {
+						counts[k] = counts[k] ? counts[k]+1 : 1;
+						break;
+					} else if (k == thresholds.length-1) {
+						if (num >= thresholds[thresholds.length-1]) {
+							counts[k] = counts[k] ? counts[k]+1 : 1;
+						}
+						break;
+					} else if ((k < thresholds.length-2) && ((num <= thresh) && (num > prevThresh))) {
+						counts[k] = counts[k] ? counts[k]+1 : 1;
 						break;
 					}
+					prevThresh = thresh;
 				}
 		    } else {
 		    	cutValues++;
 		    }
 		}
-		
+
 		// find the longest label length
 		for (var val in counts){
 			maxCount = Math.max(maxCount, counts[val]);
@@ -1300,18 +1331,21 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		var threshMaxLen = getThreshMaxLength(thresholds,classBarLegendTextSize);
 		// Indent threshholds from class bar title
 		leftOff += 10;
-		for (var j = 0; j < thresholds.length-1; j++){
+		for (var j = 0; j < thresholds.length; j++){
 			var rgb = colorMap.getClassificationColor(thresholds[j]);
 			if (classBar.bar_type !== 'color_plot') {
 				rgb = colorMap.getClassificationColor(thresholds[thresholds.length-1]);
 			}
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
-			value = counts[thresholds[j]];
+			value = counts[j];
 			if (isNaN(value) || value == undefined){
 				value = 0;
 			}
 			var valLabel = thresholds[j].toString();
+			if ((j !== 0) && (j !== thresholds.length-1)) {
+				valLabel = (thresholds[j] - thresholdSize).toString();
+			}
 			var decimalVal = 4; // go out to 3 decimal places
 			if (valLabel.indexOf(".") > 0){
 				valLabel = valLabel.substring(0, valLabel.indexOf(".") + decimalVal);
@@ -1321,13 +1355,13 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 				doc.rect(leftOff, bartop, barW, barHeight, "FD"); // make the square
 				doc.setFontSize(classBarLegendTextSize);
 				doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, valLabel, null);
-				doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value , null);
+				doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + value + " (" + (value/classBarData.values.length*100).toFixed(2) + "%)" , null);
 			} else { // histogram
 				var barW = (value/maxCount*classBarFigureW)*.65;  //scale bars to fit page
 				doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD"); // make the histo bar
 				doc.setFontSize(classBarLegendTextSize);
 				doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth(valLabel)*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, valLabel , null);
-				doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + value , null);
+				doc.text(leftOff + maxLabelLength +barW + 5, bartop + classBarLegendTextSize, "n = " + value + " (" + (value/classBarData.values.length*100).toFixed(2) + "%)"  , null);
 			}
 			missingCount -= value; 
 			bartop+=barHeight; // adjust top position for the next bar
@@ -1339,7 +1373,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			var rgb = colorMap.getClassificationColor("Missing Value");
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
-			drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen);
+			drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
 		}
 		setClassBarFigureH(0,'continuous',foundMissing);   
 		adjustForNextClassBar(key,type,maxLabelLength);

@@ -155,7 +155,7 @@ public class HeatmapDataGenerator {
 		}
 
 		//Generate PDF
-        if (iData.generatePDF) {
+        if ((iData.generatePDF) && (iData.readMatrices.equals(YES))) {
         	boolean fullPDF = false;
 			try {
 	        	for (int i=0; i < iData.matrixFiles.size();i++) {
@@ -339,11 +339,22 @@ public class HeatmapDataGenerator {
 				if (ilData.layer.equals(LAYER_SUMMARY)) {
 					summaryLayer = ilData;
 				}
-				// Within each ImportDataLayer, loop thru each of its 
-				// ImportTileData objects writing out a tile for each
-				for (int j=0; j < ilData.importTiles.size(); j++){
-					ImportTileData itData = ilData.importTiles.get(j);
-					writeTileFile(iData, ilData, itData, position, clusteredMatrix);
+				String dlDir = "dl"+(position+1);
+		    	File dataDir = new File(iData.outputDir+File.separator+dlDir+File.separator+ilData.layer);
+		    	if (!dataDir.exists()) {
+		    		if ((iData.writeTiles.equals(NO)) || (iData.writeTiles.equals(NO))) {
+		    			System.out.println("BUILD ERROR: write_tiles or read_matrices is set to NO and tile directory does not exist.  Cannot continue processing heat map.");
+		    			return null;
+		    		}
+		    	}
+		    	
+				if (iData.readMatrices.equals(YES)) {
+					// Within each ImportDataLayer, loop thru each of its 
+					// ImportTileData objects writing out a tile for each
+					for (int j=0; j < ilData.importTiles.size(); j++){
+						ImportTileData itData = ilData.importTiles.get(j);
+						writeTileFile(iData, ilData, itData, position, clusteredMatrix);
+					}
 				}
 			}
 			if (DEBUG) {
@@ -359,6 +370,25 @@ public class HeatmapDataGenerator {
 	}
 	
 	/*******************************************************************
+	 * METHOD: getOrderDendroFileDate
+	 *
+	 * This method retrieves the oldest file date (as a Long) from among
+	 * the row and column order and dendrogram files. This date value
+	 * is used to compare the creation date of the clustering files
+	 * with any pre-existing tile files when writing tiles.  If a given
+	 * tile file is more recent than this date, that file will not be
+	 * overwritten.
+	 ******************************************************************/
+	private static Long getOrderDendroFileDate(ImportData iData) {
+		Long clusteringDate = new Long(0);
+		clusteringDate = iData.rowData.orderFileDate;
+		clusteringDate = ((iData.rowData.dendroFileDate > 0) && (iData.rowData.dendroFileDate < clusteringDate)) ? iData.rowData.dendroFileDate : clusteringDate;
+		clusteringDate = ((iData.colData.orderFileDate > 0) && (iData.colData.orderFileDate < clusteringDate)) ? iData.colData.orderFileDate : clusteringDate;
+		clusteringDate = ((iData.colData.dendroFileDate > 0) && (iData.colData.dendroFileDate < clusteringDate)) ? iData.colData.dendroFileDate : clusteringDate;
+		return clusteringDate;
+	}
+	
+	/*******************************************************************
 	 * METHOD: writeTileFile
 	 *
 	 * This method writes out individual data tile files by iterating 
@@ -367,6 +397,7 @@ public class HeatmapDataGenerator {
 	 * and ImportTileData objects as a guideline.
 	 ******************************************************************/
 	private static void writeTileFile(ImportData iData, ImportLayerData ilData, ImportTileData itData, int position, float[][] clusteredMatrix) throws Exception {
+		BufferedOutputStream write = null;
 	    try {
 			InputFile iFile = iData.matrixFiles.get(position);
 			String dlDir = "dl"+(position+1);
@@ -375,8 +406,16 @@ public class HeatmapDataGenerator {
 	    	File dataDir = new File(iData.outputDir+File.separator+dlDir+File.separator+ilData.layer);
 	    	if (!dataDir.exists()) {
 	    		dataDir.mkdirs();
-	    	}
-			BufferedOutputStream write = new BufferedOutputStream(new FileOutputStream(iData.outputDir+File.separator+dlDir+File.separator+itData.fileName));
+	    	} 
+//	    	boolean writeTiles = true;
+//			File tileFile = new File(iData.outputDir+File.separator+dlDir+File.separator+itData.fileName);
+//			if (tileFile.exists()) {
+//				writeTiles = getOrderDendroFileDate(iData) < tileFile.lastModified() ? false : true;
+//			}
+	        
+			if (iData.writeTiles.equals(YES)) {
+				write = new BufferedOutputStream(new FileOutputStream(iData.outputDir+File.separator+dlDir+File.separator+itData.fileName));
+			}
 			int rowStart = itData.rowStartPos, rowEnd = itData.rowEndPos;
 			int colStart = itData.colStartPos, colEnd = itData.colEndPos; 
 			int rowInterval = ilData.rowInterval, colInterval = ilData.colInterval;
@@ -428,10 +467,12 @@ public class HeatmapDataGenerator {
 							}
 							byte f[] = ByteBuffer.allocate(4).putFloat(v).array();
 							if (DEBUG) { valprint = valprint + TAB + v; } //For debugging: writes out file
-							write.write(f, 3, 1);
-							write.write(f, 2, 1);
-							write.write(f, 1, 1);
-							write.write(f, 0, 1); 
+							if (iData.writeTiles.equals(YES)) {
+								write.write(f, 3, 1);
+								write.write(f, 2, 1);
+								write.write(f, 1, 1);
+								write.write(f, 0, 1); 
+							}
 							nextColWrite += colInterval;
 							colctr++;
 						}
@@ -446,10 +487,13 @@ public class HeatmapDataGenerator {
 				} 
 			}
 	    	if (DEBUG) { writeRow.close(); } //For debugging: writes out file
-	    	write.close();
 	    } catch (NumberFormatException ex) {
 	    	System.out.println("Exception in HeatmapDataGenerator.writeTileFile: Non-numeric data found in matrix "+ ex.toString());
 	       throw ex;
+	    } finally {
+			if (write != null) {
+				write.close();
+			}
 	    }
 	}
 	
@@ -1854,53 +1898,55 @@ public class HeatmapDataGenerator {
 		 ******************************************************************/
 		private static void createTnHeatmapImg(ColorMap cMap, ImportData iData, Float tnMatrix[][]) {
 			try {
-				int width = tnMatrix[0].length;
-		        int height = tnMatrix.length;
-		        int numBreaks = cMap.breaks.size();
-		        Color lowExCol = cMap.colors.get(0);
-		        Color hiExCol = cMap.colors.get(numBreaks-1);
-		        float lowEx = Float.parseFloat(cMap.breaks.get(0));
-		        float hiEx = Float.parseFloat(cMap.breaks.get(numBreaks-1));
-		        
-		        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-		        
-		        // BUILD HEAT MAP IMAGE
-		        // go through each value in the TN matrix and determine the color for the pixel
-		        for (int y = 0; y < height; y++) {
-		            for (int x = 0; x < width; x++) {
-		                int rgb;
-		                float val = tnMatrix[y][x];
-		                if (val == MIN_VALUES) {
-		                	rgb = RGB_WHITE;
-		                } else if (val == MAX_VALUES) {
-		                	rgb = RGB_BLACK;
-		                } else {
-			                if (val > hiEx){
-			                    rgb = hiExCol.getRGB();
-			                } else if (val < lowEx){
-			                    rgb = lowExCol.getRGB();
+				if (tnMatrix[0][0] != null) {
+					int width = tnMatrix[0].length;
+			        int height = tnMatrix.length;
+			        int numBreaks = cMap.breaks.size();
+			        Color lowExCol = cMap.colors.get(0);
+			        Color hiExCol = cMap.colors.get(numBreaks-1);
+			        float lowEx = Float.parseFloat(cMap.breaks.get(0));
+			        float hiEx = Float.parseFloat(cMap.breaks.get(numBreaks-1));
+			        
+			        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			        
+			        // BUILD HEAT MAP IMAGE
+			        // go through each value in the TN matrix and determine the color for the pixel
+			        for (int y = 0; y < height; y++) {
+			            for (int x = 0; x < width; x++) {
+			                int rgb;
+			                float val = tnMatrix[y][x];
+			                if (val == MIN_VALUES) {
+			                	rgb = RGB_WHITE;
+			                } else if (val == MAX_VALUES) {
+			                	rgb = RGB_BLACK;
 			                } else {
-			                    int i = 0;
-			                    // find the breakpoints that this value is between
-			                    while (Float.parseFloat(cMap.breaks.get(i)) <= val && i < numBreaks-1){
-			                    	i++;
-			                    };
-			                    Color lowCol = cMap.colors.get(i-1);
-			                    Color hiCol = cMap.colors.get(i);
-			                    float low = Float.parseFloat(cMap.breaks.get(i-1));
-			                    float hi = Float.parseFloat(cMap.breaks.get(i));
-			                    float ratio = (hi-val)/(hi-low);
-			                    Color blend = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
-			                    rgb = blend.getRGB();
+				                if (val > hiEx){
+				                    rgb = hiExCol.getRGB();
+				                } else if (val < lowEx){
+				                    rgb = lowExCol.getRGB();
+				                } else {
+				                    int i = 0;
+				                    // find the breakpoints that this value is between
+				                    while (Float.parseFloat(cMap.breaks.get(i)) <= val && i < numBreaks-1){
+				                    	i++;
+				                    };
+				                    Color lowCol = cMap.colors.get(i-1);
+				                    Color hiCol = cMap.colors.get(i);
+				                    float low = Float.parseFloat(cMap.breaks.get(i-1));
+				                    float hi = Float.parseFloat(cMap.breaks.get(i));
+				                    float ratio = (hi-val)/(hi-low);
+				                    Color blend = ColorMapGenerator.blendColors(hiCol,lowCol,ratio);
+				                    rgb = blend.getRGB();
+				                }
 			                }
-		                }
-		                image.setRGB(x, y, rgb);
-		            }
-		            
-		        }
-		        iData.tnImage = image;
-		        File outputFile = new File(iData.outputDir+File.separator + iData.chmName + "_tnMap.png"); 
-		        ImageIO.write(image, "png", outputFile);
+			                image.setRGB(x, y, rgb);
+			            }
+			            
+			        }
+			        iData.tnImage = image;
+			        File outputFile = new File(iData.outputDir+File.separator + iData.chmName + "_tnMap.png"); 
+			        ImageIO.write(image, "png", outputFile);
+				}
 		    } catch (Exception ex) {
 				System.out.println("Exception in HeatmapDataGenerator.createTnHeatmapImg: " + ex.toString());  
 		        ex.printStackTrace();

@@ -41,6 +41,8 @@ public class ImportData {
 	public int importRows;
 	public int importCols;
 	public String readOnly = NO;
+	public String readMatrices = YES;
+	public String writeTiles = YES;
 	public boolean generatePDF = false;
 	public boolean generateFullPDF = false;
 	public boolean generateNGCHM = false;
@@ -163,6 +165,18 @@ public class ImportData {
        			readOnly = readonly;
        		}
        		String mapname = (String) jsonObject.get(CHM_NAME);
+       		String matrixRead = (String)jsonObject.get(READ_MATRICES);
+       		if ((matrixRead != null)  && (YESNO_VALUES.contains(matrixRead))) {
+       			readMatrices = matrixRead;
+       		}
+       		String tileWrite = (String)jsonObject.get(WRITE_TILES);
+       		if ((tileWrite != null) && (YESNO_VALUES.contains(tileWrite))) {
+       			writeTiles = tileWrite;
+       			//If tile write, then MUST read matrices
+       			if (tileWrite.equals(YES)) {
+          			readMatrices = tileWrite;
+       			}
+       		}
        		String builderV = (String) jsonObject.get(BUILDER_VER);
        		if (builderV != null) {
        			builderVersion = builderV;

@@ -179,10 +179,13 @@ public final class ImportConstants {
 	public static String LABEL_TRUNCATE_DEFAULT = "\"END\""; 
 	public static String CUT_VALUE = "!CUT!"; 
 	public static Set<String> NA_VALUES = new HashSet<String>(Arrays.asList("null","NA","N/A","-","?","NAN","NaN","Na","na","n/a",EMPTY,SPACE));
+	public static Set<String> YESNO_VALUES = new HashSet<String>(Arrays.asList("Y","N"));
 
 	
 	//JSON node name constants
 	public static String READ_ONLY = "read_only";
+	public static String READ_MATRICES = "read_matrices";
+	public static String WRITE_TILES = "write_tiles";
 	public static String SUMMARY_METHOD = "summary_method";
 	public static String GRID_SHOW = "grid_show";
 	public static String GRID_COLOR = "grid_color";

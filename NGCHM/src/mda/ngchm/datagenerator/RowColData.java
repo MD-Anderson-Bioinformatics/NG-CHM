@@ -29,12 +29,14 @@ public class RowColData {
 	public String dataTypes[] = null;
 	public String orderType = null;
 	public String orderFile = null;
+	public Long orderFileDate = new Long(0);
 	public String orderMethod = null;
 	public String labelMaxLength = null;
 	public String labelAbbrevMethod = null;
 	public String distanceMetric = null;
 	public String agglomerationMethod = null;
 	public String dendroFile = null; 
+	public Long dendroFileDate = new Long(0);
 	public String showDendro = NA; 
 	public String heightDendro = TEN; 
 	public int orderArray[];
@@ -262,7 +264,9 @@ public class RowColData {
 	 ******************************************************************/
 	private void setDendroValues()  throws Exception {
         // Reading the data file and writing the output file
-        BufferedReader br = new BufferedReader(new FileReader(dendroFile));
+		File dendro = new File(dendroFile);
+        dendroFileDate =  dendro.lastModified();
+        BufferedReader br = new BufferedReader(new FileReader(dendro));
         String line = br.readLine(); // skip the first line since it's just labels
         line = br.readLine();
         while (line != null) {
@@ -357,6 +361,7 @@ public class RowColData {
         if (!order.exists()) {
         	// processing if classification order file is missing
         }
+        orderFileDate =  order.lastModified();
         BufferedReader rowRead;
         rowRead = new BufferedReader(new FileReader(order));
         // Read in the clustered Row Ordering data
