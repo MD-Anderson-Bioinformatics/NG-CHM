@@ -466,6 +466,28 @@ linkouts.addPlugin({
 }) (linkouts);
 
 //==============================================//
+// MaveDB Variant Effects Database plugin       //
+//==============================================//
+(function(linkouts) {
+
+    function openMavedbGene (names) {
+	var gname = names[0];
+	linkouts.openUrl("https://mavedb.org/search/?organism=Home+sapiens&search=" + gname, "mavedb");
+    };
+
+    linkouts.addPlugin({
+        name: "MaveDB Variant Effects Database",
+	description: "Adds linkout to search MaveDB.",
+	version: "0.1.0",
+	site: "https://www.mavedb.org",
+	logo: "https://www.mavedb.org/static/core/mavedb/dna.png",
+	linkouts: [
+	    { menuEntry: "Search MaveDB", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMavedbGene }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
 // MD Anderson Pathway Database plugin          //
 //==============================================//
 (function(linkouts) {
