@@ -1069,17 +1069,29 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if ((fileSrc == NgChm.MMGR.WEB_SOURCE) || (fileSrc == NgChm.MMGR.LOCAL_SOURCE)) {
 			let URL;
 			if (fileSrc == NgChm.MMGR.WEB_SOURCE) {
-				if (NgChm.CFG.api !== "") {
-					URL = NgChm.CFG.api + "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
+				let getTileString = "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
+				// Because a tile worker thread doesn't share our origin, we have to pass it
+				// an absolute URL, and to substitute in the CFG.api variable, we want to
+				// build the URL using the same logic as a browser for relative vs. absolute
+				// paths.
+				if (NgChm.CFG.api[0] === '/') {	// absolute
+					URL = document.location.origin + NgChm.CFG.api + getTileString;
 				} else {
-					var appPath = window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/'));
-					URL = appPath + "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
+					URL = document.location.origin + '/' +
+						window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/')) +
+						NgChm.CFG.api + getTileString;
 				}
-				// Tile worker doesn't share our origin, so prepend it to URL.
-				URL = document.location.origin + (URL[0] === '/' ? '' : '/') + URL;
+
+//				if (NgChm.CFG.api !== "") {
+//					URL = NgChm.CFG.api + getTileString;
+//				} else {
+//					var appPath = window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/'));
+//					URL = appPath + getTileString;
+//				}
+//				// Tile worker doesn't share our origin, so prepend it to URL.
+//				URL = document.location.origin + (URL[0] === '/' ? '' : '/') + URL;
 			} else {
 				URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+layer+"/"+level+"/"+tileName+".bin";
-
 			}
 			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
 		} else {
