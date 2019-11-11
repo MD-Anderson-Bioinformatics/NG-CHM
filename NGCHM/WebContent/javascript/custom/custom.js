@@ -146,14 +146,14 @@ function linkoutHelp () {
 (function(linkouts) {
     function openSlideArchive (ids) {
         var part = ids[0].substr(0,12);
-        linkouts.openUrl("http://cancer.digitalslidearchive.net/?slide_name=" + part, "slidearchive");
+        linkouts.openUrl("https://cancer.digitalslidearchive.org/#!/CDSA/byPatientID/" + part, "slidearchive");
     }
     linkouts.addPlugin({
         name: "Cancer Digital Slide Archive",
-        site: "http://cancer.digitalslidearchive.net/",
-        logo: "http://cancer.digitalslidearchive.net/img/CDSA_Slide_50.png",
+        site: "https://cancer.digitalslidearchive.org/",
+        logo: "https://cancer.digitalslidearchive.org/img/CDSA_Slide_50.png",
         description: "Adds linkouts to the Cancer Digitial Slide Archive of TCGA digital slide images.",
-        version: "0.2.0",
+        version: "0.3.0",
         linkouts: [
             { menuEntry: "View SlideArchive", typeName: "bio.tcga.barcode.sample", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openSlideArchive }
         ]});
