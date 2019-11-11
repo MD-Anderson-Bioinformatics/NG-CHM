@@ -13,9 +13,9 @@ NgChm.CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\
 		    "Full length description of this heatmap\",\"summary_width\": \"50\",\"builder_version\": \"NA\",\"summary_height\": \"100\",\"detail_width\": \"50\",\"detail_height\": \"100\",\"read_only\": \"N\",\"version_id\": \"1.0.0\",\"map_cut_rows\": \"0\",\"map_cut_cols\": \"0\"}}}";
 
 // CURRENT VERSION NUMBER
-NgChm.CM.version = "2.14.3";
+NgChm.CM.version = "2.14.4";
 NgChm.CM.versionCheckUrl = "https://bioinformatics.mdanderson.org/versioncheck/NGCHM/";
-NgChm.CM.viewerAppUrl = "http://tcga.ngchm.net/";
+NgChm.CM.viewerAppUrl = "https://tcga.ngchm.net/";
 NgChm.CM.classOrderStr = ".classifications_order";
 
 /**********************************************************************************
