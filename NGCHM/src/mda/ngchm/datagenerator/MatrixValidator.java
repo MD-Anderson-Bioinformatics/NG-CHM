@@ -3,10 +3,30 @@ package mda.ngchm.datagenerator;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.List;
 
 import static mda.ngchm.datagenerator.ImportConstants.*;
 
 public class MatrixValidator { 
+	
+	public static void validateDataLayersSize(List<InputFile> matrixFiles) throws Exception {
+    	String errMsg = null;
+	    if (matrixFiles.size() > 1) {
+	    	int baseRows = matrixFiles.get(0).rows;
+	    	int baseCols = matrixFiles.get(0).cols;
+	    	String baseName = matrixFiles.get(0).name;
+	        for (int i=1; i < matrixFiles.size();i++) {
+	       		InputFile ifl = matrixFiles.get(i);
+	       		if ((ifl.rows != baseRows) || (ifl.cols != baseCols)) {
+       			 	errMsg = "All DataLayer Matrices must contain the same number of rows and columns. DL Matrix (" + ifl.name + ") is not the same size as DL: " + baseName + ".";
+       			 	break;
+	       		}
+	    	}
+	    }
+ 		if (errMsg != null) {
+			throw new Exception(errMsg);
+ 		}
+	}
 
 	public static String validateMatrixRowLength(int headerLength, int lineLength) throws Exception {
 		String errMsg = null;

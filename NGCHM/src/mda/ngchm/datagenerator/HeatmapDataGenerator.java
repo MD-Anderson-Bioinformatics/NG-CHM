@@ -115,13 +115,24 @@ public class HeatmapDataGenerator {
 			return "BUILD ERROR: Importing Heat Map Configuration Data. " + ex.getMessage();
         }
 
+		//Validate that all data layers are the same size.
+        if (iData.matrixFiles.size() > 1) {
+        	try {
+            	MatrixValidator.validateDataLayersSize(iData.matrixFiles);
+        	} catch (Exception ex) {
+    			errMsg = "BUILD ERROR: Data Layer Input - " + ex.getMessage();
+    			System.out.println(errMsg);  
+    	        return errMsg;
+        	}
+        }
+
 		ImportLayerData summaryLayer = null;
 		try {
 			for (int i=0; i < iData.matrixFiles.size(); i++) {
 				summaryLayer = writeTileFiles(iData, i);
 			}
 		} catch (Exception ex) {
-			errMsg = "BUILD ERROR: Writing Tile Data: " + ex.toString();
+			errMsg = "BUILD ERROR: Writing Tile Data - " + ex.getMessage();
 			System.out.println(errMsg);  
 	        ex.printStackTrace();
 	        return errMsg;
@@ -367,25 +378,6 @@ public class HeatmapDataGenerator {
 			throw ex;
 		}
 		return summaryLayer;
-	}
-	
-	/*******************************************************************
-	 * METHOD: getOrderDendroFileDate
-	 *
-	 * This method retrieves the oldest file date (as a Long) from among
-	 * the row and column order and dendrogram files. This date value
-	 * is used to compare the creation date of the clustering files
-	 * with any pre-existing tile files when writing tiles.  If a given
-	 * tile file is more recent than this date, that file will not be
-	 * overwritten.
-	 ******************************************************************/
-	private static Long getOrderDendroFileDate(ImportData iData) {
-		Long clusteringDate = new Long(0);
-		clusteringDate = iData.rowData.orderFileDate;
-		clusteringDate = ((iData.rowData.dendroFileDate > 0) && (iData.rowData.dendroFileDate < clusteringDate)) ? iData.rowData.dendroFileDate : clusteringDate;
-		clusteringDate = ((iData.colData.orderFileDate > 0) && (iData.colData.orderFileDate < clusteringDate)) ? iData.colData.orderFileDate : clusteringDate;
-		clusteringDate = ((iData.colData.dendroFileDate > 0) && (iData.colData.dendroFileDate < clusteringDate)) ? iData.colData.dendroFileDate : clusteringDate;
-		return clusteringDate;
 	}
 	
 	/*******************************************************************

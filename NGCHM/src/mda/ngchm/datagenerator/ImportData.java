@@ -98,7 +98,8 @@ public class ImportData {
 	 * This method reads the incoming matrix and extracts the number of
 	 * data rows and columns.
 	 ******************************************************************/
-	private void setImportRowCols(JSONObject matrix) throws Exception{
+	private int[] getImportRowsCols(JSONObject matrix) throws Exception {
+		int[] rowsCols = new int[2];
    		String matrixFile = (String) matrix.get(PATH);
    		int rowStart = matrix.get(DATA_START_ROW) != null ? Integer.parseInt((String) matrix.get(DATA_START_ROW)) : 1;
    		int colStart = matrix.get(DATA_START_COL) != null ? Integer.parseInt((String) matrix.get(DATA_START_COL)) : 1;
@@ -119,15 +120,15 @@ public class ImportData {
 			while((sCurrentLine = br.readLine()) != null) {
 				rowId++;
 				String vals[] = sCurrentLine.split("\t");
-				importCols = (vals.length - colDataStart);
+				rowsCols[1] = (vals.length - colDataStart);
 	            if((rowEnd>0) && (rowEnd==rowId+rowDataStart)) {
 	            	break;
 	            }
 			}	
 		    br.close();
 		    // Set number of rows (accounting for header)
-		    importRows = rowId;
-	        if ((importRows < 0) || (importCols < 0)) {
+		    rowsCols[0] = rowId;
+	        if ((rowsCols[0] < 0) || (rowsCols[1] < 0)) {
 	        	throw new Exception("CONFIGURATION INVALID: Configured data start and end rows invalid in heatmapProperties.json");
 	        }
 
@@ -136,7 +137,7 @@ public class ImportData {
 	    		br.close();
 	    	} catch (Exception ex) {}
 	    }
-		return;
+	    return rowsCols;
 	}
 
 	/*******************************************************************
@@ -153,10 +154,15 @@ public class ImportData {
             JSONObject jsonObject =  (JSONObject) obj;
             JSONArray inputfiles = (JSONArray) jsonObject.get(MATRIX_FILES);
        		JSONObject matrix = (JSONObject) inputfiles.get(0);
-    		setImportRowCols(matrix);
+    		int[] rowsCols = getImportRowsCols(matrix);
+    		importRows = rowsCols[0];
+    		importCols = rowsCols[1];
             for (int i=0; i < inputfiles.size();i++) {
            		JSONObject jo = (JSONObject) inputfiles.get(i);
             	InputFile iFile = new InputFile(jo, DATA_LAYER+(i+1), DATA_POSITION+(i+1), importRows, importCols);
+        		int[] inputRowsCols = getImportRowsCols(jo);
+        		iFile.rows = inputRowsCols[0];
+        		iFile.cols = inputRowsCols[1];
         		matrixFiles.add(iFile);
         	}
 
