@@ -2755,7 +2755,7 @@ NgChm.DET.calcRowClassBarLabels = function () {
 	var rowClassLength = Object.keys(rowClassBarConfig).length;
 	var containsLegend = NgChm.DET.colClassLabelsContainLegend("row");
 	if (rowClassBarConfig != null && rowClassLength > 0) {
-		NgChm.DET.rowClassLabelFont = NgChm.DET.colClassBarLabelFont();
+		NgChm.DET.rowClassLabelFont = NgChm.DET.rowClassBarLabelFont();
 		if ((NgChm.DET.rowClassLabelFont > NgChm.DET.minLabelSize)  && (NgChm.DET.colClassLabelFont < NgChm.DET.maxLabelSize)) {
 			for (var i=0;i< rowClassBarConfigOrder.length;i++) {
 				var key = rowClassBarConfigOrder[i];
