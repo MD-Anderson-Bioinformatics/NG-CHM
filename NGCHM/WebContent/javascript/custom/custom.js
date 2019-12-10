@@ -501,12 +501,12 @@ linkouts.addPlugin({
 
     function openMDACCPathwayID (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://bioinformatics.mdanderson.org/PathwaysBrowser/pathway/latest/mdaPathwayId/" + gname, "pathways");
+	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/pathway/latest/mdaPathwayId/" + gname, "pathways");
     };
 
     function openPathwaysBrowserGO (names) {
 	var goid = names[0];
-	linkouts.openUrl("http://bioinformatics.mdanderson.org/PathwaysBrowser/goTerm/latest/goId/" + goid, "geneontology");
+	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/goTerm/latest/goId/" + goid, "geneontology");
     };
 
     linkouts.addPlugin({
