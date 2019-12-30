@@ -24,7 +24,7 @@ import org.json.simple.parser.ParseException;
 public class GalaxyMapGen {
 	
 public static boolean debugOutput = false;
-private static String BUILDER_VERSION = "Galaxy 2.9.0";
+private static String BUILDER_VERSION = "Galaxy 2.9.2";
 
 
 	public static void main(String[] args){

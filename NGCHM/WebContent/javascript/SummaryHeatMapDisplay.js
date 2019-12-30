@@ -237,16 +237,22 @@ NgChm.SUM.summaryInit = function() {
 //further to the left.
 NgChm.SUM.setMinimumSummaryWidth = function(minSumWidth) {
 	var sumPct = NgChm.heatMap.getMapInformation().summary_width;
-	while (NgChm.SUM.chmElement.offsetWidth < minSumWidth) {
-		sumPct = parseInt(sumPct) + 5;
-		NgChm.SUM.chmElement.style.width = sumPct + "%";
+	if (typeof NgChm.galaxy === "undefined") {
+		for (var i=0;i<10;i++) {
+			if (NgChm.SUM.chmElement.offsetWidth < minSumWidth) {
+				sumPct = parseInt(sumPct) + 5;
+				NgChm.SUM.chmElement.style.width = sumPct + "%";
+			} else {
+				break;
+			}
+		}
 	}
 	if (parseInt(NgChm.heatMap.getMapInformation().summary_width) < sumPct) {
 		NgChm.heatMap.setDividerPref(sumPct.toString());
 	}
 	NgChm.SUM.chmElement.style.minWidth = minSumWidth + 'px';
 
-	return sumPct;
+	return sumPct; 
 }
 
 // Sets summary and detail chm to newly adjusted size.
