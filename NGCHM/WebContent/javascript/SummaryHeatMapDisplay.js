@@ -1580,8 +1580,8 @@ NgChm.SUM.drawRowClassBarLegend = function(key,currentClassBar,prevHeight,totalH
 	var beginPos =  beginClasses+(classesHeight*prevEndPct)+(NgChm.SUM.rowClassPadding*(i+1));
 	var endPos =  beginClasses+(classesHeight*currEndPct)-NgChm.SUM.rowClassPadding;
 	var midPos =  beginPos+((endPos-beginPos)/2);
-	var highVal = parseInt(currentClassBar.high_bound);
-	var lowVal = parseInt(currentClassBar.low_bound);
+	var highVal = parseFloat(currentClassBar.high_bound);
+	var lowVal = parseFloat(currentClassBar.low_bound);
 	var midVal = Math.round((((highVal)-lowVal)/2)+lowVal);
 	//adjust display values for 0-to-1 ranges
 	if (highVal <= 1) {
@@ -1639,8 +1639,8 @@ NgChm.SUM.buildScatterBarPlotMatrix = function(height, classBarValues, start, cl
 	for (var j = 0; j < height; j++) {
 		matrix[j] = new Uint8Array(classBarLength);
 	}
-	var highVal = parseInt(currentClassBar.high_bound);
-	var lowVal = parseInt(currentClassBar.low_bound);
+	var highVal = parseFloat(currentClassBar.high_bound);
+	var lowVal = parseFloat(currentClassBar.low_bound);
 	var scaleVal = highVal - lowVal;
 	var normalizedK = 0;
 	for (var k = start; k < start+classBarLength; k++) { 

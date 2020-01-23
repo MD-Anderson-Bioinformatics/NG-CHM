@@ -2479,8 +2479,8 @@ NgChm.DET.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalH
 	var leftPos = NgChm.DET.canvas.offsetLeft + NgChm.DET.canvas.offsetWidth;
 
 	//Get your 3 values for the legend.
-	var highVal = parseInt(currentClassBar.high_bound);
-	var lowVal = parseInt(currentClassBar.low_bound);
+	var highVal = parseFloat(currentClassBar.high_bound);
+	var lowVal = parseFloat(currentClassBar.low_bound);
 	var midVal = Math.round((((highVal)-lowVal)/2)+lowVal);
 	//adjust display values for 0-to-1 ranges
 	if (highVal <= 1) {
@@ -2669,8 +2669,8 @@ NgChm.DET.drawRowClassBarLegend = function(key,currentClassBar,prevHeight,totalH
 	var endPos =  beginClasses+(classHeight*currEndPct);
 	var midPos =  beginPos+((endPos-beginPos)/2);
 	var topPos = NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.offsetHeight + 2;
-	var highVal = parseInt(currentClassBar.high_bound);
-	var lowVal = parseInt(currentClassBar.low_bound);
+	var highVal = parseFloat(currentClassBar.high_bound);
+	var lowVal = parseFloat(currentClassBar.low_bound);
 	var midVal = Math.round((((highVal)-lowVal)/2)+lowVal);
 	//adjust display values for 0-to-1 ranges
 	if (highVal <= 1) {
