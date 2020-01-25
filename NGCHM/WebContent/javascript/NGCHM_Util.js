@@ -24,6 +24,71 @@ NgChm.UTIL.setElementPositionSize = function (el, vp, styleOnly) {
 	}
 };
 
+// Create a new text node.
+NgChm.UTIL.newTxt = function newTxt(txt) {
+	return document.createTextNode(txt);
+};
+
+// Create a new DOM element.
+//
+// Spec consists of an element tag name,
+//     optionally followed by a single '#' and node id,
+//     followed by any number of '.' and class id.
+// E.g. div#id.class1.class2
+//
+// Attrs is a dictionary of attributes to add to the new node.
+//
+// Content, if defined, is either a DOM node or an array of DOM nodes to
+// include as children of the new DOM element.
+//
+// Fn, if defined, is a function that is called with the new node as a
+// parameter after it's constructed but before it's returned.
+//
+NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
+	const classes = spec.split('.');
+	const names = classes.shift().split('#');
+	content = content || [];
+	if (!Array.isArray(content)) content = [content];
+	if (names.length > 2) {
+		console.log ({ m: 'UTIL.newElement: too many ids', spec, attrs, names });
+		throw new Error ('UTIL.newElement: too many ids');
+	}
+	const el = document.createElement(names[0]);
+	if (names.length > 1) {
+		el.setAttribute ('id', names[1]);
+	}
+	while (classes.length > 0) {
+		el.classList.add (classes.shift());
+	}
+	if (attrs) {
+		Object.entries(attrs).forEach(([key,value]) => {
+			if (key === 'style') {
+				Object.entries(value).forEach(([key,value]) => {
+					el.style[key] = value;
+				});
+			} else if (key === 'dataset') {
+				Object.entries(value).forEach(([key,value]) => {
+					el.dataset[key] = value;
+				});
+			} else {
+				el.setAttribute(key,value);
+			}
+		});
+	}
+	while (content.length > 0) {
+		el.appendChild (content.shift());
+	}
+	if (fn) {
+		const x = fn (el);
+		if (x instanceof HTMLElement) {
+			return x;
+		} else {
+			console.error (new Error('UTIL.newElement decorator function did not return a DOM node'));
+		}
+	}
+	return el;
+};
+
 /**********************************************************************************
  * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
  * wegGl canvases in the viewer. It is called to deal with blurring issues occuring
