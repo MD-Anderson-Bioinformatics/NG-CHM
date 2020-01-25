@@ -11,6 +11,7 @@
 	<script src="javascript/Config.js"></script>
 	<script src="javascript/MatrixManager.js"></script>
 	<script src="javascript/NGCHM_Util.js"></script>
+	<script src="javascript/PaneControl.js"></script>
 	<script src="javascript/SelectionManager.js"></script>
 	<script src="javascript/ColorMapManager.js"></script>
 	<script src="javascript/Drawing.js"></script>
@@ -30,8 +31,8 @@
 	<script type="text/Javascript">
 		NgChm.heatMap = null;  //global - heatmap object.
 		window.onload = function() {
-			window.addEventListener('resize', NgChm.UTIL.chmResize);
-			NgChm.UTIL.setDragPanels();
+			// Line intentionally left blank
+			// Line intentionally left blank
 			NgChm.UTIL.onLoadCHM();
 			document.body.addEventListener('click', NgChm.UHM.closeMenu,true);
 			document.getElementById('barMenu_btn').mouseIsOver = "";
@@ -41,6 +42,7 @@
 <body style="font-family: sans-serif; font-size: 100%">
    <!--  <a href="javascript:alert(document.compatMode);">What mode am I?</a>   -->
     <div class="mdaServiceHeader" id="mdaServiceHeader">
+	<img id='messageOpen_btn' style="position:absolute; vertical-align: top; display: none;" src='images/messageButton.png' alt='Open Alert' onmouseout="NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.hlp(this,"Display Startup Warnings",100)' onclick='NgChm.UHM.displayStartupWarnings();'/>
         <div id="mda_header" class="mdaServiceHeaderLogo">
 		<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
 		<img id="mdaLogo" src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
@@ -130,9 +132,11 @@
          <img id='aboutMenu_btn' class='farRightButton' src='images/aboutNgchm.png' alt='About NG-CHM' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM About",140,0)' onclick='NgChm.UHM.widgetHelp();' style="vertical-align: top;"/>
     </div>
 	<div id='loader' style='display: none;'>Loading...</div>
-	<div id="container" style="position: relative">
-		<div id='summary_chm' style='position: relative;'>
-	        <img id='messageOpen_btn' style="position:absolute; vertical-align: top; display: none;" src='images/messageButton.png' alt='Open Alert' onmouseout="NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.hlp(this,"Display Startup Warnings",100)' onclick='NgChm.UHM.displayStartupWarnings();'/>
+	<div id="container" class="container" style="position: relative"></div>
+	<div id="footer"></div>
+	<div style="display:none">
+		<!-- Templates -->
+		<div id='summary_chm'>
 			<canvas id='column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
 			<canvas id='row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
 			<canvas id='row_class_canvas' class='summary_canvas'></canvas>
@@ -145,11 +149,6 @@
 			<canvas id='summary_row_select_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
 			<div id='sumlabelDiv' style="display: inline-block"></div>
 		</div>
-
-		<div id= 'divider' class="resizerHelper resizerHelperRight" onmousedown="NgChm.SUM.dividerStart(event)" ontouchstart="NgChm.SUM.dividerStart(event)">
-			<div class='resizerSplitterVertical'></div>
-		</div>
-
 		<div id='detail_chm' style='position: relative;'>
  			<canvas id='detail_column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
 			<canvas id='detail_row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
@@ -279,7 +278,7 @@
 	<div id="menuPanel" style="display: none;">
 		<div class="menuItemTop"></div>
 		<div id="menuPdf" class="menuItem" onclick='NgChm.PDF.openPdfPrefs(this,null);'><img id='menuPdf_btn' src='images/pdf.png' alt='save as PDF icon'>Save Heat Map As PDF...</div>
-		<div id="menuPng" class="menuItem" onclick='NgChm.UTIL.downloadSummaryPng();'><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
+		<div id="menuPng" class="menuItem" onclick='NgChm.UTIL.downloadSummaryPng(this);'><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
 		<div id="menuSave" class="menuItem" onclick='NgChm.UHM.saveHeatMapChanges();'><img id='menuSave_btn' src='images/saveButton.png' alt='save heat map changes icon'>Save Heat Map Changes...</div>
 		<div id="menuGear" class="menuItem" onclick='NgChm.UPM.editPreferences(this,null);'><img id='menuGear_btn' src='images/gear.png' alt='open modify map preferences icon'>Modify Map Preferences...</div>
 		<div class="menuItemBorder"></div>

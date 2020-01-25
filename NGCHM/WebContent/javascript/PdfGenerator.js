@@ -13,16 +13,52 @@ NgChm.PDF.mdaLogo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQYAAABsCAYAA
  * FUNCTION - openPdfPrefs: This function is called when the user clicks the pdf
  * button on the menu bar.  The PDF preferences panel is then launched
  **********************************************************************************/
+NgChm.PDF.canGeneratePdf = function() {
+	return NgChm.SUM.isVisible() || NgChm.DET.isVisible();
+};
+
 NgChm.PDF.openPdfPrefs = function(e) {
 	NgChm.UHM.closeMenu();
-	maxRows = 0;
 	NgChm.UHM.hlpC();
+	if (e.classList.contains('disabled')) {
+		return;
+	}
+
+	// Set maps to generate based on visible maps:
+	const sumButton = document.getElementById ('pdfInputSummaryMap');
+	const detButton = document.getElementById ('pdfInputDetailMap');
+	const bothButton = document.getElementById ('pdfInputBothMaps');
+	if (NgChm.SUM.isVisible() && !NgChm.DET.isVisible()) {
+		sumButton.checked = true;
+		sumButton.disabled = false;
+		detButton.disabled = true;
+		bothButton.disabled = true;
+	} else if (NgChm.DET.isVisible() && !NgChm.SUM.isVisible()) {
+		detButton.checked = true;
+		sumButton.disabled = true;
+		detButton.disabled = false;
+		bothButton.disabled = true;
+	} else if (NgChm.SUM.isVisible() && NgChm.DET.isVisible()) {
+		bothButton.checked = true;
+		sumButton.disabled = false;
+		detButton.disabled = false;
+		bothButton.disabled = false;
+	} else {
+		// Should not happen.
+		alert('Cannot generate PDF when no heatmap panels are open');
+		return;
+	}
 	var prefspanel = document.getElementById('pdfPrefs');
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	//Add prefspanel table to the main preferences DIV and set position and display
 	prefspanel.style.top = (headerpanel.offsetTop + 15) + 'px';
 	prefspanel.classList.remove ('hide');
-	document.getElementById("pdfInputFont"). value = parseInt(document.getElementsByClassName("DynamicLabel")[0].style["font-size"]);
+	let labels = document.getElementsByClassName("DynamicLabel");
+	if (labels.length > 0) {
+		document.getElementById("pdfInputFont").value = parseInt(labels[0].style["font-size"]);
+	} else {
+		document.getElementById("pdfInputFont").value = Math.min(NgChm.DET.colLabelFont,NgChm.DET.rowLabelFont);
+	}
     NgChm.UTIL.redrawCanvases();
 }
 
@@ -128,6 +164,13 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	}
 	// close the PDF menu when you download
 	NgChm.PDF.pdfCancelButton();
+
+	// Draw the heat map images (based upon user parameter selections)
+	const mapsToShow = isChecked("pdfInputSummaryMap") ? "S" : isChecked("pdfInputDetailMap") ? "D" : "B";
+	const includeSummaryMap = mapsToShow === "S" || mapsToShow === "B";
+	const includeDetailMap = mapsToShow === "D" || mapsToShow === "B";
+	const rowDendroConfig = NgChm.heatMap.getRowDendroConfig();
+	const colDendroConfig = NgChm.heatMap.getColDendroConfig();
 	
 	// get a jsPDF document
 	var pageHeight, pageWidth;
@@ -159,21 +202,26 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	var detImgW = pageWidth - longestRowLabelUnits - 2*paddingLeft;
 	var detImgL = paddingLeft;
 	
-	//Get Dimensions for Summary Row & Column Dendrograms
 	var rowDendroWidth, colDendroHeight;
-	setSummaryDendroDimensions();
-	
-	//Get Dimensions for Summary Row & Column Class Bars
 	var rowClassWidth, colClassHeight;
-	setSummaryClassDimensions();
-
-	//Get Dimensions for the Summary Heat Map
 	var sumMapW, sumMapH;
-	setSummaryHeatmapDimensions();
+	if (includeSummaryMap) {
+		//Get Dimensions for Summary Row & Column Dendrograms
+		setSummaryDendroDimensions();
+
+		//Get Dimensions for Summary Row & Column Class Bars
+		setSummaryClassDimensions();
+
+		//Get Dimensions for the Summary Heat Map
+		setSummaryHeatmapDimensions();
+	}
 
 	//Get Dimensions for the Detail Heat Map and derive row/col class bar height/width
 	var detMapW, sumMapH, detColClassHeight, detRowClassWidth;
-	setDetailHeatmapDimensions();
+	var detRowDendroWidth, detColDendroHeight;
+	if (includeDetailMap) {
+		setDetailHeatmapDimensions();
+	}
 
 	// Create and set the fontSize using the minimum of the calculated sizes for row and column labels
 	// Calculate the font size for rows and columns. Take the lowest of the two.  If the result is greater than 11 set the font to 11.  If the result is less than 6 set the font to 6.
@@ -184,58 +232,66 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	var theFont = maxFontSize;
 	doc.setFontSize(maxFontSize);
 
-	// Scale summary dendro canvases for PDF page size and Redraw because otherwise they can show up blank
-	resizeSummaryDendroCanvases(sumMapW, sumMapH, rowDendroWidth, colDendroHeight);
-	NgChm.SEL.updateSelection(); 
-	
-	var sumMapCanvas = document.createElement('canvas');
-	configureCanvas(sumMapCanvas, NgChm.SUM.canvas, sumMapW*2, sumMapH*2);
+	var sumMapCanvas; var sumBoxCanvas;
+	var rowClassCanvas; var colClassCanvas;
+	var rowTICanvas; var colTICanvas;
+	var sumImgData; var sumBoxImgData;
+	var sumRowClassData; var sumColClassData;
+	var sumRowDendroData; var sumColDendroData;
+	var sumRowTopItemsData; var sumColTopItemsData;
+	if (includeSummaryMap) {
+		// Scale summary dendro canvases for PDF page size and Redraw because otherwise they can show up blank
+		resizeSummaryDendroCanvases(sumMapW, sumMapH, rowDendroWidth, colDendroHeight);
+		NgChm.SEL.updateSelection();
 
-	var sumBoxCanvas = document.createElement('canvas');
-	configureCanvas(sumBoxCanvas, NgChm.SUM.boxCanvas, sumMapW*2, sumMapH*2);
+		sumMapCanvas = document.createElement('canvas');
+		configureCanvas(sumMapCanvas, NgChm.SUM.canvas, sumMapW*2, sumMapH*2);
 
-	var rowClassCanvas = document.createElement('canvas');
-	if (NgChm.SUM.rCCanvas.width > 0) {
-		configureCanvas(rowClassCanvas, NgChm.SUM.rCCanvas, rowClassWidth*2, sumMapH*2)
+		sumBoxCanvas = document.createElement('canvas');
+		configureCanvas(sumBoxCanvas, NgChm.SUM.boxCanvas, sumMapW*2, sumMapH*2);
+
+		rowClassCanvas = document.createElement('canvas');
+		if (NgChm.SUM.rCCanvas.width > 0) {
+			configureCanvas(rowClassCanvas, NgChm.SUM.rCCanvas, rowClassWidth*2, sumMapH*2)
+		}
+
+		colClassCanvas = document.createElement('canvas');
+		if (NgChm.SUM.cCCanvas.height > 0) {
+			configureCanvas(colClassCanvas, NgChm.SUM.cCCanvas, sumMapW*2, colClassHeight*2);
+		}
+
+		rowTICanvas = document.createElement('canvas');
+		configureCanvas(rowTICanvas, document.getElementById("summary_row_top_items_canvas"), 20, sumMapH*2)
+
+		colTICanvas = document.createElement('canvas');
+		configureCanvas(colTICanvas, document.getElementById("summary_col_top_items_canvas"), sumMapW*2, 20);
+
+		// Canvas elements need to be converted to DataUrl to be loaded into PDF
+			// Summary Canvases
+		sumImgData = sumMapCanvas.toDataURL('image/png');
+		sumRowClassData = rowClassCanvas.toDataURL('image/png');
+		sumColClassData = colClassCanvas.toDataURL('image/png');
+		sumRowDendroData = document.getElementById("row_dendro_canvas").toDataURL('image/png');
+		sumColDendroData = document.getElementById("column_dendro_canvas").toDataURL('image/png');
+		sumRowTopItemsData = rowTICanvas.toDataURL('image/png');
+		sumColTopItemsData = colTICanvas.toDataURL('image/png');
+		sumBoxImgData = sumBoxCanvas.toDataURL('image/png');
+		//Put the dendro canvases back the way we found them.
+		restoreSummaryDendroCanvases();
 	}
 
-	var colClassCanvas = document.createElement('canvas');
-	if (NgChm.SUM.cCCanvas.height > 0) {
-		configureCanvas(colClassCanvas, NgChm.SUM.cCCanvas, sumMapW*2, colClassHeight*2);
-	}
-
-	var rowTICanvas = document.createElement('canvas');
-	configureCanvas(rowTICanvas, document.getElementById("summary_row_top_items_canvas"), 20, sumMapH*2)
-
-	var colTICanvas = document.createElement('canvas');
-	configureCanvas(colTICanvas, document.getElementById("summary_col_top_items_canvas"), sumMapW*2, 20);
-
-	// Canvas elements need to be converted to DataUrl to be loaded into PDF
-		// Summary Canvases
-	var sumImgData = sumMapCanvas.toDataURL('image/png');
-	var sumRowClassData = rowClassCanvas.toDataURL('image/png');
-	var sumColClassData = colClassCanvas.toDataURL('image/png');
-	var sumRowDendroData = document.getElementById("row_dendro_canvas").toDataURL('image/png');
-	var sumColDendroData = document.getElementById("column_dendro_canvas").toDataURL('image/png');
-	var sumRowTopItemsData = rowTICanvas.toDataURL('image/png');
-	var sumColTopItemsData = colTICanvas.toDataURL('image/png');
-	var sumBoxImgData = sumBoxCanvas.toDataURL('image/png');
+	var detRowDendroData, detColDendroData, detImgData, detBoxImgData;
+	if (includeDetailMap) {
 		// Detail Canvases
-	var detRowDendroData = document.getElementById("detail_row_dendro_canvas").toDataURL('image/png');
-	var detColDendroData = document.getElementById("detail_column_dendro_canvas").toDataURL('image/png');
-	var detImgData = NgChm.DET.canvas.toDataURL('image/png');
-	var detBoxImgData = NgChm.DET.boxCanvas.toDataURL('image/png');
-
-	//Put the dendro canvases back the way we found them.
-	restoreSummaryDendroCanvases();
+		detRowDendroData = document.getElementById("detail_row_dendro_canvas").toDataURL('image/png');
+		detColDendroData = document.getElementById("detail_column_dendro_canvas").toDataURL('image/png');
+		detImgData = NgChm.DET.canvas.toDataURL('image/png');
+		detBoxImgData = NgChm.DET.boxCanvas.toDataURL('image/png');
+	}
 
 	// Create first page header
 	createHeader(theFont);
 	
-	// Draw the heat map images (based upon user parameter selections)
-	var mapsToShow = isChecked("pdfInputSummaryMap") ? "S" : isChecked("pdfInputDetailMap") ? "D" : "B";
-	var rowDendroConfig = NgChm.heatMap.getRowDendroConfig();
-	var colDendroConfig = NgChm.heatMap.getColDendroConfig();
 	if (mapsToShow == "D") {
 		drawDetailHeatMapPage()
 	} else {
@@ -304,9 +360,13 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	drawColClassLegends();
 
 	// Reset Summary and Detail Panels on Viewer Screen
-	NgChm.DET.canvas.focus();
+	if (includeDetailMap) {
+		NgChm.DET.canvas.focus();
+	}
 	NgChm.SUM.summaryInit();
-	NgChm.DET.detailResize();
+	if (includeDetailMap) {
+		NgChm.DET.detailResize();
+	}
 	
 	// Save the PDF document 
 	doc.save( NgChm.heatMap.getMapInformation().name + '.pdf');
@@ -440,12 +500,19 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * display dimensions for the Detail Heat Map page.
 	 **********************************************************************************/
 	function setDetailHeatmapDimensions() {
-		var rowDendroPctg = 1 - (rowDendroWidth/sumImgW);  //took out the 1 minus
-		var colDendroPctg = 1 - (colDendroHeight/sumImgH); //took out the 1 minus
-		detMapW = detImgW*rowDendroPctg;
-		detMapH = detImgH*colDendroPctg;
-		detColClassHeight = detMapH*(NgChm.SUM.calculateSummaryTotalClassBarHeight("col")/NgChm.DET.canvas.height);
-		detRowClassWidth = detMapW*(NgChm.SUM.calculateSummaryTotalClassBarHeight("row")/NgChm.DET.canvas.width);
+		const rcw = +document.getElementById("detail_row_dendro_canvas").width;
+		const cch = +document.getElementById("detail_column_dendro_canvas").height;
+		const hmw = +document.getElementById("detail_canvas").width;
+		const hmh = +document.getElementById("detail_canvas").height;
+		var rowDendroPctg = rcw / (hmw + rcw);
+		var colDendroPctg = cch / (hmh + cch);
+		detMapW = detImgW*(1-rowDendroPctg);
+		detMapH = detImgH*(1-colDendroPctg);
+		detRowDendroWidth = detImgW * rowDendroPctg;
+		detColDendroHeight = detImgH * colDendroPctg;
+		detColClassHeight = detMapH*(NgChm.DET.calculateTotalClassBarHeight("col")/hmh);
+		detRowClassWidth = detMapW*(NgChm.DET.calculateTotalClassBarHeight("row")/hmw);
+		console.log ({ m: 'setDetailHeatmapDimensions', detMapW, detMapH, detRowDendroWidth, detColDendroHeight, detColClassHeight, detRowClassWidth, rcw, cch, hmw, hmh, rowDendroPctg, colDendroPctg });
 	}
 	
 	/**********************************************************************************
@@ -688,18 +755,18 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * canvases for the PDF and redraws them.  
 	 **********************************************************************************/
 	function resizeDetailDendroCanvases(detMapW,detMapH, rowDendroW, colDendroH){
-		NgChm.DET.canvas.style.height = detMapH;
-		NgChm.DET.canvas.style.width = detMapW;
+		NgChm.DET.canvas.style.height = detMapH + 'px';
+		NgChm.DET.canvas.style.width = detMapW + 'px';
 		NgChm.DET.updateDisplayedLabels();
 		document.getElementById('detail_row_dendro_canvas').height = detMapH;
-		document.getElementById('detail_row_dendro_canvas').style.height = detMapH;
+		document.getElementById('detail_row_dendro_canvas').style.height = detMapH + 'px';
 		document.getElementById('detail_row_dendro_canvas').width = rowDendroW;
-		document.getElementById('detail_row_dendro_canvas').style.width = rowDendroW;
+		document.getElementById('detail_row_dendro_canvas').style.width = rowDendroW + 'px';
 		
 		document.getElementById('detail_column_dendro_canvas').width = detMapW;
-		document.getElementById('detail_column_dendro_canvas').style.width = detMapW;
+		document.getElementById('detail_column_dendro_canvas').style.width = detMapW + 'px';
 		document.getElementById('detail_column_dendro_canvas').height = colDendroH;
-		document.getElementById('detail_column_dendro_canvas').style.height = colDendroH;
+		document.getElementById('detail_column_dendro_canvas').style.height = colDendroH + 'px';
 		NgChm.DET.rowDendro.draw();
 		NgChm.DET.colDendro.draw();
 		NgChm.DET.detailDrawColClassBarLabels();
@@ -777,34 +844,34 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 **********************************************************************************/
 	function drawDetailHeatMapPage() {
 		var rowDendroLeft = paddingLeft;
-		var imgLeft = paddingLeft+rowDendroWidth;
+		var imgLeft = paddingLeft+detRowDendroWidth;
 		var colDendroTop = paddingTop;
-		var imgTop = paddingTop+colDendroHeight;
+		var imgTop = paddingTop+detColDendroHeight;
 		if (rowDendroConfig.show !== 'ALL') {
 			imgLeft = paddingLeft;
 			detMapW = detImgW;
-			detRowClassWidth = detMapW*(NgChm.SUM.calculateSummaryTotalClassBarHeight("row")/NgChm.DET.canvas.width);
-			rowDendroWidth = 0;
+			detRowClassWidth = detMapW*(NgChm.DET.calculateTotalClassBarHeight("row")/NgChm.DET.canvas.width);
+			detRowDendroWidth = 0;
 		}
 		if (colDendroConfig.show !== 'ALL') {
 			imgTop = paddingTop;
 			detMapH = detImgH;
-			detColClassHeight = detMapH*(NgChm.SUM.calculateSummaryTotalClassBarHeight("col")/NgChm.DET.canvas.height);
-			colDendroHeight = 0;
+			detColClassHeight = detMapH*(NgChm.DET.calculateTotalClassBarHeight("col")/NgChm.DET.canvas.height);
+			detColDendroHeight = 0;
 		}
 		
-		resizeDetailDendroCanvases(detMapW,detMapH,rowDendroWidth,colDendroHeight);
+		resizeDetailDendroCanvases(detMapW,detMapH,detRowDendroWidth,detColDendroHeight);
 		var detRowDendroData = document.getElementById("detail_row_dendro_canvas").toDataURL('image/png');
 		var detColDendroData = document.getElementById("detail_column_dendro_canvas").toDataURL('image/png');
 	
 		if (rowDendroConfig.show === 'ALL') {
-			doc.addImage(detRowDendroData, 'PNG', rowDendroLeft, imgTop+detColClassHeight, rowDendroWidth, detMapH-detColClassHeight);
+			doc.addImage(detRowDendroData, 'PNG', rowDendroLeft, imgTop+detColClassHeight, detRowDendroWidth, detMapH-detColClassHeight);
 		}
 		if (colDendroConfig.show === 'ALL') {
-			doc.addImage(detColDendroData, 'PNG',imgLeft+detRowClassWidth, colDendroTop, detMapW-detRowClassWidth,colDendroHeight);
+			doc.addImage(detColDendroData, 'PNG',imgLeft+detRowClassWidth, colDendroTop, detMapW-detRowClassWidth,detColDendroHeight);
 		}
-		doc.addImage(detImgData, 'PNG', imgLeft, imgTop, detMapW,detMapH);
-		doc.addImage(detBoxImgData, 'PNG', imgLeft, imgTop, detMapW,detMapH);
+		doc.addImage(detImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
+		doc.addImage(detBoxImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
 	}
 
 	/**********************************************************************************
@@ -857,16 +924,16 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			var label = allLabels[i];
 			if ((label.dataset.axis == "Row") || (label.dataset.axis == "ColumnCovar")) {
 				if (label.id.indexOf("legendDet") > -1) {
-					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight+theFont*.75-1, label.innerHTML, null);
+					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight+theFont*.75-1, label.innerHTML, null);
 				} else {
-					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight+theFont*.75, label.innerHTML, null);
+					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight+theFont*.75, label.innerHTML, null);
 				}
 				
 			} else if ((label.dataset.axis == "Column") || (label.dataset.axis == "RowCovar")) {
 				if (label.id.indexOf("legendDet") > -1) {
-					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, label.innerHTML, null, 270);
+					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight, label.innerHTML, null, 270);
 				} else {
-					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, label.innerHTML, null, 270);
+					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight, label.innerHTML, null, 270);
 				}
 			} 
 	

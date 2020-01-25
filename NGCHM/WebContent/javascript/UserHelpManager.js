@@ -787,6 +787,19 @@ NgChm.UHM.openMenu = function(e) {
 			document.getElementById('menuAbout').style.display = 'none';
 			document.getElementById('menuSpaceAbout').style.display = 'none';
 		}
+		// Disable Save as PDF menu item if no heatmap window visble.
+		const pdfMenuItem = document.getElementById('menuPdf');
+		if (NgChm.PDF.canGeneratePdf()) {
+			pdfMenuItem.classList.remove('disabled');
+		} else {
+			pdfMenuItem.classList.add('disabled');
+		}
+		// Disabled Save Thumbnail menu if summary heatmap not visble.
+		if (NgChm.SUM.isVisible()) {
+			document.getElementById('menuPng').classList.remove('disabled');
+		} else {
+			document.getElementById('menuPng').classList.add('disabled');
+		}
 	} else {
 		menu.style.display = 'none';
     }

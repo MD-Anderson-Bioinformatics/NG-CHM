@@ -103,7 +103,7 @@ function linkoutHelp () {
 
     function openAmigo (names) {
 	var goid = names[0];
-	linkouts.openUrl("http://amigo.geneontology.org/cgi-bin/amigo/term_details?term=" + goid, "genoontology");
+	linkouts.openUrl("http://amigo.geneontology.org/amigo/term/" + goid, "geneontology");
     };
 
     linkouts.addPlugin({
@@ -207,7 +207,7 @@ function linkoutHelp () {
 //==============================================//
 (function(linkouts) {
     function openCivicDB (ids) {
-        linkouts.openUrl("https://civic.genome.wustl.edu/links/entrez_id/" + ids[0], "civicdb");
+	linkouts.openUrl("https://civicdb.org/links/entrez_id/" + ids[0]);
     }
     linkouts.addPlugin({
         name: "CIViC",
@@ -250,7 +250,7 @@ function linkoutHelp () {
 
     function openDecipher (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://decipher.sanger.ac.uk/search?q=" + gname, "decipher");
+	linkouts.openUrl("https://decipher.sanger.ac.uk/search?q=" + gname, "decipher", { noframe: true });
     }
 
     linkouts.addPlugin({
@@ -388,11 +388,11 @@ linkouts.addPlugin({
     });
 
     function searchGoogle(selection){
-	linkouts.openUrl("https://www.google.com/#q=" + selection.join("+"));
+	linkouts.openUrl("https://www.google.com/#q=" + selection.join("+"), { noframe: true });
     }
 
     function searchGoogleScholar (labels) {
-        linkouts.openUrl("http://scholar.google.com/scholar?q=" + labels.join("+OR+"), "pubmed");
+        linkouts.openUrl("http://scholar.google.com/scholar?q=" + labels.join("+OR+"), "pubmed", { noframe: true });
     };
 
 }) (linkouts);
@@ -402,11 +402,13 @@ linkouts.addPlugin({
 //==============================================//
 (function(linkouts) {
 
+	const working = false;
   function openHGNCGene (names) {
       var gname = names[0];
       linkouts.openUrl("http://www.genenames.org/cgi-bin/gene_symbol_report?q=data/hgnc_data.php&match=" + gname, "hgnc");
   }
 
+if (working) {
 linkouts.addPlugin({
    name: "HGNC",
 	description: "Adds linkouts to HGNC portal.",
@@ -417,6 +419,7 @@ linkouts.addPlugin({
 	    { menuEntry: "View HGNC", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openHGNCGene }
 	]
 });
+}
 }) (linkouts);
 
 //==============================================//
@@ -472,7 +475,7 @@ linkouts.addPlugin({
 
     function openMavedbGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://mavedb.org/search/?organism=Home+sapiens&search=" + gname, "mavedb");
+	linkouts.openUrl("https://mavedb.org/search/?organism=Home+sapiens&search=" + gname, "mavedb", { noframe: true });
     };
 
     linkouts.addPlugin({
@@ -611,7 +614,7 @@ linkouts.addPlugin({
     }
     function searchNCBIDatabases (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gquery/?term=((" + gname + "%5BGene+Symbol%5D)+AND+Homo+sapiens%5BOrganism%5D)", "NCBI");
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gquery/?term=((" + gname + "%5BGene+Symbol%5D)+AND+Homo+sapiens%5BOrganism%5D)", "NCBI", { noframe: true });
     }
 
     function openGEOAccession (aids) {
@@ -822,7 +825,7 @@ linkouts.addPlugin({
 
     function openTumorPortalGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://www.tumorportal.org/view?geneSymbol=" + gname, "tumorportal");
+	linkouts.openUrl("http://www.tumorportal.org/view?geneSymbol=" + gname, "tumorportal", { noframe: true });
     }
 
     linkouts.addPlugin({
@@ -844,7 +847,7 @@ linkouts.addPlugin({
 
     function openUniprot (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://www.uniprot.org/uniprot/" + gname, "uniprot");
+	linkouts.openUrl("http://www.uniprot.org/uniprot/" + gname, "uniprot", { noframe: true });
     }
 
     linkouts.addPlugin({
@@ -888,7 +891,7 @@ linkouts.addPlugin({
 
     function viewZodiacG (labels) {
 	var glist = encodeURIComponent(linkouts.simplifyLabels(labels).join(","));
-	linkouts.openUrl("http://compgenome.org/zodiac2/query.php?act=input&gene_list=" + glist, "zodiac");
+	linkouts.openUrl("http://compgenome.org/zodiac/query.php?act=input&gene_list=" + glist, "zodiac");
     };
 
     linkouts.addPlugin({

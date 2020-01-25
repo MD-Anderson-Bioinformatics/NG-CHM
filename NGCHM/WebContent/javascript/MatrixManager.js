@@ -137,6 +137,10 @@ let	wS = `const debug = ${debug};`;
 	NgChm.MMGR.tileLoader = new Worker(URL.createObjectURL(blob));
 };
 
+NgChm.MMGR.isRow = function isRow (axis) {
+	return axis.toLowerCase() === 'row';
+};
+
 //HeatMap Object - holds heat map properties and a tile cache
 //Used to get HeatMapData object.
 //ToDo switch from using heat map name to blob key?
@@ -155,6 +159,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	var unAppliedChanges = false;
 	NgChm.MMGR.source= fileSrc;
 	
+	const isRow = NgChm.MMGR.isRow;
+
 	this.isMapLoaded = function () {
 		if (mapConfig !== null)  
 			return true;
@@ -251,6 +257,14 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	this.getAxisCovariateConfig = function (axis) {
 		return this.getAxisConfig(axis).classifications;
 	}
+
+	this.getAxisCovariateOrder = function (axis) {
+		return isRow(axis) ? this.getRowClassificationOrder() : this.getColClassificationOrder();
+	};
+
+	this.getAxisCovariateData = function (axis) {
+		return isRow(axis) ? mapData.row_data.classifications : mapData.col_data.classifications;
+	};
 	
 	this.getRowClassificationConfig = function() {
 		return mapConfig.row_configuration.classifications;
@@ -873,6 +887,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			createLevel (NgChm.MMGR.RIBBON_HOR_LEVEL, NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.DETAIL_LEVEL);
 
 			prefetchInitialTiles(datalayers, datalevels, levelsConf);
+			console.log ('Sending Event_INITIALIZED');
 			sendCallBack(NgChm.MMGR.Event_INITIALIZED);
 	}
 	
@@ -883,10 +898,28 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	function addMapConfig(mc) {
+		NgChm.CM.CompatibilityManager(mc);
 		mapConfig = mc;
-		addDataLayers(mc);
-		NgChm.CM.CompatibilityManager(mapConfig);
 		sendCallBack(NgChm.MMGR.Event_JSON);
+
+		NgChm.CUST.addCustomJS();
+
+		// set the position to (1,1) so that the detail pane loads at the top left corner of the summary.
+		NgChm.SEL.currentRow = 1;
+		NgChm.SEL.currentCol = 1;
+		if (NgChm.UTIL.getURLParameter("row") !== "" && !isNaN(Number(NgChm.UTIL.getURLParameter("row")))){
+			NgChm.SEL.currentRow = Number(NgChm.UTIL.getURLParameter("row"))
+		}
+		if (NgChm.UTIL.getURLParameter("column") !== "" && !isNaN(Number(NgChm.UTIL.getURLParameter("column")))){
+			NgChm.SEL.currentCol = Number(NgChm.UTIL.getURLParameter("column"))
+		}
+
+		NgChm.SUM.initSummaryDisplay();
+		NgChm.DET.initDetailDisplay();
+		NgChm.UTIL.configurePanelInterface();
+		document.addEventListener("keydown", NgChm.SEL.keyNavigate);
+
+		addDataLayers(mc);
 	}
 	
 	function prefetchInitialTiles(datalayers, datalevels, levels) {
