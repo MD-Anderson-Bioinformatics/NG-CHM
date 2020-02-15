@@ -950,8 +950,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		this.endListener = (function(dc) {
 			return ((e) => dc.dividerEnd(e));
 		})(this);
-		document.addEventListener('mousemove', this.moveListener);
-		document.addEventListener('touchmove', this.moveListener, {passive: false});
+		document.addEventListener('mousemove', this.moveListener, NgChm.UTIL.passiveCompat({passive: false}));
+		document.addEventListener('touchmove', this.moveListener, NgChm.UTIL.passiveCompat({passive: false}));
 		document.addEventListener('mouseup', this.endListener);
 		document.addEventListener('touchend', this.endListener);
 	};

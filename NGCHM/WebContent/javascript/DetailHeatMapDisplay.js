@@ -118,7 +118,7 @@ NgChm.DET.initDetailDisplay = function () {
 			NgChm.DET.clickStart(e);
 		}
 		NgChm.DET.latestTap = now;
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: false }));
 	
 	NgChm.DET.canvas.addEventListener("touchmove", function(e){
 		if (e.touches){
@@ -148,7 +148,7 @@ NgChm.DET.initDetailDisplay = function () {
 	    		NgChm.DET.handleMoveDrag(e);
 	    	}
 	    }
-	},false);
+	}, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
 	
 	NgChm.DET.canvas.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
@@ -170,7 +170,7 @@ NgChm.DET.initDetailDisplay = function () {
 				}
 			}
 	    }
-	},false);
+	}, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
 	
 	
 	// set up touch events for row and column labels
@@ -179,7 +179,7 @@ NgChm.DET.initDetailDisplay = function () {
 		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		NgChm.DET.latestLabelTap = now;
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: true }));
 	
 	NgChm.DET.rowLabelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
@@ -189,13 +189,13 @@ NgChm.DET.initDetailDisplay = function () {
 				NgChm.DET.labelRightClick(e);
 			}
 		}
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: false }));
 	
 	NgChm.DET.colLabelDiv.addEventListener("touchstart", function(e){
 		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		NgChm.DET.latestLabelTap = now;
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: true }));
 	
 	NgChm.DET.colLabelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
@@ -205,7 +205,7 @@ NgChm.DET.initDetailDisplay = function () {
 				NgChm.DET.labelRightClick(e);
 			}
 		}
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: false }));
 }
 
 /*********************************************************************************************
@@ -2107,8 +2107,8 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 	}
 	
 	if (text !== "<" && text !== "..." && text.length > 0){
-		div.addEventListener('click',NgChm.DET.labelClick ,false);
-		div.addEventListener('contextmenu',NgChm.DET.labelRightClick,false);
+		div.addEventListener('click',NgChm.DET.labelClick , NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
+		div.addEventListener('contextmenu',NgChm.DET.labelRightClick, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
 		div.onmouseover = function(){NgChm.UHM.hlp(this,longText,longText.length*9,0);}
 		div.onmouseleave = NgChm.UHM.hlpC;
 		div.addEventListener("touchstart", function(e){
@@ -2117,7 +2117,7 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 			var timesince = now - NgChm.DET.latestTap;
 			NgChm.DET.labelLastClicked[this.dataset.axis] = this.dataset.index;
 			NgChm.DET.latestLabelTap = now;
-		});
+		}, NgChm.UTIL.passiveCompat({ passive: true }));
 		div.addEventListener("touchend", function(e){
 			if (e.touches.length == 0 && NgChm.DET.latestLabelTap){
 				var now = new Date().getTime();
@@ -2126,16 +2126,17 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 					NgChm.DET.labelRightClick(e);
 				}
 			}
-		});
-		div.addEventListener("touchmove", NgChm.DET.labelDrag);
+		}, NgChm.UTIL.passiveCompat({ passive: false }));
+		div.addEventListener("touchmove", NgChm.DET.labelDrag, NgChm.UTIL.passiveCompat({ passive: false }));
 	}
 	if (text == "..."){
+		const listenOpts = NgChm.UTIL.passiveCompat({ capture: false, passive: false });
 		div.addEventListener('mouseover', (function() {
 		    return function(e) {NgChm.UHM.hlp(this,"Some covariate bars are hidden",160,0); };
-		}) (this), false);
+		}) (this), listenOpts);
 		div.addEventListener('mouseleave', (function() {
 		    return function(e) {NgChm.UHM.hlpC(); };
-		}) (this), false);
+		}) (this), listenOpts);
 	}   
 }
 

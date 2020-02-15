@@ -14,6 +14,31 @@ NgChm.UTIL.capitalize = function capitalize (str) {
 	return str.substr(0,1).toUpperCase() + str.substr(1);
 };
 
+// NgChm.UTIL.passiveCompat is a function that accepts an options
+// object for addEventListener and depending on the browser's
+// support for the passive flag returns either:
+// the unmodified object (if the browser supports passive), or
+// the truthiness of object.capture for backwards compatibility.
+(function() {
+	NgChm.UTIL.passiveCompat = supportsPassive() ? f => f : f => !!f.capture;
+	// Determine if the browser supports the passive flag.
+	function supportsPassive() {
+
+		var cold = false;
+		const hike = function() {};
+
+		try {
+			var aid = Object.defineProperty({}, 'passive', {
+				get() {cold = true}
+			});
+			window.addEventListener('test', hike, aid);
+			window.removeEventListener('test', hike, aid);
+		} catch (e) {}
+
+		return cold;
+	}
+})();
+
 // Load the dynamic script file.
 NgChm.UTIL.addScript = function(src, callback) {
 	const head = document.getElementsByTagName('head')[0];
@@ -498,7 +523,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 		}
  	} 
-	document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);
+	document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
 	document.getElementById("detail_canvas").focus();
 };
 

@@ -898,7 +898,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
         };
 
 	// event listeners
-	this.dendroCanvas.onwheel = e => this.scroll(e);
+	this.dendroCanvas.addEventListener("wheel", e => this.scroll(e), NgChm.UTIL.passiveCompat({ passive: false }));
 	this.dendroCanvas.onclick = e => this.click(e);
 	this.dendroCanvas.ontouchmove = e => this.scroll(e);
 	this.dendroCanvas.ontouchend = e => this.touchEnd(e);
