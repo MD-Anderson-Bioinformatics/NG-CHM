@@ -1713,18 +1713,18 @@ NgChm.DET.getRowLabelFontSize = function () {
 	}
 	var skip = Math.floor((NgChm.DET.canvas.clientHeight - headerSize) / NgChm.SEL.dataPerCol) - 2;
 	return Math.min(skip, NgChm.DET.maxLabelSize);	
-}
+};
 
 //This function calculates the font size to be used for column axis labels.
 NgChm.DET.getColLabelFontSize = function () {
-	headerSize = 0;
+	var headerSize = 0;
 	var rowHeight = NgChm.DET.calculateTotalClassBarHeight("row") + NgChm.DET.dendroWidth;
 	if (rowHeight > 0) {
 		headerSize = NgChm.DET.canvas.clientWidth * (rowHeight / (NgChm.DET.dataViewWidth + rowHeight));
 	}
-	skip = Math.floor((NgChm.DET.canvas.clientWidth - headerSize) / NgChm.SEL.dataPerRow) - 2;
+	var skip = Math.floor((NgChm.DET.canvas.clientWidth - headerSize) / NgChm.SEL.dataPerRow) - 2;
 	return Math.min(skip, NgChm.DET.maxLabelSize);
-}
+};
 
 //This function calculates the maximum label size (in pixels) on the row axis.
 NgChm.DET.calcRowLabels = function (fontSize) {

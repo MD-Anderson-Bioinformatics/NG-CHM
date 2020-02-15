@@ -1602,7 +1602,7 @@ NgChm.UPM.filterClassPrefs = function(filterOn) {
 		NgChm.UPM.filterVal = null;
 	}
 	var allprefs = document.getElementById("breakPrefs_ALL");
-	hiddenItems = NgChm.UPM.addClassPrefOptions();
+	var hiddenItems = NgChm.UPM.addClassPrefOptions();
 	NgChm.UPM.filterAllClassesTable(hiddenItems);
 	NgChm.UPM.showClassBreak("ALL");
 }

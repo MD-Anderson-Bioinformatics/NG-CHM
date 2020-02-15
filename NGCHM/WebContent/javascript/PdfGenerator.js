@@ -217,7 +217,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	}
 
 	//Get Dimensions for the Detail Heat Map and derive row/col class bar height/width
-	var detMapW, sumMapH, detColClassHeight, detRowClassWidth;
+	var detMapW, detMapH, detColClassHeight, detRowClassWidth;
 	var detRowDendroWidth, detColDendroHeight;
 	if (includeDetailMap) {
 		setDetailHeatmapDimensions();
@@ -1020,7 +1020,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			var rgb = cm.getColor(breaks[j]);
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
-			value = bins[j];
+			let value = bins[j];
 			if (isNaN(value) || value == undefined){
 				value = 0;
 			}
@@ -1046,7 +1046,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		var rgb = cm.getColor(breaks[breaks.length-1]);
 		doc.setFillColor(rgb.r,rgb.g,rgb.b);
 		doc.setDrawColor(0,0,0);
-		value = bins[bins.length-1];
+		let value = bins[bins.length-1];
 		if (isNaN(value) || value == undefined){
 			value = 0;
 		}
@@ -1230,7 +1230,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			}
 			var barHeight = classBarLegendTextSize + 3;
             var counts = {}, maxCount = 0;
-		    maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
+		    var maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
 			// get the number N in each threshold
 			var cutValues = 0;
 			for(var i = 0; i< classBarData.values.length; i++) {
@@ -1341,6 +1341,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
     	// 3. If remainder of half range > .75 set threshold value up to next value, Else use floor value.
 		var thresholds = colorMap.getContinuousThresholdKeys();
 		var threshSize = colorMap.getContinuousThresholdKeySize()/2;
+		var thresholdSize;
 		if ((threshSize%1) > .5) {
 			// Used to calculate modified threshold size for all but first and last threshold
 			// This modified value will be used for color and display later.
@@ -1353,7 +1354,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		// get the number N in each threshold
 		var counts = {};
 		var maxCount = 0;
-		maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
+		var maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*classBarLegendTextSize;
 
 		// get the continuous thresholds and find the counts for each bucket
 		var cutValues = 0;
@@ -1408,7 +1409,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			}
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
-			value = counts[j];
+			let value = counts[j];
 			if (isNaN(value) || value == undefined){
 				value = 0;
 			}

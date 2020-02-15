@@ -423,7 +423,7 @@ NgChm.UTIL.blendTwoColors = function(color1, color2) {
     // check input
     color1 = color1 || '#000000';
     color2 = color2 || '#ffffff';
-    percentage = 0.5;
+    var percentage = 0.5;
 
     //convert colors to rgb
     color1 = color1.substring(1);
@@ -441,7 +441,7 @@ NgChm.UTIL.blendTwoColors = function(color1, color2) {
     color3 = '#' + NgChm.UTIL.intToHex(color3[0]) + NgChm.UTIL.intToHex(color3[1]) + NgChm.UTIL.intToHex(color3[2]);
     // return hex
     return color3;
-}
+};
 
 /**********************************************************************************
  * FUNCTION - intToHex: The purpose of this function is to convert integer
@@ -800,7 +800,7 @@ NgChm.UTIL.downloadSummaryPng = function (e) {
  **********************************************************************************/
 NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callback) {
 		var canvas = document.createElement("canvas");
-		ctx = canvas.getContext("2d");
+		var ctx = canvas.getContext("2d");
 		ctx.imageSmoothingEnabled = false;
 		var mapWidth = width;
 		var mapHeight = height;
@@ -830,7 +830,7 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 		ctx.drawImage(img3, mapStartX, mapStartY, mapWidth, mapHeight);
 		// Run the callback on what to do with the canvas element.
 		callback(canvas, dl);
-}
+};
 
 /**********************************************************************************
  * FUNCTION - scaleSummaryPng: This function scales the summary PNG file down to 
@@ -843,7 +843,7 @@ NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
 	// When the images is loaded, resize it in canvas.
 	img.onload = function(){
 		var canvas = document.createElement("canvas");
-        ctx = canvas.getContext("2d");
+        var ctx = canvas.getContext("2d");
         ctx.imageSmoothingQuality = "high";
 		ctx.mozImageSmoothingEnabled = false;
 		ctx.imageSmoothingEnabled = false;
@@ -854,7 +854,7 @@ NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
         var img2 = new Image();
         img2.onload = function(){
             var canvas2 = document.createElement("canvas");
-            ctx2 = canvas2.getContext("2d");
+            var ctx2 = canvas2.getContext("2d");
             ctx2.imageSmoothingQuality = "high";
             ctx2.mozImageSmoothingEnabled = false;
             ctx2.imageSmoothingEnabled = false;

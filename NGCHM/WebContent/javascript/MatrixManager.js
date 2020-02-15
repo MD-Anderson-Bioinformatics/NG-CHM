@@ -308,7 +308,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (typeof showOnly === 'undefined') {
 			return rowClassBarsOrder;
 		} else {
-			filterRowClassBarsOrder = [];
+			const filterRowClassBarsOrder = [];
 			for (var i = 0; i < rowClassBarsOrder.length; i++) {
 				var newKey = rowClassBarsOrder[i];
 				var currConfig = mapConfig.row_configuration.classifications[newKey];
@@ -337,7 +337,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (typeof showOnly === 'undefined') {
 			return colClassBarsOrder;
 		} else {
-			filterColClassBarsOrder = [];
+			const filterColClassBarsOrder = [];
 			for (var i = 0; i < colClassBarsOrder.length; i++) {
 				var newKey = colClassBarsOrder[i];
 				var currConfig = mapConfig.col_configuration.classifications[newKey];
@@ -836,21 +836,21 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return true;
 	}
 	
-	callServlet = function(verb, url, data) {
-		  var form = document.createElement("form");
-		  form.action = url;
-		  form.method = verb;
-		  if (data) { 
-		    var input = document.createElement("textarea");
-	        input.name = "configData";
-	        input.id = "configData";
-	        input.value = data;
-	        form.appendChild(input);
-		  }
-		  form.style.display = 'none';
-		  document.body.appendChild(form);
-		  form.submit();
-		};
+	function callServlet (verb, url, data) {
+		var form = document.createElement("form");
+		form.action = url;
+		form.method = verb;
+		if (data) { 
+			var input = document.createElement("textarea");
+			input.name = "configData";
+			input.id = "configData";
+			input.value = data;
+			form.appendChild(input);
+		}
+		form.style.display = 'none';
+		document.body.appendChild(form);
+		form.submit();
+	}
 	
 	//  Initialize the data layers once we know the tile structure.
 		//  JSON structure object describing available data layers passed in.
@@ -1229,7 +1229,7 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		//Calculate which tile holds the row / column we are looking for.
 		var tileRow = Math.floor((row-1)/rowsPerTile) + 1;
 		var tileCol = Math.floor((column-1)/colsPerTile) + 1;
-		arrayData = getTileCacheData(NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol);
+		var arrayData = getTileCacheData(NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol);
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {

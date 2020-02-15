@@ -321,13 +321,13 @@ NgChm.SUM.setTopItemsSize = function (){
 	NgChm.SUM.rowTopItemsIndex = rowTopItemsIndex;
 	NgChm.SUM.colTopItemsWidth = 0;
 	if (NgChm.SUM.colTopItems){
-		for (i = 0; i < NgChm.SUM.colTopItems.length; i++){
-			var foundLabel = false;
-			var p = document.createElement("p");
+		for (let i = 0; i < NgChm.SUM.colTopItems.length; i++){
+			let foundLabel = false;
+			let p = document.createElement("p");
 			p.innerHTML = NgChm.UTIL.getLabelText(NgChm.SUM.colTopItems[i].split("|")[0],"col");
 			p.className = "topItems";
 			NgChm.SUM.chmElement.appendChild(p);
-			for (var j = 0; j < colLabels.length; j++){
+			for (let j = 0; j < colLabels.length; j++){
 				if (NgChm.SUM.colTopItems[i] == colLabels[j].split("|")[0] && colTopItemsIndex.length < 10){ // limit 10 items per axis
 					foundLabel = true;
 					colTopItemsIndex.push(j);
@@ -343,13 +343,13 @@ NgChm.SUM.setTopItemsSize = function (){
 	}
 	NgChm.SUM.rowTopItemsHeight = 0;
 	if (NgChm.SUM.rowTopItems){
-		for (i = 0; i < NgChm.SUM.rowTopItems.length; i++){
-			var foundLabel = false;
-			var p = document.createElement("p");
+		for (let i = 0; i < NgChm.SUM.rowTopItems.length; i++){
+			let foundLabel = false;
+			let p = document.createElement("p");
 			p.innerHTML = NgChm.UTIL.getLabelText(NgChm.SUM.rowTopItems[i].split("|")[0],"row");
 			p.className = "topItems";
 			NgChm.SUM.chmElement.appendChild(p);
-			for (var j = 0; j < rowLabels.length; j++){
+			for (let j = 0; j < rowLabels.length; j++){
 				if (NgChm.SUM.rowTopItems[i] == rowLabels[j].split("|")[0] && rowTopItemsIndex.length < 10){ // limit 10 items per axis
 					foundLabel = true;
 					rowTopItemsIndex.push(j);
@@ -1195,16 +1195,16 @@ NgChm.SUM.drawLeftCanvasBox = function() {
 	// Reset the canvas (drawing borders and sub-dendro selections)
 	var ctx = NgChm.SUM.resetBoxCanvas(NgChm.SUM.boxCanvas);
 	// Draw the View Box using user-defined defined selection color 
-	boxX = ((((NgChm.SEL.getCurrentSumCol()-1) * NgChm.SUM.widthScale) / NgChm.SUM.canvas.width) * NgChm.SUM.boxCanvas.width);
-	boxY = ((((NgChm.SEL.getCurrentSumRow()-1) * NgChm.SUM.heightScale) / NgChm.SUM.canvas.height) * NgChm.SUM.boxCanvas.height);
-	boxW = (NgChm.SEL.getCurrentSumDataPerRow()*NgChm.SUM.widthScale / NgChm.SUM.canvas.width) * NgChm.SUM.boxCanvas.width - 2;
-	boxH = (NgChm.SEL.getCurrentSumDataPerCol()*NgChm.SUM.heightScale / NgChm.SUM.canvas.height) * NgChm.SUM.boxCanvas.height - 2;
+	var boxX = ((((NgChm.SEL.getCurrentSumCol()-1) * NgChm.SUM.widthScale) / NgChm.SUM.canvas.width) * NgChm.SUM.boxCanvas.width);
+	var boxY = ((((NgChm.SEL.getCurrentSumRow()-1) * NgChm.SUM.heightScale) / NgChm.SUM.canvas.height) * NgChm.SUM.boxCanvas.height);
+	var boxW = (NgChm.SEL.getCurrentSumDataPerRow()*NgChm.SUM.widthScale / NgChm.SUM.canvas.width) * NgChm.SUM.boxCanvas.width - 2;
+	var boxH = (NgChm.SEL.getCurrentSumDataPerCol()*NgChm.SUM.heightScale / NgChm.SUM.canvas.height) * NgChm.SUM.boxCanvas.height - 2;
 	var dataLayers = NgChm.heatMap.getDataLayers();
 	var dataLayer = dataLayers[NgChm.SEL.currentDl];
 	ctx.strokeStyle=dataLayer.selection_color;
 	ctx.lineWidth=3;
 	ctx.strokeRect(boxX,boxY,boxW,boxH);
-}
+};
 
 //=====================//
 // 	CLASSBAR FUNCTIONS //
