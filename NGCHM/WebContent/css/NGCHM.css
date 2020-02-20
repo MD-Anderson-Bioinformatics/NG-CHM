@@ -18,7 +18,7 @@ div.mdaServiceHeader
 	width: 100%;
 	height: 60px;
 	color: #666;
-	margin: 2px 0px 4px 0px;
+	margin: 2px 0px 0px 0px;
 	background-color: white;
 	border-bottom: 4px solid #da0505;
 	font-family: sans-serif;
@@ -37,29 +37,106 @@ div.mdaServiceHeaderLogo img
 	height: 54px;
 }
 
-#container{
+div.paneHeader {
+	display: flex;
+	width: 100%;
+	background-color: #cccccc;
+	font-family: sans-serif;
+	margin: 0px 0px 4px 0px;
+	padding: 2px 0px 2px 0px;
+}
+
+div.paneHeader.activePane {
+	background-color: #ccccff;
+}
+
+div.paneTitle {
+	margin: 2px;
+	display: inline-block;
+	flex-grow: 1;
+	max-width: calc(100% - 27px);
+}
+
+div.icon_group {
+	display: inline-block;
+	vertical-align: top;
+	align-items: end;
+	margin-right: 5px;
+}
+
+div.container {
+	position: relative;
+	display: flex;
+	margin: 0px;
+}
+
+div.vertical.container {
+	flex-direction: column;
+}
+
+div.pane {
+	position: relative;
+	overflow: hidden;
+}
+
+div.pane canvas {
+	position: absolute;
+}
+
+div#container{
+	overflow: hidden;
 	display: flex;
 	flex-grow: 1;
+	border-bottom: 1px solid white;
 }
+
+#footer {
+	height: 1px;
+	background-color: white;
+}
+
 
 .resizerHelper {
     position: relative;
-	margin-left:10px;
-	margin-right:10px;
-	height:97%;
     background-color: #666666;
-	cursor: ew-resize;
     z-index: 99;
 }
 
 .resizerHelperRight {
+    height: calc(100% - 10px);
     width: 5px;
     border-left: 1px solid rgb(181, 188, 199);
     border-right: 1px solid rgb(181, 188, 199);
+    /* Also alter verticalDividerMargins if you modify margin-left or margin-right. */
+    margin-left:10px;
+    margin-right:10px;
+    cursor: ew-resize;
+}
+
+.resizerHelperBottom {
+    height: 5px;
+    width:100%;
+    border-top: 1px solid rgb(181, 188, 199);
+    border-bottom: 1px solid rgb(181, 188, 199);
+    /* Also alter horizontalDividerMargins if you modify margin-top or margin-bottom. */
+    margin-top:10px;
+    margin-bottom:0px;
+    margin-left:0px;
+    margin-right:0px;
+    cursor: ns-resize;
 }
 
 .resizerHelper:hover {
      background-color: LightBlue;
+}
+
+.resizerSplitterHorizontal {
+    position: absolute;
+    top: 30%;
+    bottom: 30%;
+    right: 48%;
+    left: 48%;
+    background-color: white;
 }
 
 .resizerSplitterVertical {
@@ -82,11 +159,38 @@ div.mdaServiceHeaderLogo img
 	border-top: 1px solid gray; 
 }
 
+.menuPanel {
+	position:absolute;
+	width: fit-content;
+	border-radius: 10px;
+	right: 0px;
+	z-index: 10000;
+	background-color: #FFFFFF;
+	border: 1px solid gray;
+	margin-top: 1px;
+	margin-right: 5px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+div.paneHeader img {
+	padding: 1px;
+}
+
+.menuHeader {
+	padding: 1px 10px 1px 10px;
+	background-color: #ccccff;
+	font-variant-caps: small-caps;
+}
 
 .menuItem {
 	padding: 1px 10px 1px 10px;
 	margin-top: 0.5em;
 	margin-bottom: 0.5em;
+}
+
+.menuItem.disabled {
+	color: grey;
 }
 
 .menuItemBorder {
@@ -102,9 +206,113 @@ div.mdaServiceHeaderLogo img
      background-color: LightGray;
 }
 
+.menuItem.disabled:hover {
+     background-color: WhiteSmoke;
+}
+
 .menuItem img {
 	vertical-align: middle;
 	margin-right: 1em;
+}
+
+.gearPanel {
+	position: absolute;
+	border-radius: 10px;
+	z-index: 10000;
+	background-color: #FFFFFF;
+	border: 1px solid gray;
+	margin-top: 1px;
+	margin-right: 5px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	padding-right: 0.5em;
+	background-color: #f7f7f7;
+}
+
+.optionsBox {
+	display: grid;
+	margin-bottom: 3em;
+	grid-template-columns: [labels-start] auto [labels-end content-start] auto [ contents-end ];
+	grid-row-gap: 0.4em;
+	grid-column-gap: 0.2em;
+}
+
+.optionsBox .nodeSelector,
+.optionsBox .userLabel,
+.optionsBox input,
+.optionsBox select {
+	grid-column-start: contents;
+}
+
+.optionsBox .leftLabel {
+	grid-column-start: labels;
+}
+
+.optionsBox .grouper {
+	display: contents;
+}
+
+.gearPanel .buttonBox {
+	display: flex;
+	margin-bottom: 1em;
+	margin-right: 1em;
+}
+
+.gearPanel .fill {
+	flex: 1 1;
+}
+
+.gearPanel .buttonBox img {
+	margin-left: 1em;
+}
+
+.gearPanel div {
+	margin-top: 1em;
+	margin-left: 0.5em;
+}
+
+.gearPanel div .leftLabel::after {
+	content: ":";
+}
+
+.gearPanel div.userLabel {
+	margin: 0;
+	font-size: 0.7rem;
+}
+
+.gearPanel div.nodeSelector {
+	margin: 0.2em 0 0.5em 0;
+	font-size: 0.7rem;
+}
+
+
+span.button {
+	padding: 0.25em 0.5em;
+	background: linear-gradient(0deg, #2a447f, #447afd);
+	color: white;
+	border-radius: 1em;
+	font-weight: bold;
+	font-size: 0.8rem;
+	margin-left: 1em;
+	cursor: pointer;
+}
+span.button.positive {
+	background: linear-gradient(0deg, #285013, #37741c);
+}
+span.button.negative {
+	background: linear-gradient(0deg, #6b0000, #cc0000);
+}
+
+
+.gearPanel div.userLabel .leftLabel::after,
+.gearPanel div.nodeSelector .leftLabel::after {
+	margin-right: 0.5em;
+}
+
+.gearPanel div.nodeSelector span.button {
+	font-size: 0.7rem;
+	background: linear-gradient(0deg, hsla(188,98%,25%,1), hsla(188,98%,50%,1));
+	padding: 0.2em 0.4em;
 }
 
 #row_dendro_canvas, #column_dendro_canvas{
@@ -112,9 +320,10 @@ div.mdaServiceHeaderLogo img
 }
 
 #summary_chm {
+    width: 100%;
+    height: 100%;
     min-height: 50px;
     max-height: 100%;
-    width:48%;
     min-width: 100px;
     vertical-align:top;
     margin-left: 3px;
@@ -153,8 +362,8 @@ div.mdaServiceHeaderLogo img
 }
 
 #detail_chm {
-    height:auto;
-    width:48%;
+    width: 100%;
+    height: 100%;
     min-height: 50px;
     max-height: 100%;
     min-width: 100px;
@@ -370,6 +579,7 @@ div.mdaServiceHeaderLogo img
     text-align: center;
     box-shadow: 5px 5px 5px #777777;
     position:relative;
+    z-index: 100;
 }
 
 .labelMenuCaption{
@@ -735,3 +945,19 @@ p.boxCaption {
 	white-space: normal;
 	text-align: left;
 }
+
+div.linkouts {
+        width: 100%;
+        height: calc(100% - 28px);
+}
+
+iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+}
+
+iframe.nopointer {
+        pointer-events: none;
+}
+

@@ -10,6 +10,31 @@ NgChm.UTIL.getURLParameter = function(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||'';
 }
 
+NgChm.UTIL.capitalize = function capitalize (str) {
+	return str.substr(0,1).toUpperCase() + str.substr(1);
+};
+
+// Load the dynamic script file.
+NgChm.UTIL.addScript = function(src, callback) {
+	const head = document.getElementsByTagName('head')[0];
+	const script = NgChm.UTIL.newEl('script', { type: 'text/javascript', src });
+	head.appendChild(script);
+	// Most browsers:   NOTE: The next 2 lines of code are replaced when building ngchmApp.html and ngchmWidget-min.js (the "file mode" and "widget" versions of the application)
+	script.onload = callback;
+	// Internet explorer:
+	script.onreadystatechange = function() { if (this.readyState == 'complete') { callback();}};  //Leave this as one line for filemode version app builder
+};
+
+NgChm.UTIL.addScripts = function(srcs, callback) {
+	NgChm.UTIL.addScript(srcs[0], () => {
+		if (srcs.length === 1) {
+			callback();
+		} else {
+			NgChm.UTIL.addScripts (srcs.slice(1), callback);
+		}
+	});
+};
+
 // Set the position and size of the DOM element el to the size in vp.
 // If el is a canvas and styleOnly is not truthy, set the canvas
 // width and height properties to the same width and height as el.
@@ -21,6 +46,77 @@ NgChm.UTIL.setElementPositionSize = function (el, vp, styleOnly) {
 	if (!styleOnly && el.tagName === 'CANVAS') {
 		el.width = Math.round (vp.width);
 		el.height = Math.round (vp.height);
+	}
+};
+
+// Create a new text node.
+NgChm.UTIL.newTxt = function newTxt(txt) {
+	return document.createTextNode(txt);
+};
+
+// Create a new DOM element.
+//
+// Spec consists of an element tag name,
+//     optionally followed by a single '#' and node id,
+//     followed by any number of '.' and class id.
+// E.g. div#id.class1.class2
+//
+// Attrs is a dictionary of attributes to add to the new node.
+//
+// Content, if defined, is either a DOM node or an array of DOM nodes to
+// include as children of the new DOM element.
+//
+// Fn, if defined, is a function that is called with the new node as a
+// parameter after it's constructed but before it's returned.
+//
+NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
+	const classes = spec.split('.');
+	const names = classes.shift().split('#');
+	content = content || [];
+	if (!Array.isArray(content)) content = [content];
+	if (names.length > 2) {
+		console.log ({ m: 'UTIL.newElement: too many ids', spec, attrs, names });
+		throw new Error ('UTIL.newElement: too many ids');
+	}
+	const el = document.createElement(names[0]);
+	if (names.length > 1) {
+		el.setAttribute ('id', names[1]);
+	}
+	while (classes.length > 0) {
+		el.classList.add (classes.shift());
+	}
+	if (attrs) {
+		Object.entries(attrs).forEach(([key,value]) => {
+			if (key === 'style') {
+				Object.entries(value).forEach(([key,value]) => {
+					el.style[key] = value;
+				});
+			} else if (key === 'dataset') {
+				Object.entries(value).forEach(([key,value]) => {
+					el.dataset[key] = value;
+				});
+			} else {
+				el.setAttribute(key,value);
+			}
+		});
+	}
+	while (content.length > 0) {
+		el.appendChild (content.shift());
+	}
+	if (fn) {
+		const x = fn (el);
+		if (x instanceof HTMLElement) {
+			return x;
+		} else {
+			console.error (new Error('UTIL.newElement decorator function did not return a DOM node'));
+		}
+	}
+	return el;
+};
+
+NgChm.UTIL.chmResize = function() {
+	if (NgChm.Pane && NgChm.Pane.resizeNGCHM) {
+		NgChm.Pane.resizeNGCHM ();
 	}
 };
 
@@ -260,6 +356,40 @@ NgChm.UTIL.startupChecks = function () {
     }
 }
 
+// Panel interface configuration parameters that can be set by NgChm.UTIL.editWidget:
+NgChm.UTIL.showSummaryPane = true;
+NgChm.UTIL.showDetailPane = true;
+
+// Function configurePanelInterface must called once immediately after the HeatMap configuration is loaded.
+// It configures the initial Panel user interface according to the heat map preferences and
+// the interface configuration parameters.
+//
+(function() {
+	var firstTime = true;
+
+	NgChm.UTIL.configurePanelInterface = function configurePanelInterface () {
+		// Split the initial pane horizontally and insert the
+		// summary and detail NGCHMs into the children.
+		if (firstTime) {
+			firstTime = false;
+		} else {
+			return;
+		}
+		document.getElementById('loader').style.display = 'none';
+		const initialLoc = NgChm.Pane.initializePanes ();
+		if (NgChm.UTIL.showSummaryPane && NgChm.UTIL.showDetailPane) {
+			const s = NgChm.Pane.splitPane (false, initialLoc);
+			NgChm.Pane.setPanePropWidths (NgChm.heatMap.getDividerPref(), s.child1, s.child2, s.divider);
+			NgChm.SUM.switchPaneToSummary (NgChm.Pane.findPaneLocation(s.child1));
+			NgChm.DET.switchPaneToDetail (NgChm.Pane.findPaneLocation(s.child2));
+		} else if (NgChm.UTIL.showSummaryPane) {
+			NgChm.SUM.switchPaneToSummary (initialLoc);
+		} else if (NgChm.UTIL.showDetailPane) {
+			NgChm.DET.switchPaneToDetail (initialLoc);
+		}
+	};
+})();
+
 /**********************************************************************************
  * FUNCTION - blendTwoColors: The purpose of this function is to blend two 6-character
  * hex color code values into a single value that is half way between.
@@ -334,6 +464,9 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	NgChm.UTIL.setBrowserMinFontSize();
 	//Run startup checks that enable startup warnings button.
 	NgChm.UTIL.startupChecks();
+	NgChm.UTIL.setDragPanels();
+	NgChm.UTIL.containerElement = document.getElementById('container');
+
 	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
 	if ((NgChm.UTIL.getURLParameter('map') === "") && (NgChm.MMGR.embeddedMapName === null)) {
 		//In local mode, need user to select the zip file with data (required by browser security)
@@ -361,15 +494,13 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 				dataSource = NgChm.MMGR.LOCAL_SOURCE;
 			}
 			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
-            NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
-            NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
-            NgChm.SUM.initSummaryDisplay();
-			NgChm.DET.initDetailDisplay();
+			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
+			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 		}
  	} 
-    document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);	
-    document.getElementById("detail_canvas").focus();
-}
+	document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);
+	document.getElementById("detail_canvas").focus();
+};
 
 /**********************************************************************************
  * FUNCTION - loadLocalModeCHM: This function is called when running in local file mode and 
@@ -431,7 +562,34 @@ NgChm.UTIL.loadFileModeCHM = function () {
 		NgChm.UTIL.displayFileModeCHM(chmFile);
 		NgChm.SEL.openFileToggle();
 	}
-}
+};
+
+// The editWidget function can optionally be called from a page that embeds the NG-CHM widget
+// to specialize it.  (Currently used by the GUI builder, for example.)
+//
+// The parameter options is an array of standard widget features to turn off.
+// * "noheader":
+//   - Hides the service header.
+// * "nodetailview":
+//   - Shows only the summary panel.
+//   - Hides the summary box canvas.
+// * "nopanelheaders":
+//   - Hides the panel headers.
+//
+NgChm.UTIL.editWidget = function editWidget (options) {
+	options = options || [];
+	//console.log ('NgChm.UTIL.editWidget called');
+	if (options.indexOf('noheader') !== -1) {
+		document.getElementById('mdaServiceHeader').classList.add('hide');
+	}
+	if (options.indexOf('nopanelheaders') !== -1) {
+		NgChm.Pane.showPaneHeader = false;
+	}
+	if (options.indexOf('nodetailview') !== -1) {
+		NgChm.UTIL.showDetailPane = false;
+		document.getElementById('summary_box_canvas').classList.add('hide');
+	}
+};
 
 /**********************************************************************************
  * FUNCTION - displayFileModeCHM: This function performs functions shared by the
@@ -445,11 +603,14 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
     NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
     NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
+	console.log ('sizeBuilderView set');
+	NgChm.UTIL.showDetailPane = false;
+	NgChm.Pane.showPaneHeader = false;
+	//NgChm.Pane.ngchmContainerWidth = 40;
+	//document.getElementById('container').style.left = '150px';
         NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
     }
-    NgChm.SUM.initSummaryDisplay();
-	NgChm.DET.initDetailDisplay();
-}
+};
 
 /**********************************************************************************
  * FUNCTION - builderViewSizing: This function handles the resizing of the summary
@@ -459,36 +620,13 @@ NgChm.UTIL.builderViewSizing = function (event) {
 	if ((typeof event !== 'undefined') && (event !== NgChm.MMGR.Event_INITIALIZED)) {
 		return;
 	}
-	if (document.getElementById('detail_chm').style.width !== '4%') {
-		document.getElementById('detail_chm').style.width = '4%';
-		document.getElementById('summary_chm').style.width = '40vw';
-		document.getElementById('summary_chm').style.left = 150 + 'px';
-		document.getElementById('summary_chm').style.top = 0 + 'px';
-		document.getElementById('mdaServiceHeader').style.height = '0px';
-		NgChm.SUM.summaryResize();  
-	 }
-}
 
-/**********************************************************************************
- * FUNCTION - chmResize: This function handles the resizing of the NG-CHM Viewer.  
- **********************************************************************************/
-NgChm.UTIL.chmResize = function () {
-		if ((NgChm.SUM.rowDendro === null) || (NgChm.SUM.colDendro === null)) {
-			return;
-		}
-		NgChm.SUM.setChmSize();
- 		NgChm.SUM.summaryResize();
- 		NgChm.DET.detailResize();
- 		NgChm.UPM.prefsResize();
- 		NgChm.DET.detailResize();
- 		var linkbox = document.getElementById('linkBox');
- 		if ((linkbox !== null) && (linkbox.style.display !== 'none')) { 
- 			NgChm.UHM.linkBoxSizing();
- 		}
- 		if ((typeof NgChmGui !== 'undefined') && (typeof NgChmGui.isHalfScreen !== 'undefined')) {
- 			NgChm.UTIL.builderViewSizing();
- 		}
-}
+	const header = document.getElementById('mdaServiceHeader');
+	if (!header.classList.contains('hide')) {
+		header.classList.add('hide');
+		window.onresize();
+	 }
+};
 
 /**********************************************************************************
  * FUNCTION - resetCHM: This function will reload CHM SelectionManager parameters 
@@ -508,7 +646,7 @@ NgChm.UTIL.resetCHM = function () {
 	NgChm.SEL.scrollTime = null; 
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;
-}
+};
 
 /**********************************************************************************
  * FUNCTION - removeElementsByClass: This function removes all DOM elements with
@@ -519,7 +657,7 @@ NgChm.UTIL.removeElementsByClass = function(className) {
     while(elements.length > 0){
         elements[0].parentNode.removeChild(elements[0]);
     }
-}
+};
 
 /**********************************************************************************
  * FUNCTION - initDisplayVars: This function reinitializes summary and detail 
@@ -580,20 +718,23 @@ NgChm.UTIL.shadeColor = function (color, pct) {
  * summary canvas.
  **********************************************************************************/
 NgChm.UTIL.downloadSummaryMapPng = function () {   
-	  var mapName = NgChm.heatMap.getMapInformation().name;
-	  var dataURL = NgChm.SUM.canvas.toDataURL('image/png');
-	  var dl = document.createElement('a');
-	  NgChm.UTIL.scalePngImage(dataURL, 200, 200, dl, function(canvas){
+	var mapName = NgChm.heatMap.getMapInformation().name;
+	var dataURL = NgChm.SUM.canvas.toDataURL('image/png');
+	var dl = document.createElement('a');
+	NgChm.UTIL.scalePngImage(dataURL, 200, 200, dl, function(canvas){
 			dl.setAttribute('href', canvas.toDataURL('image/png'));
 			dl.setAttribute('download', mapName+'_tnMap.png');
 			document.body.appendChild(dl);
 			dl.click();
 			dl.remove();
-	  });
-    NgChm.UTIL.redrawCanvases();
+	});
+	NgChm.UTIL.redrawCanvases();
 }
 
-NgChm.UTIL.downloadSummaryPng = function () { 
+NgChm.UTIL.downloadSummaryPng = function (e) { 
+	if (e.classList.contains('disabled')) {
+		return;
+	}
     var mapName = NgChm.heatMap.getMapInformation().name;
     var colDCanvas = document.getElementById("column_dendro_canvas");
     var rowDCanvas = document.getElementById("row_dendro_canvas");

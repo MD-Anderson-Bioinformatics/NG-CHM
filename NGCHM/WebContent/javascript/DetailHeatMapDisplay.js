@@ -66,6 +66,13 @@ NgChm.DET.colLabelFont = 0;
 NgChm.DET.colClassLabelFont = 0;
 NgChm.DET.rowClassLabelFont = 0;
 
+// Return true iff the Detail View is visible (i.e. contained in a visible pane).
+NgChm.DET.isVisible = function isVisible () {
+	if (NgChm.DET.chmElement == null) return false;
+	const loc = NgChm.Pane.findPaneLocation (NgChm.DET.chmElement);
+	return !loc.pane.classList.contains('collapsed');
+};
+
 
 //Call once to hook up detail drawing routines to a heat map and initialize the webGl 
 NgChm.DET.initDetailDisplay = function () {
@@ -76,7 +83,6 @@ NgChm.DET.initDetailDisplay = function () {
 	NgChm.DET.canvas = document.getElementById('detail_canvas');
 	NgChm.DET.boxCanvas = document.getElementById('detail_box_canvas');
 	NgChm.DET.labelElement = document.getElementById('labelDiv');
-	NgChm.DET.chmElement = document.getElementById('detail_chm');
 	NgChm.DET.rowLabelDiv = document.getElementById("rowLabelDiv");
 	NgChm.DET.colLabelDiv = document.getElementById("colLabelDiv");
 
@@ -1218,8 +1224,10 @@ NgChm.DET.detailInit = function () {
 	document.getElementById('detail_buttons').style.display = '';
 	document.getElementById('aboutMenu_btn').style.display = 'none';
 	document.getElementById('loader').style.display = 'none';
-	NgChm.DET.canvas.width =  (NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
-	NgChm.DET.canvas.height = (NgChm.DET.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
+	if (NgChm.DET.canvas) {
+		NgChm.DET.canvas.width =  (NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
+		NgChm.DET.canvas.height = (NgChm.DET.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
+	}
 	NgChm.LNK.createLabelMenus();
 	NgChm.SEL.createEmptySearchItems();
 	
@@ -1305,7 +1313,9 @@ NgChm.DET.setDrawDetailTimeout = function (ms, noResize) {
 	} else {
 		NgChm.DET.resizeOnNextDraw = true;
 		NgChm.DET.drawEventTimer = setTimeout(function drawDetailTimeout () {
-			NgChm.DET.drawDetailHeatMap(drawWin);
+			if (NgChm.DET.chmElement) {
+				NgChm.DET.drawDetailHeatMap(drawWin);
+			}
 		}, ms);
 	}
 };
@@ -1620,27 +1630,18 @@ NgChm.DET.detailResize = function () {
 		 NgChm.DET.rowDendro.draw();
 		 NgChm.DET.colDendro.draw();
 	 }
-}
+};
 
 //This function calculates and adjusts the size of the detail canvas and box canvas
 //in order to best accommodate the maximum label sizes for each axis.
 NgChm.DET.sizeCanvasForLabels = function() {
 	NgChm.DET.calcRowAndColLabels();
 	NgChm.DET.calcClassRowAndColLabels();
-	var cont = document.getElementById('container');
-	var div = document.getElementById('divider');
-		
-	//Calculate the total horizontal width of the screen
-	var sumWidths = NgChm.SUM.chmElement.clientWidth + div.clientWidth + NgChm.DET.chmElement.clientWidth;
-	//Calculate the remainder on right-hand side not covered by the detail_chm 
-	//(labels are partially drawn on this area)
-	var remainW = cont.clientWidth - sumWidths;
-	//Calculate the remainder on bottom not covered by the container 
-	//(labels are partially drawn on this area)
-	var remainH = cont.clientHeight - NgChm.DET.chmElement.clientHeight;
-	//Add remainders to width/height for computation
-	var dFullW = NgChm.DET.chmElement.clientWidth + remainW;
-	var dFullH = NgChm.DET.chmElement.clientHeight + remainH;
+
+	const detPane = NgChm.Pane.findPaneLocation (NgChm.DET.chmElement);
+	//Get full available width/height for detail NGCHM
+	var dFullW = detPane.pane.clientWidth;
+	var dFullH = detPane.pane.clientHeight - detPane.paneHeader.offsetHeight;
 	var left = 0;
 	if ((NgChm.DET.rowDendro !== null) && (NgChm.DET.rowDendro !== undefined)) {
 		left = NgChm.DET.rowDendro.getDivWidth();
@@ -1652,8 +1653,8 @@ NgChm.DET.sizeCanvasForLabels = function() {
 	//Set sizes of canvas and boxCanvas based upon width, label, and an offset for whitespace
 	const heatmapVP = {
 		top, left,
-		width: dFullW - (NgChm.DET.rowLabelLen + 35) - left,
-		height: dFullH - (NgChm.DET.colLabelLen + 15) - top
+		width: dFullW - (NgChm.DET.rowLabelLen + 10) - left,
+		height: dFullH - (NgChm.DET.colLabelLen + 10) - top
 	};
 	NgChm.UTIL.setElementPositionSize (NgChm.DET.canvas, heatmapVP, true);
 	NgChm.UTIL.setElementPositionSize (NgChm.DET.boxCanvas, heatmapVP, true);
@@ -1662,20 +1663,20 @@ NgChm.DET.sizeCanvasForLabels = function() {
 	const rowLabelVP = {
 		top: NgChm.DET.chmElement.offsetTop,
 		left: NgChm.DET.canvas.offsetLeft + NgChm.DET.canvas.clientWidth,
-		width: NgChm.DET.chmElement.clientWidth - NgChm.DET.canvas.offsetLeft - NgChm.DET.canvas.clientWidth,
+		width: dFullW - NgChm.DET.canvas.offsetLeft - NgChm.DET.canvas.offsetWidth,
 		height: dFullH - (NgChm.DET.colLabelLen + 15)
 	};
 	NgChm.UTIL.setElementPositionSize (NgChm.DET.rowLabelDiv, rowLabelVP, true);
 
-	const heightCalc = NgChm.DET.chmElement.clientHeight - NgChm.DET.canvas.offsetTop - NgChm.DET.canvas.clientHeight;
+	const heightCalc = dFullH - NgChm.DET.canvas.offsetTop - NgChm.DET.canvas.offsetHeight;
 	const colLabelVP = {
-		top: NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.clientHeight,
+		top: NgChm.DET.canvas.offsetTop + NgChm.DET.canvas.offsetHeight,
 		left: 0,
-		width: dFullW - (NgChm.DET.rowLabelLen + 35),
+		width: dFullW - (NgChm.DET.rowLabelLen + 10),
 		height:  heightCalc === 0 ? 11 : heightCalc
 	};
 	NgChm.UTIL.setElementPositionSize (NgChm.DET.colLabelDiv, colLabelVP, true);
-}
+};
 
 //This function resets the maximum
 //label size variables for each axis in preparation for a screen redraw.
@@ -2106,7 +2107,7 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 	if (text !== "<" && text !== "..." && text.length > 0){
 		div.addEventListener('click',NgChm.DET.labelClick ,false);
 		div.addEventListener('contextmenu',NgChm.DET.labelRightClick,false);
- 		div.onmouseover = function(){NgChm.UHM.hlp(this,longText,longText.length*7,0);}
+		div.onmouseover = function(){NgChm.UHM.hlp(this,longText,longText.length*9,0);}
 		div.onmouseleave = NgChm.UHM.hlpC;
 		div.addEventListener("touchstart", function(e){
 			NgChm.UHM.hlpC();
@@ -2583,7 +2584,7 @@ NgChm.DET.detailDrawColClassBarLabels = function () {
 						var y = NgChm.DET.canvas.offsetTop-15;
 						NgChm.DET.addLabelDiv(NgChm.DET.labelElement, "missingDetColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
 					}
-                    if (!document.getElementById("missingSumColClassBars") && NgChm.SUM.canvas){
+                    if (!document.getElementById("missingSumColClassBars") && NgChm.SUM.canvas && NgChm.SUM.chmElement){
                         var x = NgChm.SUM.canvas.offsetLeft + NgChm.SUM.canvas.offsetWidth + 2;
                         var y = NgChm.SUM.canvas.offsetTop + NgChm.SUM.canvas.clientHeight/NgChm.SUM.totalHeight - 10;
                         NgChm.DET.addLabelDiv(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
@@ -2948,7 +2949,8 @@ NgChm.DET.detailSearch = function () {
 		NgChm.SEL.updateSelection();
 	}
 	NgChm.DET.showSearchResults();	
-	document.getElementById("detail_canvas").focus();
+	let dc = document.getElementById("detail_canvas");
+	if (dc != null) dc.focus();
 }
 
 NgChm.DET.showSearchResults = function () {
@@ -3178,6 +3180,8 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 }
 
 NgChm.DET.detInitGl = function () {
+	if (!NgChm.DET.gl) return;
+
 	NgChm.DET.gl.viewport(0, 0, NgChm.DET.gl.viewportWidth, NgChm.DET.gl.viewportHeight);
 	NgChm.DET.gl.clear(NgChm.DET.gl.COLOR_BUFFER_BIT);
 
@@ -3425,4 +3429,61 @@ NgChm.DET.zoomAnimation = function (destRow,destCol) {
 		}	
 	}
 	
-}
+};
+
+(function() {
+	// Define a function to switch a panel to the detail view.
+	// Similar to the corresponding function for switching a pane to the summary view.
+	// See additional comments in that function.
+	NgChm.DET.switchPaneToDetail = switchPaneToDetail;
+	NgChm.Pane.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
+
+	var savedChmElements = [];
+	var firstSwitch = true;
+
+	function switchPaneToDetail (loc) {
+		const debug = false;
+		if (firstSwitch) {
+			// First time detail NGCHM created.
+			NgChm.Pane.emptyPaneLocation (loc);
+			NgChm.DET.chmElement = document.getElementById('detail_chm');
+			loc.pane.appendChild (NgChm.DET.chmElement);
+			firstSwitch = false;
+		} else {
+			if (savedChmElements.length > 0) {
+				// Detail NGCHM not currently showing in a pane.
+				NgChm.Pane.emptyPaneLocation (loc);
+			} else {
+				// Detail NGCHM currently showing in a pane.
+				const oldLoc = NgChm.Pane.findPaneLocation (NgChm.DET.chmElement);
+				if (oldLoc.pane === loc.pane) return;
+				if (debug) console.log ({ m: 'Emptying target pane', chmElement: NgChm.DET.chmElement, savedChmElements: savedChmElements.length });
+				NgChm.Pane.emptyPaneLocation (loc);
+				// Remove from previous location. Will set savedChmElements.
+				if (debug) console.log ({ m: 'Emptying old pane', chmElement: NgChm.DET.chmElement, savedChmElements: savedChmElements.length });
+				NgChm.Pane.emptyPaneLocation (oldLoc);
+			}
+			if (debug) console.log ({ m: 'Copying saved elements to target pane', chmElement: NgChm.DET.chmElement, savedChmElements: savedChmElements.length });
+			while (savedChmElements.length > 0) {
+				const el = savedChmElements.shift();
+				if (el.id === 'detail_chm') NgChm.DET.chmElement = el;
+				loc.pane.appendChild (el);
+			}
+			if (debug) console.log ({ m: 'Finished copying to target pane', chmElement: NgChm.DET.chmElement, savedChmElements: savedChmElements.length });
+		}
+		NgChm.DET.chmElement.style.display = '';
+		NgChm.Pane.setPaneTitle (loc, 'Heatmap Detail');
+		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
+		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
+	}
+
+	function emptyDetailPane (pane, elements) {
+		savedChmElements = elements;
+		NgChm.DET.chmElement = null;
+	}
+
+	function resizeDetailPane (loc) {
+		NgChm.DET.detailResize();
+		NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
+	}
+})();
