@@ -42,8 +42,9 @@ div.paneHeader {
 	width: 100%;
 	background-color: #cccccc;
 	font-family: sans-serif;
+	font-weight: bold;
 	margin: 0px 0px 4px 0px;
-	padding: 2px 0px 2px 0px;
+	padding: 5px 5px 0px 5px;
 }
 
 div.paneHeader.activePane {

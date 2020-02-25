@@ -1154,7 +1154,8 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * page boundary, a new page is created.
 	 **********************************************************************************/
     function drawLegendSubSectionHeader(headerText, categories, key) {
-		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
+    	var truncTitle = key.length > 40 ? key.substring(0,40) + "..." : key;
+		var splitTitle = doc.splitTextToSize(truncTitle, classBarFigureW);
 		//Adjustment for multi-line covariate headers
 		if(splitTitle.length > 1) {
 			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
@@ -1168,6 +1169,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			doc.setFontType("bold");
 			doc.text(10, topOff, sectionHeader , null);
     	}
+		doc.setFontSize(classBarTitleSize);
 		doc.setFontType("normal");
 		topOff += classBarTitleSize + 5;
 		leftOff = 20; // ...reset leftOff...
@@ -1180,7 +1182,8 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 **********************************************************************************/
 	function getBarGraphForDiscreteClassBar(key, type){
 		var foundMissing = 0;
-		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
+    	var truncTitle = key.length > 40 ? key.substring(0,40) + "..." : key;
+		var splitTitle = doc.splitTextToSize(truncTitle, classBarFigureW);
 		var bartop = topOff+5 + (splitTitle.length-1)*classBarLegendTextSize*2;
 		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap(type, key);
 		var thresholds = colorMap.getThresholds();

@@ -1476,12 +1476,18 @@ NgChm.UPM.incrementAllHeights = function() {
 	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
 	for (var key in rowClassBars){
 		var heightItem = document.getElementById(key+"_row"+'_heightPref');
-		heightItem.value = parseInt(heightItem.value)+1;
+		//increment if value < 100, limit height to 99
+		if (parseInt(heightItem.value) < 99) {
+			heightItem.value = parseInt(heightItem.value)+1;
+		}
 	}
 	var colClassBars = NgChm.heatMap.getColClassificationConfig();
 	for (var key in colClassBars){
 		var heightItem = document.getElementById(key+"_col"+'_heightPref');
-		heightItem.value = parseInt(heightItem.value)+1;
+		//increment if value < 100, limit height to 99
+		if (parseInt(heightItem.value) < 99) {
+			heightItem.value = parseInt(heightItem.value)+1;
+		}
 	}
 }	
 
@@ -1489,12 +1495,18 @@ NgChm.UPM.decrementAllHeights = function() {
 	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
 	for (var key in rowClassBars){
 		var heightItem = document.getElementById(key+"_row"+'_heightPref');
-		heightItem.value = parseInt(heightItem.value)-1;
+		//decrement if value > 0, prevent negative values
+		if (parseInt(heightItem.value) > 0) {
+			heightItem.value = parseInt(heightItem.value)-1;
+		}
 	}
 	var colClassBars = NgChm.heatMap.getColClassificationConfig();
 	for (var key in colClassBars){
 		var heightItem = document.getElementById(key+"_col"+'_heightPref');
-		heightItem.value = parseInt(heightItem.value)-1;
+		//decrement if value > 0, prevent negative values
+		if (parseInt(heightItem.value) > 0) {
+			heightItem.value = parseInt(heightItem.value)-1;
+		}
 	}
 }	
 

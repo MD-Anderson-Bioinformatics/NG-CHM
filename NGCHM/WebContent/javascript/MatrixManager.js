@@ -536,13 +536,15 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	this.autoSaveHeatMap = function () {
-		this.setRowClassificationOrder();
-		this.setColClassificationOrder();
-		var success = true;
-		if (fileSrc !== NgChm.MMGR.FILE_SOURCE) {
-			success = webSaveMapProperties(JSON.stringify(mapConfig)); 
-		} else if (NgChm.MMGR.embeddedMapName === null) {
-			NgChm.UHM.zipSaveNotification(true);
+		if (NgChm.MMGR.embeddedMapName === null) {
+			this.setRowClassificationOrder();
+			this.setColClassificationOrder();
+			var success = true;
+			if (fileSrc !== NgChm.MMGR.FILE_SOURCE) {
+				success = webSaveMapProperties(JSON.stringify(mapConfig)); 
+			} else if (NgChm.MMGR.embeddedMapName === null) {
+				NgChm.UHM.zipSaveNotification(true);
+			}
 		}
 		return success;
 	}
@@ -887,7 +889,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			createLevel (NgChm.MMGR.RIBBON_HOR_LEVEL, NgChm.MMGR.SUMMARY_LEVEL, NgChm.MMGR.DETAIL_LEVEL);
 
 			prefetchInitialTiles(datalayers, datalevels, levelsConf);
-			console.log ('Sending Event_INITIALIZED');
 			sendCallBack(NgChm.MMGR.Event_INITIALIZED);
 	}
 	

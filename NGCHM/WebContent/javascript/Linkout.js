@@ -63,7 +63,7 @@ linkouts.addPanePlugin = function (p) {
                 options = options || {};
 		const pane = NgChm.LNK.linkoutElement !== null && NgChm.Pane.findPaneLocation (NgChm.LNK.linkoutElement);
                 if (!pane.pane || options.noframe) {
-                        window.open (url, name, options);
+                        window.open (url, name);
                 } else {
                         console.log ({ m: 'openUrl', url, name, options });
                         let ch = NgChm.LNK.linkoutElement.lastChild;
@@ -337,6 +337,13 @@ NgChm.LNK.createLabelMenus = function(){
 	}
 }
 
+NgChm.LNK.labelHelpCloseAll = function(){
+	NgChm.LNK.labelHelpClose("Matrix");
+	NgChm.LNK.labelHelpClose("Column");
+	NgChm.LNK.labelHelpClose("Row");
+}
+
+
 NgChm.LNK.labelHelpClose = function(axis){
 	var labelMenu = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenu') : document.getElementById("MatrixMenu");
     var tableBody = labelMenu.getElementsByTagName("TBODY")[0];
@@ -350,6 +357,7 @@ NgChm.LNK.labelHelpClose = function(axis){
 }
 
 NgChm.LNK.labelHelpOpen = function(axis, e){
+	NgChm.LNK.labelHelpCloseAll();
 	//Get the label item that the user clicked on (by axis) and save that value for use in NgChm.LNK.selection
     var index = e.target.dataset.index;
     NgChm.LNK.selection = '';

@@ -790,6 +790,7 @@ NgChm.DET.isOnObject = function (e,type) {
 
 NgChm.DET.detailDataZoomIn = function () {
 	NgChm.UHM.hlpC();	
+	NgChm.LNK.labelHelpCloseAll();
 	if (NgChm.SEL.mode == 'FULL_MAP') {
 		if ((NgChm.SEL.prevMode == 'RIBBONH') || (NgChm.SEL.prevMode == 'RIBBONH_DETAIL')) {
 			NgChm.DET.detailHRibbonButton();
@@ -821,6 +822,7 @@ NgChm.DET.detailDataZoomIn = function () {
 
 NgChm.DET.detailDataZoomOut = function () {
 	NgChm.UHM.hlpC();	
+	NgChm.LNK.labelHelpCloseAll();
 	if (NgChm.SEL.mode == 'NORMAL') {
 		var current = NgChm.DET.zoomBoxSizes.indexOf(NgChm.DET.dataBoxWidth);
 		if ((current > 0) &&

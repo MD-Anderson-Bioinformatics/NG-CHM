@@ -103,7 +103,7 @@ function linkoutHelp () {
 
     function openAmigo (names) {
 	var goid = names[0];
-	linkouts.openUrl("http://amigo.geneontology.org/amigo/term/" + goid, "geneontology");
+	linkouts.openUrl("http://amigo.geneontology.org/amigo/term/" + goid, "GeneOntology");
     };
 
     linkouts.addPlugin({
@@ -125,7 +125,7 @@ function linkoutHelp () {
 
     function searchBioGPS (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://biogps.org/search/?q=" + gname, "biogps");
+	linkouts.openUrl("http://biogps.org/search/?q=" + gname, "bioGPS", { noframe: true });
     }
 
     linkouts.addPlugin({
@@ -146,7 +146,7 @@ function linkoutHelp () {
 (function(linkouts) {
     function openSlideArchive (ids) {
         var part = ids[0].substr(0,12);
-        linkouts.openUrl("https://cancer.digitalslidearchive.org/#!/CDSA/byPatientID/" + part, "slidearchive");
+        linkouts.openUrl("https://cancer.digitalslidearchive.org/#!/CDSA/byPatientID/" + part, "SlideArchive");
     }
     linkouts.addPlugin({
         name: "Cancer Digital Slide Archive",
@@ -228,7 +228,7 @@ function linkoutHelp () {
 
     function openCosmicGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://cancer.sanger.ac.uk/cosmic/gene/analysis?ln=" + gname, "cosmic");
+	linkouts.openUrl("http://cancer.sanger.ac.uk/cosmic/gene/analysis?ln=" + gname, "Cosmic");
     }
 
     linkouts.addPlugin({
@@ -250,7 +250,7 @@ function linkoutHelp () {
 
     function openDecipher (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://decipher.sanger.ac.uk/search?q=" + gname, "decipher", { noframe: true });
+	linkouts.openUrl("https://decipher.sanger.ac.uk/search?q=" + gname, "Decipher", { noframe: true });
     }
 
     linkouts.addPlugin({
@@ -272,12 +272,12 @@ function linkoutHelp () {
 
     function searchEnsemblForGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species=Homo_sapiens&q=" + gname, "ensemble");
+	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species=Homo_sapiens&q=" + gname, "Ensembl");
     }
 
     function searchEnsemblForTranscript (names) {
 	var tname = names[0];
-	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species=Homo_sapiens&q=" + tname, "ensemble");
+	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species=Homo_sapiens&q=" + tname, "Ensembl");
     }
 
     linkouts.addPlugin({
@@ -302,7 +302,7 @@ function linkoutHelp () {
 
     function openFireBrowseGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://firebrowse.org/viewGene.html?gene=" + gname + "&search=" + gname, "firebrowse");
+	linkouts.openUrl("http://firebrowse.org/viewGene.html?gene=" + gname + "&search=" + gname, "FireBrowse");
     }
 
     linkouts.addPlugin({
@@ -323,7 +323,7 @@ function linkoutHelp () {
 (function(linkouts) {
 
   function searchGeneCards(labels){
-	    linkouts.openUrl("http://www.genecards.org/Search/Keyword?queryString=" + labels[0]);
+	    linkouts.openUrl("http://www.genecards.org/Search/Keyword?queryString=" + labels[0], "GeneCards");
   }
 
 linkouts.addPlugin({
@@ -345,12 +345,12 @@ linkouts.addPlugin({
 
   function openGenevisiblePeptide (names) {
   	var gname = names[0];
-  	linkouts.openUrl("https://genevisible.com/tissues/HS/UniProt/" + gname, "genevisible");
+  	linkouts.openUrl("https://genevisible.com/tissues/HS/UniProt/" + gname, "GeneVisible");
       }
 
       function openGenevisibleHugo (names) {
   	var gname = names[0];
-  	linkouts.openUrl("https://genevisible.com/tissues/HS/Gene%20Symbol/" + gname, "genevisible");
+  	linkouts.openUrl("https://genevisible.com/tissues/HS/Gene%20Symbol/" + gname, "GeneVisible");
       }
 
 
@@ -428,7 +428,7 @@ linkouts.addPlugin({
 (function(linkouts) {
 
     function viewIdeogramGene(genes){
-	linkouts.openUrl("http://bioinformatics.mdanderson.org/ideogramviewer/Ideogram.html?genelist1=" + genes.join(","), "ideogram");
+	linkouts.openUrl("http://bioinformatics.mdanderson.org/ideogramviewer/Ideogram.html?genelist1=" + genes.join(","), "Ideogram");
     }
 
     function viewIdeogramGene2(labels){
@@ -475,7 +475,7 @@ linkouts.addPlugin({
 
     function openMavedbGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://mavedb.org/search/?organism=Home+sapiens&search=" + gname, "mavedb", { noframe: true });
+	linkouts.openUrl("https://mavedb.org/search/?organism=Home+sapiens&search=" + gname, "MaveDB", { noframe: true });
     };
 
     linkouts.addPlugin({
@@ -504,12 +504,12 @@ linkouts.addPlugin({
 
     function openMDACCPathwayID (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/pathway/latest/mdaPathwayId/" + gname, "pathways");
+	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/pathway/latest/mdaPathwayId/" + gname, "Pathways");
     };
 
     function openPathwaysBrowserGO (names) {
 	var goid = names[0];
-	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/goTerm/latest/goId/" + goid, "geneontology");
+	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/goTerm/latest/goId/" + goid, "Geneontology");
     };
 
     linkouts.addPlugin({
@@ -555,7 +555,7 @@ linkouts.addPlugin({
 (function(linkouts) {
     function openMSigDB (names) {
 	var pwname = names[0];
-	linkouts.openUrl("http://software.broadinstitute.org/gsea/msigdb/cards/" + pwname + ".html", "uniprot");
+	linkouts.openUrl("http://software.broadinstitute.org/gsea/msigdb/cards/" + pwname + ".html", "Uniprot");
     }
 
     linkouts.addPlugin({
@@ -579,7 +579,7 @@ linkouts.addPlugin({
     function viewMupitG (genes) {
 	genes = genes.sort().filter(function(el,i,a){return i==a.indexOf(el);});
 	var glist = encodeURIComponent(genes[0]);
-	linkouts.openUrl("http://mupit.icm.jhu.edu/MuPIT_Interactive?gene=" + glist, "mupit");
+	linkouts.openUrl("http://mupit.icm.jhu.edu/MuPIT_Interactive?gene=" + glist, "MuPIT");
     };
 
     linkouts.addPlugin({
@@ -601,7 +601,7 @@ linkouts.addPlugin({
 
     function openClinVar (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/clinvar/?term=" + gname + "%5Bgene%5D", "clinvar");
+	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/clinvar/?term=" + gname + "%5Bgene%5D", "ClinVar");
     }
 
     function openNCBIGenePage (names) {
@@ -624,7 +624,7 @@ linkouts.addPlugin({
 
     function searchClinicalTrials (labels) {
 	var gname = labels.join("+AND+");
-	linkouts.openUrl("http://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "clinicaltrials");
+	linkouts.openUrl("http://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials");
     }
 
     linkouts.addPlugin({
@@ -652,7 +652,7 @@ linkouts.addPlugin({
 
     function openOLSVis (names) {
 	var goid = names[0];
-	linkouts.openUrl("http://ols.wordvis.com/q=" + goid, "genoontology");
+	linkouts.openUrl("http://ols.wordvis.com/q=" + goid, "Genoontology");
     };
 
     linkouts.addPlugin({
@@ -674,7 +674,7 @@ linkouts.addPlugin({
 
     function openPeptideAtlas (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" + gname, "peptideatlas");
+	linkouts.openUrl("https://db.systemsbiology.net/sbeams/cgi/PeptideAtlas/Search?action=GO&search_key=" + gname, "PeptideAtlas");
     }
 
     linkouts.addPlugin({
@@ -695,15 +695,15 @@ linkouts.addPlugin({
 (function(linkouts) {
 
     function searchPubMedForOne(labels){
-	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels[0]);
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels[0], "PubMed");
     }
 
     function searchPubMedForAll(labels){
-	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"));
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"), "PubMed");
     }
 
     function searchPubMedForAny(labels){
-	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"));
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"), "PubMed");
     }
 
     linkouts.addPlugin({
@@ -727,7 +727,7 @@ linkouts.addPlugin({
 
     function openQuickGO (names) {
 	var goid = names[0];
-	linkouts.openUrl("http://www.ebi.ac.uk/QuickGO/GTerm?id=" + goid, "genoontology");
+	linkouts.openUrl("http://www.ebi.ac.uk/QuickGO/GTerm?id=" + goid, "Genoontology");
     };
 
     linkouts.addPlugin({
@@ -825,7 +825,7 @@ linkouts.addPlugin({
 
     function openTumorPortalGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://www.tumorportal.org/view?geneSymbol=" + gname, "tumorportal", { noframe: true });
+	linkouts.openUrl("http://www.tumorportal.org/view?geneSymbol=" + gname, "TumorPortal", { noframe: true });
     }
 
     linkouts.addPlugin({
@@ -847,7 +847,7 @@ linkouts.addPlugin({
 
     function openUniprot (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://www.uniprot.org/uniprot/" + gname, "uniprot", { noframe: true });
+	linkouts.openUrl("http://www.uniprot.org/uniprot/" + gname, "Uniprot", { noframe: true });
     }
 
     linkouts.addPlugin({
@@ -869,7 +869,7 @@ linkouts.addPlugin({
 
     function searchVega (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://vega.sanger.ac.uk/Homo_sapiens/psychic?site=vega&q=" + gname, "vega");
+	linkouts.openUrl("http://vega.sanger.ac.uk/Homo_sapiens/psychic?site=vega&q=" + gname, "Vega");
     }
 
     linkouts.addPlugin({
@@ -891,7 +891,7 @@ linkouts.addPlugin({
 
     function viewZodiacG (labels) {
 	var glist = encodeURIComponent(linkouts.simplifyLabels(labels).join(","));
-	linkouts.openUrl("http://compgenome.org/zodiac/query.php?act=input&gene_list=" + glist, "zodiac");
+	linkouts.openUrl("http://compgenome.org/zodiac/query.php?act=input&gene_list=" + glist, "Zodiac");
     };
 
     linkouts.addPlugin({
