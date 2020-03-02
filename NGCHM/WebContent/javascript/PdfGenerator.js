@@ -981,7 +981,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		for (var i=1; i<numCol+1;i++){
 			for(var j=1;j<numRow+1;j++){
 				count++;
-				var val = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,j,i);
+				var val = Number(Math.round(NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,j,i)+'e4')+'e-4')
 				if (isNaN(val) || val>=NgChm.SUM.maxValues){ // is it Missing value?
 					nan++;
 				} else if (val <= NgChm.SUM.minValues){ // is it a cut location?
