@@ -1842,7 +1842,10 @@ NgChm.SUM.calcSummaryLayout = function() {
 		layout.rowClassBars.width = Math.floor(xScale * NgChm.SUM.rowClassBarWidth);
 		layout.rowDendro.width = Math.floor((xtotal - xdecor - layout.rowClassBars.width) * (wFrac/(1+wFrac)) * xScale);
 		layout.matrix.width = Math.floor(xtotal - xdecor - layout.rowClassBars.width - layout.rowDendro.width);
-
+		//Leave room for labels in GUI Builder "summary only" screens
+		if (NgChm.SUM.flagDrawClassBarLabels === true) {
+			layout.matrix.width = layout.matrix.width - 100;
+		}
 
 		layout.rowClassBars.left = layout.rowDendro.width > 0 ? layout.rowDendro.width + layout.marginThickness : 0;
 		layout.matrix.left = layout.rowClassBars.left + (layout.rowClassBars.width > 0 ? layout.rowClassBars.width + layout.marginThickness : 0) + layout.borderThickness;
