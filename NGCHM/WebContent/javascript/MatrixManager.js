@@ -138,7 +138,7 @@ let	wS = `const debug = ${debug};`;
 };
 
 NgChm.MMGR.isRow = function isRow (axis) {
-	return axis.toLowerCase() === 'row';
+	return axis && axis.toLowerCase() === 'row';
 };
 
 //HeatMap Object - holds heat map properties and a tile cache
@@ -206,6 +206,12 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return datalevels[NgChm.MMGR.DETAIL_LEVEL].totalColumns;
 	}
 	
+	//Return the total number of rows/columns on the specified axis.
+	this.getTotalElementsForAxis = function(axis) {
+		const level = datalevels[NgChm.MMGR.DETAIL_LEVEL];
+		return isRow(axis) ? level.totalRows : level.totalColumns;
+	};
+
 	//Return the number of rows for a given level
 	this.getNumRows = function(level){
 		return datalevels[level].totalRows;
@@ -308,7 +314,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (typeof showOnly === 'undefined') {
 			return rowClassBarsOrder;
 		} else {
-			filterRowClassBarsOrder = [];
+			const filterRowClassBarsOrder = [];
 			for (var i = 0; i < rowClassBarsOrder.length; i++) {
 				var newKey = rowClassBarsOrder[i];
 				var currConfig = mapConfig.row_configuration.classifications[newKey];
@@ -337,7 +343,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (typeof showOnly === 'undefined') {
 			return colClassBarsOrder;
 		} else {
-			filterColClassBarsOrder = [];
+			const filterColClassBarsOrder = [];
 			for (var i = 0; i < colClassBarsOrder.length; i++) {
 				var newKey = colClassBarsOrder[i];
 				var currConfig = mapConfig.col_configuration.classifications[newKey];
@@ -368,7 +374,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	this.getDataLayers = function() {
 		return mapConfig.data_configuration.map_information.data_layer;
 	}
-	
+
+	this.getCurrentDataLayer = function() {
+		return this.getDataLayers()[NgChm.SEL.currentDl];
+	};
+
 	this.getDividerPref = function() {
 		return mapConfig.data_configuration.map_information.summary_width;
 	}
@@ -567,12 +577,29 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	//This function is used to set a read window for high resolution data layers.
 	//Calling setReadWindow will cause the HeatMap object to retrieve tiles needed
 	//for reading this area if the tiles are not already in the cache.
-    this.setReadWindow = function(level, row, column, numRows, numColumns) {
-  	//Thumb nail and summary level are always kept in the cache.  Don't do fetch for them.
-  	if (level != NgChm.MMGR.THUMBNAIL_LEVEL && level != NgChm.MMGR.SUMMARY_LEVEL)
-  		datalevels[level].setReadWindow(row, column, numRows, numColumns);
-    } 	
+	this.setReadWindow = function(level, row, column, numRows, numColumns) {
+		//Thumb nail and summary level are always kept in the cache.  Don't do fetch for them.
+		if (level != NgChm.MMGR.THUMBNAIL_LEVEL && level != NgChm.MMGR.SUMMARY_LEVEL)
+			datalevels[level].setReadWindow(row, column, numRows, numColumns);
+	};
 
+	// This function is used to set a read window for high resolution data layers.
+	// Calling getAccessWindow will cause the HeatMap object to retrieve tiles needed
+	// for reading this area if the tiles are not already in the cache.
+	// It will return an object containing methods for accessing values within
+	// the specified window.  (See comment on getAccessWindow method below for details.)
+	this.getAccessWindow = function(win) {
+		// Dummy implementation for now.
+		this.setReadWindow (win.level, win.firstRow, win.firstCol, win.numRows, win.numCols);
+		return {
+		    getValue: getGetValue(win.level)
+		}
+		function getGetValue (level) {
+			return function (row, column) {
+				return datalevels[level].getValue(row, column);
+			};
+		}
+	};
 	
 	//Method used to register another callback function for a user that wants to be notifed
 	//of updates to the status of heat map data.
@@ -836,21 +863,21 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return true;
 	}
 	
-	callServlet = function(verb, url, data) {
-		  var form = document.createElement("form");
-		  form.action = url;
-		  form.method = verb;
-		  if (data) { 
-		    var input = document.createElement("textarea");
-	        input.name = "configData";
-	        input.id = "configData";
-	        input.value = data;
-	        form.appendChild(input);
-		  }
-		  form.style.display = 'none';
-		  document.body.appendChild(form);
-		  form.submit();
-		};
+	function callServlet (verb, url, data) {
+		var form = document.createElement("form");
+		form.action = url;
+		form.method = verb;
+		if (data) { 
+			var input = document.createElement("textarea");
+			input.name = "configData";
+			input.id = "configData";
+			input.value = data;
+			form.appendChild(input);
+		}
+		form.style.display = 'none';
+		document.body.appendChild(form);
+		form.submit();
+	}
 	
 	//  Initialize the data layers once we know the tile structure.
 		//  JSON structure object describing available data layers passed in.
@@ -1229,7 +1256,7 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		//Calculate which tile holds the row / column we are looking for.
 		var tileRow = Math.floor((row-1)/rowsPerTile) + 1;
 		var tileCol = Math.floor((column-1)/colsPerTile) + 1;
-		arrayData = getTileCacheData(NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol);
+		var arrayData = getTileCacheData(NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol);
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {

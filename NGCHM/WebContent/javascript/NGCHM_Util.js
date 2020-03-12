@@ -14,6 +14,31 @@ NgChm.UTIL.capitalize = function capitalize (str) {
 	return str.substr(0,1).toUpperCase() + str.substr(1);
 };
 
+// NgChm.UTIL.passiveCompat is a function that accepts an options
+// object for addEventListener and depending on the browser's
+// support for the passive flag returns either:
+// the unmodified object (if the browser supports passive), or
+// the truthiness of object.capture for backwards compatibility.
+(function() {
+	NgChm.UTIL.passiveCompat = supportsPassive() ? f => f : f => !!f.capture;
+	// Determine if the browser supports the passive flag.
+	function supportsPassive() {
+
+		var cold = false;
+		const hike = function() {};
+
+		try {
+			var aid = Object.defineProperty({}, 'passive', {
+				get() {cold = true}
+			});
+			window.addEventListener('test', hike, aid);
+			window.removeEventListener('test', hike, aid);
+		} catch (e) {}
+
+		return cold;
+	}
+})();
+
 // Load the dynamic script file.
 NgChm.UTIL.addScript = function(src, callback) {
 	const head = document.getElementsByTagName('head')[0];
@@ -112,6 +137,15 @@ NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
 		}
 	}
 	return el;
+};
+
+// Create a new button element.
+NgChm.UTIL.newButton = function newButton (buttonName, properties, handlers) {
+	const button = NgChm.UTIL.newElement('SPAN.button', { }, [ NgChm.UTIL.newTxt(buttonName) ]);
+	for (const h of Object.entries(handlers)) {
+		button.addEventListener (h[0], h[1]);
+	}
+	return button;
 };
 
 NgChm.UTIL.chmResize = function() {
@@ -398,7 +432,7 @@ NgChm.UTIL.blendTwoColors = function(color1, color2) {
     // check input
     color1 = color1 || '#000000';
     color2 = color2 || '#ffffff';
-    percentage = 0.5;
+    var percentage = 0.5;
 
     //convert colors to rgb
     color1 = color1.substring(1);
@@ -416,7 +450,7 @@ NgChm.UTIL.blendTwoColors = function(color1, color2) {
     color3 = '#' + NgChm.UTIL.intToHex(color3[0]) + NgChm.UTIL.intToHex(color3[1]) + NgChm.UTIL.intToHex(color3[2]);
     // return hex
     return color3;
-}
+};
 
 /**********************************************************************************
  * FUNCTION - intToHex: The purpose of this function is to convert integer
@@ -498,7 +532,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 		}
  	} 
-	document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, false);
+	document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
 	document.getElementById("detail_canvas").focus();
 };
 
@@ -775,7 +809,7 @@ NgChm.UTIL.downloadSummaryPng = function (e) {
  **********************************************************************************/
 NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callback) {
 		var canvas = document.createElement("canvas");
-		ctx = canvas.getContext("2d");
+		var ctx = canvas.getContext("2d");
 		ctx.imageSmoothingEnabled = false;
 		var mapWidth = width;
 		var mapHeight = height;
@@ -805,7 +839,7 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 		ctx.drawImage(img3, mapStartX, mapStartY, mapWidth, mapHeight);
 		// Run the callback on what to do with the canvas element.
 		callback(canvas, dl);
-}
+};
 
 /**********************************************************************************
  * FUNCTION - scaleSummaryPng: This function scales the summary PNG file down to 
@@ -818,7 +852,7 @@ NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
 	// When the images is loaded, resize it in canvas.
 	img.onload = function(){
 		var canvas = document.createElement("canvas");
-        ctx = canvas.getContext("2d");
+        var ctx = canvas.getContext("2d");
         ctx.imageSmoothingQuality = "high";
 		ctx.mozImageSmoothingEnabled = false;
 		ctx.imageSmoothingEnabled = false;
@@ -829,7 +863,7 @@ NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
         var img2 = new Image();
         img2.onload = function(){
             var canvas2 = document.createElement("canvas");
-            ctx2 = canvas2.getContext("2d");
+            var ctx2 = canvas2.getContext("2d");
             ctx2.imageSmoothingQuality = "high";
             ctx2.mozImageSmoothingEnabled = false;
             ctx2.imageSmoothingEnabled = false;

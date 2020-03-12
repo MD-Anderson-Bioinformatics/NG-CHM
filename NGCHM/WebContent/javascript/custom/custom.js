@@ -1,10 +1,27 @@
 //==============================================//
-// Link out file for standard Galaxy Heat Maps  //
+// Standard link out file for NG-CHMs           //
 //==============================================//
+linkouts.setVersion('2020-03-11');
+
+// Scatter Plot plugin:
+linkouts.addPanePlugin ({
+	name: 'ScatterPlot',
+	helpText: 'Creates a two-dimensional scatter plot',
+	params: {},
+	src: 'https://www.ngchm.net/Plugins/ScatterPlot/index.html'
+});
 
 //==============================================//
 // Biology base plugin                          //
 //==============================================//
+
+// PathwayMapper modified to be an NG-CHM plugin:
+linkouts.addPanePlugin ({
+	name: 'PathwayMapper',
+	helpText: 'Pathway Mapper',
+	params: {},
+	src: 'https://www.ngchm.net/Plugins/PathwayMapper/index.html'
+});
 
 (function(linkouts) {
 

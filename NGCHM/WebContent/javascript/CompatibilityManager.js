@@ -75,7 +75,7 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 					parts[2] = NgChm.CM.trimClassLabel(parts);
 				}
 				var obj = mapConfig;
-				for (i=0;i<parts.length;i++) {
+				for (let i=0;i<parts.length;i++) {
 					obj = obj[parts[i]];
 				}
 				//For adding empty array for top_items
@@ -167,32 +167,32 @@ NgChm.CM.buildConfigComparisonObject = function(obj, stack, configObj, mapConfig
                 //and insert keys for each data layer or classification bar that exists in the heatmap.
                 if (typeof mapConfig !== 'undefined') {
 	                if (stack.indexOf("row_configuration.classifications") > -1) {
-		    			var classes = mapConfig.row_configuration.classifications;
-		    			for (key in classes) {
-							var jsonPathNew = stack+"."+key+"."+property;
-	                		configObj[jsonPathNew] = obj[property];
-		    			}
+				let classes = mapConfig.row_configuration.classifications;
+				for (let key in classes) {
+					let jsonPathNew = stack+"."+key+"."+property;
+					configObj[jsonPathNew] = obj[property];
+				}
 	                } else if (stack.indexOf("col_configuration.classifications") > -1) {
-		    			var classes = mapConfig.col_configuration.classifications;
-		    			for (key in classes) {
-							var jsonPathNew = stack+"."+key+"."+property;
-	                		configObj[jsonPathNew] = obj[property];
-		    			}
+				let classes = mapConfig.col_configuration.classifications;
+				for (let key in classes) {
+					let jsonPathNew = stack+"."+key+"."+property;
+					configObj[jsonPathNew] = obj[property];
+				}
 	                } else if (stack.indexOf("data_layer") > -1) {
-		    			var layers = mapConfig.data_configuration.map_information.data_layer;
-		    			for (key in layers) {
-							var jsonPathNew = stack+"."+key+"."+property;
-							var value = obj[property];
-							if (property === 'name') {
-								value = value + " " + key;
-							}
-	                		configObj[jsonPathNew] = value;
-		    			}
+				let layers = mapConfig.data_configuration.map_information.data_layer;
+				for (let key in layers) {
+					let jsonPathNew = stack+"."+key+"."+property;
+					let value = obj[property];
+					if (property === 'name') {
+						value = value + " " + key;
+					}
+					configObj[jsonPathNew] = value;
+				}
 	                } else {
-						configObj[jsonPath] = obj[property];
+				configObj[jsonPath] = obj[property];
 	                }
-               } else {
-					configObj[jsonPath] = obj[property];
+		} else {
+			configObj[jsonPath] = obj[property];
                 }
             }
         }

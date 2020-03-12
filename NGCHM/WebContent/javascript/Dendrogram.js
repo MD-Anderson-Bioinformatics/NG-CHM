@@ -563,10 +563,10 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		}
 	};
 	this.clearSelectionMarks = function () {
-		if (this.axis === 'Column') NgChm.SUM.clearColSelectionMarks(); else NgChm.SUM.clearRowSelectionMarks();
+		NgChm.SUM.clearAxisSelectionMarks(this.axis);
 	};
 	this.drawSelectionMarks = function () {
-		if (this.axis === 'Column') NgChm.SUM.drawColSelectionMarks(); else NgChm.SUM.drawRowSelectionMarks();
+		NgChm.SUM.drawAxisSelectionMarks(this.axis);
 	};
 
 	// Listen for click events on our canvas.
@@ -630,9 +630,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 				for (var j = selectLeft; j < selectRight+1;j++){ // remove all the search items that were selected by that old bar 
 					delete NgChm.SEL.searchItems[this.axis][j];
 				}
-				NgChm.SUM.clearSelectionMarks();
-				NgChm.SUM.drawColSelectionMarks();
-				NgChm.SUM.drawRowSelectionMarks();
+				NgChm.SUM.redrawSelectionMarks();
 				if (bar.left == left && bar.right == selectedBar.right && bar.height == selectedBar.height){ // a bar that's already selected has been selected so we remove it
 					addBar = false;
 				}
@@ -898,7 +896,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
         };
 
 	// event listeners
-	this.dendroCanvas.onwheel = e => this.scroll(e);
+	this.dendroCanvas.addEventListener("wheel", e => this.scroll(e), NgChm.UTIL.passiveCompat({ passive: false }));
 	this.dendroCanvas.onclick = e => this.click(e);
 	this.dendroCanvas.ontouchmove = e => this.scroll(e);
 	this.dendroCanvas.ontouchend = e => this.touchEnd(e);
@@ -959,8 +957,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 			NgChm.SUM.clearSelectionMarks();
 			this.summaryDendrogram.addSelectedBar(sumIdx, e.shiftKey,e.metaKey||e.ctrlKey);
 			NgChm.SEL.updateSelection();
-			NgChm.SUM.drawColSelectionMarks();
-			NgChm.SUM.drawRowSelectionMarks();
+			NgChm.SUM.drawSelectionMarks();
 			NgChm.SUM.drawTopItems();
 			this.draw();
 		});

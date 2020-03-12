@@ -118,7 +118,7 @@ NgChm.DET.initDetailDisplay = function () {
 			NgChm.DET.clickStart(e);
 		}
 		NgChm.DET.latestTap = now;
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: false }));
 	
 	NgChm.DET.canvas.addEventListener("touchmove", function(e){
 		if (e.touches){
@@ -148,7 +148,7 @@ NgChm.DET.initDetailDisplay = function () {
 	    		NgChm.DET.handleMoveDrag(e);
 	    	}
 	    }
-	},false);
+	}, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
 	
 	NgChm.DET.canvas.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
@@ -170,7 +170,7 @@ NgChm.DET.initDetailDisplay = function () {
 				}
 			}
 	    }
-	},false);
+	}, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
 	
 	
 	// set up touch events for row and column labels
@@ -179,7 +179,7 @@ NgChm.DET.initDetailDisplay = function () {
 		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		NgChm.DET.latestLabelTap = now;
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: true }));
 	
 	NgChm.DET.rowLabelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
@@ -189,13 +189,13 @@ NgChm.DET.initDetailDisplay = function () {
 				NgChm.DET.labelRightClick(e);
 			}
 		}
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: false }));
 	
 	NgChm.DET.colLabelDiv.addEventListener("touchstart", function(e){
 		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
 		NgChm.DET.latestLabelTap = now;
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: true }));
 	
 	NgChm.DET.colLabelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
@@ -205,7 +205,7 @@ NgChm.DET.initDetailDisplay = function () {
 				NgChm.DET.labelRightClick(e);
 			}
 		}
-	});
+	}, NgChm.UTIL.passiveCompat({ passive: false }));
 }
 
 /*********************************************************************************************
@@ -492,8 +492,7 @@ NgChm.DET.handleSelectDrag = function (e) {
     	for (var i = startCol; i <= endCol; i++){
     		NgChm.SEL.searchItems["Column"][i] = 1;
     	}
-        NgChm.SUM.drawRowSelectionMarks();
-        NgChm.SUM.drawColSelectionMarks();
+        NgChm.SUM.drawSelectionMarks();
         NgChm.SUM.drawTopItems();
         NgChm.DET.updateDisplayedLabels();
         NgChm.DET.drawSelections();
@@ -1254,8 +1253,7 @@ NgChm.DET.detailInit = function () {
 			var selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
 			document.getElementById("search_text").value = selected;
 			NgChm.DET.detailSearch();
-			NgChm.SUM.drawRowSelectionMarks();
-			NgChm.SUM.drawColSelectionMarks();
+			NgChm.SUM.drawSelectionMarks();
 			NgChm.SUM.drawTopItems();
 		}
 		NgChm.DET.initialized = true;
@@ -1713,18 +1711,18 @@ NgChm.DET.getRowLabelFontSize = function () {
 	}
 	var skip = Math.floor((NgChm.DET.canvas.clientHeight - headerSize) / NgChm.SEL.dataPerCol) - 2;
 	return Math.min(skip, NgChm.DET.maxLabelSize);	
-}
+};
 
 //This function calculates the font size to be used for column axis labels.
 NgChm.DET.getColLabelFontSize = function () {
-	headerSize = 0;
+	var headerSize = 0;
 	var rowHeight = NgChm.DET.calculateTotalClassBarHeight("row") + NgChm.DET.dendroWidth;
 	if (rowHeight > 0) {
 		headerSize = NgChm.DET.canvas.clientWidth * (rowHeight / (NgChm.DET.dataViewWidth + rowHeight));
 	}
-	skip = Math.floor((NgChm.DET.canvas.clientWidth - headerSize) / NgChm.SEL.dataPerRow) - 2;
+	var skip = Math.floor((NgChm.DET.canvas.clientWidth - headerSize) / NgChm.SEL.dataPerRow) - 2;
 	return Math.min(skip, NgChm.DET.maxLabelSize);
-}
+};
 
 //This function calculates the maximum label size (in pixels) on the row axis.
 NgChm.DET.calcRowLabels = function (fontSize) {
@@ -2107,8 +2105,8 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 	}
 	
 	if (text !== "<" && text !== "..." && text.length > 0){
-		div.addEventListener('click',NgChm.DET.labelClick ,false);
-		div.addEventListener('contextmenu',NgChm.DET.labelRightClick,false);
+		div.addEventListener('click',NgChm.DET.labelClick , NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
+		div.addEventListener('contextmenu',NgChm.DET.labelRightClick, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
 		div.onmouseover = function(){NgChm.UHM.hlp(this,longText,longText.length*9,0);}
 		div.onmouseleave = NgChm.UHM.hlpC;
 		div.addEventListener("touchstart", function(e){
@@ -2117,7 +2115,7 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 			var timesince = now - NgChm.DET.latestTap;
 			NgChm.DET.labelLastClicked[this.dataset.axis] = this.dataset.index;
 			NgChm.DET.latestLabelTap = now;
-		});
+		}, NgChm.UTIL.passiveCompat({ passive: true }));
 		div.addEventListener("touchend", function(e){
 			if (e.touches.length == 0 && NgChm.DET.latestLabelTap){
 				var now = new Date().getTime();
@@ -2126,16 +2124,17 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 					NgChm.DET.labelRightClick(e);
 				}
 			}
-		});
-		div.addEventListener("touchmove", NgChm.DET.labelDrag);
+		}, NgChm.UTIL.passiveCompat({ passive: false }));
+		div.addEventListener("touchmove", NgChm.DET.labelDrag, NgChm.UTIL.passiveCompat({ passive: false }));
 	}
 	if (text == "..."){
+		const listenOpts = NgChm.UTIL.passiveCompat({ capture: false, passive: false });
 		div.addEventListener('mouseover', (function() {
 		    return function(e) {NgChm.UHM.hlp(this,"Some covariate bars are hidden",160,0); };
-		}) (this), false);
+		}) (this), listenOpts);
 		div.addEventListener('mouseleave', (function() {
 		    return function(e) {NgChm.UHM.hlpC(); };
-		}) (this), false);
+		}) (this), listenOpts);
 	}   
 }
 
@@ -2190,8 +2189,7 @@ NgChm.DET.labelClick = function (e) {
 	NgChm.SUM.clearSelectionMarks();
 	NgChm.DET.updateDisplayedLabels();
 	NgChm.SEL.updateSelection();
-	NgChm.SUM.drawRowSelectionMarks();
-	NgChm.SUM.drawColSelectionMarks();
+	NgChm.SUM.drawSelectionMarks();
 	NgChm.SUM.drawTopItems();
 	NgChm.DET.showSearchResults();	
 }
@@ -2231,8 +2229,7 @@ NgChm.DET.labelDrag = function(e){
 	NgChm.SUM.clearSelectionMarks();
 	NgChm.DET.showSearchResults();	
 	NgChm.SEL.updateSelection();
-	NgChm.SUM.drawRowSelectionMarks();
-	NgChm.SUM.drawColSelectionMarks();
+	NgChm.SUM.drawSelectionMarks();
 	NgChm.SUM.drawTopItems();
 	NgChm.DET.showSearchResults();	
 	return;
@@ -2934,8 +2931,7 @@ NgChm.DET.detailSearch = function () {
 		return;
 	}
 	NgChm.DET.searchNext(true);
-    NgChm.SUM.drawRowSelectionMarks();
-    NgChm.SUM.drawColSelectionMarks();
+    NgChm.SUM.drawSelectionMarks();
     NgChm.SUM.drawTopItems();
 	if (NgChm.DET.currentSearchItem.index && NgChm.DET.currentSearchItem.axis){
 		if (itemsFound.length != tmpSearchItems.length && itemsFound.length > 0) {
@@ -3111,6 +3107,13 @@ NgChm.DET.getSearchRows = function () {
 	}
 	return selected;
 }
+
+//Return indices of rows/columns meeting current user search.
+NgChm.DET.getSearchItemsForAxis = function (axis) {
+	// axis is capitalized in so many ways :-(.
+	axis = NgChm.MMGR.isRow (axis) ? 'Row' : 'Column';
+	return Object.keys(NgChm.SEL.searchItems[axis] || {});
+};
 
 /***********************************************************
  * End - Search Functions

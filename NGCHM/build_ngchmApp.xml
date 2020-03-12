@@ -11,7 +11,7 @@
 	<apply executable="java" parallel="false">
 	    <fileset dir="${js.dir}" includes="custom/custom.js"/>
 	    <arg line="-jar"/>
-	    <arg path="${dir.jarfile}/closure-compiler-v20190528.jar"/>
+	    <arg path="${dir.jarfile}/closure-compiler-v20200204.jar"/>
 	    <srcfile/>
 		<arg line="--js_output_file"/>
 	    <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
@@ -38,8 +38,10 @@
         <apply executable="java" parallel="false">
             <fileset dir="${js.dir}" includes="ngchm.js"/>
             <arg line="-jar"/>
-            <arg path="${dir.jarfile}/closure-compiler-v20190528.jar"/>
+            <arg path="${dir.jarfile}/closure-compiler-v20200204.jar"/>
             <srcfile/>
+            <arg line="--compilation_level"/>
+            <arg line="SIMPLE_OPTIMIZATIONS"/>
             <arg line="--js_output_file"/>
             <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
             <targetfile/>
