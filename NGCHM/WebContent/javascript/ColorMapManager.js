@@ -252,10 +252,27 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 	    return ('#' + componentToHex(r) + componentToHex(g) + componentToHex(b));
 	}
 	
+	function rgbToHex (rgb) {
+	    const { r, g, b } = rgb;
+	    return ('#' + componentToHex(r) + componentToHex(g) + componentToHex(b));
+	}
+
 	function componentToHex(c) {
 	    var hex = c.toString(16);
 	    return hex.length == 1 ? "0" + hex : hex;
 	}
+
+	function darkenHexColorIfNeeded (hex) {
+		const { r, g, b } = hexToRgba (hex);
+		const low = Math.min (r, g, b);
+		if (low <= 240) {
+			return hex;
+		} else {
+			const s = 240.0 / low;
+			return rgbToHex({ r: (r * s)|0, g: (g * s)|0, b: (b * s)|0 });
+		}
+	}
+NgChm.CMM.darkenHexColorIfNeeded = darkenHexColorIfNeeded;
 
 }
 		
