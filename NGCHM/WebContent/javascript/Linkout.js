@@ -12,6 +12,8 @@
  *******************************************/
 
 var linkouts = {};
+var linkoutsVersion = 'undefined';
+
 linkouts.VISIBLE_LABELS = "visibleLabels";
 linkouts.HIDDEN_LABELS = "hiddenLabels";
 linkouts.FULL_LABELS = "fullLabels";
@@ -22,6 +24,14 @@ linkouts.MULTI_SELECT = "multiSelection";
 linkouts.getAttribute = function (attribute){
 	return NgChm.heatMap.getMapInformation().attributes[attribute];
 }
+
+linkouts.setVersion = function (v) {
+	linkoutsVersion = '' + v;
+};
+
+linkouts.getVersion = function () {
+	return linkoutsVersion;
+};
 
 linkouts.getMapName = function(){
 	return NgChm.heatMap.getMapInformation().name;
