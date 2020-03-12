@@ -3108,6 +3108,13 @@ NgChm.DET.getSearchRows = function () {
 	return selected;
 }
 
+//Return indices of rows/columns meeting current user search.
+NgChm.DET.getSearchItemsForAxis = function (axis) {
+	// axis is capitalized in so many ways :-(.
+	axis = NgChm.MMGR.isRow (axis) ? 'Row' : 'Column';
+	return Object.keys(NgChm.SEL.searchItems[axis] || {});
+};
+
 /***********************************************************
  * End - Search Functions
  ***********************************************************/

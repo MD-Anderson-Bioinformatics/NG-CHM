@@ -139,6 +139,15 @@ NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
 	return el;
 };
 
+// Create a new button element.
+NgChm.UTIL.newButton = function newButton (buttonName, properties, handlers) {
+	const button = NgChm.UTIL.newElement('SPAN.button', { }, [ NgChm.UTIL.newTxt(buttonName) ]);
+	for (const h of Object.entries(handlers)) {
+		button.addEventListener (h[0], h[1]);
+	}
+	return button;
+};
+
 NgChm.UTIL.chmResize = function() {
 	if (NgChm.Pane && NgChm.Pane.resizeNGCHM) {
 		NgChm.Pane.resizeNGCHM ();

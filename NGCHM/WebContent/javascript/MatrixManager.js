@@ -577,12 +577,29 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	//This function is used to set a read window for high resolution data layers.
 	//Calling setReadWindow will cause the HeatMap object to retrieve tiles needed
 	//for reading this area if the tiles are not already in the cache.
-    this.setReadWindow = function(level, row, column, numRows, numColumns) {
-  	//Thumb nail and summary level are always kept in the cache.  Don't do fetch for them.
-  	if (level != NgChm.MMGR.THUMBNAIL_LEVEL && level != NgChm.MMGR.SUMMARY_LEVEL)
-  		datalevels[level].setReadWindow(row, column, numRows, numColumns);
-    } 	
+	this.setReadWindow = function(level, row, column, numRows, numColumns) {
+		//Thumb nail and summary level are always kept in the cache.  Don't do fetch for them.
+		if (level != NgChm.MMGR.THUMBNAIL_LEVEL && level != NgChm.MMGR.SUMMARY_LEVEL)
+			datalevels[level].setReadWindow(row, column, numRows, numColumns);
+	};
 
+	// This function is used to set a read window for high resolution data layers.
+	// Calling getAccessWindow will cause the HeatMap object to retrieve tiles needed
+	// for reading this area if the tiles are not already in the cache.
+	// It will return an object containing methods for accessing values within
+	// the specified window.  (See comment on getAccessWindow method below for details.)
+	this.getAccessWindow = function(win) {
+		// Dummy implementation for now.
+		this.setReadWindow (win.level, win.firstRow, win.firstCol, win.numRows, win.numCols);
+		return {
+		    getValue: getGetValue(win.level)
+		}
+		function getGetValue (level) {
+			return function (row, column) {
+				return datalevels[level].getValue(row, column);
+			};
+		}
+	};
 	
 	//Method used to register another callback function for a user that wants to be notifed
 	//of updates to the status of heat map data.
