@@ -138,7 +138,7 @@ let	wS = `const debug = ${debug};`;
 };
 
 NgChm.MMGR.isRow = function isRow (axis) {
-	return axis.toLowerCase() === 'row';
+	return axis && axis.toLowerCase() === 'row';
 };
 
 //HeatMap Object - holds heat map properties and a tile cache

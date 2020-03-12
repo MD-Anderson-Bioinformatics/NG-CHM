@@ -958,31 +958,45 @@ NgChm.createNS('NgChm.LNK');
 	             will have the mean, variance, and number of entries (there might be missing data)
 	             for a row in the heatmap of the first three columns.
 	*/
-	function getSummaryStatistics(axis, idx)  {
+	/* If axis == 'row' axisIdx = indices of the rows to summarize, groupIdx = indices of columns to include.
+	 * Result will a vector with one value for each axisIdx value.
+	 */
+	function getSummaryStatistics(axis, axisIdx, groupIdx) {
 		const isRow = NgChm.MMGR.isRow (axis);
-		idx = idx === undefined ? [] : Array.isArray(idx) ? idx : [idx];
-		const win = {
-			layer: NgChm.SEL.currentDl,
-			level: NgChm.MMGR.DETAIL_LEVEL,
-			firstRow: 1,
-			firstCol: 1,
-			numRows: isRow ? idx.length : NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),
-			numCols: isRow ? NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL) : idx.length
-		};
+		axisIdx = axisIdx === undefined ? [] : Array.isArray(axisIdx) ? axisIdx : [axisIdx];
+		groupIdx = groupIdx === undefined ? [] : Array.isArray(groupIdx) ? groupIdx : [groupIdx];
 		const values = [];
-		const accessWindow = NgChm.heatMap.getAccessWindow(win)
-		// Iterate over access window to get values from heatmap
-		for (let i=0; i<win.numRows; i++) {
-			const thisRow = []
-			for (let j=0; j<win.numCols; j++) {
-				const val = accessWindow.getValue(i+win.firstRow, j+win.firstCol);
-				thisRow.push(val)
+		// Both axisIdx and groupIdx can be disjoint.
+		// TODO: Improve efficiency by grouping adjacent indices.
+		for (let i=0; i < axisIdx.length; i++) {
+			// Get access window for each axisIdx (one vector per iteration)
+			const win = {
+				layer: NgChm.SEL.currentDl,
+				level: NgChm.MMGR.DETAIL_LEVEL,
+				firstRow: isRow ? 1+axisIdx[i] : 1,
+				firstCol: isRow ? 1 : 1+axisIdx[i],
+				numRows: isRow ? 1 : NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),
+				numCols: isRow ? NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL) : 1
+			};
+			const accessWindow = NgChm.heatMap.getAccessWindow(win)
+			const thisVec = []
+			// Iterate over groupIdx to get vector of values from heatmap for summarization.
+			if (isRow) {
+				for (let j=0; j < groupIdx.length; j++) {
+					const val = accessWindow.getValue(win.firstRow, 1+groupIdx[j]);
+					thisVec.push(val);
+				}
+			} else {
+				for (let j=0; j < groupIdx.length; j++) {
+					const val = accessWindow.getValue(1+groupIdx[j], win.firstCol);
+					thisVec.push(val);
+				}
 			}
-			var statsForRow = getStats(thisRow)
-			values.push(statsForRow)
+			var statsForVec = getStats(thisVec)
+			values.push(statsForVec)
 		}
 		return values;
-	} // end function getSummaryStatistics
+	} // end function getSummaryStatistics 
 
 	function getDiscMapFromContMap (colorThresholds, colorVec) {
 		colorVec = colorVec.map(NgChm.CMM.darkenHexColorIfNeeded);
@@ -1068,59 +1082,195 @@ NgChm.createNS('NgChm.LNK');
 	}
 	// end bunch of helper functions
 
-	NgChm.LNK.maryWasHere = function(one,two) {
-		console.log('testing function')
-		return one
-	}
 	NgChm.LNK.initializePanePlugin = function(nonce, config) {
-		var colorMapMgr = NgChm.heatMap.getColorMapManager();
-		var covariateBarOrder = NgChm.heatMap.getAxisCovariateOrder(config.axes[0].axisName) //<-- array of axis covariate labels
-		var colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
-		var rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
-		var heatMap = NgChm.heatMap;
 		const data = {
 			axes: []
 		};
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
-			const isRow = NgChm.MMGR.isRow (axis.axisName);
-			const covData = isRow ? rowClassificationData : colClassificationData;
 			data.axes.push({
 				fullLabels: NgChm.heatMap.getAxisLabels(axis.axisName).labels,
-				actualLabels: NgChm.UTIL.getActualLabels(axis.axisName),
-				tvalues: [],
-				pvalues: [],
-				coordinates: [],
-				covariates: [],
-				covariateColors: [],
-				coordinateColors: []
+				actualLabels: NgChm.UTIL.getActualLabels(axis.axisName)
 			});
-			const axisCovCfg = NgChm.heatMap.getAxisCovariateConfig (axis.axisName);
-			var allSummaries = []
-			var nResultsToReturn = 0;
-			if (axis.data != null) {
-				for (let ci = 0; ci < axis.data.length; ci++) {
-					const ctype = axis.data[ci].type // one of 'covariate' (i.e. from covariate bar) or 'data' (i.e. from map values)
-					const idx = axis.data[ci].labelIdx // list of ids in collection
-					if (ctype != 'data') {console.error('This has not been implemented yet.')}
-					var summaryStatistics = getSummaryStatistics(axis.axisName === 'row' ? 'column' : 'row', idx);
-					allSummaries.push(summaryStatistics)
-				}
+			for (let idx = 0; idx < axis.cocos.length; idx++) {
+				setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx]);
 			}
-			if (allSummaries.length > 0) nResultsToReturn = allSummaries[0].length;
-			for (let i=0; i<nResultsToReturn; i++) {
-				var summary1 = allSummaries[0][i]
-				var summary2 = allSummaries[1][i]
-				var tvalue = Welch_tValue(summary1, summary2)
-				var dof = degreesOfFreedom(summary1, summary2)
-				var pvalue = pValue(tvalue, dof)
-				data.axes[ai].tvalues.push(tvalue)
-				data.axes[ai].pvalues.push(pvalue)
+			for (let idx = 0; idx < axis.groups.length; idx++) {
+				setAxisGroupData (data.axes[ai], axis, axis.groups[idx]);
 			}
 		}
 		const src = pluginData[nonce].source || pluginData[nonce].iframe.contentWindow;
 		src.postMessage({ vanodi: { nonce, op: 'plot', config, data }}, '*');
 	}; // end of initializePanePlugin
+
+		// Keys in msg: 
+		// axisName: 'row',
+		// axisLabels: labels of nodes from plugin (e.g. gene symbols from PathwayMapper)
+		// testToRun: name of test to run
+		// group1: labels of other axis elements in group 1
+		// group2: labels of other axis elements in group 2 (optional)
+	function getAxisTestData (msg) {
+		//console.log ({ m: '> getAxisTestData', msg });
+		var allSummaries = [];
+		var nResultsToReturn;
+		var otherAxisName = NgChm.MMGR.isRow(msg.axisName) ? 'column' : 'row';
+		var otherAxisLabels = NgChm.UTIL.getActualLabels (otherAxisName);
+		var heatMapAxisLabels = NgChm.UTIL.getActualLabels (msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
+		heatMapAxisLabels = heatMapAxisLabels.map (l => l.toUpperCase());
+		var axisIdx = [];
+		const pluginLabels = [];
+		for (let i = 0; i < msg.axisLabels.length; i++) {
+			let idx = heatMapAxisLabels.indexOf(msg.axisLabels[i].toUpperCase());
+			if (idx !== -1) {
+				axisIdx.push(idx);
+				pluginLabels.push(msg.axisLabels[i]);
+			}
+		}
+		if (axisIdx.length < 1) {console.warn('Heatmap and pathway have no genes in common.')}
+		var idx1 = [];
+		var idx2 = [];
+		if (msg.group2 == null || msg.group2.length == 0) {
+			for (let i = 0; i < otherAxisLabels.length; i++) {
+				if (msg.group1.indexOf(otherAxisLabels[i]) === -1) {
+					idx2.push (i);
+				} else {
+					idx1.push (i);
+				}
+			}
+		} else {
+			for (let i = 0; i < otherAxisLabels.length; i++) {
+				if (msg.group1.indexOf(otherAxisLabels[i]) !== -1) {
+					idx1.push (i);
+				}
+				if (msg.group2.indexOf(otherAxisLabels[i]) !== -1) {
+					idx2.push (i);
+				}
+			}
+		}
+		var summaryStatistics1 = getSummaryStatistics(msg.axisName, axisIdx, idx1);
+		var summaryStatistics2 = getSummaryStatistics(msg.axisName, axisIdx, idx2);
+
+		var cocodata = {
+			labels: [],
+			results: []
+		};
+		cocodata.results.push({
+			label: "t_statistics",
+			values: [],
+			colorMap: {
+				type: "linear",
+				thresholds: [ -3.291, -1.96, 1.96, 3.291 ],
+				colors: [ '#1c2ed4', '#cbcff7', '#f9d4d4', '#d41c1c' ],
+				missing: '#fefefe'
+			}
+		});
+		cocodata.results.push({
+			label: "p_values",
+			values: [],
+			colorMap: {
+				type: "linear",
+				thresholds: [ 0.001, 0.05, 1 ],
+				colors: [ '#000000', '#777777', '#fefefe' ],
+				missing: '#fefefe'
+			}
+		});
+
+		for (let i=0; i < axisIdx.length; i++) {
+			const summary1 = summaryStatistics1[i];
+			const summary2 = summaryStatistics2[i];
+			const tvalue = Welch_tValue(summary1, summary2);
+			const dof = degreesOfFreedom(summary1, summary2);
+			const pvalue = pValue(tvalue, dof);
+			cocodata.labels.push (pluginLabels[i]);
+			cocodata.results[0].values.push(tvalue);
+			cocodata.results[1].values.push(pvalue);
+		}
+		//console.log ({ m: '< getAxisTestData', msg, cocodata });
+		return cocodata;
+	} // end function getAxisTestData
+
+	// Add the values and colors to cocodata for the 'coco' attributes of axis.
+	// Currently, 'coco' is either coordinate or covariate.
+	function setAxisCoCoData (cocodata, axis, coco) {
+		const colorMapMgr = NgChm.heatMap.getColorMapManager();
+		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
+		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
+		const isRow = NgChm.MMGR.isRow (axis.axisName);
+		const covData = isRow ? rowClassificationData : colClassificationData;
+		const axisCovCfg = NgChm.heatMap.getAxisCovariateConfig (axis.axisName);
+		const valueField = coco + 's';
+		const colorField = coco + 'Colors';
+		cocodata[valueField] = [];
+		cocodata[colorField] = [];
+		for (let ci = 0; ci < axis[valueField].length; ci++) { 
+			const ctype = axis[valueField][ci].type; // one of 'covariate' (i.e. from covariate bar) or 'data' (i.e. from map values)
+			const label = axis[valueField][ci].covName;
+			if (ctype === 'covariate') { // i.e. from one of the covariate bars
+				if (axisCovCfg.hasOwnProperty (label)) {
+					const cfg = axisCovCfg[label];
+					if (cfg.color_map.type === 'continuous') { // i.e. from covariate bar w/ continuous values
+						const { classValues, colors } = getContCovariateColors (cfg, covData[label].values);
+						cocodata[colorField].push(colors); // the color corresponding to the 'Class' for each value
+						cocodata[valueField].push(covData[label].values) // the actual values (not 'Class' values) 
+					} else { // i.e. from covariate bar w/ discrete values
+						cocodata[colorField].push(getDiscCovariateColors (axis.axisName, label, covData[label].values, colorMapMgr));
+						cocodata[valueField].push(covData[label].values); //<-- original line
+					}
+				} else {
+					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
+				}
+			} else if (ctype === 'data') { // i.e. from selections on the map values
+				//console.log({mar4: 'ctype is data for ' + coco});
+				const idx = axis[valueField][ci].labelIdx; 
+				const values = getDataValues(isRow ? 'column' : 'row', idx);
+				cocodata[valueField].push(values);
+				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+				var colorsForThisData = []
+				for (var idv = 0; idv < values.length; idv++) {
+					colorsForThisData.push(colorMap.getRgbToHex(colorMap.getColor(values[idv])));
+				}
+				cocodata[colorField].push(colorsForThisData)
+			} else {
+				console.log ('Unknown coco data type ' + ctype);
+			}
+		}
+		//console.log ({ m: 'setAxisCoCoData', axis, coco, cocodata });
+	}
+
+	// Add the labels to cocodata for the 'group' attributes of axis.
+	function setAxisGroupData (cocodata, axis, group) {
+		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
+		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
+		const isRow = NgChm.MMGR.isRow (axis.axisName);
+		const covData = isRow ? rowClassificationData : colClassificationData;
+		const axisCovCfg = NgChm.heatMap.getAxisCovariateConfig (axis.axisName);
+		const valueField = group + 's';
+		cocodata[valueField] = [];
+		for (let ci = 0; ci < axis[valueField].length; ci++) { 
+			const ctype = axis[valueField][ci].type; // one of 'covariate' (i.e. from covariate bar) or 'data' (i.e. from map values)
+			const label = axis[valueField][ci].covName;
+			if (ctype === 'covariate') { // i.e. from one of the covariate bars
+				if (axisCovCfg.hasOwnProperty (label)) {
+					const cfg = axisCovCfg[label];
+					if (cfg.color_map.type === 'continuous') { // i.e. from covariate bar w/ continuous values
+						cocodata[valueField].push(covData[label].values) // the actual values (not 'Class' values) 
+					} else { // i.e. from covariate bar w/ discrete values
+						cocodata[valueField].push(covData[label].values); //<-- original line
+					}
+				} else {
+					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
+				}
+			} else if (ctype === 'data') { // i.e. from selections on the map values
+				//console.log({mar4: 'ctype is data for group ' + group});
+				const idx = axis[valueField][ci].labelIdx; 
+				const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)-1]));
+				cocodata[valueField].push({ grouplabels: axis[valueField][ci].labels, labels });
+			} else {
+				console.log ('Unknown group data type ' + ctype);
+			}
+		}
+		//console.log ({ m: 'setAxisGroupData', axis, group, cocodata });
+	}
 
 	// Create a gear dialog for the pane identified by the DOM element icon.
 	NgChm.LNK.newGearDialog = newGearDialog;
@@ -1172,20 +1322,21 @@ NgChm.createNS('NgChm.LNK');
 			return base + (len === 1 ? '' : (' ' + id));
 		}
 
+		const axisParams = plugin.config.axes;
+		//console.log({mar4: 'checking params', axisParams: axisParams});
 		const axesOptions = [];
 		for (let axisId = 0; axisId < config.axes.length; axisId++) {
-			//const axis1 = NgChm.UTIL.newElement('DIV');
-			//optionsBox.appendChild (axis1);
-			const axis1Label = NgChm.UTIL.newElement('SPAN.leftLabel');
-			axis1Label.appendChild(NgChm.UTIL.newTxt (textN('Heat map axis', axisId+1, config.axes.length)));
-			optionsBox.appendChild (axis1Label);
+			{
+				const labelText = textN(axisParams[axisId].axisLabel || 'Heat map axis', axisId+1, config.axes.length);
+				optionsBox.appendChild (NgChm.UTIL.newElement('SPAN.leftLabel', {}, NgChm.UTIL.newTxt (labelText)));
+			}
 			const axis1Select = NgChm.UTIL.newElement('SELECT');
-			optionsBox.appendChild (axis1Select);
 			axis1Select.add (optionNode ('axis', 'column'));
 			axis1Select.add (optionNode ('axis', 'row'));
+			optionsBox.appendChild (axis1Select);
 
-			const axis1coordinates = [];
-			const axis1covariates = [];
+			const axis1Coco = {};
+			const axis1Data = [];
 
 			// Variables that depend on the current axis.
 			let thisAxis;
@@ -1205,154 +1356,368 @@ NgChm.createNS('NgChm.LNK');
 				defaultCovar = defaultCovar.length === 0 ? null : defaultCovar[defaultCovar.length-1];
 			}
 
-			const axisParams = params.axes && params.axes.length > axisId ? params.axes[axisId] : {};
-			const selectedAxis = axisParams.axisName === 'row' ? 'row' : 'column';
+			const selectedAxis = NgChm.MMGR.isRow(axisParams[axisId].axisName) ? 'row' : 'column';
+			//console.log({mar4: 'selectedAxis', selectedAxis: selectedAxis})
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
 
 			function createLinearSelectors (sss, numSelectors, selectorName, params) {
-
-			params = params || [];
-			for (let cid = 0; cid < numSelectors; cid++) {
-				const selParams = cid < params.length ? params[cid] : {};
-				const selectEl = NgChm.UTIL.newElement('SELECT');
-				optionsBox.appendChild (
-					NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
-						NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, numSelectors))
-					])
-				);
-				optionsBox.appendChild (
-					selectEl
-				);
-				sss.push ({ select: selectEl, data: [] });
-
-				const uname = textN (' for ' + selectorName, cid+1, numSelectors);
-				const selectedElementsOption = selectedElementsOptionName (thisAxis, uname);
-				let defaultOpt;
-				if (selParams.type === 'data') {
-					defaultOpt = selectedElementsOption;
-				} else if (selParams.type === 'covariate' && selParams.covName) {
-					defaultOpt = selParams.covName;
-				} else if (selectorName === 'coordinate') {
-					defaultOpt = defaultCoord ? defaultCoord + (cid+1) : null;
-				} else {
-					defaultOpt = defaultCovar;
-				}
-				sss[cid].selOpt = addCovariateOptions (defaultOpt, axis1Config, selectEl, selectedElementsOption);
-
-				const userLabelEl = NgChm.UTIL.newElement ('DIV.userLabel', {}, [
-					NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ NgChm.UTIL.newTxt ('Label') ]),
-					NgChm.UTIL.newElement('INPUT')
-				]);
-				userLabelEl.children[1].type = 'text';
-				if (selParams.label) userLabelEl.children[1].value = selParams.label;
-				optionsBox.appendChild (userLabelEl);
-				sss[cid].userLabelEl = userLabelEl;
-
-				const countNode = NgChm.UTIL.newTxt ('0 ' + otherAxis + 's');
-				const infoEl = NgChm.UTIL.newElement ('DIV.nodeSelector.hide', {}, [
-					NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
-						NgChm.UTIL.newTxt ('Selected')
-					]),
-					countNode,
-					NgChm.UTIL.newElement('SPAN.button', {}, [NgChm.UTIL.newTxt('GRAB')]),
-					NgChm.UTIL.newElement('SPAN.button', {}, [NgChm.UTIL.newTxt('SHOW')])
-				]);
-				sss[cid].clearData = function() {
-					while (sss[cid].data.length > 0) sss[cid].data.pop();
-				};
-				if (selParams.type === 'data' && selParams.labelIdx) {
-					for (let ii = 0; ii < selParams.labelIdx.length; ii++) {
-						sss[cid].data.push (selParams.labelIdx[ii]);
+				params = params || [];
+				for (let cid = 0; cid < numSelectors; cid++) {
+					const selParams = cid < params.length ? params[cid] : {};
+					const selectEl = NgChm.UTIL.newElement('SELECT');
+					//console.log({mar4: 'checking pan stuff', selectorName: selectorName, numSelectors: numSelectors});
+					optionsBox.appendChild (
+						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
+							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, numSelectors))
+						])
+					);
+					optionsBox.appendChild (
+						selectEl
+					);
+					sss.push ({
+						select: selectEl,
+						axisName: thisAxis,
+						data: [],
+						updateAxis
+					});
+					function updateAxis() {
+						while (selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
+						const uname = textN (' for ' + selectorName, cid+1, numSelectors);
+						//console.log({mar4: 'calling selectedElementsOptionName', thisAxis: thisAxis, uname: uname})
+						const selectedElementsOption = selectedElementsOptionName (thisAxis, uname);
+						let defaultOpt;
+						if (selParams.type === 'data') {
+							defaultOpt = selectedElementsOption;
+						} else if (selParams.type === 'covariate' && selParams.covName) {
+							defaultOpt = selParams.covName;
+						} else if (selectorName === 'Coordinate') {
+							defaultOpt = defaultCoord ? defaultCoord + (cid+1) : null;
+						} else {
+							defaultOpt = defaultCovar;
+						}
+						sss[cid].selOpt = addCovariateOptions (defaultOpt, axis1Config, selectEl, selectedElementsOption);
 					}
-				}
-				sss[cid].setSummary = function(label) {
-					const data = sss[cid].data;
-					countNode.textContent = '' + data.length + ' ' + otherAxis + 's';
-					const idx = sss[cid].select.selectedIndex;
-					const item = sss[cid].select.children[idx];
-					if (debug) console.log ({ m: 'selector setSummary', cid, idx, item, isDataOpt: item === sss[cid].selOpt });
-					if (item === sss[cid].selOpt) {
-						infoEl.classList.remove ('hide');
-						if (label) {
-							userLabelEl.children[1].value = label;
-						} else if (data.length === 0) {
-							if (selectorName === 'coordinate') {
-								userLabelEl.children[1].value = 'Undefined';
+					updateAxis();
+					const userLabel = createLabeledTextInput(selParams.label);
+					optionsBox.appendChild (userLabel.element);
+					sss[cid].userLabel = userLabel;
+
+					sss[cid].grabber = {};
+
+					const countNode = NgChm.UTIL.newTxt ('0 ' + otherAxis + 's');
+					const infoEl = NgChm.UTIL.newElement ('DIV.nodeSelector.hide', {}, [
+						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
+							NgChm.UTIL.newTxt ('Selected')
+						]),
+						countNode,
+						NgChm.UTIL.newButton('GRAB', {}, {}),
+						NgChm.UTIL.newButton('SHOW', {}, {})
+					]);
+					sss[cid].grabber.clearData = function() {
+						while (sss[cid].data.length > 0) sss[cid].data.pop();
+					};
+					if (selParams.type === 'data' && selParams.labelIdx) {
+						for (let ii = 0; ii < selParams.labelIdx.length; ii++) {
+							sss[cid].data.push (selParams.labelIdx[ii]);
+						}
+					}
+					sss[cid].grabber.setSummary = function(label) {
+						const data = sss[cid].data;
+						countNode.textContent = '' + data.length + ' ' + otherAxis + 's';
+						const idx = sss[cid].select.selectedIndex;
+						const item = sss[cid].select.children[idx];
+						if (debug) console.log ({ m: 'selector setSummary', cid, idx, item, isDataOpt: item === sss[cid].selOpt });
+						if (item === sss[cid].selOpt) {
+							infoEl.classList.remove ('hide');
+							if (label) {
+								userLabel.setLabel ( label);
+							} else if (data.length === 0) {
+								if (selectorName === 'Coordinate') {
+									userLabel.setLabel ( 'Undefined');
+								} else {
+									userLabel.setLabel ( '');
+								}
+							} else if (data.length === 1) {
+								userLabel.setLabel ( NgChm.heatMap.getAxisLabels(otherAxis).labels[data[0]-1]);
 							} else {
-								userLabelEl.children[1].value = '';
+								userLabel.setLabel ( 'Group of ' + countNode.textContent);
 							}
-						} else if (data.length === 1) {
-							userLabelEl.children[1].value = NgChm.heatMap.getAxisLabels(otherAxis).labels[data[0]-1];
 						} else {
-							userLabelEl.children[1].value = 'Average of ' + countNode.textContent;
+							infoEl.classList.add ('hide');
+							if (label) {
+								userLabel.setLabel ( label);
+							} else {
+								userLabel.setLabel ( item.value.replace(/\.coordinate\./, ' '));
+							}
 						}
-					} else {
-						infoEl.classList.add ('hide');
-						if (label) {
-							userLabelEl.children[1].value = label;
-						} else {
-							userLabelEl.children[1].value = item.value.replace(/\.coordinate\./, ' ');
-						}
-					}
-				};
-				sss[cid].setSummary (selParams.label);
+					};
+					sss[cid].setSummary = function setSummary (label) {
+						sss[cid].grabber.setSummary (label);
+					};
+					sss[cid].setSummary (selParams.label);
 
-				infoEl.children[1].onclick = function (e) {
-					if (debug) console.log ('GRAB');
-					sss[cid].clearData();
-					let count = 0;
-					for (let i in NgChm.SEL.searchItems[otherAxis]) {
-						if (debug) console.log ({ m: 'Grabbed', i });
-						sss[cid].data.push (i);
-						count++;
+					infoEl.children[1].onclick = function (e) {
+						if (debug) console.log ('GRAB');
+						sss[cid].grabber.clearData();
+						let count = 0;
+						for (let i in NgChm.SEL.searchItems[otherAxis]) {
+							if (debug) console.log ({ m: 'Grabbed', i });
+							sss[cid].data.push (i);
+							count++;
+						}
+						sss[cid].grabber.setSummary();
+					};
+					infoEl.children[2].onclick = function (e) {
+						if (debug) console.log ('SHOW');
+						for (let i in NgChm.SEL.searchItems[otherAxis]) {
+							delete NgChm.SEL.searchItems[otherAxis][i];
+						}
+						for (let i = 0; i < sss[cid].data.length; i++) {
+							NgChm.SEL.searchItems[otherAxis][sss[cid].data[i]] = 1;
+						}
+						NgChm.UTIL.redrawSearchResults ();
+					};
+					optionsBox.appendChild (infoEl);
+					selectEl.onchange = function (e) {
+						sss[cid].setSummary();
+					};
+				}
+			}  // end function createLinearSelectors
+
+			function createGroupSelectors (sss, numSelectors, selectorName, params) {
+				const debug = false;
+				params = params || [];
+				for (let cid = 0; cid < 1+0*numSelectors; cid++) {
+					optionsBox.appendChild (
+						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
+							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, 1+0*numSelectors))
+						])
+					);
+					const selectEl = NgChm.UTIL.newElement('SELECT');
+					optionsBox.appendChild (
+						selectEl
+					);
+					sss.push ({
+						select: selectEl,
+						axisName: otherAxis,
+						data: [],
+						updateAxis
+					});
+
+					const selParams = cid < params.length ? params[cid] : {};
+					sss[cid].updateAxis();
+
+					sss[cid].userLabels = [];
+					sss[cid].grabbers = [];
+					for (let idx = 0; idx < numSelectors; idx++) {
+						sss[cid].data.push([]);
+						const groupName = selParams.labels && idx < selParams.labels.length ? selParams.labels[idx] : 'Undefined';
+						sss[cid].userLabels.push(createLabeledTextInput(groupName, idx+1, numSelectors));
+						optionsBox.appendChild (sss[cid].userLabels[idx].element);
+						sss[cid].grabbers.push(createLabelGrabber (thisAxis, sss[cid].userLabels[idx], idx));
+						optionsBox.appendChild (sss[cid].grabbers[idx].element);
 					}
-					sss[cid].setSummary();
-				};
-				infoEl.children[2].onclick = function (e) {
-					if (debug) console.log ('SHOW');
-					for (let i in NgChm.SEL.searchItems[otherAxis]) {
-						delete NgChm.SEL.searchItems[otherAxis][i];
+
+					function isGrabberSelected () {
+						const idx = sss[cid].select.selectedIndex;
+						const item = sss[cid].select.children[idx];
+						if (debug) console.log ({ m: 'isGrabberSelected', cid, idx, item, isSelected: item === sss[cid].selOpt });
+						return item === sss[cid].selOpt;
 					}
-					for (let i = 0; i < sss[cid].data.length; i++) {
-						NgChm.SEL.searchItems[otherAxis][sss[cid].data[i]] = 1;
+
+					function updateAxis() {
+						// Remove choices for previous axis, if any.
+						while (selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
+						const uname = ' for ' + selectorName;
+						//console.log({mar4: 'calling selectedElementsOptionName', thisAxis: thisAxis, uname: uname})
+						const selectedElementsOption = selectedElementsOptionName (otherAxis, uname);
+						let defaultOpt;
+						if (selParams.type === 'data') {
+							defaultOpt = selectedElementsOption;
+						} else if (selParams.type === 'covariate' && selParams.covName) {
+							defaultOpt = selParams.covName;
+						} else if (selectorName === 'Coordinate') {
+							defaultOpt = defaultCoord ? defaultCoord + (cid+1) : null;
+						} else {
+							defaultOpt = defaultCovar;
+						}
+						sss[cid].selOpt = addCovariateOptions (defaultOpt, axis1Config, selectEl, selectedElementsOption);
+						if (selParams.type === 'data' && selParams.labelIdx) {
+							for (let ii = 0; ii < selParams.labelIdx.length; ii++) {
+								sss[cid].data.push (selParams.labelIdx[ii]);
+							}
+						}
+						if (sss[cid].grabbers) {
+							for (let idx = 0; idx < numSelectors; idx++) {
+								sss[cid].grabbers[idx].updateAxis (thisAxis);
+							}
+						}
 					}
-					NgChm.UTIL.redrawSearchResults ();
-				};
-				optionsBox.appendChild (infoEl);
-				selectEl.onchange = function (e) {
-					sss[cid].setSummary();
-				};
+
+					function clearData(idx) {
+						while (sss[cid].data[idx].length > 0) sss[cid].data[idx].pop();
+					}
+
+					function createLabelGrabber (axisName, userLabel, idx) {
+						const countNode = NgChm.UTIL.newTxt ('0 ' + axisName + 's');
+						const infoEl = NgChm.UTIL.newElement ('DIV.nodeSelector.hide', {}, [
+							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
+								NgChm.UTIL.newTxt ('Selected')
+							]),
+							countNode,
+							NgChm.UTIL.newButton('GRAB', {}, { click: doGrab }),
+							NgChm.UTIL.newButton('SHOW', {}, { click: doShow })
+						]);
+						let axisNameU;
+						updateAxis(axisName);
+
+						function doGrab (e) {
+							if (debug) console.log ('GRAB');
+							clearData(idx);
+							let count = 0;
+							for (let i in NgChm.SEL.searchItems[axisNameU]) {
+								if (debug) console.log ({ m: 'Grabbed', i });
+								sss[cid].data[idx].push (i);
+								count++;
+							}
+							setSummary(true);
+						}
+						function doShow (e) {
+							if (debug) console.log ('SHOW');
+							for (let i in NgChm.SEL.searchItems[axisNameU]) {
+								delete NgChm.SEL.searchItems[axisNameU][i];
+							}
+							for (let i = 0; i < sss[cid].data[idx].length; i++) {
+								NgChm.SEL.searchItems[axisNameU][sss[cid].data[idx][i]] = 1;
+							}
+							NgChm.UTIL.redrawSearchResults ();
+						}
+						function updateAxis (newAxis) {
+							axisName = newAxis;
+							axisNameU = NgChm.MMGR.isRow(axisName) ? "Row" : "Column";
+						}
+						function setSummary (selected, label) {
+							const data = sss[cid].data[idx];
+							countNode.textContent = '' + data.length + ' ' + axisName + 's';
+							if (selected) {
+								infoEl.classList.remove ('hide');
+								if (label) {
+									userLabel.setLabel ( label );
+								} else if (data.length === 0) {
+									if (selectorName === 'Coordinate') {
+										userLabel.setLabel ( 'Undefined');
+									} else {
+										userLabel.setLabel ( 'Undefined');
+									}
+								} else if (data.length === 1) {
+									userLabel.setLabel ( NgChm.heatMap.getAxisLabels(axisName).labels[data[0]-1]);
+								} else {
+									userLabel.setLabel ( 'Group of ' + countNode.textContent);
+								}
+							} else {
+								infoEl.classList.add ('hide');
+							}
+						}
+						return { element: infoEl, clearData, setSummary, updateAxis };
+					}
+
+					sss[cid].setSummary = function setSummary (selectedValue, labels) {
+						if (isGrabberSelected()) {
+							for (let idx = 0; idx < numSelectors; idx++) {
+								sss[cid].grabbers[idx].setSummary(true, selectedValue);
+							}
+						} else {
+							const idx = sss[cid].select.selectedIndex;
+							const item = sss[cid].select.children[idx];
+							if (debug) console.log ({ m: 'selector setSummary', cid, idx, item, isGrabber: item === sss[cid].selOpt });
+							for (let idx = 0; idx < numSelectors; idx++) {
+								sss[cid].grabbers[idx].setSummary(false);
+								if (labels) {
+									sss[cid].userLabels[idx].setLabel ( labels[idx]);
+								} else {
+									sss[cid].userLabels[idx].setLabel ( item.value.replace(/\.coordinate\./, ' '));
+								}
+							}
+						}
+					};
+
+					sss[cid].setSummary (selParams.selectedValue, selParams.labels);
+					selectEl.onchange = function (e) {
+						sss[cid].setSummary();
+					};
+				}
+			}  // end function createGroupSelectors
+
+			if (config.axes[axisId].coco == null) config.axes[axisId].coco = [];
+			const pa = params.axes && axisId < params.axes.length ? params.axes[axisId] : { cocos:[], groups: [] };
+			for (let cocoidx = 0; cocoidx < config.axes[axisId].coco.length; cocoidx++) {
+				const coco = config.axes[axisId].coco[cocoidx];
+				axis1Coco[coco.baseid] = [];
+				createLinearSelectors (axis1Coco[coco.baseid], coco.max, coco.name, pa[pa.cocos[cocoidx]+'s']);
 			}
+			if (config.axes[axisId].group == null) config.axes[axisId].group = [];
+			for (let groupidx = 0; groupidx < config.axes[axisId].group.length; groupidx++) {
+				const group = config.axes[axisId].group[groupidx];
+				axis1Coco[group.baseid] = [];
+				createGroupSelectors (axis1Coco[group.baseid], group.max, group.label, pa[pa.groups[groupidx]+'s']);
 			}
-			createLinearSelectors (axis1coordinates, config.axes[axisId].maxCoordinates, 'coordinate', axisParams.coordinates);
-			createLinearSelectors (axis1covariates, config.axes[axisId].maxCovariates, 'covariate', axisParams.covariates);
-			axesOptions.push ({ select: axis1Select, coordinates: axis1coordinates, covariates: axis1covariates });
+			const theseOpts = {
+				select: axis1Select,
+				data: axis1Data,
+				dataTypeName: 'group',
+				groups: [],
+				cocos: []
+			};
+			for (let cocoidx = 0; cocoidx < config.axes[axisId].coco.length; cocoidx++) {
+				const coco = config.axes[axisId].coco[cocoidx];
+				theseOpts[coco.baseid+'s'] = axis1Coco[coco.baseid];
+				theseOpts.cocos.push (coco.baseid);
+			}
+			for (let groupidx = 0; groupidx < config.axes[axisId].group.length; groupidx++) {
+				const group = config.axes[axisId].group[groupidx];
+				theseOpts[group.baseid+'s'] = axis1Coco[group.baseid];
+				theseOpts.groups.push (group.baseid);
+			}
+			axesOptions.push (theseOpts);
 			axis1Select.onchange = function(e) {
 				setAxis (e.srcElement.value);
 				if (debug) console.log ('Selected axis changed to ' + thisAxis);
-				for (let cid = 0; cid < config.axes[axisId].maxCoordinates; cid++) {
-					const s = axis1coordinates[cid].select;
-					while (s.firstChild) s.removeChild(s.firstChild);
-					const defaultOpt = defaultCoord ? defaultCoord + (cid+1) : null;
-					const uname = textN (' for coordinate', cid+1, config.axes[axisId].maxCoordinates);
-					const selectedElementsOption = selectedElementsOptionName (thisAxis, uname);
-					axis1coordinates[cid].selOpt = addCovariateOptions (defaultOpt, axis1Config, s, selectedElementsOption);
-					axis1coordinates[cid].clearData();
-					axis1coordinates[cid].setSummary();
-					s.onchange(null);
-				}
-				for (let cid = 0; cid < config.axes[axisId].maxCovariates; cid++) {
-					const s = axis1covariates[cid].select;
-					while (s.firstChild) s.removeChild(s.firstChild);
-					const uname = textN (' for covariate', cid+1, config.axes[axisId].maxCovariates);
-					const selectedElementsOption = selectedElementsOptionName (thisAxis, uname);
-					axis1covariates[cid].selOpt = addCovariateOptions (defaultCovar, axis1Config, s, selectedElementsOption);
-					axis1covariates[cid].clearData();
-					axis1covariates[cid].setSummary();
-					s.onchange(null);
+				for (let coco of config.axes[axisId].coco) { updateSelector (coco); }
+				for (let group of config.axes[axisId].group) { updateSelector (group); }
+				function updateSelector (coco) {
+					for (let cid = 0; cid < coco.max; cid++) {
+						axis1Coco[coco.baseid][cid].updateAxis();
+						axis1Coco[coco.baseid][cid].grabber.clearData();
+						axis1Coco[coco.baseid][cid].setSummary();
+						axis1Coco[coco.baseid][cid].select.onchange(null);
+					}
 				}
 			};
+		}
+
+		// Create a DIV.userLabel that displays as Label: <text input>
+		// If specified, iValue is the initial value of the text input.
+		// The returned value is an object with the following fields:
+		// .element  The created DIV element.
+		// .setLabel Method for changing the labels value.
+		//
+		function createLabeledTextInput (iValue, nth, nmax) {
+			let label = 'Label';
+			if (nmax && nmax > 1) {
+				label = label + ' ' + nth;
+			}
+			const userLabelEl = NgChm.UTIL.newElement ('DIV.userLabel', {}, [
+				NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ NgChm.UTIL.newTxt (label) ]),
+				NgChm.UTIL.newElement('INPUT')
+			]);
+			userLabelEl.children[1].type = 'text';
+			if (iValue) userLabelEl.children[1].value = iValue;
+			return { element: userLabelEl, setLabel };
+
+			function setLabel (v) {
+				userLabelEl.children[1].value = v;
+			}
 		}
 
 		const pluginOptions = genPluginOptions (config.options, 0, params.options);
@@ -1375,18 +1740,39 @@ NgChm.createNS('NgChm.LNK');
 					input.type = opts[oi].type;
 					input.checked = optParam !== null ? optParam : opts[oi].default;
 					opt.append (input);
+				} else if (opts[oi].type === 'text') {
+					const input = NgChm.UTIL.newElement('INPUT');
+					input.type = opts[oi].type;
+					input.value = optParam !== null ? optParam : opts[oi].default;
+					opt.append (input);
 				} else if (opts[oi].type === 'dropdown') {
 					const input = NgChm.UTIL.newElement('SELECT');
-					const entries = Object.entries(opts[oi].choices);
 					let selectedIndex = 0;
+					let choices = opts[oi].choices;
+					if (!Array.isArray(choices)) choices = [ choices ];
 					let idx = 0;
-					for (const [label,value] of entries) {
-						const choice = NgChm.UTIL.newElement('OPTION');
-						choice.value = value;
-						if (value === optParam) selectedIndex = idx;
-						choice.innerHTML = label;
-						input.append(choice);
-						idx++;
+					for (const cc of choices) {
+						if (typeof cc === "string") {
+							if (cc === "STANDARD TESTS") {
+								for (const t of vanodiKnownTests) {
+									const choice = NgChm.UTIL.newElement('OPTION');
+									choice.value = t.value;
+									if (t.value === optParam) selectedIndex = idx;
+									choice.innerText = t.label;
+									input.append(choice);
+									idx++;
+								}
+							} else {
+								console.log ("Unknown choice string: " + cc);
+							}
+						} else {
+							const choice = NgChm.UTIL.newElement('OPTION');
+							choice.value = cc.value;
+							if (cc.value === optParam) selectedIndex = idx;
+							choice.innerText = cc.label;
+							input.append(choice);
+							idx++;
+						}
 					}
 					input.selectedIndex = selectedIndex;
 					opt.append(input);
@@ -1407,7 +1793,7 @@ NgChm.createNS('NgChm.LNK');
 				const e = element.children[oi].children[1];
 				if (o.type === 'checkbox') {
 					values[o.label] = e.checked;
-				} else if (o.type === 'dropdown') {
+				} else if (o.type === 'dropdown' || o.type === 'text') {
 					values[o.label] = e.value;
 				} else if (o.type === 'group') {
 					values[o.label] = getPluginOptionValues (o.options, e);
@@ -1419,7 +1805,7 @@ NgChm.createNS('NgChm.LNK');
 		}
 
 		function selectToCoordinate (coord) {
-			const label = coord.userLabelEl.children[1].value; //.select.value.replace(/\.coordinate\./, ' ');
+			const label = coord.userLabel.element.children[1].value; //.select.value.replace(/\.coordinate\./, ' ');
 			const choice = coord.select.children[coord.select.selectedIndex];
 			const type = choice.dataset.type;
 			if (type === 'data') {
@@ -1429,27 +1815,46 @@ NgChm.createNS('NgChm.LNK');
 			}
 		}
 
+		function selectToGroups (coord) {
+			const labels = coord.userLabels.map(ul => ul.element.children[1].value);
+			const choice = coord.select.children[coord.select.selectedIndex];
+			const type = choice.dataset.type;
+			return ({ type, selectValue: coord.select.value, labels, labelIdx: coord.data });
+		}
+
 		function axesElementsToOps (aEls) {
-			return {
+			const ops = {
 				axisName: aEls.select.value,
-				coordinates: aEls.coordinates.map(axisC => selectToCoordinate (axisC)),
-				covariates: aEls.covariates.map(axisC => selectToCoordinate (axisC))
+				data: aEls.data.map(axisC => selectToCoordinate (axisC)),
+				cocos: aEls.cocos,
+				groups: aEls.groups
 			};
+			for (let idx = 0; idx < aEls.cocos.length; idx++) {
+				const f = aEls.cocos[idx] + 's';
+				ops[f] = aEls[f].map(axisC => selectToCoordinate (axisC));
+			};
+			for (let idx = 0; idx < aEls.groups.length; idx++) {
+				const f = aEls.groups[idx] + 's';
+				ops[f] = aEls[f].map(axisC => selectToGroups (axisC));
+			};
+			return ops;
 		}
 
 		function applyPanel() {
 			let plotTitle = 'Special';
 			if (axesOptions.length === 1) {
+				//console.log({mar4: 'calling capitalize here', axesOptions: axesOptions})
 				plotTitle = NgChm.UTIL.capitalize (axesOptions[0].select.value) + 's';
-				if (axesOptions[0].covariates.length === 1) {
-					const groupName = axesOptions[0].covariates[0].userLabelEl.children[1].value;
+				/*if (axesOptions[0].covariates.length === 1) {
+					const groupName = axesOptions[0].covariates[0].userLabel.element.children[1].value;
 					if (groupName !== '') {
 						plotTitle = plotTitle + ': ' + groupName;
 					}
-				} else {
+				} else {*/
 					plotTitle = plotTitle + ': special';
-				}
+				//}
 			}
+			//console.log({mar4: 'axisOptions before using', axesOptions: axesOptions})
 			const plotParams = {
 				plotTitle,
 				axes: axesOptions.map(ao => axesElementsToOps (ao)),
@@ -1465,23 +1870,11 @@ NgChm.createNS('NgChm.LNK');
 			NgChm.Pane.removePopupNearIcon (panel, icon);
 		}
 
-		const buttonBox = NgChm.UTIL.newElement('DIV.buttonBox', {}, NgChm.UTIL.newElement('SPAN.fill'));
-		panel.appendChild (buttonBox);
-
-		const applyBtn = NgChm.UTIL.newElement('SPAN.button');
-		applyBtn.onclick = applyPanel;
-		applyBtn.appendChild(NgChm.UTIL.newTxt('APPLY'));
-		buttonBox.appendChild (applyBtn);
-
-		const resetBtn = NgChm.UTIL.newElement('SPAN.button');
-		resetBtn.onclick = resetPanel;
-		resetBtn.appendChild(NgChm.UTIL.newTxt('RESET'));
-		buttonBox.appendChild (resetBtn);
-
-		const closeBtn = NgChm.UTIL.newElement('SPAN.button');
-		closeBtn.onclick = closePanel;
-		closeBtn.appendChild(NgChm.UTIL.newTxt('CLOSE'));
-		buttonBox.appendChild (closeBtn);
+		panel.appendChild (NgChm.UTIL.newElement('DIV.buttonBox', {}, [
+			NgChm.UTIL.newButton('APPLY', {}, { click: applyPanel }),
+			NgChm.UTIL.newButton('RESET', {}, { click: resetPanel }),
+			NgChm.UTIL.newButton('CLOSE', {}, { click: closePanel })
+		]));
 
 		NgChm.Pane.insertPopupNearIcon (panel, icon);
 	}
@@ -1491,10 +1884,12 @@ NgChm.createNS('NgChm.LNK');
 		if (msg.op === 'register') vanodiRegister (nonce, loc, msg);
 		if (msg.op === 'selectLabels') vanodiSelectLabels (nonce, loc, msg);
 		if (msg.op === 'mouseover') vanodiMouseover (nonce, loc, msg);
+		if (msg.op === 'getLabels') vanodiSendLabels (nonce, loc, msg);
+		if (msg.op === 'getTestData') vanodiSendTestData (nonce, loc, msg);
 	}
 
 	function vanodiRegister (nonce, loc, msg) {
-		console.log ({ 'Vanodi register': msg, loc:loc });
+		//console.log ({ 'Vanodi register': msg, loc:loc });
 		const { plugin, params, iframe, source } = pluginData[nonce];
 		plugin.config = { name: msg.name, axes: msg.axes, options: msg.options };
 		if (Object.entries(params).length === 0) {
@@ -1504,6 +1899,43 @@ NgChm.createNS('NgChm.LNK');
 			alert ('Params has length > 0');
 			loc.paneTitle.innerText = plugin.name;
 			NgChm.LNK.initializePanePlugin (nonce, params);
+		}
+	}
+
+	function vanodiSendLabels (nonce, loc, msg) {
+		console.log ({ 'Vanodi sendLabels': msg, loc:loc });
+		const { plugin, params, iframe, source } = pluginData[nonce];
+		// msg.axisName
+		if (msg.axisName === 'row' || msg.axisName === 'column') {
+			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'labels', labels: NgChm.UTIL.getActualLabels(msg.axisName) }}, '*');
+		} else {
+			console.log ({ m: 'Malformed getLabels request', msg, detail: 'msg.axisName must equal row or column' });
+		}
+	}
+
+	const vanodiKnownTests = [
+		{ label: 'T-test', value: 'T-test' }
+	];
+	function vanodiSendTestData (nonce, loc, msg) {
+		console.log ({ 'Vanodi sendTestData': msg, loc:loc });
+		const { plugin, params, iframe, source } = pluginData[nonce];
+
+		// axisName: 'row',
+		// axisLabels: labels of axisName elements to test
+		// testToRun: name of test to run
+		// group1: labels of other axis elements in group 1
+		// group2: labels of other axis elements in group 2 (optional)
+
+		// msg.axisName
+		if (msg.axisName != 'row' && msg.axisName != 'column') {
+			console.log ({ m: 'Malformed getTestData request', msg, detail: 'msg.axisName must equal row or column' });
+		} else if (vanodiKnownTests.map(t => t.label).indexOf(msg.testToRun) === -1) {
+			console.log ({ m: 'Malformed getTestData request', msg, detail: 'unknown test msg.testToRun', vanodiKnownTests });
+		} else if (msg.group1 == null) {
+			console.log ({ m: 'Malformed getTestData request', msg, detail: 'group1 is required' });
+		} else {
+			var testData = getAxisTestData (msg);
+			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'testData', data: testData }}, '*');
 		}
 	}
 
@@ -1536,22 +1968,29 @@ NgChm.createNS('NgChm.LNK');
 	};
 
 	/*
-		Process message from scatter plot to highlight points selected on the plot
+		Process message from plugins to highlight points selected in plugin
 	*/
 	function vanodiSelectLabels(nonce, loc, msg) {
 		const axis = NgChm.MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
-		const allLabels = NgChm.heatMap.getAxisLabels(axis).labels;
-
-	/*
-		var setSelected = new Set(msg.selection.pointIds); // make set for faster access below
+		const pluginLabels = msg.selection.pointIds.map(l => l.toUpperCase()) // labels from plugin
+		var heatMapAxisLabels;
+		if (pluginLabels.length > 0 && pluginLabels[0].indexOf('|') !== -1) {
+			// Plugin sent full labels
+			heatMapAxisLabels = NgChm.heatMap.getAxisLabels(axis).labels;
+		} else {
+			// Plugin sent actual labels (or actual and full are identical).
+			heatMapAxisLabels = NgChm.UTIL.getActualLabels(axis);
+		}
+		heatMapAxisLabels = heatMapAxisLabels.map(l => l.toUpperCase());
+		var setSelected = new Set(pluginLabels) // make a set for faster access below, and avoiding use of indexOf
 		NgChm.DET.clearSearchItems(axis);
 		var indexes = []
-		for (var i=0; i<allLabels.length; i++) { // loop over all labels
-			if (setSelected.has(allLabels[i])) {  // if set of selected points has label, add index to array of indexes
-				indexes.push(i+1);
+		for (var i=0; i<heatMapAxisLabels.length; i++) { // loop over all labels
+			if (setSelected.has(heatMapAxisLabels[i])) {  // if set of selected points has label, add index to array of indexes
+				indexes.push(i+1);  
 			}
 		}
-		for (var i=0; i<indexes.length; i++) { // add those indexes to the search items
+		for (var i=0; i<indexes.length; i++) { // add those indexes to the search items 
 			NgChm.SEL.searchItems[axis][indexes[i]] = 1;
 			NgChm.DET.labelLastClicked[axis] = indexes[i]
 		}
@@ -1559,13 +1998,6 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.SUM.redrawSelectionMarks();
 		NgChm.SEL.updateSelection();
 		NgChm.DET.showSearchResults();
-	*/
-		const pointIds = msg.selection.pointIds
-		const clickType = msg.selection.clickType || 'standardClick';
-		const lastClickIndex = msg.selection.lastClickText ? allLabels.indexOf (msg.selection.lastClickText) : -1;
-		//console.log ({ m: 'vanodiSelectLabels', axis, pointIds, msg });
-		NgChm.UTIL.setSearchItems (axis, pointIds, clickType, lastClickIndex, nonce);
-
 		// I don't thing we need this here...maybe it was for something else? Or something no-longer used? Not sure so leaving it for now.
 		//NgChm.LNK.postSelectionToLinkouts (axis, clickType, lastClickIndex, nonce);
 	}
