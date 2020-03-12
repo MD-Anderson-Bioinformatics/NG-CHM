@@ -206,6 +206,12 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return datalevels[NgChm.MMGR.DETAIL_LEVEL].totalColumns;
 	}
 	
+	//Return the total number of rows/columns on the specified axis.
+	this.getTotalElementsForAxis = function(axis) {
+		const level = datalevels[NgChm.MMGR.DETAIL_LEVEL];
+		return isRow(axis) ? level.totalRows : level.totalColumns;
+	};
+
 	//Return the number of rows for a given level
 	this.getNumRows = function(level){
 		return datalevels[level].totalRows;
@@ -368,7 +374,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	this.getDataLayers = function() {
 		return mapConfig.data_configuration.map_information.data_layer;
 	}
-	
+
+	this.getCurrentDataLayer = function() {
+		return this.getDataLayers()[NgChm.SEL.currentDl];
+	};
+
 	this.getDividerPref = function() {
 		return mapConfig.data_configuration.map_information.summary_width;
 	}

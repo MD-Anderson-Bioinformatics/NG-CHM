@@ -492,8 +492,7 @@ NgChm.DET.handleSelectDrag = function (e) {
     	for (var i = startCol; i <= endCol; i++){
     		NgChm.SEL.searchItems["Column"][i] = 1;
     	}
-        NgChm.SUM.drawRowSelectionMarks();
-        NgChm.SUM.drawColSelectionMarks();
+        NgChm.SUM.drawSelectionMarks();
         NgChm.SUM.drawTopItems();
         NgChm.DET.updateDisplayedLabels();
         NgChm.DET.drawSelections();
@@ -1254,8 +1253,7 @@ NgChm.DET.detailInit = function () {
 			var selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
 			document.getElementById("search_text").value = selected;
 			NgChm.DET.detailSearch();
-			NgChm.SUM.drawRowSelectionMarks();
-			NgChm.SUM.drawColSelectionMarks();
+			NgChm.SUM.drawSelectionMarks();
 			NgChm.SUM.drawTopItems();
 		}
 		NgChm.DET.initialized = true;
@@ -2191,8 +2189,7 @@ NgChm.DET.labelClick = function (e) {
 	NgChm.SUM.clearSelectionMarks();
 	NgChm.DET.updateDisplayedLabels();
 	NgChm.SEL.updateSelection();
-	NgChm.SUM.drawRowSelectionMarks();
-	NgChm.SUM.drawColSelectionMarks();
+	NgChm.SUM.drawSelectionMarks();
 	NgChm.SUM.drawTopItems();
 	NgChm.DET.showSearchResults();	
 }
@@ -2232,8 +2229,7 @@ NgChm.DET.labelDrag = function(e){
 	NgChm.SUM.clearSelectionMarks();
 	NgChm.DET.showSearchResults();	
 	NgChm.SEL.updateSelection();
-	NgChm.SUM.drawRowSelectionMarks();
-	NgChm.SUM.drawColSelectionMarks();
+	NgChm.SUM.drawSelectionMarks();
 	NgChm.SUM.drawTopItems();
 	NgChm.DET.showSearchResults();	
 	return;
@@ -2935,8 +2931,7 @@ NgChm.DET.detailSearch = function () {
 		return;
 	}
 	NgChm.DET.searchNext(true);
-    NgChm.SUM.drawRowSelectionMarks();
-    NgChm.SUM.drawColSelectionMarks();
+    NgChm.SUM.drawSelectionMarks();
     NgChm.SUM.drawTopItems();
 	if (NgChm.DET.currentSearchItem.index && NgChm.DET.currentSearchItem.axis){
 		if (itemsFound.length != tmpSearchItems.length && itemsFound.length > 0) {
