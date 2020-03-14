@@ -262,6 +262,20 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 	    return hex.length == 1 ? "0" + hex : hex;
 	}
 
+	// Return the hex color that is ratio*color1 + (1-ratio)*color2.
+	// 0.0 <= ratio <= 1.0
+	function blendHexColors (color1, color2, ratio) {
+		const rgba1 = hexToRgba (color1);
+		const rgba2 = hexToRgba (color2);
+		return rgbToHex ({
+			r: (rgba1.r * ratio + rgba2.r * (1.0 - ratio))|0,
+			g: (rgba1.g * ratio + rgba2.g * (1.0 - ratio))|0,
+			b: (rgba1.b * ratio + rgba2.b * (1.0 - ratio))|0,
+			a: (rgba1.a * ratio + rgba2.a * (1.0 - ratio))|0
+		});
+	}
+NgChm.CMM.blendHexColors = blendHexColors;
+
 	function darkenHexColorIfNeeded (hex) {
 		const { r, g, b } = hexToRgba (hex);
 		const low = Math.min (r, g, b);
