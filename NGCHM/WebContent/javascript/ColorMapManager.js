@@ -252,10 +252,41 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 	    return ('#' + componentToHex(r) + componentToHex(g) + componentToHex(b));
 	}
 	
+	function rgbToHex (rgb) {
+	    const { r, g, b } = rgb;
+	    return ('#' + componentToHex(r) + componentToHex(g) + componentToHex(b));
+	}
+
 	function componentToHex(c) {
 	    var hex = c.toString(16);
 	    return hex.length == 1 ? "0" + hex : hex;
 	}
+
+	// Return the hex color that is ratio*color1 + (1-ratio)*color2.
+	// 0.0 <= ratio <= 1.0
+	function blendHexColors (color1, color2, ratio) {
+		const rgba1 = hexToRgba (color1);
+		const rgba2 = hexToRgba (color2);
+		return rgbToHex ({
+			r: (rgba1.r * ratio + rgba2.r * (1.0 - ratio))|0,
+			g: (rgba1.g * ratio + rgba2.g * (1.0 - ratio))|0,
+			b: (rgba1.b * ratio + rgba2.b * (1.0 - ratio))|0,
+			a: (rgba1.a * ratio + rgba2.a * (1.0 - ratio))|0
+		});
+	}
+NgChm.CMM.blendHexColors = blendHexColors;
+
+	function darkenHexColorIfNeeded (hex) {
+		const { r, g, b } = hexToRgba (hex);
+		const low = Math.min (r, g, b);
+		if (low <= 240) {
+			return hex;
+		} else {
+			const s = 240.0 / low;
+			return rgbToHex({ r: (r * s)|0, g: (g * s)|0, b: (b * s)|0 });
+		}
+	}
+NgChm.CMM.darkenHexColorIfNeeded = darkenHexColorIfNeeded;
 
 }
 		
