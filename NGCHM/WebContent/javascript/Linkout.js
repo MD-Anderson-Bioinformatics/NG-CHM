@@ -1906,7 +1906,6 @@ NgChm.createNS('NgChm.LNK');
 			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'none' }}, '*');  // Let plugin know we heard it.
 			NgChm.Pane.switchToPlugin (loc, plugin.name);
 		} else {
-			alert ('Params has length > 0');
 			loc.paneTitle.innerText = plugin.name;
 			NgChm.LNK.initializePanePlugin (nonce, params);
 		}
