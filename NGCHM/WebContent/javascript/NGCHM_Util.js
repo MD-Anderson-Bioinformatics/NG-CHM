@@ -1196,3 +1196,18 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
  **********************************************************************************/
+
+/**
+*  Function to show selected items when the 'SHOW' button in the Gear Dialog is clicked
+* 
+*  @function redrawSearchResults
+*/
+NgChm.UTIL.redrawSearchResults = function () {
+	NgChm.DET.updateDisplayedLabels();
+	NgChm.SUM.redrawSelectionMarks();
+	NgChm.SEL.updateSelection();
+	NgChm.DET.showSearchResults();
+};
+
+
+

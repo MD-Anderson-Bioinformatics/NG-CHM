@@ -2177,6 +2177,9 @@ NgChm.DET.labelClick = function (e) {
 		NgChm.SEL.searchItems[axis][index] = 1;
 		NgChm.DET.labelLastClicked[axis] = index;
 	}
+	var clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
+	var lastClickedIndex = (typeof index == 'undefined') ? focusIndex : index;
+	NgChm.LNK.postSelectionToLinkouts(this.dataset.axis, clickType, index, null);
 	var searchElement = document.getElementById('search_text');
 	searchElement.value = "";
 	document.getElementById('prev_btn').style.display='';
@@ -2795,7 +2798,10 @@ NgChm.DET.detailDrawRowClassBarLabels = function () {
 					if (!document.getElementById("missingSumRowClassBars") && NgChm.SUM.canvas){
 						var x = NgChm.SUM.canvas.offsetLeft;
 						var y = NgChm.SUM.canvas.offsetTop + NgChm.SUM.canvas.clientHeight + 2;
-						NgChm.DET.addLabelDiv(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
+						var sumlabelDiv = document.getElementById('sumlabelDiv')
+						if (sumlabelDiv !== null) {
+							NgChm.DET.addLabelDiv(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
+						}
 					}
 				}
 				prevClassBarHeight = currentClassBar.height;

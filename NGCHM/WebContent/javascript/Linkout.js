@@ -887,7 +887,7 @@ NgChm.createNS('NgChm.LNK');
 			if (tmpColor.length != 1) { console.error('Error getting color for discrete covariate'); tmpColor = [{Color: '#000000'}]}
 			valColors.push(tmpColor[0].Color);
 		});
-		return valColors;
+		return { classColors, colors: valColors };
 	}
 
 	/* Return object of class values (list of values)  and corresponding hex colors (list of hex colors)
@@ -906,7 +906,15 @@ NgChm.createNS('NgChm.LNK');
 		const valClasses = getValueClassesColors (vals, breaks, classColors, cfg.color_map.missing,'Class');
 		// get list of corresponding hex colors for each of vals:
 		const valColors = getValueClassesColors (vals, breaks, classColors, cfg.color_map.missing,'Color');
-		return { values: valClasses, colors: valColors };
+		return { values: valClasses, colors: valColors, colorMap: getVanodiColorMap (cfg.color_map.thresholds, cfg.color_map.colors) };
+	}
+
+	function getVanodiColorMap (thresholds, colors) {
+		const classColors = [];
+		for (let idx = 0; idx < thresholds.length; idx++) {
+		    classColors.push({ 'Class': thresholds[idx], 'Color': colors[idx] });
+		}
+		return classColors;
 	}
 
 	// Return an array of values for the rows/columns specified by idx along axis.
@@ -1113,6 +1121,28 @@ NgChm.createNS('NgChm.LNK');
 		src.postMessage({ vanodi: { nonce, op: 'plot', config, data }}, '*');
 	}; // end of initializePanePlugin
 
+
+	/**
+		Using information in msg about which tests to perform, performs statistical tests and returns results.
+
+		Called from vanodiSendTestData
+
+		@function getAxisTestData
+		@param {Object} msg same format as vanodiSendTestData
+		@return {Object} cocodata
+		@option {Array<String>} labels NGCHM / plugin labels
+		@option {Array<>} results Array of results. Below describes an example element
+
+						{
+							'colorMap': {
+							              'colors': Array of hex colors
+							              'missing': color for missing
+							              'thresholds': thresholds for the color map
+							            },
+							'label': string name for the test
+							'values': array of numerical results of the test
+						}
+	*/
 		// Keys in msg: 
 		// axisName: 'row',
 		// axisLabels: labels of nodes from plugin (e.g. gene symbols from PathwayMapper)
@@ -1157,6 +1187,13 @@ NgChm.createNS('NgChm.LNK');
 				}
 			}
 		}
+		if (idx1.length < 2) {
+			NgChm.UHM.systemMessage('Group too small','Group 1 must have at least 2 members.')
+			return false;
+		} else if (idx2.length < 2) {
+			NgChm.UHM.systemMessage('Group too small','Group 2 must have at least 2 members.')
+			return false;
+		}
 		var summaryStatistics1 = getSummaryStatistics(msg.axisName, axisIdx, idx1);
 		var summaryStatistics2 = getSummaryStatistics(msg.axisName, axisIdx, idx2);
 
@@ -1164,36 +1201,62 @@ NgChm.createNS('NgChm.LNK');
 			labels: [],
 			results: []
 		};
-		cocodata.results.push({
-			label: "t_statistics",
-			values: [],
-			colorMap: {
-				type: "linear",
-				thresholds: [ -3.291, -1.96, 1.96, 3.291 ],
-				colors: [ '#1c2ed4', '#cbcff7', '#f9d4d4', '#d41c1c' ],
-				missing: '#fefefe'
-			}
-		});
-		cocodata.results.push({
-			label: "p_values",
-			values: [],
-			colorMap: {
-				type: "linear",
-				thresholds: [ 0.001, 0.05, 1 ],
-				colors: [ '#000000', '#777777', '#fefefe' ],
-				missing: '#fefefe'
-			}
-		});
 
-		for (let i=0; i < axisIdx.length; i++) {
-			const summary1 = summaryStatistics1[i];
-			const summary2 = summaryStatistics2[i];
-			const tvalue = Welch_tValue(summary1, summary2);
-			const dof = degreesOfFreedom(summary1, summary2);
-			const pvalue = pValue(tvalue, dof);
-			cocodata.labels.push (pluginLabels[i]);
-			cocodata.results[0].values.push(tvalue);
-			cocodata.results[1].values.push(pvalue);
+		if (msg.testToRun === 'Mean') {
+		    const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+		    const vColorMap = {
+		        thresholds: colorMap.getThresholds(),
+			colors: colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded),
+		        type: "linear",
+		        missing: '#fefefe'
+		    };
+		    cocodata.results.push({
+			    label: "mean",
+			    values: [],
+			    colorMap: vColorMap
+		    });
+		    for (let i=0; i < axisIdx.length; i++) {
+			    const summary1 = summaryStatistics1[i];
+			    cocodata.labels.push (pluginLabels[i]);
+			    if (msg.group2 == null || msg.group2.length == 0) {
+				cocodata.results[0].values.push(summary1.mu);
+			    } else {
+			        const summary2 = summaryStatistics2[i];
+				cocodata.results[0].values.push(summary1.mu - summary2.mu);
+			    }
+		    }
+		} else if (msg.testToRun === 'T-test') {
+		    cocodata.results.push({
+			    label: "t_statistics",
+			    values: [],
+			    colorMap: {
+				    type: "linear",
+				    thresholds: [ -3.291, -1.96, 1.96, 3.291 ],
+				    colors: [ '#1c2ed4', '#cbcff7', '#f9d4d4', '#d41c1c' ],
+				    missing: '#fefefe'
+			    }
+		    });
+		    cocodata.results.push({
+			    label: "p_values",
+			    values: [],
+			    colorMap: {
+				    type: "linear",
+				    thresholds: [ 0.001, 0.05, 1 ],
+				    colors: [ '#fefefe', '#777777', '#000000' ],
+				    missing: '#fefefe'
+			    }
+		    });
+
+		    for (let i=0; i < axisIdx.length; i++) {
+			    const summary1 = summaryStatistics1[i];
+			    const summary2 = summaryStatistics2[i];
+			    const tvalue = Welch_tValue(summary1, summary2);
+			    const dof = degreesOfFreedom(summary1, summary2);
+			    const pvalue = pValue(tvalue, dof);
+			    cocodata.labels.push (pluginLabels[i]);
+			    cocodata.results[0].values.push(tvalue);
+			    cocodata.results[1].values.push(pvalue);
+		    }
 		}
 		//console.log ({ m: '< getAxisTestData', msg, cocodata });
 		return cocodata;
@@ -1210,8 +1273,10 @@ NgChm.createNS('NgChm.LNK');
 		const axisCovCfg = NgChm.heatMap.getAxisCovariateConfig (axis.axisName);
 		const valueField = coco + 's';
 		const colorField = coco + 'Colors';
+		const colorMapField = coco + 'ColorMap';
 		cocodata[valueField] = [];
 		cocodata[colorField] = [];
+		cocodata[colorMapField] = [];
 		for (let ci = 0; ci < axis[valueField].length; ci++) { 
 			const ctype = axis[valueField][ci].type; // one of 'covariate' (i.e. from covariate bar) or 'data' (i.e. from map values)
 			const label = axis[valueField][ci].covName;
@@ -1219,27 +1284,31 @@ NgChm.createNS('NgChm.LNK');
 				if (axisCovCfg.hasOwnProperty (label)) {
 					const cfg = axisCovCfg[label];
 					if (cfg.color_map.type === 'continuous') { // i.e. from covariate bar w/ continuous values
-						const { classValues, colors } = getContCovariateColors (cfg, covData[label].values);
+						const { classValues, colors, colorMap } = getContCovariateColors (cfg, covData[label].values);
+						cocodata[colorMapField].push(colorMap);
 						cocodata[colorField].push(colors); // the color corresponding to the 'Class' for each value
 						cocodata[valueField].push(covData[label].values) // the actual values (not 'Class' values) 
 					} else { // i.e. from covariate bar w/ discrete values
-						cocodata[colorField].push(getDiscCovariateColors (axis.axisName, label, covData[label].values, colorMapMgr));
-						cocodata[valueField].push(covData[label].values); //<-- original line
+						const { classColors, colors } = getDiscCovariateColors (axis.axisName, label, covData[label].values, colorMapMgr);
+						cocodata[colorMapField].push(classColors);
+						cocodata[colorField].push(colors);
+						cocodata[valueField].push(covData[label].values); 
 					}
 				} else {
 					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values
-				//console.log({mar4: 'ctype is data for ' + coco});
 				const idx = axis[valueField][ci].labelIdx; 
 				const values = getDataValues(isRow ? 'column' : 'row', idx);
 				cocodata[valueField].push(values);
 				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+
 				var colorsForThisData = []
 				for (var idv = 0; idv < values.length; idv++) {
-					colorsForThisData.push(colorMap.getRgbToHex(colorMap.getColor(values[idv])));
+					colorsForThisData.push(NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getColor(values[idv]))));
 				}
-				cocodata[colorField].push(colorsForThisData)
+				cocodata[colorMapField].push(getVanodiColorMap (colorMap.getThresholds(), colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded)));
+				cocodata[colorField].push(colorsForThisData);
 			} else {
 				console.log ('Unknown coco data type ' + ctype);
 			}
@@ -1247,7 +1316,46 @@ NgChm.createNS('NgChm.LNK');
 		//console.log ({ m: 'setAxisCoCoData', axis, coco, cocodata });
 	}
 
-	// Add the labels to cocodata for the 'group' attributes of axis.
+	/**
+		Pushes user-specified group labels and NGCHM labels for group members to cocodata object.
+
+		As an example, if 'group' = 'ugroup', then the following will be added to the cocodata object:
+
+				[
+					{
+						'grouplabels': Array of strings to label each of the groups. length = 2. E.g. ['my group 1', 'my group 2']
+						'labels': Array of arrays of strings. Each array will have the NGCHM labels of the items in 
+						        each group. E.g. [['sample1', 'sample2'], ['sample5', 'sample9']]
+					}
+				]
+
+		@function setAxisGroupData
+		@param {object} cocodata
+		@option {Array<String>} actualLabels The actual labels from the NGCHM
+		@option {Array<String>} fullLabels The full labels from the NGCHM
+		@param {object} axis
+		@option {String} axisName 'column' or 'row
+		@option {Array<String>} cocos Array of strings that are names for coordinates or covariates. For each item in this array, an additional key will be present in axis, with an 's' added to the name. For example if axis.cocos = ['coordinate','covariate'] then there are two additional keys for axis: 'coordinates' and 'covariates'.
+		@option {Array<>} [coordinates] Present only if 'coordinate' is an element of axisName.cocos
+		@option {Array<>} [covariates] Present only if 'covariate' is an element of axisName.cocos
+		@option {Array<>} data
+		@option {Array<String>} groups Array of string that are names for groups. Similar to axis.cocos, for each item in this array,an additional key will be present in axis, with and 's' added to the name. For example, if axis.groups = ['ugroup'] then there will be an additional key to axis: 'ugroups'
+		@option {Array<>} [ugroups] Present only if the 'ugroup' is an element of axisName.groups. Describes the groups for 
+		                            the statistical tests. Below is a brief description of the elements in the object
+
+			[ 
+				{
+					'covName': if present, name of covariate choosen
+					'labelIdx': Array of length two (one for each group). Each array has the label index from the NGCHM of the items in the groups
+					'labels': User-specified labels for each group
+					'selectValue': covariate selected. How this is different from covName, I am not sure
+					'type': 'covariate' or 'data'. 'covariate' seems to be for when a covariate is choosen from the selector dropdown, 
+					      'data' seems to be for when the GRAB/SHOW buttons are being used.
+				}
+			]
+
+		@param {String} group In this example, 'ugroup'
+	*/
 	function setAxisGroupData (cocodata, axis, group) {
 		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
 		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
@@ -1263,15 +1371,18 @@ NgChm.createNS('NgChm.LNK');
 				if (axisCovCfg.hasOwnProperty (label)) {
 					const cfg = axisCovCfg[label];
 					if (cfg.color_map.type === 'continuous') { // i.e. from covariate bar w/ continuous values
-						cocodata[valueField].push(covData[label].values) // the actual values (not 'Class' values) 
+						const idx = axis[valueField][ci].labelIdx; 
+						const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)])); 
+						cocodata[valueField].push({ grouplabels: axis[valueField][ci].labels, labels });
 					} else { // i.e. from covariate bar w/ discrete values
-						cocodata[valueField].push(covData[label].values); //<-- original line
+						const idx = axis[valueField][ci].labelIdx; 
+						const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)])); 
+						cocodata[valueField].push({ grouplabels: axis[valueField][ci].labels, labels });
 					}
 				} else {
 					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
 				}
-			} else if (ctype === 'data') { // i.e. from selections on the map values
-				//console.log({mar4: 'ctype is data for group ' + group});
+			} else if (ctype === 'data') { // i.e. from selections on the map values (GRAB/SHOW buttons)
 				const idx = axis[valueField][ci].labelIdx; 
 				const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)-1]));
 				cocodata[valueField].push({ grouplabels: axis[valueField][ci].labels, labels });
@@ -1279,7 +1390,6 @@ NgChm.createNS('NgChm.LNK');
 				console.log ('Unknown group data type ' + ctype);
 			}
 		}
-		//console.log ({ m: 'setAxisGroupData', axis, group, cocodata });
 	}
 
 	// Create a gear dialog for the pane identified by the DOM element icon.
@@ -1333,12 +1443,11 @@ NgChm.createNS('NgChm.LNK');
 		}
 
 		const axisParams = plugin.config.axes;
-		//console.log({mar4: 'checking params', axisParams: axisParams});
-		const axesOptions = [];
+		const axesOptions = []; // this is the list that will get sent to the plugin
 		for (let axisId = 0; axisId < config.axes.length; axisId++) {
 			{
 				const labelText = textN(axisParams[axisId].axisLabel || 'Heat map axis', axisId+1, config.axes.length);
-				optionsBox.appendChild (NgChm.UTIL.newElement('SPAN.leftLabel', {}, NgChm.UTIL.newTxt (labelText)));
+				optionsBox.appendChild (NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt (labelText)]));
 			}
 			const axis1Select = NgChm.UTIL.newElement('SELECT');
 			axis1Select.add (optionNode ('axis', 'column'));
@@ -1368,7 +1477,6 @@ NgChm.createNS('NgChm.LNK');
 			}
 
 			const selectedAxis = NgChm.MMGR.isRow(axisParams[axisId].axisName) ? 'row' : 'column';
-			//console.log({mar4: 'selectedAxis', selectedAxis: selectedAxis})
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
 
@@ -1377,7 +1485,6 @@ NgChm.createNS('NgChm.LNK');
 				for (let cid = 0; cid < numSelectors; cid++) {
 					const selParams = cid < params.length ? params[cid] : {};
 					const selectEl = NgChm.UTIL.newElement('SELECT');
-					//console.log({mar4: 'checking pan stuff', selectorName: selectorName, numSelectors: numSelectors});
 					optionsBox.appendChild (
 						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
 							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, numSelectors))
@@ -1395,7 +1502,6 @@ NgChm.createNS('NgChm.LNK');
 					function updateAxis() {
 						while (selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
 						const uname = textN (' for ' + selectorName, cid+1, numSelectors);
-						//console.log({mar4: 'calling selectedElementsOptionName', thisAxis: thisAxis, uname: uname})
 						const selectedElementsOption = selectedElementsOptionName (thisAxis, uname);
 						let defaultOpt;
 						if (selParams.type === 'data') {
@@ -1452,7 +1558,7 @@ NgChm.createNS('NgChm.LNK');
 							} else if (data.length === 1) {
 								userLabel.setLabel ( NgChm.heatMap.getAxisLabels(otherAxis).labels[data[0]-1]);
 							} else {
-								userLabel.setLabel ( 'Group of ' + countNode.textContent);
+								userLabel.setLabel ( 'Average of ' + countNode.textContent);
 							}
 						} else {
 							infoEl.classList.add ('hide');
@@ -1496,16 +1602,30 @@ NgChm.createNS('NgChm.LNK');
 				}
 			}  // end function createLinearSelectors
 
+			/**
+				Creates the selectors for choosing groups in the gear menu.
+				@function createGroupSelectors
+				@param {object} sss
+				@param {int} numSelectors Number of selectors to create
+				@param {string} selectorName
+				@param {object} params
+			*/
 			function createGroupSelectors (sss, numSelectors, selectorName, params) {
 				const debug = false;
 				params = params || [];
+				var thisText = textN(NgChm.UTIL.capitalize(selectorName))
 				for (let cid = 0; cid < 1+0*numSelectors; cid++) {
-					optionsBox.appendChild (
-						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
+					var selectorGroupElem = NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
 							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, 1+0*numSelectors))
 						])
-					);
-					const selectEl = NgChm.UTIL.newElement('SELECT');
+					var groupMainHelp = NgChm.UTIL.newElement('a.helpQuestionMark',{})
+					var helpText = 'Specify groups for statistical tests by first selecting a covariate or \'Selected '+
+					        thisAxis+'s for Group(s):\' from this dropdown.';
+					groupMainHelp.onmouseover = function(){NgChm.UHM.hlp(this, helpText, 400, 0, 10)};
+					groupMainHelp.onmouseout = function(){NgChm.UHM.hlpC()}
+					selectorGroupElem.appendChild(groupMainHelp);
+					optionsBox.appendChild (selectorGroupElem);
+					const selectEl = NgChm.UTIL.newElement('SELECT#gearDialogCovariateSelect');
 					optionsBox.appendChild (
 						selectEl
 					);
@@ -1521,13 +1641,16 @@ NgChm.createNS('NgChm.LNK');
 
 					sss[cid].userLabels = [];
 					sss[cid].grabbers = [];
+					sss[cid].covariateBars = []
 					for (let idx = 0; idx < numSelectors; idx++) {
 						sss[cid].data.push([]);
 						const groupName = selParams.labels && idx < selParams.labels.length ? selParams.labels[idx] : 'Undefined';
 						sss[cid].userLabels.push(createLabeledTextInput(groupName, idx+1, numSelectors));
-						optionsBox.appendChild (sss[cid].userLabels[idx].element);
+						optionsBox.appendChild (sss[cid].userLabels[idx].element); // append text box for label
 						sss[cid].grabbers.push(createLabelGrabber (thisAxis, sss[cid].userLabels[idx], idx));
-						optionsBox.appendChild (sss[cid].grabbers[idx].element);
+						optionsBox.appendChild (sss[cid].grabbers[idx].element); // append GRAB/SHOW
+						sss[cid].covariateBars.push(createGroupChooserDiv(thisAxis, sss[cid], idx+1))
+						optionsBox.appendChild (sss[cid].covariateBars[idx].element) // append dropdown for covariate threshold
 					}
 
 					function isGrabberSelected () {
@@ -1541,7 +1664,6 @@ NgChm.createNS('NgChm.LNK');
 						// Remove choices for previous axis, if any.
 						while (selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
 						const uname = ' for ' + selectorName;
-						//console.log({mar4: 'calling selectedElementsOptionName', thisAxis: thisAxis, uname: uname})
 						const selectedElementsOption = selectedElementsOptionName (otherAxis, uname);
 						let defaultOpt;
 						if (selParams.type === 'data') {
@@ -1631,24 +1753,229 @@ NgChm.createNS('NgChm.LNK');
 							}
 						}
 						return { element: infoEl, clearData, setSummary, updateAxis };
-					}
+					} // end function createLabelGrabber
 
+					/**
+						Function to create main DIV element to allow the user to choose members of the groups for 
+						statistical tests. If the selected covariate is discrete, this div will be filled with text
+						boxes for each threshold for the user to select group members. If the selected covariate is continuous, this div will have min and
+						max boxes for the user to input a range for each group. If the user selects a non-covariate,
+						this div will have the 'GRAB' and 'SHOW' buttons for the user to select labels.
+
+						There is a help question mark for each group, and the contents of that help depends on the selected 
+						covariate (discrete vs continuous vs GRAB/SHOW), the selected test (mean vs t-test), and the group index
+						(group 1 vs group 2).
+						@function createGroupChooserDiv 
+						@param {string} thisAxis 'row' or 'column'
+						@param {object} this_sss
+						@param {int} idx
+					*/
+					function createGroupChooserDiv(thisAxis, this_sss, idx) {
+						const label = 'Group: ' + idx 
+						const covariateThresholdSelectElem = NgChm.UTIL.newElement('DIV.thresholdDropdownDIV', {}, [
+							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ NgChm.UTIL.newTxt(label) ])
+						])
+						var groupIdxHelpElem = NgChm.UTIL.newElement('a.helpQuestionMark',{});
+						groupIdxHelpElem.onmouseover = function() {
+							// marohrdanz: this is clumsy, fragile, and needs refactored
+							var testElem = document.getElementById('gearDialogTestSelect')
+							var selectedTest = testElem.options[testElem.selectedIndex].value;
+							var selectedCovariate = selectEl.options[selectEl.selectedIndex].value;
+							var covariateClassificationConfig = NgChm.heatMap.getAxisCovariateConfig(thisAxis);
+							var typeContOrDisc = covariateClassificationConfig[selectedCovariate].color_map.type
+							var helpText = '';
+							if (selectedTest == 'Mean') {
+								if (idx == 1) { // help for first group for mean test
+									helpText += '<u>Mean:</u> If only Group 1 is specified, the mean value of Group 1 will be calculated. Otherwise the difference in means between Group 1 and Group 2 will be calculated.';
+								} else if (idx == 2) { // help for second group of mean test
+									helpText += '<u>Mean:</u> If Group 2 is unspecified, the mean of Group 1 will be calculated. Otherwise the difference in means between Group 1 and Group 2 will be calculated.';
+								}
+							} else if (selectedTest == 'T-test') {
+								if (idx == 1) { // help for first group for T-test
+									helpText += '<u>T-test:</u> If only Group 1 is specified, then Group 2 is automatically all elements NOT in Group 1.';
+								} else if (idx == 2) { // help for second group for T-test
+									helpText += '<u>T-test:</u> If Group 2 is unspecified, it defaults to all elements NOT in Group 1.';
+								}
+							} else {
+								console.warn('Unknown vanodi test')
+							}
+							if (typeContOrDisc == 'discrete') {
+								helpText += '<br><br>Select checkboxes to specify Group ' + idx + '.';
+								if (idx == 2 && selectedTest == 'T-test') {
+									helpText += ' Leave all boxes unchecked to specify Group 2 as all elements NOT in Group 1'
+								}
+							} else if (typeContOrDisc == 'continuous') {
+								helpText += '<br><br>Enter a Lower and Upper Bound including an operator to specify Group ' + idx + '.<br>E.g. Lower Bound: >2.3, Upper Bound: <3.4';
+								if (idx == 2 && selectedTest == 'T-test') {
+									helpText += ' Leave emtpy to specify Group 2 as all elements NOT in Group 1'
+								}
+							} else {
+								console.warn('Unknown covariate type')
+							}
+							NgChm.UHM.hlp(this, helpText, 300, undefined, 10)
+						};
+						groupIdxHelpElem.onmouseout = function() {NgChm.UHM.hlpC()}
+						covariateThresholdSelectElem.appendChild(groupIdxHelpElem);
+						// set an attribute for the group number
+						return {element: covariateThresholdSelectElem, createChoosersForGroups}
+
+						/**
+							Onchange handler for the checkboxes in the gear menu.
+
+							- Ensures that for the checked checkbox, checkboxes of that same value in other groups
+							  become unchecked. (so that groups are mutually exclusive)
+							- For each group of checkboxes, adds the index from the heat map for all the samples with
+							  covariate value equal to the corresponding check box
+
+							@function covariateCheckboxesOnChange
+							@param {Object} e onclick event for gear menu covariate checkboxes
+						*/
+						function covariateCheckboxesOnChange(e) {
+							const colVal = selectEl.options[selectEl.selectedIndex].value;
+							const covariateClassificationConfig = NgChm.heatMap.getAxisCovariateConfig(thisAxis);
+							const covariateClassificationData = NgChm.heatMap.getAxisCovariateData(thisAxis);
+							const typeContOrDisc = covariateClassificationConfig[colVal].color_map.type
+							const covariateValues = covariateClassificationData[colVal].values 
+							// for each group, add the indexes for the checked boxes or the input text boxes to sss[cid].data[groupIdx]
+							const nGroups = sss[cid].data.length // <-- number of groups
+							for (var groupIdx=0; groupIdx<nGroups; groupIdx++) { // loop over groups to fill sss[cid].data lists
+								let groupNumber = groupIdx+1; // all this code is very prone to off by one errors :thumbsdown:
+								sss[cid].data[groupIdx] = [] // <-- clear any old values
+								if (typeContOrDisc == 'discrete') { // get data from checkboxes
+									let targetCheckbox = e.target
+									let targetValue = e.target.value
+									// uncheck any other checkboxes with this value (so groups are mutually exclusive):
+									const checkboxesWTargetValue  = document.querySelectorAll('[value="'+targetValue+'"]')  
+									for (let i=0; i<checkboxesWTargetValue.length; i++) { 
+										if (checkboxesWTargetValue[i] != targetCheckbox) { 
+											checkboxesWTargetValue[i].checked = false;
+										}
+									}
+									const checkboxGroup = document.querySelectorAll('input[data-covariate-group="' + groupNumber + '"]')
+									let checkedValues = [] //<-- all the covariate values checked in this group
+									checkboxGroup.forEach((box) => {
+										if (box.checked == true) {
+											checkedValues.push(box.value)
+										}
+									})
+									for (let j=0; j<covariateValues.length; j++) {
+										if (checkedValues.indexOf(covariateValues[j]) > -1) {
+											sss[cid].data[groupIdx].push(String(j));
+										}
+									}
+								} else if (typeContOrDisc == 'continuous') { // get data from input text boxes
+									let indexesToKeep = []
+									const rangeString = document.querySelectorAll('input[data-covariate-group="' + groupNumber + '"][class="gear-menu-covariate-range"]')[0].value;
+									const parsedSearch = NgChm.SRCH.parseSearchExpression(rangeString);
+									const isValid = NgChm.SRCH.isSearchValid(parsedSearch.firstOper, parsedSearch.firstValue,
+									    parsedSearch.secondOper, parsedSearch.secondValue)
+									if (!isValid) {
+										NgChm.UHM.systemMessage("Invalid Range Options",
+										   "Error in range selection. Examples of acceptable ranges: >2<5, >=1<=10")
+										return;
+									}
+									for (let j=0; j<covariateValues.length; j++) {
+										let covVal = covariateValues[j]
+										let selectItem = NgChm.SRCH.evaluateExpression(parsedSearch.firstOper, parseFloat(parsedSearch.firstValue), parseFloat(covVal))
+										if (parsedSearch.secondOper !== null && selectItem === true) {
+											selectItem = NgChm.SRCH.evaluateExpression(parsedSearch.secondOper, parseFloat(parsedSearch.secondValue), parseFloat(covVal))
+										}
+										if (selectItem === true) {
+											indexesToKeep.push(j)
+										}
+									}
+									indexesToKeep = [...new Set(indexesToKeep)]
+									sss[cid].data[groupIdx] = indexesToKeep
+									if (groupIdx == nGroups-1) { // verify that groups are mutually exclusive.
+										const common = sss[cid].data[0].filter(value => sss[cid].data[1].includes(value))
+										if (common.length > 0) {
+											NgChm.UHM.systemMessage('Group Selection Warning',
+											  "WARNING: Groups are not mutually exclusive in Gear Dialog.")
+										}
+									}
+								} else {
+									console.error('Unknown covariate type')
+								}
+							}  // end loop over groups
+						} // end covariateCheckboxesOnChange (onchange handler for checkboxes)
+
+						/**
+							Create UI elements for user to select cohort for groups (e.g. groups for T-test)
+
+							@function createChoosersForGroups
+							@param {String} selectedCovariate name of covariate selected 
+
+							If the selected covariate is discrete, checkboxes with values/text from the thresholds are
+							shown to the user.
+							If the selected covariate is continuous, text boxes for the user to add a min and max value
+							are shown to the user.
+						*/
+						function createChoosersForGroups(selectedCovariate) {
+							const typeContOrDisc = NgChm.heatMap.getAxisCovariateConfig(thisAxis)[selectedCovariate].color_map.type;
+							const classNameForLabel = 'checkbox-group-'+idx
+							var checkboxElements = document.getElementsByClassName(classNameForLabel)
+							while(checkboxElements.length > 0) { // remove existing elements
+								checkboxElements[0].parentNode.removeChild(checkboxElements[0])
+							}
+							if (typeContOrDisc == 'continuous') {
+								var covariateValues = NgChm.heatMap.getAxisCovariateData(thisAxis)[selectedCovariate].values.map( x => parseFloat(x));
+								var minCovValue = Math.min(...covariateValues).toPrecision(4);
+								var maxCovValue = Math.max(...covariateValues).toPrecision(4);
+								var midCovValue = ((maxCovValue - minCovValue) / 2).toPrecision(4); 
+								var rangeElem = NgChm.UTIL.newElement('LABEL.'+classNameForLabel, {},
+									[ NgChm.UTIL.newTxt('  (Range: '+minCovValue+' to '+maxCovValue+')'), NgChm.UTIL.newElement('BR'),
+										NgChm.UTIL.newElement('BR'), NgChm.UTIL.newElement('SPAN.gear-menu-spacing'),
+										NgChm.UTIL.newElement('INPUT.gear-menu-covariate-range',
+											{type: 'text', 'data-covariate-group': idx, 'placeholder': 'e.g: >='+midCovValue.toString()+'<'+maxCovValue.toString()}) ])
+								rangeElem.onchange = covariateCheckboxesOnChange;
+								covariateThresholdSelectElem.appendChild(rangeElem);
+							} else {
+								const covariateBarThresholds = NgChm.heatMap.getAxisCovariateConfig(thisAxis)[selectedCovariate].color_map.thresholds;
+								covariateBarThresholds.forEach((covThresh) => {
+									var thresholdCheckbox = NgChm.UTIL.newElement('LABEL.'+classNameForLabel, {}, 
+										[ NgChm.UTIL.newElement('BR'), 
+											NgChm.UTIL.newElement('INPUT.gear-menu-covariate-checkbox', 
+												{type: 'checkbox', 'data-covariate-group': idx, value: covThresh}),
+											NgChm.UTIL.newTxt(covThresh) ])
+									thresholdCheckbox.onchange = covariateCheckboxesOnChange
+									covariateThresholdSelectElem.appendChild(thresholdCheckbox)
+								})
+							}
+						}
+					} // end function createGroupChooserDiv 
+
+					/*
+							Function to set sub-options for the group selector after the user has chosen
+							something from the dropdown for this group selector. For example, if the
+							user has chosen 'Selected columns for Groups(s)', the SHOW & GRAB buttons are displayed.
+					*/
 					sss[cid].setSummary = function setSummary (selectedValue, labels) {
+						const thresholdDropdownDIV = document.getElementsByClassName('thresholdDropdownDIV')
+						// Clear options from the covariate threshold selectors:
+						const thresholdDropdownSELECT = document.getElementsByClassName('thresholdDropdownSELECT')
+						for (thresholdSelect of thresholdDropdownSELECT) {
+							while (thresholdSelect.firstChild) { thresholdSelect.removeChild(thresholdSelect.lastChild) }
+						}
 						if (isGrabberSelected()) {
 							for (let idx = 0; idx < numSelectors; idx++) {
 								sss[cid].grabbers[idx].setSummary(true, selectedValue);
 							}
-						} else {
-							const idx = sss[cid].select.selectedIndex;
-							const item = sss[cid].select.children[idx];
-							if (debug) console.log ({ m: 'selector setSummary', cid, idx, item, isGrabber: item === sss[cid].selOpt });
+							for (thresholdDiv of thresholdDropdownDIV) { thresholdDiv.classList.add('hide') } // hide covariate threshold dropdowns
+						} else {  // covariate bar selected
+							for (thresholdDiv of thresholdDropdownDIV) { thresholdDiv.classList.remove('hide') } // show covariate threshold dropdowns
+							const selectedIndex = sss[cid].select.selectedIndex;
+							const selectedValue = sss[cid].select.children[selectedIndex].value;
+							const item = sss[cid].select.children[selectedIndex];
+							if (debug) console.log ({ m: 'selector setSummary', cid, selectedIndex, item, isGrabber: item === sss[cid].selOpt });
 							for (let idx = 0; idx < numSelectors; idx++) {
 								sss[cid].grabbers[idx].setSummary(false);
-								if (labels) {
+								if (labels) {  
 									sss[cid].userLabels[idx].setLabel ( labels[idx]);
 								} else {
-									sss[cid].userLabels[idx].setLabel ( item.value.replace(/\.coordinate\./, ' '));
+									let groupNumber = idx + 1
+									sss[cid].userLabels[idx].setLabel ('Group '+groupNumber+' for '+ item.value.replace(/\.coordinate\./, ' '));
 								}
+								sss[cid].covariateBars[idx].createChoosersForGroups(selectedValue); 
 							}
 						}
 					};
@@ -1662,12 +1989,14 @@ NgChm.createNS('NgChm.LNK');
 
 			if (config.axes[axisId].coco == null) config.axes[axisId].coco = [];
 			const pa = params.axes && axisId < params.axes.length ? params.axes[axisId] : { cocos:[], groups: [] };
+			// create UI for choosing coordiantes / covariates 
 			for (let cocoidx = 0; cocoidx < config.axes[axisId].coco.length; cocoidx++) {
 				const coco = config.axes[axisId].coco[cocoidx];
 				axis1Coco[coco.baseid] = [];
 				createLinearSelectors (axis1Coco[coco.baseid], coco.max, coco.name, pa[pa.cocos[cocoidx]+'s']);
 			}
 			if (config.axes[axisId].group == null) config.axes[axisId].group = [];
+			// create UI for choosing groups 
 			for (let groupidx = 0; groupidx < config.axes[axisId].group.length; groupidx++) {
 				const group = config.axes[axisId].group[groupidx];
 				axis1Coco[group.baseid] = [];
@@ -1680,11 +2009,13 @@ NgChm.createNS('NgChm.LNK');
 				groups: [],
 				cocos: []
 			};
+			// add coordiante/covariate information to theseOpts
 			for (let cocoidx = 0; cocoidx < config.axes[axisId].coco.length; cocoidx++) {
 				const coco = config.axes[axisId].coco[cocoidx];
 				theseOpts[coco.baseid+'s'] = axis1Coco[coco.baseid];
 				theseOpts.cocos.push (coco.baseid);
 			}
+			// add groups information to theseOpts
 			for (let groupidx = 0; groupidx < config.axes[axisId].group.length; groupidx++) {
 				const group = config.axes[axisId].group[groupidx];
 				theseOpts[group.baseid+'s'] = axis1Coco[group.baseid];
@@ -1757,7 +2088,7 @@ NgChm.createNS('NgChm.LNK');
 					input.value = optParam !== null ? optParam : opts[oi].default;
 					opt.append (input);
 				} else if (opts[oi].type === 'dropdown') {
-					const input = NgChm.UTIL.newElement('SELECT');
+					const input = NgChm.UTIL.newElement('SELECT#gearDialogTestSelect');
 					let selectedIndex = 0;
 					let choices = opts[oi].choices;
 					if (!Array.isArray(choices)) choices = [ choices ];
@@ -1830,9 +2161,68 @@ NgChm.createNS('NgChm.LNK');
 			const labels = coord.userLabels.map(ul => ul.element.children[1].value);
 			const choice = coord.select.children[coord.select.selectedIndex];
 			const type = choice.dataset.type;
-			return ({ type, selectValue: coord.select.value, labels, labelIdx: coord.data });
+			return ({ type, selectValue: coord.select.value, labels, labelIdx: coord.data, covName: coord.select.value });
 		}
 
+		/**
+			Function to convert the user selections from DOM elements in the Gear Dialog into data to send to the plugins.
+			
+			The aEls object has additional key/value pairs depending on the arrays 'cocos' and 'groups'. For example,
+			if cocos = ['coordinate', 'covariate'] and groups = ['ugroup'], there will be three additional keys
+			in aEls: 'coordinates', 'covariates', and 'ugroups'. Note the additional 's' on the name.
+
+			- coordaintes: Array of objects relating to DOM elements for user selection of 'coordinates',
+			- covariates: Array of objects relating to DOM elements for user selection of 'covariates',
+			- ugroups: Array of objects relating to DOM elements for user selection of 'ugroups'.
+			
+			The return value of this function will become the 'axes' key to the plotParams object. This is part
+			of the data sent to the plugins. This return object has the same general structure as the aEls input 
+			object. Below is some description of the structure of this 'ops' return object:
+
+			- cocos: Same as input
+			- coordinates: Specific to this example. Array of objects of information extracted from DOM element. Example:
+
+					[
+						{
+							type: 'covariate' // for data obtained from covariate bar
+							label: <user-specified label> // from the text box in Gear Menu
+							covName: <name of covariate bar>
+						},
+						{
+							type: 'data' // for data obtained from GRAB/SHOW
+							label: <user-specified label> // from the text box in Gear Menu
+							labelIdx: Array of indexes of NGCHM rows or columns 
+						}
+					]
+
+			- groups: Same as input
+			- ugroups: Specific to this example. Array of objects of information extracted from DOM element. Example:
+
+					[
+						{
+							labelIdx: Array of arrays of indexes of NGCHM rows or columns. One array for each group,
+							labels: Array of user-specified labels // from the text boxes in the Gear Menu
+							selectValue: value from the, in this example, 'Group(s)' dropdown. In this example this is one of the covariate bars or something to let you know the GRAB/SHOW was used
+							type: 'data'
+						}
+					]
+
+			- data:  ??
+
+
+				@param {object} aEls Object of selection-element stuff
+				@option {Array<String>} cocos Array of names of coordinate/covariate data to send to plugin. E.g.: ['coordiante', 'covariate'].
+					       There will be an additional key in the aEls object for each item in this list, with and added 's'. 
+					       In this example, that means there are two additional keys: 'coordinates' and 'covariates'
+				@option {Array<String>} groups Similar to 'cocos'. Array of names of group data to send to plugin. E.g.: ['ugroup']
+					        There will be an additional key in the aEls object for each item in this list, with and added 's'.
+					        In this example, that means there is an additional key: 'ugroups'.
+				@option {String} dataTypeName ??
+				@option {Array<>} data 
+				@option {Element} select DOM element for selecting between 'row' and 'column'
+				@return {object} The value for the 'axes' key to the plotParams object. This is part of the data sent to the plugins. The 
+				       same general structure as for the 'aEls' input object. See the more detailed description below.
+		*/
 		function axesElementsToOps (aEls) {
 			const ops = {
 				axisName: aEls.select.value,
@@ -1851,10 +2241,74 @@ NgChm.createNS('NgChm.LNK');
 			return ops;
 		}
 
+
+		/**
+			Function to verify minimum required entries for coordinates and groups are present
+			before sending data to plugin.
+
+			This function verifies that the labelIdx entries are non-empty, alerts the user, and returns 'false'.
+			Otherwise this function returns 'true'.
+			
+			The config object is used to determine which plotParams to validate.
+			
+			For cocos: since user is choosing from a dropdown, we only need to test the type = 'data' (because 
+			otherwise the values are comming from a covariate bar).
+			
+			@function validateParams
+			@param {Object} plotParams Parameters sent to plugin
+		*/
+		function validateParams(plotParams) {
+			var minNumberRequired, thingToCheck
+			for (var a=0; a<config.axes.length; a++) {
+				for (var c=0; c<config.axes[a].coco.length; c++) { 
+					minNumberRequired = config.axes[a].coco[c].min 
+					for (var i=0; i<minNumberRequired; i++) {
+						thingToCheck = config.axes[a].coco[c].baseid + 's'
+						var cocoToCheck = plotParams.axes[a][thingToCheck]
+						for (var j=0; j<minNumberRequired; j++) { 
+							if (cocoToCheck[j].type == 'data' && cocoToCheck[j].labelIdx.length == 0) { 
+								var entryNumber = j+1         
+								NgChm.UHM.systemMessage('Missing Selection',
+								   "Missing selection for " + config.axes[a].coco[c].name + " "+entryNumber+ " in Gear Dialog.")
+								return false
+							}
+						}
+					}
+				} // end loop over config.axes.coco 
+				for (var g=0; g<config.axes[a].group.length; g++) {
+					minNumberRequired = config.axes[a].group[g].min
+					for (var i=0; i<minNumberRequired; i++) {
+						thingToCheck = config.axes[a].group[g].baseid + 's'
+						var groupToCheck = plotParams.axes[a][thingToCheck][0]
+						for (var j=0; j<minNumberRequired; j++) {
+							if (groupToCheck.labelIdx[j].length == 0) {
+								NgChm.UHM.systemMessage('Missing Selection',
+								   "Missing selection for "+config.axes[a].group[g].label+" in Gear Dialog. At least " + minNumberRequired + " is required.")
+								return false;
+							}
+						}
+					}
+				} // end loop over config.axes.group
+			} // end loop over config.axes
+			return true
+		}
+
+		/**
+				Invoked when user clicks 'APPLY' button on gear menu. 
+
+			This function constructs the plotParams object with:
+
+					{
+						axes: via a call to axesElementsToOps
+						options: via a call to getPluginOptionValues
+					}
+
+
+			@function applyPanel
+		*/
 		function applyPanel() {
 			let plotTitle = 'Special';
 			if (axesOptions.length === 1) {
-				//console.log({mar4: 'calling capitalize here', axesOptions: axesOptions})
 				plotTitle = NgChm.UTIL.capitalize (axesOptions[0].select.value) + 's';
 				/*if (axesOptions[0].covariates.length === 1) {
 					const groupName = axesOptions[0].covariates[0].userLabel.element.children[1].value;
@@ -1865,16 +2319,20 @@ NgChm.createNS('NgChm.LNK');
 					plotTitle = plotTitle + ': special';
 				//}
 			}
-			//console.log({mar4: 'axisOptions before using', axesOptions: axesOptions})
 			const plotParams = {
 				plotTitle,
 				axes: axesOptions.map(ao => axesElementsToOps (ao)),
 				options: getPluginOptionValues (config.options, pluginOptions)
 			};
-			NgChm.LNK.setPanePluginOptions (icon, plotParams);
+			var paramsOK = validateParams(plotParams); 
+			if (paramsOK) {
+				NgChm.LNK.setPanePluginOptions (icon, plotParams);
+			}
 		}
 
 		function resetPanel() {
+			closePanel()
+			newGearDialog(icon)
 		}
 
 		function closePanel() {
@@ -1890,6 +2348,20 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.Pane.insertPopupNearIcon (panel, icon);
 	}
 
+	/**
+		Processes messages from plugins
+
+		@function processVanodiMessage
+		@param {string} nonce nonce for plugin
+		@param {} loc location of plugin
+		@param {object} msg
+		@option {string} op operation to perform. E.g. 'getTestData'
+		@option {string} axisName 'row' or 'column'
+		@option {Array<String>} axisLabels lNGCHM labels in heatmap along axisName dimension
+		@option {Array<String>} group1 Optional. NGCHM labels in heat map for group 1
+		@option {Array<Striong>} group2 Optional. NGCHM labels in heat map for group 2
+		@option {String} testToRun Optional. String denoting tests to run. E.g. 'T-test'
+	*/
 	function processVanodiMessage (nonce, loc, msg) {
 		// process message from plot plugin
 		if (msg.op === 'register') vanodiRegister (nonce, loc, msg);
@@ -1900,14 +2372,12 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	function vanodiRegister (nonce, loc, msg) {
-		//console.log ({ 'Vanodi register': msg, loc:loc });
 		const { plugin, params, iframe, source } = pluginData[nonce];
 		plugin.config = { name: msg.name, axes: msg.axes, options: msg.options };
 		if (Object.entries(params).length === 0) {
 			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'none' }}, '*');  // Let plugin know we heard it.
 			NgChm.Pane.switchToPlugin (loc, plugin.name);
 		} else {
-			console.log('Params has length > 0');  //alert
 			loc.paneTitle.innerText = plugin.name;
 			NgChm.LNK.initializePanePlugin (nonce, params);
 		}
@@ -1925,8 +2395,24 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	const vanodiKnownTests = [
+		{ label: 'Mean', value: 'Mean' },
 		{ label: 'T-test', value: 'T-test' }
 	];
+
+	/**
+		Calls getAxisTestData to perform statistical tests, and posts results to plugin
+
+		@function vanodiSendTestData
+		@param {String} nonce to identify plugin
+		@param {} loc
+		@param {object} msg
+		@option {String} op Specifices operation to perform. here 'getTestData'
+		@option {String} testToRun Specifies tests to perform
+		@option {String} axisName 'row' or 'column'
+		@option {Array<String>} axisLabels labels of nodes from plugin (e.g. gene symbols from PathwayMapper)
+		@option {Array<String>} group1 NGCHM labels for group 1
+		@option {Array<String>} group2 NGCHM labels for group 2
+	*/
 	function vanodiSendTestData (nonce, loc, msg) {
 		console.log ({ 'Vanodi sendTestData': msg, loc:loc });
 		const { plugin, params, iframe, source } = pluginData[nonce];
