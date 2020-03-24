@@ -1850,10 +1850,30 @@ NgChm.createNS('NgChm.LNK');
 			return ops;
 		}
 
+
+		/*
+			Function to verify selections for coordinates and covariates in the Gear Menu are not empty.
+		*/
+		function validateParams(plotParams) {
+			plotParams.axes.forEach((axes_elem) => {
+				axes_elem.coordinates.forEach((elem, idx) => {  // check for empty coordinate data
+					if (elem.hasOwnProperty('labelIdx') && elem.labelIdx.length == 0) {
+						var entryNumber = idx + 1
+						alert("Please select data for Coordinate " + entryNumber +" the Gear Menu.")
+					}
+				}) 
+				axes_elem.covariates.forEach((elem, idx) => {  // check for empty covariate data
+					if (elem.hasOwnProperty('labelIdx') && elem.labelIdx.length == 0) {
+						var entryNumber = idx + 1
+						alert("Please select data for Covariate "+entryNumber+" in the Gear Menu.")
+					}
+				}) 
+			}) // end forEach over plotParams.axes
+		}
+
 		function applyPanel() {
 			let plotTitle = 'Special';
 			if (axesOptions.length === 1) {
-				//console.log({mar4: 'calling capitalize here', axesOptions: axesOptions})
 				plotTitle = NgChm.UTIL.capitalize (axesOptions[0].select.value) + 's';
 				/*if (axesOptions[0].covariates.length === 1) {
 					const groupName = axesOptions[0].covariates[0].userLabel.element.children[1].value;
@@ -1864,12 +1884,12 @@ NgChm.createNS('NgChm.LNK');
 					plotTitle = plotTitle + ': special';
 				//}
 			}
-			//console.log({mar4: 'axisOptions before using', axesOptions: axesOptions})
 			const plotParams = {
 				plotTitle,
 				axes: axesOptions.map(ao => axesElementsToOps (ao)),
 				options: getPluginOptionValues (config.options, pluginOptions)
 			};
+			validateParams(plotParams); 
 			NgChm.LNK.setPanePluginOptions (icon, plotParams);
 		}
 
