@@ -1852,22 +1852,40 @@ NgChm.createNS('NgChm.LNK');
 
 
 		/*
-			Function to verify selections for coordinates and covariates in the Gear Menu are not empty.
+			Function to verify selections for coordinates, covariates, and groups in the Gear Menu are not empty.
+			If the user has not added any data, an alert message will be shown and this function will return false.
 		*/
 		function validateParams(plotParams) {
 			for (var p=0; p<plotParams.axes.length; p++) {
-				for (var a=0; a<plotParams.axes[p].coordinates.length; a++) {
-					if (plotParams.axes[p].coordinates[a].hasOwnProperty('labelIdx') && plotParams.axes[p].coordinates[a].labelIdx.length == 0) {
-						var entryNumber = a + 1
-						alert("Please select data for Coordinate " + entryNumber +" the Gear Menu.")
-						return false;
+				if (plotParams.axes[p].hasOwnProperty('coordinates')) {
+					for (var a=0; a<plotParams.axes[p].coordinates.length; a++) {
+						if (plotParams.axes[p].coordinates[a].hasOwnProperty('labelIdx') && plotParams.axes[p].coordinates[a].labelIdx.length == 0) {
+							var entryNumber = a + 1
+							alert("Please select data for Coordinate " + entryNumber +" the Gear Menu.")
+							return false;
+						}
 					}
 				}
-				for (var a=0; a<plotParams.axes[p].covariates.length; a++) {
-					if (plotParams.axes[p].covariates[a].hasOwnProperty('labelIdx') && plotParams.axes[p].covariates[a].labelIdx.length == 0) {
-						var entryNumber = a + 1
-						alert("Please select data for Covariate "+entryNumber+" in the Gear Menu.")
-						return false;
+				if (plotParams.axes[p].hasOwnProperty('covariates')) {
+					for (var a=0; a<plotParams.axes[p].covariates.length; a++) {
+						if (plotParams.axes[p].covariates[a].hasOwnProperty('labelIdx') && plotParams.axes[p].covariates[a].labelIdx.length == 0) {
+							var entryNumber = a + 1
+							alert("Please select data for Covariate "+entryNumber+" in the Gear Menu.")
+							return false;
+						}
+					}
+				}
+				if (plotParams.axes[p].hasOwnProperty('ugroups')) {
+					for (var u=0; u<plotParams.axes[p].ugroups.length; u++) {
+						if (plotParams.axes[p].ugroups[u].hasOwnProperty('labelIdx')) {
+							for (var l=0; l<plotParams.axes[p].ugroups[u].labelIdx.length; l++) {
+								if (plotParams.axes[p].ugroups[u].labelIdx[l].length == 0) {
+									var entryNumber = l + 1
+									alert("Please selected data for Group(s): Label: "+entryNumber+" in the Gear Menu.")
+									return false;
+								}
+							}
+						}
 					}
 				}
 			} // end loop over plotParams.axes
