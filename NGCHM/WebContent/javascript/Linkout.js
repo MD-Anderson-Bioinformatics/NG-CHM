@@ -1855,20 +1855,23 @@ NgChm.createNS('NgChm.LNK');
 			Function to verify selections for coordinates and covariates in the Gear Menu are not empty.
 		*/
 		function validateParams(plotParams) {
-			plotParams.axes.forEach((axes_elem) => {
-				axes_elem.coordinates.forEach((elem, idx) => {  // check for empty coordinate data
-					if (elem.hasOwnProperty('labelIdx') && elem.labelIdx.length == 0) {
-						var entryNumber = idx + 1
+			for (var p=0; p<plotParams.axes.length; p++) {
+				for (var a=0; a<plotParams.axes[p].coordinates.length; a++) {
+					if (plotParams.axes[p].coordinates[a].hasOwnProperty('labelIdx') && plotParams.axes[p].coordinates[a].labelIdx.length == 0) {
+						var entryNumber = a + 1
 						alert("Please select data for Coordinate " + entryNumber +" the Gear Menu.")
+						return false;
 					}
-				}) 
-				axes_elem.covariates.forEach((elem, idx) => {  // check for empty covariate data
-					if (elem.hasOwnProperty('labelIdx') && elem.labelIdx.length == 0) {
-						var entryNumber = idx + 1
+				}
+				for (var a=0; a<plotParams.axes[p].covariates.length; a++) {
+					if (plotParams.axes[p].covariates[a].hasOwnProperty('labelIdx') && plotParams.axes[p].covariates[a].labelIdx.length == 0) {
+						var entryNumber = a + 1
 						alert("Please select data for Covariate "+entryNumber+" in the Gear Menu.")
+						return false;
 					}
-				}) 
-			}) // end forEach over plotParams.axes
+				}
+			} // end loop over plotParams.axes
+			return true
 		}
 
 		function applyPanel() {
@@ -1889,8 +1892,10 @@ NgChm.createNS('NgChm.LNK');
 				axes: axesOptions.map(ao => axesElementsToOps (ao)),
 				options: getPluginOptionValues (config.options, pluginOptions)
 			};
-			validateParams(plotParams); 
-			NgChm.LNK.setPanePluginOptions (icon, plotParams);
+			var paramsOK = validateParams(plotParams); 
+			if (paramsOK) {
+				NgChm.LNK.setPanePluginOptions (icon, plotParams);
+			}
 		}
 
 		function resetPanel() {
