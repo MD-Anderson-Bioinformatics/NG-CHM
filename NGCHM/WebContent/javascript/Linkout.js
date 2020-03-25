@@ -1230,7 +1230,6 @@ NgChm.createNS('NgChm.LNK');
 					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values
-				//console.log({mar4: 'ctype is data for ' + coco});
 				const idx = axis[valueField][ci].labelIdx; 
 				const values = getDataValues(isRow ? 'column' : 'row', idx);
 				cocodata[valueField].push(values);
@@ -1271,7 +1270,6 @@ NgChm.createNS('NgChm.LNK');
 					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values
-				//console.log({mar4: 'ctype is data for group ' + group});
 				const idx = axis[valueField][ci].labelIdx; 
 				const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)-1]));
 				cocodata[valueField].push({ grouplabels: axis[valueField][ci].labels, labels });
@@ -1333,7 +1331,6 @@ NgChm.createNS('NgChm.LNK');
 		}
 
 		const axisParams = plugin.config.axes;
-		//console.log({mar4: 'checking params', axisParams: axisParams});
 		const axesOptions = [];
 		for (let axisId = 0; axisId < config.axes.length; axisId++) {
 			{
@@ -1367,7 +1364,6 @@ NgChm.createNS('NgChm.LNK');
 			}
 
 			const selectedAxis = NgChm.MMGR.isRow(axisParams[axisId].axisName) ? 'row' : 'column';
-			//console.log({mar4: 'selectedAxis', selectedAxis: selectedAxis})
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
 
@@ -1376,7 +1372,6 @@ NgChm.createNS('NgChm.LNK');
 				for (let cid = 0; cid < numSelectors; cid++) {
 					const selParams = cid < params.length ? params[cid] : {};
 					const selectEl = NgChm.UTIL.newElement('SELECT');
-					//console.log({mar4: 'checking pan stuff', selectorName: selectorName, numSelectors: numSelectors});
 					optionsBox.appendChild (
 						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
 							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, numSelectors))
@@ -1394,7 +1389,6 @@ NgChm.createNS('NgChm.LNK');
 					function updateAxis() {
 						while (selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
 						const uname = textN (' for ' + selectorName, cid+1, numSelectors);
-						//console.log({mar4: 'calling selectedElementsOptionName', thisAxis: thisAxis, uname: uname})
 						const selectedElementsOption = selectedElementsOptionName (thisAxis, uname);
 						let defaultOpt;
 						if (selParams.type === 'data') {
@@ -1540,7 +1534,6 @@ NgChm.createNS('NgChm.LNK');
 						// Remove choices for previous axis, if any.
 						while (selectEl.firstChild) selectEl.removeChild(selectEl.firstChild);
 						const uname = ' for ' + selectorName;
-						//console.log({mar4: 'calling selectedElementsOptionName', thisAxis: thisAxis, uname: uname})
 						const selectedElementsOption = selectedElementsOptionName (otherAxis, uname);
 						let defaultOpt;
 						if (selParams.type === 'data') {
