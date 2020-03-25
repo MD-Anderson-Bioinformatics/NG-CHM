@@ -1445,7 +1445,7 @@ NgChm.createNS('NgChm.LNK');
 							} else if (data.length === 1) {
 								userLabel.setLabel ( NgChm.heatMap.getAxisLabels(otherAxis).labels[data[0]-1]);
 							} else {
-								userLabel.setLabel ( 'Group of ' + countNode.textContent);
+								userLabel.setLabel ( 'Average of ' + countNode.textContent);
 							}
 						} else {
 							infoEl.classList.add ('hide');
