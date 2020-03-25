@@ -2181,6 +2181,9 @@ NgChm.DET.labelClick = function (e) {
 		NgChm.SEL.searchItems[axis][index] = 1;
 		NgChm.DET.labelLastClicked[axis] = index;
 	}
+	var clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
+	var lastClickedIndex = (typeof index == 'undefined') ? focusIndex : index;
+	NgChm.LNK.postSelectionToLinkouts(this.dataset.axis, clickType, index, null);
 	var searchElement = document.getElementById('search_text');
 	searchElement.value = "";
 	document.getElementById('prev_btn').style.display='';
