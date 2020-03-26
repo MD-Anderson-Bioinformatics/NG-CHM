@@ -1845,43 +1845,45 @@ NgChm.createNS('NgChm.LNK');
 
 
 		/*
-			Function to verify selections for coordinates, covariates, and groups in the Gear Menu are not empty.
-			If the user has not added any data, an alert message will be shown and this function will return false.
+			Function to verify GRAB selections for coordinates, covariates, and groups in the Gear Menu are not empty before applying.
+			If the user has chosen to select rows/columns manually (e.g. GRAB button in the Gear Menu), this
+			function verifies that the labelIdx entries are non-empty, alerts the user, and returns 'false'.
+			Otherwise this function returns 'true'.
+			
+			The config object is used to determine which plotParams to validate.
 		*/
 		function validateParams(plotParams) {
-			for (var p=0; p<plotParams.axes.length; p++) {
-				if (plotParams.axes[p].hasOwnProperty('coordinates')) {
-					for (var a=0; a<plotParams.axes[p].coordinates.length; a++) {
-						if (plotParams.axes[p].coordinates[a].hasOwnProperty('labelIdx') && plotParams.axes[p].coordinates[a].labelIdx.length == 0) {
-							var entryNumber = a + 1
-							alert("Please select data for Coordinate " + entryNumber +" the Gear Menu.")
-							return false;
-						}
-					}
-				}
-				if (plotParams.axes[p].hasOwnProperty('covariates')) {
-					for (var a=0; a<plotParams.axes[p].covariates.length; a++) {
-						if (plotParams.axes[p].covariates[a].hasOwnProperty('labelIdx') && plotParams.axes[p].covariates[a].labelIdx.length == 0) {
-							var entryNumber = a + 1
-							alert("Please select data for Covariate "+entryNumber+" in the Gear Menu.")
-							return false;
-						}
-					}
-				}
-				if (plotParams.axes[p].hasOwnProperty('ugroups')) {
-					for (var u=0; u<plotParams.axes[p].ugroups.length; u++) {
-						if (plotParams.axes[p].ugroups[u].hasOwnProperty('labelIdx')) {
-							for (var l=0; l<plotParams.axes[p].ugroups[u].labelIdx.length; l++) {
-								if (plotParams.axes[p].ugroups[u].labelIdx[l].length == 0) {
-									var entryNumber = l + 1
-									alert("Please selected data for Group(s): Label: "+entryNumber+" in the Gear Menu.")
-									return false;
-								}
+			var minNumberRequired, thingToCheck
+			for (var a=0; a<config.axes.length; a++) {
+				for (var c=0; c<config.axes[a].coco.length; c++) { 
+					minNumberRequired = config.axes[a].coco[c].min 
+					for (var i=0; i<minNumberRequired; i++) {
+						thingToCheck = config.axes[a].coco[c].baseid + 's'
+						var cocoToCheck = plotParams.axes[a][thingToCheck]
+						for (var j=0; j<minNumberRequired; j++) { // for the min number of required cocos, ensure if type = data then user has chosen data
+							if (cocoToCheck[j].type == 'data' && cocoToCheck[j].labelIdx.length == 0) { 
+								var entryNumber = j+1         
+								alert("Please select data for '" + config.axes[a].coco[c].name + "' entry " + entryNumber + " in the Gear Menu.")
+								return false
 							}
 						}
 					}
-				}
-			} // end loop over plotParams.axes
+				} // end loop over config.axes.coco 
+				// TODO: what if user has chosen a covariate here?
+				for (var g=0; g<config.axes[a].group.length; g++) {
+					minNumberRequired = config.axes[a].group[g].min
+					for (var i=0; i<minNumberRequired; i++) {
+						thingToCheck = config.axes[a].group[g].baseid + 's'
+						var groupToCheck = plotParams.axes[a][thingToCheck][0]
+						for (var j=0; j<minNumberRequired; j++) {
+							if (groupToCheck.labelIdx[j].length == 0) {
+								alert("Please select data for at least " + minNumberRequired + " '" + config.axes[a].group[g].label + "' in the Gear Menu.")
+								return false;
+							}
+						}
+					}
+				} // end loop over config.axes.group
+			} // end loop over config.axes
 			return true
 		}
 
