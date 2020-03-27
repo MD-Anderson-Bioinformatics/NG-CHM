@@ -887,7 +887,7 @@ NgChm.createNS('NgChm.LNK');
 			if (tmpColor.length != 1) { console.error('Error getting color for discrete covariate'); tmpColor = [{Color: '#000000'}]}
 			valColors.push(tmpColor[0].Color);
 		});
-		return valColors;
+		return { classColors, colors: valColors };
 	}
 
 	/* Return object of class values (list of values)  and corresponding hex colors (list of hex colors)
@@ -906,7 +906,15 @@ NgChm.createNS('NgChm.LNK');
 		const valClasses = getValueClassesColors (vals, breaks, classColors, cfg.color_map.missing,'Class');
 		// get list of corresponding hex colors for each of vals:
 		const valColors = getValueClassesColors (vals, breaks, classColors, cfg.color_map.missing,'Color');
-		return { values: valClasses, colors: valColors };
+		return { values: valClasses, colors: valColors, colorMap: getVanodiColorMap (cfg.color_map.thresholds, cfg.color_map.colors) };
+	}
+
+	function getVanodiColorMap (thresholds, colors) {
+		const classColors = [];
+		for (let idx = 0; idx < thresholds.length; idx++) {
+		    classColors.push({ 'Class': thresholds[idx], 'Color': colors[idx] });
+		}
+		return classColors;
 	}
 
 	// Return an array of values for the rows/columns specified by idx along axis.
@@ -1210,8 +1218,10 @@ NgChm.createNS('NgChm.LNK');
 		const axisCovCfg = NgChm.heatMap.getAxisCovariateConfig (axis.axisName);
 		const valueField = coco + 's';
 		const colorField = coco + 'Colors';
+		const colorMapField = coco + 'ColorMap';
 		cocodata[valueField] = [];
 		cocodata[colorField] = [];
+		cocodata[colorMapField] = [];
 		for (let ci = 0; ci < axis[valueField].length; ci++) { 
 			const ctype = axis[valueField][ci].type; // one of 'covariate' (i.e. from covariate bar) or 'data' (i.e. from map values)
 			const label = axis[valueField][ci].covName;
@@ -1219,11 +1229,14 @@ NgChm.createNS('NgChm.LNK');
 				if (axisCovCfg.hasOwnProperty (label)) {
 					const cfg = axisCovCfg[label];
 					if (cfg.color_map.type === 'continuous') { // i.e. from covariate bar w/ continuous values
-						const { classValues, colors } = getContCovariateColors (cfg, covData[label].values);
+						const { classValues, colors, colorMap } = getContCovariateColors (cfg, covData[label].values);
+						cocodata[colorMapField].push(colorMap);
 						cocodata[colorField].push(colors); // the color corresponding to the 'Class' for each value
 						cocodata[valueField].push(covData[label].values) // the actual values (not 'Class' values) 
 					} else { // i.e. from covariate bar w/ discrete values
-						cocodata[colorField].push(getDiscCovariateColors (axis.axisName, label, covData[label].values, colorMapMgr));
+						const { classColors, colors } = getDiscCovariateColors (axis.axisName, label, covData[label].values, colorMapMgr);
+						cocodata[colorMapField].push(classColors);
+						cocodata[colorField].push(colors);
 						cocodata[valueField].push(covData[label].values); //<-- original line
 					}
 				} else {
@@ -1234,11 +1247,13 @@ NgChm.createNS('NgChm.LNK');
 				const values = getDataValues(isRow ? 'column' : 'row', idx);
 				cocodata[valueField].push(values);
 				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+
 				var colorsForThisData = []
 				for (var idv = 0; idv < values.length; idv++) {
-					colorsForThisData.push(colorMap.getRgbToHex(colorMap.getColor(values[idv])));
+					colorsForThisData.push(NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getColor(values[idv]))));
 				}
-				cocodata[colorField].push(colorsForThisData)
+				cocodata[colorMapField].push(getVanodiColorMap (colorMap.getThresholds(), colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded)));
+				cocodata[colorField].push(colorsForThisData);
 			} else {
 				console.log ('Unknown coco data type ' + ctype);
 			}
