@@ -1144,7 +1144,7 @@ NgChm.createNS('NgChm.LNK');
 				pluginLabels.push(msg.axisLabels[i]);
 			}
 		}
-		if (axisIdx.length < 1) {console.warn('Heatmap and pathway have no genes in common.')}
+		if (axisIdx.length < 1) { console.warn('Plug-in and NG-CHM have no ' + msg.axisName + ' labels in common.')}
 		var idx1 = [];
 		var idx2 = [];
 		if (msg.group2 == null || msg.group2.length == 0) {
@@ -1165,6 +1165,7 @@ NgChm.createNS('NgChm.LNK');
 				}
 			}
 		}
+
 		var summaryStatistics1 = getSummaryStatistics(msg.axisName, axisIdx, idx1);
 		var summaryStatistics2 = getSummaryStatistics(msg.axisName, axisIdx, idx2);
 
@@ -1172,36 +1173,62 @@ NgChm.createNS('NgChm.LNK');
 			labels: [],
 			results: []
 		};
-		cocodata.results.push({
-			label: "t_statistics",
-			values: [],
-			colorMap: {
-				type: "linear",
-				thresholds: [ -3.291, -1.96, 1.96, 3.291 ],
-				colors: [ '#1c2ed4', '#cbcff7', '#f9d4d4', '#d41c1c' ],
-				missing: '#fefefe'
-			}
-		});
-		cocodata.results.push({
-			label: "p_values",
-			values: [],
-			colorMap: {
-				type: "linear",
-				thresholds: [ 0.001, 0.05, 1 ],
-				colors: [ '#000000', '#777777', '#fefefe' ],
-				missing: '#fefefe'
-			}
-		});
 
-		for (let i=0; i < axisIdx.length; i++) {
-			const summary1 = summaryStatistics1[i];
-			const summary2 = summaryStatistics2[i];
-			const tvalue = Welch_tValue(summary1, summary2);
-			const dof = degreesOfFreedom(summary1, summary2);
-			const pvalue = pValue(tvalue, dof);
-			cocodata.labels.push (pluginLabels[i]);
-			cocodata.results[0].values.push(tvalue);
-			cocodata.results[1].values.push(pvalue);
+		if (msg.testToRun === 'Mean') {
+		    const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+		    const vColorMap = {
+		        thresholds: colorMap.getThresholds(),
+			colors: colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded),
+		        type: "linear",
+		        missing: '#fefefe'
+		    };
+		    cocodata.results.push({
+			    label: "mean",
+			    values: [],
+			    colorMap: vColorMap
+		    });
+		    for (let i=0; i < axisIdx.length; i++) {
+			    const summary1 = summaryStatistics1[i];
+			    cocodata.labels.push (pluginLabels[i]);
+			    if (msg.group2 == null || msg.group2.length == 0) {
+				cocodata.results[0].values.push(summary1.mu);
+			    } else {
+			        const summary2 = summaryStatistics2[i];
+				cocodata.results[0].values.push(summary1.mu - summary2.mu);
+			    }
+		    }
+		} else if (msg.testToRun === 'T-test') {
+		    cocodata.results.push({
+			    label: "t_statistics",
+			    values: [],
+			    colorMap: {
+				    type: "linear",
+				    thresholds: [ -3.291, -1.96, 1.96, 3.291 ],
+				    colors: [ '#1c2ed4', '#cbcff7', '#f9d4d4', '#d41c1c' ],
+				    missing: '#fefefe'
+			    }
+		    });
+		    cocodata.results.push({
+			    label: "p_values",
+			    values: [],
+			    colorMap: {
+				    type: "linear",
+				    thresholds: [ 0.001, 0.05, 1 ],
+				    colors: [ '#000000', '#777777', '#fefefe' ],
+				    missing: '#fefefe'
+			    }
+		    });
+
+		    for (let i=0; i < axisIdx.length; i++) {
+			    const summary1 = summaryStatistics1[i];
+			    const summary2 = summaryStatistics2[i];
+			    const tvalue = Welch_tValue(summary1, summary2);
+			    const dof = degreesOfFreedom(summary1, summary2);
+			    const pvalue = pValue(tvalue, dof);
+			    cocodata.labels.push (pluginLabels[i]);
+			    cocodata.results[0].values.push(tvalue);
+			    cocodata.results[1].values.push(pvalue);
+		    }
 		}
 		//console.log ({ m: '< getAxisTestData', msg, cocodata });
 		return cocodata;
@@ -1976,6 +2003,7 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	const vanodiKnownTests = [
+		{ label: 'Mean', value: 'Mean' },
 		{ label: 'T-test', value: 'T-test' }
 	];
 	function vanodiSendTestData (nonce, loc, msg) {
