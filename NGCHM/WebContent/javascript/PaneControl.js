@@ -531,7 +531,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 						NgChm.LNK.switchPaneToPlugin (loc, plugin);
 					});
 				}
-			});
+			});  
 			menuSeparator();
 		}
 
@@ -622,6 +622,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 		if (parentC !== null) {
 			if (getExpandedSibling(paneLoc) == null) {
+				menuItemDisabled ('Close');
+			} else if ((NgChm.MMGR.source === NgChm.MMGR.FILE_SOURCE) && (document.getElementsByClassName("pane").length < 3)) {
 				menuItemDisabled ('Close');
 			} else {
 				menuItem ('Close', () => {

@@ -177,7 +177,8 @@ NgChm.CUST.verbose = false;
 	    linkoutFn = (function(lofn) {
 		return function(labels) {
 		    if (labels.length===0 || labels[0]==="-") {
-			alert("No information known for the selected label");
+			//console.log("No information known for the selected label"); //alert
+			NgChm.UHM.systemMessage("NG-CHM Plug-in", "No information known for the selected label.")
 		    } else {
 			lofn(labels);
 		    }
@@ -189,14 +190,15 @@ NgChm.CUST.verbose = false;
 		    var idx = labels.indexOf("-");
 		    if (idx >= 0) labels.splice(idx,1);
 		    if (labels.length===0) {
-			alert("No information known for any selected label");
+		    	//console.log("No information known for any selected label"); //alert
+				NgChm.UHM.systemMessage("NG-CHM Plug-in", "No information known for any selected label.")
 		    } else {
 			lofn(labels);
 		    }
 		};
 	    })(linkoutFn);
 	} else {
-	    alert('Unknown selectMode: ' + selectMode);
+		console.log('Unknown selectMode: ' + selectMode); //alert
 	}
 
 	if (NgChm.CUST.allTypes.indexOf( typeName ) >= 0) {

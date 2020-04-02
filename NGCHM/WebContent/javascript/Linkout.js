@@ -798,7 +798,7 @@ NgChm.createNS('NgChm.LNK');
 		};
 
 		NgChm.LNK.getPanePlugins = function() {
-			return panePlugins;
+			return Array.from(new Set(panePlugins.map(a => a.name))).map(name => { return panePlugins.find(a => a.name === name)})
 		};
 	})();
 
@@ -1136,7 +1136,7 @@ NgChm.createNS('NgChm.LNK');
 				pluginLabels.push(msg.axisLabels[i]);
 			}
 		}
-		if (axisIdx.length < 1) {console.warn('Heatmap and pathway have no genes in common.')}
+		if (axisIdx.length < 1) {NgChm.UHM.systemMessage("NG-CHM Pathway Mapper", "Heatmap and pathway have no genes in common."); return;}
 		var idx1 = [];
 		var idx2 = [];
 		if (msg.group2 == null || msg.group2.length == 0) {
@@ -1288,7 +1288,7 @@ NgChm.createNS('NgChm.LNK');
 		const debug = false;
 		const loc = NgChm.Pane.findPaneLocation (icon);
 		if (!loc || !loc.pane || loc.pane.getElementsByTagName('IFRAME').length == 0) {
-			alert ('No options');
+			console.log('No options');  //alert
 			return;
 		}
 
@@ -1906,7 +1906,7 @@ NgChm.createNS('NgChm.LNK');
 			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'none' }}, '*');  // Let plugin know we heard it.
 			NgChm.Pane.switchToPlugin (loc, plugin.name);
 		} else {
-			alert ('Params has length > 0');
+			console.log('Params has length > 0');  //alert
 			loc.paneTitle.innerText = plugin.name;
 			NgChm.LNK.initializePanePlugin (nonce, params);
 		}

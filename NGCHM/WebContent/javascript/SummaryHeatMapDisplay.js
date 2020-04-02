@@ -1896,6 +1896,7 @@ NgChm.SUM.drawAxisSelectionMarks = function(axis) {
 	const isRow = NgChm.MMGR.isRow (axis);
 	const selection = NgChm.DET.getSearchItemsForAxis(axis);
 	const canvas = document.getElementById (isRow ? "summary_row_select_canvas" : "summary_col_select_canvas");
+	if (canvas === null) { return;}
 	const limit = isRow ? canvas.height : canvas.width;
 	const scale = limit / NgChm.heatMap.getTotalElementsForAxis(axis);
 

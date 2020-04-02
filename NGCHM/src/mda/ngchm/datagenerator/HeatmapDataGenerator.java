@@ -953,7 +953,7 @@ public class HeatmapDataGenerator {
 	        for (int row = 1; row < classData.length; row++) {
 	        	int adjustedPos = row - 1;
 	    		float remainder = ((float)adjustedPos/interval)%1;
-	    		String dataItem = classData[row];
+	    		String dataItem = classData[row] == null ? "NA" : classData[row];
 	    		if (currFile.map.type.equals(COLORTYPE_CONTINUOUS)) {
 	    			if (dataItem.equals(CUT_VALUE) || NA_VALUES.contains(dataItem)) {
 	    				cutCtr++;

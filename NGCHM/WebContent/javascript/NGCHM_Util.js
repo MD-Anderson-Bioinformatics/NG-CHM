@@ -402,6 +402,9 @@ NgChm.UTIL.showDetailPane = true;
 	var firstTime = true;
 
 	NgChm.UTIL.configurePanelInterface = function configurePanelInterface () {
+		if (NgChm.MMGR.source === NgChm.MMGR.FILE_SOURCE) {
+			firstTime = true;
+		}
 		// Split the initial pane horizontally and insert the
 		// summary and detail NGCHMs into the children.
 		if (firstTime) {

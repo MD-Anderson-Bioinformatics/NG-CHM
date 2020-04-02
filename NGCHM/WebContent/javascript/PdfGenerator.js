@@ -21,6 +21,7 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	NgChm.UHM.closeMenu();
 	NgChm.UHM.hlpC();
 	if (e.classList.contains('disabled')) {
+		NgChm.UHM.systemMessage("NG-CHM PDF Generator", "Cannot generate the PDF when both the Summary and Detail heat map panels are closed.");
 		return;
 	}
 
@@ -45,7 +46,7 @@ NgChm.PDF.openPdfPrefs = function(e) {
 		bothButton.disabled = false;
 	} else {
 		// Should not happen.
-		alert('Cannot generate PDF when no heatmap panels are open');
+		NgChm.UHM.systemMessage("NG-CHM PDF", "Cannot generate PDF when the Summary or Detail heat map panels are closed.");
 		return;
 	}
 	var prefspanel = document.getElementById('pdfPrefs');
