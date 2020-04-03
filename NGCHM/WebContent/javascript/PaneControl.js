@@ -531,7 +531,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 						NgChm.LNK.switchPaneToPlugin (loc, plugin);
 					});
 				}
-			});
+			});  
 			menuSeparator();
 		}
 

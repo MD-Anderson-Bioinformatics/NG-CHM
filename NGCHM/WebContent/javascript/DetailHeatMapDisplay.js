@@ -3158,7 +3158,7 @@ NgChm.DET.getDetVertexShader = function (theGL) {
 	theGL.shaderSource(shader, source);
 	theGL.compileShader(shader);
 	if (!theGL.getShaderParameter(shader, theGL.COMPILE_STATUS)) {
-        alert(theGL.getShaderInfoLog(shader));
+		console.log(theGL.getShaderInfoLog(shader)); //alert
     }
 
 	return shader;
@@ -3178,7 +3178,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	theGL.shaderSource(shader, source);
 	theGL.compileShader(shader);
 	if (!theGL.getShaderParameter(shader, theGL.COMPILE_STATUS)) {
-        alert(theGL.getShaderInfoLog(shader));
+		console.log(theGL.getShaderInfoLog(shader)); //alert
     }
 
 	return shader;

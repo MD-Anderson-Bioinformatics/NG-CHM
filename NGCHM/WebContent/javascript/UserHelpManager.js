@@ -654,6 +654,18 @@ NgChm.UHM.hamburgerLinkMissing = function() {
 }
 
 /**********************************************************************************
+ * FUNCTION - systemMessage: This function handles all of the tasks necessary 
+ * display a modal window whenever a given notification condition occurs. 
+ **********************************************************************************/
+NgChm.UHM.systemMessage = function(header, message) {
+	NgChm.UHM.initMessageBox();
+	NgChm.UHM.setMessageBoxHeader(header);
+	NgChm.UHM.setMessageBoxText("<br>" + message);
+	NgChm.UHM.setMessageBoxButton(1, "images/closeButton.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	document.getElementById('msgBox').style.display = '';
+}
+
+/**********************************************************************************
  * FUNCTION - zipAppDownload: This function calls the Matrix Manager to initiate
  * the download of the NG-CHM File Viewer application. 
  **********************************************************************************/

@@ -327,7 +327,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	this.setRowClassificationOrder = function() {
-		mapConfig.row_configuration.classifications_order = this.getRowClassificationOrder();
+		if (mapConfig !== null) {mapConfig.row_configuration.classifications_order = this.getRowClassificationOrder();}
 	}
 	
 	this.getColClassificationOrder = function(showOnly){
@@ -356,7 +356,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	this.setColClassificationOrder = function() {
-		mapConfig.col_configuration.classifications_order = this.getColClassificationOrder();
+		if (mapConfig !== null) {mapConfig.col_configuration.classifications_order = this.getColClassificationOrder();}
 	}
 	
 	this.getRowClassificationData = function() {
@@ -942,9 +942,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			NgChm.SEL.currentCol = Number(NgChm.UTIL.getURLParameter("column"))
 		}
 
+		NgChm.UTIL.configurePanelInterface();
 		NgChm.SUM.initSummaryDisplay();
 		NgChm.DET.initDetailDisplay();
-		NgChm.UTIL.configurePanelInterface();
 		document.addEventListener("keydown", NgChm.SEL.keyNavigate);
 
 		addDataLayers(mc);

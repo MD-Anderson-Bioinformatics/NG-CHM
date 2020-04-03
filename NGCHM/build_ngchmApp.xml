@@ -42,6 +42,8 @@
             <srcfile/>
             <arg line="--compilation_level"/>
             <arg line="SIMPLE_OPTIMIZATIONS"/>
+            <arg line="--jscomp_off"/>
+            <arg line="uselessCode"/>
             <arg line="--js_output_file"/>
             <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
             <targetfile/>
