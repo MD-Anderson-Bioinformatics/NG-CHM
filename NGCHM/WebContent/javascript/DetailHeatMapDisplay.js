@@ -106,49 +106,6 @@ NgChm.DET.initDetailDisplay = function () {
 	NgChm.DET.canvas.onmousedown = NgChm.DET.clickStart;
 	NgChm.DET.canvas.ondblclick = NgChm.DET.dblClick;
 	
-	var navLoc = document.getElementById ('back_btn').parentElement;
-	navLoc = addZoomButton (navLoc, 'zoomOut_btn', 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DET.detailDataZoomOut);
-	navLoc = addZoomButton (navLoc, 'zoomIn_btn', 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DET.zoomAnimation);
-	navLoc = addModeButton (navLoc, 'full_btn', 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, NgChm.DET.detailNormal);
-	navLoc = addModeButton (navLoc, 'ribbonH_btn', 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, NgChm.DET.detailHRibbonButton);
-	navLoc = addModeButton (navLoc, 'ribbonV_btn', 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, NgChm.DET.detailVRibbonButton);
-
-	function addZoomButton (loc, btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
-	    const img = NgChm.UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
-	    img.onmouseout = function (e) {
-		img.setAttribute ('src', btnIcon);
-		NgChm.UHM.hlpC();
-	    };
-	    img.onmouseover = function (e) {
-		img.setAttribute ('src', btnHoverIcon);
-		NgChm.UHM.hlp(img, btnHelp, btnSize);
-	    };
-	    img.onclick = function (e) {
-		clickFn();
-	    };
-	    const el = NgChm.UTIL.newElement ('TD.tdTop', {}, [img]);
-	    loc.parentNode.insertBefore (el, loc.nextSibling);
-	    return el;
-	}
-
-	function addModeButton (loc, btnId, btnIcon, btnOverFn, btnHelp, btnSize, clickFn) {
-	    const img = NgChm.UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
-	    img.onmouseout = function (e) {
-		btnOverFn (img, 0);
-		NgChm.UHM.hlpC();
-	    };
-	    img.onmouseover = function (e) {
-		btnOverFn (img, 1);
-		NgChm.UHM.hlp(img, btnHelp, btnSize);
-	    };
-	    img.onclick = function (e) {
-		clickFn();
-	    };
-	    const el = NgChm.UTIL.newElement ('TD.tdTop', {}, [img]);
-	    loc.parentNode.insertBefore (el, loc.nextSibling);
-	    return el;
-	}
-
 	NgChm.DET.canvas.addEventListener("touchstart", function(e){
 		NgChm.UHM.hlpC();
 		var now = new Date().getTime();
@@ -3522,6 +3479,14 @@ NgChm.DET.zoomAnimation = function (destRow,destCol) {
 		NgChm.Pane.setPaneTitle (loc, 'Heatmap Detail');
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
+		NgChm.Pane.setPaneClientIcons(loc, [
+		    zoomButton ('zoomOut_btn', 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DET.detailDataZoomOut),
+		    zoomButton ('zoomIn_btn', 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DET.zoomAnimation),
+		    modeButton ('full_btn', 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, NgChm.DET.detailNormal),
+		    modeButton ('ribbonH_btn', 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, NgChm.DET.detailHRibbonButton),
+		    modeButton ('ribbonV_btn', 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, NgChm.DET.detailVRibbonButton)
+		]);
+
 	}
 
 	function emptyDetailPane (pane, elements) {
@@ -3533,4 +3498,37 @@ NgChm.DET.zoomAnimation = function (destRow,destCol) {
 		NgChm.DET.detailResize();
 		NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
 	}
+
+	function zoomButton (btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
+	    const img = NgChm.UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
+	    img.onmouseout = function (e) {
+		img.setAttribute ('src', btnIcon);
+		NgChm.UHM.hlpC();
+	    };
+	    img.onmouseover = function (e) {
+		img.setAttribute ('src', btnHoverIcon);
+		NgChm.UHM.hlp(img, btnHelp, btnSize);
+	    };
+	    img.onclick = function (e) {
+		clickFn();
+	    };
+	    return NgChm.UTIL.newElement ('TD.tdTop', {}, [img]);
+	}
+
+	function modeButton (btnId, btnIcon, btnOverFn, btnHelp, btnSize, clickFn) {
+	    const img = NgChm.UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
+	    img.onmouseout = function (e) {
+		btnOverFn (img, 0);
+		NgChm.UHM.hlpC();
+	    };
+	    img.onmouseover = function (e) {
+		btnOverFn (img, 1);
+		NgChm.UHM.hlp(img, btnHelp, btnSize);
+	    };
+	    img.onclick = function (e) {
+		clickFn();
+	    };
+	    return NgChm.UTIL.newElement ('TD.tdTop', {}, [img]);
+	}
+
 })();

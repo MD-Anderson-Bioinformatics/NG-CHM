@@ -65,6 +65,18 @@ div.icon_group {
 	margin-right: 5px;
 }
 
+div.icon_group.client_icons {
+	flex-grow: 5;
+}
+
+div.collapsed img.gearIcon {
+	display: none;
+}
+
+div.collapsed div.icon_group.client_icons {
+	display: none;
+}
+
 div.container {
 	position: relative;
 	display: flex;
