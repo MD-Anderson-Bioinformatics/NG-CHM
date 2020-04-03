@@ -901,6 +901,26 @@ linkouts.addPlugin({
     });
 }) (linkouts);
 
+
+// Plugin for NDEx IQuery
+(function(linkouts) {
+
+    function iQuery (names) {
+	linkouts.openUrl("http://iquery.ndexbio.org?genes=" + names.join(','), "NDEx IQuery");
+    }
+
+    linkouts.addPlugin({
+        name: "NDEx IQuery",
+	description: "Adds linkouts to NDEx IQuery.",
+	version: "0.1.0",
+	site: "http://iquery.ndexbio.org/",
+	logo: "http://iquery.ndexbio.org/static/media/ndex-logo.04d7bf44.svg",
+	linkouts: [
+	    { menuEntry: "NDEx IQuery", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: iQuery }
+	]
+    });
+}) (linkouts);
+
 //==============================================//
 // Zodiac plugin                                //
 //==============================================//
