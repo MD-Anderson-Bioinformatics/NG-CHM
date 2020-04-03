@@ -69,8 +69,12 @@ div.icon_group.client_icons {
 	flex-grow: 5;
 }
 
-div.icon_group.client_icons td.tdTop {
-	display: inline;
+span.tdTop {
+	display: inline-block;
+}
+
+div#bottom_buttons span.tdTop img {
+	margin-top: 3px;
 }
 
 div.collapsed img.gearIcon {
@@ -409,7 +413,7 @@ span.button.negative {
 
 #bottom_buttons{
 	display: block;
-	margin-top:0px;
+	margin-top: 2px;
 }
 
 #settings_buttons{

@@ -3512,7 +3512,7 @@ NgChm.DET.zoomAnimation = function (destRow,destCol) {
 	    img.onclick = function (e) {
 		clickFn();
 	    };
-	    return NgChm.UTIL.newElement ('TD.tdTop', {}, [img]);
+	    return NgChm.UTIL.newElement ('SPAN.tdTop', {}, [img]);
 	}
 
 	function modeButton (btnId, btnIcon, btnOverFn, btnHelp, btnSize, clickFn) {
@@ -3528,7 +3528,7 @@ NgChm.DET.zoomAnimation = function (destRow,destCol) {
 	    img.onclick = function (e) {
 		clickFn();
 	    };
-	    return NgChm.UTIL.newElement ('TD.tdTop', {}, [img]);
+	    return NgChm.UTIL.newElement ('SPAN.tdTop', {}, [img]);
 	}
 
 })();
