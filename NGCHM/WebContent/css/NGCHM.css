@@ -69,6 +69,10 @@ div.icon_group.client_icons {
 	flex-grow: 5;
 }
 
+div.icon_group.client_icons td.tdTop {
+	display: inline;
+}
+
 div.collapsed img.gearIcon {
 	display: none;
 }
