@@ -48,7 +48,7 @@ div.paneHeader {
 }
 
 div.paneHeader.activePane {
-	background-color: #ccccff;
+	/* background-color: #ccccff; */
 }
 
 div.paneTitle {
