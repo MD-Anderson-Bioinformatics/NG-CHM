@@ -1966,7 +1966,7 @@ NgChm.createNS('NgChm.LNK');
 		const lastClickText = lastClickIndex > 0 ? allLabels[lastClickIndex] : '';
 		for (let i = 0; i < iframes.length; i++) {
 			const nonce = iframes[i].dataset.nonce;
-			if (srcNonce === nonce) {
+			if (!nonce || srcNonce === nonce) {
 				continue;
 			}
 			const src = pluginData[nonce].source || iframes[i].contentWindow;
