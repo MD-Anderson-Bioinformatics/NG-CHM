@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion('2020-03-11');
+linkouts.setVersion('2020-04-07');
 
 // Scatter Plot plugin:
 linkouts.addPanePlugin ({
@@ -902,7 +902,9 @@ linkouts.addPlugin({
 }) (linkouts);
 
 
-// Plugin for NDEx IQuery
+//==============================================//
+// NDEx IQuery plugin                                //
+//==============================================//
 (function(linkouts) {
 
     function iQuery (names) {
@@ -916,6 +918,7 @@ linkouts.addPlugin({
 	site: "http://iquery.ndexbio.org/",
 	logo: "http://iquery.ndexbio.org/static/media/ndex-logo.04d7bf44.svg",
 	linkouts: [
+	    { menuEntry: "NDEx IQuery Single", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: iQuery },
 	    { menuEntry: "NDEx IQuery", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: iQuery }
 	]
     });
