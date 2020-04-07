@@ -44,6 +44,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// function setPaneTitle (loc, title) - set the title of the pane at PaneLocation loc
 	NgChm.Pane.setPaneTitle = setPaneTitle;
 
+	// function setPaneClientIcons (loc, icons) - Set the icon group containing icons (an array) to the pane header.
+	NgChm.Pane.setPaneClientIcons = setPaneClientIcons;
+
 	// function insertPopupNearIcon (popup, icon) - display a popup near a pane icon
 	NgChm.Pane.insertPopupNearIcon = insertPopupNearIcon;
 
@@ -361,6 +364,25 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 		return pane;
 	}
+
+	// Exported function.
+	// Add an icon group containing icons (an array) to the pane header.
+	function setPaneClientIcons (loc, icons) {
+		if (!loc.paneHeader || !loc.paneTitle) return;
+		var ig = loc.paneTitle.nextSibling;
+		// Remove existing clientIcons, if any.
+		if (ig && ig.classList.contains('client_icons')) {
+			ig.remove();
+		}
+		if (icons && icons.length > 0) {
+		    ig = NgChm.UTIL.newElement('DIV.icon_group.client_icons');
+		    while (icons.length > 0) {
+			    ig.appendChild (icons.shift());
+		    }
+		    loc.paneHeader.insertBefore (ig, loc.paneTitle.nextSibling);
+		}
+	}
+
 
 	// Exported function.
 	// Split the pane at Pane Location loc into two.
@@ -867,10 +889,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		// Call the empty callback, if any.
 		getPaneEventHandler (loc.pane, 'empty') (loc, clientElements);
 		removePaneHandlers (loc.pane);
-		// Set pane title to empty and hide the gear icon.
+		// Set pane title to empty, hide the gear icon, and remove client icons (if any).
 		setPaneTitle (loc, 'empty');
 		const gearIcon = loc.paneHeader.getElementsByClassName('gearIcon')[0];
 		gearIcon.classList.add('hide');
+		NgChm.Pane.setPaneClientIcons (loc, []);
 
 		// Return remaining client elements to caller.
 		return clientElements;

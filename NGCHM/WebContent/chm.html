@@ -63,31 +63,13 @@
 			<div id="mapName" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Map Name: " + NgChm.heatMap.getMapInformation().name + "<br><br>Description: " + NgChm.heatMap.getMapInformation().description,350);'></div>
 		    </div>
 		    <div id='bottom_buttons' >
-				<table>
-					<tr>
-						<td class='tdTop'>
+						<span class='tdTop'>
 						<img id='fileOpen_btn' style="display: none;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.hlp(this,"Open .NG-CHM Heat Map",130);' onclick='NgChm.SEL.openFileToggle();'/>
-						</td>
-						<td class='tdTop'>
+						</span>
+						<span class='tdTop'>
 						<img id='back_btn' style="display: none;" src='images/returnArrow.png' alt='Return to previous screen' onmouseout='this.setAttribute("src", "images/returnArrow.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/returnArrowHover.png");NgChm.UHM.hlp(this,"Return To Previous Screen",160);'  onclick='NgChm.UTIL.returnToHome();'/>
-						</td>
-						<td class='tdTop'>
-							<img id='zoomOut_btn' src='images/zoomOut.png' alt='Zoom Out' onmouseout='this.setAttribute("src", "images/zoomOut.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/zoomOutHover.png");NgChm.UHM.hlp(this,"Zoom Out",50);' onclick='NgChm.DET.detailDataZoomOut();'/>
-
-						</td>
-						<td class='tdTop'>
-						    <img id='zoomIn_btn' src='images/zoomIn.png' alt='Zoom In' onmouseout='this.setAttribute("src", "images/zoomIn.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/zoomInHover.png");NgChm.UHM.hlp(this,"Zoom In",40);' onclick='NgChm.DET.zoomAnimation();'/>
-						</td>
-						<td class='tdTop'>
-						    <img id='full_btn' src='images/full_selected.png' alt='Full' onmouseout='NgChm.UHM.fullBtnOver(this,0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.fullBtnOver(this,1);NgChm.UHM.hlp(this,"Normal View",65);' onclick='NgChm.DET.detailNormal();'/>
-						</td>
-						<td class='tdTop'>
-						    <img id='ribbonH_btn' src='images/ribbonH.png' alt='Ribbon H' onmouseout='NgChm.UHM.ribbonHBtnOver(this,0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.ribbonHBtnOver(this,1);NgChm.UHM.hlp(this,"Horizontal Ribbon View",115);' onclick='NgChm.DET.detailHRibbonButton();'/>
-						</td>
-						<td class='tdTop'>
-						    <img id='ribbonV_btn' src='images/ribbonV.png' alt='Ribbon V' onmouseout='NgChm.UHM.ribbonVBtnOver(this,0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.ribbonVBtnOver(this,1);NgChm.UHM.hlp(this,"Vertical Ribbon View",100);' onclick='NgChm.DET.detailVRibbonButton();'/>
-						</td>
-						<td>
+						</span>
+						<span class="tdTop">
 							<table>
 								<tr>
 									<td>
@@ -100,21 +82,19 @@
 									</td>
 								</tr>
 							</table>
-						</td>
-						<td class='tdTop'>
+						</span>
+						<span class='tdTop'>
 						    <img id='go_btn' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'  onclick='NgChm.DET.detailSearch();'/>
-						</td>
-						<td class='tdTop'>
+						</span>
+						<span class='tdTop'>
 						    <img id='prev_btn' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.hlp(this,"Previous Search Result",115);' style="display:none;" onclick='NgChm.DET.searchPrev();'/>
-						</td>
-						<td class='tdTop'>
+						</span>
+						<span class='tdTop'>
 						    <img id='next_btn' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.hlp(this,"Next Search Result",100)' style="display:none;" onclick='NgChm.DET.searchNext();'/>
-						</td>
-						<td class='tdTop'>
+						</span>
+						<span class='tdTop'>
 						    <img id='cancel_btn' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.hlp(this,"Clear Search Results",105)' style="display:none;" onclick='NgChm.DET.clearSearch(event);'/>
-						</td>
-					</tr>
-				</table>
+						</span>
 		    </div>
 			<div id="pdf_gear" style="text-align: right;" >
 				<div id="flicks" style="display: none;">

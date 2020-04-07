@@ -48,7 +48,7 @@ div.paneHeader {
 }
 
 div.paneHeader.activePane {
-	background-color: #ccccff;
+	/* background-color: #ccccff; */
 }
 
 div.paneTitle {
@@ -63,6 +63,26 @@ div.icon_group {
 	vertical-align: top;
 	align-items: end;
 	margin-right: 5px;
+}
+
+div.icon_group.client_icons {
+	flex-grow: 5;
+}
+
+span.tdTop {
+	display: inline-block;
+}
+
+div#bottom_buttons span.tdTop img {
+	margin-top: 3px;
+}
+
+div.collapsed img.gearIcon {
+	display: none;
+}
+
+div.collapsed div.icon_group.client_icons {
+	display: none;
 }
 
 div.container {
@@ -393,7 +413,7 @@ span.button.negative {
 
 #bottom_buttons{
 	display: block;
-	margin-top:0px;
+	margin-top: 2px;
 }
 
 #settings_buttons{
