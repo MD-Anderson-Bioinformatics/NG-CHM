@@ -1359,10 +1359,11 @@ NgChm.createNS('NgChm.LNK');
 				thisAxis = axis;
 				if (debug) console.log ({ m: 'setAxis', axis, params });
 				axis1Config = NgChm.heatMap.getAxisCovariateConfig (axis);
+				const axis1cvOrder = NgChm.heatMap.getAxisCovariateOrder (axis);
 				otherAxis = NgChm.MMGR.isRow (axis) ? 'Column' : 'Row';
-				defaultCoord = Object.keys(axis1Config).filter(x => /\.coordinate\.1/.test(x));
+				defaultCoord = axis1cvOrder.filter(x => /\.coordinate\.1/.test(x));
 				defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, '');
-				defaultCovar = Object.keys(axis1Config).filter(x => !/\.coordinate\.\d+$/.test(x));
+				defaultCovar = axis1cvOrder.filter(x => !/\.coordinate\.\d+$/.test(x));
 				defaultCovar = defaultCovar.length === 0 ? null : defaultCovar[defaultCovar.length-1];
 			}
 
