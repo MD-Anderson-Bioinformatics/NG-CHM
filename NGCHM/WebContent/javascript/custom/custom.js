@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion('2020-03-11');
+linkouts.setVersion('2020-04-07');
 
 // Scatter Plot plugin:
 linkouts.addPanePlugin ({
@@ -901,6 +901,39 @@ linkouts.addPlugin({
     });
 }) (linkouts);
 
+
+//==============================================//
+// NDEx IQuery plugin                                //
+//==============================================//
+(function(linkouts) {
+
+    const iQueryBaseURL = "http://iquery.ndexbio.org?genes=";
+
+    function iQuery (names) {
+        linkouts.openUrl(iQueryBaseURL + names.join(','), "NDEx IQuery");
+    }
+
+    function iQuery2 (labels){
+	// Concatenate rows and column labels and uniqueify.
+        iQuery (labels.Row.concat(labels.Column).filter((v,i,a) => a.indexOf(v) === i));
+    }
+
+    linkouts.addPlugin({
+        name: "NDEx IQuery",
+        description: "Adds linkouts to NDEx IQuery.",
+        version: "0.1.0",
+        site: "http://iquery.ndexbio.org/",
+        logo: "http://iquery.ndexbio.org/static/media/ndex-logo.04d7bf44.svg",
+        linkouts: [
+            { menuEntry: "NDEx IQuery Single", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: iQuery },
+            { menuEntry: "NDEx IQuery", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: iQuery }
+        ],
+        matrixLinkouts: [
+            { menuEntry: "NDEx IQuery", typeName1: ["bio.gene.hugo"], typeName2: ["bio.gene.hugo"], selectMode: linkouts.MULTI_SELECT, linkoutFn: iQuery2 },
+        ]
+    });
+}) (linkouts);
+
 //==============================================//
 // Zodiac plugin                                //
 //==============================================//
@@ -915,8 +948,8 @@ linkouts.addPlugin({
         name: "Zodiac",
 	description: "Adds linkouts to Zodiac.",
 	version: "0.1.0",
-	site: "http://www.compgenome.org/zodiac2/",
-	logo: "http://www.compgenome.org/zodiac2/images/zodiac_logo.png",
+	site: "http://www.compgenome.org/zodiac/",
+	logo: "http://www.compgenome.org/zodiac/images/zodiac_logo.png",
 	linkouts: [
             { menuEntry: "View Zodiac", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: viewZodiacG }
 	],
