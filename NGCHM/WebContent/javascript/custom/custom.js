@@ -935,8 +935,8 @@ linkouts.addPlugin({
         name: "Zodiac",
 	description: "Adds linkouts to Zodiac.",
 	version: "0.1.0",
-	site: "http://www.compgenome.org/zodiac2/",
-	logo: "http://www.compgenome.org/zodiac2/images/zodiac_logo.png",
+	site: "http://www.compgenome.org/zodiac/",
+	logo: "http://www.compgenome.org/zodiac/images/zodiac_logo.png",
 	linkouts: [
             { menuEntry: "View Zodiac", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: viewZodiacG }
 	],
