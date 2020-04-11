@@ -1206,7 +1206,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		} else {
 			//Adjustment for multi-line covariate headers
 			if(splitTitle.length > 1) {
-				classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  //TEST
+				classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  
 			}
 			if ((topOff + classBarHeaderHeight + (thresholds.length*13) > pageHeight) && !isLastClassBarToBeDrawn(key,type)) {
 				doc.addPage(); // ... make a new page and reset topOff
@@ -1217,7 +1217,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			bartop = topOff+5 + (splitTitle.length - 1)*(classBarLegendTextSize*2);
 			//Adjustment for multi-line covariate headers
 			if(splitTitle.length > 1) {
-				classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  //TEST
+				classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  
 			}
 			doc.setFontType("bold");
 		    doc.text(leftOff, topOff, splitTitle);

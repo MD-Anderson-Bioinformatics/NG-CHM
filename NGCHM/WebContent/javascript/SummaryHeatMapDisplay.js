@@ -189,7 +189,7 @@ NgChm.SUM.summaryInit = function() {
 		mapName = mapName.substring(0,80) + "...";
 	}
 
-	nameDiv.innerHTML = "<b>NG-CHM Heat Map:</b>&nbsp;&nbsp;"+mapName;
+	nameDiv.innerHTML = "<b>Map Name:</b>&nbsp;&nbsp;"+mapName;
 	setTimeout (function() {
 		NgChm.SUM.setupHeatMapGl();
 		NgChm.SUM.initHeatMapGl();
@@ -2348,7 +2348,7 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 			}
 		}
 		NgChm.SUM.chmElement.style.display = '';
-		NgChm.Pane.setPaneTitle (loc, 'Heatmap Summary');
+		NgChm.Pane.setPaneTitle (loc, 'Heat Map Summary');
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptySummaryPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeSummaryPane);
 	}

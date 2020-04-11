@@ -556,7 +556,6 @@ NgChm.DET.drawSelections = function () {
 		ctx.strokeStyle="#000000";
 		ctx.strokeRect(boxX,boxY,boxW,boxH);
 	}
-
 	
 	//Retrieve contiguous row and column search arrays
 	var searchRows = NgChm.DET.getSearchRows();
@@ -1411,7 +1410,6 @@ NgChm.DET.drawDetailHeatMap = function (drawWin) {
 //Returns a renderBuffer containing an image of the region of the NGCHM
 //specified by drawWin rendered using the parameters in params.
 NgChm.DET.getDetailHeatMap = function (drawWin, params) {
-	//console.log("NgChm.DET.getDetailHeatMap");
 
 	const layer = drawWin.layer;
 	const paramCheck = JSON.stringify({ drawWin, params });
@@ -2859,16 +2857,32 @@ NgChm.DET.getSamplingRatio = function (axis) {
  * Search Functions Section
  ***********************************************************/
 
+NgChm.DET.cleanseSearchString = function (searchStr) {
+	var srchItems = searchStr.split(/[|;, ]+/);
+	var cleanStr = "";
+	for (var j = 0; j < srchItems.length; j++) {
+		var item = srchItems[j];
+		item = item.replace(/^\|+|\.+|\,+|\;+|\,+|\;+|\|+|\.+$/g, '');
+		if (item !== '') {
+			cleanStr = cleanStr + item + ',';
+		}
+	}
+	return cleanStr.substring(0,cleanStr.length - 1);
+}
+
 //Called when search string is entered.
 NgChm.DET.detailSearch = function () {
 	NgChm.DET.hideSearchResults();	
 	var searchElement = document.getElementById('search_text');
 	var searchString = searchElement.value.trim();
-	if (searchString == "" || searchString == null || searchString == " " || searchString == "."){
-		return;
-	}
 	NgChm.SEL.createEmptySearchItems();
 	NgChm.SUM.clearSelectionMarks();
+	if (searchString === "" || searchString === null || searchString === " "){
+		return;
+	}
+	searchString = NgChm.DET.cleanseSearchString(searchString);
+	searchElement.value = searchString;
+	
 	var tmpSearchItems = searchString.split(/[;, ]+/);
 	const itemsFound = [];
 	
@@ -2904,7 +2918,7 @@ NgChm.DET.detailSearch = function () {
 	for (var j = 0; j < tmpSearchItems.length; j++) {
 		var reg;
 		var searchItem = tmpSearchItems[j];
-		if (searchItem == "." || searchItem == "*"){ // if this is a search item that's going to return everything, skip it.
+		if (searchItem === '' || searchItem == "*"){ // if this is a search item that's going to return everything, skip it.
 			continue;
 		}
 		if (searchItem.charAt(0) == "\"" && searchItem.slice(-1) == "\""){ // is it wrapped in ""?
@@ -3476,7 +3490,7 @@ NgChm.DET.zoomAnimation = function (destRow,destCol) {
 			if (debug) console.log ({ m: 'Finished copying to target pane', chmElement: NgChm.DET.chmElement, savedChmElements: savedChmElements.length });
 		}
 		NgChm.DET.chmElement.style.display = '';
-		NgChm.Pane.setPaneTitle (loc, 'Heatmap Detail');
+		NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail');
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
 		NgChm.Pane.setPaneClientIcons(loc, [

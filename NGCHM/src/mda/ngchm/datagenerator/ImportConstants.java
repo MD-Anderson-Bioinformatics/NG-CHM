@@ -196,6 +196,7 @@ public final class ImportConstants {
 	public static String DETAIL_HEIGHT  = "detail_height";
 	public static String SELECTION_COLOR = "selection_color";
 	public static String OUTPUT_LOC = "output_location";
+	public static String BUILD_PLATFORM = "build_platform";
 	public static String METHOD_SAMPLE = "sample";
 	public static String METHOD_AVERAGE = "average";
 	public static String METHOD_MODE = "mode";
