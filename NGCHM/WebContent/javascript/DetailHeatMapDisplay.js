@@ -2867,7 +2867,8 @@ NgChm.DET.cleanseSearchString = function (searchStr) {
 			cleanStr = cleanStr + item + ',';
 		}
 	}
-	return cleanStr.substring(0,cleanStr.length - 1);
+	cleanStr = cleanStr.substring(0,cleanStr.length - 1);
+	return cleanStr;
 }
 
 //Called when search string is entered.

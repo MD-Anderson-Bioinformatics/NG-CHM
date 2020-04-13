@@ -982,3 +982,11 @@ iframe.nopointer {
         pointer-events: none;
 }
 
+.dblSpace {
+ margin-left: 1em
+}
+
+.tab {
+ margin-left: 2em
+}
+

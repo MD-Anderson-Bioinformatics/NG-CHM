@@ -189,7 +189,7 @@ NgChm.SUM.summaryInit = function() {
 		mapName = mapName.substring(0,80) + "...";
 	}
 
-	nameDiv.innerHTML = "<b>Map Name:</b>&nbsp;&nbsp;"+mapName;
+	nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
 	setTimeout (function() {
 		NgChm.SUM.setupHeatMapGl();
 		NgChm.SUM.initHeatMapGl();
