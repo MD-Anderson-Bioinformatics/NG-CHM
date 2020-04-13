@@ -977,6 +977,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		document.addEventListener('touchmove', this.moveListener, NgChm.UTIL.passiveCompat({passive: false}));
 		document.addEventListener('mouseup', this.endListener);
 		document.addEventListener('touchend', this.endListener);
+		NgChm.UTIL.containerElement.addEventListener('mouseleave', this.endListener);
 	};
 
 	// This method is called for each pointer movement while moving the divider.

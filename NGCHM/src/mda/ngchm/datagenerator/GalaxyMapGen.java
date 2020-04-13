@@ -24,7 +24,7 @@ import org.json.simple.parser.ParseException;
 public class GalaxyMapGen {
 	
 public static boolean debugOutput = false;
-private static String BUILDER_VERSION = "Galaxy 2.11.0";
+private static String BUILDER_VERSION = "2.11.1";
 
 
 	public static void main(String[] args){
@@ -72,7 +72,9 @@ private static String BUILDER_VERSION = "Galaxy 2.11.0";
 			
 			//Add heatmap output subdirectory and galaxy version number to heatmapProperties JSON
 			jsonObject.put(OUTPUT_LOC,subdir);
-			jsonObject.put(BUILDER_VER,BUILDER_VERSION);
+			String buildPlatform = (String) jsonObject.get(BUILD_PLATFORM);
+			jsonObject.put(BUILDER_VER,buildPlatform+SPACE+BUILDER_VERSION);
+			jsonObject.remove(BUILD_PLATFORM);
 
 			//Fix org.simple.JSON escaping of forward slashes throughout JSON
 			String jsonString = jsonObject.toString();

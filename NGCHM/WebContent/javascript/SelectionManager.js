@@ -168,12 +168,15 @@ NgChm.SEL.keyNavigate = function(e) {
 			default:
 				return;
 		}
+		NgChm.SEL.checkRow();
+		NgChm.SEL.checkColumn();
+	    NgChm.SEL.updateSelection();
+    } else {
+    	if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
+    		NgChm.DET.detailSearch();    		
+    	}
     }
 	
-	NgChm.SEL.checkRow();
-	NgChm.SEL.checkColumn();
-    
-    NgChm.SEL.updateSelection();
 }
 
 NgChm.SEL.callDetailDrawFunction = function(modeVal) {
