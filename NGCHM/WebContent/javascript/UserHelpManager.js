@@ -529,8 +529,8 @@ NgChm.UHM.showSearchError = function(type) {
 	searchError.style.left = (searchBar.offsetLeft + searchBar.offsetWidth) + 'px';
 	switch (type){
 		case 0: searchError.innerHTML = "No matching labels found"; break;
-		case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + NgChm.DET.currentSearchItem.label;break;
-		case 2: searchError.innerHTML = "All " + NgChm.DET.currentSearchItem.axis +  " items are visible. Change the view mode to see " + NgChm.DET.currentSearchItem.label;break;
+		case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + NgChm.SRCH.currentSearchItem.label;break;
+		case 2: searchError.innerHTML = "All " + NgChm.SRCH.currentSearchItem.axis +  " items are visible. Change the view mode to see " + NgChm.SRCH.currentSearchItem.label;break;
 	}
 	NgChm.UHM.hlpC();
 	document.body.appendChild(searchError);

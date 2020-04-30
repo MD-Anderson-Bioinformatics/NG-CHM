@@ -77,7 +77,7 @@ NgChm.DET.isVisible = function isVisible () {
 //Call once to hook up detail drawing routines to a heat map and initialize the webGl 
 NgChm.DET.initDetailDisplay = function () {
 
-	NgChm.DET.currentSearchItem = {};
+	NgChm.SRCH.currentSearchItem = {};
 	NgChm.DET.labelLastClicked = {};
 
 	NgChm.DET.canvas = document.getElementById('detail_canvas');
@@ -409,7 +409,7 @@ NgChm.DET.handleMouseMove = function (e) {
 		if (e.shiftKey) {
 	        //process select drag only if the mouse is down AND the cursor is on the heat map.
             if((NgChm.DET.mouseDown) && (NgChm.DET.isOnObject(e,"map"))) {
-			    NgChm.DET.clearSearch(e);
+			    NgChm.SRCH.clearSearch(e);
 			    NgChm.DET.handleSelectDrag(e);
             }
 	    }
@@ -484,7 +484,7 @@ NgChm.DET.handleSelectDrag = function (e) {
     	var endCol = Math.max(NgChm.DET.getColFromLayerX(coords.x),NgChm.DET.getColFromLayerX(NgChm.DET.dragOffsetX));
 		var startRow = Math.min(NgChm.DET.getRowFromLayerY(coords.y),NgChm.DET.getRowFromLayerY(NgChm.DET.dragOffsetY));
 		var startCol = Math.min(NgChm.DET.getColFromLayerX(coords.x),NgChm.DET.getColFromLayerX(NgChm.DET.dragOffsetX));
-		NgChm.DET.clearSearch(e);
+		NgChm.SRCH.clearSearch(e);
     	for (var i = startRow; i <= endRow; i++){
     		NgChm.SEL.searchItems["Row"][i] = 1;
     	}
@@ -558,12 +558,11 @@ NgChm.DET.drawSelections = function () {
 	}
 	
 	//Retrieve contiguous row and column search arrays
-	var searchRows = NgChm.DET.getSearchRows();
+	var searchRows = NgChm.SRCH.getSearchRows();
 	var rowRanges = NgChm.DET.getContigSearchRanges(searchRows);
-	var searchCols = NgChm.DET.getSearchCols();
+	var searchCols = NgChm.SRCH.getSearchCols();
 	var colRanges = NgChm.DET.getContigSearchRanges(searchCols);
 	if (rowRanges.length > 0 || colRanges.length > 0) {
-    	NgChm.DET.showSrchBtns();
 		if (rowRanges.length === 0) {
 			//Draw horizontal lines across entire heatMap
 			for (var i=0;i<colRanges.length;i++) {
@@ -1189,7 +1188,7 @@ NgChm.DET.processDetailMapUpdate = function (event, tile) {
 		if (searchParam !== "") {
 			var searchElement = document.getElementById('search_text');
 			searchElement.value = searchParam;
-			NgChm.DET.detailSearch();
+			NgChm.SRCH.detailSearch();
 		}
 	} else {
 		NgChm.DET.flushDrawingCache(tile);
@@ -1250,7 +1249,7 @@ NgChm.DET.detailInit = function () {
 		if (NgChm.UTIL.getURLParameter("selected") !== ""){
 			var selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
 			document.getElementById("search_text").value = selected;
-			NgChm.DET.detailSearch();
+			NgChm.SRCH.detailSearch();
 			NgChm.SUM.drawSelectionMarks();
 			NgChm.SUM.drawTopItems();
 		}
@@ -1361,8 +1360,8 @@ NgChm.DET.drawDetailHeatMap = function (drawWin) {
 		rowBarWidths: NgChm.heatMap.getCovariateBarHeights("row"),
 		colBarHeights: NgChm.heatMap.getCovariateBarHeights("column"),
 
-		searchRows: NgChm.DET.getSearchRows(),
-		searchCols: NgChm.DET.getSearchCols(),
+		searchRows: NgChm.SRCH.getSearchRows(),
+		searchCols: NgChm.SRCH.getSearchCols(),
 		searchGridColor: [0,0,0]
 	};
 
@@ -2136,7 +2135,7 @@ NgChm.DET.addLabelDiv = function (parent, id, className, text ,longText, left, t
 }
 
 NgChm.DET.labelClick = function (e) {
-	NgChm.DET.hideSearchResults();	
+	NgChm.SRCH.showSearchResults();	
 	if (e.shiftKey || e.type == "touchmove"){ // shift + click
 		var selection = window.getSelection();
 		selection.removeAllRanges();
@@ -2152,7 +2151,7 @@ NgChm.DET.labelClick = function (e) {
 				}
 			}
 		} else { // otherwise, treat as normal click
-			NgChm.DET.clearSearchItems(focusNode.dataset.axis);
+			NgChm.SRCH.clearSearchItems(focusNode.dataset.axis);
 			var searchIndex = NgChm.DET.labelIndexInSearch(focusIndex,axis);
 			if (searchIndex ){
 				delete NgChm.SEL.searchItems[axis][index];
@@ -2174,7 +2173,7 @@ NgChm.DET.labelClick = function (e) {
 	} else { // standard click
 		var axis = this.dataset.axis;
 		var index = this.dataset.index;
-		NgChm.DET.clearSearchItems(axis);
+		NgChm.SRCH.clearSearchItems(axis);
 		NgChm.SEL.searchItems[axis][index] = 1;
 		NgChm.DET.labelLastClicked[axis] = index;
 	}
@@ -2183,12 +2182,12 @@ NgChm.DET.labelClick = function (e) {
 	document.getElementById('prev_btn').style.display='';
 	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
-	NgChm.SUM.clearSelectionMarks();
+//	NgChm.SUM.clearSelectionMarks();
 	NgChm.DET.updateDisplayedLabels();
 	NgChm.SEL.updateSelection();
 	NgChm.SUM.drawSelectionMarks();
 	NgChm.SUM.drawTopItems();
-	NgChm.DET.showSearchResults();	
+	NgChm.SRCH.showSearchResults();	
 }
 
 NgChm.DET.labelDrag = function(e){
@@ -2208,7 +2207,7 @@ NgChm.DET.labelDrag = function(e){
 			}
 		}
 	} else { // otherwise, treat as normal click
-		NgChm.DET.clearSearchItems(focusNode.dataset.axis);
+		NgChm.SRCH.clearSearchItems(focusNode.dataset.axis);
 		var searchIndex = NgChm.DET.labelIndexInSearch(focusIndex,axis);
 		if (searchIndex ){
 			delete NgChm.SEL.searchItems[axis][index];
@@ -2223,28 +2222,13 @@ NgChm.DET.labelDrag = function(e){
 	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
 	NgChm.DET.updateDisplayedLabels();
-	NgChm.SUM.clearSelectionMarks();
-	NgChm.DET.showSearchResults();	
+//	NgChm.SUM.clearSelectionMarks();
+	NgChm.SRCH.showSearchResults();	
 	NgChm.SEL.updateSelection();
 	NgChm.SUM.drawSelectionMarks();
 	NgChm.SUM.drawTopItems();
-	NgChm.DET.showSearchResults();	
+	NgChm.SRCH.showSearchResults();	
 	return;
-}
-
-//clears the search items on a particular axis
-NgChm.DET.clearSearchItems = function (clickAxis) {
-	var length = NgChm.SEL.searchItems[clickAxis].length;
-	NgChm.SEL.searchItems[clickAxis] = {};
-	if (clickAxis == "Row"){
-		NgChm.SUM.rowDendro.clearSelectedBars();
-	} else if (clickAxis == "Column"){
-		NgChm.SUM.colDendro.clearSelectedBars();
-	}
-	var markLabels = document.getElementsByClassName('MarkLabel');
-	for (let ii = 0; ii < markLabels.length; ii++){ // clear tick marks
-		NgChm.DET.removeLabel(markLabels[ii].id);
-	}
 }
 
 NgChm.DET.labelRightClick = function (e) {
@@ -2852,286 +2836,6 @@ NgChm.DET.getSamplingRatio = function (axis) {
 /****************************************************
  *****  DETAIL DENDROGRAM FUNCTIONS END HERE!!! *****
  ****************************************************/
-
-/***********************************************************
- * Search Functions Section
- ***********************************************************/
-
-NgChm.DET.cleanseSearchString = function (searchStr) {
-	var srchItems = searchStr.split(/[|;, ]+/);
-	var cleanStr = "";
-	for (var j = 0; j < srchItems.length; j++) {
-		var item = srchItems[j];
-		item = item.replace(/^\|+|\.+|\,+|\;+|\,+|\;+|\|+|\.+$/g, '');
-		if (item !== '') {
-			cleanStr = cleanStr + item + ',';
-		}
-	}
-	cleanStr = cleanStr.substring(0,cleanStr.length - 1);
-	return cleanStr;
-}
-
-//Called when search string is entered.
-NgChm.DET.detailSearch = function () {
-	NgChm.DET.hideSearchResults();	
-	var searchElement = document.getElementById('search_text');
-	var searchString = searchElement.value.trim();
-	NgChm.SEL.createEmptySearchItems();
-	NgChm.SUM.clearSelectionMarks();
-	if (searchString === "" || searchString === null || searchString === " "){
-		return;
-	}
-	searchString = NgChm.DET.cleanseSearchString(searchString);
-	searchElement.value = searchString;
-	
-	var tmpSearchItems = searchString.split(/[;, ]+/);
-	const itemsFound = [];
-	
-	//Put labels into the global search item list if they match a user search string.
-	//Regular expression is built for partial matches if the search string contains '*'.
-	//toUpperCase is used to make the search case insensitive.
-	var labels = NgChm.heatMap.getRowLabels()["labels"];
-	for (var j = 0; j < tmpSearchItems.length; j++) {
-		var reg;
-		var searchItem = tmpSearchItems[j];
-		if (searchItem == "." || searchItem == "*"){ // if this is a search item that's going to return everything, skip it.
-			continue;
-		}
-		if (searchItem.charAt(0) == "\"" && searchItem.slice(-1) == "\""){ // is it wrapped in ""?
-			reg = new RegExp("^" + searchItem.toUpperCase().slice(1,-1).replace(".","\\.") + "$");
-		} else {
-			reg = new RegExp(searchItem.toUpperCase());
-		}
-		for (var i = 0; i < labels.length; i++) {
-			var label = labels[i].toUpperCase();
-			if (label.indexOf('|') > -1)
-				label = label.substring(0,label.indexOf('|'));
-			
-			if  (reg.test(label)) {
-				NgChm.SEL.searchItems["Row"][i+1] = 1;
-				if (itemsFound.indexOf(searchItem) == -1)
-					itemsFound.push(searchItem);
-			} 
-		}	
-	}
-
-	labels = NgChm.heatMap.getColLabels()["labels"];
-	for (var j = 0; j < tmpSearchItems.length; j++) {
-		var reg;
-		var searchItem = tmpSearchItems[j];
-		if (searchItem === '' || searchItem == "*"){ // if this is a search item that's going to return everything, skip it.
-			continue;
-		}
-		if (searchItem.charAt(0) == "\"" && searchItem.slice(-1) == "\""){ // is it wrapped in ""?
-			reg = new RegExp("^" + searchItem.toUpperCase().slice(1,-1).replace(".","\\.") + "$");
-		} else {
-			reg = new RegExp(searchItem.toUpperCase());
-		}
-		for (var i = 0; i < labels.length; i++) {
-			var label = labels[i].toUpperCase();
-			if (label.indexOf('|') > -1)
-				label = label.substring(0,label.indexOf('|'));
-			
-			if  (reg.test(label)) {
-				NgChm.SEL.searchItems["Column"][i+1] = 1;
-				if (itemsFound.indexOf(searchItem) == -1)
-					itemsFound.push(searchItem);
-			} 
-		}	
-	}
-
-	//Jump to the first match
-	if (searchString == null || searchString == ""){
-		return;
-	}
-	NgChm.DET.searchNext(true);
-    NgChm.SUM.drawSelectionMarks();
-    NgChm.SUM.drawTopItems();
-	if (NgChm.DET.currentSearchItem.index && NgChm.DET.currentSearchItem.axis){
-		if (itemsFound.length != tmpSearchItems.length && itemsFound.length > 0) {
-			searchElement.style.backgroundColor = "rgba(255,255,0,0.3)";
-		} else if (itemsFound.length == 0){
-			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
-		}
-	} else {
-		if (searchString != null && searchString.length> 0) {
-			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
-		}	
-		//Clear previous matches when search is empty.
-		NgChm.SEL.updateSelection();
-	}
-	NgChm.DET.showSearchResults();	
-	let dc = document.getElementById("detail_canvas");
-	if (dc != null) dc.focus();
-}
-
-NgChm.DET.showSearchResults = function () {
-	document.getElementById("search_display_text").innerHTML = NgChm.DET.getSearchResultsTxt();
-}
-NgChm.DET.hideSearchResults = function () {
-	document.getElementById("search_display_text").innerHTML = "";
-}
-
-NgChm.DET.goToCurrentSearchItem = function () {
-	if (NgChm.DET.currentSearchItem.axis == "Row") {
-		NgChm.SEL.currentRow = NgChm.DET.currentSearchItem.index;
-		if ((NgChm.SEL.mode == 'RIBBONV') && NgChm.SEL.selectedStart!= 0 && (NgChm.SEL.currentRow < NgChm.SEL.selectedStart-1 || NgChm.SEL.selectedStop-1 < NgChm.SEL.currentRow)){
-			NgChm.UHM.showSearchError(1);
-		} else if (NgChm.SEL.mode == 'RIBBONV' && NgChm.SEL.selectedStart == 0){
-			NgChm.UHM.showSearchError(2);
-		} 
-		NgChm.SEL.checkRow();
-	} else if (NgChm.DET.currentSearchItem.axis == "Column"){
-		NgChm.SEL.currentCol = NgChm.DET.currentSearchItem.index;
-		if ((NgChm.SEL.mode == 'RIBBONH') && NgChm.SEL.selectedStart!= 0 && (NgChm.SEL.currentCol < NgChm.SEL.selectedStart-1 || NgChm.SEL.selectedStop-1 < NgChm.SEL.currentCol )){
-			NgChm.UHM.showSearchError(1)
-		} else if (NgChm.SEL.mode == 'RIBBONH' && NgChm.SEL.selectedStart == 0){
-			NgChm.UHM.showSearchError(2);
-		} 
-		NgChm.SEL.checkColumn();
-	}
-	NgChm.DET.showSrchBtns();
-	NgChm.SEL.updateSelection();
-}
-
-NgChm.DET.findNextSearchItem = function (index, axis) {
-	var axisLength = axis == "Row" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
-	var otherAxis = axis == "Row" ? "Column" : "Row";
-	var otherAxisLength = axis == "Column" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
-	var curr = index;
-	while( !NgChm.SEL.searchItems[axis][++curr] && curr <  axisLength){}; // find first searchItem in row
-	if (curr >= axisLength){ // if no searchItems exist in first axis, move to other axis
-		curr = -1;
-		while( !NgChm.SEL.searchItems[otherAxis][++curr] && curr <  otherAxisLength){};
-		if (curr >=otherAxisLength){ // if no matches in the other axis, check the earlier indices of the first axis (loop back)
-			curr = -1;
-			while( !NgChm.SEL.searchItems[axis][++curr] && curr <  index){};
-			if (curr < index && index != -1){
-				NgChm.DET.currentSearchItem["axis"] = axis;
-				NgChm.DET.currentSearchItem["index"] = curr;
-			}
-		} else {
-			NgChm.DET.currentSearchItem["axis"] = otherAxis;
-			NgChm.DET.currentSearchItem["index"] = curr;
-		}
-	} else {
-		NgChm.DET.currentSearchItem["axis"] = axis;
-		NgChm.DET.currentSearchItem["index"] = curr;
-	}
-	
-}
-
-NgChm.DET.findPrevSearchItem = function (index, axis) {
-	var axisLength = axis == "Row" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
-	var otherAxis = axis == "Row" ? "Column" : "Row";
-	var otherAxisLength = axis == "Column" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
-	var curr = index;
-	while( !NgChm.SEL.searchItems[axis][--curr] && curr > -1 ){}; // find first searchItem in row
-	if (curr < 0){ // if no searchItems exist in first axis, move to other axis
-		curr = otherAxisLength;
-		while( !NgChm.SEL.searchItems[otherAxis][--curr] && curr > -1){};
-		if (curr > 0){
-			NgChm.DET.currentSearchItem["axis"] = otherAxis;
-			NgChm.DET.currentSearchItem["index"] = curr;
-		} else {
-			curr = axisLength;
-			while( !NgChm.SEL.searchItems[axis][--curr] && curr > index ){};
-			if (curr > index){
-				NgChm.DET.currentSearchItem["axis"] = axis;
-				NgChm.DET.currentSearchItem["index"] = curr;
-			}
-		}
-	} else {
-		NgChm.DET.currentSearchItem["axis"] = axis;
-		NgChm.DET.currentSearchItem["index"] = curr;
-	}
-}
-
-//Go to next search item
-NgChm.DET.searchNext = function (firstTime) {
-	if (typeof firstTime !== 'undefined') {
-		NgChm.DET.findNextSearchItem(-1,"Row");
-	} else if (!NgChm.DET.currentSearchItem["index"] || !NgChm.DET.currentSearchItem["axis"]){ // if currentSeachItem isnt set (first time search)
-		NgChm.DET.findNextSearchItem(-1,"Row");
-	} else {
-		NgChm.DET.findNextSearchItem(NgChm.DET.currentSearchItem["index"],NgChm.DET.currentSearchItem["axis"]);
-	}
-	NgChm.DET.goToCurrentSearchItem();
-}
-
-//Go back to previous search item.
-NgChm.DET.searchPrev = function () {
-	NgChm.DET.findPrevSearchItem(NgChm.DET.currentSearchItem["index"],NgChm.DET.currentSearchItem["axis"]);
-	NgChm.DET.goToCurrentSearchItem();
-}
-
-//Called when red 'X' is clicked.
-NgChm.DET.clearSearch = function (event) {
- 	NgChm.DET.hideSearchResults();
-	var searchElement = document.getElementById('search_text');
-	searchElement.value = "";
-	NgChm.DET.currentSearchItem = {};
-	NgChm.DET.labelLastClicked = {};
-	NgChm.SEL.createEmptySearchItems();
-	NgChm.SUM.rowDendro.clearSelectedBars();
-	NgChm.SUM.colDendro.clearSelectedBars();
-    NgChm.SUM.clearSelectionMarks();
-	NgChm.DET.clearSrchBtns(event);
-	NgChm.SEL.updateSelection();
-}
-
-NgChm.DET.clearSrchBtns = function (event) {
-	if ((event != null) && (event.keyCode == 13))
-		return;
-	
-	document.getElementById('prev_btn').style.display='none';
-	document.getElementById('next_btn').style.display='none';	
-	document.getElementById('cancel_btn').style.display='none';	
-	var srchText = document.getElementById('search_text');
-	srchText.style.backgroundColor = "white";
-}
-
-NgChm.DET.showSrchBtns = function () {
-	document.getElementById('prev_btn').style.display='';
-	document.getElementById('next_btn').style.display='';
-	document.getElementById('cancel_btn').style.display='';
-}
-
-//Return the column number of any columns meeting the current user search.
-NgChm.DET.getSearchCols = function () {
-	var selected = [];
-	for (var i in NgChm.SEL.searchItems["Column"]) {
-		selected.push(i);
-	}
-	return selected;	
-}
-
-//Generates search results text to be displayed on button bar
-NgChm.DET.getSearchResultsTxt = function () {
-	var rowItems = Object.keys(NgChm.SEL.searchItems["Row"]).length;
-	var colItems = Object.keys(NgChm.SEL.searchItems["Column"]).length;
-	return "Found: Rows - " + rowItems + " Columns - " + colItems;	
-}
-
-//Return row numbers of any rows meeting current user search.
-NgChm.DET.getSearchRows = function () {
-	var selected = [];
-	for (var i in NgChm.SEL.searchItems["Row"]) {
-		selected.push(i);
-	}
-	return selected;
-}
-
-//Return indices of rows/columns meeting current user search.
-NgChm.DET.getSearchItemsForAxis = function (axis) {
-	// axis is capitalized in so many ways :-(.
-	axis = NgChm.MMGR.isRow (axis) ? 'Row' : 'Column';
-	return Object.keys(NgChm.SEL.searchItems[axis] || {});
-};
-
-/***********************************************************
- * End - Search Functions
- ***********************************************************/
 
 /****************************************************
  *****  WebGL stuff *****

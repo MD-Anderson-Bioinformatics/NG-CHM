@@ -717,7 +717,7 @@ NgChm.createNS('NgChm.LNK');
 		var newWindow = window.open("","",'width=335,height=330,resizable=1');
 		var newDoc = newWindow.document;
 		var axisLabels = axis == "ColumnCovar" ? NgChm.DET.getSearchLabelsByAxis("Column") : NgChm.DET.getSearchLabelsByAxis("Row");
-		var labelIndex = axis == "ColumnCovar" ? NgChm.DET.getSearchCols() : NgChm.DET.getSearchRows(); 
+		var labelIndex = axis == "ColumnCovar" ? NgChm.SRCH.getSearchCols() : NgChm.SRCH.getSearchRows(); 
 		var classBars = axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationData() : NgChm.heatMap.getRowClassificationData(); 
 		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
 		for (var i = 0; i < axisLabels.length; i++){
@@ -1956,7 +1956,7 @@ NgChm.createNS('NgChm.LNK');
 	*/
 	NgChm.LNK.postSelectionToLinkouts = function(axis, clickType, lastClickIndex, srcNonce) {
 		const allLabels = NgChm.heatMap.getAxisLabels(axis).labels;
-		const searchItems = NgChm.MMGR.isRow(axis) ? NgChm.DET.getSearchRows() : NgChm.DET.getSearchCols();
+		const searchItems = NgChm.MMGR.isRow(axis) ? NgChm.SRCH.getSearchRows() : NgChm.SRCH.getSearchCols();
 		const pointLabelNames = [];
 		for (let i=0; i<searchItems.length; i++) {
 			const pointId = allLabels[searchItems[i] - 1];
@@ -1994,7 +1994,7 @@ NgChm.createNS('NgChm.LNK');
 		}
 		heatMapAxisLabels = heatMapAxisLabels.map(l => l.toUpperCase());
 		var setSelected = new Set(pluginLabels) // make a set for faster access below, and avoiding use of indexOf
-		NgChm.DET.clearSearchItems(axis);
+		NgChm.SRCH.clearSearchItems(axis);
 		var indexes = []
 		for (var i=0; i<heatMapAxisLabels.length; i++) { // loop over all labels
 			if (setSelected.has(heatMapAxisLabels[i])) {  // if set of selected points has label, add index to array of indexes
@@ -2008,7 +2008,7 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.DET.updateDisplayedLabels();
 		NgChm.SUM.redrawSelectionMarks();
 		NgChm.SEL.updateSelection();
-		NgChm.DET.showSearchResults();
+		NgChm.SRCH.showSearchResults();
 		// I don't thing we need this here...maybe it was for something else? Or something no-longer used? Not sure so leaving it for now.
 		//NgChm.LNK.postSelectionToLinkouts (axis, clickType, lastClickIndex, nonce);
 	}
@@ -2025,7 +2025,7 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.DET.labelLastClicked[axis] = ptIdx;
 		NgChm.DET.updateDisplayedLabels();
 		NgChm.SEL.updateSelection();
-		NgChm.DET.showSearchResults();
+		NgChm.SRCH.showSearchResults();
 		NgChm.SUM.redrawSelectionMarks();
 	}
 
