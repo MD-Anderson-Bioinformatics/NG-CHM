@@ -63,7 +63,7 @@
 		<!-- SECTION WITH SEARCH BOX UNDER NAME (change left CSS to remove width) -->
 			<div class="divTable" id="detail_buttons">
 			  <div class="divRow">
-			    <div class="divLeft" id="mapName" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Map Name: " + NgChm.heatMap.getMapInformation().name + "<br><br>Description: " + NgChm.heatMap.getMapInformation().description,350);'></div>
+			    <div class="divLeft" id="mapName" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Map Name: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().name : "Not yet available") + "<br><br>Description: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().description : "N/A"),350);'></div>
 			  </div>
 			  <div class="divRow">
 	  		    <div class="divLeft">  

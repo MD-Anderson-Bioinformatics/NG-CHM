@@ -368,7 +368,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	this.getMapInformation = function() {
-		return mapConfigInformation !== null ? mapConfig.data_configuration.map_information : "";
+		return mapConfig.data_configuration.map_information;
 	}
 	
 	this.getDataLayers = function() {
