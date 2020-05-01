@@ -628,6 +628,31 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		}
 	}
 	
+	this.configSearchCovars = function () {  //TODO Get rid of duplicates
+		var searchOn = document.getElementById('search_on');
+		var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
+		var classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
+		var classBarsData = NgChm.heatMap.getColClassificationData(); 
+		for (var i = 0; i < classBarConfigOrder.length; i++) {
+			var key = classBarConfigOrder[i];
+			var currentClassBar = classBarsConfig[key];
+			// create new option element
+			var opt = document.createElement('option');
+			opt.appendChild( document.createTextNode(key) );
+			opt.value = "col|" + key; 
+			// add opt to end of select box (sel)
+			searchOn.appendChild(opt); 
+		}
+		classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
+		classBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
+		for (var i = 0; i < classBarConfigOrder.length; i++) {
+			var key = classBarConfigOrder[i];
+			var opt = document.createElement('option');
+			opt.appendChild( document.createTextNode(key) );
+			opt.value = "row|" + key; 
+			searchOn.appendChild(opt); 
+		}
+	}	
 	this.configureFlick = function(){
 		if (!flickInitialized) {
 			var flicks = document.getElementById("flicks");

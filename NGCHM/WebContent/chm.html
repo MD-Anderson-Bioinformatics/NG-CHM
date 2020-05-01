@@ -24,6 +24,7 @@
 	<script src="javascript/Linkout.js"></script>
 	<script src="javascript/Customization.js"></script>
 	<script src="javascript/CompatibilityManager.js"></script>
+	<script src="javascript/SearchManager.js"></script>
 	<script src="javascript/lib/jspdf.min.js"></script>
 	<script src="javascript/lib/jstat.min.js"></script>
 	<script src="javascript/use_jstat.js"></script>
@@ -50,52 +51,57 @@
 		<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
 		<img id="mdaLogo" src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
            </a>
-	</div>
-		<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);">
-			<table><tr>
-				<td><div id="fileInstr" style="padding-bottom:5px; font-size: 14px; font-weight:bold;color: rgb(51, 51, 51);">Select .NGCHM file to view:<br></div></td></tr><tr>
-				<td><div style="font-size: 12px; font-weight:bold;color: rgb(51, 51, 51);"><input type='file' accept=".ngchm" title= 'To view .ngchm files: Press this button, select the .ngchm file that you wish to view, and press Open.' id='chmFile' name='chmFile'></div></td>
-			</tr></table>
+			</div>
+				<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);">
+					<table><tr>
+						<td><div id="fileInstr" style="padding-bottom:5px; font-size: 14px; font-weight:bold;color: rgb(51, 51, 51);">Select .NGCHM file to view:<br></div></td></tr><tr>
+						<td><div style="font-size: 12px; font-weight:bold;color: rgb(51, 51, 51);"><input type='file' accept=".ngchm" title= 'To view .ngchm files: Press this button, select the .ngchm file that you wish to view, and press Open.' id='chmFile' name='chmFile'></div></td>
+					</tr></table>
+		
+			</div>
+		
+		<!-- SECTION WITH SEARCH BOX UNDER NAME (change left CSS to remove width) -->
+			<div class="divTable" id="detail_buttons">
+			  <div class="divRow">
+			    <div class="divLeft" id="mapName" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Map Name: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().name : "Not yet available") + "<br><br>Description: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().description : "N/A"),350);'></div>
+			  </div>
+			  <div class="divRow">
+	  		    <div class="divLeft">  
+					<img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.hlp(this,"Open .NG-CHM Heat Map",130);' onclick='NgChm.SEL.openFileToggle();'/>
+					<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen" /> 
+					<strong>Search:</strong>&nbsp;
+					<select name="search_on" id="search_on" style="vertical-align:bottom;font-size: 13px;" onchange="NgChm.SRCH.searchOnSel();">
+						<option value="labels">Labels</option>
+					</select>
+					<input id="search_text" name="search" type="text" style="vertical-align:bottom;font-size: 12px;" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.",300);' />
+					<input id="search_cov_cont" name="search_cont" type="text" style="display:none;vertical-align:bottom;font-size: 12px;" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row and column covariate values.  Enter search term and click Go. The search will find rows/cols with continuous covariate values that fall within the search expressions entered. Search expressions should be entered in the form of a comma-delimited string with each segment representing an expression. Valid expressions would include individual values and/or values preceded by one of the following operators: >, >=< <, <=. If the search box turns red, no rows/cols containing the selected covariate values were found.",300);' />
+					<div id="search_cov_disc" style="display:none;padding-top:2px;vertical-align:bottom;">
+						<div class="dropDownMultiSelect">
+					        <div id="srchCovSelectBox" class="dropDownSelectBox" onclick="NgChm.UTIL.showCheckBoxDropDown('srchCovCheckBoxes');">   
+					        </div>
+					        <div id="srchCovCheckBoxes" class='dropDownCheckBoxes' style='display:none;'>
+					        </div>
+						</div>
+					</div>
+					<select name="search_target" id="search_target" style='vertical-align:bottom;font-size: 13px;"'>
+						<option value="Both">Both</option>
+						<option value="Column">Column</option>
+						<option value="Row">Row</option>
+					</select>
+					<span class="dblSpace"/>
+				    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'  onclick='NgChm.SRCH.detailSearch();'/>
+				    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.hlp(this,"Previous Search Result",115);' style="display:none;" onclick='NgChm.SRCH.searchPrev();'/>
+				    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.hlp(this,"Next Search Result",100)' style="display:none;" onclick='NgChm.SRCH.searchNext();'/>
+				    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.hlp(this,"Clear Search Results",105)' style="display:none;" onclick="NgChm.SRCH.clearSearch(event);"/>
+	  			</div> 
+			</div>
+			<div class="divRow">
+				<div class="divLeft">
+					<div><span id="search_display_text" style="margin-left:15em;font-size: 10px; vertical-align: middle;"></span></div>
+				</div>
+			</div>
+		  </div>	
 
-	</div>
-		<div id='detail_buttons' style="display:none;" onmouseout='NgChm.UHM.hlpC();'>
-			<div id='top_buttons'>
-			<div id="mapName" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Map Name: " + NgChm.heatMap.getMapInformation().name + "<br><br>Description: " + NgChm.heatMap.getMapInformation().description,350);'></div>
-		    </div>
-		    <div id='bottom_buttons' >
-						<span class='tdTop'>
-						<img id='fileOpen_btn' style="display: none;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.hlp(this,"Open .NG-CHM Heat Map",130);' onclick='NgChm.SEL.openFileToggle();'/>
-						</span>
-						<span class='tdTop'>
-						<img id='back_btn' style="display: none;" src='images/returnArrow.png' alt='Return to previous screen' onmouseout='this.setAttribute("src", "images/returnArrow.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/returnArrowHover.png");NgChm.UHM.hlp(this,"Return To Previous Screen",160);'  onclick='NgChm.UTIL.returnToHome();'/>
-						</span>
-						<span class="tdTop">
-							<table>
-								<tr>
-									<td>
-										<span style='display: inline-block;'><b>Search: </b><input type="text" id="search_text" name="search" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.",300);' /></span>
-									</td>
-								</tr>
-								<tr id="search_display_show" >
-									<td>
-										&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<div id='search_display_text' style='font-size: 10px;display: inline-block;vertical-align: top;'></div>
-									</td>
-								</tr>
-							</table>
-						</span>
-						<span class='tdTop'>
-						    <img id='go_btn' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'  onclick='NgChm.DET.detailSearch();'/>
-						</span>
-						<span class='tdTop'>
-						    <img id='prev_btn' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.hlp(this,"Previous Search Result",115);' style="display:none;" onclick='NgChm.DET.searchPrev();'/>
-						</span>
-						<span class='tdTop'>
-						    <img id='next_btn' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.hlp(this,"Next Search Result",100)' style="display:none;" onclick='NgChm.DET.searchNext();'/>
-						</span>
-						<span class='tdTop'>
-						    <img id='cancel_btn' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.hlp(this,"Clear Search Results",105)' style="display:none;" onclick='NgChm.DET.clearSearch(event);'/>
-						</span>
-		    </div>
 			<div id="pdf_gear" style="text-align: right;" >
 				<div id="flicks" style="display: none;">
 				    <div id="noFlickViews" style="display: none;">

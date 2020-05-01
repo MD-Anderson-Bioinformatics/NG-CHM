@@ -95,6 +95,7 @@ NgChm.SUM.processSummaryMapUpdate = function(event, tile) {
 	if (event == NgChm.MMGR.Event_INITIALIZED) {
 		NgChm.heatMap.configureButtonBar();
 		NgChm.heatMap.configureFlick();
+		NgChm.heatMap.configSearchCovars();
 		if (NgChm.MMGR.source !== NgChm.MMGR.LOCAL_SOURCE) {
 			document.title = NgChm.heatMap.getMapInformation().name;
 		}
@@ -185,8 +186,8 @@ NgChm.SUM.summaryInit = function() {
 	
 	var nameDiv = document.getElementById("mapName");  
 	var mapName = NgChm.heatMap.getMapInformation().name;
-	if (mapName.length > 80){
-		mapName = mapName.substring(0,80) + "...";
+	if (mapName.length > 30){
+		mapName = mapName.substring(0,30) + "...";
 	}
 
 	nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
@@ -1894,7 +1895,7 @@ NgChm.SUM.drawSelectionMarks = function() {
 // Draw the selection marks on the specified axis.
 NgChm.SUM.drawAxisSelectionMarks = function(axis) {
 	const isRow = NgChm.MMGR.isRow (axis);
-	const selection = NgChm.DET.getSearchItemsForAxis(axis);
+	const selection = NgChm.SRCH.getSearchItemsForAxis(axis);
 	const canvas = document.getElementById (isRow ? "summary_row_select_canvas" : "summary_col_select_canvas");
 	if (canvas === null) { return;}
 	const limit = isRow ? canvas.height : canvas.width;
@@ -1945,8 +1946,15 @@ NgChm.SUM.drawMissingColClassBarsMark = function (){
 }
 
 NgChm.SUM.clearSelectionMarks = function(){
-	NgChm.SUM.clearRowSelectionMarks();
-	NgChm.SUM.clearColSelectionMarks();
+	const searchTarget = document.getElementById('search_target').value;
+	if (searchTarget === "Row") {
+		NgChm.SUM.clearRowSelectionMarks();
+	} else if (searchTarget === "Column") {
+		NgChm.SUM.clearColSelectionMarks();
+	} else {
+		NgChm.SUM.clearRowSelectionMarks();
+		NgChm.SUM.clearColSelectionMarks();
+	}
 }
 
 NgChm.SUM.clearAxisSelectionMarks = function (axis) {

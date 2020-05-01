@@ -544,7 +544,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			NgChm.SUM.colDendro.clearRibbonMode();
 
 			this.clearSelectionMarks();
-			NgChm.DET.clearSearchItems(this.axis);
+			NgChm.SRCH.clearSearchItems(this.axis);
 
 			this.ribbonModeBar = barIndex;
 			// Redraw both summary dendrograms:
@@ -558,6 +558,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			NgChm.SEL.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
 			NgChm.SEL.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
 			console.log ({ rmBar, start: NgChm.SEL.selectedStart, stop: NgChm.SEL.selectedStop });
+			NgChm.SRCH.showSearchResults();	
 
 			NgChm.SEL.changeMode(this.axis === 'Row' ? 'RIBBONV' : 'RIBBONH');
 		}
@@ -611,10 +612,11 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		var addBar = true;
 		// is it a standard click?
 		if (!shift && !ctrl){
-			NgChm.DET.clearSearchItems(this.axis);
+			NgChm.SRCH.clearSearchItems(this.axis);
 			for (var i = selectLeft; i < selectRight+1;i++){
 				NgChm.SEL.searchItems[this.axis][i] = 1;
 			}
+			NgChm.SRCH.showSearchResults();	
 			
 			this.selectedBars = [selectedBar];
 			return;

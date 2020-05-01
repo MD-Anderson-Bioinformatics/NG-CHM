@@ -173,7 +173,7 @@ NgChm.SEL.keyNavigate = function(e) {
 	    NgChm.SEL.updateSelection();
     } else {
     	if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
-    		NgChm.DET.detailSearch();    		
+    		NgChm.SRCH.detailSearch();    		
     	}
     }
 	
@@ -411,10 +411,13 @@ NgChm.SEL.flickToggleOn = function() {
 }
 NgChm.SEL.openFileToggle = function() {
 	var fileButton = document.getElementById('fileButton');
+	var detailButtons = document.getElementById('detail_buttons');
 	if (fileButton.style.display === 'none') {
 		fileButton.style.display = '';
+		detailButtons.style.display = 'none';
 	} else {
 		fileButton.style.display = 'none';
+		detailButtons.style.display = '';
 	}
 }
 

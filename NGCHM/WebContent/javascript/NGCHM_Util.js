@@ -510,11 +510,13 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	NgChm.UTIL.setDragPanels();
 	NgChm.UTIL.containerElement = document.getElementById('container');
 
+
 	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
 	if ((NgChm.UTIL.getURLParameter('map') === "") && (NgChm.MMGR.embeddedMapName === null)) {
 		//In local mode, need user to select the zip file with data (required by browser security)
 		var chmFileItem  = document.getElementById('fileButton');
 		document.getElementById('fileOpen_btn').style.display = '';
+		document.getElementById('detail_buttons').style.display = 'none';
 		chmFileItem.style.display = '';
 		chmFileItem.addEventListener('change', NgChm.UTIL.loadFileModeCHM, false);
 	} else {
@@ -734,7 +736,7 @@ NgChm.UTIL.initDisplayVars = function() {
 	NgChm.DET.pageY = 0;
 	NgChm.DET.dendroHeight = 105;
 	NgChm.DET.dendroWidth = 105;
-	NgChm.DET.currentSearchItem = {};
+	NgChm.SRCH.currentSearchItem = {};
 	NgChm.DET.labelLastClicked = {};
 	NgChm.DET.mouseDown = false;
 	NgChm.DET.rowLabelLen = 0;
@@ -964,6 +966,88 @@ NgChm.UTIL.roundUpDown = function(inVal, limit) {
 	} 
 	return roundedVal; 
 }
+
+/**********************************************************************************
+ * FUNCTION - createCheckBoxDropDown: The purpose of this function is to dynamically
+ * populate the html of a discrete check box dropdown with items.
+ **********************************************************************************/
+NgChm.UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,items,maxHeight) {
+	var checkBoxes = document.getElementById(checkBoxesId);
+	var selectBox = document.getElementById(selectBoxId);
+	//Set text to display on closed check box dropdown (can be set to '' for no text)
+	selectBox.innerHTML = "<select><option>"+boxText+"</option></select><div id='overSelect' class='dropDownOverSelect'></div>";
+	//Create html for all check box rows
+	var boxes = "";
+	for (var i = 0; i < items.length; i++){
+		boxes = boxes + "<label for='" + items[i] + "' onclick='NgChm.UTIL.toggleCheckBox(event, this);'><input type='checkBox' class='srchCovCheckBox' value='" + items[i] + "'>" + items[i] + "</input></label>";
+	}
+	if (items.length > 20) {
+		checkBoxes.style.height = maxHeight;
+	} else {
+		checkBoxes.style.height = (items.length + 1) * 18 + 'px';
+	}
+	checkBoxes.innerHTML = boxes;
+}
+
+/**********************************************************************************
+ * FUNCTION - clearCheckBoxDropdown: The purpose of this function is to remove all
+ * check box rows from within a given checkBox dropdown control.
+ **********************************************************************************/
+NgChm.UTIL.clearCheckBoxDropdown = function(checkBoxesId) {
+	document.getElementById(checkBoxesId).innerHTML = "";
+}
+
+/**********************************************************************************
+ * FUNCTION - resetCheckBoxDropdown: The purpose of this function is to reset all
+ * check boxes in a check box dropdown control to unselected.
+ **********************************************************************************/
+NgChm.UTIL.resetCheckBoxDropdown = function(checkBoxClass) {
+	var checkboxes =  document.getElementsByClassName(checkBoxClass);
+	for (var i = 0; i < checkboxes.length; i++){
+        checkboxes[i].checked = false;
+    }
+}
+
+/**********************************************************************************
+ * FUNCTION - toggleCheckBox: The purpose of this function is to toggle the value
+ * of a check box.  This is inherent to the check box itself BUT you need this 
+ * code to enable the toggle when the user clicks on a check box row (highlighted
+ * LABEL element) but not directly on the box itself. 
+ **********************************************************************************/
+NgChm.UTIL.toggleCheckBox = function(event, item) {
+	if (event.target.nodeName === 'LABEL') {
+		item.children[0].checked = !item.children[0].checked;
+	}
+}
+
+/**********************************************************************************
+ * FUNCTION - showCheckBoxDropDown: The purpose of this function is open up
+ * the contents (checkboxes) of a check box dropdown control. 
+ **********************************************************************************/
+NgChm.UTIL.showCheckBoxDropDown = function(checkBoxesId) {
+	var checkboxes = document.getElementById(checkBoxesId);
+	if (checkboxes.style.display ===  "none") {
+		checkboxes.style.display = "block";
+		checkBoxOpen = true;
+	} else {
+		checkboxes.style.display = "none";
+		checkBoxOpen = false;
+	}
+}
+
+/**********************************************************************************
+ * FUNCTION - closeCheckBoxDropdown: The purpose of this function is to close
+ * the contents of a check box dropdown control. It is similar the the show
+ * function but can be called from anywhere. The idea being that if the 
+ * dropdown has been left open and you click somewhere else, it will be closed. 
+ **********************************************************************************/
+NgChm.UTIL.closeCheckBoxDropdown = function(selectBoxId,checkBoxesId) {
+	var offP = document.getElementById(checkBoxesId).offsetParent;
+	  if (offP !== null) {
+		 document.getElementById(selectBoxId).click();
+	  }
+}
+
 
 /**********************************************************************************
  * BEGIN: EMBEDDED MAP FUNCTIONS AND GLOBALS

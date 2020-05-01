@@ -16,9 +16,9 @@ div.mdaServiceHeader
 	display: inline-flex;
 	float: none;
 	width: 100%;
-	height: 60px;
+	height: 55px;
 	color: #666;
-	margin: 2px 0px 0px 0px;
+	margin: 0px 0px 0px 0px;
 	background-color: white;
 	border-bottom: 4px solid #da0505;
 	font-family: sans-serif;
@@ -402,9 +402,6 @@ span.button.negative {
 }
 
 #detail_buttons {
-	min-width:300px;
-	width:550px;
-	display: block;
 }
 
 #top_buttons {
@@ -990,3 +987,65 @@ iframe.nopointer {
  margin-left: 2em
 }
 
+.divTable {
+    display: table;
+}
+.divRow  {
+    display: table-row;
+    padding-bottom: 3px;
+    height: 17px;
+}
+.divLeft {
+    display: table-cell;
+    padding-right: 10px;
+}
+.divRight {
+    display: table-cell;
+    padding-right: 10px;
+}
+.divMiddle {
+    display: table-cell;
+    padding-right: 10px;
+}
+.divLeft p, .divRight p, .divMiddle p {
+    margin: 1px 1px;
+}
+
+ .dropDownCheckBoxes {
+  	width:250px;
+      display: none;
+      border: 1px #DADADA solid;
+      font-size:13px;
+  	overflow-y:auto; 
+  	z-index:1;
+  	position:absolute;
+  	background-color: white;
+  }
+  .dropDownCheckBoxes label {
+      display: block;
+  }
+  .dropDownCheckBoxes label:hover {
+      background-color: #CBDBF6;
+  }
+  
+  .dropDownMultiSelect {
+      width: 140px;
+      float: left;
+      padding: 1px;
+  }
+  .dropDownSelectBox {
+      position: relative;
+  }
+  .dropDownSelectBox select {
+      width: 100%;
+  }
+
+  .dropDownOverSelect {
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+  }
+  .srchCovCheckBox {
+  	margin: 2px;
+  	font-size: 8px;
+  }
+    
