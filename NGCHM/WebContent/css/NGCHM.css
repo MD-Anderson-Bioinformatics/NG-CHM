@@ -1017,7 +1017,7 @@ iframe.nopointer {
       border: 1px #DADADA solid;
       font-size:13px;
   	overflow-y:auto; 
-  	z-index:1;
+  	z-index:100;
   	position:absolute;
   	background-color: white;
   }
@@ -1031,21 +1031,42 @@ iframe.nopointer {
   .dropDownMultiSelect {
       width: 140px;
       float: left;
-      padding: 1px;
+      vertical-align: bottom;
   }
+  
   .dropDownSelectBox {
       position: relative;
   }
+  
   .dropDownSelectBox select {
       width: 100%;
+      font-size:11px;
+      height:21px;
+      padding-top:2px;
+      padding-bottom:4px;
   }
 
   .dropDownOverSelect {
       position: absolute;
       left: 0; right: 0; top: 0; bottom: 0;
   }
+  
   .srchCovCheckBox {
   	margin: 2px;
   	font-size: 8px;
   }
-    
+  
+  .srchSelect {
+  	vertical-align:bottom;
+  	font-size: 12px;
+  	height:20px;
+  }  
+
+  .srchText {
+ 	vertical-align:bottom;
+  	font-size: 12px;
+    width: 140px;
+  }  
+  
+  
+ 

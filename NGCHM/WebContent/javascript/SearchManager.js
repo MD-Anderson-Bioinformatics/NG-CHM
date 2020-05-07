@@ -1,7 +1,8 @@
 //Define Namespace for NgChm SearchManager
 NgChm.createNS('NgChm.SRCH');
 
-NgChm.SRCH.discCovState = "";
+NgChm.SRCH.discCovRowState = "";
+NgChm.SRCH.discCovColState = "";
 NgChm.SRCH.currentSearchItem = {};
 
 /***********************************************************
@@ -82,6 +83,7 @@ NgChm.SRCH.searchOnSel = function() {
  **********************************************************************************/
 NgChm.SRCH.loadCovarSearch = function() {
 	const searchOn = document.getElementById('search_on');
+	const searchTarget = document.getElementById('search_target');
 	const checkBoxes = document.getElementById('srchCovCheckBoxes');
 	const selectBox = document.getElementById('srchCovSelectBox');
 	const covType = searchOn.value.split("|")[0];
@@ -94,9 +96,7 @@ NgChm.SRCH.loadCovarSearch = function() {
 	const thresholds = currentClassBar.color_map.thresholds.sort();
 	NgChm.UTIL.createCheckBoxDropDown('srchCovSelectBox','srchCovCheckBoxes',"Select Category(s)", thresholds,"300px");
 	checkBoxes.innerHTML = checkBoxes.innerHTML + "<label for='Missing'><input type='checkBox' class='srchCovCheckBox' value='missing'>Missing</input></label>";
-	if (NgChm.SRCH.discCovState !== "") {
-		NgChm.SRCH.loadSavedCovarState(covType,covVal);
-	}
+	NgChm.SRCH.loadSavedCovarState(covType,covVal);
 }
 
 /**********************************************************************************
@@ -104,11 +104,20 @@ NgChm.SRCH.loadCovarSearch = function() {
  * box state of a discrete covariate checkbox dropdown when a search is run;
   **********************************************************************************/
 NgChm.SRCH.saveCovarState = function (covVal) {
+	const searchTarget = document.getElementById('search_target').value;
 	const currElems = document.getElementsByClassName('srchCovCheckBox');
-	NgChm.SRCH.discCovState = covVal+"|"
+	if (searchTarget === 'Row') {
+		NgChm.SRCH.discCovRowState = covVal+"|"
+	} else {
+		NgChm.SRCH.discCovColState = covVal+"|"
+	}
 	for (let i=0; i<currElems.length;i++) {
 		if (currElems[i].checked) {
-			NgChm.SRCH.discCovState = NgChm.SRCH.discCovState + i + "|";
+			if (searchTarget === 'Row') {
+				NgChm.SRCH.discCovRowState = NgChm.SRCH.discCovRowState + i + "|";
+			} else {
+				NgChm.SRCH.discCovColState = NgChm.SRCH.discCovColState + i + "|";
+			}
 		}
 	}
 }
@@ -119,8 +128,18 @@ NgChm.SRCH.saveCovarState = function (covVal) {
  * that have been used in a current search.
   **********************************************************************************/
 NgChm.SRCH.loadSavedCovarState = function (covType, covVal) {
+	const searchTarget = document.getElementById('search_target').value;
+	if ((searchTarget === 'Row') && (NgChm.SRCH.discCovRowState === "")) {
+		return;
+	}
+	if ((searchTarget === 'Column') && (NgChm.SRCH.discCovColState === "")) {
+		return;
+	}
 	const checkBoxes = document.getElementById('srchCovCheckBoxes');
-	let stateElems = NgChm.SRCH.discCovState.split("|");
+	let stateElems = NgChm.SRCH.discCovRowState.split("|");
+	if (searchTarget === 'Column') {
+		stateElems = NgChm.SRCH.discCovColState.split("|");
+	}
 	if ((stateElems[0] === covType) && (stateElems[1] === covVal)) {
 		for (let i=2;i<stateElems.length-1;i++) {
 			let stateElem = parseInt(stateElems[i]);
@@ -232,62 +251,180 @@ NgChm.SRCH.getSelectedDiscreteSelections = function (axis, cats,classDataValues)
 NgChm.SRCH.getSelectedContinuousSelections = function (axis, classDataValues) {
 	let itemFound = false;
 	const searchElement = document.getElementById('search_cov_cont');
-	const searchString = searchElement.value.trim();
+	let searchString = searchElement.value.trim();
+	//Remove all spaces from expression
+	searchString = searchString.replace(/ /g,'');
+	searchElement.value = searchString;
 	if (searchString === "" || searchString === null || searchString === " "){
 		return itemFound;
 	}
-	const tmpSearchItems = searchString.split(/[;, ]+/);
+	const tmpSearchItems = searchString.split(/[;,]+/);
 	for (let i=0;i<classDataValues.length;i++) {
 		let classDataValue = classDataValues[i];
 		for (let j=0;j<tmpSearchItems.length;j++) {
-			const expr = tmpSearchItems[j].trim().toLowerCase();
-			const oper = (expr.includes(">=")) ? 0 : (expr.includes("<=")) ? 1 :  (expr.includes(">")) ? 2 : (expr.includes("<")) ? 3 : (expr.includes("miss")) ? 4 : 5;
-			const value = ((oper === 0) || (oper === 1)) ? expr.substring(2,expr.length) : ((oper === 2) || (oper === 3)) ? expr.substring(1,expr.length) : expr;
-			switch(oper) {
-			  case 0:
-				if (parseFloat(classDataValue) >= parseFloat(value)) {
-					NgChm.SEL.searchItems[axis][i+1] = 1;
-					itemFound = true;
-				}
-			    break;
-			  case 1:
-				if (parseFloat(classDataValue) <= parseFloat(value)) {
-					NgChm.SEL.searchItems[axis][i+1] = 1;
-					itemFound = true;
-				}
-			    break;
-			  case 2:
-				if (parseFloat(classDataValue) > parseFloat(value)) {
-					NgChm.SEL.searchItems[axis][i+1] = 1;
-					itemFound = true;
-				}
-			    break;
-			  case 3:
-				if (parseFloat(classDataValue) < parseFloat(value)) {
-					NgChm.SEL.searchItems[axis][i+1] = 1;
-					itemFound = true;
-				}
-			    break;
-			  case 4:
+			let expr = tmpSearchItems[j].trim().toLowerCase();
+			//Parse the expression for all components
+			const results = NgChm.SRCH.parseSearchExpression(expr);
+			if (results === null) { break; }
+			//If we are doing a search for missing values
+			if (results.firstValue.includes("miss")) {
 				if ((classDataValue === 'null') || (classDataValue === "NA")) {
 					NgChm.SEL.searchItems[axis][i+1] = 1;
 					itemFound = true;
 				}
-			    break;
-			  case 5:
-					if (parseFloat(classDataValue) === parseFloat(value)) {
+			} else {
+				//Validate expression and execute if valid
+				if (NgChm.SRCH.isSearchValid(results.firstOper, results.firstValue, results.secondOper, results.secondValue) === true) {
+					let selectItem = NgChm.SRCH.evaluateExpression(results.firstOper,parseFloat(results.firstValue), parseFloat(classDataValue));
+					if ((results.secondOper !== null) && (selectItem === true)) {
+						selectItem = NgChm.SRCH.evaluateExpression(results.secondOper,parseFloat(results.secondValue), parseFloat(classDataValue));
+					}
+					if (selectItem === true) {
 						NgChm.SEL.searchItems[axis][i+1] = 1;
 						itemFound = true;
 					}
-				    break;
-			  default:
-			    break;
-			} 
+				}
+			}
 		}
 	}
 	return itemFound;
 }
-	
+
+/**********************************************************************************
+ * FUNCTION - evaluateExpression: The purpose of this function is to evaluate
+ * a user entered expression against a value from the classDataValues for a given
+ * covariate. It checks first for values that meet the greater than operators
+ * (> and >=).  Then it checks for values that meet the less than operators.
+ * Finally, it checks for values that meet the equal to operators (===,>=,<=).
+ * If a value satisfies any of these conditions a true value is returned.   
+  **********************************************************************************/
+NgChm.SRCH.evaluateExpression = function(oper, srchValue, dataValue) {
+	let selectItem = false;
+	if (oper.charAt(0) === '>') {
+			if (dataValue > srchValue) {
+				selectItem = true;
+			}
+	} 
+	if (oper.charAt(0) === '<') {
+		if (dataValue < srchValue) {
+			selectItem = true;
+		}
+	}
+	if (oper.charAt(1) === '=') {
+		if (dataValue === srchValue) {
+			selectItem = true;
+		}	
+	}
+	return selectItem;
+}
+
+/**********************************************************************************
+ * FUNCTION - getSelectedContinuousSelections: The purpose of this function is to 
+ * take a search expression (>44,>45<=90,88, etc...), parse that expression, and 
+ * return an object with 4 variables (the first expression operator, the first 
+ * expression value, second operator, and second value.  If an expression is just
+ * a single number, the first oper will be "=" and the first value, the expression.
+ * A null is returned if no valid expression is found.
+  **********************************************************************************/
+NgChm.SRCH.parseSearchExpression= function (expr) {
+	//Make a first pass thru the expression
+	const firstPass = NgChm.SRCH.examineExpression(expr);
+	if (firstPass === null) { return null; }
+	let secondPass = null;
+	let firstValue = null;
+	let secondValue = null;
+	let firstOper = null;
+	let secondOper = null;
+	//If the first pass has a length of 1 we have an "equal to" expression (either a number OR 'missing')
+	if (firstPass.oper === "===") {
+		//Use the 'is equal' test to evaluate the expression
+		firstOper = firstPass.oper;
+		firstValue = firstPass.remainder;
+	} else {
+		//If the first pass array has 4 values, we need to do a second pass
+		if (firstPass.position === 0) {
+			//If the first pass found an operator in position 0, the firstOper is set AND the rest of the string needs a second pass
+			firstOper = firstPass.oper;
+			//If the first pass remainder is a numeric value, we have identified the first value.
+			if (NgChm.UTIL.isNaN(firstPass.remainder) === false) {
+				firstValue = firstPass.remainder;
+			} else {
+				secondPass = NgChm.SRCH.examineExpression(firstPass.remainder);
+				secondOper = secondPass.oper
+				firstValue = firstPass.remainder.substring(0,secondPass.position);
+				secondValue = secondPass.remainder;
+			}
+		} else {
+			//If the first pass found an operator a in position other than 0, the remainder is the second value and the operator found is the second operator
+			//AND the first half of the string needs a second pass
+			secondOper = firstPass.oper;
+			secondValue = firstPass.remainder;
+			secondPass = NgChm.SRCH.examineExpression(expr.substring(0, firstPass.position));
+			//With the results of the second pass we have now identified both operators and both values
+			firstValue = secondPass.remainder;
+			firstOper = secondPass.oper;
+		}
+	}
+	return {firstOper: firstOper, firstValue: firstValue, secondOper: secondOper, secondValue};
+}
+
+/**********************************************************************************
+ * FUNCTION - examineExpression: The purpose of this function is to evaluate an incoming
+ * string and pull out the components of the expression.  It returns an object
+ * containing the following values: The first operator (>,<,>=,<=) found, the position
+ * that the operator was found in, and the string remainder of that expression
+ * UNLESS the expression contains none of those above operators.  If none of them
+ * are found, the expression is evaluated to see if it contains a numeric value. If
+ * so, the first operator is "=" and the remainder is the expression.  Null is 
+ * returned if the expression yields no results.
+  **********************************************************************************/
+NgChm.SRCH.examineExpression = function (expr) {
+	let gteIdx = (expr.indexOf(">="));
+	let lteIdx = (expr.indexOf("<="));
+	let gtIdx = gteIdx > -1 ? -1 : (expr.indexOf(">"));
+	let ltIdx = lteIdx > -1 ? -1 : (expr.indexOf("<"));
+    
+	if (gteIdx !== -1) {
+		return { oper: ">=", position: gteIdx, remainder: expr.substring(gteIdx+2,expr.length) }
+	} else if (lteIdx !== -1) {
+		return { oper: "<=", position: lteIdx, remainder: expr.substring(lteIdx+2,expr.length) }
+	} else if (gtIdx !== -1) {
+		return { oper: ">", position: gtIdx, remainder: expr.substring(gtIdx+1,expr.length) }
+	} else if (ltIdx !== -1) {
+		return { oper: "<", position: ltIdx, remainder:  expr.substring(ltIdx+1,expr.length) }
+	} else {
+		if (NgChm.UTIL.isNaN(expr) === false) {	
+			return { oper: "===", remainder: expr }
+		} else {
+			return { oper: "txt", remainder: expr }
+		}
+	}
+}
+
+/**********************************************************************************
+ * FUNCTION - isSearchValid: The purpose of this function is to evaluate the operators 
+ * and values entered by the user ensure that they are actual operators and float values 
+ * BEFORE using them in an EVAL statement.  This is done to preclude code injection.
+  **********************************************************************************/
+NgChm.SRCH.isSearchValid = function (firstOper, firstValue, secondOper, secondValue) {
+	let srchValid = true;
+	if ((firstOper !== '>') && (firstOper !== '<') && (firstOper !== '>=') && (firstOper !== '<=')  && (firstOper !== '===')) {
+		srchValid = false;
+	}
+	if (NgChm.UTIL.isNaN(firstValue) === true) {
+		srchValid = false;
+	}
+	if (secondOper !== null) {
+		if ((secondOper !== '>') && (secondOper !== '<') && (secondOper !== '>=') && (secondOper !== '<=')) {
+			srchValid = false;
+		}
+		if (NgChm.UTIL.isNaN(secondValue) === true) {
+			srchValid = false;
+		}
+	}
+	return srchValid;
+}
+
 /**********************************************************************************
  * FUNCTION - labelSearch: The purpose of this function is to perform
  * a label based search. It calls the sub-functions necessary to execute
@@ -548,8 +685,8 @@ NgChm.SRCH.goToCurrentSearchItem = function () {
 NgChm.SRCH.clearSearch = function (event) {
 	NgChm.UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const searchTarget = document.getElementById('search_target').value;
-	NgChm.SUM.clearSelectionMarks();
-	NgChm.SRCH.clearSearchItems();
+	NgChm.SUM.clearSelectionMarks(searchTarget);
+	NgChm.SRCH.clearSearchRequest(searchTarget);
 	if (searchTarget === "Row") {
 		if (NgChm.SRCH.currentSearchItem["axis"] === "Row") {
 			NgChm.SRCH.findNextSearchItem(-1,"Column");
@@ -581,12 +718,13 @@ NgChm.SRCH.clearSearch = function (event) {
   **********************************************************************************/
 NgChm.SRCH.clearSearchRequest = function() {
 	const searchTarget = document.getElementById('search_target').value;
-	if (searchTarget === 'both') {
+	if (searchTarget === 'Both') {
 		NgChm.SRCH.clearSearchItems("Row");
 		NgChm.SRCH.clearSearchItems("Column");
 	} else {
 		NgChm.SRCH.clearSearchItems(searchTarget)
 	}
+	NgChm.SUM.clearSelectionMarks(searchTarget);
 }
 
 /**********************************************************************************
@@ -604,7 +742,6 @@ NgChm.SRCH.clearSearchItems = function (clickAxis) {
 	for (let ii = 0; ii < markLabels.length; ii++){ // clear tick marks
 		NgChm.DET.removeLabel(markLabels[ii].id);
 	}
-	NgChm.SUM.clearSelectionMarks();
 }
 
 /**********************************************************************************
@@ -640,10 +777,19 @@ NgChm.SRCH.clearSearchElement = function () {
 			if (currentClassBar.color_map.type === 'continuous') {
 				document.getElementById('search_cov_cont').value = "";
 			} else {
-				NgChm.SRCH.discCovState = "";
 				NgChm.UTIL.resetCheckBoxDropdown('srchCovCheckBox');		
 			}
 		}
+	}
+	if (searchTarget === 'row') {
+		NgChm.SRCH.discCovRowState = "";
+		
+	} else if (searchTarget === 'column') {
+		NgChm.SRCH.discCovColState = "";
+		
+	} else {
+		NgChm.SRCH.discCovRowState = "";
+		NgChm.SRCH.discCovColState = "";
 	}
 }
 
@@ -711,22 +857,6 @@ NgChm.SRCH.getSearchItemsForAxis = function (axis) {
 	axis = NgChm.MMGR.isRow (axis) ? 'Row' : 'Column';
 	return Object.keys(NgChm.SEL.searchItems[axis] || {});
 };
-
-/**********************************************************************************
- * FUNCTION - clearSearchItems: The purpose of this function is to clear the 
- * searchItems depending upon the search_target (row/col/both) that is selected.
-  **********************************************************************************/
-NgChm.SRCH.clearSearchItems = function() {
-	var searchTarget = document.getElementById('search_target').value;
-	if (searchTarget === "Row") {
-		NgChm.SEL.searchItems["Row"]= {};
-	} else if (searchTarget === "Column") {
-		NgChm.SEL.searchItems["Column"]= {};
-	} else {
-		NgChm.SEL.searchItems["Row"]= {};
-		NgChm.SEL.searchItems["Column"]= {};
-	}
-}
 
 /***********************************************************
  * End - Search Functions

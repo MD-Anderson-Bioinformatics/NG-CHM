@@ -197,6 +197,28 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return datalevels[NgChm.MMGR.DETAIL_LEVEL].totalRows;
 	}
 	
+	//Return the summary row ratio
+	this.getSummaryRowRatio = function(){
+		if (datalevels[NgChm.MMGR.SUMMARY_LEVEL] !== null) {
+			return datalevels[NgChm.MMGR.SUMMARY_LEVEL].rowSummaryRatio;
+		} else {
+			return datalevels[NgChm.MMGR_THUMBNAIL_LEVEL].rowSummaryRatio;
+		}
+	}
+	
+	//Return the summary row ratio
+	this.getSummaryColRatio = function(){
+		if (datalevels[NgChm.MMGR.SUMMARY_LEVEL] !== null) {
+			return datalevels[NgChm.MMGR.SUMMARY_LEVEL].colSummaryRatio;
+		} else {
+			return datalevels[NgChm.MMGR_THUMBNAIL_LEVEL].col_summaryRatio;
+		}
+	}
+	//Return the total number of detail rows
+	this.getTotalRows = function(){
+		return datalevels[NgChm.MMGR.DETAIL_LEVEL].totalRows;
+	}
+	
 	this.setFlickInitialized = function(value){
 		flickInitialized = value;
 	}
@@ -638,7 +660,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			var currentClassBar = classBarsConfig[key];
 			// create new option element
 			var opt = document.createElement('option');
-			opt.appendChild( document.createTextNode(key) );
+			let covname = key.length > 20 ? key.substring(0,20) + "..." : key;
+			opt.appendChild( document.createTextNode(covname) );
 			opt.value = "col|" + key; 
 			// add opt to end of select box (sel)
 			searchOn.appendChild(opt); 
@@ -648,7 +671,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		for (var i = 0; i < classBarConfigOrder.length; i++) {
 			var key = classBarConfigOrder[i];
 			var opt = document.createElement('option');
-			opt.appendChild( document.createTextNode(key) );
+			let covname = key.length > 20 ? key.substring(0,20) + "..." : key;
+			opt.appendChild( document.createTextNode(covname) );
 			opt.value = "row|" + key; 
 			searchOn.appendChild(opt); 
 		}
