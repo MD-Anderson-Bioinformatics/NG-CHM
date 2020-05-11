@@ -260,6 +260,7 @@ div.paneHeader img {
 
 .optionsBox .nodeSelector,
 .optionsBox .userLabel,
+.optionsBox .thresholdDropdownDIV,
 .optionsBox input,
 .optionsBox select {
 	grid-column-start: contents;
@@ -301,6 +302,11 @@ div.paneHeader img {
 	font-size: 0.7rem;
 }
 
+.gearPanel div.thresholdDropdownDIV{
+	margin: 0;
+	font-size: 0.7rem;
+}
+
 .gearPanel div.nodeSelector {
 	margin: 0.2em 0 0.5em 0;
 	font-size: 0.7rem;
@@ -326,6 +332,7 @@ span.button.negative {
 
 
 .gearPanel div.userLabel .leftLabel::after,
+.gearPanel div.thresholdDropdownDIV .leftLabel::after,
 .gearPanel div.nodeSelector .leftLabel::after {
 	margin-right: 0.5em;
 }
@@ -1068,5 +1075,22 @@ iframe.nopointer {
     width: 140px;
   }  
   
-  
- 
+.gear-menu-covariate-checkbox {
+	margin-left: 5%;
+}
+.gear-menu-covariate-range{
+	margin-left: 5%;
+	width: 150px;
+}
+.gear-menu-spacing{
+	margin-left: 5%;
+}
+
+/* Help Question marks. These are anchors in the HTML, and when
+   a user hovers over them, a help message is diplayed */
+.helpQuestionMark {
+	content: url('../images/questionMark.png'); 
+	height: 15px;
+	width: 15px;
+}
+
