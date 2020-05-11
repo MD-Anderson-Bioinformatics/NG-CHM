@@ -96,6 +96,7 @@ NgChm.SUM.processSummaryMapUpdate = function(event, tile) {
 		NgChm.heatMap.configureButtonBar();
 		NgChm.heatMap.configureFlick();
 		NgChm.heatMap.configSearchCovars();
+		
 		if (NgChm.MMGR.source !== NgChm.MMGR.LOCAL_SOURCE) {
 			document.title = NgChm.heatMap.getMapInformation().name;
 		}
@@ -378,7 +379,7 @@ NgChm.SUM.setSelectionDivSize = function(width, height){ // input params used fo
 	var rowTI = document.getElementById("summary_row_top_items_canvas");
 	//Size and position Column Selections Canvas
 	const colSelVP = {
-		top: NgChm.SUM.colDendro.getDivHeight() + (NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale) + NgChm.SUM.canvas.clientHeight,
+		top: NgChm.SUM.colDendro.getDivHeight() + NgChm.SUM.colClassBarHeight + NgChm.SUM.canvas.clientHeight,
 		width: NgChm.SUM.canvas.clientWidth,
 		height: 10
 	};
@@ -1877,9 +1878,6 @@ NgChm.SUM.calcSummaryLayout = function() {
 	}
 };
 
-// Minimum width of a selection mark.
-NgChm.SUM.minSelectionMarkSize = Math.ceil (5 * window.devicePixelRatio);
-
 // Clear and redraw the selection marks on both axes.
 NgChm.SUM.redrawSelectionMarks = function() {
 	NgChm.SUM.clearSelectionMarks();
@@ -1900,16 +1898,18 @@ NgChm.SUM.drawAxisSelectionMarks = function(axis) {
 	if (canvas === null) { return;}
 	const limit = isRow ? canvas.height : canvas.width;
 	const scale = limit / NgChm.heatMap.getTotalElementsForAxis(axis);
+	const summaryRatio = axis === 'Row' ? NgChm.heatMap.getSummaryRowRatio() : NgChm.heatMap.getSummaryColRatio();
+	const minSelectionMarkSize = summaryRatio === 1 ? 1 : ((2*summaryRatio)*window.devicePixelRatio);
 
 	const marks = NgChm.DET.getContigSearchRanges(selection).map(range => {
-		let posn = Math.floor (range[0] * scale);
-		let size = Math.ceil ((range[1] - range[0]) * scale);
-		if (size < NgChm.SUM.minSelectionMarkSize) {
-			const dposn = Math.floor((NgChm.SUM.minSelectionMarkSize-size)/2);
+		let posn = Math.floor (range[0] * scale) - 1;
+		let size = Math.ceil ((range[1] - range[0]) * scale) + 1;
+		if (size < minSelectionMarkSize) {
+			const dposn = Math.floor((minSelectionMarkSize-size)/2);
 			const newposn = Math.max(0, posn - dposn);
-			size = NgChm.SUM.minSelectionMarkSize;
+			size = summaryRatio === 1 ? size : (2*summaryRatio);
 			posn = newposn + size <= limit ? newposn : limit - size;
-		}
+		} 
 		return { posn, size };
 	});
 
@@ -1945,12 +1945,16 @@ NgChm.SUM.drawMissingColClassBarsMark = function (){
 	}
 }
 
-NgChm.SUM.clearSelectionMarks = function(){
-	const searchTarget = document.getElementById('search_target').value;
-	if (searchTarget === "Row") {
-		NgChm.SUM.clearRowSelectionMarks();
-	} else if (searchTarget === "Column") {
-		NgChm.SUM.clearColSelectionMarks();
+NgChm.SUM.clearSelectionMarks = function(searchTarget){
+	if (typeof searchTarget !== 'undefined') {
+		if (searchTarget === "Row") {
+			NgChm.SUM.clearRowSelectionMarks();
+		} else if (searchTarget === "Column") {
+			NgChm.SUM.clearColSelectionMarks();
+		} else {
+			NgChm.SUM.clearRowSelectionMarks();
+			NgChm.SUM.clearColSelectionMarks();
+		}	
 	} else {
 		NgChm.SUM.clearRowSelectionMarks();
 		NgChm.SUM.clearColSelectionMarks();

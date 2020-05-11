@@ -906,6 +906,14 @@ NgChm.UTIL.setDragPanels = function () {
 }
 
 /**********************************************************************************
+ * FUNCTION - isNaN: This function checks for a numeric (float or integer) value
+ * and returns true/false.
+ **********************************************************************************/
+NgChm.UTIL.isNaN = function (n) {
+    return isNaN(n);
+}
+
+/**********************************************************************************
  * FUNCTION - dragElement: This function adds drag/move functionality to the DIV
  * passed in.
  **********************************************************************************/

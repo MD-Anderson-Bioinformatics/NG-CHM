@@ -2182,7 +2182,7 @@ NgChm.DET.labelClick = function (e) {
 	document.getElementById('prev_btn').style.display='';
 	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
-//	NgChm.SUM.clearSelectionMarks();
+	NgChm.SUM.clearSelectionMarks();
 	NgChm.DET.updateDisplayedLabels();
 	NgChm.SEL.updateSelection();
 	NgChm.SUM.drawSelectionMarks();
@@ -2222,7 +2222,6 @@ NgChm.DET.labelDrag = function(e){
 	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
 	NgChm.DET.updateDisplayedLabels();
-//	NgChm.SUM.clearSelectionMarks();
 	NgChm.SRCH.showSearchResults();	
 	NgChm.SEL.updateSelection();
 	NgChm.SUM.drawSelectionMarks();
