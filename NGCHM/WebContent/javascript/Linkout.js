@@ -1918,15 +1918,18 @@ NgChm.createNS('NgChm.LNK');
 								checkboxElements[0].parentNode.removeChild(checkboxElements[0])
 							}
 							if (typeContOrDisc == 'continuous') {
-								var covariateValues = NgChm.heatMap.getAxisCovariateData(thisAxis)[selectedCovariate].values.map( x => parseFloat(x));
-								var minCovValue = Math.min(...covariateValues).toPrecision(4);
-								var maxCovValue = Math.max(...covariateValues).toPrecision(4);
-								var midCovValue = ((maxCovValue - minCovValue) / 2).toPrecision(4); 
-								var rangeElem = NgChm.UTIL.newElement('LABEL.'+classNameForLabel, {},
-									[ NgChm.UTIL.newTxt('  (Range: '+minCovValue+' to '+maxCovValue+')'), NgChm.UTIL.newElement('BR'),
+								const covariateValues = NgChm.heatMap.getAxisCovariateData(thisAxis)[selectedCovariate].values
+									.filter( x => { return !isNaN(x) })
+									.map( x => parseFloat(x));
+								let minCovValue = Math.min(...covariateValues)
+								let maxCovValue = Math.max(...covariateValues)
+								let midCovValue = ((maxCovValue + minCovValue) / 2)
+								let rangeElem = NgChm.UTIL.newElement('LABEL.'+classNameForLabel, {},
+									[ NgChm.UTIL.newTxt('  (Range: '+minCovValue.toFixed(4)+' to '+maxCovValue.toFixed(4)+')'), NgChm.UTIL.newElement('BR'),
 										NgChm.UTIL.newElement('BR'), NgChm.UTIL.newElement('SPAN.gear-menu-spacing'),
 										NgChm.UTIL.newElement('INPUT.gear-menu-covariate-range',
-											{type: 'text', 'data-covariate-group': idx, 'placeholder': 'e.g: >='+midCovValue.toString()+'<'+maxCovValue.toString()}) ])
+											{type: 'text', 'data-covariate-group': idx, 'placeholder': 'e.g: >='+midCovValue.toFixed(4).toString()
+											   +'<'+maxCovValue.toFixed(4).toString()}) ])
 								rangeElem.onchange = covariateCheckboxesOnChange;
 								covariateThresholdSelectElem.appendChild(rangeElem);
 							} else {
