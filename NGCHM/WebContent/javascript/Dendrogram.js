@@ -961,6 +961,8 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 			NgChm.SEL.updateSelection();
 			NgChm.SUM.drawSelectionMarks();
 			NgChm.SUM.drawTopItems();
+			let clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
+			NgChm.LNK.postSelectionToLinkouts(this.axis, clickType, 0, null);
 			this.draw();
 		});
 	};

@@ -260,7 +260,8 @@ div.paneHeader img {
 
 .optionsBox .nodeSelector,
 .optionsBox .userLabel,
-.optionsBox .thresholdDropdownDIV,
+.optionsBox .rangeSelector,
+.optionsBox .discreteSelector,
 .optionsBox input,
 .optionsBox select {
 	grid-column-start: contents;
@@ -297,12 +298,9 @@ div.paneHeader img {
 	content: ":";
 }
 
+.gearPanel div.rangeSelector,
+.gearPanel div.discreteSelector,
 .gearPanel div.userLabel {
-	margin: 0;
-	font-size: 0.7rem;
-}
-
-.gearPanel div.thresholdDropdownDIV{
 	margin: 0;
 	font-size: 0.7rem;
 }
@@ -332,7 +330,8 @@ span.button.negative {
 
 
 .gearPanel div.userLabel .leftLabel::after,
-.gearPanel div.thresholdDropdownDIV .leftLabel::after,
+.gearPanel div.rangeSelector.leftLabel::after,
+.gearPanel div.discreteSelector.leftLabel::after,
 .gearPanel div.nodeSelector .leftLabel::after {
 	margin-right: 0.5em;
 }
@@ -1074,14 +1073,9 @@ iframe.nopointer {
   	font-size: 12px;
     width: 140px;
   }  
-  
-.gear-menu-covariate-checkbox {
-	margin-left: 5%;
-}
-.gear-menu-covariate-range{
-	margin-left: 5%;
-	width: 150px;
-}
+ 
+/* Used to add a little space in SPANs 
+   for prettier format of gear dialog*/ 
 .gear-menu-spacing{
 	margin-left: 5%;
 }
@@ -1093,4 +1087,26 @@ iframe.nopointer {
 	height: 15px;
 	width: 15px;
 }
+
+
+/* For the checkboxes for choosing discrete covariates in Gear Dialog */
+.gear-dialog-dropDownCheckBoxes-inline {
+	margin-top: 0em !important;
+	border: 1px #DADADA solid;
+	background-color: white;
+	height: 100px;
+	overflow: scroll;
+}
+
+.gear-dialog-dropDownCheckBoxes-inline label {
+	display: block;
+	position: relative;
+	overscroll-behavior: contain;
+	z-index: 11000;
+}
+
+.gear-dialog-dropDownCheckBoxes-inline label:hover {
+	background-color: #CBDBF6;
+}
+
 

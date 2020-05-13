@@ -543,7 +543,8 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 		}
  	} 
-	document.getElementById("container").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
+	document.getElementById("detail_canvas").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
+	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
 	document.getElementById("detail_canvas").focus();
 };
 
