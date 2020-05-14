@@ -46,6 +46,7 @@ public class ImportData {
 	public boolean generatePDF = false;
 	public boolean generateFullPDF = false;
 	public boolean generateNGCHM = false;
+	public boolean generateHTML = false;
 	public ArrayList<AttributeData> chmAttributes = new ArrayList<AttributeData>();
 	public String outputDir;
 	public RowColData rowData;
@@ -68,13 +69,20 @@ public class ImportData {
 	 ******************************************************************/
 	public ImportData(String[] fileInfo) throws Exception
 	{
-		if ((fileInfo.length > 1 && fileInfo[1].equals(GENERATE_PDF)) ||  (fileInfo.length > 2 && fileInfo[2].equals(GENERATE_PDF))) {
-			generatePDF = true;
-		} else if ((fileInfo.length > 1 && fileInfo[1].equals(GENERATE_FULL_PDF)) ||  (fileInfo.length > 2 && fileInfo[2].equals(GENERATE_FULL_PDF))) {
-			generateFullPDF = true;
-		}
-		if ((fileInfo.length > 1 && fileInfo[1].equals(GENERATE_NGCHM)) ||  (fileInfo.length > 2 && fileInfo[2].equals(GENERATE_NGCHM))) {
-			generateNGCHM = true;
+		if (fileInfo.length > 1) {
+			for (int i=1;i< fileInfo.length;i++) {
+				String infoItem = fileInfo[i];
+				if (infoItem.equals(GENERATE_PDF)) {
+					generatePDF = true;
+				} else if (infoItem.equals(GENERATE_FULL_PDF)) {
+					generateFullPDF = true;
+				} else if (infoItem.equals(GENERATE_NGCHM)) {
+					generateNGCHM = true;
+				} else if (infoItem.equals(GENERATE_HTML)) {
+					generateNGCHM = true;
+					generateHTML = true;
+				}
+			}
 		}
 
 		// Retrieve heatmap properties

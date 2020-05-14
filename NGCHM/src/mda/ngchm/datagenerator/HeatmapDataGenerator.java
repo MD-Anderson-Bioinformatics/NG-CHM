@@ -17,17 +17,23 @@ import java.awt.Color;
 import java.awt.Graphics; 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -249,6 +255,16 @@ public class HeatmapDataGenerator {
 			}
         }
 
+		//Generate combined .ngchm, js, embedded html file
+        if (iData.generateHTML) {
+        	try {
+        		createHtmlHeatMap(iData.outputDir, iData.chmName);
+			} catch (Exception ex) {
+				System.out.println("Exception in HeatmapDataGenerator.main. Error generating NGCHM zip file: " + ex.toString());  
+				ex.printStackTrace();
+			}
+        }
+        
 		if (iData.rowData.configWarnings.size() > 0) {
 			for (int i=0;i<iData.rowData.configWarnings.size();i++) {
 				errMsg = errMsg + iData.rowData.configWarnings.get(i) + "\n";
@@ -2133,5 +2149,54 @@ public class HeatmapDataGenerator {
 			zos.closeEntry();
 			fis.close();
 		}
-
+		
+	    private static void createHtmlHeatMap(String outputDir, String chmName) {
+    		BufferedWriter  bw = null;
+    		BufferedReader  br = null;
+ 	        try {
+				String zipFileName = outputDir + FILE_SEP + chmName + ".ngchm";
+	    		bw = new BufferedWriter(new FileWriter(outputDir + FILE_SEP + chmName + ".html"));
+	    		br = new BufferedReader(new FileReader("./ngchmWidget-min.js" ));
+	    		String htmlString1 = "<HTML><HEAD></HEAD><BODY>\n <script type='text/Javascript'>var base64_NGCHM=\"";
+	    		String htmlString2 = "\"</script><div \'width: 97vh;height: 97vh;\'>\n<div id='NGCHMEmbed' style=\'display: flex; flex-direction: column; background-color: white; height: 97vh; padding: 5px;\'></div>\n</div>\n<script>\n";
+	    		String htmlString3 = "</script><script type='text/Javascript'>NgChm.UTIL.embedCHM(NgChm.UTIL.b64toBlob(base64_NGCHM))</script></BODY></HTML>";
+	    		String encodedNgChmFile = encodeNgChmFile(zipFileName);
+ 				bw.write(htmlString1);
+ 				bw.write(encodedNgChmFile);
+ 				bw.write(htmlString2);
+	    		String line = br.readLine();
+	    		while (line != null) {
+     				bw.write(line+"\n");
+	    			line = br.readLine();
+	    		} 	
+ 				bw.write(htmlString3);
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	        } finally {
+	        	try {
+		    		bw.close();
+		    		br.close();
+	        	} catch (Exception e) {
+	        		//do nothing
+	        	}
+	        }
+		}
+	    
+	    private static String encodeNgChmFile(String zipFile) throws IOException {
+            String encodedBase64 = "";
+	        File file = new File(zipFile);
+	        byte[] bytes = new byte[(int)file.length()];
+	        try {
+	            DataInputStream dataInputStream = new DataInputStream(new BufferedInputStream(new FileInputStream(zipFile)));
+	            dataInputStream.readFully(bytes);    
+		        encodedBase64 = new String(Base64.getEncoder().encodeToString(bytes));
+	            dataInputStream.close();
+	        }
+	        catch (Exception e) {
+	            System.out.println("Error");
+	            e.printStackTrace();
+	        }
+	        return encodedBase64;
+	    }
+	    
 }
