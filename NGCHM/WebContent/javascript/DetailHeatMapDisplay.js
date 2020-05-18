@@ -1221,6 +1221,9 @@ NgChm.DET.detailInit = function () {
 	NgChm.DET.setDendroShow();
 	document.getElementById('detail_buttons').style.display = '';
 	document.getElementById('loader').style.display = 'none';
+	if (document.getElementById('loadSpan') !== null) {
+		document.getElementById('loadSpan').remove();
+	}
 	if (NgChm.DET.canvas) {
 		NgChm.DET.canvas.width =  (NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
 		NgChm.DET.canvas.height = (NgChm.DET.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));

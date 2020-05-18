@@ -2157,19 +2157,30 @@ public class HeatmapDataGenerator {
 				String zipFileName = outputDir + FILE_SEP + chmName + ".ngchm";
 	    		bw = new BufferedWriter(new FileWriter(outputDir + FILE_SEP + chmName + ".html"));
 	    		br = new BufferedReader(new FileReader("./ngchmWidget-min.js" ));
-	    		String htmlString1 = "<HTML><HEAD></HEAD><BODY>\n <script type='text/Javascript'>var base64_NGCHM=\"";
-	    		String htmlString2 = "\"</script><div \'width: 97vh;height: 97vh;\'>\n<div id='NGCHMEmbed' style=\'display: flex; flex-direction: column; background-color: white; height: 97vh; padding: 5px;\'></div>\n</div>\n<script>\n";
-	    		String htmlString3 = "</script><script type='text/Javascript'>NgChm.UTIL.embedCHM(NgChm.UTIL.b64toBlob(base64_NGCHM))</script></BODY></HTML>";
+		        File zipFile = new File(zipFileName);
+		        int zipSize = (int)zipFile.length();
+		        String sizeMessage = "";
+		        if (zipSize > 200000000) {
+		        	sizeMessage = "<span id='loadSpan' style='font-weight:bold;font-size:12px;color:red;'>This is a very large heat map (over 200MB). It may be to large to load in the browser...</span>";
+		        } else if (zipSize > 80000000) {
+		        	sizeMessage = "<span id='loadSpan' style='font-weight:bold;font-size:12px;color:red;'>A heat map of this size (over 80MB) may take 10-20 seconds to load. Please be patient...</span>";
+		        }
+	    		String htmlString1 = "<HTML><HEAD></HEAD><BODY>\n";
+	    		String htmlString2 = "<script type='text/Javascript'>var base64_NGCHM=\"";
+	    		String htmlString3 = "\"</script><div \'width: 97vh;height: 97vh;\'>\n<div id='NGCHMEmbed' style=\'display: flex; flex-direction: column; background-color: white; height: 97vh; padding: 5px;\'></div>\n</div>\n<script>\n";
+	    		String htmlString4 = "</script><script type='text/Javascript'>NgChm.UTIL.embedCHM(NgChm.UTIL.b64toBlob(base64_NGCHM))</script></BODY></HTML>";
 	    		String encodedNgChmFile = encodeNgChmFile(zipFileName);
  				bw.write(htmlString1);
- 				bw.write(encodedNgChmFile);
+ 				bw.write(sizeMessage);
  				bw.write(htmlString2);
+ 				bw.write(encodedNgChmFile);
+ 				bw.write(htmlString3);
 	    		String line = br.readLine();
 	    		while (line != null) {
      				bw.write(line+"\n");
 	    			line = br.readLine();
 	    		} 	
- 				bw.write(htmlString3);
+ 				bw.write(htmlString4);
 	        } catch (Exception e) {
 	            e.printStackTrace();
 	        } finally {
