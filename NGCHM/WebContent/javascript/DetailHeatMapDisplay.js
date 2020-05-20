@@ -89,7 +89,6 @@ NgChm.DET.initDetailDisplay = function () {
 	if (NgChm.heatMap.isInitialized() > 0) {
  		document.getElementById('flicks').style.display = '';
 		document.getElementById('detail_buttons').style.display = '';
-		document.getElementById('aboutMenu_btn').style.display = 'none';
 		NgChm.DET.canvas.width =  (NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
 		NgChm.DET.canvas.height = (NgChm.DET.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
 		NgChm.DET.detSetupGl();
@@ -1212,6 +1211,7 @@ NgChm.DET.setDendroShow = function () {
  
 //Perform all initialization functions for Detail heat map
 NgChm.DET.detailInit = function () {
+	document.getElementById('aboutMenu_btn').style.display = 'none';
 	if (!NgChm.DET.colDendro){
 		NgChm.DET.colDendro = new NgChm.DDR.DetailColumnDendrogram();
 	}
@@ -1220,7 +1220,6 @@ NgChm.DET.detailInit = function () {
 	}
 	NgChm.DET.setDendroShow();
 	document.getElementById('detail_buttons').style.display = '';
-	document.getElementById('aboutMenu_btn').style.display = 'none';
 	document.getElementById('loader').style.display = 'none';
 	if (NgChm.DET.canvas) {
 		NgChm.DET.canvas.width =  (NgChm.DET.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));

@@ -769,8 +769,6 @@ th.breakpointContainer {
     color: #000000;
     z-index: 10000;
     text-align: center;
-    max-height: 80vh;
-    max-width: 80vw;
     box-shadow: 5px 5px 5px #777777;
     white-space: nowrap;
     box-sizing: border-box;

@@ -1210,5 +1210,26 @@ NgChm.UTIL.redrawSearchResults = function () {
 	NgChm.DET.showSearchResults();
 };
 
+/**********************************************************************************
+ * FUNCTION - b64toBlob: This function reads a .ngchm file from a blob.  It is used
+ * in html pages that contain an entire heat map (.ngchm, widget, html, embed)
+ **********************************************************************************/
+NgChm.UTIL.b64toBlob = function (b64Data) {
+	  const sliceSize = 512;
+	  let byteCharacters = atob(b64Data);
+	  let byteArrays = [];
+	  for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+	    const slice = byteCharacters.slice(offset, offset + sliceSize);
+	    let byteNumbers = new Array(slice.length);
+	    for (var i = 0; i < slice.length; i++) {
+	      byteNumbers[i] = slice.charCodeAt(i);
+	    }
+	    let byteArray = new Uint8Array(byteNumbers);
+	    byteArrays.push(byteArray);
+	  }
+	  const blob = new Blob(byteArrays);
+	  return blob;
+}
+
 
 
