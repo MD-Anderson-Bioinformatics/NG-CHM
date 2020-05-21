@@ -2161,9 +2161,9 @@ public class HeatmapDataGenerator {
 		        int zipSize = (int)zipFile.length();
 		        String sizeMessage = "";
 		        if (zipSize > 200000000) {
-		        	sizeMessage = "<span id='loadSpan' style='font-weight:bold;font-size:12px;color:red;'>This is a very large heat map (over 200MB). It may be to large to load in the browser...</span>";
+		        	sizeMessage = "<span id='loadSpan' style='font-weight:bold;font-size:12px;'>This is a very large heat map (over 200MB). It may be to large to load in the browser...</span>";
 		        } else if (zipSize > 80000000) {
-		        	sizeMessage = "<span id='loadSpan' style='font-weight:bold;font-size:12px;color:red;'>A heat map of this size (over 80MB) may take 10-20 seconds to load. Please be patient...</span>";
+		        	sizeMessage = "<span id='loadSpan' style='font-weight:bold;font-size:12px;'>A heat map of this size (over 80MB) may take 10-20 seconds to load. Please be patient...</span>";
 		        }
 	    		String htmlString1 = "<HTML><HEAD></HEAD><BODY>\n";
 	    		String htmlString2 = "<script type='text/Javascript'>var base64_NGCHM=\"";
