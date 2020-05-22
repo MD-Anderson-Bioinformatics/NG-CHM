@@ -1498,16 +1498,25 @@ NgChm.createNS('NgChm.LNK');
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
 
-			function createLinearSelectors (sss, numSelectors, selectorName, params) {
+			function createLinearSelectors (sss, numSelectors, selectorName, params, helpText) {
 				params = params || [];
 				for (let cid = 0; cid < numSelectors; cid++) {
 					const selParams = cid < params.length ? params[cid] : {};
-					const selectEl = NgChm.UTIL.newElement('SELECT');
+					const selectEl = NgChm.UTIL.newElement('SELECT')
 					optionsBox.appendChild (
 						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
-							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, numSelectors))
+							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, numSelectors)),
 						])
 					);
+					if (helpText != undefined) { 
+						optionsBox.appendChild (
+							NgChm.UTIL.newElement('a.helpQuestionMark',{},[], e=> {
+								e.onmouseover = function() {NgChm.UHM.hlp(this, helpText, 200, true, 0)};
+								e.onmouseout = function() {NgChm.UHM.hlpC()};
+								return e;
+							})
+						)
+					}
 					optionsBox.appendChild (
 						selectEl
 					);
@@ -1634,16 +1643,22 @@ NgChm.createNS('NgChm.LNK');
 				params = params || [];
 				var thisText = textN(NgChm.UTIL.capitalize(selectorName))
 				for (let cid = 0; cid < 1+0*numSelectors; cid++) {
-					var selectorGroupElem = NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
+					optionsBox.appendChild (
+						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
 							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, 1+0*numSelectors))
 						])
-					var groupMainHelp = NgChm.UTIL.newElement('a.helpQuestionMark',{})
-					var helpText = 'Specify groups for statistical tests by first selecting a covariate or \'Selected '+
-					        thisAxis+'s for Group(s):\' from this dropdown.';
-					groupMainHelp.onmouseover = function(){NgChm.UHM.hlp(this, helpText, 400, 0, 10)};
-					groupMainHelp.onmouseout = function(){NgChm.UHM.hlpC()}
-					selectorGroupElem.appendChild(groupMainHelp);
-					optionsBox.appendChild (selectorGroupElem);
+					)
+					optionsBox.appendChild(
+						NgChm.UTIL.newElement('a.helpQuestionMark',{},[], e=> {
+							e.onmouseover = function() {
+								let helpText = 'Specify groups for statistical tests by first selecting a covariate or'
+								helpText += ' \'Selected '+thisAxis+'s for Group(s):\' from this dropdown.';
+								NgChm.UHM.hlp(this, helpText, 400, 0, 0)
+							};
+							e.onmouseout = function() { NgChm.UHM.hlpC()};
+							return e;
+						})
+					)
 					const selectEl = NgChm.UTIL.newElement('SELECT#gearDialogCovariateSelect');
 					optionsBox.appendChild (
 						selectEl
@@ -1807,19 +1822,31 @@ NgChm.createNS('NgChm.LNK');
 							@option {function} showMinMax function to show the min/max covariates to help user
 					*/
 					function createRangeSelector(nth, nmax) {
-						let label = 'Range';
+						let label = 'Group ';
 						const groupIdx = nth - 1;
 						if (nmax && nmax > 1) {
 							label = label + ' ' + nth;
 						}
 						const rangeSelectorEl = NgChm.UTIL.newElement ('DIV.rangeSelector.hide', {}, [
-							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ 
-								NgChm.UTIL.newTxt (label)
-							]),
+							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt (label)]),
+							NgChm.UTIL.newElement('a.helpQuestionMark',{},[],e => {
+								e.onmouseover = function() {
+									let helpText = 'Use the text boxes to enter a range for selection of groups based on continuous covariate values.'
+									let testElem = document.getElementById('gearDialogTestSelect');
+									let selectedTest = testElem.options[testElem.selectedIndex].value;
+									if (selectedTest == 'Mean') {
+										helpText += '<br><br><u>Mean:</u> <br>If only Group 1 is specified, the mean value of Group 1 will be calculated.'
+										helpText += '<br>If both groups are specified, the difference in means between Group 1 and Group 2 will be calculated.';
+									} else if (selectedTest == 'T-test') {
+										helpText += '<br><br><u>T-test:</u><br>If only Group 1 is specified, then Group 2 is automatically all elements NOT in Group 1.';
+									}
+									NgChm.UHM.hlp(this, helpText, 200, undefined, 0)
+								};
+								e.onmouseout = function(){NgChm.UHM.hlpC()};
+								return e;
+							}),
 							NgChm.UTIL.newElement('BR'),NgChm.UTIL.newElement('SPAN.gear-menu-spacing'),
-							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ 
-								NgChm.UTIL.newTxt ('')
-							]),
+							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ NgChm.UTIL.newTxt ('')]),
 							NgChm.UTIL.newElement('BR'),NgChm.UTIL.newElement('SPAN.gear-menu-spacing'),
 							NgChm.UTIL.newElement('INPUT',{'data-covariate-group':groupIdx})
 						]);
@@ -1838,7 +1865,7 @@ NgChm.createNS('NgChm.LNK');
 						}
 						/** Function to show the min & max values as text to help user in making ranges */
 						function showMinMax(v) {  
-							rangeSelectorEl.children[2].innerHTML = v;
+							rangeSelectorEl.children[4].innerHTML = v;
 						}
 						/** Function to set value of range */
 						function setRange(v) { 
@@ -1898,13 +1925,28 @@ NgChm.createNS('NgChm.LNK');
 					*/
 					function createDiscreteSelector(nth, nmax) {
 						const groupIdx = nth - 1;
-						let label = 'Discrete group';
+						let label = 'Group';
 						if (nmax && nmax > 1) {
 							label = label + ' ' + nth;
 						}
 						const discreteSelectorEl = NgChm.UTIL.newElement ('DIV.discreteSelector.hide', {}, [
 							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt (label)]),
-							NgChm.UTIL.newElement('BR'),NgChm.UTIL.newElement('SPAN.gear-menu-spacing')
+							NgChm.UTIL.newElement('a.helpQuestionMark',{},[],e=>{
+								e.onmouseover = function(){
+									let helpText = 'Use the checkboxes to select groups based on covariate value.'
+									let testElem = document.getElementById('gearDialogTestSelect');
+									let selectedTest = testElem.options[testElem.selectedIndex].value;
+									if (selectedTest == 'Mean') {
+										helpText += '<br><br><u>Mean:</u> <br>If only Group 1 is specified, the mean value of Group 1 will be calculated.'
+										helpText += '<br>If both groups are specified, the difference in means between Group 1 and Group 2 will be calculated.';
+									} else if (selectedTest == 'T-test') {
+										helpText += '<br><br><u>T-test:</u><br>If only Group 1 is specified, then Group 2 is automatically all elements NOT in Group 1.';
+									}
+									NgChm.UHM.hlp(this, helpText, 200, undefined, 0)
+								};
+								e.onmouseout = function(){NgChm.UHM.hlpC()};
+								return e;
+							})
 						])
 						return { element: discreteSelectorEl, setSummary, getCheckBoxes, setCheckBoxes };
 
@@ -1932,7 +1974,7 @@ NgChm.createNS('NgChm.LNK');
 						/** Function to show/hide DIV.discreteSelector, and to create checkboxes for selected covariate */
 						function setSummary(show) {
 							if (show) {
-								while (discreteSelectorEl.children.length > 1) {
+								while (discreteSelectorEl.children.length > 2) {
 									discreteSelectorEl.removeChild(discreteSelectorEl.lastChild);
 								}
 								discreteSelectorEl.classList.remove('hide')
@@ -1970,7 +2012,7 @@ NgChm.createNS('NgChm.LNK');
 							for (let groupIndex=0; groupIndex<nmax; groupIndex++) {
 								sss[cid].data[groupIndex] = [] // clear any old values
 								let checkedValues = []
-								const checkboxEls = sss[cid].discreteSelectors[groupIndex].element.children.item(1).children;
+								const checkboxEls = sss[cid].discreteSelectors[groupIndex].element.children.item(2).children;
 								Array.from(checkboxEls).forEach((cb, i) => {
 									if (cb.firstChild.checked === true) { checkedValues.push(cb.firstChild.value) }
 								})
@@ -2050,7 +2092,8 @@ NgChm.createNS('NgChm.LNK');
 			for (let cocoidx = 0; cocoidx < config.axes[axisId].coco.length; cocoidx++) {
 				const coco = config.axes[axisId].coco[cocoidx];
 				axis1Coco[coco.baseid] = [];
-				createLinearSelectors (axis1Coco[coco.baseid], coco.max, coco.name, pa[pa.cocos[cocoidx]+'s']);
+				let helpText = coco.helpText;
+				createLinearSelectors (axis1Coco[coco.baseid], coco.max, coco.name, pa[pa.cocos[cocoidx]+'s'], helpText);
 			}
 			if (config.axes[axisId].group == null) config.axes[axisId].group = [];
 			// create UI for choosing groups 
@@ -2129,6 +2172,14 @@ NgChm.createNS('NgChm.LNK');
 				const opt = NgChm.UTIL.newElement('DIV.grouper', {}, [
 					NgChm.UTIL.newElement ('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt(opts[oi].label)])
 				]);
+				if (opts[oi].helpText) {
+					let helpElem = NgChm.UTIL.newElement('a.helpQuestionMark',{},[], e=> {
+						e.onmouseover = function() {NgChm.UHM.hlp(this, opts[oi].helpText, 200, true, 0)};
+						e.onmouseout = function() {NgChm.UHM.hlpC()};
+						return e;
+					})
+					opt.appendChild(helpElem);
+				}
 				const optParam = params && params.hasOwnProperty(opts[oi].label) ? params[opts[oi].label] : null;
 				if (debug) console.log ({ m: 'genOption', label: opts[oi].label, optParam });
 				if (level > 0) {
