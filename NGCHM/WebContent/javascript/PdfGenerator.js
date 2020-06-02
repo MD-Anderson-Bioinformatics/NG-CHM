@@ -202,6 +202,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	var detImgH = pageHeight - paddingTop - longestColLabelUnits - 2*paddingLeft;
 	var detImgW = pageWidth - longestRowLabelUnits - 2*paddingLeft;
 	var detImgL = paddingLeft;
+	var covTitleRows = 1;
 	
 	var rowDendroWidth, colDendroHeight;
 	var rowClassWidth, colClassHeight;
@@ -617,7 +618,8 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		leftOff+= classBarFigureW + maxLabelLength + 60;
 		if (leftOff + classBarFigureW > pageWidth){ // if the next class bar figure will go beyond the width of the page...
 			leftOff = 20; // ...reset leftOff...
-			topSkip  = classBarFigureH + classBarHeaderHeight; 
+			topSkip  = classBarFigureH + classBarHeaderHeight + (10*covTitleRows); 
+			covTitleRows = 1;
 			topOff += topSkip; // ... and move the next figure to the line below
 			classBarHeaderHeight = classBarHeaderSize+10; //reset this value
 			var nextClassBarFigureH = getNextLineClassBarFigureH(key,type);
@@ -1185,6 +1187,9 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		var foundMissing = 0;
     	var truncTitle = key.length > 40 ? key.substring(0,40) + "..." : key;
 		var splitTitle = doc.splitTextToSize(truncTitle, classBarFigureW);
+		if (covTitleRows === 1) {
+			covTitleRows = splitTitle.length;
+		}
 		var bartop = topOff+5 + (splitTitle.length-1)*classBarLegendTextSize*2;
 		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap(type, key);
 		var thresholds = colorMap.getThresholds();
@@ -1306,6 +1311,9 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		var foundMissing = 0;
 		// Write class bar name to PDF
 		var splitTitle = doc.splitTextToSize(key, classBarFigureW);
+		if (covTitleRows === 1) {
+			covTitleRows = splitTitle.length;
+		}
 		//Adjustment for multi-line covariate headers
 		if(splitTitle.length > 1) {
 			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
@@ -1325,9 +1333,9 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		}
 		var classBar = classBars[key];
 		//Adjustment for multi-line covariate headers
-		if(splitTitle.length > 1) {
-			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
-		}
+//		if(splitTitle.length > 1) {
+//			classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
+//		}
 		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap(type, key);
 		var classBarConfig = rowClassBarConfig[key];
 		var classBarData = rowClassBarData[key];
@@ -1360,15 +1368,12 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		// get the continuous thresholds and find the counts for each bucket
 		var cutValues = 0;
 		for(var i = 0; i < classBarData.values.length; i++) {
-		    var num = parseInt(classBarData.values[i]);
-		    if (num === 89) {
-		    	var stophere = 1;
-		    }
-		    if (num !== '!CUT!') {
+		    var num = parseFloat(classBarData.values[i]);
+		    if (classBarData.values[i] !== '!CUT!') {
 		    	var prevThresh = 0;
 			    for (var k = 0; k < thresholds.length; k++){
 					var thresh = thresholds[k];
-					if (k == 0 && num < thresholds[k]){
+					if (k == 0 && num <= thresholds[k]){
 						counts[k] = counts[k] ? counts[k]+1 : 1;
 						break;
 					} else if (k == thresholds.length-2 && ((num < thresh) && (num > prevThresh))) {
