@@ -165,6 +165,9 @@ NgChm.SRCH.cleanseSearchString = function (searchStr) {
 		}
 	}
 	cleanStr = cleanStr.substring(0,cleanStr.length - 1);
+	if ((cleanStr === ',') || (cleanStr === ';')) {
+		cleanStr = '';
+	}
 	return cleanStr;
 }
 
@@ -433,11 +436,11 @@ NgChm.SRCH.isSearchValid = function (firstOper, firstValue, secondOper, secondVa
 NgChm.SRCH.labelSearch = function () {
 	let searchElement = document.getElementById('search_text');
 	let searchString = searchElement.value.trim();
+	searchString = NgChm.SRCH.cleanseSearchString(searchString);
+	searchElement.value = searchString;
 	if (searchString === "" || searchString === null || searchString === " "){
 		return false;
 	}
-	searchString = NgChm.SRCH.cleanseSearchString(searchString);
-	searchElement.value = searchString;
 	
 	let tmpSearchItems = searchString.split(/[;, ]+/);
 	const itemsFound = [];
