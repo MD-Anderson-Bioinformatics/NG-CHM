@@ -1424,6 +1424,7 @@ NgChm.createNS('NgChm.LNK');
 			return optNode;
 		}
 
+		/** Creates text for option to use GRAB/SHOW */
 		function selectedElementsOptionName (axis, uname) {
 			return 'Selected ' + (NgChm.MMGR.isRow(axis) ? 'columns' : 'rows') + uname;
 		}
@@ -1496,7 +1497,12 @@ NgChm.createNS('NgChm.LNK');
 				defaultCovar = defaultCovar.length === 0 ? null : defaultCovar[defaultCovar.length-1];
 			}
 
-			const selectedAxis = NgChm.MMGR.isRow(axisParams[axisId].axisName) ? 'row' : 'column';
+			let selectedAxis;
+			if (lastApplied[0].hasOwnProperty('axis')) {
+				selectedAxis = lastApplied[0].axis 
+			} else {
+				selectedAxis = NgChm.MMGR.isRow(axisParams[axisId].axisName) ? 'row' : 'column';
+			}
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
 
@@ -1550,7 +1556,7 @@ NgChm.createNS('NgChm.LNK');
 					optionsBox.appendChild (userLabel.element);
 					sss[cid].userLabel = userLabel;
 
-					sss[cid].grabber = {};
+					sss[cid].grabbers = {};
 
 					const countNode = NgChm.UTIL.newTxt ('0 ' + otherAxis + 's');
 					const infoEl = NgChm.UTIL.newElement ('DIV.nodeSelector.hide', {}, [
@@ -1561,7 +1567,7 @@ NgChm.createNS('NgChm.LNK');
 						NgChm.UTIL.newButton('GRAB', {}, {}),
 						NgChm.UTIL.newButton('SHOW', {}, {})
 					]);
-					sss[cid].grabber.clearData = function() {
+					sss[cid].grabbers.clearData = function() {
 						while (sss[cid].data.length > 0) sss[cid].data.pop();
 					};
 					if (selParams.type === 'data' && selParams.labelIdx) {
@@ -1569,13 +1575,11 @@ NgChm.createNS('NgChm.LNK');
 							sss[cid].data.push (selParams.labelIdx[ii]);
 						}
 					}
-					sss[cid].grabber.setSummary = function(label) {
+					sss[cid].grabbers.setSummary = function(label) {
 						const data = sss[cid].data;
 						countNode.textContent = '' + data.length + ' ' + otherAxis + 's';
-						const idx = sss[cid].select.selectedIndex;
-						const item = sss[cid].select.children[idx];
-						if (debug) console.log ({ m: 'selector setSummary', cid, idx, item, isDataOpt: item === sss[cid].selOpt });
-						if (item === sss[cid].selOpt) {
+						const selectedItem = sss[cid].select.children[sss[cid].select.selectedIndex];
+						if (sss[cid].select.selectedIndex === sss[cid].select.length-1) {
 							infoEl.classList.remove ('hide');
 							if (label) {
 								userLabel.setLabel ( label);
@@ -1595,25 +1599,25 @@ NgChm.createNS('NgChm.LNK');
 							if (label) {
 								userLabel.setLabel ( label);
 							} else {
-								userLabel.setLabel ( item.value.replace(/\.coordinate\./, ' '));
+								userLabel.setLabel ( selectedItem.value.replace(/\.coordinate\./, ' '));
 							}
 						}
 					};
 					sss[cid].setSummary = function setSummary (label) {
-						sss[cid].grabber.setSummary (label);
+						sss[cid].grabbers.setSummary (label);
 					};
 					sss[cid].setSummary (selParams.label);
 
 					infoEl.children[1].onclick = function (e) {
 						if (debug) console.log ('GRAB');
-						sss[cid].grabber.clearData();
+						sss[cid].grabbers.clearData();
 						let count = 0;
 						for (let i in NgChm.SEL.searchItems[otherAxis]) {
 							if (debug) console.log ({ m: 'Grabbed', i });
 							sss[cid].data.push (i);
 							count++;
 						}
-						sss[cid].grabber.setSummary();
+						sss[cid].grabbers.setSummary();
 					};
 					infoEl.children[2].onclick = function (e) {
 						if (debug) console.log ('SHOW');
@@ -2095,7 +2099,7 @@ NgChm.createNS('NgChm.LNK');
 				const coco = config.axes[axisId].coco[cocoidx];
 				axis1Coco[coco.baseid] = [];
 				let helpText = coco.helpText;
-				createLinearSelectors (axis1Coco[coco.baseid], coco.max, coco.name, pa[pa.cocos[cocoidx]+'s'], helpText);
+				createLinearSelectors (axis1Coco[coco.baseid], coco.max, coco.name, pa[pa.cocos[cocoidx]+'s'], helpText); 
 			}
 			if (config.axes[axisId].group == null) config.axes[axisId].group = [];
 			// create UI for choosing groups 
@@ -2130,10 +2134,15 @@ NgChm.createNS('NgChm.LNK');
 				for (let coco of config.axes[axisId].coco) { updateSelector (coco); }
 				for (let group of config.axes[axisId].group) { updateSelector (group); }
 				function updateSelector (coco) {
+					axis1Coco[coco.baseid][0].updateAxis();
 					for (let cid = 0; cid < coco.max; cid++) {
 						axis1Coco[coco.baseid][cid].updateAxis();
-						axis1Coco[coco.baseid][cid].grabber.clearData();
+						//while (axis1Coco[coco.baseid][cid].data.length > 0) {axis1Coco[coco.baseid][cid].data.pop()}
+						for (let gidx=0; gidx<axis1Coco[coco.baseid][cid].grabbers.length; gidx++) {
+							axis1Coco[coco.baseid][cid].grabbers[gidx].clearData(gidx);
+						}
 						axis1Coco[coco.baseid][cid].setSummary();
+						if (axis1Coco[coco.baseid][cid].hasOwnProperty('userLabel')) {axis1Coco[coco.baseid][cid].userLabel.setLabel('')}
 						axis1Coco[coco.baseid][cid].select.onchange(null);
 					}
 				}
@@ -2353,6 +2362,7 @@ NgChm.createNS('NgChm.LNK');
 
 		function saveLastApplied(aEls) {
 			let lastApplied = {};
+			lastApplied.axis = aEls.select.value;
 			lastApplied.rangeStrings = [];
 			lastApplied.discreteCheckboxes = [];
 			for (let idx=0; idx<aEls.groups.length; idx++) {
@@ -2366,6 +2376,12 @@ NgChm.createNS('NgChm.LNK');
 					lastApplied.rangeStrings[jdx] = aEls[f][idx].rangeSelectors[jdx].getRange()
 					lastApplied.discreteCheckboxes[jdx] = aEls[f][idx].discreteSelectors[jdx].getCheckBoxes();
 				}
+			}
+			if (aEls.hasOwnProperty('coordinates')) {
+				lastApplied.coordinates = aEls.coordinates.map(elem => {return elem.data})
+			}
+			if (aEls.hasOwnProperty('covariates')) {
+				lastApplied.covariates = aEls.covariates.map(elem => {return elem.data})
 			}
 			return lastApplied;
 		}
