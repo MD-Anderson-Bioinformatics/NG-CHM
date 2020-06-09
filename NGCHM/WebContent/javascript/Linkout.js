@@ -2207,7 +2207,7 @@ NgChm.createNS('NgChm.LNK');
 					input.value = optParam !== null ? optParam : opts[oi].default;
 					opt.append (input);
 				} else if (opts[oi].type === 'dropdown') {
-					const input = NgChm.UTIL.newElement('SELECT#gearDialogTestSelect');
+					const input = NgChm.UTIL.newElement('SELECT');
 					let selectedIndex = 0;
 					let choices = opts[oi].choices;
 					if (!Array.isArray(choices)) choices = [ choices ];
@@ -2215,6 +2215,7 @@ NgChm.createNS('NgChm.LNK');
 					for (const cc of choices) {
 						if (typeof cc === "string") {
 							if (cc === "STANDARD TESTS") {
+								input.id = 'gearDialogTestSelect';
 								for (const t of vanodiKnownTests) {
 									const choice = NgChm.UTIL.newElement('OPTION');
 									choice.value = t.value;
