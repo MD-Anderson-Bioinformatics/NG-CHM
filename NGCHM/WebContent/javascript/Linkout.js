@@ -2162,7 +2162,7 @@ NgChm.createNS('NgChm.LNK');
 			}
 			const userLabelEl = NgChm.UTIL.newElement ('DIV.userLabel', {}, [
 				NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ NgChm.UTIL.newTxt (label) ]),
-				NgChm.UTIL.newElement('INPUT')
+				NgChm.UTIL.newElement('INPUT',{maxlength: "50"})
 			]);
 			userLabelEl.children[1].type = 'text';
 			if (iValue) userLabelEl.children[1].value = iValue;
