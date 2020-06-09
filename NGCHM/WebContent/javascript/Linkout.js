@@ -2252,7 +2252,7 @@ NgChm.createNS('NgChm.LNK');
 			const values = {};
 			for (let oi = 0; oi < opts.length; oi++) {
 				const o = opts[oi];
-				const e = element.children[oi].children[1];
+				let e = Array.from(element.children[oi].children).filter(ele => {return ele.nodeName === 'SELECT'})[0]
 				if (o.type === 'checkbox') {
 					values[o.label] = e.checked;
 				} else if (o.type === 'dropdown' || o.type === 'text') {
