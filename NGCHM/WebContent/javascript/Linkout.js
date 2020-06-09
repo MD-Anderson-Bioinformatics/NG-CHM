@@ -1152,6 +1152,10 @@ NgChm.createNS('NgChm.LNK');
 		// group2: labels of other axis elements in group 2 (optional)
 	function getAxisTestData (msg) {
 		//console.log ({ m: '> getAxisTestData', msg });
+		if (msg.axisLabels.length < 1) {
+			NgChm.UHM.systemMessage("NG-CHM Pathway Mapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again."); 
+			return false;
+		}
 		var allSummaries = [];
 		var nResultsToReturn;
 		var otherAxisName = NgChm.MMGR.isRow(msg.axisName) ? 'column' : 'row';
@@ -2252,7 +2256,7 @@ NgChm.createNS('NgChm.LNK');
 			const values = {};
 			for (let oi = 0; oi < opts.length; oi++) {
 				const o = opts[oi];
-				let e = Array.from(element.children[oi].children).filter(ele => {return ele.nodeName === 'SELECT'})[0]
+				let e = Array.from(element.children[oi].children).filter(ele => {return (ele.nodeName === 'SELECT' || ele.nodeName === 'INPUT')})[0]
 				if (o.type === 'checkbox') {
 					values[o.label] = e.checked;
 				} else if (o.type === 'dropdown' || o.type === 'text') {
@@ -2570,6 +2574,7 @@ NgChm.createNS('NgChm.LNK');
 			console.log ({ m: 'Malformed getTestData request', msg, detail: 'group1 is required' });
 		} else {
 			var testData = getAxisTestData (msg);
+			if (testData == false) {return;} // return if no data to send
 			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'testData', data: testData }}, '*');
 		}
 	}
