@@ -1212,7 +1212,7 @@ NgChm.UTIL.redrawSearchResults = function () {
 	NgChm.DET.updateDisplayedLabels();
 	NgChm.SUM.redrawSelectionMarks();
 	NgChm.SEL.updateSelection();
-	NgChm.DET.showSearchResults();
+	NgChm.SRCH.showSearchResults();
 };
 
 /**********************************************************************************
