@@ -633,7 +633,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 					delete NgChm.SEL.searchItems[this.axis][j];
 				}
 				NgChm.SUM.redrawSelectionMarks();
-				if (bar.left == left && bar.right == selectedBar.right && bar.height == selectedBar.height){ // a bar that's already selected has been selected so we remove it
+				if (bar.right == selectedBar.right && bar.height == selectedBar.height){ // a bar that's already selected has been selected so we remove it
 					addBar = false;
 				}
 			}

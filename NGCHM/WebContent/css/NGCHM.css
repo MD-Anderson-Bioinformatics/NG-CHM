@@ -16,7 +16,7 @@ div.mdaServiceHeader
 	display: inline-flex;
 	float: none;
 	width: 100%;
-	height: 55px;
+	height: 58px;
 	color: #666;
 	margin: 0px 0px 0px 0px;
 	background-color: white;
@@ -78,7 +78,7 @@ div#bottom_buttons span.tdTop img {
 }
 
 div.collapsed img.gearIcon {
-	display: none;
+	display: '';
 }
 
 div.collapsed div.icon_group.client_icons {
@@ -169,7 +169,7 @@ div#container{
     background-color: white;
 }
 
-#menuPanel {
+#burgerMenuPanel {
     position:absolute;
 	width: 275px;
     right: 0px; 
@@ -183,8 +183,9 @@ div#container{
 .menuPanel {
 	position:absolute;
 	width: fit-content;
+	width: -moz-fit-content;
+	min-width: 140px;
 	border-radius: 10px;
-	right: 0px;
 	z-index: 10000;
 	background-color: #FFFFFF;
 	border: 1px solid gray;

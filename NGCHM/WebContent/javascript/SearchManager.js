@@ -19,17 +19,28 @@ NgChm.SRCH.detailSearch = function () {
 	NgChm.UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	NgChm.SRCH.clearSearchRequest();
 	NgChm.SRCH.showSearchResults();
+	let validSearch = true;
 	const searchOn = document.getElementById('search_on');
 	if (searchOn.value === 'labels') {
 		NgChm.SRCH.labelSearch();
 	} else {
-		NgChm.SRCH.covarSearch();
+		validSearch = NgChm.SRCH.covarSearch();
 	}
     NgChm.SUM.redrawSelectionMarks();
     NgChm.SUM.drawTopItems();
-	NgChm.SRCH.showSearchResults();	
+	NgChm.SRCH.showSearchResults(validSearch);	
+	NgChm.SRCH.updateLinkoutSelections();
 	let dc = document.getElementById("detail_canvas");
 	if (dc != null) dc.focus();
+}
+
+/**********************************************************************************
+ * FUNCTION - updateLinkoutSelections: The purpose of this function to post 
+ * all selections (both row and column) to linkouts 
+  **********************************************************************************/
+NgChm.SRCH.updateLinkoutSelections = function () {
+	NgChm.LNK.postSelectionToLinkouts("column", "standardClick");
+	NgChm.LNK.postSelectionToLinkouts("row", "standardClick");
 }
 
 /**********************************************************************************
@@ -194,6 +205,7 @@ NgChm.SRCH.covarSearch = function () {
 	}
 	const currentClassBar = classBarsConfig[covVal];
 	let itemsFound = false;
+	let validSearch = true;
 	if (currentClassBar.color_map.type === 'discrete') {
 		let cats = [];
 		for (let i=0;i<covBoxes.length;i++) {
@@ -206,7 +218,10 @@ NgChm.SRCH.covarSearch = function () {
 
 	} else {
 		searchElement = document.getElementById('search_cov_cont');
-		itemsFound = NgChm.SRCH.getSelectedContinuousSelections(axis,classDataValues);
+		validSearch = NgChm.SRCH.validateContinuousSearch(axis,classDataValues);
+		if (validSearch === true) {
+			itemsFound = NgChm.SRCH.getSelectedContinuousSelections(axis,classDataValues);
+		}
 	}
 
 	NgChm.SRCH.searchNext(true);
@@ -217,6 +232,7 @@ NgChm.SRCH.covarSearch = function () {
 	} else {
 		searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
 	}
+	return validSearch;
 }	
 
 /**********************************************************************************
@@ -239,6 +255,29 @@ NgChm.SRCH.getSelectedDiscreteSelections = function (axis, cats,classDataValues)
 		}
 	}
 	return itemFound;
+}
+
+/**********************************************************************************
+ * FUNCTION - validateContinuousSearch: The purpose of this function it to validate
+ * the  user entered continuous covariate search expressions and return a true/false
+  **********************************************************************************/
+NgChm.SRCH.validateContinuousSearch = function (axis, classDataValues) {
+	const searchElement = document.getElementById('search_cov_cont');
+	let searchString = searchElement.value.trim();
+	//Remove all spaces from expression
+	searchString = searchString.replace(/ /g,'');
+	searchElement.value = searchString;
+	const tmpSearchItems = searchString.split(/[;,]+/);
+	
+	for (let j=0;j<tmpSearchItems.length;j++) {
+		let expr = tmpSearchItems[j].trim().toLowerCase();
+		//Parse the expression for all components
+		const results = NgChm.SRCH.parseSearchExpression(expr);
+		if (NgChm.SRCH.isSearchValid(results.firstOper, results.firstValue, results.secondOper, results.secondValue) === false) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /**********************************************************************************
@@ -276,16 +315,14 @@ NgChm.SRCH.getSelectedContinuousSelections = function (axis, classDataValues) {
 					itemFound = true;
 				}
 			} else {
-				//Validate expression and execute if valid
-				if (NgChm.SRCH.isSearchValid(results.firstOper, results.firstValue, results.secondOper, results.secondValue) === true) {
-					let selectItem = NgChm.SRCH.evaluateExpression(results.firstOper,parseFloat(results.firstValue), parseFloat(classDataValue));
-					if ((results.secondOper !== null) && (selectItem === true)) {
-						selectItem = NgChm.SRCH.evaluateExpression(results.secondOper,parseFloat(results.secondValue), parseFloat(classDataValue));
-					}
-					if (selectItem === true) {
-						NgChm.SEL.searchItems[axis][i+1] = 1;
-						itemFound = true;
-					}
+				//Evaluate expression agains class data value
+				let selectItem = NgChm.SRCH.evaluateExpression(results.firstOper,parseFloat(results.firstValue), parseFloat(classDataValue));
+				if ((results.secondOper !== null) && (selectItem === true)) {
+					selectItem = NgChm.SRCH.evaluateExpression(results.secondOper,parseFloat(results.secondValue), parseFloat(classDataValue));
+				}
+				if (selectItem === true) {
+					NgChm.SEL.searchItems[axis][i+1] = 1;
+					itemFound = true;
 				}
 			}
 		}
@@ -422,6 +459,9 @@ NgChm.SRCH.isSearchValid = function (firstOper, firstValue, secondOper, secondVa
 			srchValid = false;
 		}
 		if (NgChm.UTIL.isNaN(secondValue) === true) {
+			srchValid = false;
+		}
+		if (firstOper === '===') {
 			srchValid = false;
 		}
 	}
@@ -713,6 +753,19 @@ NgChm.SRCH.clearSearch = function (event) {
 	NgChm.SRCH.clearSearchElement();
 	NgChm.SRCH.showSearchResults();	
 	NgChm.SEL.updateSelection();
+	NgChm.SRCH.updateLinkoutSelections();
+	NgChm.SRCH.resetSearchBoxColor()
+}
+
+/**********************************************************************************
+ * FUNCTION - resetSearchBoxColor: The purpose of this function is to clear the coloring
+ * of the label and continuous covariate search boxes when the search is cleared
+  **********************************************************************************/
+NgChm.SRCH.resetSearchBoxColor = function() {
+	let searchElement = document.getElementById('search_text');
+	searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
+	searchElement = document.getElementById('search_cov_cont');
+	searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
 }
 
 /**********************************************************************************
@@ -801,10 +854,12 @@ NgChm.SRCH.clearSearchElement = function () {
  * search results text area below the search controls with the row/col count
  * results from the just-executed search IF there are search results to show.
   **********************************************************************************/
-NgChm.SRCH.showSearchResults = function () {
+NgChm.SRCH.showSearchResults = function (validSearch) {
 	const resultsCnts = NgChm.SRCH.getSearchResultsCounts();
 	if (resultsCnts[2] > 0) {
 		document.getElementById("search_display_text").innerHTML = "Found: Rows - " + resultsCnts[0] + " Columns - " + resultsCnts[1];
+	} else if ((typeof validSearch !== 'undefined') && (validSearch === false)) {
+		document.getElementById("search_display_text").innerHTML = "Invalid search expression entered";
 	} else {
 		NgChm.SRCH.hideSearchResults();
 	}

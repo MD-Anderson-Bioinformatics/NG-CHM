@@ -124,7 +124,7 @@ NgChm.createNS('NgChm.LNK');
 
 	//Add a linkout to the Hamburger menu
 	NgChm.LNK.addHamburgerLinkout = function(params) {
-		var burgerMenu = document.getElementById('menuPanel');
+		var burgerMenu = document.getElementById('burgerMenuPanel');
 		//Verify params and set defaults
 		if (params.name === undefined) {return;}
 		if (params.label === undefined) {params.label = params.name;}
@@ -771,6 +771,7 @@ NgChm.createNS('NgChm.LNK');
 	};
 
 	NgChm.LNK.switchPaneToLinkouts = function switchPaneToLinkouts (loc) {
+		NgChm.Pane.clearExistingGearDialog(loc.pane.id);
 		const oldLinkoutPane = NgChm.LNK.linkoutElement && NgChm.Pane.findPaneLocation (NgChm.LNK.linkoutElement);
 		if (oldLinkoutPane && oldLinkoutPane.paneTitle && oldLinkoutPane.paneTitle.innerText === 'Linkouts') {
 			NgChm.Pane.setPaneTitle (oldLinkoutPane, 'Empty');
@@ -1394,7 +1395,7 @@ NgChm.createNS('NgChm.LNK');
 
 	// Create a gear dialog for the pane identified by the DOM element icon.
 	NgChm.LNK.newGearDialog = newGearDialog;
-	function newGearDialog (icon) {
+	function newGearDialog (icon, paneId) {
 		const debug = false;
 		const loc = NgChm.Pane.findPaneLocation (icon);
 		if (!loc || !loc.pane || loc.pane.getElementsByTagName('IFRAME').length == 0) {
@@ -1413,7 +1414,8 @@ NgChm.createNS('NgChm.LNK');
 			lastApplied = []
 			lastApplied.push({rangeStrings: ['','']})
 		}
-		const panel = NgChm.UTIL.newElement('DIV.gearPanel');
+		let panel = NgChm.UTIL.newElement('DIV.gearPanel');
+		panel.id = paneId + "Gear";
 
 		function optionNode (type, value) {
 			const optNode = NgChm.UTIL.newElement('OPTION');
@@ -2570,7 +2572,8 @@ NgChm.createNS('NgChm.LNK');
 		const searchItems = NgChm.MMGR.isRow(axis) ? NgChm.SRCH.getSearchRows() : NgChm.SRCH.getSearchCols();
 		const pointLabelNames = [];
 		for (let i=0; i<searchItems.length; i++) {
-			const pointId = allLabels[searchItems[i] - 1];
+			let pointId = allLabels[searchItems[i] - 1];
+			pointId = pointId.indexOf("|") !== -1 ? pointId.substring(0,pointId.indexOf("|")) : pointId;
 			pointLabelNames.push(pointId);
 		}
 		const iframes = document.getElementsByTagName('iframe');
