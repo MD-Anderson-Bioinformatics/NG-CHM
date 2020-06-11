@@ -574,13 +574,13 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 		menuHeader ('Pane control');
 		if (paneLoc.pane.classList.contains('collapsed')) {
-			menuItemDisabled ('Split vertically');
-			menuItemDisabled ('Split horizontally');
+			menuItemDisabled ('Add Pane Below');
+			menuItemDisabled ('Add Pane Right');
 		} else {
-			menuItem ('Split vertically', () => {
+			menuItem ('Add Pane Below', () => {
 				splitPane (true, findPaneLocation(icon));
 			});
-			menuItem ('Split horizontally', () => {
+			menuItem ('Add Pane Right', () => {
 				splitPane (false, findPaneLocation(icon));
 			});
 		}
