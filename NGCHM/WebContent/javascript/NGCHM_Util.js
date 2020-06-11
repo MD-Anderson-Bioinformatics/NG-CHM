@@ -911,7 +911,12 @@ NgChm.UTIL.setDragPanels = function () {
  * and returns true/false.
  **********************************************************************************/
 NgChm.UTIL.isNaN = function (n) {
-    return isNaN(n);
+	let nan = false;
+	nan = isNaN(n);
+	if (n.trim() === '') {
+		nan = true;
+	}
+    return nan;
 }
 
 /**********************************************************************************

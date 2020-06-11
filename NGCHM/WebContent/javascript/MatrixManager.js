@@ -655,6 +655,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
 		var classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
 		var classBarsData = NgChm.heatMap.getColClassificationData(); 
+		var searchLength = searchOn.options.length;
+		//Clear all options if any exist
+		for (i = searchLength-1; i >= 1; i--) {
+			searchOn.remove(i);
+		}
 		for (var i = 0; i < classBarConfigOrder.length; i++) {
 			var key = classBarConfigOrder[i];
 			var currentClassBar = classBarsConfig[key];
@@ -1191,15 +1196,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 						window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/')) +
 						NgChm.CFG.api + getTileString;
 				}
-
-//				if (NgChm.CFG.api !== "") {
-//					URL = NgChm.CFG.api + getTileString;
-//				} else {
-//					var appPath = window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/'));
-//					URL = appPath + getTileString;
-//				}
-//				// Tile worker doesn't share our origin, so prepend it to URL.
-//				URL = document.location.origin + (URL[0] === '/' ? '' : '/') + URL;
 			} else {
 				URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+layer+"/"+level+"/"+tileName+".bin";
 			}

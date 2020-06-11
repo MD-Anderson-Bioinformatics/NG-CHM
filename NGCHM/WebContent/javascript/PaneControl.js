@@ -37,6 +37,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// function switchToPlugin (loc, name) - switch the pane to the plugin called name.
 	NgChm.Pane.switchToPlugin = switchToPlugin;
+	
+	// function clearExistingGearDialog (paneId) - clear any existing gear dialog from pane.
+	NgChm.Pane.clearExistingGearDialog = clearExistingGearDialog
 
 	// function setDividerPref (percent) - resize panes in standard configuration.
 	NgChm.Pane.setDividerPref = setDividerPref;
@@ -264,7 +267,18 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		setPaneTitle (loc, name);
 		const gearIcon = loc.paneHeader.getElementsByClassName('gearIcon')[0];
 		gearIcon.classList.remove('hide');
-		NgChm.LNK.newGearDialog (gearIcon);
+		clearExistingGearDialog (loc.pane.id);
+		NgChm.LNK.newGearDialog (gearIcon, loc.pane.id);
+	}
+	
+	// Exported function.
+	// Check for and clear any existing gear dialog on the pane.
+	function clearExistingGearDialog (paneId) {
+		const existingGear = document.getElementById(paneId+"Gear");
+		const existingIcon = document.getElementById(paneId+"Icon");
+		if (existingGear !== null) {
+			removePopupNearIcon (existingGear, existingIcon);
+		}
 	}
 
 	// Handler for custom resize event for both Panels (leaf nodes) and Containers.
@@ -348,7 +362,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			const img2 = NgChm.UTIL.newElement('IMG.gearIcon', {
 				src: 'images/gear.png',
 				alt: 'Open gear menu',
-				align: 'top'
+				align: 'top',
+				id: paneid+"Icon"
 			});
 			initializeGearIconMenu (img2);
 			ig.appendChild(img2);

@@ -37,7 +37,15 @@ public class NGCHM_Widgetizer {
 		while (line != null) {
 			String toks[] = line.split("\\s+");
 			for (String tok : toks) {
-				strBuff.append(tok.replace("\"", "\\\"") + " ");
+				if (tok.contains("images/")) {
+					int start = tok.indexOf("images/");
+					int stop = tok.indexOf(".png") + 4;
+					strBuff.append(tok.substring(0,start-4));
+					strBuff.append(encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
+					strBuff.append(tok.substring(stop+1) + " ");
+				} else {
+					strBuff.append(tok.replace("\"", "\\\"") + " ");
+				}
 			}
 			line = br.readLine();
 		}

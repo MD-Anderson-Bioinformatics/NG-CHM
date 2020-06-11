@@ -795,7 +795,7 @@ NgChm.UHM.openHelp = function() {
 }
 
 NgChm.UHM.openMenu = function(e) {
-	var menu = document.getElementById('menuPanel');
+	var menu = document.getElementById('burgerMenuPanel');
 	var parent = menu.parentElement;
 	var parentTop = parent.offsetTop+50;
 	menu.style.top = parentTop + 'px';
@@ -828,7 +828,7 @@ NgChm.UHM.closeMenu = function() {
 	var barMenuBtn = document.getElementById('barMenu_btn');
 	if (barMenuBtn !== null) {
 		if (document.getElementById('barMenu_btn').mouseIsOver < 1) {
-			var menu = document.getElementById('menuPanel');
+			var menu = document.getElementById('burgerMenuPanel');
 			menu.style.display = 'none';
 		}
 	}

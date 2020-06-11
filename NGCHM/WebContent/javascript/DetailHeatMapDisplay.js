@@ -494,6 +494,7 @@ NgChm.DET.handleSelectDrag = function (e) {
         NgChm.SUM.drawTopItems();
         NgChm.DET.updateDisplayedLabels();
         NgChm.DET.drawSelections();
+        NgChm.SRCH.updateLinkoutSelections();
     }
 }	
 
@@ -3177,6 +3178,7 @@ NgChm.DET.zoomAnimation = function (destRow,destCol) {
 			loc.pane.appendChild (NgChm.DET.chmElement);
 			firstSwitch = false;
 		} else {
+			NgChm.Pane.clearExistingGearDialog(loc.pane.id);
 			if (savedChmElements.length > 0) {
 				// Detail NGCHM not currently showing in a pane.
 				NgChm.Pane.emptyPaneLocation (loc);

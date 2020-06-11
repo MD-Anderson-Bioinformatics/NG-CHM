@@ -2337,6 +2337,7 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 			loc.pane.appendChild (NgChm.SUM.chmElement);
 			firstSwitch = false;
 		} else {
+			NgChm.Pane.clearExistingGearDialog(loc.pane.id);
 			// The summary NGCHM has already been created.
 			if (savedChmElements.length > 0) {
 				// The summary NGCHM not is currently showing in a pane.
