@@ -412,8 +412,12 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	function splitPane (vertical, loc) {
 		if (debug) console.log ({ m: 'splitPane', vertical, loc });
 		if (!loc.pane || !loc.container) return;
-		if (loc.paneHeader) loc.paneHeader.classList.remove('activePane');
 		const verticalContainer = loc.container.classList.contains('vertical');
+		if (vertical != verticalContainer && loc.pane.textContent === 'PathwayMapper') {
+			let proceedOK = confirm('This action will delete all the information in PathwayMapper. Would you like to continue?')
+			if (!proceedOK) {return false}
+		}
+		if (loc.paneHeader) loc.paneHeader.classList.remove('activePane');
 		const style = {};
 		style[vertical ? 'height' : 'width'] = 'calc(50% - 5px)';
 		const divider = NgChm.UTIL.newElement('DIV.resizerHelper');
