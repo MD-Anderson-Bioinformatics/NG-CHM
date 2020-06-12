@@ -668,6 +668,12 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				menuItem ('Close', () => {
 					emptyPaneLocation (paneLoc);
 					if (debug) console.log({ m: 'closePane', paneLoc, parentC, siblings: paneLoc.container.children });
+					try { // remove Gear dialong if it exists
+						let idIdx = paneLoc.pane.id.slice(4) // id is, e.g., 'pane3'
+						let gearDialog = document.getElementById('pane'+idIdx+'Gear')
+						let gearIcon = document.getElementById('pane'+idIdx+'Icon')
+						NgChm.Pane.removePopupNearIcon(gearDialog, gearIcon)
+					} catch (err) {} // if err, then popup wasn't open
 					// Get all children of parent container.
 					const c = [...paneLoc.container.children];
 					if (c.length < 3) {
