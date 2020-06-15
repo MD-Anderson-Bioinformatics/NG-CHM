@@ -28,22 +28,30 @@ public class NGCHM_AppGenerator {
           return encodedfile;
     }
      
-    public static String styleToString(String webDir, String cssFile) throws Exception {
-    	StringBuffer strBuff = new StringBuffer();
-    	
+   public static String styleToString(String webDir, String cssFile) throws Exception {
+   	StringBuffer strBuff = new StringBuffer();
+   	
 		BufferedReader br = new BufferedReader(new FileReader(webDir + "/" + cssFile));
 		String line = br.readLine();
 		while (line != null) {
 			String toks[] = line.split("\\s+");
 			for (String tok : toks) {
-				strBuff.append(tok.replace("\"", "\\\"") + " ");
+				if (tok.contains("images/")) {
+					int start = tok.indexOf("images/");
+					int stop = tok.indexOf(".png") + 4;
+					strBuff.append(tok.substring(0,start-4));
+					strBuff.append(encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
+					strBuff.append(tok.substring(stop+1) + " ");
+				} else {
+					strBuff.append(tok.replace("\"", "\\\"") + " ");
+				}
 			}
 			line = br.readLine();
 		}
-    	
+   	
 		br.close();
-    	return strBuff.toString();
-    }
+   	return strBuff.toString();
+   }
 	
     public static void main(String[] args) {
 		System.out.println("BEGIN NGCHM_AppGenerator  " + new Date());
