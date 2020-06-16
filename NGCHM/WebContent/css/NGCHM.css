@@ -436,6 +436,7 @@ span.button.negative {
 	top: 0px;
 	position: absolute;
 	right: 60px;
+	z-index: 2;
 }
 
 #helptext {
@@ -862,12 +863,14 @@ table.onlineHelp th {
 	right: 30px;
 	top: 0px;
     position: absolute;
+    z-index: 2;
 }
 
 .farRightButton {
 	right: 0px;
 	top: 0px;
     position: absolute;
+    z-index: 2;
 }
 
 .tdTop {
@@ -1117,3 +1120,23 @@ iframe.nopointer {
 }
 
 
+div#droptarget {
+    position:  absolute;
+    top: 0px;
+    right: 0px;
+    width: fit-content;
+    height: fit-content;
+    text-align: center;
+    vertical-align: middle;
+    padding: 1em 2em;
+    z-index: 1;
+    color: rgba(0,0,0,0);
+    background-color: rgba(1,0,0,0.01);
+    user-select: none;
+}
+
+div#droptarget.visible {
+    z-index: 100;
+    color: rgba(0,0,0,1);
+    background-color: rgba(255,128,128,1);
+}

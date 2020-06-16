@@ -2868,4 +2868,7 @@ NgChm.createNS('NgChm.LNK');
 		}
 	})();
 
+        NgChm.LNK.loadLinkoutSpec = function loadLinkoutSpec (kind, spec) {
+	   console.log ({ m: 'loadLinkoutSpec', kind, spec });
+	};
 })(); // end of big IIFE
