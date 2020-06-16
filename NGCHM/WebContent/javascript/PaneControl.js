@@ -255,7 +255,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		icon.onclick = function(e) {
 			if (debug) console.log ({ m: 'paneGearIcon click', e });
 			e.stopPropagation();
-			NgChm.LNK.newGearDialog (icon);
+			let paneIdx = e.target.id.slice(0,-4) // e.g. 'pane2Gear'
+			NgChm.LNK.newGearDialog (icon, paneIdx);
 		};
 	}
 
