@@ -1614,6 +1614,10 @@ NgChm.createNS('NgChm.LNK');
 
 					infoEl.children[1].onclick = function (e) {
 						if (debug) console.log ('GRAB');
+						if (Object.keys(NgChm.SEL.searchItems[otherAxis]).length < 1) {
+							NgChm.UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
+							return;
+						}
 						sss[cid].grabbers.clearData();
 						let count = 0;
 						for (let i in NgChm.SEL.searchItems[otherAxis]) {
@@ -1625,6 +1629,10 @@ NgChm.createNS('NgChm.LNK');
 					};
 					infoEl.children[2].onclick = function (e) {
 						if (debug) console.log ('SHOW');
+						if (sss[cid].data.length < 1) {
+							NgChm.UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
+							return;
+						}
 						for (let i in NgChm.SEL.searchItems[otherAxis]) {
 							delete NgChm.SEL.searchItems[otherAxis][i];
 						}
@@ -1766,6 +1774,10 @@ NgChm.createNS('NgChm.LNK');
 
 						function doGrab (e) {
 							if (debug) console.log ('GRAB');
+							if (Object.keys(NgChm.SEL.searchItems[axisNameU]).length < 1) {
+								NgChm.UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
+								return;
+							}
 							clearData(idx);
 							let count = 0;
 							for (let i in NgChm.SEL.searchItems[axisNameU]) {
@@ -1777,6 +1789,10 @@ NgChm.createNS('NgChm.LNK');
 						}
 						function doShow (e) {
 							if (debug) console.log ('SHOW');
+							if (sss[cid].data[idx].length < 1) {
+								NgChm.UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
+								return;
+							}
 							for (let i in NgChm.SEL.searchItems[axisNameU]) {
 								delete NgChm.SEL.searchItems[axisNameU][i];
 							}
