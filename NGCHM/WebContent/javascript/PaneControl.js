@@ -423,7 +423,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			function promisePrompt(vertical, loc) {
 				let dialog = document.getElementById('msgBox')
 				NgChm.UHM.initMessageBox();
-				NgChm.UHM.setMessageBoxHeader('Pathway Mapper Pane Reset Warning');
+				NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 				NgChm.UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
 				NgChm.UHM.setMessageBoxButton(1, 'images/cancelSmall.png', 'Cancel Button')
 				NgChm.UHM.setMessageBoxButton(2, 'images/okButton.png', 'OK Button')

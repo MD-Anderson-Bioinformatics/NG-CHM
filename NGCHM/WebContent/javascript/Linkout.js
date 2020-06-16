@@ -1153,7 +1153,7 @@ NgChm.createNS('NgChm.LNK');
 	function getAxisTestData (msg) {
 		//console.log ({ m: '> getAxisTestData', msg });
 		if (msg.axisLabels.length < 1) {
-			NgChm.UHM.systemMessage("NG-CHM Pathway Mapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again."); 
+			NgChm.UHM.systemMessage("NG-CHM PathwayMapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again."); 
 			return false;
 		}
 		var allSummaries = [];
@@ -1171,7 +1171,7 @@ NgChm.createNS('NgChm.LNK');
 				pluginLabels.push(msg.axisLabels[i]);
 			}
 		}
-		if (axisIdx.length < 1) {NgChm.UHM.systemMessage("NG-CHM Pathway Mapper", "Heatmap and pathway have no genes in common."); return;}
+		if (axisIdx.length < 1) {NgChm.UHM.systemMessage("NG-CHM PathwayMapper", "Heatmap and pathway have no genes in common."); return;}
 		var idx1 = [];
 		var idx2 = [];
 		if (msg.group2 == null || msg.group2.length == 0) {
