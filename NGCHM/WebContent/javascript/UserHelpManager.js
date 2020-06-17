@@ -775,8 +775,10 @@ NgChm.UHM.setMessageBoxButton = function(buttonId, imageSrc, altText, onClick) {
 	buttonImg.style.display = '';
 	buttonImg.src = imageSrc;
 	buttonImg.alt = altText;
-	var fn = eval("(function() {"+onClick+"();})");
-	buttonImg.onclick=fn;
+	if (onClick != undefined) {
+		var fn = eval("(function() {"+onClick+"();})");
+		buttonImg.onclick=fn;
+	}
 }
 
 NgChm.UHM.messageBoxCancel = function() {

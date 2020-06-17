@@ -23,6 +23,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// function emptyPaneLocation(loc) - remove and return client elements from pane location
 	NgChm.Pane.emptyPaneLocation = emptyPaneLocation;
 
+	// function splitPaneCheck (vertical, loc) - check if OK to split pane
+	NgChm.Pane.splitPaneCheck = splitPaneCheck;
+
 	// function splitPane (vertical, loc) - split the pane at PaneLocation loc
 	NgChm.Pane.splitPane = splitPane;
 
@@ -252,7 +255,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		icon.onclick = function(e) {
 			if (debug) console.log ({ m: 'paneGearIcon click', e });
 			e.stopPropagation();
-			NgChm.LNK.newGearDialog (icon);
+			let paneIdx = e.target.id.slice(0,-4) // e.g. 'pane2Gear'
+			NgChm.LNK.newGearDialog (icon, paneIdx);
 		};
 	}
 
@@ -400,6 +404,59 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 
 	// Exported function.
+	/**
+		Function to determine if pane can be divided without loss of PathwayMapper
+		state. If no loss of PathwayMapper state, then divide pane. If division would
+		result in loss of PathwayMapper state, present a system message with a warning,
+		and allow the user to decide if they want to proceed or not.
+	*/
+	function splitPaneCheck (vertical, loc) {
+		if (!loc.pane || !loc.container) return;
+		const verticalContainer = loc.container.classList.contains('vertical');
+		// If user is attempting pane manipulation that will reset PathwayMapper, offer them a chance to cancel:
+		if (vertical != verticalContainer && loc.pane.textContent.indexOf('PathwayMapper') > -1) {
+			/**
+				Function to create dialog for user to choose 'Cancel' or 'OK. 
+				Returns a promise: resolve if 'OK' button clicked, reject if 'Cancel' button clicked
+				This function was created to warn user about resetting the PathwayMapper pane.
+			*/
+			function promisePrompt(vertical, loc) {
+				let dialog = document.getElementById('msgBox')
+				NgChm.UHM.initMessageBox();
+				NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
+				NgChm.UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
+				NgChm.UHM.setMessageBoxButton(1, 'images/cancelSmall.png', 'Cancel Button')
+				NgChm.UHM.setMessageBoxButton(2, 'images/okButton.png', 'OK Button')
+				dialog.style.display = '';
+				return new Promise(function(resolve, reject) {
+					let okButton = dialog.querySelector('#msgBoxBtnImg_2')
+					let cancelButton = dialog.querySelector('#msgBoxBtnImg_1')
+					dialog.addEventListener('click', function handleButtonClick(e) {
+						if (e.target.tagName !== 'IMG') {return;}
+						dialog.removeEventListener('click', handleButtonClick)
+						if (e.target === okButton) {
+							resolve();
+						} else {
+							reject()
+						}
+					})
+				})
+			}
+			promisePrompt(vertical, loc)
+				.then(function() {  // promise resolved, split pane
+					NgChm.UHM.messageBoxCancel();
+					splitPane(vertical, loc)
+				})
+				.catch(function() {  // promise rejected, do not split pane
+					NgChm.UHM.messageBoxCancel();
+					return;
+				})
+		} else { // pane division can proceed w/o any loss of PathwayMapper state
+			splitPane(vertical, loc)
+		}
+	} // end splitPaneCheck
+
+	// Exported function.
 	// Split the pane at Pane Location loc into two.
 	// The pane is split vertically is verticle is true, otherwise horizontally.
 	// If the split is in the same direction as the enclosing container:
@@ -409,11 +466,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	//	- create two new child panes and a divider
 	//	- move the original pane's contents into the first child pane.
 	// Returns the two child panes.
-	function splitPane (vertical, loc) {
+	function splitPane(vertical, loc) {
 		if (debug) console.log ({ m: 'splitPane', vertical, loc });
 		if (!loc.pane || !loc.container) return;
-		if (loc.paneHeader) loc.paneHeader.classList.remove('activePane');
 		const verticalContainer = loc.container.classList.contains('vertical');
+		if (loc.paneHeader) loc.paneHeader.classList.remove('activePane');
 		const style = {};
 		style[vertical ? 'height' : 'width'] = 'calc(50% - 5px)';
 		const divider = NgChm.UTIL.newElement('DIV.resizerHelper');
@@ -471,7 +528,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 		resizePane (child1, false);
 		return { child1, child2, divider };
-	}
+	}  // end splitPane
 
 	const collapsedPanes = [];
 
@@ -574,14 +631,14 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 		menuHeader ('Pane control');
 		if (paneLoc.pane.classList.contains('collapsed')) {
-			menuItemDisabled ('Split vertically');
-			menuItemDisabled ('Split horizontally');
+			menuItemDisabled ('Add Pane Below');
+			menuItemDisabled ('Add Pane Right');
 		} else {
-			menuItem ('Split vertically', () => {
-				splitPane (true, findPaneLocation(icon));
+			menuItem ('Add Pane Below', () => {
+				splitPaneCheck (true, findPaneLocation(icon));
 			});
-			menuItem ('Split horizontally', () => {
-				splitPane (false, findPaneLocation(icon));
+			menuItem ('Add Pane Right', () => {
+				splitPaneCheck (false, findPaneLocation(icon));
 			});
 		}
 		const collapsedPaneIdx = collapsedPanes.indexOf (paneLoc.pane);
@@ -664,6 +721,12 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				menuItem ('Close', () => {
 					emptyPaneLocation (paneLoc);
 					if (debug) console.log({ m: 'closePane', paneLoc, parentC, siblings: paneLoc.container.children });
+					try { // remove Gear dialong if it exists
+						let idIdx = paneLoc.pane.id.slice(4) // id is, e.g., 'pane3'
+						let gearDialog = document.getElementById('pane'+idIdx+'Gear')
+						let gearIcon = document.getElementById('pane'+idIdx+'Icon')
+						NgChm.Pane.removePopupNearIcon(gearDialog, gearIcon)
+					} catch (err) {} // if err, then popup wasn't open
 					// Get all children of parent container.
 					const c = [...paneLoc.container.children];
 					if (c.length < 3) {
@@ -678,20 +741,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					}
 					// Find nearby uncollapsed sibling for returning space to.
 					const target = getExpandedSibling(paneLoc);
-					// Remove pane and an adjacent divider.
-					if (idx === 0) {
-						// Remove divider after pane instead of before.
-						paneLoc.container.removeChild (c[idx]);  // Pane
-						paneLoc.container.removeChild (c[idx+1]); // Divider
-						c.splice (idx,2);
-					} else {
-						// Remove divider before pane.
-						paneLoc.container.removeChild (c[idx-1]); // Divider
-						paneLoc.container.removeChild (c[idx]); // Pane
-						c.splice (idx-1,2);
-					}
-					if (paneLoc.container.children.length === 1) {
-						// Replace container with the only remaining child.
+					/** 
+						Function to replace container with only remaining child.
+					*/
+					function replaceContainerWithOnlyChild() {
 						// Move all child contents into the container:
 						const ch = paneLoc.container.firstChild;
 						const oldSize = ch.firstElementChild.getBoundingClientRect();
@@ -739,10 +792,76 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 								paneLoc.container.remove();
 							}
 						}
-					} else {
-						// Redistribute space among remaining children.
-						if (target) redistributeContainer (paneLoc.container, target);
-					}
+					}  // end function replaceContainerWithOnlyChild
+					/**
+						Function to remove pane and adjacent divider
+					*/
+					function removePaneAndAdjacentDivider() {
+						if (idx === 0) {
+							// Remove divider after pane instead of before.
+							paneLoc.container.removeChild (c[idx]);  // Pane
+							paneLoc.container.removeChild (c[idx+1]); // Divider
+							c.splice (idx,2);
+						} else {
+							// Remove divider before pane.
+							paneLoc.container.removeChild (c[idx-1]); // Divider
+							paneLoc.container.removeChild (c[idx]); // Pane
+							c.splice (idx-1,2);
+						}
+					} // end function removePaneAndAdjacentDivider
+					/**
+						Function to create dialog for user to choose 'Cancel' or 'OK'.
+						Returns a promise: resolve if 'OK' button clicked, reject if 'Cancel' button clicked
+						This function was created to warn user about resetting the PathwayMapper pane.
+					*/
+					function promisePrompt(paneLoc) {
+						let dialog = document.getElementById('msgBox');
+						NgChm.UHM.initMessageBox();
+						NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
+						NgChm.UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
+						NgChm.UHM.setMessageBoxButton(1, 'images/cancelSmall.png', 'Cancel Button')
+						NgChm.UHM.setMessageBoxButton(2, 'images/okButton.png', 'OK Button')
+						dialog.style.display = '';
+						return new Promise(function(resolve, reject) {
+							let okButton = dialog.querySelector('#msgBoxBtnImg_2')
+							let cancelButton = dialog.querySelector('#msgBoxBtnImg_1')
+							dialog.addEventListener('click', function handleButtonClick(e) {
+								if (e.target.tagName !== 'IMG') {return;}
+								dialog.removeEventListener('click', handleButtonClick)
+								if (e.target === okButton) {
+									resolve();
+								} else { 
+									reject();
+								}
+							})
+						})
+					}  // end function promisePrompt
+					// If user is attempting to close a pane that will result in resetting PathwayMapper, offer them the chance to cancel:
+					if (paneLoc.container.textContent.indexOf('PathwayMapper') > -1 && c.length < 4) {
+						promisePrompt(paneLoc)
+							.then(function() { // promise resolved, continue pane manipulation
+								NgChm.UHM.messageBoxCancel()
+								removePaneAndAdjacentDivider();
+								if (paneLoc.container.children.length === 1) {
+									replaceContainerWithOnlyChild()
+								} else {
+									// Redistribute space among remaining children.
+									if (target) redistributeContainer (paneLoc.container, target);
+								}
+							})
+							.catch(function() { // promise rejected, do NOT continue pane manipulation
+								NgChm.UHM.messageBoxCancel()
+								return;
+							})
+					} else { // PathwayMapper pane unaffected, OK to close
+						removePaneAndAdjacentDivider();
+						if (paneLoc.container.children.length === 1) {
+							replaceContainerWithOnlyChild()
+						} else {
+							// Redistribute space among remaining children.
+							if (target) redistributeContainer (paneLoc.container, target);
+						}
+					} // endif for checking for PathwayMapper pane reset
 				});
 			}
 		}
