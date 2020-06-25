@@ -1792,11 +1792,18 @@ NgChm.SUM.calcSummaryLayout = function() {
 		NgChm.SUM.setTopItemsSize();
 
 		const selectCanvasSize = 10;
+		//Leave room for labels in GUI Builder "summary only" screens
+		let colLabelTopItemsHeight = NgChm.SUM.flagDrawClassBarLabels === true ? 70 : 0;
+		let rowLabelTopItemsWidth = NgChm.SUM.flagDrawClassBarLabels === true ? 110 : 0;
+		//Check to see if top items is longer than labels (if labels are drawn)
+		colLabelTopItemsHeight = colLabelTopItemsHeight < NgChm.SUM.colTopItemsWidth ? NgChm.SUM.colTopItemsWidth : colLabelTopItemsHeight;
+		rowLabelTopItemsWidth = rowLabelTopItemsWidth < NgChm.SUM.rowTopItemsHeight ? NgChm.SUM.rowTopItemsHeight : rowLabelTopItemsWidth;
+
 		const layout = {
 			borderThickness: 1,
 			marginThickness: 1,
-			colTopItems: { top: 0, left: 0, height: selectCanvasSize + NgChm.SUM.colTopItemsWidth, width: 0 },
-			rowTopItems: { top: 0, left: 0, height: 0, width: selectCanvasSize + NgChm.SUM.rowTopItemsHeight },
+			colTopItems: { top: 0, left: 0, height: selectCanvasSize + colLabelTopItemsHeight, width: 0 },
+			rowTopItems: { top: 0, left: 0, height: 0, width: selectCanvasSize + rowLabelTopItemsWidth },
 			colSelection: { top: 0, left: 0, height: selectCanvasSize, width: 0 },
 			rowSelection: { top: 0, left: 0, height: 0, width: selectCanvasSize },
 			colDendro: { top: 0, left: 0, height: 0, width: 0 },
@@ -1842,15 +1849,10 @@ NgChm.SUM.calcSummaryLayout = function() {
 		layout.rowClassBars.width = Math.floor(xScale * NgChm.SUM.rowClassBarWidth);
 		layout.rowDendro.width = Math.floor((xtotal - xdecor - layout.rowClassBars.width) * (wFrac/(1+wFrac)) * xScale);
 		layout.matrix.width = Math.floor(xtotal - xdecor - layout.rowClassBars.width - layout.rowDendro.width);
-		//Leave room for labels in GUI Builder "summary only" screens
-		if (NgChm.SUM.flagDrawClassBarLabels === true) {
-			layout.matrix.width = layout.matrix.width - 100;
-		}
 
 		layout.rowClassBars.left = layout.rowDendro.width > 0 ? layout.rowDendro.width + layout.marginThickness : 0;
 		layout.matrix.left = layout.rowClassBars.left + (layout.rowClassBars.width > 0 ? layout.rowClassBars.width + layout.marginThickness : 0) + layout.borderThickness;
 		layout.rowSelection.left = layout.matrix.left + layout.matrix.width + layout.borderThickness;
-		//console.log ({ xdecor, rowClassBarWidth, rowDendroWidth, matrixWidth });
 
 		layout.colDendro.width = layout.matrix.width; layout.colDendro.left = layout.matrix.left;
 		layout.colTopItems.width = layout.matrix.width; layout.colTopItems.left = layout.matrix.left;
