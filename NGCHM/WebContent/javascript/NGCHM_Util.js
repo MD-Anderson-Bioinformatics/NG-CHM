@@ -1236,5 +1236,29 @@ NgChm.UTIL.b64toBlob = function (b64Data) {
 	  return blob;
 }
 
+/**********************************************************************************
+ * FUNCTION - loadAllTilesTimer: This function checks the dimensions of the heat map
+ * and returns a delay timer value to be used when setting the read window to the
+ * entire map.
+ **********************************************************************************/
+NgChm.UTIL.loadAllTilesTimer = function() {
+	const dimensionVal = NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) + NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL);
+	if (dimensionVal <= 1000) {
+		return 500;
+	} else if (dimensionVal <= 2000) {
+		return 1000;
+	} else if (dimensionVal <= 3000) {
+		return 2000;
+	} else if (dimensionVal <= 4000) {
+		return 3000;
+	} else if (dimensionVal <= 5000) {
+		return 4000;
+	} else if (dimensionVal <= 6000) {
+		return 5000;
+	} else {
+		return 10000;
+	}
+}
+
 
 

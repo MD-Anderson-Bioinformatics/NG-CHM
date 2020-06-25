@@ -151,6 +151,18 @@ NgChm.PDF.setBuilderLogText = function (doc, text, pos, end) {
 }
 
 /**********************************************************************************
+ * FUNCTION - callViewerHeatmapPDF: This function is called when the "create pdf" 
+ * button is pressed. Since the data distribution requires all data tiles to be
+ * loaded, it sets a read window to guarantee that they are all there, allows
+ * for the process to complete, and then calls the "get" functioon to create the PDF.
+ **********************************************************************************/
+NgChm.PDF.callViewerHeatmapPDF = function() {
+    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
+    document.body.style.cursor = 'wait';
+    setTimeout(function(){ NgChm.PDF.getViewerHeatmapPDF(); }, NgChm.UTIL.loadAllTilesTimer());
+}
+
+/**********************************************************************************
  * FUNCTION - getViewerHeatmapPDF: This function is called when the "create pdf" 
  * button is pressed. It will check the checkboxes/radio buttons to see how the PDF 
  * is to be created using the isChecked function. 
@@ -159,6 +171,7 @@ NgChm.PDF.setBuilderLogText = function (doc, text, pos, end) {
  * https://mrrio.github.io/jsPDF/doc/symbols/jsPDF.html#setLineCap
  **********************************************************************************/
 NgChm.PDF.getViewerHeatmapPDF = function() {
+	document.body.style.cursor = 'default';
 	//Validate User-entered font size
 	if (validateInputFont() === false) {
 		return
@@ -990,7 +1003,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 				} else if (val <= NgChm.SUM.minValues){ // is it a cut location?
 					continue;
 				}
-				if (val <= lowBP){
+				if (val <= breaks[0]){
 					bins[0]++;
 					continue;
 				} else if (highBP < val){
