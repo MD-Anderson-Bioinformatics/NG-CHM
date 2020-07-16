@@ -1429,6 +1429,7 @@ public class HeatmapDataGenerator {
 	        int numBreaks = cMap.breaks.size();
 	        Color lowExCol = cMap.colors.get(0);
 	        Color hiExCol = cMap.colors.get(numBreaks-1);
+	        Color missingCol = cMap.missingColor;
 	        float lowEx = Float.parseFloat(cMap.breaks.get(0));
 	        float hiEx = Float.parseFloat(cMap.breaks.get(numBreaks-1));
 	        
@@ -1443,7 +1444,7 @@ public class HeatmapDataGenerator {
 	                if (val == MIN_VALUES) {
 	                	rgb = RGB_WHITE;
 	                } else if (val == MAX_VALUES) {
-	                	rgb = RGB_BLACK;
+	                	rgb = missingCol.getRGB();
 	                } else {
 		                if (val > hiEx){
 		                    rgb = hiExCol.getRGB();
@@ -1487,6 +1488,7 @@ public class HeatmapDataGenerator {
 	        int numBreaks = cMap.breaks.size();
 	        Color lowExCol = cMap.colors.get(0);
 	        Color hiExCol = cMap.colors.get(numBreaks-1);
+	        Color missingCol = cMap.missingColor;
 	        float lowEx = Float.parseFloat(cMap.breaks.get(0));
 	        float hiEx = Float.parseFloat(cMap.breaks.get(numBreaks-1));
 	        
@@ -1501,7 +1503,7 @@ public class HeatmapDataGenerator {
 	                if (val == MIN_VALUES) {
 	                	rgb = RGB_WHITE;
 	                } else if (val == MAX_VALUES) {
-	                	rgb = RGB_BLACK;
+	                	rgb = missingCol.getRGB();
 	                } else {
 		                if (val > hiEx){
 		                    rgb = hiExCol.getRGB();
@@ -1896,6 +1898,7 @@ public class HeatmapDataGenerator {
 			        int numBreaks = cMap.breaks.size();
 			        Color lowExCol = cMap.colors.get(0);
 			        Color hiExCol = cMap.colors.get(numBreaks-1);
+			        Color missingCol = cMap.missingColor;
 			        float lowEx = Float.parseFloat(cMap.breaks.get(0));
 			        float hiEx = Float.parseFloat(cMap.breaks.get(numBreaks-1));
 			        
@@ -1910,7 +1913,7 @@ public class HeatmapDataGenerator {
 			                if (val == MIN_VALUES) {
 			                	rgb = RGB_WHITE;
 			                } else if (val == MAX_VALUES) {
-			                	rgb = RGB_BLACK;
+			                	rgb = missingCol.getRGB();
 			                } else {
 				                if (val > hiEx){
 				                    rgb = hiExCol.getRGB();
