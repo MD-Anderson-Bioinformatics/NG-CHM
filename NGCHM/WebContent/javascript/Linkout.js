@@ -244,9 +244,19 @@ NgChm.createNS('NgChm.LNK');
 				for (var i in NgChm.SEL.searchItems["Column"]){
 					searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],[formatIndex[0]]) );
 				}
+				if (linkout.title !== 'Copy selected labels to clipboard') {
+					if (searchLabels["Row"].length === 0) {
+						searchLabels["Row"] = NgChm.DET.getAllLabelsByAxis("Row");
+					}
+					if (searchLabels["Column"].length === 0) {
+						searchLabels["Column"] = NgChm.DET.getAllLabelsByAxis("Column");
+					}
+				}
 				if (linkout.title === 'Download selected matrix data to file') {
 					labelDataMatrix = NgChm.LNK.createMatrixData(searchLabels);
-					return labelDataMatrix;
+				}
+				if (linkout.title === 'Set selection as detail view') {
+					NgChm.LNK.setDetailView(searchLabels);
 				}
 			}
 		} else { // if this linkout was added using addMatrixLinkout
@@ -289,37 +299,114 @@ NgChm.createNS('NgChm.LNK');
 		}
 	}
 
+
+	NgChm.LNK.createMatrixData = function(searchLabels) {
+		let tilesReady = false;
+		if (Object.keys(NgChm.SEL.searchItems["Row"]).length === 0) {
+		    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
+		    tilesReady = NgChm.heatMap.allTilesAvailable();
+		} else if (Object.keys(NgChm.SEL.searchItems["Column"]).length === 0) {
+		    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
+		    tilesReady = NgChm.heatMap.allTilesAvailable();
+		} else {
+			return NgChm.LNK.createMatrixDataTsv(searchLabels);
+		} 
+		if (tilesReady === true) {
+			NgChm.LNK.createMatrixDataTsv(searchLabels);
+		} else {
+			NgChm.heatMap.addEventListener(NgChm.LNK.matrixDataReady.bind('payload', searchLabels));
+		}
+	}
+
+	//This function gets called asynchronously if tiles need to be loaded in order
+	//to satisfy the matrix data tsv request.
+	NgChm.LNK.matrixDataReady = function(searchLabels, event, tile) {
+	    let tilesReady = NgChm.heatMap.allTilesAvailable();
+	    if (tilesReady === true) {
+	    	NgChm.MMGR.latestReadWindow= null;
+	        NgChm.LNK.createMatrixDataTsv(searchLabels);
+	    }
+	}
+	
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
-	NgChm.LNK.createMatrixData = function(searchLabels) {
+	NgChm.LNK.createMatrixDataTsv = function(searchLabels) {
 		var matrix = new Array();
+
+		let rowSearchItems = NgChm.SEL.searchItems["Row"];
+		//Check to see if we need new searchItems because entire axis is selected by 
+		//default of no items being selected on opposing axis, Otherwise, use
+		//searchItems selected.
+		if (Object.keys(NgChm.SEL.searchItems["Row"]).length === 0) {
+			rowSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Row");
+		}
+		let colSearchItems = NgChm.SEL.searchItems["Column"];
+		if (Object.keys(NgChm.SEL.searchItems["Column"]).length === 0) {
+			colSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Column");
+		}
+		
+		//Load up initial array with column headers
+		let matrixCtr = 0;
 		for (var j = 0; j < searchLabels["Row"].length+1; j++) {
-			matrix[j] = new Array();
-			if (j == 0) {
-				matrix[j].push(" ");
-				for (var i = 0; i < searchLabels["Column"].length; i++) {
-					matrix[j].push(searchLabels["Column"][i])
+			//Skip any gaps in data (matrixCtr counts rows actually written to new matrix)
+			if (searchLabels["Row"][j] !== '') {
+				matrix[matrixCtr] = new Array();
+				if (j == 0) {
+					matrix[matrixCtr].push(" ");
+					for (var i = 0; i < searchLabels["Column"].length; i++) {
+						if (searchLabels["Column"][i] !== "") {
+							matrix[matrixCtr].push(searchLabels["Column"][i])
+						}
+					}
+ 				}
+				matrixCtr++;
+			}
+		}
+		
+		//Load up an array containing data values for the selected data matrix
+		var dataMatrix = new Array();
+		for (var x in rowSearchItems){
+			for (var y in colSearchItems){
+				var matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,x,y);
+				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
+				if (matrixValue !== NgChm.SUM.minValues-1) {
+					dataMatrix.push(matrixValue);
 				}
 			}
 		}
-		var dataMatrix = new Array();
-		for (var x in NgChm.SEL.searchItems["Row"]){
-			for (var y in NgChm.SEL.searchItems["Column"]){
-			var matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,x,y);
-			dataMatrix.push(matrixValue);
-			}
-		}
+		//Fill in the remainder of the matrix with labels from searchLabels and data from dataMatrix
 		var dataIdx = 0;
-		for (var k = 1; k < matrix.length; k++) {
-			matrix[k].push(searchLabels["Row"][k-1]);
-			for (var i = 1; i < searchLabels["Column"].length+1; i++) {
-				matrix[k].push(dataMatrix[dataIdx])
-				dataIdx++;
+		matrixCtr = 1;
+		for (var k = 1; k <= searchLabels["Row"].length; k++) {
+			//Skip row labels representing gaps in heat map
+			if (searchLabels["Row"][k-1] !== '') {
+				matrix[matrixCtr].push(searchLabels["Row"][k-1]);
+				for (var i = 1; i < searchLabels["Column"].length+1; i++) {
+					//Skip column labels representing gaps in heat map
+					if (searchLabels["Column"][i-1] !== '') {
+						matrix[matrixCtr].push(dataMatrix[dataIdx])
+						dataIdx++;
+					}
+				}
+				matrixCtr++;
 			}
 		}
-		return matrix;
+		NgChm.LNK.copySelectedDataToClipboard(matrix,"Matrix");
 	}
 
+	//This function creates a temporary searchItems object array and
+	//is called when the selection box spans an entire axis
+	//(e.g. the selection is the result of a dendro selection on one
+	//axis with nothing selected on the other)
+	NgChm.LNK.getEntireAxisSearchItems = function(searchLabels,axis) {
+		let searchItems = {};
+		for (let i=1;i<=searchLabels[axis].length;i++) {
+			if (searchLabels[axis][i-1] !== '') {
+				searchItems[i] = 1;
+			}
+		}
+		return searchItems;
+	}
 
 	NgChm.LNK.createLabelMenus = function(){
 		if (!document.getElementById("RowLabelMenu")){
@@ -372,15 +459,20 @@ NgChm.createNS('NgChm.LNK');
 	    var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
 	    var row = header.getElementsByTagName('TR')[0];
 	    if (((axisLabelsLength > 0) || (NgChm.LNK.selection !== '')) && axis !== "Matrix"){
-		row.innerHTML = "Selected " + axis.replace("Covar"," Classification") + "s : " + axisLabelsLength;
-		labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
-		NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
-	    } else if (axisLabelsLength["Row"] > 0 && axisLabelsLength["Column"] > 0 && axis == "Matrix"){
-		row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
-		NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
+			row.innerHTML = "Selected " + axis.replace("Covar"," Classification") + "s : " + axisLabelsLength;
+			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
+			NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
+	    } else if ((axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) && axis == "Matrix"){
+	    	if (axisLabelsLength["Row"] === 0) {
+	    		axisLabelsLength["Row"] = NgChm.DET.getAllLabelsByAxis("Row").length;
+	    	} else if (axisLabelsLength["Column"] === 0) {
+	    		axisLabelsLength["Column"] = NgChm.DET.getAllLabelsByAxis("Column").length;
+	    	}
+			row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
+			NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else {
-		row.innerHTML = "Please select a " + axis.replace("Covar"," Classification");
-		labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
+			row.innerHTML = "Please select a " + axis.replace("Covar"," Classification");
+			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
 	    }
 	    
 	    if (labelMenu){
@@ -580,7 +672,8 @@ NgChm.createNS('NgChm.LNK');
 
 		var functionWithParams = function(){ // this is the function that gets called when the linkout is clicked
 			var input = NgChm.LNK.getLabelsByType(axis,linkout)
-			linkout.callback(input,axis); // linkout functions will have inputs that correspond to the labelType used in the addlinkout function used to make them.
+			if (linkout.callback !== null)
+				linkout.callback(input,axis); // linkout functions will have inputs that correspond to the labelType used in the addlinkout function used to make them.
 		};
 		//Add indentation to linkout title if the link does not contain the word "clipboard" and it is not a Matrix linkout
 		var linkTitle = linkout.title.indexOf("clipboard") > 0 && axis !== "Matrix"? linkout.title : "&nbsp;&nbsp"+linkout.title;
@@ -685,8 +778,8 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.LNK.addLinkout("Copy bar data for all labels", "RowCovar", null,NgChm.LNK.copyEntireClassBarToClipBoard,null,0);
 		NgChm.LNK.addLinkout("Copy bar data for selected labels", "RowCovar", linkouts.MULTI_SELECT,NgChm.LNK.copyPartialClassBarToClipBoard,null,1);
 		NgChm.LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,NgChm.LNK.copySelectionToClipboard,null,0);
-		NgChm.LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,NgChm.LNK.copySelectedDataToClipboard,null,0);
-		NgChm.LNK.addLinkout("Set selection as detail view.", "Matrix", linkouts.MULTI_SELECT,NgChm.LNK.setDetailView,null,0);
+		NgChm.LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
+		NgChm.LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
 
 
@@ -759,9 +852,17 @@ NgChm.createNS('NgChm.LNK');
 	//the currently selected box in the detail panel.  It just uses the first
 	//row/col selected and last row/col selected so it will work well with a drag
 	//selected box but not with random selections all over the map.
-	NgChm.LNK.setDetailView = function(labels,axis){
-		var selCols = Object.keys(NgChm.SEL.searchItems["Column"])
-		var selRows = Object.keys(NgChm.SEL.searchItems["Row"])
+	NgChm.LNK.setDetailView = function(searchLabels){
+		let rowSearchItems = NgChm.SEL.searchItems["Row"];
+		if (Object.keys(NgChm.SEL.searchItems["Row"]).length === 0) {
+			rowSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Row");
+		}
+		let colSearchItems = NgChm.SEL.searchItems["Column"];
+		if (Object.keys(NgChm.SEL.searchItems["Column"]).length === 0) {
+			colSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Column");
+		}
+		var selCols = Object.keys(colSearchItems)
+		var selRows = Object.keys(rowSearchItems)
 		var startCol = parseInt(selCols[0])
 		var endCol = parseInt(selCols[selCols.length-1])
 		var startRow = parseInt(selRows[0])

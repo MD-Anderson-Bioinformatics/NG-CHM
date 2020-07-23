@@ -2266,56 +2266,60 @@ NgChm.DET.labelIndexInSearch = function (index,axis) {
 }
 
 NgChm.DET.getSearchLabelsByAxis = function (axis, labelType) {
-	var searchLabels;
-	var keys = Object.keys(NgChm.heatMap.getColClassificationConfig());
-	var labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] : 
+	let searchLabels = [];
+	const labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] : 
 		axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getRowClassificationConfig()) : 
 			[NgChm.heatMap.getRowLabels()["labels"], NgChm.heatMap.getColLabels()['labels'] ];
-	if (axis !== "Matrix"){
-		searchLabels = [];
-		for (var i in NgChm.SEL.searchItems[axis]){
-			if (axis.includes("Covar")){
-				if (labelType == linkouts.VISIBLE_LABELS){
-					searchLabels.push(labels[i].split("|")[0]);
-				}else if (labelType == linkouts.HIDDEN_LABELS){
-					searchLabels.push(labels[i].split("|")[1]);
-				} else {
-					searchLabels.push(labels[i]);
-				}
-			} else {
-				if (labelType == linkouts.VISIBLE_LABELS){
-					searchLabels.push(labels[i-1].split("|")[0]);
-				}else if (labelType == linkouts.HIDDEN_LABELS){
-					searchLabels.push(labels[i-1].split("|")[1]);
-				} else {
-					searchLabels.push(labels[i-1]);
-				}
-			}
-		}
-	} else {
-		searchLabels = {"Row" : [], "Column" : []};
-		for (var i in NgChm.SEL.searchItems["Row"]){
+	for (let i in NgChm.SEL.searchItems[axis]){
+		if (axis.includes("Covar")){
 			if (labelType == linkouts.VISIBLE_LABELS){
-				searchLabels["Row"].push(labels[0][i-1].split("|")[0]);
-			}else if (labelType == linkouts.HIDDEN_LABELS){
-				searchLabels["Row"].push(labels[0][i-1].split("|")[1]);
+				searchLabels.push(labels[i].split("|")[0]);
+			} else if (labelType == linkouts.HIDDEN_LABELS){
+				searchLabels.push(labels[i].split("|")[1]);
 			} else {
-				searchLabels["Row"].push(labels[0][i-1])
+				searchLabels.push(labels[i]);
 			}
-		}
-		for (var i in NgChm.SEL.searchItems["Column"]){
+		} else {
 			if (labelType == linkouts.VISIBLE_LABELS){
-				searchLabels["Column"].push(labels[1][i-1].split("|")[0]);
-			}else if (labelType == linkouts.HIDDEN_LABELS){
-				searchLabels["Column"].push(labels[1][i-1].split("|")[1]);
+				searchLabels.push(labels[i-1].split("|")[0]);
+			} else if (labelType == linkouts.HIDDEN_LABELS){
+				searchLabels.push(labels[i-1].split("|")[1]);
 			} else {
-				searchLabels["Column"].push(labels[1][i-1]);
+				searchLabels.push(labels[i-1]);
 			}
 		}
 	}
 	return searchLabels;
 }
 
+NgChm.DET.getAllLabelsByAxis = function (axis, labelType) {
+	const labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] : 
+		axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getRowClassificationConfig()) : 
+			[NgChm.heatMap.getRowLabels()["labels"], NgChm.heatMap.getColLabels()['labels'] ];
+	let searchLabels = [];
+	if (axis === "Row") {
+		for (let i in labels){
+			if (labelType == linkouts.VISIBLE_LABELS){
+				searchLabels.push(labels[i].split("|")[0]);
+			}else if (labelType == linkouts.HIDDEN_LABELS){
+				searchLabels.push(labels[i].split("|")[1]);
+			} else {
+				searchLabels.push(labels[i])
+			}
+		}
+	} else {
+		for (let i in labels){
+				if (labelType == linkouts.VISIBLE_LABELS){
+					searchLabels.push(labels[i].split("|")[0]);
+				}else if (labelType == linkouts.HIDDEN_LABELS){
+					searchLabels.push(labels[i].split("|")[1]);
+				} else {
+					searchLabels.push(labels[i])
+				}
+			}
+	}
+	return searchLabels;
+}
 
 //This function draws column class bars on the detail heat map canvas
 NgChm.DET.detailDrawColClassBars = function (pixels) {

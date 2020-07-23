@@ -262,12 +262,12 @@ NgChm.SUM.setSummarySize = function() {
 		}
 		var colDendroHeight = 0;
 		if ((NgChm.SUM.colDendro !== null) && (NgChm.SUM.colDendro !== undefined)) {
-			colDendroHeight = NgChm.SUM.colDendro.getConfigSize()*(document.getElementById("container").clientHeight*NgChm.SUM.heightPct);
+			colDendroHeight = NgChm.SUM.colDendro.getConfigSize()*(document.getElementById("ngChmContainer").clientHeight*NgChm.SUM.heightPct);
 		}
 		var left = rowDendroWidth*NgChm.SUM.widthPct + NgChm.SUM.paddingHeight + NgChm.SUM.rowClassBarWidth;
 		var top = colDendroHeight + NgChm.SUM.paddingHeight + NgChm.SUM.colClassBarHeight;
 		var width = document.getElementById("summary_chm").clientWidth - rowDendroWidth - NgChm.SUM.rowTopItemsHeight - NgChm.SUM.rowClassBarWidth;
-		var height = document.getElementById("container").clientHeight*NgChm.SUM.heightPct - colDendroHeight - NgChm.SUM.colTopItemsWidth - NgChm.SUM.colClassBarHeight;
+		var height = document.getElementById("ngChmContainer").clientHeight*NgChm.SUM.heightPct - colDendroHeight - NgChm.SUM.colTopItemsWidth - NgChm.SUM.colClassBarHeight;
 	
 		//Size Row Dendrogram Canvas
 		NgChm.UTIL.setElementPositionSize (NgChm.SUM.rowDendro.dendroCanvas, {

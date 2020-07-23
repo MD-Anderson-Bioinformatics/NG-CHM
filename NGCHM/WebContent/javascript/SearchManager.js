@@ -104,8 +104,7 @@ NgChm.SRCH.loadCovarSearch = function() {
 		classBarsConfig = NgChm.heatMap.getColClassificationConfig();
 	}
 	const currentClassBar = classBarsConfig[covVal];
-	const thresholds = currentClassBar.color_map.thresholds.sort();
-	NgChm.UTIL.createCheckBoxDropDown('srchCovSelectBox','srchCovCheckBoxes',"Select Category(s)", thresholds,"300px");
+	NgChm.UTIL.createCheckBoxDropDown('srchCovSelectBox','srchCovCheckBoxes',"Select Category(s)", currentClassBar.color_map.thresholds,"300px");
 	checkBoxes.innerHTML = checkBoxes.innerHTML + "<label for='Missing'><input type='checkBox' class='srchCovCheckBox' value='missing'>Missing</input></label>";
 	NgChm.SRCH.loadSavedCovarState(covType,covVal);
 }

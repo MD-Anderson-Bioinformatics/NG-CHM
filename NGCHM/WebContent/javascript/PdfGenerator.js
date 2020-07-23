@@ -157,9 +157,27 @@ NgChm.PDF.setBuilderLogText = function (doc, text, pos, end) {
  * for the process to complete, and then calls the "get" functioon to create the PDF.
  **********************************************************************************/
 NgChm.PDF.callViewerHeatmapPDF = function() {
-    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
-    document.body.style.cursor = 'wait';
-    setTimeout(function(){ NgChm.PDF.getViewerHeatmapPDF(); }, NgChm.UTIL.loadAllTilesTimer());
+	document.body.style.cursor = 'wait';
+    const details = NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
+    let tilesReady = NgChm.heatMap.allTilesAvailable();
+    if (tilesReady === true) {
+    	 NgChm.PDF.getViewerHeatmapPDF();
+    } else {
+    	NgChm.heatMap.addEventListener(NgChm.PDF.pdfDataReady);
+    }
+}
+
+/**********************************************************************************
+ * FUNCTION - pdfDataReady: This function is called when the PDF creation process
+ * cannot continue until all the necessary tiles are loaded into the cache. In this 
+ * case the processing of the PDF awaits an asynchronous load of data tiles.
+ **********************************************************************************/
+NgChm.PDF.pdfDataReady = function(event, tile) {
+    let tilesReady = NgChm.heatMap.allTilesAvailable();
+    if (tilesReady === true) {
+    	NgChm.MMGR.latestReadWindow= null;
+    	 NgChm.PDF.getViewerHeatmapPDF();
+    }
 }
 
 /**********************************************************************************
@@ -171,7 +189,6 @@ NgChm.PDF.callViewerHeatmapPDF = function() {
  * https://mrrio.github.io/jsPDF/doc/symbols/jsPDF.html#setLineCap
  **********************************************************************************/
 NgChm.PDF.getViewerHeatmapPDF = function() {
-	document.body.style.cursor = 'default';
 	//Validate User-entered font size
 	if (validateInputFont() === false) {
 		return
@@ -382,6 +399,8 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	if (includeDetailMap) {
 		NgChm.DET.detailResize();
 	}
+	// Reset cursor to default
+	document.body.style.cursor = 'default';
 	
 	// Save the PDF document 
 	doc.save( NgChm.heatMap.getMapInformation().name + '.pdf');
