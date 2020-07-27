@@ -169,7 +169,8 @@ NgChm.SRCH.cleanseSearchString = function (searchStr) {
 	let cleanStr = "";
 	for (let j = 0; j < srchItems.length; j++) {
 		let item = srchItems[j];
-		item = item.replace(/^\|+|\.+|\,+|\;+|\,+|\;+|\|+|\.+$/g, '');
+		item = item.replace(/^\|+|\..$/g, '');
+		item = item.replace(/^\|+|\,+|\;+|\,+|\;+|\|+$/g, '');
 		if (item !== '') {
 			cleanStr = cleanStr + item + ',';
 		}

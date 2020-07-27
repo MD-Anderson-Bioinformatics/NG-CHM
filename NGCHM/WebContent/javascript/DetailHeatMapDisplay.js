@@ -564,7 +564,7 @@ NgChm.DET.drawSelections = function () {
 	var colRanges = NgChm.DET.getContigSearchRanges(searchCols);
 	if (rowRanges.length > 0 || colRanges.length > 0) {
 		if (rowRanges.length === 0) {
-			//Draw horizontal lines across entire heatMap
+			//Draw vertical lines across entire heatMap
 			for (var i=0;i<colRanges.length;i++) {
 				var range = colRanges[i];
 				var colStart = range[0];
@@ -572,7 +572,7 @@ NgChm.DET.drawSelections = function () {
 				NgChm.DET.drawSearchBox(0,NgChm.heatMap.getNumRows('d'),colStart,colEnd);
 			}
 		} else if (colRanges.length === 0) {
-			//Draw vertical lines across entire heatMap
+			//Draw horizontal lines across entire heatMap
 			for (var i=0;i<rowRanges.length;i++) {
 				var range = rowRanges[i];
 				var rowStart = range[0];
@@ -649,7 +649,7 @@ NgChm.DET.drawSearchBox = function (csRowStart, csRowEnd, csColStart, csColEnd) 
 	//height/width of a data cell in pixels
 	var cellWidth = mapXWidth/NgChm.SEL.getCurrentDetDataPerRow();
 	var cellHeight = mapYHeight/NgChm.SEL.getCurrentDetDataPerCol();
-	if (NgChm.SEL.mode === 'FULL_MAP') {
+	if (NgChm.SEL.mode !== 'NORMAL') {
 		cellWidth = mapXWidth/NgChm.SEL.dataPerRow;
 		cellHeight = mapYHeight/NgChm.SEL.dataPerCol;
 	}
