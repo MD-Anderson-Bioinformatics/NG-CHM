@@ -235,6 +235,8 @@ public class ImportData {
         	JSONArray classfiles = (JSONArray) jsonObject.get(CLASS_FILES);
             int rowCtr = 0;
             int colCtr = 0;
+            ArrayList<String> rowClassNames= new ArrayList<String>();
+            ArrayList<String> colClassNames= new ArrayList<String>();
             for (int i=0; i < classfiles.size();i++) {
            		JSONObject jo = (JSONObject) classfiles.get(i);
            		String pos = (String) jo.get(POSITION);
@@ -246,7 +248,8 @@ public class ImportData {
         			} else {
 	        			rowCtr++;
 	            		id = ROW_CLASS+(rowCtr);
-	            		InputClass iClass = new InputClass(jo, pos, rowData, rowCtr, iFile);
+	            		InputClass iClass = new InputClass(jo, pos, rowData, rowCtr, iFile,rowClassNames);
+	            		rowClassNames.add((String) jo.get(NAME));
 	        			rowData.classFiles.add(iClass);
         			}
         		} else {
@@ -255,7 +258,8 @@ public class ImportData {
         			} else {
             			colCtr++;
                 		id = COL_CLASS+(colCtr);
-                		InputClass iClass = new InputClass(jo , pos, colData, colCtr, iFile);
+                		InputClass iClass = new InputClass(jo , pos, colData, colCtr, iFile,colClassNames);
+	            		colClassNames.add((String) jo.get(NAME));
              			colData.classFiles.add(iClass);
         			}
         		}

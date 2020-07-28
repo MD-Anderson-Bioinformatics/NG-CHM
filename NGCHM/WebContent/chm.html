@@ -1,277 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<title>NG-CHM</title>
-	<meta charset="utf-8"/>
-	<link rel="shortcut icon" href="ngChmIcon.ico">
-	<link rel="stylesheet" href="css/NGCHM.css">
-	<script src="javascript/lib/zip.js"></script>
-	<script src="javascript/lib/deflate.js"></script>
-	<script src="javascript/lib/inflate.js"></script>
-	<script src="javascript/Config.js"></script>
-	<script src="javascript/MatrixManager.js"></script>
-	<script src="javascript/NGCHM_Util.js"></script>
-	<script src="javascript/PaneControl.js"></script>
-	<script src="javascript/SelectionManager.js"></script>
-	<script src="javascript/ColorMapManager.js"></script>
-	<script src="javascript/Drawing.js"></script>
-	<script src="javascript/SummaryHeatMapDisplay.js"></script>
-	<script src="javascript/DetailHeatMapDisplay.js"></script>
-	<script src="javascript/Dendrogram.js"></script>
-	<script src="javascript/UserHelpManager.js"></script>
-	<script src="javascript/UserPreferenceManager.js"></script>
-	<script src="javascript/PdfGenerator.js"></script>
-	<script src="javascript/Linkout.js"></script>
-	<script src="javascript/Customization.js"></script>
-	<script src="javascript/CompatibilityManager.js"></script>
-	<script src="javascript/SearchManager.js"></script>
-	<script src="javascript/lib/jspdf.min.js"></script>
-	<script src="javascript/lib/jstat.min.js"></script>
-	<script src="javascript/use_jstat.js"></script>
-
-	<meta id='viewport' name ="viewport" content="width=device-width,user-scalable=no">
-
-	<script type="text/Javascript">
-		NgChm.heatMap = null;  //global - heatmap object.
-		NgChm.UTIL.containerElement = document.getElementById('container');
-		window.onload = function() {
-			// Line intentionally left blank
-			// Line intentionally left blank
-			NgChm.UTIL.onLoadCHM();
-			document.body.addEventListener('click', NgChm.UHM.closeMenu,true);
-			document.getElementById('barMenu_btn').mouseIsOver = "";
-		};
-	</script>
-</head>
-<body style="font-family: sans-serif; font-size: 100%">
-   <!--  <a href="javascript:alert(document.compatMode);">What mode am I?</a>   -->
-    <div class="mdaServiceHeader" id="mdaServiceHeader">
-		<img id='messageOpen_btn' style="position:absolute; vertical-align: top; display: none;" src='images/messageButton.png' alt='Open Alert' onmouseout="NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.hlp(this,"Display Startup Warnings",100)' onclick='NgChm.UHM.displayStartupWarnings();'/>
-        <div id="mda_header" class="mdaServiceHeaderLogo">
-			<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
-			<img id="mdaLogo" src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
-	           </a>
-		</div>
-		<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);">
-			<table><tr>
-				<td><div id="fileInstr" style="padding-bottom:5px; font-size: 14px; font-weight:bold;color: rgb(51, 51, 51);">Select .NGCHM file to view:<br></div></td></tr><tr>
-				<td><div style="font-size: 12px; font-weight:bold;color: rgb(51, 51, 51);"><input type='file' accept=".ngchm" title= 'To view .ngchm files: Press this button, select the .ngchm file that you wish to view, and press Open.' id='chmFile' name='chmFile'></div></td>
-			</tr></table>
-
-		</div>
-		<div class="divTable" id="detail_buttons" style='display:none;'>
-		  <div class="divRow">
-		    <div class="divLeft" id="mapName" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Map Name: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().name : "Not yet available") + "<br><br>Description: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().description : "N/A"),350);'></div>
-		  </div>
-		  <div class="divRow">
-  		    <div class="divLeft">  
-				<img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.hlp(this,"Open .NG-CHM Heat Map",130);' onclick='NgChm.SEL.openFileToggle();'/>
-				<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen" /> 
-				<strong>Search:</strong>&nbsp;
-				<select name="search_on" id="search_on" class='srchSelect' onchange="NgChm.SRCH.searchOnSel();">
-					<option value="labels">Labels</option>
-				</select>
-				<input id="search_text" name="search" type="text" class='srchText' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.",300);' />
-				<input id="search_cov_cont" name="search_cont" type="text" class='srchText' style='display:none;' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row/column covariate values.  Enter search term and click Go. The search will find rows/cols with continuous covariate values that fall within the search expressions entered. Search expressions should be entered in the form of a comma-delimited string with each segment representing an expression. Valid expressions would include individual numeric values, values preceded by one of the following operators: >, >=< <, <= (e.g. >10), and/or range expressions with 2 operators creating a range of values (e.g.>10<=20). Expressions that do not match these patterns will be ignored. If the search box turns red, no rows/cols containing the selected covariate values were found.",300);' />
-				<div id="search_cov_disc" style="display:none;"> 
-					<div class="dropDownMultiSelect">
-				        <div id="srchCovSelectBox" class="dropDownSelectBox" onclick="NgChm.UTIL.showCheckBoxDropDown('srchCovCheckBoxes');">   
-				        </div>
-				        <div id="srchCovCheckBoxes" class='dropDownCheckBoxes' style='display:none;'>
-				        </div>
+	<head>
+		<title>NG-CHM</title>
+		<meta charset="utf-8"/>
+		<link rel="shortcut icon" href="ngChmIcon.ico">
+		<link rel="stylesheet" href="css/NGCHM.css">
+		<script src="javascript/lib/zip.js"></script>
+		<script src="javascript/lib/deflate.js"></script>
+		<script src="javascript/lib/inflate.js"></script>
+		<script src="javascript/Config.js"></script>
+		<script src="javascript/MatrixManager.js"></script>
+		<script src="javascript/NGCHM_Util.js"></script>
+		<script src="javascript/PaneControl.js"></script>
+		<script src="javascript/SelectionManager.js"></script>
+		<script src="javascript/ColorMapManager.js"></script>
+		<script src="javascript/Drawing.js"></script>
+		<script src="javascript/SummaryHeatMapDisplay.js"></script>
+		<script src="javascript/DetailHeatMapDisplay.js"></script>
+		<script src="javascript/Dendrogram.js"></script>
+		<script src="javascript/UserHelpManager.js"></script>
+		<script src="javascript/UserPreferenceManager.js"></script>
+		<script src="javascript/PdfGenerator.js"></script>
+		<script src="javascript/Linkout.js"></script>
+		<script src="javascript/Customization.js"></script>
+		<script src="javascript/CompatibilityManager.js"></script>
+		<script src="javascript/SearchManager.js"></script>
+		<script src="javascript/lib/jspdf.min.js"></script>
+		<script src="javascript/lib/jstat.min.js"></script>
+		<script src="javascript/use_jstat.js"></script>
+	
+		<meta id='viewport' name ="viewport" content="width=device-width,user-scalable=no">
+	
+		<script type="text/Javascript">
+			NgChm.heatMap = null;  //global - heatmap object.
+			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
+			window.onload = function() {
+				// Line intentionally left blank
+				// Line intentionally left blank
+				NgChm.UTIL.onLoadCHM();
+				document.body.addEventListener('click', NgChm.UHM.closeMenu,true);
+				document.getElementById('barMenu_btn').mouseIsOver = "";
+			};
+		</script>
+	</head>
+	<body class="NgChmViewer" style="font-family: sans-serif; font-size: 100%">
+		    <!--  <a href="javascript:alert(document.compatMode);">What mode am I?</a>   -->
+		    <div class="mdaServiceHeader" id="mdaServiceHeader">
+				<img id='messageOpen_btn' style="position:absolute; vertical-align: top; display: none;" src='images/messageButton.png' alt='Open Alert' onmouseout="NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.hlp(this,"Display Startup Warnings",100)' onclick='NgChm.UHM.displayStartupWarnings();'/>
+		        <div id="mda_header" class="mdaServiceHeaderLogo">
+					<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
+					<img id="mdaLogo" src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
+			           </a>
+				</div>
+				<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);">
+					<table><tr>
+						<td><div id="fileInstr" style="padding-bottom:5px; font-size: 14px; font-weight:bold;color: rgb(51, 51, 51);">Select .NGCHM file to view:<br></div></td></tr><tr>
+						<td><div style="font-size: 12px; font-weight:bold;color: rgb(51, 51, 51);"><input type='file' accept=".ngchm" title= 'To view .ngchm files: Press this button, select the .ngchm file that you wish to view, and press Open.' id='chmFile' name='chmFile'></div></td>
+					</tr></table>
+		
+				</div>
+				<div class="divTable" id="detail_buttons" style='display:none;'>
+				  <div class="divRow">
+				    <div class="divLeft" id="mapName" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Map Name: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().name : "Not yet available") + "<br><br>Description: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().description : "N/A"),350);'></div>
+				  </div>
+				  <div class="divRow">
+		  		    <div class="divLeft">  
+						<img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.hlp(this,"Open .NG-CHM Heat Map",130);' onclick='NgChm.SEL.openFileToggle();'/>
+						<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen" /> 
+						<strong>Search:</strong>&nbsp;
+						<select name="search_on" id="search_on" class='srchSelect' onchange="NgChm.SRCH.searchOnSel();">
+							<option value="labels">Labels</option>
+						</select>
+						<input id="search_text" name="search" type="text" class='srchText' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.",300);' />
+						<input id="search_cov_cont" name="search_cont" type="text" class='srchText' style='display:none;' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row/column covariate values.  Enter search term and click Go. The search will find rows/cols with continuous covariate values that fall within the search expressions entered. Search expressions should be entered in the form of a comma-delimited string with each segment representing an expression. Valid expressions would include individual numeric values, values preceded by one of the following operators: >, >=< <, <= (e.g. >10), and/or range expressions with 2 operators creating a range of values (e.g.>10<=20). Expressions that do not match these patterns will be ignored. If the search box turns red, no rows/cols containing the selected covariate values were found.",300);' />
+						<div id="search_cov_disc" style="display:none;"> 
+							<div class="dropDownMultiSelect">
+						        <div id="srchCovSelectBox" class="dropDownSelectBox" onclick="NgChm.UTIL.showCheckBoxDropDown('srchCovCheckBoxes');">   
+						        </div>
+						        <div id="srchCovCheckBoxes" class='dropDownCheckBoxes' style='display:none;'>
+						        </div>
+							</div>
+						</div>
+						<select name="search_target" id="search_target" class='srchSelect'>
+							<option value="Both">Both</option>
+							<option value="Column">Column</option>
+							<option value="Row">Row</option>
+						</select>
+						<span class="dblSpace"/>
+					    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'  onclick='NgChm.SRCH.detailSearch();'/>
+					    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.hlp(this,"Previous Search Result",115);' style="display:none;" onclick='NgChm.SRCH.searchPrev();'/>
+					    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.hlp(this,"Next Search Result",100)' style="display:none;" onclick='NgChm.SRCH.searchNext();'/>
+					    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.hlp(this,"Clear Search Results",105)' style="display:none;" onclick="NgChm.SRCH.clearSearch(event);"/>
+		  			 </div> 
+				  </div>
+				  <div class="divRow">
+					<div class="divLeft">
+						<div><span id="search_display_text" style="margin-left:15em;font-size: 10px; vertical-align: top;"></span></div>
+					</div>
+				  </div>
+		<!--  	    </div>	-->
+				    <div id="pdf_gear" style="text-align: right;" >
+						<div id="flicks" style="display: none;">
+						    <div id="noFlickViews" style="display: none;">
+							<table><tr><td><img id='flickOff' src='images/layersOff.png' alt='open data layer control icon' onclick="NgChm.SEL.flickToggleOn();" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Open Data Layer Control",120,0)'/></td></tr></table>
+						    </div>
+						    <div id="flickViews" style="display: none;">
+						    	<table><tr>
+									<td><table><tr><td rowspan="2"><img id='flick_btn' data-state='flickUp' src='images/toggleUp.png' alt='Flick' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Toggle Between Selected Data Layers (F2)",205,0)' onclick='NgChm.SEL.flickChange();'/></td><td><select name="flick1" id="flick1" onchange="NgChm.SEL.flickChange('flick1');"></select></td></tr><tr><td><select name="flick2" id="flick2" onchange="NgChm.SEL.flickChange('flick2');"></select></td></tr></table></td>
+									<td><img id='flickOn_pic' src='images/layersOn.png'  alt='close data layer control icon' onclick="NgChm.SEL.flickToggleOff();" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Close Data Layer Control",120,0)'/></td>
+						    		</tr></table>
+					    	</div>
+						</div>
+				    </div>
+					<img id='colorMenu_btn' src='images/barColors.png' alt='Open Alert' onmouseout="NgChm.UHM.colorOver(0);NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.colorOver(1);NgChm.UHM.hlp(this,"Edit Map Colors",80,0)' onclick='NgChm.UPM.editPreferences(this,null);' style="vertical-align: top;"   />
+					<img id='barMenu_btn' class='farRightButton' src='images/barMenu.png' alt='Open Menu' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM Options Menu",140,0)' onclick='NgChm.UHM.openMenu(this);' style="vertical-align: top;"/>
+			    </div>
+		        <img id='aboutMenu_btn' class='farRightButton' src='images/aboutNgchm.png' alt='About NG-CHM' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM About",140,0)' onclick='NgChm.UHM.widgetHelp();' style="vertical-align: top;"/>
+		    </div>
+			<div id='loader' style='display: none;'>Loading...</div>
+			<div id="ngChmContainer" class="ngChmContainer" style="position: relative"></div>
+			<div id="footer"></div>
+			<div style="display:none">
+				<!-- Templates -->
+				<div id='summary_chm'>
+					<canvas id='column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
+					<canvas id='row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
+					<canvas id='row_class_canvas' class='summary_canvas'></canvas>
+					<canvas id='col_class_canvas' class='summary_canvas'></canvas>
+					<canvas id='summary_canvas' class='summary_canvas'></canvas>
+					<canvas id='summary_box_canvas' ></canvas>
+					<canvas id=summary_col_top_items_canvas class='selection_canvas' style='padding-top:2px;z-index:1;'></canvas>
+					<canvas id='summary_row_top_items_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
+					<canvas id='summary_col_select_canvas' class='selection_canvas' style='padding-top:2px;z-index:0;'></canvas>
+					<canvas id='summary_row_select_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
+					<div id='sumlabelDiv' style="display: inline-block"></div>
+				</div>
+				<div id='detail_chm' style='position: relative;'>
+		 			<canvas id='detail_column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
+					<canvas id='detail_row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
+					<canvas id='detail_canvas' tabindex='1'></canvas>
+					<canvas id='detail_box_canvas'></canvas>
+					<div id='labelDiv' style="display: inline-block">
+						<div id='colLabelDiv' data-axis="Column" style="display: inline-block; position: absolute; right: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
+						<div id='rowLabelDiv' data-axis ="Row" style="display: inline-block; position: absolute; bottom: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
 					</div>
 				</div>
-				<select name="search_target" id="search_target" class='srchSelect'>
-					<option value="Both">Both</option>
-					<option value="Column">Column</option>
-					<option value="Row">Row</option>
-				</select>
-				<span class="dblSpace"/>
-			    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'  onclick='NgChm.SRCH.detailSearch();'/>
-			    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.hlp(this,"Previous Search Result",115);' style="display:none;" onclick='NgChm.SRCH.searchPrev();'/>
-			    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.hlp(this,"Next Search Result",100)' style="display:none;" onclick='NgChm.SRCH.searchNext();'/>
-			    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.hlp(this,"Clear Search Results",105)' style="display:none;" onclick="NgChm.SRCH.clearSearch(event);"/>
-  			 </div> 
-		  </div>
-		  <div class="divRow">
-			<div class="divLeft">
-				<div><span id="search_display_text" style="margin-left:15em;font-size: 10px; vertical-align: top;"></span></div>
 			</div>
-		  </div>
-<!--  	    </div>	-->
-		    <div id="pdf_gear" style="text-align: right;" >
-				<div id="flicks" style="display: none;">
-				    <div id="noFlickViews" style="display: none;">
-					<table><tr><td><img id='flickOff' src='images/layersOff.png' alt='open data layer control icon' onclick="NgChm.SEL.flickToggleOn();" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Open Data Layer Control",120,0)'/></td></tr></table>
-				    </div>
-				    <div id="flickViews" style="display: none;">
-				    	<table><tr>
-							<td><table><tr><td rowspan="2"><img id='flick_btn' data-state='flickUp' src='images/toggleUp.png' alt='Flick' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Toggle Between Selected Data Layers (F2)",205,0)' onclick='NgChm.SEL.flickChange();'/></td><td><select name="flick1" id="flick1" onchange="NgChm.SEL.flickChange('flick1');"></select></td></tr><tr><td><select name="flick2" id="flick2" onchange="NgChm.SEL.flickChange('flick2');"></select></td></tr></table></td>
-							<td><img id='flickOn_pic' src='images/layersOn.png'  alt='close data layer control icon' onclick="NgChm.SEL.flickToggleOff();" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Close Data Layer Control",120,0)'/></td>
-				    		</tr></table>
-			    	</div>
+			<div id="pdfPrefs" class="hide">
+				<div class="prefsHdr" id="pdfPrefsHdr">PDF Generation</div>
+				<table id="pdfPrefsTable">
+					<tbody>
+						<tr class="chmTblRow">
+							<td>
+								<div id="pdfprefprefs" style="display: block; background-color: rgb(203, 219, 246);">
+									<div style="display: inherit; width: 290px; height: 315px;">
+										<h3 style="margin-bottom:0px;">Show maps:</h3>
+										<input id="pdfInputSummaryMap" type="radio" name="pages" value="summary"> Summary<br>
+										<input id="pdfInputDetailMap" type="radio" name="pages" value="detail"> Detail<br>
+										<input id="pdfInputBothMaps" type="radio" name="pages" value="both" checked> Both<br><br>
+								<!--  		<input id="pdfInputPages" type="checkbox" name="pages" value="separate"> Show maps on separate pages<br>	-->
+										<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait
+										<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape <br>
+										<h3 style="margin-bottom:0px;">Show classification bars:</h3>
+										<input id="pdfInputCondensed" type="radio" name="condensed" value="condensed" checked> Condensed
+										<input id="pdfInputHistogram" type="radio" name="condensed" value="histogram"> Histogram <br>
+										<input id="pdfInputColumn" type="checkbox" name="class" value="row" checked> Column<br>
+										<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Row<br>
+										<h3 style="margin-bottom:0px;">Display Options:</h3>
+										Font Size:&nbsp;&nbsp;&nbsp;<input id="pdfInputFont" type="number" name="font" value="" style="width:40px;" min="1" max="36" onchange="NgChm.PDF.customFont=true">
+										<p id="pdfErrorMessage" style="display:none;color:red; font-weight:bold;margin-left: 1.0em; margin-left: 1.0em;">Please select a font between 1 and 36</p><br>
+										Font Style:&nbsp;&nbsp;<select id="pdfFontStyle">
+											<option value="helvetica">Helvetica</option>
+											<option value="courier">Courier</option>
+											<option value="times">Times-Roman</option>
+										</select><br>
+										Paper Size:&nbsp;<select id="pdfPaperSize">
+											<option value="standard">Standard Letter (8.5 x 11 inches)</option>
+											<option value="A3">Ledger/Tabloid (11 x 17 inches)</option>
+											<option value="A4">A4 International (210 x 297 mm)</option>
+										</select>
+									</div>
+									<table>
+										<tbody>
+											<tr class="chmTblRow">
+												<td style="font-weight: bold;">
+													<div id="pref_buttons" style="text-align: right;">
+														<img id="prefCancel_btn" src="images/prefCancel.png" alt="Cancel changes" onclick="NgChm.PDF.pdfCancelButton();" style="vertical-align: top;">&nbsp;&nbsp;
+														<img id="prefCreate_btn" src="images/createPdf.png" alt="Create PDF" onclick="NgChm.PDF.callViewerHeatmapPDF();" style="vertical-align: top;">
+													</div>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div id="msgBox" style="display: none; position: absolute; background-color: rgb(230, 240, 255);">
+				<div class="msgBoxHdr" id="msgBoxHdr"></div>
+				<table>
+					<tbody>
+						<tr class="chmTblRow">
+							<td>
+								<div id="ngchmLogos" style="display: none">
+									<div class="mdaServiceHeaderLogo" style="right:5px;top:40px">
+							        	<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
+									    <img id="msgBoxMdaLogo" src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
+									</a>
+							       	</div>
+									<div style="right:5px;top:40px;position:absolute">
+										<a href="http://insilico.us.com/"  target="_blank">
+											<img id='insilicologo' src='images/insilicologo.png' alt='insilico' height=40 />
+										</a>
+									</div>
+							    </div>
+								<div id="msgBoxTxt" style="display: inherit;font-size: 12px; background-color: rgb(230, 240, 255); width: 400px; height: 80px;"></div>
+								<table>
+									<tbody>
+										<tr>
+											<td style="text-align: left;">
+													<img id="msgBoxBtnImg_1" class='msgBoxButton' alt='message box button 1 icon'>
+											</td>
+											<td style="text-align: left;">
+													<img id="msgBoxBtnImg_2" class='msgBoxButton' alt='message box button 2 icon'>
+											</td>
+											<td style="text-align:right;">
+													<img id="msgBoxBtnImg_3" class='msgBoxButton' alt='message box button 3 icon'>
+											</td>
+											<td style="text-align: right;">
+													<img id="msgBoxBtnImg_4" class='msgBoxButton' alt='message box button 4 icon'>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		
+			<div id="linkBox" class='hide'>
+				<div id="linkBoxHdr" class="msgBoxHdr"></div>
+				<p class='boxCaption'>This screen contains a listing of all plug-ins that are active in the current heat map and a listing all plug-ins installed in this Ng-Chm system.</p>
+				<div id="linkTabButtons">
+					<img id="mapLinks_btn" src="images/mapLinksOn.png" alt="Plugins available for this map" onclick="NgChm.UHM.showMapPlugins();">
+					<img id="allLinks_btn" src="images/allLinksOff.png" alt="Plugins Installed" onclick="NgChm.UHM.showAllPlugins();">
 				</div>
-		    </div>
-			<img id='colorMenu_btn' src='images/barColors.png' alt='Open Alert' onmouseout="NgChm.UHM.colorOver(0);NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.colorOver(1);NgChm.UHM.hlp(this,"Edit Map Colors",80,0)' onclick='NgChm.UPM.editPreferences(this,null);' style="vertical-align: top;"   />
-			<img id='barMenu_btn' class='farRightButton' src='images/barMenu.png' alt='Open Menu' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM Options Menu",140,0)' onclick='NgChm.UHM.openMenu(this);' style="vertical-align: top;"/>
-	    </div>
-        <img id='aboutMenu_btn' class='farRightButton' src='images/aboutNgchm.png' alt='About NG-CHM' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM About",140,0)' onclick='NgChm.UHM.widgetHelp();' style="vertical-align: top;"/>
-    </div>
-	<div id='loader' style='display: none;'>Loading...</div>
-	<div id="container" class="container" style="position: relative"></div>
-	<div id="footer"></div>
-	<div style="display:none">
-		<!-- Templates -->
-		<div id='summary_chm'>
-			<canvas id='column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
-			<canvas id='row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
-			<canvas id='row_class_canvas' class='summary_canvas'></canvas>
-			<canvas id='col_class_canvas' class='summary_canvas'></canvas>
-			<canvas id='summary_canvas' class='summary_canvas'></canvas>
-			<canvas id='summary_box_canvas' ></canvas>
-			<canvas id=summary_col_top_items_canvas class='selection_canvas' style='padding-top:2px;z-index:1;'></canvas>
-			<canvas id='summary_row_top_items_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
-			<canvas id='summary_col_select_canvas' class='selection_canvas' style='padding-top:2px;z-index:0;'></canvas>
-			<canvas id='summary_row_select_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
-			<div id='sumlabelDiv' style="display: inline-block"></div>
-		</div>
-		<div id='detail_chm' style='position: relative;'>
- 			<canvas id='detail_column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
-			<canvas id='detail_row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
-			<canvas id='detail_canvas' tabindex='1'></canvas>
-			<canvas id='detail_box_canvas'></canvas>
-			<div id='labelDiv' style="display: inline-block">
-				<div id='colLabelDiv' data-axis="Column" style="display: inline-block; position: absolute; right: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
-				<div id='rowLabelDiv' data-axis ="Row" style="display: inline-block; position: absolute; bottom: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
+				<div id="linkBoxTxt"></div>
+				<div id="linkBoxAllTxt" class="hide"></div>
+				<div id="linkBoxFoot">
+					<img src="images/closeButton.png" alt='close button icon' onclick='NgChm.UHM.linkBoxCancel();'>
+				</div>
 			</div>
-		</div>
-	</div>
-	<div id="pdfPrefs" class="hide">
-		<div class="prefsHdr" id="pdfPrefsHdr">PDF Generation</div>
-		<table id="pdfPrefsTable">
-			<tbody>
-				<tr class="chmTblRow">
-					<td>
-						<div id="pdfprefprefs" style="display: block; background-color: rgb(203, 219, 246);">
-							<div style="display: inherit; width: 290px; height: 315px;">
-								<h3 style="margin-bottom:0px;">Show maps:</h3>
-								<input id="pdfInputSummaryMap" type="radio" name="pages" value="summary"> Summary<br>
-								<input id="pdfInputDetailMap" type="radio" name="pages" value="detail"> Detail<br>
-								<input id="pdfInputBothMaps" type="radio" name="pages" value="both" checked> Both<br><br>
-						<!--  		<input id="pdfInputPages" type="checkbox" name="pages" value="separate"> Show maps on separate pages<br>	-->
-								<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait
-								<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape <br>
-								<h3 style="margin-bottom:0px;">Show classification bars:</h3>
-								<input id="pdfInputCondensed" type="radio" name="condensed" value="condensed" checked> Condensed
-								<input id="pdfInputHistogram" type="radio" name="condensed" value="histogram"> Histogram <br>
-								<input id="pdfInputColumn" type="checkbox" name="class" value="row" checked> Column<br>
-								<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Row<br>
-								<h3 style="margin-bottom:0px;">Display Options:</h3>
-								Font Size:&nbsp;&nbsp;&nbsp;<input id="pdfInputFont" type="number" name="font" value="" style="width:40px;" min="1" max="36" onchange="NgChm.PDF.customFont=true">
-								<p id="pdfErrorMessage" style="display:none;color:red; font-weight:bold;margin-left: 1.0em; margin-left: 1.0em;">Please select a font between 1 and 36</p><br>
-								Font Style:&nbsp;&nbsp;<select id="pdfFontStyle">
-									<option value="helvetica">Helvetica</option>
-									<option value="courier">Courier</option>
-									<option value="times">Times-Roman</option>
-								</select><br>
-								Paper Size:&nbsp;<select id="pdfPaperSize">
-									<option value="standard">Standard Letter (8.5 x 11 inches)</option>
-									<option value="A3">Ledger/Tabloid (11 x 17 inches)</option>
-									<option value="A4">A4 International (210 x 297 mm)</option>
-								</select>
-							</div>
-							<table>
-								<tbody>
-									<tr class="chmTblRow">
-										<td style="font-weight: bold;">
-											<div id="pref_buttons" style="text-align: right;">
-												<img id="prefCancel_btn" src="images/prefCancel.png" alt="Cancel changes" onclick="NgChm.PDF.pdfCancelButton();" style="vertical-align: top;">&nbsp;&nbsp;
-												<img id="prefCreate_btn" src="images/createPdf.png" alt="Create PDF" onclick="NgChm.PDF.callViewerHeatmapPDF();" style="vertical-align: top;">
-											</div>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<div id="msgBox" style="display: none; position: absolute; background-color: rgb(230, 240, 255);">
-		<div class="msgBoxHdr" id="msgBoxHdr"></div>
-		<table>
-			<tbody>
-				<tr class="chmTblRow">
-					<td>
-						<div id="ngchmLogos" style="display: none">
-							<div class="mdaServiceHeaderLogo" style="right:5px;top:40px">
-					        	<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
-							    <img id="msgBoxMdaLogo" src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
-							</a>
-					       	</div>
-							<div style="right:5px;top:40px;position:absolute">
-								<a href="http://insilico.us.com/"  target="_blank">
-									<img id='insilicologo' src='images/insilicologo.png' alt='insilico' height=40 />
-								</a>
-							</div>
-					    </div>
-						<div id="msgBoxTxt" style="display: inherit;font-size: 12px; background-color: rgb(230, 240, 255); width: 400px; height: 80px;"></div>
-						<table>
-							<tbody>
-								<tr>
-									<td style="text-align: left;">
-											<img id="msgBoxBtnImg_1" class='msgBoxButton' alt='message box button 1 icon'>
-									</td>
-									<td style="text-align: left;">
-											<img id="msgBoxBtnImg_2" class='msgBoxButton' alt='message box button 2 icon'>
-									</td>
-									<td style="text-align:right;">
-											<img id="msgBoxBtnImg_3" class='msgBoxButton' alt='message box button 3 icon'>
-									</td>
-									<td style="text-align: right;">
-											<img id="msgBoxBtnImg_4" class='msgBoxButton' alt='message box button 4 icon'>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-
-	<div id="linkBox" class='hide'>
-		<div id="linkBoxHdr" class="msgBoxHdr"></div>
-		<p class='boxCaption'>This screen contains a listing of all plug-ins that are active in the current heat map and a listing all plug-ins installed in this Ng-Chm system.</p>
-		<div id="linkTabButtons">
-			<img id="mapLinks_btn" src="images/mapLinksOn.png" alt="Plugins available for this map" onclick="NgChm.UHM.showMapPlugins();">
-			<img id="allLinks_btn" src="images/allLinksOff.png" alt="Plugins Installed" onclick="NgChm.UHM.showAllPlugins();">
-		</div>
-		<div id="linkBoxTxt"></div>
-		<div id="linkBoxAllTxt" class="hide"></div>
-		<div id="linkBoxFoot">
-			<img src="images/closeButton.png" alt='close button icon' onclick='NgChm.UHM.linkBoxCancel();'>
-		</div>
-	</div>
-
-	<div id="prefs" style="display: none;">
-		<div id="prefsHdr"><img id='prefsMove_btn' data-state='moveLeft' src='images/prefsLeft.png' alt='Move preferences' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Move Preferences",80)' onclick='NgChm.UPM.prefsMoveButton();' style='float: left;'>Heat Map Display Properties<img id="redX_btn" src="images/redX.png" alt="Cancel changes" onclick="NgChm.UPM.prefsCancelButton();" style="float: right;"></div>
-		<div style="height: 20px;"></div>
-		<div id="prefTabButtons"><img id="prefLayer_btn" src="images/heatMapColorsOff.png" alt="Edit Data Layers" onclick="NgChm.UPM.showLayerPrefs();"><img id="prefRowsCols_btn" src="images/rowsColsOn.png" alt="Edit Rows &amp; Columns" onclick="NgChm.UPM.showRowsColsPrefs();"><img id="prefClass_btn" src="images/covariateBarsOff.png" alt="Edit Classifications" onclick="NgChm.UPM.showClassPrefs();"></div>
-		<div id="prefPrefs" class="prefSubPanel" style="display: block; height: 70px"></div>
-	</div>
-	<div id="burgerMenuPanel" style="display: none;">
-		<div class="menuItemTop"></div>
-		<div id="menuPdf" class="menuItem" onclick='NgChm.PDF.openPdfPrefs(this,null);'><img id='menuPdf_btn' src='images/pdf.png' alt='save as PDF icon'>Save Heat Map As PDF...</div>
-		<div id="menuPng" class="menuItem" onclick='NgChm.UTIL.downloadSummaryPng(this);'><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
-		<div id="menuSave" class="menuItem" onclick='NgChm.UHM.saveHeatMapChanges();'><img id='menuSave_btn' src='images/saveButton.png' alt='save heat map changes icon'>Save Heat Map Changes...</div>
-		<div id="menuGear" class="menuItem" onclick='NgChm.UPM.editPreferences(this,null);'><img id='menuGear_btn' src='images/gear.png' alt='open modify map preferences icon'>Modify Map Preferences...</div>
-		<div class="menuItemBorder"></div>
-		<div id="menuLink" class="menuItem" onclick='NgChm.UHM.openLinkoutHelp();'><img id='linkHelp_btn' src='images/plugin.png' alt='open plugin help icon'>Plug-in Help...</div>
-		<div id="menuHelp" class="menuItem" onclick='NgChm.UHM.openHelp(this);'><img id='help_btn' src='images/questionMark.png' alt='open help icon'>NgChm Help...</div>
-		<div id="menuSpaceAbout" class="menuItemBorder"></div>
-		<div id="menuAbout" class="menuItem" onclick='NgChm.UHM.widgetHelp();'><img id='about_btn' src='images/aboutNgchm.png' alt='about ngchm icon'>About NgChm...</div>
-	</div>
+		
+			<div id="prefs" style="display: none;">
+				<div id="prefsHdr"><img id='prefsMove_btn' data-state='moveLeft' src='images/prefsLeft.png' alt='Move preferences' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Move Preferences",80)' onclick='NgChm.UPM.prefsMoveButton();' style='float: left;'>Heat Map Display Properties<img id="redX_btn" src="images/redX.png" alt="Cancel changes" onclick="NgChm.UPM.prefsCancelButton();" style="float: right;"></div>
+				<div style="height: 20px;"></div>
+				<div id="prefTabButtons"><img id="prefLayer_btn" src="images/heatMapColorsOff.png" alt="Edit Data Layers" onclick="NgChm.UPM.showLayerPrefs();"><img id="prefRowsCols_btn" src="images/rowsColsOn.png" alt="Edit Rows &amp; Columns" onclick="NgChm.UPM.showRowsColsPrefs();"><img id="prefClass_btn" src="images/covariateBarsOff.png" alt="Edit Classifications" onclick="NgChm.UPM.showClassPrefs();"></div>
+				<div id="prefPrefs" class="prefSubPanel" style="display: block; height: 70px"></div>
+			</div>
+			<div id="burgerMenuPanel" style="display: none;">
+				<div class="menuItemTop"></div>
+				<div id="menuPdf" class="menuItem" onclick='NgChm.PDF.openPdfPrefs(this,null);'><img id='menuPdf_btn' src='images/pdf.png' alt='save as PDF icon'>Save Heat Map As PDF...</div>
+				<div id="menuPng" class="menuItem" onclick='NgChm.UTIL.downloadSummaryPng(this);'><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
+				<div id="menuSave" class="menuItem" onclick='NgChm.UHM.saveHeatMapChanges();'><img id='menuSave_btn' src='images/saveButton.png' alt='save heat map changes icon'>Save Heat Map Changes...</div>
+				<div id="menuGear" class="menuItem" onclick='NgChm.UPM.editPreferences(this,null);'><img id='menuGear_btn' src='images/gear.png' alt='open modify map preferences icon'>Modify Map Preferences...</div>
+				<div class="menuItemBorder"></div>
+				<div id="menuLink" class="menuItem" onclick='NgChm.UHM.openLinkoutHelp();'><img id='linkHelp_btn' src='images/plugin.png' alt='open plugin help icon'>Plug-in Help...</div>
+				<div id="menuHelp" class="menuItem" onclick='NgChm.UHM.openHelp(this);'><img id='help_btn' src='images/questionMark.png' alt='open help icon'>NgChm Help...</div>
+				<div id="menuSpaceAbout" class="menuItemBorder"></div>
+				<div id="menuAbout" class="menuItem" onclick='NgChm.UHM.widgetHelp();'><img id='about_btn' src='images/aboutNgchm.png' alt='about ngchm icon'>About NgChm...</div>
+			</div>
 	</body>
 </html>

@@ -76,7 +76,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// Return unique ID for a container element - to aid in automated tests
 	var nextUniqueContainerId = 1;
 	function getUniqueContainerId () {
-		return "container" + nextUniqueContainerId++;
+		return "ngChmContainer" + nextUniqueContainerId++;
 	}
 
 	// The panel user interface is a DOM tree:
@@ -113,7 +113,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			if (p.classList.contains('paneHeader')) res.paneHeader = p;
 			else if (p.classList.contains('paneTitle')) res.paneTitle = p;
 			else if (p.classList.contains('pane')) res.pane = p;
-			else if (p.classList.contains('container')) {
+			else if (p.classList.contains('ngChmContainer')) {
 				res.container = p;
 				break;
 			}
@@ -158,7 +158,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	function initializePanes () {
 		if (debug) console.log ('Initialize Panes');
 
-		const topContainer = document.getElementById('container');
+		const topContainer = document.getElementById('ngChmContainer');
 		if (!panesInitialized) {
 			NgChm.Pane.resizeNGCHM = resizeNGCHM;
 			window.onresize = resizeNGCHM;
@@ -181,7 +181,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				const embed = document.getElementById('NGCHMEmbed');
 				const bb = (embed || document.body).getBoundingClientRect();
 				if (embed) {
-					const cont = document.getElementById('container');
+					const cont = document.getElementById('ngChmContainer');
 					if (cont) cont.classList.add('hide');
 					const estyle = window.getComputedStyle(embed);
 					if (cont) cont.classList.remove('hide');
@@ -311,7 +311,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		// Resize this container/pane.
 		e.target.style[e.detail.what]=(bb[e.detail.what]+e.detail.amount)+'px';
 
-		if (!e.target.classList.contains('container')) {
+		if (!e.target.classList.contains('ngChmContainer')) {
 			resizePane (e.target, true);
 		}
 
@@ -319,7 +319,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		if (e.detail.amount > 0) resizeChildren();
 
 		function resizeChildren() {
-			if (e.target.classList.contains('container')) {
+			if (e.target.classList.contains('ngChmContainer')) {
 				// Resize children of the container.
 				if (debug) console.log ('container resize');
 				const verticalContainer = e.target.classList.contains('vertical');
@@ -485,7 +485,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		let child1;
 		let h = loc.pane.clientHeight;
 		let w = loc.pane.clientWidth;
-		if (vertical === verticalContainer && loc.container.id !== 'container') {
+		if (vertical === verticalContainer && loc.container.id !== 'ngChmContainer') {
 			container = loc.container;
 			child1 = loc.pane;
 		} else {
@@ -498,7 +498,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				child1.appendChild(p);
 				p = container.firstChild;
 			}
-			container.classList.replace ('pane', 'container');
+			container.classList.replace ('pane', 'ngChmContainer');
 			container.id = getUniqueContainerId ();
 			container.appendChild (child1);
 			updatePaneHandlers (container, child1);
@@ -711,7 +711,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 
 		let parentC = paneLoc.container.parentElement;
-		while (parentC !== null && !parentC.classList.contains('container')) {
+		while (parentC !== null && !parentC.classList.contains('ngChmContainer')) {
 			parentC = parentC.parentElement;
 		}
 		if (parentC !== null) {
@@ -759,7 +759,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 							// Move any old pane handlers to 'container'
 							updatePaneHandlers (ch, paneLoc.container);
 							// Change the 'container' into a pane
-							paneLoc.container.classList.replace ('container', 'pane');
+							paneLoc.container.classList.replace ('ngChmContainer', 'pane');
 							paneLoc.container.id = ch.id;
 							resizePane (paneLoc.container, false);
 						} else {
@@ -783,7 +783,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 							});
 							// If parent is a similarly oriented container, merge child elements into parent.
 							const pc = paneLoc.container.parentElement;
-							if (pc.id !== 'container' && pc.classList.contains('container') &&
+							if (pc.id !== 'ngChmContainer' && pc.classList.contains('ngChmContainer') &&
 							    pc.classList.contains('vertical') === paneLoc.container.classList.contains('vertical')) {
 								console.log ('Merging into parent container.');
 								while (paneLoc.container.firstChild) {
@@ -1038,7 +1038,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	function createInitialPane () {
 		const header = document.getElementById('mdaServiceHeader');
 		const footer = document.getElementById('footer');
-		const topContainer = document.getElementById('container');
+		const topContainer = document.getElementById('ngChmContainer');
 
 		if (topContainer.children.length === 0) {
 
@@ -1338,7 +1338,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	function getStandardConfiguration() {
 		const c1 = NgChm.UTIL.containerElement.children;
 		// Stop if top-level container does not contain exactly one container.
-		if (c1.length !== 1 || !c1[0].classList.contains('container')) return {};
+		if (c1.length !== 1 || !c1[0].classList.contains('ngChmContainer')) return {};
 		// Stop if subcontainer is not horizontal.
 		if (c1[0].classList.contains('vertical')) return {};
 		// Stop if subcontainer does not contain exactly two panes.

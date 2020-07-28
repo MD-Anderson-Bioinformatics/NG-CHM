@@ -45,12 +45,12 @@ public class InputClass {
 	private boolean isMatrixClass = false;
 	public int[] cutLocations = null;
 
-	public InputClass(JSONObject jo, String pos, RowColData rcData, int classCtr, InputFile iFile) throws Exception {
+	public InputClass(JSONObject jo, String pos, RowColData rcData, int classCtr, InputFile iFile, ArrayList<String> existingNames) throws Exception {
 		try {
 			String[] classArray = rcData.classArray;
-			name = (String) jo.get(NAME);
 			file = (String) jo.get(PATH);
 			position = pos.trim();
+			setClassName(jo,existingNames);
 			if (file.equals("matrix")) {
 				isMatrixClass = true;
 			}
@@ -145,6 +145,28 @@ public class InputClass {
 			}	
 		} catch (Exception ex) {
 	        throw ex;
+		}
+	}
+	
+	/*******************************************************************
+	 * METHOD: setClassName
+	 *
+	 * This method checks for existing classes with the same name as
+	 * the incoming class and increments the new class name (if necessary).
+	 ******************************************************************/
+	private void setClassName(JSONObject jo, ArrayList<String> existingNames) throws Exception {
+		String proposedName = (String) jo.get(NAME);
+		int dupes = 1;
+		for (int i = 0; i < existingNames.size(); i++) {
+			String existingClassName =existingNames.get(i);
+			if (existingClassName.contentEquals(proposedName)) {
+				dupes++;
+			}
+		}
+		if (dupes > 1) {
+			name = proposedName+"_"+dupes;
+		} else {
+			name = proposedName;
 		}
 	}
 

@@ -508,7 +508,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	//Run startup checks that enable startup warnings button.
 	NgChm.UTIL.startupChecks();
 	NgChm.UTIL.setDragPanels();
-	NgChm.UTIL.containerElement = document.getElementById('container');
+	NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
 
 
 	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
@@ -653,7 +653,7 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	NgChm.UTIL.showDetailPane = false;
 	NgChm.Pane.showPaneHeader = false;
 	//NgChm.Pane.ngchmContainerWidth = 40;
-	//document.getElementById('container').style.left = '150px';
+	//document.getElementById('ngChmContainer').style.left = '150px';
         NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
     }
 };
@@ -988,12 +988,18 @@ NgChm.UTIL.roundUpDown = function(inVal, limit) {
 NgChm.UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,items,maxHeight) {
 	var checkBoxes = document.getElementById(checkBoxesId);
 	var selectBox = document.getElementById(selectBoxId);
+	//Order categories (in case they are out of order in properties)
+	let orderedItems = [];
+	for (let i=0;i<items.length;i++) {
+		orderedItems.push(items[i])
+	}
+	orderedItems.sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}))
 	//Set text to display on closed check box dropdown (can be set to '' for no text)
 	selectBox.innerHTML = "<select><option>"+boxText+"</option></select><div id='overSelect' class='dropDownOverSelect'></div>";
 	//Create html for all check box rows
 	var boxes = "";
-	for (var i = 0; i < items.length; i++){
-		boxes = boxes + "<label for='" + items[i] + "' onclick='NgChm.UTIL.toggleCheckBox(event, this);'><input type='checkBox' class='srchCovCheckBox' value='" + items[i] + "'>" + items[i] + "</input></label>";
+	for (var i = 0; i < orderedItems.length; i++){
+		boxes = boxes + "<label for='" + orderedItems[i] + "' onclick='NgChm.UTIL.toggleCheckBox(event, this);'><input type='checkBox' class='srchCovCheckBox' value='" + orderedItems[i] + "'>" + orderedItems[i] + "</input></label>";
 	}
 	if (items.length > 20) {
 		checkBoxes.style.height = maxHeight;
@@ -1190,7 +1196,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	ngchmIFrame.id = options.divId+"_iframe"; 
 	ngchmIFrame.scrolling = "no";
 	ngchmIFrame.style = "height:"+options.thumbnailHeight+"; width:100%; border-style:none; ";
-	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals'; 
+	ngchmIFrame.sandbox = 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-downloads'; 
 	ngchmIFrame.className='ngchmThumbnail';
 	embeddedDiv.appendChild(ngchmIFrame); 
 	var doc = ngchmIFrame.contentWindow.document;

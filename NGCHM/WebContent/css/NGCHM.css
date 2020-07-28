@@ -2,7 +2,7 @@
 /**
  *  */
 
-body {
+body.NgChmViewer {
 	margin: 8px;
 	width: calc(100vw - 16px);
 	height: calc(100vh - 16px);
@@ -85,13 +85,13 @@ div.collapsed div.icon_group.client_icons {
 	display: none;
 }
 
-div.container {
+div.ngChmContainer {
 	position: relative;
 	display: flex;
 	margin: 0px;
 }
 
-div.vertical.container {
+div.vertical.ngChmContainer {
 	flex-direction: column;
 }
 
@@ -104,7 +104,7 @@ div.pane canvas {
 	position: absolute;
 }
 
-div#container{
+div#ngChmContainer{
 	overflow: hidden;
 	display: flex;
 	flex-grow: 1;

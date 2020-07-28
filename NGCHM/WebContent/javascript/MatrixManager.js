@@ -65,6 +65,7 @@ NgChm.MMGR.Event_NEWDATA = 'NewData';
 NgChm.MMGR.source= null;
 NgChm.MMGR.embeddedMapName= null;
 NgChm.MMGR.localRepository= '/NGCHM';
+NgChm.MMGR.latestReadWindow= null;
 
 
 //Create a MatrixManager to retrieve heat maps. 
@@ -408,7 +409,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	this.setDividerPref = function(sumSize) {
 		var sumPercent = 50;
 		if (sumSize === undefined) {
-			var container = document.getElementById('container');
+			var container = document.getElementById('ngChmContainer');
 			var summary = document.getElementById('summary_chm');
 			sumPercent = Math.ceil(100*summary.clientWidth / container.clientWidth);
 		} else {
@@ -595,14 +596,37 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		}	
 	}
 
+	//This function tells us if all files are in the cache.
+	this.allTilesAvailable = function() {
+		const details = NgChm.MMGR.latestReadWindow;
+		if (hasDetailTiles() === false) {
+			return true;
+		} else {
+	    	for (var i = details.startRowTile; i <= details.endRowTile; i++) {
+	    		for (var j = details.startColTile; j <= details.endColTile; j++) {
+	    			var tileCacheName=NgChm.SEL.currentDl + "." +NgChm.MMGR.DETAIL_LEVEL + "." + i + "." + j;
+	    			if (getTileCacheData(tileCacheName) === null) {
+	     				//Do not yet have tile in cache return false
+	    				return false;
+	    			}
+	    		}
+	    	}
+		}
+		return true;
+	};
 	
 	//This function is used to set a read window for high resolution data layers.
 	//Calling setReadWindow will cause the HeatMap object to retrieve tiles needed
 	//for reading this area if the tiles are not already in the cache.
 	this.setReadWindow = function(level, row, column, numRows, numColumns) {
+		NgChm.MMGR.latestReadWindow = null;
+		let details;
 		//Thumb nail and summary level are always kept in the cache.  Don't do fetch for them.
-		if (level != NgChm.MMGR.THUMBNAIL_LEVEL && level != NgChm.MMGR.SUMMARY_LEVEL)
-			datalevels[level].setReadWindow(row, column, numRows, numColumns);
+		if (level != NgChm.MMGR.THUMBNAIL_LEVEL && level != NgChm.MMGR.SUMMARY_LEVEL) {
+			details = datalevels[level].setReadWindow(row, column, numRows, numColumns);
+		}
+		NgChm.MMGR.latestReadWindow = details;
+		return details;
 	};
 
 	// This function is used to set a read window for high resolution data layers.
@@ -1038,6 +1062,16 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		}
 	}
 	
+	// Returns true if map contains detail tiles.  Small maps have only tn and summary
+	function hasDetailTiles() {
+		const levels = mapConfig.data_configuration.map_information.levels;
+		if (levels.d !== undefined) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	// Return the tile cache (For debugging.)
 	NgChm.MMGR.getTileCache = function getTileCache () {
 		return tileCache;
@@ -1328,9 +1362,10 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
     	
     	for (var i = startRowTile; i <= endRowTile; i++) {
     		for (var j = startColTile; j <= endColTile; j++) {
-			getTile(NgChm.SEL.currentDl, level, i, j);
+    			getTile(NgChm.SEL.currentDl, level, i, j);
     		}
     	}
+    	return {startRowTile: startRowTile, endRowTile: endRowTile, startColTile: startColTile, endColTile: endColTile}
     }
 
 	// External user of the matrix data lets us know where they plan to read.
