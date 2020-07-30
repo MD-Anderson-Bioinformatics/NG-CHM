@@ -1232,6 +1232,7 @@ NgChm.UHM.linkBoxSizing = function() {
 	}
 	var linkBoxTxt = document.getElementById('linkBoxTxt');
 	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+	var container = document.getElementById('ngChmContainer');
 	var contHeight = container.offsetHeight;
 	if (pluginCtr === 0) {
 		var boxHeight = contHeight *.30;
