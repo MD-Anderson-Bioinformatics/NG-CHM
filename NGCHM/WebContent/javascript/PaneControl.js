@@ -79,6 +79,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		return "ngChmContainer" + nextUniqueContainerId++;
 	}
 
+	function getContainerElement() {
+	    return document.getElementById('ngChmContainer');
+	}
+
 	// The panel user interface is a DOM tree:
 	// - Leaf nodes are panels. They are implemented as DIV elements with class pane.
 	// - Internal tree nodes are containers.  They are implemented as DIV elements with class container.
@@ -883,13 +887,14 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// Exported function.
 	// Also used internally to reposition the popup after changes to the icon position.
 	function insertPopupNearIcon (popup, icon) {
-		if (popup.parentElement !== NgChm.UTIL.containerElement) {
+		const containerElement = getContainerElement();
+		if (popup.parentElement !== containerElement) {
 			// Test lets us reuse this function to reposition popup after moving the icon.
-			NgChm.UTIL.containerElement.appendChild(popup);
+			containerElement.appendChild(popup);
 			neighborPopups.push (popup);
 			neighborIcons.push (icon);
 		}
-		const contBB = NgChm.UTIL.containerElement.getBoundingClientRect();
+		const contBB = containerElement.getBoundingClientRect();
 		const iconBB = icon.getBoundingClientRect();
 		let topPosn = iconBB.bottom - contBB.top;
 		let leftPosn = iconBB.left - contBB.left;
@@ -927,7 +932,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// Exported function.
 	function removePopupNearIcon (popup, icon) {
-		NgChm.UTIL.containerElement.removeChild (popup);
+		getContainerElement().removeChild (popup);
 		for (let idx = 0; idx < neighborPopups.length; idx++) {
 			if (popup === neighborPopups[idx] && icon === neighborIcons[idx]) {
 				neighborPopups.splice(idx,1);
@@ -1111,7 +1116,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		document.addEventListener('touchmove', this.moveListener, NgChm.UTIL.passiveCompat({passive: false}));
 		document.addEventListener('mouseup', this.endListener);
 		document.addEventListener('touchend', this.endListener);
-		NgChm.UTIL.containerElement.addEventListener('mouseleave', this.endListener);
+		getContainerElement().addEventListener('mouseleave', this.endListener);
 	};
 
 	// This method is called for each pointer movement while moving the divider.
@@ -1296,7 +1301,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		// Set the heatmap's DividerPref iff the Pane configuation matches the standard configuration.
 		const { summary, detail } = getStandardConfiguration();
 		if (summary) {
-			const sumPercent = Math.ceil(100 * summary.pane.clientWidth / NgChm.UTIL.containerElement.clientWidth);
+			const sumPercent = Math.ceil(100 * summary.pane.clientWidth / getContainerElement().clientWidth);
 			if (debug) console.log ('Setting DividerPref to ' + sumPercent);
 			NgChm.heatMap.setDividerPref(sumPercent);
 		}
@@ -1316,7 +1321,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// Exported function.
 	function setPanePropWidths (percent, left, right, divider) {
-		const w = NgChm.UTIL.containerElement.clientWidth - divider.offsetWidth - verticalDividerMargins;
+		const w = getContainerElement().clientWidth - divider.offsetWidth - verticalDividerMargins;
 		const w1 = (w * percent) / 100;
 		left.style.width = w1 + 'px';
 		right.style.width = (w - w1) + 'px';
@@ -1336,7 +1341,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// this function returns an object containing the PaneLocations of the summary and detail NG-CHMs.
 	// Otherwise, it returns an empty object.
 	function getStandardConfiguration() {
-		const c1 = NgChm.UTIL.containerElement.children;
+		const c1 = getContainerElement().children;
 		// Stop if top-level container does not contain exactly one container.
 		if (c1.length !== 1 || !c1[0].classList.contains('ngChmContainer')) return {};
 		// Stop if subcontainer is not horizontal.

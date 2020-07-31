@@ -4,36 +4,52 @@
 		<title>NG-CHM</title>
 		<meta charset="utf-8"/>
 		<link rel="shortcut icon" href="ngChmIcon.ico">
-		<link rel="stylesheet" href="css/NGCHM.css">
-		<script src="javascript/lib/zip.js"></script>
-		<script src="javascript/lib/deflate.js"></script>
-		<script src="javascript/lib/inflate.js"></script>
-		<script src="javascript/Config.js"></script>
-		<script src="javascript/MatrixManager.js"></script>
-		<script src="javascript/NGCHM_Util.js"></script>
-		<script src="javascript/PaneControl.js"></script>
-		<script src="javascript/SelectionManager.js"></script>
-		<script src="javascript/ColorMapManager.js"></script>
-		<script src="javascript/Drawing.js"></script>
-		<script src="javascript/SummaryHeatMapDisplay.js"></script>
-		<script src="javascript/DetailHeatMapDisplay.js"></script>
-		<script src="javascript/Dendrogram.js"></script>
-		<script src="javascript/UserHelpManager.js"></script>
-		<script src="javascript/UserPreferenceManager.js"></script>
-		<script src="javascript/PdfGenerator.js"></script>
-		<script src="javascript/Linkout.js"></script>
-		<script src="javascript/Customization.js"></script>
-		<script src="javascript/CompatibilityManager.js"></script>
-		<script src="javascript/SearchManager.js"></script>
-		<script src="javascript/lib/jspdf.min.js"></script>
-		<script src="javascript/lib/jstat.min.js"></script>
-		<script src="javascript/use_jstat.js"></script>
-	
 		<meta id='viewport' name ="viewport" content="width=device-width,user-scalable=no">
 	
 		<script type="text/Javascript">
-			NgChm.heatMap = null;  //global - heatmap object.
-			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
+		    //Define Namespace for NgChm Application
+		    var NgChm = NgChm || {};
+		    NgChm.version = "2.18.1.bmbdev.0";
+		    NgChm.heatMap = null;  //global - heatmap object.
+		    (function() {
+			// Include style and javascript files in a way that
+			// overrides client and proxy caching when and only
+			// when the software version changes.
+			//
+			// The software version is included in the URLs for
+			// these files after the css and javascript path
+			// components (e.g. .../javascript-v1/... ).
+			//
+			// The system serving these files can just ignore the
+			// version numbers.  The following pair of NGINX
+			// rewrite rules is one way:
+			//     rewrite ^(.*)/javascript-[^/]*/(.*)$ $1/javascript/$2 last;
+			//     rewrite ^(.*)/css-[^/]*/(.*)$ $1/css/$2 last;
+		        const styles = [ "NGCHM.css" ];
+			const scripts = [
+			    "lib/zip.js", "lib/deflate.js", "lib/inflate.js",
+			    "Config.js", "MatrixManager.js", "NGCHM_Util.js",
+			    "PaneControl.js", "SelectionManager.js",
+			    "ColorMapManager.js", "Drawing.js",
+			    "SummaryHeatMapDisplay.js", "DetailHeatMapDisplay.js",
+			    "Dendrogram.js", "UserHelpManager.js",
+			    "UserPreferenceManager.js", "PdfGenerator.js",
+			    "Linkout.js", "Customization.js",
+			    "CompatibilityManager.js", "SearchManager.js",
+			    "lib/jspdf.min.js", "lib/jstat.min.js", "use_jstat.js"
+			];
+			styles.forEach(style => {
+			    const link = document.createElement('link');
+			    link.rel = 'stylesheet';
+			    link.href = "css-" + NgChm.version + "/" + style;
+			    document.head.appendChild(link);
+			});
+			scripts.forEach(script => {
+			    const el = document.createElement('script');
+			    el.async = false; el.defer = true;
+			    el.src = "javascript-" + NgChm.version + "/" + script;
+			    document.head.appendChild(el);
+			});
 			window.onload = function() {
 				// Line intentionally left blank
 				// Line intentionally left blank
@@ -41,6 +57,7 @@
 				document.body.addEventListener('click', NgChm.UHM.closeMenu,true);
 				document.getElementById('barMenu_btn').mouseIsOver = "";
 			};
+		    })();
 		</script>
 	</head>
 	<body class="NgChmViewer" style="font-family: sans-serif; font-size: 100%">

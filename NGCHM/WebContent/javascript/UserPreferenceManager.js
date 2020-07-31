@@ -1734,7 +1734,7 @@ NgChm.UPM.setupRowColPrefs = function(e, prefprefs) {
 	var prefContents = document.createElement("TABLE");
 	NgChm.UHM.addBlankRow(prefContents);
 	NgChm.UHM.setTableRow(prefContents,["MAP INFORMATION:"], 2);
-	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Viewer Version:", NgChm.CM.version]);
+	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Viewer Version:", NgChm.version]);
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Map Version:", NgChm.heatMap.getMapInformation().version_id]);
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Builder Version:", NgChm.heatMap.getMapInformation().builder_version]);
 	NgChm.UHM.setTableRow(prefContents,["&nbsp;&nbsp;Read Only:", NgChm.heatMap.getMapInformation().read_only]);

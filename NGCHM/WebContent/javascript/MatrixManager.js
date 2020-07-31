@@ -10,10 +10,6 @@
 // the tile is retrieved.
 //
 
-//Define Namespace for NgChm Application
-var NgChm = NgChm || {
-};
-
 // Function: createNS
 // This function is called from other JS files to define their individual namespaces.
 NgChm.createNS = function (namespace) {
@@ -1286,16 +1282,16 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	//Specify which file to get and what function to call when it arrives.
 	function fileModeFetchVersion() {
 		var req = new XMLHttpRequest();
-		req.open("GET", NgChm.CM.versionCheckUrl+NgChm.CM.version , true);
+		req.open("GET", NgChm.CM.versionCheckUrl+NgChm.version , true);
 		req.onreadystatechange = function () {
 			if (req.readyState == req.DONE) {
 		        if (req.status != 200) {
 		        	//Log failure, otherwise, do nothing.
 		            console.log('Failed to get software version: ' + req.status);
 		        } else {
-		        	var latestVersion = req.response;
-		        	if ((latestVersion > NgChm.CM.version) && (typeof NgChm.galaxy === 'undefined') && (NgChm.MMGR.embeddedMapName === null) && (fileSrc == NgChm.MMGR.WEB_SOURCE)) {
-		        		NgChm.UHM.viewerAppVersionExpiredNotification(NgChm.CM.version, latestVersion);   
+				var latestVersion = req.response;
+				if ((latestVersion > NgChm.version) && (typeof NgChm.galaxy === 'undefined') && (NgChm.MMGR.embeddedMapName === null) && (fileSrc == NgChm.MMGR.WEB_SOURCE)) {
+					NgChm.UHM.viewerAppVersionExpiredNotification(NgChm.version, latestVersion);
 		        	}
 			    } 
 			}
