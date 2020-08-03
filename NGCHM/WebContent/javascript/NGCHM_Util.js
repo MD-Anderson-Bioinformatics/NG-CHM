@@ -778,8 +778,8 @@ NgChm.UTIL.downloadSummaryMapPng = function () {
 }
 
 NgChm.UTIL.downloadSummaryPng = function (e) { 
-	if (e.classList.contains('disabled')) {
-		return;
+	if (typeof e !== 'undefined') {
+		if (e.classList.contains('disabled')) return;
 	}
     var mapName = NgChm.heatMap.getMapInformation().name;
     var colDCanvas = document.getElementById("column_dendro_canvas");

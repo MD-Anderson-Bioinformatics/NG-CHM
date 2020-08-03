@@ -180,10 +180,10 @@ NgChm.SUM.summaryInit = function() {
 	NgChm.SUM.canvas.height = NgChm.SUM.totalHeight;
 	NgChm.SUM.boxCanvas.width =  NgChm.SUM.totalWidth;
 	NgChm.SUM.boxCanvas.height = NgChm.SUM.totalHeight;
-	NgChm.SUM.rCCanvas.width =  NgChm.SUM.rowClassBarWidth*NgChm.SUM.widthScale;
+	NgChm.SUM.rCCanvas.width =  NgChm.SUM.rowClassBarWidth;
 	NgChm.SUM.rCCanvas.height = NgChm.SUM.totalHeight;
 	NgChm.SUM.cCCanvas.width =  NgChm.SUM.totalWidth;
-	NgChm.SUM.cCCanvas.height = NgChm.SUM.colClassBarHeight*NgChm.SUM.heightScale;
+	NgChm.SUM.cCCanvas.height = NgChm.SUM.colClassBarHeight;
 	
 	var nameDiv = document.getElementById("mapName");  
 	var mapName = NgChm.heatMap.getMapInformation().name;
