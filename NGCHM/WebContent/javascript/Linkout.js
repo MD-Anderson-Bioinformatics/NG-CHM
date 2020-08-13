@@ -918,11 +918,10 @@ NgChm.createNS('NgChm.LNK');
 	};
 
 	(function() {
-		var nextNonce = 1234543;
 		NgChm.LNK.getNewNonce = function() {
-			const nonce = '' + nextNonce;
-			nextNonce += 3353;
-			return nonce;
+			const ta = new Uint8Array(16);
+			window.crypto.getRandomValues(ta);
+			return Array.from(ta).map(x => x.toString(16)).join("");
 		};
 	})();
 
