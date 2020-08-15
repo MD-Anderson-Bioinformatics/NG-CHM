@@ -369,8 +369,6 @@ public class ShaidyRMapGen {
 		String chmJSON = rootDir + File.separator + "chm" + FILE_SEP + args[1] + FILE_SEP + "chm.json";
 		String viewerMapDir = rootDir + FILE_SEP + "viewer";
 		String dataPath = rootDir + FILE_SEP + "dataset" + FILE_SEP;
-		String genPDF = ((args.length == 4 && args[3].equals("NO_PDF")) ||  (args.length == 5 && args[4].equals("NO_PDF"))) ? "" : "-PDF";
-		String genNGCHM = ((args.length == 4 && args[3].equals("NO_ZIP")) ||  (args.length == 5 && args[4].equals("NO_ZIP"))) ? "" : "-NGCHM";
 		
 		//Ensure that directories are properly setup.
 		envChecks(rootDir, chmJSON, viewerMapDir, dataPath);
@@ -791,9 +789,29 @@ public class ShaidyRMapGen {
 				System.out.println( "ERROR in ShaidyRMapGen e= "+ errors.toString());
 				System.exit(1);
 			} else {
+				// Create parameter list for processHeatMap.
+				// Default is: path/to/heatmapProperties.json -NGCHM -PDF
+				// -NGCHM is not output if NO_ZIP in args
+				// -PDF is not output if NO_PDF in args
+				// Other args included in genArgs as is.
+				ArrayList<String> genArgs = new ArrayList<String>();
+				genArgs.add (viewerMapDir+File.separator+"heatmapProperties.json");
+				boolean genNGCHM = true;
+				boolean genPDF = true;
+				for (int i = 3; i < args.length; i++) {
+					if (args[i].equals("NO_ZIP")) {
+						genNGCHM = false;
+					} else if (args[i].equals("NO_PDF")) {
+						genPDF = false;
+					} else {
+						genArgs.add (args[i]);
+					}
+				}
+				if (genNGCHM) genArgs.add ("-NGCHM");
+				if (genPDF) genArgs.add ("-PDF");
+
 				System.out.println(warnings);
-				String genArgs[] = new String[] {viewerMapDir+File.separator+"heatmapProperties.json",genPDF,genNGCHM};
-				String errMsg = HeatmapDataGenerator.processHeatMap(genArgs); 
+				String errMsg = HeatmapDataGenerator.processHeatMap(genArgs.toArray(new String[0]));
 				if ((errMsg != EMPTY) && (errMsg.contains("BUILD ERROR"))) {
 					System.out.println( "ERROR in ShaidyRMapGen e= "+ errMsg);
 					System.exit(1);
