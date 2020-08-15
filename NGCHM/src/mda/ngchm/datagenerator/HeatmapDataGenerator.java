@@ -2156,7 +2156,9 @@ public class HeatmapDataGenerator {
  	        try {
 				String zipFileName = outputDir + FILE_SEP + chmName + ".ngchm";
 	    		bw = new BufferedWriter(new FileWriter(outputDir + FILE_SEP + chmName + ".html"));
-	    		br = new BufferedReader(new FileReader("./ngchmWidget-min.js" ));
+			String widgetPath = System.getenv("NGCHMWIDGETPATH");
+			if (widgetPath == null) widgetPath = "./ngchmWidget-min.js";
+			br = new BufferedReader(new FileReader(widgetPath ));
 		        File zipFile = new File(zipFileName);
 		        int zipSize = (int)zipFile.length();
 		        String sizeMessage = "";
