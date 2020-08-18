@@ -127,6 +127,7 @@ public final class ImportConstants {
 	public static String GENERATE_PDF = "-PDF";
 	public static String GENERATE_FULL_PDF = "-FULLPDF";
 	public static String GENERATE_NGCHM = "-NGCHM";
+	public static String GENERATE_HTML = "-HTML";
 	
 	//Dendro PNG Generation Constants
 	public static int TN_HEIGHT = 60;

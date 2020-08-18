@@ -1266,5 +1266,24 @@ NgChm.UTIL.loadAllTilesTimer = function() {
 	}
 }
 
-
+/**********************************************************************************
+ * FUNCTION - b64toBlob: This function loads an .ngchm file from a blob.  It is
+ * used in .html heat map files that contain: .ngchm, widget, html, and embedded logic. 
+ **********************************************************************************/
+NgChm.UTIL.b64toBlob = function (b64Data) {
+	  const sliceSize = 512;
+	  let byteCharacters = atob(b64Data);
+	  let byteArrays = [];
+	  for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
+	    const slice = byteCharacters.slice(offset, offset + sliceSize);
+	    let byteNumbers = new Array(slice.length);
+	    for (var i = 0; i < slice.length; i++) {
+	      byteNumbers[i] = slice.charCodeAt(i);
+	    }
+	    let byteArray = new Uint8Array(byteNumbers);
+	    byteArrays.push(byteArray);
+	  }
+	  const blob = new Blob(byteArrays);
+	  return blob;
+}
 
