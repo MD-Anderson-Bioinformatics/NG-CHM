@@ -788,7 +788,7 @@ NgChm.createNS('NgChm.LNK');
 	//===================//
 
 	NgChm.LNK.copyToClipBoard = function(labels,axis){
-		window.open("","",'width=335,height=330,resizable=1').document.write(labels.join(", "));
+		window.open("","",'width=335,height=330,resizable=1').document.write(labels.join("<br>"));
 	}
 
 	NgChm.LNK.copyEntireClassBarToClipBoard = function(labels,axis){
@@ -823,7 +823,7 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	NgChm.LNK.copySelectionToClipboard = function(labels,axis){
-		window.open("","",'width=335,height=330,resizable=1').document.write("Rows: " + labels["Row"].join(", ") + "<br><br> Columns: " + labels["Column"].join(", "));
+		window.open("","",'width=335,height=330,resizable=1').document.write("<b>Rows:</b><br>" + labels["Row"].join("<br>") + "<br><br><b>Columns:</b><br>" + labels["Column"].join("<br>"));
 	}
 
 	NgChm.LNK.copySelectedDataToClipboard = function(matrixData,axis){

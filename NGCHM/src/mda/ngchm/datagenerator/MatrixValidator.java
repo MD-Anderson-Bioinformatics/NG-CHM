@@ -84,6 +84,10 @@ public class MatrixValidator {
 				    	errMsg = "COVARIATE INVALID: A row (" + rowId + ") in the covariate file (" + name + ") contains no label";
 						break;
 					}
+					if ((type.equals("continuous")) && (vals.length == 1)) {
+				    	errMsg = "COVARIATE INVALID: All values for a continuous covariate bar must be numeric OR valid N/A values (NA, N/A)";
+						break;
+					}
 					if ((type.equals("continuous")) && ((!isNumeric(vals[1])) && !NA_VALUES.contains(vals[1]))) {
 				    	errMsg = "COVARIATE INVALID: All values for a continuous covariate bar must be numeric OR valid N/A values (NA, N/A)";
 						break;

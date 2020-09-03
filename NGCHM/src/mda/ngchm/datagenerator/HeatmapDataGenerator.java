@@ -206,7 +206,8 @@ public class HeatmapDataGenerator {
 				System.out.println("Exception in HeatmapDataGenerator.main. Error generating PDF: " + ex.toString());  
 				ex.printStackTrace();
 			}
-        } else if (iData.generateFullPDF) { 
+        } 
+        if (iData.generateFullPDF) { 
         	boolean fullPDF = true;
 			try {
 	        	for (int i=0; i < iData.matrixFiles.size();i++) {
