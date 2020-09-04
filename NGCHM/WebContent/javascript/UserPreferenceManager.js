@@ -74,8 +74,20 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	NgChm.UPM.resetVal = NgChm.UPM.getResetVals();
 	
 	var prefspanel = document.getElementById("prefs");
+	var barMenu_btn = document.getElementById("barMenu_btn");
+	const contBB = NgChm.UTIL.containerElement.getBoundingClientRect();
+	const iconBB = barMenu_btn.getBoundingClientRect();
 	prefspanel.style.right = "0px";
 	prefspanel.style.left = "";
+	prefspanel.style.top = iconBB.top + 'px';
+	//done for builder panel sizing ONLY
+	var screenNotes  = document.getElementById('screenNotesDisplay')
+	if (screenNotes !== null) {
+		notesBB = screenNotes.getBoundingClientRect();
+		prefspanel.style.top = (iconBB.top - notesBB.height) + 'px';
+	}
+
+	prefspanel.style.height = (contBB.height + (iconBB.height*2)) + 'px';
 	var prefprefs = document.getElementById("prefPrefs");
 
 	if (errorMsg !== null) {
