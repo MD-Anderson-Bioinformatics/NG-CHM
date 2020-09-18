@@ -79,7 +79,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	const iconBB = barMenu_btn.getBoundingClientRect();
 	prefspanel.style.right = "0px";
 	prefspanel.style.left = "";
-	prefspanel.style.top = iconBB.top + 'px';
+	prefspanel.style.top=NgChm.UTIL.containerElement.parentElement.offsetTop + 30 + 'px';
 	//done for builder panel sizing ONLY
 	var screenNotes  = document.getElementById('screenNotesDisplay')
 	if (screenNotes !== null) {
