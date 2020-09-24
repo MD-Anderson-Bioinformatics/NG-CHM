@@ -899,7 +899,16 @@ NgChm.createNS('NgChm.LNK');
 		}
 
 		NgChm.LNK.registerPanePlugin = function(p) {
-			panePlugins.push (new PanePlugin (p));
+			const pp = new PanePlugin (p);
+			// Replace any existing plugin with the same name.
+			for (let idx = 0; idx < panePlugins.length; idx++) {
+			    if (panePlugins[idx].name === pp.name) {
+				panePlugins[idx] = pp;
+				return;
+			    }
+			}
+			// Add new pane plugin if no plugin with the same name already exists.
+			panePlugins.push (pp);
 		};
 
 		NgChm.LNK.getPanePlugins = function() {
