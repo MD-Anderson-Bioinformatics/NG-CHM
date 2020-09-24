@@ -916,58 +916,143 @@ NgChm.createNS('NgChm.LNK');
 		};
 	})();
 
-	// Data for current plugins.
-	var pluginData = {};
+	// Maintain a database of current plugin instances.
+	(function() {
+	    // Every plugin instance is identified by a unique nonce.
+	    // The following object maps nonces to plugin instances.
+	    const instances = {};
 
-	NgChm.LNK.setPanePluginOptions = function (element, options) {
+	    // Class for a plugin instance.
+	    class PluginInstance {
+	        constructor ({ kind, nonce, source, plugin, params, iframe, config } = {}) {
+	            if (kind === undefined) kind = "panel-plugin";
+	            if (["panel-plugin", "linkout-plugin", "hamburger-plugin"].indexOf(kind) === -1) { alert("Unknown plugin kind"); }
+	            Object.assign (this, { kind, nonce, source, plugin, params, iframe, config });
+		}
+	    }
+
+	    NgChm.LNK.getPluginInstance = function getPluginInstance (nonce) {
+	        return instances[nonce];
+	    };
+
+	    NgChm.LNK.getPluginInstanceByName = function getPluginInstanceByName (name) {
+		let p = 0;
+		const k = Object.keys(instances);
+		while (p < k.length && instances[k[p]].plugin.name !== name) p++;
+		return p === k.length ? null : instances[k[p]];
+	    };
+
+	    // Set the parameters for a panel plugin instance.
+	    // Element is a DOM element within the panel plugin.
+	    // Options contains the parameters to set.
+	    // Also sets the panel's title bar.
+	    NgChm.LNK.setPanePluginOptions = function (element, options) {
 		const loc = NgChm.Pane.findPaneLocation (element);
 		const iframe = loc.pane.getElementsByTagName('IFRAME')[0];
 		const nonce = iframe.dataset.nonce;
-		const { plugin, params } = pluginData[nonce];
-		pluginData[nonce].params = options;
-		loc.paneTitle.innerText = plugin.name + '. ' + options.plotTitle;
+		instances[nonce].params = options;
+		loc.paneTitle.innerText = instances[nonce].plugin.name + '. ' + options.plotTitle;
 		NgChm.LNK.initializePanePlugin (nonce, options);
-	};
+	    };
 
-	(function() {
-		NgChm.LNK.getNewNonce = function() {
-			const ta = new Uint8Array(16);
-			window.crypto.getRandomValues(ta);
-			return Array.from(ta).map(x => x.toString(16)).join("");
-		};
-	})();
+	    // Create a new, unique nonce.
+	    NgChm.LNK.getNewNonce = function getNewNonce () {
+		const ta = new Uint8Array(16);
+		window.crypto.getRandomValues(ta);
+		return Array.from(ta).map(x => x.toString(16)).join("");
+	    };
 
-	// Switch the empty pane identified by PaneLocation loc to the specified plugin.
-	NgChm.LNK.switchPaneToPlugin = function (loc, plugin) {
-
-		const params = plugin.params;
-		if (!params) {
-			const help = NgChm.UTIL.newElement('DIV.linkouts');
-			help.innerText = plugin.helpText;
-			loc.pane.appendChild (help);
-			return;
-		}
-
+	    // Create a new instance of the specified plugin and return the
+	    // iframe associated with the new instance.  The caller is
+	    // responsible for inserting the iframe into the correct place
+	    // in the DOM.
+	    NgChm.LNK.createPluginInstance = function createPluginInstance (kind, plugin) {
 		const nonce = NgChm.LNK.getNewNonce();
 		const isBlob = /^blob:/.test(plugin.src);
 		const url = isBlob ? plugin.src : plugin.src + (plugin.src.indexOf('?') == -1 ? '?' : '&') + 'nonce=' + nonce;
 
-		const linkoutElement = NgChm.UTIL.newElement ('DIV.linkouts');
-		loc.paneTitle.innerText = plugin.name;
-		loc.pane.appendChild (linkoutElement);
-
 		const iframe = document.createElement('IFRAME');
 		iframe.dataset.nonce = nonce;
-		pluginData[nonce] = { plugin, params, iframe };
+		instances[nonce] = new PluginInstance ({ kind, nonce, plugin, params: {}, iframe, config: plugin.config });
 
 		iframe.setAttribute('title', plugin.name);
 		if (isBlob) {
-			iframe.onload = function() {
-				iframe.contentWindow.postMessage({ vanodi: { nonce, op: 'nonce' }}, '*');
-			};
+		    iframe.onload = function() {
+			NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'nonce' });
+		    };
 		}
 		iframe.setAttribute('src', url);
-		linkoutElement.appendChild(iframe);
+
+	        return iframe;
+	    };
+
+	    // Send a Vanodi message to the plugin instance identified by msg.nonce.
+	    NgChm.LNK.sendMessageToPlugin = function sendMessageToPlugin (msg) {
+		const src = instances[msg.nonce].source || instances[msg.nonce].iframe.contentWindow;
+		src.postMessage({ vanodi: msg }, '*');
+	    };
+
+	    // Send a Vanodi message to all plugin instances except the one identified by srcNonce.
+	    NgChm.LNK.sendMessageToAllOtherPlugins = function sendMessageToAllOtherPlugins (srcNonce, msg) {
+		const iframes = document.getElementsByTagName('iframe');
+		for (let i = 0; i < iframes.length; i++) {
+		    const nonce = iframes[i].dataset.nonce;
+		    if (nonce && nonce !== srcNonce ) {
+			NgChm.LNK.sendMessageToPlugin (Object.assign ({}, msg, {nonce}));
+		    }
+		}
+	    };
+
+	    // Add a linkout or hamburger plugin.
+	    NgChm.LNK.addLinkoutPlugin = function addLinkoutPlugin (kind, spec) {
+	       if ((kind === 'linkout-plugin' || kind === 'hamburger-plugin') && spec.src) {
+		   // Create an instance of the plugin.
+		   const iframe = NgChm.LNK.createPluginInstance (kind, spec);
+		   iframe.classList.add('hide');
+		   document.body.append(iframe);
+
+		   // For each linkout, create a function that sends a Vanodi message to the instance.
+		   if (kind === 'linkout-plugin') {
+		       for (let idx = 0; idx < spec.linkouts.length; idx++) {
+			   spec.linkouts[idx].linkoutFn = ((spec, nonce) => function(labels) {
+			       NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'linkout', id: spec.messageId, labels });
+			   })(spec.linkouts[idx], iframe.dataset.nonce);
+		       }
+		       for (let idx = 0; idx < spec.matrixLinkouts.length; idx++) {
+			   spec.matrixLinkouts[idx].linkoutFn = ((spec, nonce) => function(labels) {
+			       NgChm.LNK.sendMessageToPlugin({ nonce, op: 'matrixLinkout', id: spec.messageId, labels });
+			   })(spec.matrixLinkouts[idx], iframe.dataset.nonce);
+		       }
+		       linkouts.addPlugin(spec);
+		   } else {
+		       spec.action = ((spec, nonce) => function() {
+			   NgChm.LNK.sendMessageToPlugin({ nonce, op: 'hamburgerLinkout', id: spec.messageId });
+		       })(spec, iframe.dataset.nonce);
+		       linkouts.addHamburgerLinkout(spec);
+		   }
+		   // Regenerate the linkout menus.
+		   NgChm.CUST.definePluginLinkouts();
+	       }
+	    };
+	})();
+
+	// Switch the empty pane identified by PaneLocation loc to a new
+	// instance of the specified panel plugin.
+	NgChm.LNK.switchPaneToPlugin = function (loc, plugin) {
+
+	    const params = plugin.params;
+	    if (!params) {
+		const help = NgChm.UTIL.newElement('DIV.linkouts');
+		help.innerText = plugin.helpText;
+		loc.pane.appendChild (help);
+		return;
+	    }
+
+	    const linkoutElement = NgChm.UTIL.newElement ('DIV.linkouts');
+	    loc.paneTitle.innerText = plugin.name;
+	    loc.pane.appendChild (linkoutElement);
+
+	    linkoutElement.appendChild(NgChm.LNK.createPluginInstance('panel-plugin', plugin));
 	};
 
 	// Start bunch of private helper functions for collecting/packaging data to send to plugin
@@ -1239,8 +1324,7 @@ NgChm.createNS('NgChm.LNK');
 				setAxisGroupData (data.axes[ai], axis, axis.groups[idx]);
 			}
 		}
-		const src = pluginData[nonce].source || pluginData[nonce].iframe.contentWindow;
-		src.postMessage({ vanodi: { nonce, op: 'plot', config, data }}, '*');
+		NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
 	}; // end of initializePanePlugin
 
 
@@ -1530,7 +1614,7 @@ NgChm.createNS('NgChm.LNK');
 
 		const iframe = loc.pane.getElementsByTagName('IFRAME')[0];
 		const nonce = iframe.dataset.nonce;
-		const { plugin, params } = pluginData[nonce];
+		const { plugin, params } = NgChm.LNK.getPluginInstance (nonce);
 		if (debug) console.log ({ m: 'newGearDialog', loc, plugin, params });
 
 		const config = plugin.config;
@@ -2652,38 +2736,35 @@ NgChm.createNS('NgChm.LNK');
 		@option {Array<Striong>} group2 Optional. NGCHM labels in heat map for group 2
 		@option {String} testToRun Optional. String denoting tests to run. E.g. 'T-test'
 	*/
-	function processVanodiMessage (nonce, loc, msg) {
-		// process message from plot plugin
-		if (msg.op === 'register') vanodiRegister (nonce, loc, msg);
-		if (msg.op === 'selectLabels') vanodiSelectLabels (nonce, loc, msg);
-		if (msg.op === 'mouseover') vanodiMouseover (nonce, loc, msg);
-		if (msg.op === 'getLabels') vanodiSendLabels (nonce, loc, msg);
-		if (msg.op === 'getTestData') vanodiSendTestData (nonce, loc, msg);
-		if (msg.op === 'getProperty') vanodiSendProperty (nonce, loc, msg);
+	const vanodiMessageHandlers = {};
+	function defineVanodiMessageHandler (op, fn) {
+	    vanodiMessageHandlers[op] = fn;
+	};
+	function processVanodiMessage (instance, msg) {
+	    const fn = vanodiMessageHandlers[msg.op];
+	    console.log({ m: 'Processing Vanodi message', instance, msg, fn });
+	    if (fn) fn (instance, msg);
 	}
 
-	function vanodiRegister (nonce, loc, msg) {
-		const { plugin, params, iframe, source } = pluginData[nonce];
-		plugin.config = { name: msg.name, axes: msg.axes, options: msg.options };
-		if (Object.entries(params).length === 0) {
-			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'none' }}, '*');  // Let plugin know we heard it.
-			NgChm.Pane.switchToPlugin (loc, plugin.name);
+	defineVanodiMessageHandler ('register', function vanodiRegister (instance, msg) {
+	        const loc = NgChm.Pane.findPaneLocation (instance.iframe);
+		instance.plugin.config = { name: msg.name, axes: msg.axes, options: msg.options };
+		if (Object.entries(instance.params).length === 0) {
+		        NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'none' }); // Let plugin know we heard it.
+			NgChm.Pane.switchToPlugin (loc, instance.plugin.name);
 		} else {
-			loc.paneTitle.innerText = plugin.name;
-			NgChm.LNK.initializePanePlugin (nonce, params);
+			loc.paneTitle.innerText = instance.plugin.name;
+			NgChm.LNK.initializePanePlugin (msg.nonce, instance.params);
 		}
-	}
+	});
 
-	function vanodiSendLabels (nonce, loc, msg) {
-		console.log ({ 'Vanodi sendLabels': msg, loc:loc });
-		const { plugin, params, iframe, source } = pluginData[nonce];
-		// msg.axisName
+	defineVanodiMessageHandler ('getLabels', function vanodiSendLabels (instance, msg) {
 		if (msg.axisName === 'row' || msg.axisName === 'column') {
-			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'labels', labels: NgChm.UTIL.getActualLabels(msg.axisName) }}, '*');
+			NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'labels', labels: NgChm.UTIL.getActualLabels(msg.axisName) });
 		} else {
 			console.log ({ m: 'Malformed getLabels request', msg, detail: 'msg.axisName must equal row or column' });
 		}
-	}
+	});
 
 	/*
 		Send an NGCHM property to plugin.
@@ -2695,26 +2776,23 @@ NgChm.createNS('NgChm.LNK');
 		the R function 'chmAddProperty()'. 
 		
 		Inputs:
-			nonce: plugin's nonce.
 			loc: location of plugin.
 			msg: message from plugin. Should have attribute 'propertyName',
 			     whose value is the name of the property to retrieve from the NGCHM.
 	*/
-	function vanodiSendProperty (nonce, loc, msg) {
+	defineVanodiMessageHandler ('getProperty', function vanodiSendProperty (loc, msg) {
 		if (!msg.hasOwnProperty('propertyName')) {
 			console.error('Incoming message missing attribute "propertyName"')
 			return
 		}
-		const { plugin, params, iframe, source } = pluginData[nonce];
-		(source||iframe.contentWindow).postMessage({
-			vanodi: {
-				nonce,
-				op: 'property',
-				propertyName: msg.propertyName,
-				propertyValue: linkouts.getAttribute(msg.propertyName) 
-			}
-		},'*')
-	}
+		const { plugin, params, iframe, source } = pluginData[msg.nonce];
+        NgChm.LNK.sendMessageToPlugin ({
+            nonce: msg.nonce,
+			op: 'property',
+			propertyName: msg.propertyName,
+			propertyValue: linkouts.getAttribute(msg.propertyName) 
+		});
+	});
 
 	const vanodiKnownTests = [
 		{ label: 'Mean', value: 'Mean' },
@@ -2725,8 +2803,7 @@ NgChm.createNS('NgChm.LNK');
 		Calls getAxisTestData to perform statistical tests, and posts results to plugin
 
 		@function vanodiSendTestData
-		@param {String} nonce to identify plugin
-		@param {} loc
+		@param {object} instance Plugin instance msg applies to
 		@param {object} msg
 		@option {String} op Specifices operation to perform. here 'getTestData'
 		@option {String} testToRun Specifies tests to perform
@@ -2735,10 +2812,7 @@ NgChm.createNS('NgChm.LNK');
 		@option {Array<String>} group1 NGCHM labels for group 1
 		@option {Array<String>} group2 NGCHM labels for group 2
 	*/
-	function vanodiSendTestData (nonce, loc, msg) {
-		console.log ({ 'Vanodi sendTestData': msg, loc:loc });
-		const { plugin, params, iframe, source } = pluginData[nonce];
-
+	defineVanodiMessageHandler ('getTestData', function vanodiSendTestData (instance, msg) {
 		// axisName: 'row',
 		// axisLabels: labels of axisName elements to test
 		// testToRun: name of test to run
@@ -2755,9 +2829,9 @@ NgChm.createNS('NgChm.LNK');
 		} else {
 			var testData = getAxisTestData (msg);
 			if (testData == false) {return;} // return if no data to send
-			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'testData', data: testData }}, '*');
+			NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });
 		}
-	}
+	});
 
 	/*
 		Function to post message to linkouts regarding selected labels.
@@ -2778,26 +2852,17 @@ NgChm.createNS('NgChm.LNK');
 			pointId = pointId.indexOf("|") !== -1 ? pointId.substring(0,pointId.indexOf("|")) : pointId;
 			pointLabelNames.push(pointId);
 		}
-		const iframes = document.getElementsByTagName('iframe');
 		const lastClickText = lastClickIndex > 0 ? allLabels[lastClickIndex] : '';
-		for (let i = 0; i < iframes.length; i++) {
-			const nonce = iframes[i].dataset.nonce;
-			if (!nonce || srcNonce === nonce) {
-				continue;
-			}
-			const src = pluginData[nonce].source || iframes[i].contentWindow;
-			src.postMessage({vanodi: {
-				nonce,
-				op: 'makeHiLite',
-				data: { axis, pointIds:pointLabelNames, clickType, lastClickText }
-			}}, '*');
-		}
+		NgChm.LNK.sendMessageToAllOtherPlugins (srcNonce, {
+		    op: 'makeHiLite',
+		    data: { axis, pointIds:pointLabelNames, clickType, lastClickText }
+		});
 	};
 
 	/*
 		Process message from plugins to highlight points selected in plugin
 	*/
-	function vanodiSelectLabels(nonce, loc, msg) {
+	defineVanodiMessageHandler ('selectLabels', function vanodiSelectLabels(instance, msg) {
 		const axis = NgChm.MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
 		const pluginLabels = msg.selection.pointIds.map(l => l.toUpperCase()) // labels from plugin
 		var heatMapAxisLabels;
@@ -2825,13 +2890,13 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.SUM.redrawSelectionMarks();
 		NgChm.SEL.updateSelections();
 		NgChm.SRCH.showSearchResults();
-		NgChm.LNK.postSelectionToLinkouts (axis, msg.selection.clickType, 0, nonce);
-	}
+		NgChm.LNK.postSelectionToLinkouts (axis, msg.selection.clickType, 0, msg.nonce);
+	});
 
 	/*
 		Process message from scatter plot to highlight single point under mouse on plot
 	*/
-	function vanodiMouseover(nonce, loc, msg) {
+	defineVanodiMessageHandler('mouseover', function vanodiMouseover(instance, msg) {
 		const axis = NgChm.MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
 		const allLabels = NgChm.UTIL.getActualLabels(axis);
 		const pointId = msg.selection.pointId
@@ -2842,44 +2907,54 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.SEL.updateSelections();
 		NgChm.SRCH.showSearchResults();
 		NgChm.SUM.redrawSelectionMarks();
-	}
-
-	var vanodiRegisterMsg
+	});
 
 	// Listen for messages from plugins.
 	(function() {
 		window.addEventListener('message', processMessage, false);
 		function processMessage(e) {
 			if (e.data.hasOwnProperty('vanodi')) {
-				const vanodi = e.data.vanodi;
-				if (!vanodi.hasOwnProperty('nonce')) {
-					console.warn ('Vanodi message received with no nonce: op==' + vanodi.op);
+				const msg = e.data.vanodi;
+				if (!msg.hasOwnProperty('nonce')) {
+					console.warn ('Vanodi message received with no nonce: op==' + msg.op);
 					return;
 				}
-				if (vanodi.nonce == 'prompt' && vanodi.op == 'register') {
-					let p = 0;
-					const k = Object.keys(pluginData);
-					while (p < k.length && pluginData[k[p]].plugin.name !== vanodi.name) p++;
-					if (p === k.length) {
-						console.warn ('Vanodi registration message received for unknown plugin: name==' + vanodi.name);
+				if (msg.nonce == 'prompt' && msg.op == 'register') {
+					// Intercept special case: register message from a plugin instance that can't get a nonce automatically.
+					// Ask user for permission.
+					const instance = NgChm.LNK.getPluginInstanceByName (msg.name);
+					if (!instance) {
+						console.warn ('Vanodi registration message received for unknown plugin: name==' + msg.name);
 						return;
 					}
-					if (confirm ("Grant access to plugin " + vanodi.name + "?")) {
-						//linkouts.addPanePlugin (e.data.plugin, e.source);
-						vanodiRegisterMsg = e;
-						pluginData[k[p]].source = e.source;
-						e.source.postMessage({ vanodi: { op: 'changeNonce', nonce: vanodi.actualNonce, newNonce: k[p] }}, '*');
-						vanodi.nonce = k[p];
+					if (confirm ("Grant access to plugin " + msg.name + "?")) {
+						// Post special message containing actual nonce to the plugin.
+						instance.source = e.source;
+						e.source.postMessage({ vanodi: { op: 'changeNonce', nonce: msg.actualNonce, newNonce: instance.nonce }}, '*');
+						// Then proceed as if a normal register message for the instance's nonce was received.
+						msg.nonce = instance.nonce;
+					} else {
+						return;
 					}
 				}
-				const iframe = pluginData[vanodi.nonce].iframe;
-				const loc = NgChm.Pane.findPaneLocation (iframe);
-				if (loc && loc.pane) processVanodiMessage (vanodi.nonce, loc, vanodi);
+				const instance = NgChm.LNK.getPluginInstance (msg.nonce);
+				if (instance) {
+				    processVanodiMessage (instance, msg);
+				}
 			}
 		}
 	})();
 
+
         NgChm.LNK.loadLinkoutSpec = function loadLinkoutSpec (kind, spec) {
 	   console.log ({ m: 'loadLinkoutSpec', kind, spec });
+	   if (kind === 'panel-plugin') {
+	       // Panel plugin was dropped.  Add plugin to available panel plugins.
+	       NgChm.LNK.registerPanePlugin(spec);
+	       NgChm.UHM.hlp (document.getElementById('barMenu_btn'), 'Added panel plugin ' + spec.name, 150, false, 0);
+	       setTimeout (NgChm.UHM.hlpC, 5000);
+	   } else {
+	       NgChm.LNK.addLinkoutPlugin(kind, spec);
+	   }
 	};
 })(); // end of big IIFE
