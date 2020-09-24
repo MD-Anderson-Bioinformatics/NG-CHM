@@ -127,13 +127,15 @@ NgChm.createNS('NgChm.LNK');
 		var burgerMenu = document.getElementById('burgerMenuPanel');
 		//Verify params and set defaults
 		if (params.name === undefined) {return;}
+		params.name = "plugin-" + params.name;
 		if (params.label === undefined) {params.label = params.name;}
 		if (params.icon === undefined) {params.icon = 'images/link.png';}
-		if (params.action === undefined) {params.action = 'NgChm.UHM.hamburgerLinkMissing();'}
+		if (params.action === undefined) {params.action = NgChm.UHM.hamburgerLinkMissing;}
 		//Create linkout div using params
 		var wrapper= document.createElement('div');
-		wrapper.innerHTML= "<div id='"+params.name+"' class='menuitem' onclick='"+params.action+"'> <img id='menu"+params.name+"_btn' class='menuitem' name ='menu"+params.name+"' src='"+params.icon+"' align='middle'>&nbsp;&nbsp;"+params.label+"...<br><br></div>";
+		wrapper.innerHTML= "<div id='"+params.name+"' class='menuItem'> <img id='plugin-"+params.name+"_btn' src='"+params.icon+"'>"+params.label+"...</div>";
 		var burgerLinkDiv= wrapper.firstChild;
+		burgerLinkDiv.onclick = params.action;
 		//Add linkout to burger menu
 		burgerMenu.insertBefore(burgerLinkDiv, burgerMenu.children[NgChm.LNK.hamburgerLinkCtr]);
 		NgChm.LNK.hamburgerLinkCtr++;
