@@ -241,6 +241,135 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}, true);
 	}
 
+	//******* BEGIN SCREEN MODE FUNCTIONS *********//
+	// variables used in screen expansion/contraction
+	let origPane = {};
+	let origContainer = {};
+	let activeContainers = [];
+	let isPaneExpanded = false;
+
+	// Initialize DOM IMG element for the screen mode (expand/contract) function.
+	function initializePaneScreenMode (icon, paneId) {
+		icon.id = paneId + "_ScreenMode";
+		icon.onmouseout = function(e) {
+			NgChm.UHM.hlpC();
+		};
+		icon.onmouseover = function(e) {
+			NgChm.UHM.hlp(icon, 'Expand/Contract Panel', 120, 0);
+		};
+		icon.addEventListener ('click', function(icon) {
+			changeScreenMode (icon);
+		}, true);
+	}
+
+	// Change screen mode and icon button when user invokes functionality.
+	function changeScreenMode (icon) {
+		let iconTarget = icon.currentTarget;
+		let paneId = icon.currentTarget.id.split("_")[0];
+		if (isPaneExpanded === true) {
+			icon.currentTarget.src = 'images/iconFullScreen.png';
+			closeFullScreen(paneId);
+		} else {
+			icon.currentTarget.src = 'images/iconCloseFullScreen.png';
+			openFullScreen(paneId);
+		}
+	}
+
+	//Grab a list of panes and show/hide them all
+	function getActiveContainers (paneId) {
+		let thisPaneParent = paneId.parentElement;
+		while (thisPaneParent.id !== 'ngChmContainer') {
+			activeContainers.push(thisPaneParent.id);
+			thisPaneParent = thisPaneParent.parentElement;
+		}
+	}
+	
+	function openFullScreen (paneId) {
+		isPaneExpanded = true;
+		const thisPane = document.getElementById(paneId);
+		const thisPaneParent = thisPane.parentElement;
+		getActiveContainers (thisPane);
+		const topContainer = document.getElementById('ngChmContainer');
+		//Hide all panes
+		displayPanes('none');
+		//Hide all resizers
+		displayResizers ('none');
+		//Hide all contaniers but the one holding the pane being expanded AND the top container
+		displayContainers('none');
+		//Retain original sizing for pane and parent container
+		origPane = {width: thisPane.style.width, height: thisPane.style.height};
+		origContainer = {width: thisPaneParent.style.width, height: thisPaneParent.style.height};
+		//Resize the pane being expanded to fill it's parent container
+		thisPaneParent.style.width = topContainer.clientWidth + 'px';
+		thisPaneParent.style.height = topContainer.clientHeight + 'px';
+		thisPane.style.width = topContainer.clientWidth + 'px';
+		thisPane.style.height = topContainer.clientHeight + 'px';
+		thisPane.style.display = '';
+		//Resize panels
+		NgChm.SUM.calcSummaryLayout();NgChm.SUM.redrawSummaryPane();
+		NgChm.DET.detailResize();NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
+	}
+	
+	function closeFullScreen (paneId) {
+		isPaneExpanded = false;
+		const thisPane = document.getElementById(paneId);
+		const thisPaneParent = thisPane.parentElement;
+		//Hide all panes
+		displayPanes('');
+		//Hide all re-sizers
+		displayResizers ('');
+		//Hide all containers but the ones holding the pane being expanded AND the top container
+		displayContainers('flex');
+		//Resize the pane being expanded to fill it's parent container
+		thisPaneParent.style.width = origContainer.width;
+		thisPaneParent.style.height = origContainer.height;
+		thisPane.style.width = origPane.width;
+		thisPane.style.height = origPane.height;
+		//Rest original sizing objects
+		origPane = {};
+		origContainer = {};
+		activeContainers = [];
+		//Resize all panels
+		NgChm.SUM.calcSummaryLayout();NgChm.SUM.redrawSummaryPane();
+		NgChm.DET.detailResize();NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
+	}
+	
+	//Grab a list of panes and show/hide them all
+	function displayPanes (method) {
+		const panes = document.getElementsByClassName('pane');
+		for (let i=0;i<panes.length;i++) {
+			panes[i].style.display = method;
+		}
+	}
+
+	//Grab a list of resizers and show/hide them all
+	function displayResizers (method) {
+		const resizers = document.getElementsByClassName('resizerHelper');
+		for (let i=0;i<resizers.length;i++) {
+			resizers[i].style.display = method;
+		}
+	}
+	
+	//Grab a list of containers and show/hide all but the ones holding the pane being expanded AND the top container
+	function displayContainers(method) {
+		const containers = document.getElementsByClassName('ngChmContainer');
+		for (let i=0;i<containers.length;i++) {
+			let currCont = containers[i];
+			if (currCont.id !== 'ngChmContainer') {
+				let found = false;
+				for (let j=0;j<activeContainers.length;j++) {
+					if (activeContainers[j] === currCont.id) {
+						found = true;
+					}
+				}
+				if (found === false) {
+					currCont.style.display = method;
+				}
+			}
+		}
+	}
+	//******* END SCREEN MODE FUNCTIONS *********//
+
 	// Initialize DOM IMG element icon to a gear menu.
 	function initializeGearIconMenu (icon) {
 		icon.classList.add('hide');
@@ -356,6 +485,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			if (!NgChm.Pane.showPaneHeader) h.classList.add ('hide');
 			pane.appendChild(h);
 
+			const sc = NgChm.UTIL.newElement('DIV.paneScreenMode');
+			h.appendChild (sc);
+
 			const t = NgChm.UTIL.newElement('DIV.paneTitle');
 			t.innerText = title;
 			h.appendChild (t);
@@ -378,7 +510,14 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				align: 'top'
 			});
 			initializePaneIconMenu (img);
+			const imgScr = NgChm.UTIL.newElement('IMG.paneScreenModeIcon', {
+				src: 'images/iconFullScreen.png',
+				alt: 'Expand Pane',
+				align: 'left'
+			});
+			initializePaneScreenMode(imgScr, paneid);
 			ig.appendChild(img);
+			sc.appendChild(imgScr);
 
 		}
 		return pane;
@@ -630,7 +769,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 
 		menuHeader ('Pane control');
-		if (paneLoc.pane.classList.contains('collapsed')) {
+		if (isPaneExpanded === true) {
+			menuItemDisabled ('Add Pane Below');
+			menuItemDisabled ('Add Pane Right');
+		} else if (paneLoc.pane.classList.contains('collapsed')) {
 			menuItemDisabled ('Add Pane Below');
 			menuItemDisabled ('Add Pane Right');
 		} else {
@@ -642,7 +784,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			});
 		}
 		const collapsedPaneIdx = collapsedPanes.indexOf (paneLoc.pane);
-		if (collapsedPaneIdx >= 0) {
+
+		if (isPaneExpanded === true) {
+			menuItemDisabled ('Collapse');
+		} else if (collapsedPaneIdx >= 0) {
 			menuItem ('Expand', () => {
 				collapsedPanes.splice(collapsedPaneIdx,1);
 				expandPane (findPaneLocation(icon));
@@ -715,7 +860,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			parentC = parentC.parentElement;
 		}
 		if (parentC !== null) {
-			if (getExpandedSibling(paneLoc) == null) {
+			if (isPaneExpanded === true) {
+				menuItemDisabled ('Close');
+			} else if (getExpandedSibling(paneLoc) == null) {
 				menuItemDisabled ('Close');
 			} else {
 				menuItem ('Close', () => {
