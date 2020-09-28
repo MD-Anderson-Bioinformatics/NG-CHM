@@ -74,8 +74,6 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	NgChm.UPM.resetVal = NgChm.UPM.getResetVals();
 	
 	var prefspanel = document.getElementById("prefs");
-	prefspanel.style.right = "0px";
-	prefspanel.style.left = "";
 	var prefprefs = document.getElementById("prefPrefs");
 
 	if (errorMsg !== null) {
@@ -102,7 +100,6 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		prefspanel.appendChild(prefBtnsDiv);
 		NgChm.UPM.setMessage("");
 	}
-	prefspanel.style.display= '';
 	NgChm.UPM.prefsResize();
 
 	//If errors exist and they are NOT on the currently visible DIV (dataLayer1),
@@ -128,7 +125,31 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		NgChm.UPM.showLayerPrefs();
 	}
 	errorMsg = null;
-    NgChm.UTIL.redrawCanvases();
+	prefspanel.style.display= '';	
+	NgChm.UPM.locatePrefsPanel();
+	NgChm.UTIL.redrawCanvases();
+}
+
+/**********************************************************************************
+ * FUNCTION - locatePrefsPanel: The purpose of this function is to place the prefs 
+ * panel on the screen.
+ **********************************************************************************/
+NgChm.UPM.locatePrefsPanel = function() {
+	var prefspanel = document.getElementById("prefs");
+	var barMenu_btn = document.getElementById("barMenu_btn");
+	const contBB = NgChm.UTIL.containerElement.getBoundingClientRect();
+	const iconBB = barMenu_btn.getBoundingClientRect();
+	prefspanel.style.top=NgChm.UTIL.containerElement.parentElement.offsetTop + 30 + 'px';
+	//done for builder panel sizing ONLY
+	var screenNotes  = document.getElementById('screenNotesDisplay')
+	if (screenNotes !== null) {
+		notesBB = screenNotes.getBoundingClientRect();
+		prefspanel.style.top = (iconBB.top - notesBB.height) + 'px';
+	}
+	
+	prefspanel.style.height = (contBB.height + iconBB.height) + 'px';
+	document.getElementById("prefsMove_btn").dataset.state = 'moveLeft';
+	prefspanel.style.left = (NgChm.UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
 }
 
 /**********************************************************************************
@@ -258,12 +279,12 @@ NgChm.UPM.prefsMoveButton = function() {
 		moveBtn.setAttribute('src', 'images/prefsRight.png');
 		moveBtn.dataset.state = 'moveRight';
 		prefspanel.style.right = "";
-		prefspanel.style.left = "0px";
+		prefspanel.style.left = NgChm.UTIL.containerElement.offsetLeft + 'px';
 	} else {
 		moveBtn.setAttribute('src', 'images/prefsLeft.png');
 		moveBtn.dataset.state = 'moveLeft';
-		prefspanel.style.right = "0px";
-		prefspanel.style.left = "";
+		prefspanel.style.right = "";
+		prefspanel.style.left = (NgChm.UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
 	}
 }
 
