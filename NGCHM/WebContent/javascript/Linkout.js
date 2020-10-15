@@ -2350,7 +2350,7 @@ NgChm.createNS('NgChm.LNK');
 						} else {
 							const choice = NgChm.UTIL.newElement('OPTION');
 							choice.value = cc.value;
-							if (cc.value === optParam) selectedIndex = idx;
+							if (cc.value == optParam) selectedIndex = idx;
 							choice.innerText = cc.label;
 							input.append(choice);
 							idx++;
