@@ -283,6 +283,25 @@ function linkoutHelp () {
 }) (linkouts);
 
 //==============================================//
+// DepMap plugin                                //
+//==============================================//
+(function(linkouts) {
+    function openDepMap (ids) {
+	linkouts.openUrl("https://depmap.org/portal/gene/" + ids[0] + "?tab=overview");
+    }
+    linkouts.addPlugin({
+        name: "DepMap",
+        description: "Adds linkouts to the DepMap Portal",
+        version: "0.1.0",
+        site: "https://depmap.org/portal/",
+        logo: "https://depmap.org/portal/static/img/nav_footer/banner_logo_depmapportal.svg",
+        linkouts: [
+            { menuEntry: "View depmap", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openDepMap }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
 // Ensembl plugin                               //
 //==============================================//
 (function(linkouts) {
