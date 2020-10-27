@@ -434,6 +434,25 @@ linkouts.addPlugin({
 }) (linkouts);
 
 //==============================================//
+// GTEx plugin                                  //
+//==============================================//
+(function(linkouts) {
+    function openGTExPortal (ids) {
+	linkouts.openUrl("https://gtexportal.org/home/gene/" + ids[0]);
+    }
+    linkouts.addPlugin({
+        name: "GTEx Portal",
+        description: "Adds linkouts to the GTEx Portal",
+        version: "0.1.0",
+        site: "https://gtexportal.org/home/",
+        logo: "https://gtexportal.org/img/gtex2.1a2a339c.png",
+        linkouts: [
+            { menuEntry: "View GTEx", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGTExPortal }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
 //HGNC plugin                                 //
 //==============================================//
 (function(linkouts) {
