@@ -544,26 +544,33 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// Exported function.
 	/**
-		Function to determine if pane can be divided without loss of PathwayMapper
-		state. If no loss of PathwayMapper state, then divide pane. If division would
-		result in loss of PathwayMapper state, present a system message with a warning,
-		and allow the user to decide if they want to proceed or not.
+		Function to determine if pane can be divided without loss of pane state.
+
+		If no loss of plugin state, then divide pane. If division would result in a loss of state information, present
+		a system message with a warning and allow the user to decide if they want to proceed or not.
+
+		This is most relevant for PathwayMapper, where pathway information that took the user a long time to generate may be lost. 
+		This is less critical for the ScatterPlot plugins--where only selections and zoom/rotation information may be deleted. 
 	*/
 	function splitPaneCheck (vertical, loc) {
 		if (!loc.pane || !loc.container) return;
 		const verticalContainer = loc.container.classList.contains('vertical');
-		// If user is attempting pane manipulation that will reset PathwayMapper, offer them a chance to cancel:
-		if (vertical != verticalContainer && loc.pane.textContent.indexOf('PathwayMapper') > -1) {
+		// If user is attempting pane manipulation that will reset the plugin, offer them a chance to cancel:
+		if (vertical != verticalContainer) {
 			/**
 				Function to create dialog for user to choose 'Cancel' or 'OK. 
 				Returns a promise: resolve if 'OK' button clicked, reject if 'Cancel' button clicked
-				This function was created to warn user about resetting the PathwayMapper pane.
 			*/
 			function promisePrompt(vertical, loc) {
 				let dialog = document.getElementById('msgBox')
 				NgChm.UHM.initMessageBox();
-				NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
-				NgChm.UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
+				if (loc.pane.textContent.indexOf('PathwayMapper') > -1) {
+					NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
+					NgChm.UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
+				} else {
+					NgChm.UHM.setMessageBoxHeader('Pane Reset Warning');
+					NgChm.UHM.setMessageBoxText('This action will delete some settings in "'+loc.pane.textContent+'". Would you like to continue?')
+				}
 				NgChm.UHM.setMessageBoxButton(1, 'images/cancelSmall.png', 'Cancel Button')
 				NgChm.UHM.setMessageBoxButton(2, 'images/okButton.png', 'OK Button')
 				dialog.style.display = '';
@@ -590,7 +597,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					NgChm.UHM.messageBoxCancel();
 					return;
 				})
-		} else { // pane division can proceed w/o any loss of PathwayMapper state
+		} else { // pane division can proceed w/o any loss of plugin pane state
 			splitPane(vertical, loc)
 		}
 	} // end splitPaneCheck
@@ -959,13 +966,21 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					/**
 						Function to create dialog for user to choose 'Cancel' or 'OK'.
 						Returns a promise: resolve if 'OK' button clicked, reject if 'Cancel' button clicked
-						This function was created to warn user about resetting the PathwayMapper pane.
+						This function was created to warn user about resetting the state of plugin panes. This 
+						is particularly a concern for the PathwayMapper pane, where pathway information that took the 
+						user a long time to create may be lost.
 					*/
 					function promisePrompt(paneLoc) {
 						let dialog = document.getElementById('msgBox');
 						NgChm.UHM.initMessageBox();
-						NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
-						NgChm.UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
+						if (paneLoc.container.textContent.indexOf('PathwayMapper') > -1) {
+							NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
+							NgChm.UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
+						} else {
+							NgChm.UHM.setMessageBoxHeader('Pane Reset Warning');
+							NgChm.UHM.setMessageBoxText('This action will delete some settings in "' +
+								paneLoc.container.textContent.replace('empty','') + '". Would you like to continue?')
+						} 
 						NgChm.UHM.setMessageBoxButton(1, 'images/cancelSmall.png', 'Cancel Button')
 						NgChm.UHM.setMessageBoxButton(2, 'images/okButton.png', 'OK Button')
 						dialog.style.display = '';
@@ -983,8 +998,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 							})
 						})
 					}  // end function promisePrompt
-					// If user is attempting to close a pane that will result in resetting PathwayMapper, offer them the chance to cancel:
-					if (paneLoc.container.textContent.indexOf('PathwayMapper') > -1 && c.length < 4) {
+					// If user is attempting to close a pane that will result in resetting plugin state, offer them the chance to cancel:
+					if (c.length < 4) {
 						promisePrompt(paneLoc)
 							.then(function() { // promise resolved, continue pane manipulation
 								NgChm.UHM.messageBoxCancel()
@@ -1000,7 +1015,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 								NgChm.UHM.messageBoxCancel()
 								return;
 							})
-					} else { // PathwayMapper pane unaffected, OK to close
+					} else { // plugin pane unaffected, OK to close
 						removePaneAndAdjacentDivider();
 						if (paneLoc.container.children.length === 1) {
 							replaceContainerWithOnlyChild()
@@ -1008,7 +1023,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 							// Redistribute space among remaining children.
 							if (target) redistributeContainer (paneLoc.container, target);
 						}
-					} // endif for checking for PathwayMapper pane reset
+					} // endif for checking for plugin pane reset
 				});
 			}
 		}
