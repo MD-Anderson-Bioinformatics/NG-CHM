@@ -1207,9 +1207,18 @@ NgChm.createNS('NgChm.LNK');
 		};
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
+			let fullLabels = NgChm.heatMap.getAxisLabels(axis.axisName).labels;
+			let searchItemsIdx = NgChm.MMGR.isRow(axis.axisName) ? NgChm.SRCH.getSearchRows() : NgChm.SRCH.getSearchCols();
+			let selectedLabels = []
+			for (let i=0; i<searchItemsIdx.length; i++) {
+				let selectedLabel = fullLabels[searchItemsIdx[i] - 1];
+				selectedLabel = selectedLabel.indexOf('|') !== -1 ? selectedLabel.substring(0,selectedLabel.indexOf('|')) : selectedLabel;
+				selectedLabels.push(selectedLabel)
+			}
 			data.axes.push({
-				fullLabels: NgChm.heatMap.getAxisLabels(axis.axisName).labels,
-				actualLabels: NgChm.UTIL.getActualLabels(axis.axisName)
+				fullLabels: fullLabels,
+				actualLabels: NgChm.UTIL.getActualLabels(axis.axisName),
+				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
 				setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx]);
