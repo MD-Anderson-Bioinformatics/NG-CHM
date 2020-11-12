@@ -556,7 +556,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		if (!loc.pane || !loc.container) return;
 		const verticalContainer = loc.container.classList.contains('vertical');
 		// If user is attempting pane manipulation that will reset the plugin, offer them a chance to cancel:
-		if (vertical != verticalContainer && loc.pane.textContent.indexOf('Scatter Plot') != -1) {
+		if (vertical != verticalContainer && (loc.pane.textContent.indexOf('Scatter Plot') != -1 || loc.pane.textContent.indexOf('PathwayMapper') > -1)) {
 			/**
 				Function to create dialog for user to choose 'Cancel' or 'OK. 
 				Returns a promise: resolve if 'OK' button clicked, reject if 'Cancel' button clicked
@@ -999,7 +999,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 						})
 					}  // end function promisePrompt
 					// If user is attempting to close a pane that will result in resetting plugin state, offer them the chance to cancel:
-					if (c.length < 4 && paneLoc.container.textContent.indexOf('Scatter Plot') != -1) {
+					if (c.length < 4 && (paneLoc.container.textContent.indexOf('Scatter Plot') != -1 || paneLoc.container.textContent.indexOf('PathwayMapper') > -1)) {
 						promisePrompt(paneLoc)
 							.then(function() { // promise resolved, continue pane manipulation
 								NgChm.UHM.messageBoxCancel()
