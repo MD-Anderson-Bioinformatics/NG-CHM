@@ -162,7 +162,7 @@ NgChm.UTIL.chmResize = function() {
 NgChm.UTIL.redrawCanvases = function () {
     if ((NgChm.UTIL.getBrowserType() !== "Firefox") && (NgChm.heatMap !== null)) {
         NgChm.SUM.drawHeatMap();
-        NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
+        NgChm.DET.setDrawDetailsTimeout (NgChm.DET.redrawSelectionTimeout);
         if (NgChm.SUM.rCCanvas.width > 0) {
             NgChm.SUM.drawRowClassBars();
         }
@@ -407,8 +407,10 @@ NgChm.UTIL.showDetailPane = true;
 			if (NgChm.SUM.chmElement) {
 				NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.SUM.chmElement));
 			}
-			if (NgChm.DET.chmElement) {
-				NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.DET.chmElement));
+			if (NgChm.DMM.DetailMaps.length > 0) {
+				for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
+					NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.DMM.DetailMaps[i].chm.id));
+				}
 			}
 		}
 		// Split the initial pane horizontally and insert the
@@ -540,11 +542,12 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 			}
 			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
 			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
+//			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 		}
  	} 
-	document.getElementById("detail_canvas").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
-	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
+	document.getElementById("detail_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
+	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
 	document.getElementById("detail_canvas").focus();
 };
 
@@ -647,6 +650,7 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	NgChm.UTIL.resetCHM();
     NgChm.UTIL.initDisplayVars();
     NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
+//    NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
     NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
 	console.log ('sizeBuilderView set');
@@ -680,15 +684,15 @@ NgChm.UTIL.builderViewSizing = function (event) {
  * from one file-mode heatmap to another
  **********************************************************************************/
 NgChm.UTIL.resetCHM = function () {
-	NgChm.SEL.mode = 'NORMAL';      
+//	NgChm.SEL.mode = 'NORMAL';      
 	NgChm.SEL.currentDl = "dl1"; 
 	NgChm.SEL.currentRow=null; 
 	NgChm.SEL.currentCol=null; 
-	NgChm.SEL.dataPerRow=null; 
-	NgChm.SEL.dataPerCol=null; 
-	NgChm.SEL.selectedStart=0; 
-	NgChm.SEL.selectedStop=0; 
-	NgChm.SEL.searchItems={};
+//	NgChm.SEL.dataPerRow=null; 
+//	NgChm.SEL.dataPerCol=null; 
+//	NgChm.SEL.selectedStart=0; 
+//	NgChm.SEL.selectedStop=0; 
+	NgChm.SRCH.searchItems={};
 	NgChm.SEL.scrollTime = null; 
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;
@@ -711,41 +715,42 @@ NgChm.UTIL.removeElementsByClass = function(className) {
  * to reset screens when a second, third, etc. map is opened.  
  **********************************************************************************/
 NgChm.UTIL.initDisplayVars = function() {
-	NgChm.UTIL.removeElementsByClass("DynamicLabel");
 	NgChm.SUM.summaryHeatMapCache = {};
+	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
+	NgChm.SUM.heightScale = 1;
+	NgChm.SUM.colTopItemsWidth = 0;
+	NgChm.SUM.rowTopItemsHeight = 0;
 	NgChm.DET.detailHeatMapCache = {};      
 	NgChm.DET.detailHeatMapLevel = {};      
 	NgChm.DET.detailHeatMapValidator = {};  
+	NgChm.DET.initialized = false;
+	NgChm.DET.mouseDown = false;
 	NgChm.UTIL.actualAxisLabels = {};
 	NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
-	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	NgChm.DET.colDendro = null;
-	NgChm.DET.rowDendro = null;
-	NgChm.DET.labelElements = {};
-	NgChm.DET.oldLabelElements = {};
+	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	
+	NgChm.UTIL.removeElementsByClass("DynamicLabel");
 	NgChm.DET.resetLabelLengths();  
-	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
-	NgChm.SUM.heightScale = 1;
-	NgChm.DET.initialized = false;
-	NgChm.DET.dataViewHeight = 506;
-	NgChm.DET.dataViewWidth = 506;
-	NgChm.SUM.colTopItemsWidth = 0;
-	NgChm.SUM.rowTopItemsHeight = 0;
-	NgChm.DET.oldMousePos = [0, 0];
-	NgChm.DET.offsetX = 0;
-	NgChm.DET.offsetY = 0;
-	NgChm.DET.pageX = 0;
-	NgChm.DET.pageY = 0;
-	NgChm.DET.dendroHeight = 105;
-	NgChm.DET.dendroWidth = 105;
 	NgChm.SRCH.currentSearchItem = {};
-	NgChm.DET.labelLastClicked = {};
-	NgChm.DET.mouseDown = false;
-	NgChm.DET.rowLabelLen = 0;
-	NgChm.DET.colLabelLen = 0;
-	NgChm.DET.rowLabelFont = 0;
-	NgChm.DET.colLabelFont = 0;
-	NgChm.DET.colClassLabelFont = 0;
-	NgChm.DET.rowClassLabelFont = 0;
+//	NgChm.DET.labelElements = {};
+//	NgChm.DET.oldLabelElements = {};
+//	NgChm.DET.dataViewHeight = 506;
+//	NgChm.DET.dataViewWidth = 506;
+//	NgChm.DET.colDendro = null;
+//	NgChm.DET.rowDendro = null;
+//	NgChm.DET.oldMousePos = [0, 0];
+//	NgChm.DET.offsetX = 0;
+//	NgChm.DET.offsetY = 0;
+//	NgChm.DET.pageX = 0;
+//	NgChm.DET.pageY = 0;
+//	NgChm.DET.dendroHeight = 105;
+//	NgChm.DET.dendroWidth = 105;
+//	NgChm.DET.labelLastClicked = {};
+//	NgChm.DET.rowLabelLen = 0;
+//	NgChm.DET.colLabelLen = 0;
+//	NgChm.DET.rowLabelFont = 0;
+//	NgChm.DET.colLabelFont = 0;
+//	NgChm.DET.colClassLabelFont = 0;
+//	NgChm.DET.rowClassLabelFont = 0;
 }
 
 /**********************************************************************************
@@ -852,6 +857,16 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 		// Run the callback on what to do with the canvas element.
 		callback(canvas, dl);
 };
+
+
+NgChm.UTIL.imageCanvas = function (canvas) {
+	let inMemCanvas = document.createElement('canvas');
+	const inMemCtx = inMemCanvas.getContext('2d');
+	inMemCanvas.width = canvas.width;
+	inMemCanvas.height = canvas.height;
+	inMemCtx.drawImage(canvas, 0, 0);
+	return inMemCanvas;
+}
 
 /**********************************************************************************
  * FUNCTION - scaleSummaryPng: This function scales the summary PNG file down to 
@@ -1094,8 +1109,8 @@ NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
 	//Reset dendros for local/widget load
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;
-	NgChm.DET.colDendro = null;
-	NgChm.DET.rowDendro = null;
+//	NgChm.DET.colDendro = null;
+//	NgChm.DET.rowDendro = null;
 	NgChm.UTIL.onLoadCHM(sizeBuilderView);
 }
 
@@ -1217,7 +1232,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 NgChm.UTIL.redrawSearchResults = function () {
 	NgChm.DET.updateDisplayedLabels();
 	NgChm.SUM.redrawSelectionMarks();
-	NgChm.SEL.updateSelection();
+	NgChm.SEL.updateSelections();
 	NgChm.SRCH.showSearchResults();
 };
 
@@ -1286,4 +1301,161 @@ NgChm.UTIL.b64toBlob = function (b64Data) {
 	  const blob = new Blob(byteArrays);
 	  return blob;
 }
+
+NgChm.UTIL.clickListener = function(e) {
+    var clickedElement;
+    if(e == null) {
+        clickedElement = event.srcElement;
+    } else {
+        clickedElement = e.target;
+    }
+    var here = 1;
+}
+
+/*********************************************************************************************
+ * FUNCTION:  getClickType - The purpose of this function returns an integer. 0 for left click; 
+ * 1 for right.  It could be expanded further for wheel clicks, browser back, and browser forward 
+ *********************************************************************************************/
+NgChm.UTIL.getClickType = function (e) {
+	 var clickType = 0;
+	 e = e || window.event;
+	 if ( !e.which && (typeof e.button !== 'undefined') ) {
+	    e.which = ( e.button & 1 ? 1 : ( e.button & 2 ? 3 : ( e.button & 4 ? 2 : 0 ) ) );
+	 }
+	 switch (e.which) {
+	    case 3: clickType = 1;
+	    break; 
+	}
+	 return clickType;
+}
+
+/*********************************************************************************************
+ * FUNCTION:  getCursorPosition - The purpose of this function is to return the cursor 
+ * position over the canvas.  
+ *********************************************************************************************/
+NgChm.UTIL.getCursorPosition = function (e) {
+	var x,y;
+	if (e.touches){
+		if (e.touches.length > 0){
+			var rect = e.target.getBoundingClientRect();
+			x = Math.round(e.targetTouches[0].pageX - rect.left);
+			y = Math.round(e.targetTouches[0].pageY - rect.top);
+		} else {
+			var rect = e.target.getBoundingClientRect();
+			x = Math.round(e.changedTouches[0].pageX - rect.left);
+			y = Math.round(e.changedTouches[0].pageY - rect.top);
+		}
+	} else {
+		x = e.offsetX;
+	    y = e.offsetY;
+	}
+    return {x:x, y:y};
+}
+
+/*********************************************************************************************
+ * FUNCTION:  isOnObject - The purpose of this function is to tell us if the cursor is over 
+ * a given scrreen object.
+ *********************************************************************************************/
+NgChm.UTIL.isOnObject = function (e,type) {
+	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
+    var rowClassWidthPx =  NgChm.DET.getRowClassPixelWidth(mapItem);
+    var colClassHeightPx = NgChm.DET.getColClassPixelHeight(mapItem);
+    var rowDendroWidthPx =  NgChm.DET.getRowDendroPixelWidth(mapItem);
+    var colDendroHeightPx = NgChm.DET.getColDendroPixelHeight(mapItem);
+	var coords = NgChm.UTIL.getCursorPosition(e);
+    if (coords.y > colClassHeightPx) { 
+        if  ((type == "map") && coords.x > rowClassWidthPx) {
+    		return true;
+    	}
+    	if  ((type == "rowClass") && coords.x < rowClassWidthPx + rowDendroWidthPx && coords.x > rowDendroWidthPx) {
+    		return true;
+    	}
+    } else if (coords.y > colDendroHeightPx) {
+    	if  ((type == "colClass") && coords.x > rowClassWidthPx + rowDendroWidthPx) {
+    		return true;
+    	}
+    }
+    return false;
+}	
+
+/*********************************************************************************************
+ * FUNCTION:  hexToComplimentary - The purpose of this function is to convert a hex color value 
+ * to a complimentary hex color value.  It shifts hue by 45 degrees and then converts hex, 
+ * returning complimentary color as a hex value
+ *********************************************************************************************/
+ NgChm.UTIL.hexToComplimentary = function(hex){
+
+    // Convert hex to rgb
+    // Credit to Denis http://stackoverflow.com/a/36253499/4939630
+    var rgb = 'rgb(' + (hex = hex.replace('#', '')).match(new RegExp('(.{' + hex.length/3 + '})', 'g')).map(function(l) { return parseInt(hex.length%2 ? l+l : l, 16); }).join(',') + ')';
+
+    // Get array of RGB values
+    rgb = rgb.replace(/[^\d,]/g, '').split(',');
+
+    var r = rgb[0], g = rgb[1], b = rgb[2];
+
+    // Convert RGB to HSL
+    // Adapted from answer by 0x000f http://stackoverflow.com/a/34946092/4939630
+    r /= 255.0;
+    g /= 255.0;
+    b /= 255.0;
+    var max = Math.max(r, g, b);
+    var min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2.0;
+
+    if(max == min) {
+        h = s = 0;  //achromatic
+    } else {
+        var d = max - min;
+        s = (l > 0.5 ? d / (2.0 - max - min) : d / (max + min));
+
+        if(max == r && g >= b) {
+            h = 1.0472 * (g - b) / d ;
+        } else if(max == r && g < b) {
+            h = 1.0472 * (g - b) / d + 6.2832;
+        } else if(max == g) {
+            h = 1.0472 * (b - r) / d + 2.0944;
+        } else if(max == b) {
+            h = 1.0472 * (r - g) / d + 4.1888;
+        }
+    }
+
+    h = h / 6.2832 * 360.0 + 0;
+
+    // Shift hue to opposite side of wheel and convert to [0-1] value
+    h+= 45;
+    if (h > 360) { h -= 360; }
+    h /= 360;
+
+    // Convert h s and l values into r g and b values
+    // Adapted from answer by Mohsen http://stackoverflow.com/a/9493060/4939630
+    if(s === 0){
+        r = g = b = l; // achromatic
+    } else {
+        var hue2rgb = function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        };
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    r = Math.round(r * 255);
+    g = Math.round(g * 255); 
+    b = Math.round(b * 255);
+
+    // Convert r b and g values to hex
+    rgb = b | (g << 8) | (r << 16); 
+    return "#" + (0x1000000 | rgb).toString(16).substring(1);
+}  
+
 

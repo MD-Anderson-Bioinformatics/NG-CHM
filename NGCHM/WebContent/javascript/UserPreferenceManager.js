@@ -390,8 +390,8 @@ NgChm.UPM.prefsSuccess = function() {
 	//and formally apply all changes to the heat map, re-draw, and exit preferences.
 	NgChm.UPM.bkpColorMaps = null;
 	NgChm.SUM.summaryInit();  
-	NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
-	NgChm.SEL.callDetailDrawFunction(NgChm.SEL.mode);
+	NgChm.DET.setDrawDetailsTimeout(NgChm.DET.redrawSelectionTimeout);
+	NgChm.DEV.callDetailDrawFunction(NgChm.DMM.primaryMap.mode);
 	document.getElementById("summaryDisplayPref").value = NgChm.heatMap.getMapInformation().summary_width;
 	NgChm.UPM.applyDone = true;
 	NgChm.UPM.setMessage("");
@@ -1035,8 +1035,8 @@ NgChm.UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 	for (var i=0; i <breaks.length;i++){
 		breaks[i]+=lowBP+diff/(breaks.length-1)*i; // array of the breakpoints shown in the preview div
 	}
-	var saveDl = NgChm.SEL.currentDl; 
-	NgChm.SEL.currentDl = mapName;
+	var saveDl = NgChm.DMM.primaryMap.currentDl; 
+	NgChm.DMM.primaryMap.currentDl = mapName;
 	var numCol = NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL);
 	var numRow = NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL)
 	var count = 0;
@@ -1086,7 +1086,7 @@ NgChm.UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 	var preview = "<div id='previewMainColor"+mapName+"' style='height: 100px; width:100px;background:"+gradient+";position:absolute; left: 10px; top: 20px;'></div>"
 		+"<div id='previewMissingColor"+mapName+"'style='height: 100px; width:10px;background:"+cm.missing+";position:absolute;left:110px;top:20px;'></div>"
 		+svg+binNums+boundNums;
-	NgChm.SEL.currentDl = saveDl;
+	NgChm.DMM.primaryMap.currentDl = saveDl;
 	wrapper.innerHTML= preview;
 }
 

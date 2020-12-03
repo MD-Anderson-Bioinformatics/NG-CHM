@@ -1022,8 +1022,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 
 		NgChm.UTIL.configurePanelInterface();
 		NgChm.SUM.initSummaryDisplay();
-		NgChm.DET.initDetailDisplay();
-		document.addEventListener("keydown", NgChm.SEL.keyNavigate);
+//		NgChm.DET.initDetailDisplay();
+		document.addEventListener("keydown", NgChm.DEV.keyNavigate);
 
 		addDataLayers(mc);
 	}
