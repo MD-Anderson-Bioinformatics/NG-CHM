@@ -371,7 +371,7 @@ span.button.negative {
 	pointer-events: none;
 }
 
-#detail_box_canvas {
+.detail_box_canvas {
 	position:absolute;
 	pointer-events: none;
 }
@@ -389,7 +389,7 @@ span.button.negative {
 	pointer-events:none;
 }
 
-#detail_chm {
+.detail_chm {
     width: 100%;
     height: 100%;
     min-height: 50px;
@@ -399,7 +399,7 @@ span.button.negative {
     display:inline-block;
 }
 
-#detail_canvas {
+.detail_canvas {
 	position:absolute;
 	height:82%;
 	zIndex:1;

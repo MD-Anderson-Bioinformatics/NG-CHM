@@ -28,9 +28,9 @@ NgChm.DDR.minDendroHeight = 500;
 NgChm.DDR.minDendroWidth = 500;
 
 NgChm.DDR.clearDendroSelection = function() {
-	if (NgChm.SEL.selectedStart != 0) {
-		NgChm.SEL.selectedStart = 0;
-		NgChm.SEL.selectedStop = 0;
+	if (NgChm.DMM.primaryMap.selectedStart != 0) {
+		NgChm.DMM.primaryMap.selectedStart = 0;
+		NgChm.DMM.primaryMap.selectedStop = 0;
 		NgChm.SUM.rowDendro.clearRibbonMode();
 		NgChm.SUM.colDendro.clearRibbonMode();
 		if (!NgChm.SEL.isSub) {
@@ -67,11 +67,12 @@ NgChm.DDR.clearDendroSelection = function() {
 // All dendrograms are displayed on a canvas.  The parameter canvasId is the id of
 // the dendrogram's canvas element.
 //
-NgChm.DDR.Dendrogram = function(canvasId) {
+NgChm.DDR.Dendrogram = function(canvas) {
 	// The bars in this dendrogram:
 	this.bars = [];
 	// The canvas on which the dendrogram will be drawn:
-	this.dendroCanvas = document.getElementById(canvasId);
+//	this.dendroCanvas = document.getElementById(canvasId);
+	this.dendroCanvas = canvas;
 
 	// Returns the width of the dendrogram canvas.  Add a bit of padding below the leaves.
 	this.getDivWidth = function() {
@@ -525,8 +526,8 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 	// Clear ribbon mode for this dendrogram.
 	this.clearRibbonMode = function() {
 		this.ribbonModeBar = -1;
-		NgChm.SEL.selectedStart = 0;
-		NgChm.SEL.selectedStop = 0;
+		NgChm.DMM.primaryMap.selectedStart = 0;
+		NgChm.DMM.primaryMap.selectedStop = 0;
 	};
 
 	// Enter/leave ribbon mode.  Called when the user has clicked near
@@ -537,7 +538,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		if (sameBarClicked) {
 			this.clearRibbonMode();
 			this.draw();
-			NgChm.SEL.changeMode('NORMAL');
+			NgChm.DEV.callDetailDrawFunction('NORMAL');
 		} else {
 			// Clear any previous ribbon mode on either axis.
 			NgChm.SUM.rowDendro.clearRibbonMode();
@@ -555,12 +556,12 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 
 			// Set start and stop coordinates
 			const rmBar = this.bars[barIndex];
-			NgChm.SEL.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
-			NgChm.SEL.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
-			console.log ({ rmBar, start: NgChm.SEL.selectedStart, stop: NgChm.SEL.selectedStop });
+			NgChm.DMM.primaryMap.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
+			NgChm.DMM.primaryMap.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
+			console.log ({ rmBar, start: NgChm.DMM.primaryMap.selectedStart, stop: NgChm.DMM.primaryMap.selectedStop });
 			NgChm.SRCH.showSearchResults();	
 
-			NgChm.SEL.changeMode(this.axis === 'Row' ? 'RIBBONV' : 'RIBBONH');
+			NgChm.DEV.callDetailDrawFunction(this.axis === 'Row' ? 'RIBBONV' : 'RIBBONH');
 		}
 	};
 	this.clearSelectionMarks = function () {
@@ -614,7 +615,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		if (!shift && !ctrl){
 			NgChm.SRCH.clearSearchItems(this.axis);
 			for (var i = selectLeft; i < selectRight+1;i++){
-				NgChm.SEL.searchItems[this.axis][i] = 1;
+				NgChm.SRCH.searchItems[this.axis][i] = 1;
 			}
 			NgChm.SRCH.showSearchResults();	
 			
@@ -630,7 +631,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			if (bar.left >= left && bar.right <= right && bar.height-1 <= height){ // if the new selected bar is in the bounds of an older one... (-1 added to height since highlighted bars can cause issues without it)
 				deleteBar.push(i);
 				for (var j = selectLeft; j < selectRight+1;j++){ // remove all the search items that were selected by that old bar 
-					delete NgChm.SEL.searchItems[this.axis][j];
+					delete NgChm.SRCH.searchItems[this.axis][j];
 				}
 				NgChm.SUM.redrawSelectionMarks();
 				if (bar.right == selectedBar.right && bar.height == selectedBar.height){ // a bar that's already selected has been selected so we remove it
@@ -648,7 +649,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		if (addBar){
 			if (shift){
 				for (var i = selectLeft; i < selectRight+1;i++){
-					NgChm.SEL.searchItems[this.axis][i] = 1;
+					NgChm.SRCH.searchItems[this.axis][i] = 1;
 				}
 				var numBars = this.selectedBars.length;
 				var startIndex = 0, endIndex = -1;
@@ -671,12 +672,12 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 				}
 				
 				for (var i = startIndex; i < endIndex; i++){
-					NgChm.SEL.searchItems[this.axis][i] = 1;
+					NgChm.SRCH.searchItems[this.axis][i] = 1;
 				}
 				this.selectedBars.push(selectedBar);
 			} else if (ctrl) {
 				for (var i = selectLeft; i < selectRight+1;i++){
-					NgChm.SEL.searchItems[this.axis][i] = 1;
+					NgChm.SRCH.searchItems[this.axis][i] = 1;
 				}
 				this.selectedBars.push(selectedBar);
 			}
@@ -958,7 +959,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 			const sumIdx = this.bars[barIdx].idx;  // Get index of bar in summary dendrogram.
 			NgChm.SUM.clearSelectionMarks();
 			this.summaryDendrogram.addSelectedBar(sumIdx, e.shiftKey,e.metaKey||e.ctrlKey);
-			NgChm.SEL.updateSelection();
+			NgChm.SEL.updateSelection(NgChm.DMM.getMapItemFromDendro(this));
 			NgChm.SUM.drawSelectionMarks();
 			NgChm.SUM.drawTopItems();
 			let clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
@@ -985,7 +986,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
  ******************************/
 NgChm.DDR.SummaryColumnDendrogram = function() {
 
-	NgChm.DDR.Dendrogram.call (this, 'column_dendro_canvas');
+	NgChm.DDR.Dendrogram.call (this, document.getElementById('column_dendro_canvas'));
         NgChm.DDR.ColumnDendrogram.call (this);
 	NgChm.DDR.SummaryDendrogram.call (this,
 		NgChm.heatMap.getColDendroConfig(),
@@ -999,7 +1000,7 @@ NgChm.DDR.SummaryColumnDendrogram = function() {
  ******************************/
 NgChm.DDR.SummaryRowDendrogram = function() {
 
-	NgChm.DDR.Dendrogram.call (this, 'row_dendro_canvas');
+	NgChm.DDR.Dendrogram.call (this, document.getElementById('row_dendro_canvas'));
         NgChm.DDR.RowDendrogram.call (this);
 	NgChm.DDR.SummaryDendrogram.call (this,
 		NgChm.heatMap.getRowDendroConfig(),
@@ -1018,18 +1019,20 @@ NgChm.DDR.SummaryRowDendrogram = function() {
 /**************************
  *  DETAIL COL DENDROGRAM *
  **************************/
-NgChm.DDR.DetailColumnDendrogram = function() {
+NgChm.DDR.DetailColumnDendrogram = function(dendroCanvas) {
 
 	// Get region of dendrogram currently visible.
 	this.getWindow = function() {
-		if (NgChm.SEL.mode === 'FULL_MAP') {
+		const mapItem = NgChm.DMM.getMapItemFromDendro(this);
+		if (mapItem.mode === 'FULL_MAP') {
 			return { startIdx: 1, numElements: NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL) };
 		} else {
-			return { startIdx: NgChm.SEL.currentCol, numElements: NgChm.SEL.dataPerRow };
+			return { startIdx: mapItem.currentCol, numElements: mapItem.dataPerRow };
 		}
 	};
 
-	NgChm.DDR.Dendrogram.call (this, 'detail_column_dendro_canvas');
+//	NgChm.DDR.Dendrogram.call (this, 'detail_column_dendro_canvas');
+	NgChm.DDR.Dendrogram.call (this, dendroCanvas);
 	NgChm.DDR.ColumnDendrogram.call (this);
 	NgChm.DDR.DetailDendrogram.call (this, NgChm.SUM.colDendro);
 };
@@ -1037,18 +1040,20 @@ NgChm.DDR.DetailColumnDendrogram = function() {
 /**************************
  *  DETAIL ROW DENDROGRAM *
  **************************/
-NgChm.DDR.DetailRowDendrogram = function() {
+NgChm.DDR.DetailRowDendrogram = function(dendroCanvas) {
 
 	// Get region of dendrogram currently visible.
 	this.getWindow = function() {
-		if (NgChm.SEL.mode === 'FULL_MAP') {
+		const mapItem = NgChm.DMM.getMapItemFromDendro(this);
+		if (mapItem.mode === 'FULL_MAP') {
 			return { startIdx: 1, numElements: NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) };
 		} else {
-			return { startIdx: NgChm.SEL.currentRow, numElements: NgChm.SEL.dataPerCol };
+			return { startIdx: mapItem.currentRow, numElements: mapItem.dataPerCol };
 		}
 	};
 
-	NgChm.DDR.Dendrogram.call (this, 'detail_row_dendro_canvas');
+//	NgChm.DDR.Dendrogram.call (this, 'detail_row_dendro_canvas');
+	NgChm.DDR.Dendrogram.call (this, dendroCanvas);
 	NgChm.DDR.RowDendrogram.call (this);
 	NgChm.DDR.DetailDendrogram.call (this, NgChm.SUM.rowDendro);
 };
