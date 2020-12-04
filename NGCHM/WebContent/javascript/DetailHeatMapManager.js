@@ -22,7 +22,7 @@ NgChm.DMM.mapTemplate = {
 	  dataViewWidth: 506, minLabelSize: 5, labelLastClicked: {}, dragOffsetX: null, dragOffsetY: null, rowLabelLen: 0, colLabelLen: 0,
 	  rowLabelFont: 0, colLabelFont: 0,colClassLabelFont: 0, rowClassLabelFont: 0, labelElements: {}, oldLabelElements: {}, tmpLabelSizeElements: [], 
 	  labelSizeWidthCalcPool: [], labelSizeCache: {}, labelSizeWidthCalcPool: []
-}
+} 
 
 /*********************************************************************************************
  * FUNCTION:  getMapTemplate - The purpose of this function is to clone and return a copy
