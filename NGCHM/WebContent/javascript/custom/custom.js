@@ -283,6 +283,25 @@ function linkoutHelp () {
 }) (linkouts);
 
 //==============================================//
+// DepMap plugin                                //
+//==============================================//
+(function(linkouts) {
+    function openDepMap (ids) {
+	linkouts.openUrl("https://depmap.org/portal/gene/" + ids[0] + "?tab=overview");
+    }
+    linkouts.addPlugin({
+        name: "DepMap",
+        description: "Adds linkouts to the DepMap Portal",
+        version: "0.1.0",
+        site: "https://depmap.org/portal/",
+        logo: "https://depmap.org/portal/static/img/nav_footer/banner_logo_depmapportal.svg",
+        linkouts: [
+            { menuEntry: "View depmap", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openDepMap }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
 // Ensembl plugin                               //
 //==============================================//
 (function(linkouts) {
@@ -412,6 +431,25 @@ linkouts.addPlugin({
         linkouts.openUrl("http://scholar.google.com/scholar?q=" + labels.join("+OR+"), "pubmed", { noframe: true });
     };
 
+}) (linkouts);
+
+//==============================================//
+// GTEx plugin                                  //
+//==============================================//
+(function(linkouts) {
+    function openGTExPortal (ids) {
+	linkouts.openUrl("https://gtexportal.org/home/gene/" + ids[0]);
+    }
+    linkouts.addPlugin({
+        name: "GTEx Portal",
+        description: "Adds linkouts to the GTEx Portal",
+        version: "0.1.0",
+        site: "https://gtexportal.org/home/",
+        logo: "https://gtexportal.org/img/gtex2.1a2a339c.png",
+        linkouts: [
+            { menuEntry: "View GTEx", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGTExPortal }
+	]
+    });
 }) (linkouts);
 
 //==============================================//
