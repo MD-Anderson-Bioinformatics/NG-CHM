@@ -2641,12 +2641,24 @@ NgChm.createNS('NgChm.LNK');
 		}
 	}
 
+	/*
+		Send label and pathway information to plugins.
+		
+		Here 'ndexUUID' is a UUID for a pathway in http://www.ndexbio.org/. Error trapping
+		for undefined/non-existing UUID is performed in the plugin.
+	*/
 	function vanodiSendLabels (nonce, loc, msg) {
 		console.log ({ 'Vanodi sendLabels': msg, loc:loc });
 		const { plugin, params, iframe, source } = pluginData[nonce];
-		// msg.axisName
 		if (msg.axisName === 'row' || msg.axisName === 'column') {
-			(source||iframe.contentWindow).postMessage({ vanodi: { nonce, op: 'labels', labels: NgChm.UTIL.getActualLabels(msg.axisName) }}, '*');
+			(source||iframe.contentWindow).postMessage({ 
+				vanodi: { 
+					nonce, 
+					op: 'labels', 
+					labels: NgChm.UTIL.getActualLabels(msg.axisName), 
+					pathways: {'ndexUUID': linkouts.getAttribute('ndexUUID')}
+				}
+			}, '*');
 		} else {
 			console.log ({ m: 'Malformed getLabels request', msg, detail: 'msg.axisName must equal row or column' });
 		}
