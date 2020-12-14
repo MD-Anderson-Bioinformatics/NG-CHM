@@ -409,7 +409,7 @@ NgChm.UTIL.showDetailPane = true;
 			}
 			if (NgChm.DMM.DetailMaps.length > 0) {
 				for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-					NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.DMM.DetailMaps[i].chm.id));
+					NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.DMM.DetailMaps[i].chm));
 				}
 			}
 		}
@@ -715,6 +715,10 @@ NgChm.UTIL.removeElementsByClass = function(className) {
  * to reset screens when a second, third, etc. map is opened.  
  **********************************************************************************/
 NgChm.UTIL.initDisplayVars = function() {
+	NgChm.DMM.nextMapNumber = 1;
+	NgChm.DMM.primaryMap = null;
+	NgChm.DMM.DetailMaps = [];
+	NgChm.DET.firstSwitch = true;
 	NgChm.SUM.summaryHeatMapCache = {};
 	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
 	NgChm.SUM.heightScale = 1;
@@ -729,8 +733,8 @@ NgChm.UTIL.initDisplayVars = function() {
 	NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
 	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	
 	NgChm.UTIL.removeElementsByClass("DynamicLabel");
-	NgChm.DET.resetLabelLengths();  
 	NgChm.SRCH.currentSearchItem = {};
+//	NgChm.DET.resetLabelLengths();  
 //	NgChm.DET.labelElements = {};
 //	NgChm.DET.oldLabelElements = {};
 //	NgChm.DET.dataViewHeight = 506;
