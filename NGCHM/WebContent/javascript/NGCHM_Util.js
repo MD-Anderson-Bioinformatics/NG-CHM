@@ -431,7 +431,7 @@ NgChm.UTIL.showDetailPane = true;
 			NgChm.SUM.switchPaneToSummary (initialLoc);
 		} else if (NgChm.UTIL.showDetailPane) {
 			NgChm.DET.switchPaneToDetail (initialLoc);
-		}
+		} 
 	};
 })();
 
@@ -602,6 +602,7 @@ NgChm.UTIL.loadBlobModeCHM = function (sizeBuilderView) {
  * file mode and  user selects the chm data .zip file.
  **********************************************************************************/
 NgChm.UTIL.loadFileModeCHM = function () {
+	location.reload(); 
 	document.getElementById('loader').style.display = '';
 	var chmFile  = document.getElementById('chmFile').files[0];
 	var split = chmFile.name.split("."); 
@@ -650,7 +651,6 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	NgChm.UTIL.resetCHM();
     NgChm.UTIL.initDisplayVars();
     NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
-//    NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
     NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
 	console.log ('sizeBuilderView set');
@@ -716,9 +716,9 @@ NgChm.UTIL.removeElementsByClass = function(className) {
  **********************************************************************************/
 NgChm.UTIL.initDisplayVars = function() {
 	NgChm.DMM.nextMapNumber = 1;
-	NgChm.DMM.primaryMap = null;
-	NgChm.DMM.DetailMaps = [];
-	NgChm.DET.firstSwitch = true;
+//	NgChm.DMM.primaryMap = null;
+//	NgChm.DMM.DetailMaps = [];
+//	NgChm.DET.firstSwitch = true;
 	NgChm.SUM.summaryHeatMapCache = {};
 	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
 	NgChm.SUM.heightScale = 1;

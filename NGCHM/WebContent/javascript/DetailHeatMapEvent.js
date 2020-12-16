@@ -522,11 +522,11 @@ NgChm.DEV.flickChange = function(fromList) {
 		if (flickBtn.dataset.state === 'flickUp') {
 			flickBtn.setAttribute('src', 'images/toggleUp.png');
 			flickBtn.dataset.state = 'flickUp';
-			mapItem.currentDl = flickDrop1.value;
+			mapItem.currentDl = flickDrop1.value === "" ? 'dl1' : flickDrop1.value;
 		} else {
 			flickBtn.setAttribute('src', 'images/toggleDown.png');
 			flickBtn.dataset.state = 'flickDown';
-			mapItem.currentDl = flickDrop2.value;
+			mapItem.currentDl = flickDrop2.value === "" ? 'dl1' : flickDrop2.value;
 		}
 	} else {
 		if ((fromList === "flick1") && (flickBtn.dataset.state === 'flickUp')) {
@@ -880,9 +880,9 @@ NgChm.DEV.detailFullMap = function (mapItem) {
  * buttons on the detail pane header bar when the user selects a button.
  **********************************************************************************/
 NgChm.DEV.setButtons = function (mapItem) {
-	const full = document.getElementById('full_btn'+mapItem.labelPostScript);
-	const ribbonH = document.getElementById('ribbonH_btn'+mapItem.labelPostScript);
-	const ribbonV = document.getElementById('ribbonV_btn'+mapItem.labelPostScript);
+	const full = document.getElementById('full_btn'+mapItem.panelNbr);
+	const ribbonH = document.getElementById('ribbonH_btn'+mapItem.panelNbr);
+	const ribbonV = document.getElementById('ribbonV_btn'+mapItem.panelNbr);
 	full.src= "images/full.png";
 	ribbonH.src= "images/ribbonH.png";
 	ribbonV.src= "images/ribbonV.png";
