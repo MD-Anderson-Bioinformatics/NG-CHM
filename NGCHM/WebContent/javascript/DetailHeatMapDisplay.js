@@ -2298,31 +2298,11 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild (document.getElementById('detail_chm'));
 			firstSwitch = false;
-			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
-			NgChm.Pane.setPaneClientIcons(loc, [
-			    zoomButton ('primary_btn', 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
-			    zoomButton ('zoomOut_btn', 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
-			    zoomButton ('zoomIn_btn', 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
-			    modeButton ('full_btn', 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, NgChm.DEV.detailNormal.bind('chm', loc.pane.children[1])),
-			    modeButton ('ribbonH_btn', 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton.bind('chm', loc.pane.children[1])),
-			    modeButton ('ribbonV_btn', 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton.bind('chm', loc.pane.children[1]))
-			]);
-			document.getElementById('primary_btn').style.display = 'none';
 		} else {
 			NgChm.Pane.clearExistingGearDialog(loc.pane.id);
 			if (savedChmElements.length > 0) {
 				// Detail NGCHM not currently showing in a pane.
 				NgChm.Pane.emptyPaneLocation (loc);
-				NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
-				NgChm.Pane.setPaneClientIcons(loc, [
-				    zoomButton ('primary_btn', 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
-				    zoomButton ('zoomOut_btn', 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
-				    zoomButton ('zoomIn_btn', 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
-				    modeButton ('full_btn', 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, NgChm.DEV.detailNormal.bind('chm', loc.pane.children[1])),
-				    modeButton ('ribbonH_btn', 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton.bind('chm', loc.pane.children[1])),
-				    modeButton ('ribbonV_btn', 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton.bind('chm', loc.pane.children[1]))
-				]);
-				document.getElementById('primary_btn').style.display = 'none';
 			} else {
 				// Detail NGCHM currently showing in a pane.
 				const oldLoc = NgChm.Pane.findPaneLocation (NgChm.DMM.primaryMap.chm);
@@ -2335,16 +2315,21 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 				const el = savedChmElements.shift(); 
 				loc.pane.appendChild (el);
 			}
-			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
-			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver'+mapItem.labelPostScript);
-			NgChm.Pane.setPaneClientIcons(loc, [
-			    zoomButton ('primary_btn'+mapItem.labelPostScript, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
-			    zoomButton ('zoomOut_btn'+mapItem.labelPostScript, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
-			    zoomButton ('zoomIn_btn'+mapItem.labelPostScript, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
-			    modeButton ('full_btn'+mapItem.labelPostScript, 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, NgChm.DEV.detailNormal.bind('chm', loc.pane.children[1])),
-			    modeButton ('ribbonH_btn'+mapItem.labelPostScript, 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton.bind('chm', loc.pane.children[1])),
-			    modeButton ('ribbonV_btn'+mapItem.labelPostScript, 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton.bind('chm', loc.pane.children[1]))
-			]);
+		}
+		NgChm.Pane.setPaneClientIcons(loc, [
+		    zoomButton ('primary_btn'+NgChm.DMM.nextMapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
+		    zoomButton ('zoomOut_btn'+NgChm.DMM.nextMapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
+		    zoomButton ('zoomIn_btn'+NgChm.DMM.nextMapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
+		    modeButton ('full_btn'+NgChm.DMM.nextMapNumber, 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, NgChm.DEV.detailNormal.bind('chm', loc.pane.children[1])),
+		    modeButton ('ribbonH_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton.bind('chm', loc.pane.children[1])),
+		    modeButton ('ribbonV_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton.bind('chm', loc.pane.children[1]))
+		]);
+		if (NgChm.DMM.nextMapNumber === 1) {
+			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = 'none';
+			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
+		} else {
+			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = '';
+			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+NgChm.DMM.nextMapNumber);
 			NgChm.DEV.addEvents(loc.pane.id);
 			NgChm.SUM.drawLeftCanvasBox();
 		}

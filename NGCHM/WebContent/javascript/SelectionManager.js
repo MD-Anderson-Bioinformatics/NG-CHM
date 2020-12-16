@@ -347,16 +347,16 @@ NgChm.SEL.flickToggleOn = function() {
 	flickViewsOff.style.display="none";
 	flickViewsOn.style.display='';
 }
+
 NgChm.SEL.openFileToggle = function() {
 	var fileButton = document.getElementById('fileButton');
 	var detailButtons = document.getElementById('detail_buttons');
 	if (fileButton.style.display === 'none') {
-		fileButton.style.display = '';
-		detailButtons.style.display = 'none';
+		location.reload(); 
 	} else {
 		fileButton.style.display = 'none';
 		detailButtons.style.display = '';
-	}
+	} 
 }
 
 /************************************************************************************************

@@ -579,7 +579,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 						if (e.target === okButton) {
 							resolve();
 						} else {
-							reject()
+							reject();
 						}
 					})
 				})
@@ -999,7 +999,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 									if (target) redistributeContainer (paneLoc.container, target);
 								}
 							})
-							.catch(function() { // promise rejected, do NOT continue pane manipulation
+		       				.catch(function() { // promise rejected, do NOT continue pane manipulation
 								NgChm.UHM.messageBoxCancel()
 								return;
 							})
@@ -1190,7 +1190,6 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		for (let idx = 0; idx < loc.pane.childNodes.length; idx++) {
 			const p = loc.pane.childNodes[idx];
 			if (p !== loc.paneHeader) {
-				//drawImage() called passing the source canvas directly
 				pClone = p.cloneNode(true);
 				NgChm.DMM.nextMapNumber++;
 				pClone.id = p.id + NgChm.DMM.nextMapNumber;
