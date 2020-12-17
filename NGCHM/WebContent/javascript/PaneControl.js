@@ -123,8 +123,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			p = p.parentElement;
 		}
 		if (!res.pane) {
-			// Should have found the pane element.
-			console.error ({ m: 'findPaneLocation: could not find pane', element, res });
+			if (NgChm.UTIL.isBuilderView !== true) {
+				// Should have found the pane element.
+				console.error ({ m: 'findPaneLocation: could not find pane', element, res });
+			}
 			return res;
 		}
 		if (!res.container) {
@@ -1161,6 +1163,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// - the Pane Header is reset to empty
 	// - the removed client elements are returned.
 	function emptyPaneLocation (loc) {
+		if (loc.pane === null) return;  //builder logic
 		// Remove all client elements from the pane.
 		const clientElements = [];
 		for (let idx = 0; idx < loc.pane.childNodes.length; idx++) {
