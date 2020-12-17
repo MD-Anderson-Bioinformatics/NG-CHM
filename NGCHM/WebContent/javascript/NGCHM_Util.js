@@ -500,12 +500,14 @@ NgChm.UTIL.convertToArray = function(value) {
 	}
 })();
 
+NgChm.UTIL.isBuilderView = false;
 /**********************************************************************************
  * FUNCTION - onLoadCHM: This function performs "on load" processing for the NG_CHM
  * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
  * viewer.  
  **********************************************************************************/
 NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
+	NgChm.UTIL.isBuilderView = sizeBuilderView;
 	NgChm.UTIL.setBrowserMinFontSize();
 	//Run startup checks that enable startup warnings button.
 	NgChm.UTIL.startupChecks();
@@ -602,7 +604,6 @@ NgChm.UTIL.loadBlobModeCHM = function (sizeBuilderView) {
  * file mode and  user selects the chm data .zip file.
  **********************************************************************************/
 NgChm.UTIL.loadFileModeCHM = function () {
-	location.reload(); 
 	document.getElementById('loader').style.display = '';
 	var chmFile  = document.getElementById('chmFile').files[0];
 	var split = chmFile.name.split("."); 
@@ -653,11 +654,9 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
     NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
     NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
-	console.log ('sizeBuilderView set');
+//	console.log ('sizeBuilderView set');
 	NgChm.UTIL.showDetailPane = false;
 	NgChm.Pane.showPaneHeader = false;
-	//NgChm.Pane.ngchmContainerWidth = 40;
-	//document.getElementById('ngChmContainer').style.left = '150px';
         NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
     }
 };

@@ -934,7 +934,7 @@ NgChm.DEV.detailHRibbon = function (mapItem) {
 		mapItem.currentCol = 1;
 	} else {
 		mapItem.saveCol = mapItem.selectedStart;
-		const selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
+		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
 		mapItem.mode='RIBBONH_DETAIL'
 		const width = Math.max(1, Math.floor(500/selectionSize));
 		mapItem.dataViewWidth = (selectionSize * width) + NgChm.DET.dataViewBorder;
@@ -1002,7 +1002,7 @@ NgChm.DEV.detailVRibbon = function (mapItem) {
 		mapItem.currentRow = 1;
 	} else {
 		mapItem.saveRow = mapItem.selectedStart;
-		const selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
+		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
 		if (selectionSize < 500) {
 			NgChm.SEL.setMode(mapItem, 'RIBBONV_DETAIL');
 		} else {

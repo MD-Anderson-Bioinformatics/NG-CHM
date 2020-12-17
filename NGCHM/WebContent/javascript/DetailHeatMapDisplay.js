@@ -740,47 +740,49 @@ NgChm.DET.strokeLine = function (mapItem, fromX, fromY, toX,toY) {
 NgChm.DET.sizeCanvasForLabels = function() {
 	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
 		const mapItem = NgChm.DMM.DetailMaps[i];
-		NgChm.DET.calcRowAndColLabels(mapItem);
-		NgChm.DET.calcClassRowAndColLabels(mapItem);
-	
-		const detPane = NgChm.Pane.findPaneLocation (mapItem.chm);
-		//Get full available width/height for detail NGCHM
-		const dFullW = detPane.pane.clientWidth;
-		const dFullH = detPane.pane.clientHeight - detPane.paneHeader.offsetHeight;
-		let left = 0;
-		if ((mapItem.rowDendro !== null) && (mapItem.rowDendro !== undefined)) {
-			left = mapItem.rowDendro.getDivWidth();
+		if (mapItem.pane !== "") {  //Used by builder which does not contain the detail pane necessary, nor the use, for this logic
+			NgChm.DET.calcRowAndColLabels(mapItem);
+			NgChm.DET.calcClassRowAndColLabels(mapItem);
+		
+			const detPane = NgChm.Pane.findPaneLocation (mapItem.chm);
+			//Get full available width/height for detail NGCHM
+			const dFullW = detPane.pane.clientWidth;
+			const dFullH = detPane.pane.clientHeight - detPane.paneHeader.offsetHeight;
+			let left = 0;
+			if ((mapItem.rowDendro !== null) && (mapItem.rowDendro !== undefined)) {
+				left = mapItem.rowDendro.getDivWidth();
+			}
+			let top = 0;
+			if ((mapItem.colDendro !== null) && (mapItem.colDendro !== undefined)) {
+				top = mapItem.colDendro.getDivHeight();
+			}
+			//Set sizes of canvas and boxCanvas based upon width, label, and an offset for whitespace
+			const heatmapVP = {
+				top, left,
+				width: dFullW - (mapItem.rowLabelLen + 10) - left,
+				height: dFullH - (mapItem.colLabelLen + 10) - top
+			};
+			NgChm.UTIL.setElementPositionSize (mapItem.canvas, heatmapVP, true);
+			NgChm.UTIL.setElementPositionSize (mapItem.boxCanvas, heatmapVP, true);
+		
+			// Set sizes for the label divs
+			const rowLabelVP = {
+				top: mapItem.chm.offsetTop,
+				left: mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth,
+				width: dFullW - mapItem.canvas.offsetLeft - mapItem.canvas.offsetWidth,
+				height: dFullH - (mapItem.colLabelLen + 15)
+			};
+			NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), rowLabelVP, true);
+		
+			const heightCalc = dFullH - mapItem.canvas.offsetTop - mapItem.canvas.offsetHeight;
+			const colLabelVP = {
+				top: mapItem.canvas.offsetTop + mapItem.canvas.offsetHeight,
+				left: 0,
+				width: dFullW - (mapItem.rowLabelLen + 10),
+				height:  heightCalc === 0 ? 11 : heightCalc
+			};
+			NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), colLabelVP, true);
 		}
-		let top = 0;
-		if ((mapItem.colDendro !== null) && (mapItem.colDendro !== undefined)) {
-			top = mapItem.colDendro.getDivHeight();
-		}
-		//Set sizes of canvas and boxCanvas based upon width, label, and an offset for whitespace
-		const heatmapVP = {
-			top, left,
-			width: dFullW - (mapItem.rowLabelLen + 10) - left,
-			height: dFullH - (mapItem.colLabelLen + 10) - top
-		};
-		NgChm.UTIL.setElementPositionSize (mapItem.canvas, heatmapVP, true);
-		NgChm.UTIL.setElementPositionSize (mapItem.boxCanvas, heatmapVP, true);
-	
-		// Set sizes for the label divs
-		const rowLabelVP = {
-			top: mapItem.chm.offsetTop,
-			left: mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth,
-			width: dFullW - mapItem.canvas.offsetLeft - mapItem.canvas.offsetWidth,
-			height: dFullH - (mapItem.colLabelLen + 15)
-		};
-		NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), rowLabelVP, true);
-	
-		const heightCalc = dFullH - mapItem.canvas.offsetTop - mapItem.canvas.offsetHeight;
-		const colLabelVP = {
-			top: mapItem.canvas.offsetTop + mapItem.canvas.offsetHeight,
-			left: 0,
-			width: dFullW - (mapItem.rowLabelLen + 10),
-			height:  heightCalc === 0 ? 11 : heightCalc
-		};
-		NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), colLabelVP, true);
 	}
 }
 
@@ -2291,7 +2293,8 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	let savedChmElements = [];
 	let firstSwitch = true;
 
-	function switchPaneToDetail (loc) {
+	function switchPaneToDetail (loc) { 
+		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		if (firstSwitch) {
 			// First time detail NGCHM created.

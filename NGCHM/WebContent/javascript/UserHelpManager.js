@@ -860,12 +860,13 @@ NgChm.UHM.colorOver = function(val) {
 
 NgChm.UHM.fullBtnOver = function(btn,val) {
 	let selStr = '_selected';
+	let fullButton = 'images/full_selected.png';
 	if (!btn.src.includes(selStr)) {
-		selStr = "";
+		fullButton = 'images/full.png';
 	}
 	if (NgChm.DMM.primaryMap.mode !=='NORMAL') {
 		if (val === 0) {
-			btn.setAttribute('src', 'images/full'+selStr+'.png');
+			btn.setAttribute('src', fullButton);
 		} else {
 			btn.setAttribute('src', 'images/fullHover.png');
 		}
@@ -873,12 +874,13 @@ NgChm.UHM.fullBtnOver = function(btn,val) {
 }
 NgChm.UHM.ribbonHBtnOver = function(btn,val) {
 	let selStr = '_selected';
+	let ribbonButton = 'images/ribbonH_selected.png';
 	if (!btn.src.includes(selStr)) {
-		selStr = "";
+		ribbonButton = 'images/ribbonH.png';
 	}
 	if (NgChm.DMM.primaryMap.mode !=='RIBBONH') {
 		if (val === 0) {
-			btn.setAttribute('src', 'images/ribbonH'+selStr+'.png');
+			btn.setAttribute('src', ribbonButton);
 		} else {
 			btn.setAttribute('src', 'images/ribbonHHover.png');
 		}
@@ -886,12 +888,13 @@ NgChm.UHM.ribbonHBtnOver = function(btn,val) {
 }
 NgChm.UHM.ribbonVBtnOver = function(btn,val) {
 	let selStr = '_selected';
+	let ribbonButton = 'images/ribbonV_selected.png';
 	if (!btn.src.includes(selStr)) {
-		selStr = "";
+		ribbonButton = 'images/ribbonV.png';
 	}
 	if (NgChm.DMM.primaryMap.mode !=='RIBBONV') {
 		if (val === 0) {
-			btn.setAttribute('src', 'images/ribbonV'+selStr+'.png');
+			btn.setAttribute('src', ribbonButton);
 		} else {
 			btn.setAttribute('src', 'images/ribbonVHover.png');
 		}
