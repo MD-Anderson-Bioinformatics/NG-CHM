@@ -809,7 +809,7 @@ NgChm.SRCH.clearSearchItems = function (clickAxis) {
 	}
 	let markLabels = document.getElementsByClassName('MarkLabel');
 	for (let ii = 0; ii < markLabels.length; ii++){ // clear tick marks
-		NNgChm.DMM.removeLabels(markLabels[ii].id);
+		NgChm.DET.removeLabels(markLabels[ii].id);
 	}
 }
 
