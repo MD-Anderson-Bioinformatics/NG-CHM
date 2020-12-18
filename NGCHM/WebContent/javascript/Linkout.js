@@ -2656,7 +2656,7 @@ NgChm.createNS('NgChm.LNK');
 					nonce, 
 					op: 'labels', 
 					labels: NgChm.UTIL.getActualLabels(msg.axisName), 
-					pathways: {'ndexUUID': linkouts.getAttribute('ndexUUID')}
+					pathways: {'ndexUUIDs': linkouts.getAttribute('ndexUUIDs')}
 				}
 			}, '*');
 		} else {
