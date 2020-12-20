@@ -307,13 +307,15 @@ function linkoutHelp () {
 (function(linkouts) {
 
     function searchEnsemblForGene (names) {
-	var gname = names[0];
-	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species=Homo_sapiens&q=" + gname, "Ensembl");
+	const gname = names[0];
+	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species="+species+"&q=" + gname, "Ensembl");
     }
 
     function searchEnsemblForTranscript (names) {
-	var tname = names[0];
-	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species=Homo_sapiens&q=" + tname, "Ensembl");
+	const tname = names[0];
+	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+	linkouts.openUrl("http://ensembl.org/Multi/psychic?site=ensembl&species="+species+"&q=" + tname, "Ensembl");
     }
 
     linkouts.addPlugin({
@@ -529,8 +531,9 @@ linkouts.addPlugin({
 (function(linkouts) {
 
     function openMavedbGene (names) {
-	var gname = names[0];
-	linkouts.openUrl("https://mavedb.org/search/?organism=Home+sapiens&search=" + gname, "MaveDB", { noframe: true });
+	const gname = names[0];
+	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+	linkouts.openUrl("https://mavedb.org/search/?organism=" + species + "&search=" + gname, "MaveDB", { noframe: true });
     };
 
     linkouts.addPlugin({
@@ -660,16 +663,18 @@ linkouts.addPlugin({
     }
 
     function openNCBIGenePage (names) {
-	var gname = names[0];
-	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gene?term=(homo%20sapiens%5BOrganism%5D)%20AND%20" + gname + "%5BGene%20Name%5D", "NCBI");
+	const gname = names[0];
+	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gene?term=(" + species + "%5BOrganism%5D)%20AND%20" + gname + "%5BGene%20Name%5D", "NCBI");
     }
     function openNCBIEntrezIDPage (eids) {
 	var gid = eids[0];
 	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gene/" + gid, "NCBI");
     }
     function searchNCBIDatabases (names) {
-	var gname = names[0];
-	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gquery/?term=((" + gname + "%5BGene+Symbol%5D)+AND+Homo+sapiens%5BOrganism%5D)", "NCBI", { noframe: true });
+	const gname = names[0];
+	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+	linkouts.openUrl("http://www.ncbi.nlm.nih.gov/gquery/?term=((" + gname + "%5BGene+Symbol%5D)+AND+" + species + "%5BOrganism%5D)", "NCBI", { noframe: true });
     }
 
     function openGEOAccession (aids) {
@@ -923,8 +928,9 @@ linkouts.addPlugin({
 (function(linkouts) {
 
     function searchVega (names) {
-	var gname = names[0];
-	linkouts.openUrl("http://vega.sanger.ac.uk/Homo_sapiens/psychic?site=vega&q=" + gname, "Vega");
+	const gname = names[0];
+	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+	linkouts.openUrl("http://vega.sanger.ac.uk/" + species + "/psychic?site=vega&q=" + gname, "Vega");
     }
 
     linkouts.addPlugin({
