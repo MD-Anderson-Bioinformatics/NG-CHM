@@ -11,8 +11,8 @@ NgChm.createNS('NgChm.SEL');
 
 //Globals that provide information about heat map position selection.
 NgChm.SEL.currentDl = "dl1";    // Set (default) to Data Layer 1 (set in application by user when flick views are toggled)
-NgChm.SEL.currentRow=null;      // Top row of current selected position
-NgChm.SEL.currentCol=null;      // Left column of the current selected position
+NgChm.SEL.currentRow = null;      // Top row of current selected position
+NgChm.SEL.currentCol = null;      // Left column of the current selected position
 NgChm.SEL.scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
 
 /*********************************************************************************************

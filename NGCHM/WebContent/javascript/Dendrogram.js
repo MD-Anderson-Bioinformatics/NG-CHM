@@ -814,6 +814,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 	this.barsMaxHeight = -1;
 
 	this.buildView = function () {
+		this.zoomLevel = 1;
 		// Step 1: select bars between the left and right edges of the window.
 		this.selectWindowBars();
 		if (this.windowBars.length === 0) {
@@ -847,15 +848,17 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 				this.barsMaxHeight = maxHeight;
 				this.scaledView = null;		// Force scaled view recalculation.
 			}
-		        // Done if initialized or if at least 75% of the
-		        // bars spanning the view are visible.
-		        if (NgChm.DET.initialized || (visBars/this.windowBars.length) > 0.75)
-			    break;
+	        // Done if initialized or if at least 75% of the
+	        // bars spanning the view are visible.
+	        if ((visBars/this.windowBars.length) > 0.75) {
+	        	break;
+	        }
 			// Guaranteed stop. Really expect to stop before this becomes true.
-			if (this.zoomLevel < 0.0001)
+			if (this.zoomLevel < 0.0001) {
 			    break;
+			}
 			// If not, zoom out a little and try again.
-		        this.zoomLevel *= 0.75;
+	        this.zoomLevel *= 0.75;
 		}
 		this.dendroViewHeight = maxHeight;
 	};

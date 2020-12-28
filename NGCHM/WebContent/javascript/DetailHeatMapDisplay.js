@@ -3,7 +3,6 @@ NgChm.createNS('NgChm.DET');
 
 
 NgChm.DET.labelLastClicked = {};
-NgChm.DET.initialized = false;
 NgChm.DET.mouseDown = false;
 NgChm.DET.minLabelSize = 5;
 NgChm.DET.resizeOnNextDraw = false;
@@ -150,20 +149,18 @@ NgChm.DET.setDetailMapDisplay = function (chm,mapItem) {
 		if (NgChm.UTIL.getURLParameter("selected") !== ""){
 			const selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
 			document.getElementById("search_text").value = selected;
-			if (mapItem.version === 'P') {  //TODO: WE MAY NEED TO DO THESE FOR ALL VERSIONS BUT JUST PRIMARY FOR NOW
+			if (mapItem.version === 'P') {  
 				NgChm.SRCH.detailSearch();
 				NgChm.SUM.drawSelectionMarks();
 				NgChm.SUM.drawTopItems();
 			}
 		}
-		NgChm.DET.initialized = true;
 	}, 1);
   	
   	NgChm.DMM.DetailMaps.push(mapItem);
   	if (mapItem.version === 'P') {
   		NgChm.DMM.primaryMap = mapItem;
   	}
-  	
 }
 
 /*********************************************************************************************
@@ -1821,8 +1818,10 @@ NgChm.DET.colDendroResize = function() {
 			const left = mapItem.canvas.offsetLeft;
 			dendroCanvas.style.left = (left + mapItem.canvas.clientWidth * (1-mapItem.dataViewWidth/mapItem.canvas.width)) + 'px';
 			if (mapItem.colDendro.isVisible()){
-				const height = mapItem.colDendro.getConfigSize() * mapItem.chm.clientHeight + NgChm.SUM.paddingHeight;
-				dendroCanvas.style.height = height + 'px';
+				const dendroSumPct = (parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(NgChm.SUM.canvas.style.height, 10) + parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(NgChm.SUM.cCCanvas.style.height, 10)));
+				const totalDetHeight = (mapItem.chm.offsetHeight - 50);
+				const height = (totalDetHeight * dendroSumPct); 
+				dendroCanvas.style.height = parseInt(height, 10) + 'px';
 				dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width)) + 'px';
 				if (mapItem.version === 'P') {
 					dendroCanvas.height = Math.round(height);
@@ -1847,9 +1846,11 @@ NgChm.DET.rowDendroResize = function() {
 			const top = mapItem.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
 			dendroCanvas.style.top = (top + mapItem.canvas.clientHeight * (1-mapItem.dataViewHeight/mapItem.canvas.height)) + 'px';
 			if (mapItem.rowDendro.isVisible()){
-				const width = mapItem.rowDendro.getConfigSize() * mapItem.chm.clientWidth + NgChm.SUM.paddingHeight;
 				const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/mapItem.canvas.height);
-				dendroCanvas.style.width = width + 'px';
+				const dendroSumPct = (parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(NgChm.SUM.canvas.style.width, 10) + parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(NgChm.SUM.rCCanvas.style.width, 10)));
+				const totalDetWidth = (mapItem.chm.offsetWidth - 50);
+				const width = (totalDetWidth * dendroSumPct); 
+				dendroCanvas.style.width = parseInt(width, 10) + 'px';
 				dendroCanvas.style.height = (height-2) + 'px';
 				if (mapItem.version === 'P') {
 					dendroCanvas.width = Math.round(width);

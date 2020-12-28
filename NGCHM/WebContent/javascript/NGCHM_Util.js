@@ -715,9 +715,6 @@ NgChm.UTIL.removeElementsByClass = function(className) {
  **********************************************************************************/
 NgChm.UTIL.initDisplayVars = function() {
 	NgChm.DMM.nextMapNumber = 1;
-//	NgChm.DMM.primaryMap = null;
-//	NgChm.DMM.DetailMaps = [];
-//	NgChm.DET.firstSwitch = true;
 	NgChm.SUM.summaryHeatMapCache = {};
 	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
 	NgChm.SUM.heightScale = 1;
@@ -726,13 +723,16 @@ NgChm.UTIL.initDisplayVars = function() {
 	NgChm.DET.detailHeatMapCache = {};      
 	NgChm.DET.detailHeatMapLevel = {};      
 	NgChm.DET.detailHeatMapValidator = {};  
-	NgChm.DET.initialized = false;
 	NgChm.DET.mouseDown = false;
 	NgChm.UTIL.actualAxisLabels = {};
 	NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
 	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	
 	NgChm.UTIL.removeElementsByClass("DynamicLabel");
 	NgChm.SRCH.currentSearchItem = {};
+//	NgChm.DMM.primaryMap = null;
+//	NgChm.DMM.DetailMaps = [];
+//	NgChm.DET.firstSwitch = true;
+//	NgChm.DET.initialized = false;
 //	NgChm.DET.resetLabelLengths();  
 //	NgChm.DET.labelElements = {};
 //	NgChm.DET.oldLabelElements = {};
