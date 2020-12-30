@@ -169,10 +169,14 @@ NgChm.DMM.getMapItemFromEvent = function (e) {
  * object using the chm. 
  *********************************************************************************************/
 NgChm.DMM.getMapItemFromChm = function (chm) {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		if (mapItem.chm === chm) {
-			return mapItem;
+	if (NgChm.DMM.DetailMaps.length === 0) {
+		return NgChm.DMM.primaryMap;
+	} else {
+		for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
+			const mapItem = NgChm.DMM.DetailMaps[i];
+			if (mapItem.chm === chm) {
+				return mapItem;
+			}
 		}
 	}
 }
@@ -182,10 +186,14 @@ NgChm.DMM.getMapItemFromChm = function (chm) {
  * object using the panel id associated with that map object. 
  *********************************************************************************************/
 NgChm.DMM.getMapItemFromPane = function (paneId) {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		if (mapItem.pane === paneId) {
-			return mapItem;
+	if (NgChm.DMM.DetailMaps.length === 0) {
+		return NgChm.DMM.primaryMap;
+	} else {
+		for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
+			const mapItem = NgChm.DMM.DetailMaps[i];
+			if (mapItem.pane === paneId) {
+				return mapItem;
+			}
 		}
 	}
 }
@@ -195,10 +203,14 @@ NgChm.DMM.getMapItemFromPane = function (paneId) {
  * object using the canvas associated with that map object. 
  *********************************************************************************************/
 NgChm.DMM.getMapItemFromCanvas = function (canvas) {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		if (mapItem.canvas === canvas) {
-			return mapItem;
+	if (NgChm.DMM.DetailMaps.length === 0) {
+		return NgChm.DMM.primaryMap;
+	} else {
+		for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
+			const mapItem = NgChm.DMM.DetailMaps[i];
+			if (mapItem.canvas === canvas) {
+				return mapItem;
+			}
 		}
 	}
 }

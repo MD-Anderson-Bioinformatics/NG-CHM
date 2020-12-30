@@ -814,7 +814,6 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 	this.barsMaxHeight = -1;
 
 	this.buildView = function () {
-		this.zoomLevel = 1;
 		// Step 1: select bars between the left and right edges of the window.
 		this.selectWindowBars();
 		if (this.windowBars.length === 0) {
@@ -850,7 +849,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 			}
 	        // Done if initialized or if at least 75% of the
 	        // bars spanning the view are visible.
-	        if ((visBars/this.windowBars.length) > 0.75) {
+	        if (NgChm.DET.initialized || (visBars/this.windowBars.length) > 0.75) {
 	        	break;
 	        }
 			// Guaranteed stop. Really expect to stop before this becomes true.
@@ -1027,14 +1026,15 @@ NgChm.DDR.DetailColumnDendrogram = function(dendroCanvas) {
 	// Get region of dendrogram currently visible.
 	this.getWindow = function() {
 		const mapItem = NgChm.DMM.getMapItemFromDendro(this);
-		if (mapItem.mode === 'FULL_MAP') {
+		if (typeof mapItem === 'undefined') {
+			return {};
+		} else if (mapItem.mode === 'FULL_MAP') {
 			return { startIdx: 1, numElements: NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL) };
 		} else {
 			return { startIdx: mapItem.currentCol, numElements: mapItem.dataPerRow };
 		}
 	};
 
-//	NgChm.DDR.Dendrogram.call (this, 'detail_column_dendro_canvas');
 	NgChm.DDR.Dendrogram.call (this, dendroCanvas);
 	NgChm.DDR.ColumnDendrogram.call (this);
 	NgChm.DDR.DetailDendrogram.call (this, NgChm.SUM.colDendro);
@@ -1048,14 +1048,15 @@ NgChm.DDR.DetailRowDendrogram = function(dendroCanvas) {
 	// Get region of dendrogram currently visible.
 	this.getWindow = function() {
 		const mapItem = NgChm.DMM.getMapItemFromDendro(this);
-		if (mapItem.mode === 'FULL_MAP') {
+		if (typeof mapItem === 'undefined') {
+			return {};
+		} else if (mapItem.mode === 'FULL_MAP') {
 			return { startIdx: 1, numElements: NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) };
 		} else {
 			return { startIdx: mapItem.currentRow, numElements: mapItem.dataPerCol };
 		}
 	};
 
-//	NgChm.DDR.Dendrogram.call (this, 'detail_row_dendro_canvas');
 	NgChm.DDR.Dendrogram.call (this, dendroCanvas);
 	NgChm.DDR.RowDendrogram.call (this);
 	NgChm.DDR.DetailDendrogram.call (this, NgChm.SUM.rowDendro);

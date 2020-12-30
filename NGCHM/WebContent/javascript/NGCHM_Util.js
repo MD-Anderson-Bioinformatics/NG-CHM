@@ -544,11 +544,9 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 			}
 			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
 			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
-//			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
 		}
  	} 
-	document.getElementById("detail_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
 	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
 	document.getElementById("detail_canvas").focus();
 };

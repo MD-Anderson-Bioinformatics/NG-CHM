@@ -252,68 +252,6 @@ NgChm.SUM.setMinimumSummaryWidth = function(minSumWidth) {
 	return sumPct;
 };
 
-// Sets summary and detail chm to newly adjusted size.
-/*
-NgChm.SUM.setSummarySize = function() {
-	if (NgChm.SUM.canvas !== undefined) {
-		var msgButton = document.getElementById('messageOpen_btn');
-		var rowDendroWidth = 0;
-		if ((NgChm.SUM.rowDendro !== null) && (NgChm.SUM.rowDendro !== undefined)) {
-			rowDendroWidth = NgChm.SUM.rowDendro.getConfigSize()*document.getElementById("summary_chm").clientWidth;
-		}
-		var colDendroHeight = 0;
-		if ((NgChm.SUM.colDendro !== null) && (NgChm.SUM.colDendro !== undefined)) {
-			colDendroHeight = NgChm.SUM.colDendro.getConfigSize()*(document.getElementById("ngChmContainer").clientHeight*NgChm.SUM.heightPct);
-		}
-		var left = rowDendroWidth*NgChm.SUM.widthPct + NgChm.SUM.paddingHeight + NgChm.SUM.rowClassBarWidth;
-		var top = colDendroHeight + NgChm.SUM.paddingHeight + NgChm.SUM.colClassBarHeight;
-		var width = document.getElementById("summary_chm").clientWidth - rowDendroWidth - NgChm.SUM.rowTopItemsHeight - NgChm.SUM.rowClassBarWidth;
-		var height = document.getElementById("ngChmContainer").clientHeight*NgChm.SUM.heightPct - colDendroHeight - NgChm.SUM.colTopItemsWidth - NgChm.SUM.colClassBarHeight;
-	
-		//Size Row Dendrogram Canvas
-		NgChm.UTIL.setElementPositionSize (NgChm.SUM.rowDendro.dendroCanvas, {
-			top,
-			width: rowDendroWidth,
-			height
-		}, true);
-
-		//Size Column Dendrogram Canvas
-		NgChm.UTIL.setElementPositionSize (NgChm.SUM.colDendro.dendroCanvas, {
-			left, width,
-			height: colDendroHeight
-		}, true);
-
-		//Size Heat Map Canvas
-		NgChm.UTIL.setElementPositionSize (NgChm.SUM.canvas, {
-			top, left, width, height
-		}, true);
-
-		//Size Row Class Bar Canvas
-		NgChm.UTIL.setElementPositionSize (NgChm.SUM.rCCanvas, {
-			top,
-			left: left - NgChm.SUM.rowClassBarWidth,
-			width: NgChm.SUM.rowClassBarWidth,
-			height
-		}, true);
-
-		//Size Column Class Bar Canvas
-		NgChm.UTIL.setElementPositionSize (NgChm.SUM.cCCanvas, {
-			top: top - NgChm.SUM.colClassBarHeight,
-			left, width,
-			height: NgChm.SUM.colClassBarHeight
-		}, true);
-
-		NgChm.SUM.setSelectionDivSize();
-		//The selection box canvas is on top of the webGL canvas but
-		//is always resized to the actual on screen size to draw boxes clearly.
-		NgChm.SUM.boxCanvas.style.left=left + 'px';
-		NgChm.SUM.boxCanvas.style.top=NgChm.SUM.canvas.style.top;
-		NgChm.SUM.boxCanvas.width = width+1;
-		NgChm.SUM.boxCanvas.height = height+1;
-		NgChm.DET.setDetCanvasBoxSize();
-	}
-}
-*/
 NgChm.SUM.setTopItemsSize = function (){
 	var colLabels = NgChm.heatMap.getColLabels()["labels"];
 	var rowLabels = NgChm.heatMap.getRowLabels()["labels"];
@@ -1006,8 +944,6 @@ NgChm.SUM.onMouseUpCanvas = function(evt) {
 //selected region of the map.
 NgChm.SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
 	//In case there was a previous dendo selection - clear it.
-//	NgChm.SUM.colDendro.clearSelection();
-//	NgChm.SUM.rowDendro.clearSelection();
 	NgChm.SUM.clearSelectionMarks();
 	NgChm.SUM.colDendro.draw();
 	NgChm.SUM.rowDendro.draw();
@@ -1193,10 +1129,14 @@ NgChm.SUM.resetBoxCanvas = function() {
  * dendro selections when in sub-dendro mode.
  **********************************************************************************/
 NgChm.SUM.drawLeftCanvasBox = function() {
+	let maps = NgChm.DMM.DetailMaps;
+	if (maps.length === 0) {
+		maps = [NgChm.DMM.primaryMap];
+	}
 	// Reset the canvas (drawing borders and sub-dendro selections)
 	var ctx = NgChm.SUM.resetBoxCanvas(NgChm.SUM.boxCanvas);
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
+	for (let i=0; i<maps.length;i++ ) {
+		const mapItem = maps[i];
 		// Draw the View Box using user-defined defined selection color 
 		const boxX = ((((NgChm.SEL.getCurrentSumCol(mapItem)-1) * NgChm.SUM.widthScale) / NgChm.SUM.canvas.width) * NgChm.SUM.boxCanvas.width);
 		const boxY = ((((NgChm.SEL.getCurrentSumRow(mapItem)-1) * NgChm.SUM.heightScale) / NgChm.SUM.canvas.height) * NgChm.SUM.boxCanvas.height);
@@ -2043,8 +1983,6 @@ NgChm.SUM.drawTopItems = function(){
 			for (var i = 0; i < colTopItemsIndex.length;i++){ // check for rightside overlap. move overlapping items to the left
  				var start = colTopItemsStart[i]+colAdjust;    
 				var moveTo = colPositionArray[colTopItemsIndex[i]]*colCanvas.width;
-//				if (Math.abs(start - moveTo < 3)) { moveTo = start}
-//				colCtx.translate(0.5, 0.5);
 				colCtx.moveTo(start,0);
 				colCtx.bezierCurveTo(start,5,moveTo,5,moveTo,10);
 				placeTopItemDiv(i, "col");

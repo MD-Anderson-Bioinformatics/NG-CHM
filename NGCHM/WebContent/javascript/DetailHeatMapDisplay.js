@@ -2,6 +2,7 @@
 NgChm.createNS('NgChm.DET');
 
 
+NgChm.DET.initialized = false;
 NgChm.DET.labelLastClicked = {};
 NgChm.DET.mouseDown = false;
 NgChm.DET.minLabelSize = 5;
@@ -237,6 +238,7 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 
 	//Draw any selection boxes defined by SearchRows/SearchCols
 	NgChm.DET.drawSelections();
+	NgChm.DET.initialized = true;
 };
 
 /*********************************************************************************************

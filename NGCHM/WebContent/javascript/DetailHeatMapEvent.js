@@ -17,6 +17,9 @@ NgChm.DEV.addEvents = function (paneId) {
 	mapItem.canvas.onmousedown = NgChm.DEV.clickStart;
 	mapItem.canvas.ondblclick = NgChm.DEV.dblClick;
 	
+	mapItem.canvas.addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
+
+	
 	mapItem.canvas.addEventListener("touchstart", function(e){
 		NgChm.UHM.hlpC();
 		const now = new Date().getTime();
@@ -127,7 +130,7 @@ NgChm.DEV.addEvents = function (paneId) {
 NgChm.DEV.handleScroll = function(evt) {
 	evt.preventDefault();
 	let parentElement = evt.target.parentElement;
-	if (parentElement.id !== 'detail_chm') {
+	if (!parentElement.id.includes('detail_chm')) { 
 		parentElement = NgChm.DMM.primaryMap.chm;
 	}
 	if (NgChm.SEL.scrollTime == null || evt.timeStamp - NgChm.SEL.scrollTime > 150){
@@ -731,6 +734,7 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 			NgChm.SEL.updateSelection(mapItem,true);
 		}
 	}
+    NgChm.UTIL.redrawCanvases();
 }	
 
 /**********************************************************************************
