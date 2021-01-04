@@ -2665,7 +2665,9 @@ NgChm.createNS('NgChm.LNK');
 	/*
 		Send an NGCHM property to plugin.
 		
-		Post message to plugin with value of given property.
+		Post message to plugin with value of given property, typically in response to a 
+		'getProperty' message from a plugin. 
+		Example incoming message: {vanodi: {op: 'getProperty', propertyName: 'ndexUUIDs', nonce: <nonce>}}.
 		These are properties added to the NGCHM at build time, for example by using
 		the R function 'chmAddProperty()'. 
 		
