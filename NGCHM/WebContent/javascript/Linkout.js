@@ -2627,6 +2627,7 @@ NgChm.createNS('NgChm.LNK');
 		if (msg.op === 'mouseover') vanodiMouseover (nonce, loc, msg);
 		if (msg.op === 'getLabels') vanodiSendLabels (nonce, loc, msg);
 		if (msg.op === 'getTestData') vanodiSendTestData (nonce, loc, msg);
+		if (msg.op === 'getProperty') vanodiSendProperty (nonce, loc, msg);
 	}
 
 	function vanodiRegister (nonce, loc, msg) {
@@ -2650,6 +2651,35 @@ NgChm.createNS('NgChm.LNK');
 		} else {
 			console.log ({ m: 'Malformed getLabels request', msg, detail: 'msg.axisName must equal row or column' });
 		}
+	}
+
+	/*
+		Send an NGCHM property to plugin.
+		
+		Post message to plugin with value of given property.
+		These are properties added to the NGCHM at build time, for example by using
+		the R function 'chmAddProperty()'. 
+		
+		Inputs:
+			nonce: plugin's nonce.
+			loc: location of plugin.
+			msg: message from plugin. Should have attribute 'propertyName',
+			     whose value is the name of the property to retrieve from the NGCHM.
+	*/
+	function vanodiSendProperty (nonce, loc, msg) {
+		if (!msg.hasOwnProperty('propertyName')) {
+			console.error('Incoming message missing attribute "propertyName"')
+			return
+		}
+		const { plugin, params, iframe, source } = pluginData[nonce];
+		(source||iframe.contentWindow).postMessage({
+			vanodi: {
+				nonce,
+				op: 'property',
+				propertyName: msg.propertyName,
+				propertyValue: linkouts.getAttribute(msg.propertyName) 
+			}
+		},'*')
 	}
 
 	const vanodiKnownTests = [
