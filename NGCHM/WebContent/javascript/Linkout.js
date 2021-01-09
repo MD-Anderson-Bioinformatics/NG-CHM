@@ -914,8 +914,61 @@ NgChm.createNS('NgChm.LNK');
 		const { plugin, params } = pluginData[nonce];
 		pluginData[nonce].params = options;
 		loc.paneTitle.innerText = plugin.name + '. ' + options.plotTitle;
-		NgChm.LNK.initializePanePlugin (nonce, options);
-	};
+		if (plugin.config.axes[0].hasOwnProperty('extra')) {
+            let config = JSON.parse(JSON.stringify(options))
+            NgChm.LNK.initializePanePlugin_extraCovariates(nonce, config, plugin.config.axes[0].extra)
+        } else {
+            NgChm.LNK.initializePanePlugin(nonce, options);
+        }
+    };
+
+
+    NgChm.LNK.initializePanePlugin_extraCovariates = function(nonce, config, extraPatterns) {
+        const data = {
+            axes: []
+        };
+        let covariates = Object.keys(NgChm.heatMap.getAxisCovariateData('column'))
+            // Select covariates based on regular expression
+            // covariates = covariates.filter((name) => name.includes(extra));
+
+        // covariates = covariates.filter((name) => name.match(extra[0]));
+        let extraCovariates = []
+        extraPatterns.forEach((extraPattern) => {
+            extraCovariates = extraCovariates.concat(covariates.filter((cov) => cov.match(extraPattern)))
+        })
+
+        let selectedCoords = config.axes[0].coordinates.map((coord) => coord.covName)
+        let selectedIndex = selectedCoords.map((selectedCoord) => extraCovariates.indexOf(selectedCoord))
+            // Add extra covariates info to the message
+        for (let ai = 0; ai < config.axes.length; ai++) {
+            let axis = JSON.parse(JSON.stringify(config.axes[ai]));
+            axis.coordinates = []
+            extraCovariates.forEach((cov) => {
+                if (selectedCoords.includes(cov)) {
+                    axis.coordinates.push({ type: 'covariate', covName: cov, label: config.axes[ai]["coordinates"].filter((cod) => cod.covName === cov)[0]["label"] })
+                } else {
+                    axis.coordinates.push({ type: 'covariate', covName: cov })
+                }
+            })
+            data.axes.push({
+                fullLabels: NgChm.heatMap.getAxisLabels(axis.axisName).labels,
+                actualLabels: NgChm.UTIL.getActualLabels(axis.axisName)
+            });
+            for (let idx = 0; idx < axis.cocos.length; idx++) {
+                setAxisCoCoData(data.axes[ai], axis, axis.cocos[idx]);
+            }
+            for (let idx = 0; idx < axis.groups.length; idx++) {
+                setAxisGroupData(data.axes[ai], axis, axis.groups[idx]);
+            }
+            if (axis.coordinates.length == 0) {
+                alert("Something wrong in getting extra covariats from " + axis.axisName)
+            } else {
+                config.axes[ai] = axis
+            }
+        }
+        const src = pluginData[nonce].source || pluginData[nonce].iframe.contentWindow;
+        src.postMessage({ vanodi: { nonce, op: 'plot', config, data, selected: selectedIndex } }, '*');
+    };
 
 	(function() {
 		NgChm.LNK.getNewNonce = function() {

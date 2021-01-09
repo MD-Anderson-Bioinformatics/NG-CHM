@@ -23,6 +23,13 @@ linkouts.addPanePlugin ({
 	src: 'https://www.ngchm.net/Plugins/PathwayMapper/index.html'
 });
 
+linkouts.addPanePlugin({
+    name: 'PCAPlot',
+    helpText: 'Creates a PCA plot',
+    params: {},
+    src: 'http://localhost:8088/index.html'
+});
+
 (function(linkouts) {
 
 	/*BEGIN SAMPLE Linkouts to the Hamburger Menu
