@@ -1825,10 +1825,9 @@ NgChm.DET.colDendroResize = function() {
 				const height = (totalDetHeight * dendroSumPct); 
 				dendroCanvas.style.height = parseInt(height, 10) + 'px';
 				dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width)) + 'px';
-				if (mapItem.version === 'P') {
-					dendroCanvas.height = Math.round(height);
-					dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
-				}
+				dendroCanvas.height = Math.round(height);
+				dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
+				mapItem.colDendro.draw();
 			} else {
 				dendroCanvas.style.height = '0px';
 			}
@@ -1854,27 +1853,12 @@ NgChm.DET.rowDendroResize = function() {
 				const width = (totalDetWidth * dendroSumPct); 
 				dendroCanvas.style.width = parseInt(width, 10) + 'px';
 				dendroCanvas.style.height = (height-2) + 'px';
-				if (mapItem.version === 'P') {
-					dendroCanvas.width = Math.round(width);
-					dendroCanvas.height = Math.round(height);
-				}
+				dendroCanvas.width = Math.round(width);
+				dendroCanvas.height = Math.round(height);
+				mapItem.rowDendro.draw();
 			} else {
 				dendroCanvas.style.width = '0px';
 			}
-		}
-	}
-}
-
-/**********************************************************************************
- * FUNCTION - dendroDraw: The purpose of this function is to call the dengrogram
- * drawing routine for all detail heat map dendrograms.
- **********************************************************************************/
-NgChm.DET.dendroDraw = function () {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		if (i === 0) {
-			mapItem.rowDendro.draw();
-			mapItem.colDendro.draw();
 		}
 	}
 }

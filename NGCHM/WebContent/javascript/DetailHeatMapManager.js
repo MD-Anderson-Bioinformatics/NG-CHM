@@ -88,14 +88,18 @@ NgChm.DMM.completeMapItemConfig = function (chm,mapItem) {
  * object from the DetailMaps array.
  *********************************************************************************************/
 NgChm.DMM.RemoveDetailMap = function (pane) {
+	let wasPrime = false;
 	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
 		const mapItem = NgChm.DMM.DetailMaps[i];
 		if (mapItem.pane === pane) {
+			if (mapItem.version === 'P') {
+				wasPrime = true;
+			}
 			NgChm.DMM.DetailMaps.splice(i, 1);
 			break;
 		}
 	}
-	if (NgChm.DMM.DetailMaps.length === 1) {
+	if ((wasPrime === true) && (NgChm.DMM.DetailMaps.length > 0)) {
 		NgChm.DMM.switchToPrimary(NgChm.DMM.DetailMaps[0].chm); 
 	}
 }
@@ -258,7 +262,6 @@ NgChm.DMM.detailResize = function () {
 		 NgChm.DET.drawSelections();  
 		 NgChm.DET.rowDendroResize();
 		 NgChm.DET.colDendroResize();
-		 NgChm.DET.dendroDraw();
 	 }
 }
 
