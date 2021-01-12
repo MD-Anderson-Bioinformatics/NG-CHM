@@ -2283,16 +2283,21 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	function switchPaneToDetail (loc) { 
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
+		let isPrimary = false;
 		if (firstSwitch) {
 			// First time detail NGCHM created.
 			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild (document.getElementById('detail_chm'));
 			firstSwitch = false;
+			isPrimary = true;
 		} else {
 			NgChm.Pane.clearExistingGearDialog(loc.pane.id);
 			if (savedChmElements.length > 0) {
 				// Detail NGCHM not currently showing in a pane.
+				NgChm.DMM.primaryMap.pane = loc.pane.id;
+			  	NgChm.DMM.DetailMaps.push(NgChm.DMM.primaryMap);
 				NgChm.Pane.emptyPaneLocation (loc);
+				isPrimary = true;
 			} else {
 				// Detail NGCHM currently showing in a pane.
 				const oldLoc = NgChm.Pane.findPaneLocation (NgChm.DMM.primaryMap.chm);
@@ -2305,6 +2310,8 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 				const el = savedChmElements.shift(); 
 				loc.pane.appendChild (el);
 			}
+			NgChm.DEV.addEvents(loc.pane.id);
+			NgChm.SUM.drawLeftCanvasBox();
 		}
 		NgChm.Pane.setPaneClientIcons(loc, [
 		    zoomButton ('primary_btn'+NgChm.DMM.nextMapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
@@ -2314,18 +2321,15 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		    modeButton ('ribbonH_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton.bind('chm', loc.pane.children[1])),
 		    modeButton ('ribbonV_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton.bind('chm', loc.pane.children[1]))
 		]);
-		if (NgChm.DMM.nextMapNumber === 1) {
+		if (isPrimary === true) {
 			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = 'none';
 			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
 		} else {
 			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = '';
 			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+NgChm.DMM.nextMapNumber);
-			NgChm.DEV.addEvents(loc.pane.id);
-			NgChm.SUM.drawLeftCanvasBox();
 		}
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
-
 	}
 
 	function emptyDetailPane (pane, elements) {

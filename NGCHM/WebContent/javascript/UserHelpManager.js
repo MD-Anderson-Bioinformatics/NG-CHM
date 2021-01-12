@@ -84,7 +84,6 @@ NgChm.UHM.formatMapDetails = function (helpContents, pixelInfo) {
  * classification bars.  
  *********************************************************************************/
 NgChm.UHM.userHelpOpen = function(mapItem) {
-	console.log("EVENT TIMER:" + NgChm.DET.eventTimer);
 	NgChm.UHM.hlpC();
     clearTimeout(NgChm.DET.detailPoint);
 	var helpContents = document.createElement("TABLE");
@@ -344,7 +343,7 @@ NgChm.UHM.userHelpOpen = function(mapItem) {
         } else {
         	helptext.style.display="inline";
         	helptext.appendChild(helpContents);
-        	NgChm.UHM.locateHelpBox(helptext);
+        	NgChm.UHM.locateHelpBox(helptext,mapItem);
         }	
     } else {  
     	// on the blank area in the top left corner

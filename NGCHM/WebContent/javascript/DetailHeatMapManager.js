@@ -58,8 +58,8 @@ NgChm.DMM.AddDetailMap = function (chm,pane){
 	newMapObj.pane = pane;
 	newMapObj.version = 'S';
 	NgChm.DMM.completeMapItemConfig(chm,newMapObj);
-	 NgChm.DET.rowDendroResize();
-	 NgChm.DET.colDendroResize();
+	NgChm.DET.rowDendroResize();
+	NgChm.DET.colDendroResize();
 }
 
 /*********************************************************************************************
