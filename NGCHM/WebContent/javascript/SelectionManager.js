@@ -32,9 +32,13 @@ NgChm.SEL.updateSelection = function (mapItem,noResize) {
  * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection
  * function for each detail map panel.
  *********************************************************************************************/
-NgChm.SEL.updateSelections = function () {   
+NgChm.SEL.updateSelections = function (noResize) {   
 	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		NgChm.SEL.updateSelection(NgChm.DMM.DetailMaps[i])
+		if (typeof noResize !== 'undefined') {
+			NgChm.SEL.updateSelection(NgChm.DMM.DetailMaps[i],noResize)
+		} else {
+			NgChm.SEL.updateSelection(NgChm.DMM.DetailMaps[i])
+		}
 	}
 }
 

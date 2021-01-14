@@ -588,7 +588,7 @@ NgChm.DEV.handleMouseMove = function (e) {
 		//Else perform a drag move
 		if (e.shiftKey) {
 	        //process select drag only if the mouse is down AND the cursor is on the heat map.
-            if((NgChm.DET.mouseDown) && (NgChm.UTIL.isOnObject(e,"map")) && (mapItem.version === 'P')) {
+            if((NgChm.DET.mouseDown) && (NgChm.UTIL.isOnObject(e,"map"))) {
 			    NgChm.SRCH.clearSearch(e);
 			    NgChm.DEV.handleSelectDrag(e);
             }
@@ -791,13 +791,13 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
  **********************************************************************************/
 NgChm.DEV.callDetailDrawFunction = function(modeVal) {  //SEL
 	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
-		NgChm.DEV.detailHRibbon(NgChm.DMM.primaryMap);
+		NgChm.DEV.detailHRibbon(NgChm.DMM.primaryMap.chm);
 	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
-		NgChm.DEV.detailVRibbon(NgChm.DMM.primaryMap);
+		NgChm.DEV.detailVRibbon(NgChm.DMM.primaryMap.chm);
 	if (modeVal == 'FULL_MAP')
-		NgChm.DEV.detailFullMap(NgChm.DMM.primaryMap);
+		NgChm.DEV.detailFullMap(NgChm.DMM.primaryMap.chm);
 	if (modeVal == 'NORMAL') {
-		NgChm.DEV.detailNormal(NgChm.DMM.primaryMap);	
+		NgChm.DEV.detailNormal(NgChm.DMM.primaryMap.chm);	
 	}
 }
 
