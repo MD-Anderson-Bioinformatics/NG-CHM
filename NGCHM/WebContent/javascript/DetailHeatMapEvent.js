@@ -715,7 +715,7 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 		} else if  ((mapItem.prevMode == 'RIBBONV') || (mapItem.prevMode == 'RIBBONV_DETAIL')) {
             NgChm.DEV.detailVRibbonButton(mapItem.chm);
 		} else {
-			NgChm.DET.detailNormal(e);
+			NgChm.DEV.detailNormal(mapItem.chm);
 		}
 	} else if (mapItem.mode == 'NORMAL') {
 		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
