@@ -105,7 +105,9 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	//If errors exist and they are NOT on the currently visible DIV (dataLayer1),
 	//hide the dataLayers DIV, set the tab to "Covariates", and open the appropriate
 	//covariate bar DIV.
-	NgChm.UPM.addClassPrefOptions();
+	if (errorMsg === null) {
+		NgChm.UPM.addClassPrefOptions();
+	}
 	NgChm.UPM.showDendroSelections();
 	NgChm.UPM.showLabelSelections();
 	NgChm.UPM.setShowAll();
@@ -551,11 +553,12 @@ NgChm.UPM.prefsValidateForNumeric = function() {
 		var keyrow = key+"_row";
 		var elem = document.getElementById(key+"_row_heightPref");
 		var elemVal = elem.value;
+		var rowBarType = document.getElementById(key + "_row_barTypePref");
 		if ((isNaN(elemVal)) || (parseInt(elemVal) < 0) || (elemVal === "")) {
 			errorMsg =  ["ALL", "classPrefs", "ERROR: Bar heights must be between 0 and 99"];
 		    return errorMsg;
 		}
-		if (currentClassBar.bar_type !== 'color_plot') {
+		if ((rowBarType !== null) && (rowBarType.value !== 'color_plot')) {
 			var lowBoundElement = document.getElementById(keyrow+"_lowBoundPref");
 			if (isNaN(lowBoundElement.value)) {
 				errorMsg =  [keyrow, "classPrefs", "ERROR: Covariate bar low bound must be numeric"];
@@ -581,11 +584,12 @@ NgChm.UPM.prefsValidateForNumeric = function() {
 			var currentClassBar = colClassBars[key];
 			var elem = document.getElementById(key+"_col_heightPref");
 			var elemVal = elem.value;
+			var colBarType = document.getElementById(key + "_col_barTypePref");
 			if ((isNaN(elemVal)) || (parseInt(elemVal) < 0) || (elemVal === "")) {
 				errorMsg =  ["ALL", "classPrefs", "ERROR: Bar heights must be between 0 and 99"];
 				 return errorMsg;
 			}
-			if (currentClassBar.bar_type !== 'color_plot') {
+			if ((colBarType !== null) && (colBarType.value !== 'color_plot')) {
 				var lowBoundElement = document.getElementById(keycol+"_lowBoundPref");
 				if (isNaN(lowBoundElement.value)) {
 					errorMsg =  [keycol, "classPrefs", "ERROR: Covariate bar low bound must be numeric"];
@@ -1381,8 +1385,8 @@ NgChm.UPM.setupClassBreaks = function(e, key, barType, classBar) {
 	NgChm.UHM.addBlankRow(prefContents, 3);
 	var bgColorInput = "<input class='spectrumColor' type='color' name='"+keyRC+"_bgColorPref' id='"+keyRC+"_bgColorPref' value='"+classBar.bg_color+"'>"; 
 	var fgColorInput = "<input class='spectrumColor' type='color' name='"+keyRC+"_fgColorPref' id='"+keyRC+"_fgColorPref' value='"+classBar.fg_color+"'>"; 
-	var lowBound = "<input name='"+keyRC+"_lowBoundPref' id='"+keyRC+"_lowBoundPref' value='"+classBar.low_bound+"' maxlength='3' size='2'>&emsp;";
-	var highBound = "<input name='"+keyRC+"_highBoundPref' id='"+keyRC+"_highBoundPref' value='"+classBar.high_bound+"' maxlength='3' size='2'>&emsp;";
+	var lowBound = "<input name='"+keyRC+"_lowBoundPref' id='"+keyRC+"_lowBoundPref' value='"+classBar.low_bound+"' maxlength='10' size='8'>&emsp;";
+	var highBound = "<input name='"+keyRC+"_highBoundPref' id='"+keyRC+"_highBoundPref' value='"+classBar.high_bound+"' maxlength='10' size='8'>&emsp;";
 	if (typ === 'Discrete') {
 		NgChm.UHM.setTableRow(prefContents,["&nbsp;Bar Type: ","<b>"+barPlot+"</b>"]);
 	} else {
