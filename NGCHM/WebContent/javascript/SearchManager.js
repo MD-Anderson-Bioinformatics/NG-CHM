@@ -1,6 +1,7 @@
 //Define Namespace for NgChm SearchManager
 NgChm.createNS('NgChm.SRCH');
 
+NgChm.SRCH.searchItems={};
 NgChm.SRCH.discCovRowState = "";
 NgChm.SRCH.discCovColState = "";
 NgChm.SRCH.currentSearchItem = {};
@@ -8,6 +9,17 @@ NgChm.SRCH.currentSearchItem = {};
 /***********************************************************
  * SEARCH FUNCTIONS SECTION
  ***********************************************************/
+
+/**********************************************************************************
+ * FUNCTION - createEmptySearchItems: This function is called on detailInit to initialize the 
+ * searchItems arrays.
+  **********************************************************************************/
+NgChm.SRCH.createEmptySearchItems = function() {
+	NgChm.SRCH.searchItems["Row"]= {};
+	NgChm.SRCH.searchItems["Column"]= {};
+	NgChm.SRCH.searchItems["RowCovar"] = {};
+	NgChm.SRCH.searchItems["ColumnCovar"]= {};
+}
 
 /**********************************************************************************
  * FUNCTION - detailSearch: The purpose of this function is to serve as a driver
@@ -228,7 +240,7 @@ NgChm.SRCH.covarSearch = function () {
 	if (itemsFound === false){
 		searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 		//Clear previous matches when search is empty.
-		NgChm.SEL.updateSelection();
+		NgChm.SEL.updateSelections();
 	} else {
 		searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
 	}
@@ -247,10 +259,10 @@ NgChm.SRCH.getSelectedDiscreteSelections = function (axis, cats,classDataValues)
 	let itemFound = false;
 	for (let i=0;i<classDataValues.length;i++) {
 		if (cats.indexOf(classDataValues[i]) > -1) {
-			NgChm.SEL.searchItems[axis][i+1] = 1;
+			NgChm.SRCH.searchItems[axis][i+1] = 1;
 			itemFound = true;
 		} else if (((classDataValues[i] === 'null') || (classDataValues[i] === 'NA')) && (cats.indexOf("missing")> -1)) {
-			NgChm.SEL.searchItems[axis][i+1] = 1;
+			NgChm.SRCH.searchItems[axis][i+1] = 1;
 			itemFound = true;
 		}
 	}
@@ -311,7 +323,7 @@ NgChm.SRCH.getSelectedContinuousSelections = function (axis, classDataValues) {
 			//If we are doing a search for missing values
 			if (results.firstValue.includes("miss")) {
 				if ((classDataValue === 'null') || (classDataValue === "NA")) {
-					NgChm.SEL.searchItems[axis][i+1] = 1;
+					NgChm.SRCH.searchItems[axis][i+1] = 1;
 					itemFound = true;
 				}
 			} else {
@@ -321,7 +333,7 @@ NgChm.SRCH.getSelectedContinuousSelections = function (axis, classDataValues) {
 					selectItem = NgChm.SRCH.evaluateExpression(results.secondOper,parseFloat(results.secondValue), parseFloat(classDataValue));
 				}
 				if (selectItem === true) {
-					NgChm.SEL.searchItems[axis][i+1] = 1;
+					NgChm.SRCH.searchItems[axis][i+1] = 1;
 					itemFound = true;
 				}
 			}
@@ -516,7 +528,7 @@ NgChm.SRCH.labelSearch = function () {
 			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 		}	
 		//Clear previous matches when search is empty.
-		NgChm.SEL.updateSelection();
+		NgChm.SEL.updateSelections();
 	}
 }	
 
@@ -543,7 +555,7 @@ NgChm.SRCH.searchLabels = function (axis,tmpSearchItems,itemsFound) {
 				label = label.substring(0,label.indexOf('|'));
 			}
 			if  (reg.test(label)) {
-				NgChm.SEL.searchItems[axis][i+1] = 1;
+				NgChm.SRCH.searchItems[axis][i+1] = 1;
 				if (itemsFound.indexOf(searchItem) == -1)
 					itemsFound.push(searchItem);
 			} 
@@ -590,11 +602,11 @@ NgChm.SRCH.findNextSearchItem = function (index, axis) {
 	const otherAxisLength = axis == "Column" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
 	const searchTarget = document.getElementById('search_target').value;
 	let curr = index;
-	while( !NgChm.SEL.searchItems[axis][++curr] && curr <  axisLength){}; // find first searchItem in row
+	while( !NgChm.SRCH.searchItems[axis][++curr] && curr <  axisLength){}; // find first searchItem in row
 	if (curr >= axisLength) { // if no searchItems exist in first axis, move to other axis
 		if (document.getElementById('search_target').value === 'Both') {
 			curr = -1;
-			while( !NgChm.SEL.searchItems[otherAxis][++curr] && curr <  otherAxisLength){};
+			while( !NgChm.SRCH.searchItems[otherAxis][++curr] && curr <  otherAxisLength){};
 			if (curr >=otherAxisLength){ // if no matches in the other axis, check the earlier indices of the first axis (loop back)
 				NgChm.SRCH.findNextReturnOnAxis(curr, index, axis);
 			} else {
@@ -615,7 +627,7 @@ NgChm.SRCH.findNextSearchItem = function (index, axis) {
   **********************************************************************************/
 NgChm.SRCH.findNextReturnOnAxis = function (curr, index, axis) {
 	curr = -1;
-	while( !NgChm.SEL.searchItems[axis][++curr] && curr <  index){};
+	while( !NgChm.SRCH.searchItems[axis][++curr] && curr <  index){};
 	if (curr < index && index != -1){
 		NgChm.SRCH.currentSearchItem["axis"] = axis;
 		NgChm.SRCH.currentSearchItem["index"] = curr;
@@ -662,11 +674,11 @@ NgChm.SRCH.findPrevSearchItem = function (index, axis) {
 	const otherAxis = axis == "Row" ? "Column" : "Row";
 	const otherAxisLength = axis == "Column" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
 	let curr = index;
-	while( !NgChm.SEL.searchItems[axis][--curr] && curr > -1 ){}; // find first searchItem in row
+	while( !NgChm.SRCH.searchItems[axis][--curr] && curr > -1 ){}; // find first searchItem in row
 	if (curr < 0){ // if no searchItems exist in first axis, move to other axis
 		if (document.getElementById('search_target').value === 'Both') { 
 			curr = otherAxisLength;
-			while( !NgChm.SEL.searchItems[otherAxis][--curr] && curr > -1){};
+			while( !NgChm.SRCH.searchItems[otherAxis][--curr] && curr > -1){};
 			if (curr > 0){
 				NgChm.SRCH.setSearchItem(otherAxis, curr);
 			} else {  //if axis is locked by search_target, check the earlier indices of the first axis (loop back)
@@ -686,7 +698,7 @@ NgChm.SRCH.findPrevSearchItem = function (index, axis) {
  * search target OR there are no items to move to on the other axis.
   **********************************************************************************/
 NgChm.SRCH.findPrevReturnOnAxis = function (curr, index, axis) {
-	while( !NgChm.SEL.searchItems[axis][--curr] && curr > index ){};
+	while( !NgChm.SRCH.searchItems[axis][--curr] && curr > index ){};
 	if (curr > index){
 		NgChm.SRCH.currentSearchItem["axis"] = axis;
 		NgChm.SRCH.currentSearchItem["index"] = curr;
@@ -698,24 +710,25 @@ NgChm.SRCH.findPrevReturnOnAxis = function (curr, index, axis) {
  * focus of the detail heat map panel to the current search item.
   **********************************************************************************/
 NgChm.SRCH.goToCurrentSearchItem = function () {
+	const mapItem = NgChm.DMM.primaryMap;
 	if (NgChm.SRCH.currentSearchItem.axis == "Row") {
-		NgChm.SEL.currentRow = NgChm.SRCH.currentSearchItem.index;
-		if ((NgChm.SEL.mode == 'RIBBONV') && NgChm.SEL.selectedStart!= 0 && (NgChm.SEL.currentRow < NgChm.SEL.selectedStart-1 || NgChm.SEL.selectedStop-1 < NgChm.SEL.currentRow)){
+		mapItem.currentRow = NgChm.SRCH.currentSearchItem.index;
+		if ((mapItem.mode == 'RIBBONV') && mapItem.selectedStart!= 0 && (mapItem.currentRow < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentRow)){
 			NgChm.UHM.showSearchError(1);
-		} else if (NgChm.SEL.mode == 'RIBBONV' && NgChm.SEL.selectedStart == 0){
+		} else if (mapItem.mode == 'RIBBONV' && mapItem.selectedStart == 0){
 			NgChm.UHM.showSearchError(2);
 		} 
-		NgChm.SEL.checkRow();
+		NgChm.SEL.checkRow(mapItem);
 	} else if (NgChm.SRCH.currentSearchItem.axis == "Column"){
-		NgChm.SEL.currentCol = NgChm.SRCH.currentSearchItem.index;
-		if ((NgChm.SEL.mode == 'RIBBONH') && NgChm.SEL.selectedStart!= 0 && (NgChm.SEL.currentCol < NgChm.SEL.selectedStart-1 || NgChm.SEL.selectedStop-1 < NgChm.SEL.currentCol )){
+		mapItem.currentCol = NgChm.SRCH.currentSearchItem.index;
+		if ((mapItem.mode == 'RIBBONH') && mapItem.selectedStart!= 0 && (mapItem.currentCol < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentCol )){
 			NgChm.UHM.showSearchError(1)
-		} else if (NgChm.SEL.mode == 'RIBBONH' && NgChm.SEL.selectedStart == 0){
+		} else if (mapItem.mode == 'RIBBONH' && mapItem.selectedStart == 0){
 			NgChm.UHM.showSearchError(2);
 		} 
-		NgChm.SEL.checkColumn();
+		NgChm.SEL.checkCol(mapItem);
 	}
-	NgChm.SEL.updateSelection();
+	NgChm.SEL.updateSelections();
 }
 
 /**********************************************************************************
@@ -752,7 +765,7 @@ NgChm.SRCH.clearSearch = function (event) {
 	}
 	NgChm.SRCH.clearSearchElement();
 	NgChm.SRCH.showSearchResults();	
-	NgChm.SEL.updateSelection();
+	NgChm.SEL.updateSelections();
 	NgChm.SRCH.updateLinkoutSelections();
 	NgChm.SRCH.resetSearchBoxColor()
 }
@@ -788,7 +801,7 @@ NgChm.SRCH.clearSearchRequest = function() {
  * items on a particular axis.
   **********************************************************************************/
 NgChm.SRCH.clearSearchItems = function (clickAxis) {
-	NgChm.SEL.searchItems[clickAxis] = {};
+	NgChm.SRCH.searchItems[clickAxis] = {};
 	if (clickAxis === "Row"){
 		NgChm.SUM.rowDendro.clearSelectedBars();
 	} else if (clickAxis === "Column"){
@@ -796,7 +809,7 @@ NgChm.SRCH.clearSearchItems = function (clickAxis) {
 	}
 	let markLabels = document.getElementsByClassName('MarkLabel');
 	for (let ii = 0; ii < markLabels.length; ii++){ // clear tick marks
-		NgChm.DET.removeLabel(markLabels[ii].id);
+		NgChm.DET.removeLabels(markLabels[ii].id);
 	}
 }
 
@@ -879,7 +892,7 @@ NgChm.SRCH.hideSearchResults = function () {
  * total row search results, total column results, and total combined results.
   **********************************************************************************/
 NgChm.SRCH.getSearchResultsCounts = function () {
-	return [Object.keys(NgChm.SEL.searchItems["Row"]).length, Object.keys(NgChm.SEL.searchItems["Column"]).length, Object.keys(NgChm.SEL.searchItems["Row"]).length + Object.keys(NgChm.SEL.searchItems["Column"]).length];
+	return [Object.keys(NgChm.SRCH.searchItems["Row"]).length, Object.keys(NgChm.SRCH.searchItems["Column"]).length, Object.keys(NgChm.SRCH.searchItems["Row"]).length + Object.keys(NgChm.SRCH.searchItems["Column"]).length];
 }
 
 /**********************************************************************************
@@ -888,7 +901,7 @@ NgChm.SRCH.getSearchResultsCounts = function () {
   **********************************************************************************/
 NgChm.SRCH.getSearchCols = function () {
 	const selected = [];
-	for (let i in NgChm.SEL.searchItems["Column"]) {
+	for (let i in NgChm.SRCH.searchItems["Column"]) {
 		selected.push(i);
 	}
 	return selected;	
@@ -900,7 +913,7 @@ NgChm.SRCH.getSearchCols = function () {
   **********************************************************************************/
 NgChm.SRCH.getSearchRows = function () {
 	const selected = [];
-	for (let i in NgChm.SEL.searchItems["Row"]) {
+	for (let i in NgChm.SRCH.searchItems["Row"]) {
 		selected.push(i);
 	}
 	return selected;
@@ -913,7 +926,7 @@ NgChm.SRCH.getSearchRows = function () {
 NgChm.SRCH.getSearchItemsForAxis = function (axis) {
 	// axis is capitalized in so many ways :-(.
 	axis = NgChm.MMGR.isRow (axis) ? 'Row' : 'Column';
-	return Object.keys(NgChm.SEL.searchItems[axis] || {});
+	return Object.keys(NgChm.SRCH.searchItems[axis] || {});
 };
 
 /***********************************************************

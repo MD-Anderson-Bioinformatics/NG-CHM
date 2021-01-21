@@ -23,6 +23,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// function emptyPaneLocation(loc) - remove and return client elements from pane location
 	NgChm.Pane.emptyPaneLocation = emptyPaneLocation;
 
+	// function openDetailPaneLocation(oldLoc, loc.pane.id) - Add new secondary detail pane
+	NgChm.Pane.openDetailPaneLocation = openDetailPaneLocation;
+	
 	// function splitPaneCheck (vertical, loc) - check if OK to split pane
 	NgChm.Pane.splitPaneCheck = splitPaneCheck;
 
@@ -120,8 +123,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			p = p.parentElement;
 		}
 		if (!res.pane) {
-			// Should have found the pane element.
-			console.error ({ m: 'findPaneLocation: could not find pane', element, res });
+			if (NgChm.UTIL.isBuilderView !== true) {
+				// Should have found the pane element.
+				console.error ({ m: 'findPaneLocation: could not find pane', element, res });
+			}
 			return res;
 		}
 		if (!res.container) {
@@ -307,7 +312,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		thisPane.style.display = '';
 		//Resize panels
 		NgChm.SUM.calcSummaryLayout();NgChm.SUM.redrawSummaryPane();
-		NgChm.DET.detailResize();NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
+		NgChm.DMM.detailResize();NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
 	}
 	
 	function closeFullScreen (paneId) {
@@ -331,7 +336,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		activeContainers = [];
 		//Resize all panels
 		NgChm.SUM.calcSummaryLayout();NgChm.SUM.redrawSummaryPane();
-		NgChm.DET.detailResize();NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
+		NgChm.DMM.detailResize();NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
 	}
 	
 	//Grab a list of panes and show/hide them all
@@ -576,7 +581,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 						if (e.target === okButton) {
 							resolve();
 						} else {
-							reject()
+							reject();
 						}
 					})
 				})
@@ -996,7 +1001,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 									if (target) redistributeContainer (paneLoc.container, target);
 								}
 							})
-							.catch(function() { // promise rejected, do NOT continue pane manipulation
+		       				.catch(function() { // promise rejected, do NOT continue pane manipulation
 								NgChm.UHM.messageBoxCancel()
 								return;
 							})
@@ -1158,6 +1163,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// - the Pane Header is reset to empty
 	// - the removed client elements are returned.
 	function emptyPaneLocation (loc) {
+		if (loc.pane === null) return;  //builder logic
 		// Remove all client elements from the pane.
 		const clientElements = [];
 		for (let idx = 0; idx < loc.pane.childNodes.length; idx++) {
@@ -1179,8 +1185,59 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		// Return remaining client elements to caller.
 		return clientElements;
 	}
+	
+	function openDetailPaneLocation (loc, newPane) {
+		// Remove all client elements from the pane.
+		const clientElements = [];
+		let pClone = null;	
+		for (let idx = 0; idx < loc.pane.childNodes.length; idx++) {
+			const p = loc.pane.childNodes[idx];
+			if (p !== loc.paneHeader) {
+				pClone = p.cloneNode(true);
+				NgChm.DMM.nextMapNumber++;
+				pClone.id = p.id + NgChm.DMM.nextMapNumber;
+				renameElements(pClone);
+				clientElements.push (pClone);
+				NgChm.DMM.AddDetailMap(pClone, newPane);
+				
+			}
+		}
+		// Return remaining client elements to caller.
+		return clientElements;
+	}
 
-	// Create an initial, immmediate child pane of the top-level container.
+	function renameElements (pClone) {
+		// Rename all client elements on the pane.
+		for (let idx = 0; idx < pClone.children.length; idx++) {
+			const p = pClone.children[idx];
+			p.id = p.id + NgChm.DMM.nextMapNumber;
+			if (p.children.length > 0) {
+				let removals = [];
+		        for (let idx2 = 0; idx2 < p.children.length; idx2++) {
+					const q = p.children[idx2];
+					//rename all but label elements and place label elements in a deletion array
+					if ((q.id.includes('rowLabelDiv')) || (q.id.includes('colLabelDiv'))) {
+						q.id = q.id + NgChm.DMM.nextMapNumber;
+					} else {
+						removals.push(q.id);
+					}
+		        }
+		        //strip out all label elements
+		        for (let idx3 = 0; idx3 < removals.length; idx3++) {
+					const rem = removals[idx3];
+			        for (let idx4 = 0; idx4 < p.children.length; idx4++) {
+						const q = p.children[idx4];
+						if (rem === q.id) {
+							q.remove();
+							break;
+						}
+			        }
+		        }
+			}
+		}
+	}
+
+	// Create an initial, immediate child pane of the top-level container.
 	// Used only during initialization of the panel interface.
 	function createInitialPane () {
 		const header = document.getElementById('mdaServiceHeader');

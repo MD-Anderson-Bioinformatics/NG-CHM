@@ -82,8 +82,8 @@ NgChm.UHM.formatMapDetails = function (helpContents, pixelInfo) {
  * FUNCTION - userHelpOpen: This function handles all of the tasks necessary to 
  * generate help pop-up panels for the detail heat map and the detail heat map 
  * classification bars.  
- **********************************************************************************/
-NgChm.UHM.userHelpOpen = function() {
+ *********************************************************************************/
+NgChm.UHM.userHelpOpen = function(mapItem) {
 	NgChm.UHM.hlpC();
     clearTimeout(NgChm.DET.detailPoint);
 	var helpContents = document.createElement("TABLE");
@@ -94,30 +94,30 @@ NgChm.UHM.userHelpOpen = function() {
     helptext.innerHTML=("<a href='javascript:void(pasteHelpContents())' align='left'>Copy To Clipboard</a><img id='redX_btn' src='images/redX.png' alt='Close Help' onclick='NgChm.UHM.hlpC();' align='right'>");
     helptext.style.position = "absolute";
     document.getElementsByTagName('body')[0].appendChild(helptext);
-    var rowElementSize = NgChm.DET.dataBoxWidth * NgChm.DET.canvas.clientWidth/NgChm.DET.canvas.width; // px/Glpoint
-    var colElementSize = NgChm.DET.dataBoxHeight * NgChm.DET.canvas.clientHeight/NgChm.DET.canvas.height;
+    var rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
+    var colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
 
     // pixels
-    var rowClassWidthPx = NgChm.DET.getRowClassPixelWidth();
-    var colClassHeightPx = NgChm.DET.getColClassPixelHeight();
-	var mapLocY = NgChm.DET.offsetY - colClassHeightPx;
-	var mapLocX = NgChm.DET.offsetX - rowClassWidthPx;
+    var rowClassWidthPx = NgChm.DET.getRowClassPixelWidth(mapItem);
+    var colClassHeightPx = NgChm.DET.getColClassPixelHeight(mapItem);
+	var mapLocY = mapItem.offsetY - colClassHeightPx;
+	var mapLocX = mapItem.offsetX - rowClassWidthPx;
 	var objectType = "none";
-    if (NgChm.DET.offsetY > colClassHeightPx) { 
-    	if  (NgChm.DET.offsetX > rowClassWidthPx) {
+    if (mapItem.offsetY > colClassHeightPx) { 
+    	if  (mapItem.offsetX > rowClassWidthPx) {
     		objectType = "map";
     	}
-    	if  (NgChm.DET.offsetX < rowClassWidthPx) {
+    	if  (mapItem.offsetX < rowClassWidthPx) {
     		objectType = "rowClass";
     	}
     } else {
-    	if  (NgChm.DET.offsetX > rowClassWidthPx) {
+    	if  (mapItem.offsetX > rowClassWidthPx) {
     		objectType = "colClass";
     	}
     }
     if (objectType === "map") {
-    	var row = Math.floor(NgChm.SEL.currentRow + (mapLocY/colElementSize)*NgChm.DET.getSamplingRatio('row'));
-    	var col = Math.floor(NgChm.SEL.currentCol + (mapLocX/rowElementSize)*NgChm.DET.getSamplingRatio('col'));
+    	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*NgChm.SEL.getSamplingRatio('row'));
+    	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*NgChm.SEL.getSamplingRatio('col'));
     	if ((row <= NgChm.heatMap.getNumRows('d')) && (col <= NgChm.heatMap.getNumColumns('d'))) {
 		// Gather the information about the current pixel.
 		let matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,row,col);
@@ -128,7 +128,7 @@ NgChm.UHM.userHelpOpen = function() {
 	    	} else {
 	    		matrixValue = matrixValue.toFixed(5);
 	    	}
-	    	if (NgChm.SEL.mode === 'FULL_MAP') {
+	    	if (NgChm.DMM.primaryMap.mode === 'FULL_MAP') {
 	    		matrixValue = matrixValue + "<br>(summarized)";
 	    	}
 
@@ -172,26 +172,26 @@ NgChm.UHM.userHelpOpen = function() {
 			NgChm.UHM.formatMapDetails (helpContents, pixelInfo);
 			helptext.style.display="inline";
 			helptext.appendChild(helpContents);
-			NgChm.UHM.locateHelpBox(helptext);
+			NgChm.UHM.locateHelpBox(helptext,mapItem);
 		}
     	}
     } else if ((objectType === "rowClass") || (objectType === "colClass")) {
     	var pos, value, label;
 	var hoveredBar, hoveredBarColorScheme, hoveredBarValues;
     	if (objectType === "colClass") {
-        	var col = Math.floor(NgChm.SEL.currentCol + (mapLocX/rowElementSize)*NgChm.DET.getSamplingRatio('col'));
+        	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*NgChm.SEL.getSamplingRatio('col'));
         	var colLabels = NgChm.heatMap.getColLabels().labels;
         	label = colLabels[col-1];
     		var coveredHeight = 0;
-    		pos = Math.floor(NgChm.SEL.currentCol + (mapLocX/rowElementSize));
+    		pos = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize));
     		var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
     		var classBarsConfigOrder = NgChm.heatMap.getColClassificationOrder();
 			for (var i = 0; i <  classBarsConfigOrder.length; i++) {
 				var key = classBarsConfigOrder[i];
     			var currentBar = classBarsConfig[key];
     			if (currentBar.show === 'Y') {
-	        		coveredHeight += NgChm.DET.canvas.clientHeight*currentBar.height/NgChm.DET.canvas.height;
-	        		if (coveredHeight >= NgChm.DET.offsetY) {
+	        		coveredHeight += mapItem.canvas.clientHeight*currentBar.height/mapItem.canvas.height;
+	        		if (coveredHeight >= mapItem.offsetY) {
 	        			hoveredBar = key;
 	        			hoveredBarValues = NgChm.heatMap.getColClassificationData()[key].values;
 	        			break;
@@ -200,19 +200,19 @@ NgChm.UHM.userHelpOpen = function() {
     		}
         	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("col",hoveredBar);
     	} else {
-    		var row = Math.floor(NgChm.SEL.currentRow + (mapLocY/colElementSize)*NgChm.DET.getSamplingRatio('row'));
+    		var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*NgChm.SEL.getSamplingRatio('row'));
         	var rowLabels = NgChm.heatMap.getRowLabels().labels;
         	label = rowLabels[row-1];
     		var coveredWidth = 0;
-    		pos = Math.floor(NgChm.SEL.currentRow + (mapLocY/colElementSize));
+    		pos = Math.floor(mapItem.currentRow + (mapLocY/colElementSize));
     		var classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
     		var classBarsConfigOrder = NgChm.heatMap.getRowClassificationOrder();
 			for (var i = 0; i <  classBarsConfigOrder.length; i++) {
 				var key = classBarsConfigOrder[i];
 				var currentBar = classBarsConfig[key];
     			if (currentBar.show === 'Y') {
-	        		coveredWidth += NgChm.DET.canvas.clientWidth*currentBar.height/NgChm.DET.canvas.width;
-	        		if (coveredWidth >= NgChm.DET.offsetX){
+	        		coveredWidth += mapItem.canvas.clientWidth*currentBar.height/mapItem.canvas.width;
+	        		if (coveredWidth >= mapItem.offsetX){
 	        			hoveredBar = key;
 	        			hoveredBarValues = NgChm.heatMap.getRowClassificationData()[key].values;
 	        			break;
@@ -343,7 +343,7 @@ NgChm.UHM.userHelpOpen = function() {
         } else {
         	helptext.style.display="inline";
         	helptext.appendChild(helpContents);
-        	NgChm.UHM.locateHelpBox(helptext);
+        	NgChm.UHM.locateHelpBox(helptext,mapItem);
         }	
     } else {  
     	// on the blank area in the top left corner
@@ -361,28 +361,27 @@ function pasteHelpContents() {
 }
 
 /**********************************************************************************
- * FUNCTION - locateHelpBox: The purpose of this function is to set the location 
- * for the display of a pop-up help panel based upon the cursor location and the
- * size of the panel.
+ * FUNCTION - locateHelpBox: This function determines and sets the location of a
+ * popup help box.  
  **********************************************************************************/
-NgChm.UHM.locateHelpBox = function(helptext) {
-    var rowClassWidthPx = NgChm.DET.getRowClassPixelWidth();
-    var colClassHeightPx = NgChm.DET.getColClassPixelHeight();
-	var mapLocY = NgChm.DET.offsetY - colClassHeightPx;
-	var mapLocX = NgChm.DET.offsetX - rowClassWidthPx;
-	var mapH = NgChm.DET.canvas.clientHeight - colClassHeightPx;
-	var mapW = NgChm.DET.canvas.clientWidth - rowClassWidthPx;
-	var boxLeft = NgChm.DET.pageX;
+NgChm.UHM.locateHelpBox = function(helptext,mapItem) {
+    var rowClassWidthPx = NgChm.DET.getRowClassPixelWidth(mapItem);
+    var colClassHeightPx = NgChm.DET.getColClassPixelHeight(mapItem);
+	var mapLocY = mapItem.offsetY - colClassHeightPx;
+	var mapLocX = mapItem.offsetX - rowClassWidthPx;
+	var mapH = mapItem.canvas.clientHeight - colClassHeightPx;
+	var mapW = mapItem.canvas.clientWidth - rowClassWidthPx;
+	var boxLeft = mapItem.pageX;
 	if (mapLocX > (mapW / 2)) {
-		boxLeft = NgChm.DET.pageX - helptext.clientWidth - 10;
+		boxLeft = mapItem.pageX - helptext.clientWidth - 10;
 	}
 	helptext.style.left = boxLeft + 'px';
-	var boxTop = NgChm.DET.pageY;
-	if ((boxTop+helptext.clientHeight) > NgChm.DET.canvas.clientHeight + 90) {
-		if (helptext.clientHeight > NgChm.DET.pageY) {
-			boxTop = NgChm.DET.pageY - (helptext.clientHeight/2);
+	var boxTop = mapItem.pageY;
+	if ((boxTop+helptext.clientHeight) > mapItem.canvas.clientHeight + 90) {
+		if (helptext.clientHeight > mapItem.pageY) {
+			boxTop = mapItem.pageY - (helptext.clientHeight/2);
 		} else {
-			boxTop = NgChm.DET.pageY - helptext.clientHeight;
+			boxTop = mapItem.pageY - helptext.clientHeight;
 		}
 	}
 	//Keep box from going off top of screen so data values always visible.
@@ -391,6 +390,7 @@ NgChm.UHM.locateHelpBox = function(helptext) {
 	}
 	helptext.style.top = boxTop + 'px';
 }
+
 
 /**********************************************************************************
  * FUNCTION - hlp: The purpose of this function is to generate a 
@@ -858,27 +858,42 @@ NgChm.UHM.colorOver = function(val) {
 
 
 NgChm.UHM.fullBtnOver = function(btn,val) {
-	if (NgChm.SEL.mode !=='NORMAL') {
+	let selStr = '_selected';
+	let fullButton = 'images/full_selected.png';
+	if (!btn.src.includes(selStr)) {
+		fullButton = 'images/full.png';
+	}
+	if (NgChm.DMM.primaryMap.mode !=='NORMAL') {
 		if (val === 0) {
-			btn.setAttribute('src', 'images/full.png');
+			btn.setAttribute('src', fullButton);
 		} else {
 			btn.setAttribute('src', 'images/fullHover.png');
 		}
 	}
 }
 NgChm.UHM.ribbonHBtnOver = function(btn,val) {
-	if (NgChm.SEL.mode !=='RIBBONH') {
+	let selStr = '_selected';
+	let ribbonButton = 'images/ribbonH_selected.png';
+	if (!btn.src.includes(selStr)) {
+		ribbonButton = 'images/ribbonH.png';
+	}
+	if (NgChm.DMM.primaryMap.mode !=='RIBBONH') {
 		if (val === 0) {
-			btn.setAttribute('src', 'images/ribbonH.png');
+			btn.setAttribute('src', ribbonButton);
 		} else {
 			btn.setAttribute('src', 'images/ribbonHHover.png');
 		}
 	}
 }
 NgChm.UHM.ribbonVBtnOver = function(btn,val) {
-	if (NgChm.SEL.mode !=='RIBBONV') {
+	let selStr = '_selected';
+	let ribbonButton = 'images/ribbonV_selected.png';
+	if (!btn.src.includes(selStr)) {
+		ribbonButton = 'images/ribbonV.png';
+	}
+	if (NgChm.DMM.primaryMap.mode !=='RIBBONV') {
 		if (val === 0) {
-			btn.setAttribute('src', 'images/ribbonV.png');
+			btn.setAttribute('src', ribbonButton);
 		} else {
 			btn.setAttribute('src', 'images/ribbonVHover.png');
 		}
@@ -1261,8 +1276,4 @@ NgChm.UHM.linkBoxSizing = function() {
 		linkBoxAllTxt.style.height = boxTextHeight;
 	}
 }
-
-
-
-
 

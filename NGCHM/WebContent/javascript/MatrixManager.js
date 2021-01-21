@@ -1019,11 +1019,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (NgChm.UTIL.getURLParameter("column") !== "" && !isNaN(Number(NgChm.UTIL.getURLParameter("column")))){
 			NgChm.SEL.currentCol = Number(NgChm.UTIL.getURLParameter("column"))
 		}
-
 		NgChm.UTIL.configurePanelInterface();
 		NgChm.SUM.initSummaryDisplay();
-		NgChm.DET.initDetailDisplay();
-		document.addEventListener("keydown", NgChm.SEL.keyNavigate);
+		document.addEventListener("keydown", NgChm.DEV.keyNavigate);
 
 		addDataLayers(mc);
 	}

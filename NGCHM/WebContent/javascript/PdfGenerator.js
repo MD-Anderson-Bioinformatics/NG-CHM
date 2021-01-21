@@ -14,7 +14,7 @@ NgChm.PDF.mdaLogo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQYAAABsCAYAA
  * button on the menu bar.  The PDF preferences panel is then launched
  **********************************************************************************/
 NgChm.PDF.canGeneratePdf = function() {
-	return NgChm.SUM.isVisible() || NgChm.DET.isVisible();
+	return NgChm.SUM.isVisible() || NgChm.DMM.isVisible();
 };
 
 NgChm.PDF.openPdfPrefs = function(e) {
@@ -29,17 +29,17 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	const sumButton = document.getElementById ('pdfInputSummaryMap');
 	const detButton = document.getElementById ('pdfInputDetailMap');
 	const bothButton = document.getElementById ('pdfInputBothMaps');
-	if (NgChm.SUM.isVisible() && !NgChm.DET.isVisible()) {
+	if (NgChm.SUM.isVisible() && !NgChm.DMM.isVisible()) {
 		sumButton.checked = true;
 		sumButton.disabled = false;
 		detButton.disabled = true;
 		bothButton.disabled = true;
-	} else if (NgChm.DET.isVisible() && !NgChm.SUM.isVisible()) {
+	} else if (NgChm.DMM.isVisible() && !NgChm.SUM.isVisible()) {
 		detButton.checked = true;
 		sumButton.disabled = true;
 		detButton.disabled = false;
 		bothButton.disabled = true;
-	} else if (NgChm.SUM.isVisible() && NgChm.DET.isVisible()) {
+	} else if (NgChm.SUM.isVisible() && NgChm.DMM.isVisible()) {
 		bothButton.checked = true;
 		sumButton.disabled = false;
 		detButton.disabled = false;
@@ -58,7 +58,7 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	if (labels.length > 0) {
 		document.getElementById("pdfInputFont").value = parseInt(labels[0].style["font-size"]);
 	} else {
-		document.getElementById("pdfInputFont").value = Math.min(NgChm.DET.colLabelFont,NgChm.DET.rowLabelFont);
+		document.getElementById("pdfInputFont").value = Math.min(NgChm.DMM.primaryMap.colLabelFont,NgChm.DMM.primaryMap.rowLabelFont);
 	}
     NgChm.UTIL.redrawCanvases();
 }
@@ -71,7 +71,7 @@ NgChm.PDF.pdfCancelButton = function() {
 	document.getElementById('pdfErrorMessage').style.display="none";
 	var prefspanel = document.getElementById('pdfPrefs');
 	prefspanel.classList.add ('hide');
-    NgChm.DET.canvas.focus();
+	NgChm.DMM.primaryMap.canvas.focus();
 }
 
 /**********************************************************************************
@@ -158,7 +158,7 @@ NgChm.PDF.setBuilderLogText = function (doc, text, pos, end) {
  **********************************************************************************/
 NgChm.PDF.callViewerHeatmapPDF = function() {
 	document.body.style.cursor = 'wait';
-    const details = NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
+    const details = NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.DMM.primaryMap, NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
     let tilesReady = NgChm.heatMap.allTilesAvailable();
     if (tilesReady === true) {
     	 NgChm.PDF.getViewerHeatmapPDF();
@@ -209,7 +209,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	var maxFontSize = Number(document.getElementById("pdfInputFont").value);
 
 	// Calculate longest labels on each axis
-	var allLabels = document.getElementsByClassName("DynamicLabel");
+	var allLabels = getPrimaryLabels();
 	var longestRowLabelUnits,longestColLabelUnits;
 	setLongestLabelUnits();
 
@@ -251,9 +251,6 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	//Get Dimensions for the Detail Heat Map and derive row/col class bar height/width
 	var detMapW, detMapH, detColClassHeight, detRowClassWidth;
 	var detRowDendroWidth, detColDendroHeight;
-	if (includeDetailMap) {
-		setDetailHeatmapDimensions();
-	}
 
 	// Create and set the fontSize using the minimum of the calculated sizes for row and column labels
 	// Calculate the font size for rows and columns. Take the lowest of the two.  If the result is greater than 11 set the font to 11.  If the result is less than 6 set the font to 6.
@@ -274,7 +271,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	if (includeSummaryMap) {
 		// Scale summary dendro canvases for PDF page size and Redraw because otherwise they can show up blank
 		resizeSummaryDendroCanvases(sumMapW, sumMapH, rowDendroWidth, colDendroHeight);
-		NgChm.SEL.updateSelection();
+		NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
 
 		sumMapCanvas = document.createElement('canvas');
 		configureCanvas(sumMapCanvas, NgChm.SUM.canvas, sumMapW*2, sumMapH*2);
@@ -312,29 +309,16 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		restoreSummaryDendroCanvases();
 	}
 
-	var detRowDendroData, detColDendroData, detImgData, detBoxImgData;
-	if (includeDetailMap) {
-		// Detail Canvases
-		detRowDendroData = document.getElementById("detail_row_dendro_canvas").toDataURL('image/png');
-		detColDendroData = document.getElementById("detail_column_dendro_canvas").toDataURL('image/png');
-		detImgData = NgChm.DET.canvas.toDataURL('image/png');
-		detBoxImgData = NgChm.DET.boxCanvas.toDataURL('image/png');
-	}
-
-	// Create first page header
-	createHeader(theFont);
-	
 	if (mapsToShow == "D") {
-		drawDetailHeatMapPage()
+		drawDetailHeatMapPages(theFont)
 	} else {
 		var imgLeft, imgTop;
-		drawSummaryHeatMapPage();
+		drawSummaryHeatMapPage(theFont);
 		if (mapsToShow === 'B') {
 			// If showing both sum and det, add the box to the summary image, add a page, print the header, and add the detail image to the PDF
 			doc.addImage(sumBoxImgData, 'PNG', imgLeft, imgTop, sumMapW,sumMapH);
 			doc.addPage();
-			createHeader(theFont);
-			drawDetailHeatMapPage()
+			drawDetailHeatMapPages(theFont)
 		} else {
 			// If showing ONLY summary, Clear the box canvas and draw it 'empty' on the summary page (we do this just for the border w/o selection box)
 			NgChm.SUM.resetBoxCanvas();
@@ -348,7 +332,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 
 	// Add row and column labels to the PDF
 	if (mapsToShow !== "S") {
-		drawDetailSelectionsAndLabels();
+//		drawDetailSelectionsAndLabels();
 	}
 	
 	// Setup for class bar legends
@@ -391,14 +375,14 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	leftOff = 20; // ...reset leftOff...
 	drawColClassLegends();
 
+	NgChm.SUM.summaryInit();
+
 	// Reset Summary and Detail Panels on Viewer Screen
 	if (includeDetailMap) {
-		NgChm.DET.canvas.focus();
+		NgChm.DMM.primaryMap.canvas.focus();
+		NgChm.DMM.detailResize();
 	}
-	NgChm.SUM.summaryInit();
-	if (includeDetailMap) {
-		NgChm.DET.detailResize();
-	}
+	
 	// Reset cursor to default
 	document.body.style.cursor = 'default';
 	
@@ -533,11 +517,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * FUNCTION: setDetailHeatmapDimensions - This function calculates the proper PDF
 	 * display dimensions for the Detail Heat Map page.
 	 **********************************************************************************/
-	function setDetailHeatmapDimensions() {
-		const rcw = +document.getElementById("detail_row_dendro_canvas").width;
-		const cch = +document.getElementById("detail_column_dendro_canvas").height;
-		const hmw = +document.getElementById("detail_canvas").width;
-		const hmh = +document.getElementById("detail_canvas").height;
+	function setDetailHeatmapDimensions(rcw,cch,hmw,hmh) {
 		var rowDendroPctg = rcw / (hmw + rcw);
 		var colDendroPctg = cch / (hmh + cch);
 		detMapW = detImgW*(1-rowDendroPctg);
@@ -546,7 +526,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		detColDendroHeight = detImgH * colDendroPctg;
 		detColClassHeight = detMapH*(NgChm.DET.calculateTotalClassBarHeight("col")/hmh);
 		detRowClassWidth = detMapW*(NgChm.DET.calculateTotalClassBarHeight("row")/hmw);
-		console.log ({ m: 'setDetailHeatmapDimensions', detMapW, detMapH, detRowDendroWidth, detColDendroHeight, detColClassHeight, detRowClassWidth, rcw, cch, hmw, hmh, rowDendroPctg, colDendroPctg });
+//		console.log ({ m: 'setDetailHeatmapDimensions', detMapW, detMapH, detRowDendroWidth, detColDendroHeight, detColClassHeight, detRowClassWidth, rcw, cch, hmw, hmh, rowDendroPctg, colDendroPctg });
 	}
 	
 	/**********************************************************************************
@@ -572,18 +552,22 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * of the PDF pages.  It makes the MDAnderson logo, the HM name, and the red divider 
 	 * line at the top of each page
 	 **********************************************************************************/
-	function createHeader(theFont, contText) {
+	function createHeader(theFont, titleText, contText) {
 		//If standard viewer version OR file viewer version show MDA logo 
 		if ((NgChm.PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined')) {
 			doc.addImage(NgChm.PDF.mdaLogo, 'PNG',5,5,header.clientWidth,header.clientHeight);
 			// Center Heat Map name in header whitespace to left of logo and step down the font if excessively long.
-			if (NgChm.heatMap.getMapInformation().name.length > 60) {
-				doc.setFontSize(10);
-				doc.text(pageWidth/1.7 - doc.getStringUnitWidth(NgChm.heatMap.getMapInformation().name)*10/2, headerHeight - 10, NgChm.heatMap.getMapInformation().name, null);
-			} else {
-				doc.setFontSize(20);
-				doc.text(pageWidth/1.7 - doc.getStringUnitWidth(NgChm.heatMap.getMapInformation().name)*20/2, headerHeight - 10, NgChm.heatMap.getMapInformation().name, null);
+			let fullTitle
+			if (titleText !== null) {
+				fullTitle = titleText + ": ";
 			}
+			fullTitle = fullTitle + NgChm.heatMap.getMapInformation().name
+			if (NgChm.heatMap.getMapInformation().name.length > 60) {
+				doc.setFontSize(12);
+			} else {
+				doc.setFontSize(18);
+			}
+			doc.text(150, headerHeight - 10, fullTitle, null);
 			doc.setFontType("bold");
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
@@ -657,7 +641,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			var nextClassBarFigureH = getNextLineClassBarFigureH(key,type);
 			if (topOff + classBarHeaderHeight + nextClassBarFigureH > pageHeight && !isLastClassBarToBeDrawn(key,type)){ // if the next class bar goes off the page vertically...
 				doc.addPage(); // ... make a new page and reset topOff
-				createHeader(theFont, sectionHeader + " (continued)");
+				createHeader(theFont, null, sectionHeader + " (continued)");
 				topOff = paddingTop + 15;
 			}
 			classBarFigureH = 0;   
@@ -790,29 +774,30 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * canvases for the PDF and redraws them.  
 	 **********************************************************************************/
 	function resizeDetailDendroCanvases(detMapW,detMapH, rowDendroW, colDendroH){
-		NgChm.DET.canvas.style.height = detMapH + 'px';
-		NgChm.DET.canvas.style.width = detMapW + 'px';
-		NgChm.DET.updateDisplayedLabels();
-		document.getElementById('detail_row_dendro_canvas').height = detMapH;
-		document.getElementById('detail_row_dendro_canvas').style.height = detMapH + 'px';
-		document.getElementById('detail_row_dendro_canvas').width = rowDendroW;
-		document.getElementById('detail_row_dendro_canvas').style.width = rowDendroW + 'px';
-		
-		document.getElementById('detail_column_dendro_canvas').width = detMapW;
-		document.getElementById('detail_column_dendro_canvas').style.width = detMapW + 'px';
-		document.getElementById('detail_column_dendro_canvas').height = colDendroH;
-		document.getElementById('detail_column_dendro_canvas').style.height = colDendroH + 'px';
-		NgChm.DET.rowDendro.draw();
-		NgChm.DET.colDendro.draw();
-		NgChm.DET.detailDrawColClassBarLabels();
-		NgChm.DET.detailDrawRowClassBarLabels();
+        const mapItem = NgChm.DMM.primaryMap;
+        mapItem.canvas.style.height = detMapH + 'px';
+        mapItem.canvas.style.width = detMapW+ 'px';
+ 		NgChm.DET.updateDisplayedLabels();
+		mapItem.rowDendroCanvas.height = detMapH;
+		mapItem.rowDendroCanvas.style.height = detMapH + 'px';
+		mapItem.rowDendroCanvas.width = rowDendroW;
+		mapItem.rowDendroCanvas.style.width = rowDendroW + 'px';
+		mapItem.colDendroCanvas.width = detMapW;
+		mapItem.colDendroCanvas.style.width = detMapW + 'px';
+		mapItem.colDendroCanvas.height = colDendroH;
+		mapItem.colDendroCanvas.style.height = colDendroH + 'px';
+		mapItem.rowDendro.draw();
+		mapItem.colDendro.draw();
+		NgChm.DET.detailDrawColClassBarLabels(mapItem);
+		NgChm.DET.detailDrawRowClassBarLabels(mapItem);
 	}
 	
 	/**********************************************************************************
 	 * FUNCTION:  drawSummaryHeatMapPage - This function draws the various summary canvases
 	 * onto the summary heat map PDF page.
 	 **********************************************************************************/
-	function drawSummaryHeatMapPage() {
+	function drawSummaryHeatMapPage(theFont) {
+		createHeader(theFont, "Summary");
 		// Draw the Summary Top Items on the Summary Page
 		drawSummaryTopItems();
 		var rowDendroLeft = paddingLeft;
@@ -838,6 +823,22 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		// Add top item marks
 		doc.addImage(sumRowTopItemsData, 'PNG', imgLeft + sumMapW, imgTop, topItemsWidth,sumMapH); 
 		doc.addImage(sumColTopItemsData, 'PNG', imgLeft, imgTop + sumMapH, sumMapW,topItemsHeight);
+	}
+	
+	/**********************************************************************************
+	 * FUNCTION - getPrimaryLabels: This function retrieves an array filled with the
+	 * labels for the Primary heat map panel.
+	 **********************************************************************************/
+	function getPrimaryLabels(){
+		var allLabels = document.getElementsByClassName("DynamicLabel");
+		var primaryLabels = [];
+		for (var i = 0; i < allLabels.length; i++) {
+			var label = allLabels[i];
+			if ((label.id.split("_").length) < 3) {
+				primaryLabels.push(label);
+			}
+		}
+		return primaryLabels;
 	}
 	
 	/**********************************************************************************
@@ -874,77 +875,104 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	}
 	
 	/**********************************************************************************
-	 * FUNCTION:  drawDetailHeatMapPage - This function draws the various detail canvases
+	 * FUNCTION:  drawDetailHeatMapPages - This function draws the various detail canvases
 	 * onto the detail heat map PDF page.
 	 **********************************************************************************/
-	function drawDetailHeatMapPage() {
-		var rowDendroLeft = paddingLeft;
-		var imgLeft = paddingLeft+detRowDendroWidth;
-		var colDendroTop = paddingTop;
-		var imgTop = paddingTop+detColDendroHeight;
-		if (rowDendroConfig.show !== 'ALL') {
-			imgLeft = paddingLeft;
-			detMapW = detImgW;
-			detRowClassWidth = detMapW*(NgChm.DET.calculateTotalClassBarHeight("row")/NgChm.DET.canvas.width);
-			detRowDendroWidth = 0;
+	function drawDetailHeatMapPages(theFont) {
+		for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
+			if (i > 0) {
+				doc.addPage();
+			}
+			const mapItem = NgChm.DMM.DetailMaps[i];
+			let detVer = "Primary";
+			if (mapItem.version === 'S') {
+				detVer = "Ver " + mapItem.panelNbr;
+			}
+			createHeader(theFont, "Detail - " + detVer);
+			const rcw = + mapItem.rowDendroCanvas.width;
+			const cch = + mapItem.colDendroCanvas.height;
+			const hmw = + mapItem.canvas.width;
+			const hmh = + mapItem.canvas.height;
+			const rowDendroPctg = rcw / (hmw + rcw);
+			const colDendroPctg = cch / (hmh + cch);
+			const detMapW = detImgW*(1-rowDendroPctg);
+			const detMapH = detImgH*(1-colDendroPctg);
+			const detRowDendroWidth = detImgW * rowDendroPctg;
+			const detColDendroHeight = detImgH * colDendroPctg;
+			const detColClassHeight = detMapH*(NgChm.DET.calculateTotalClassBarHeight("col")/hmh);
+			const detRowClassWidth = detMapW*(NgChm.DET.calculateTotalClassBarHeight("row")/hmw);
+			setDetailHeatmapDimensions(rcw,cch,hmw,hmh)
+			let rowDendroLeft = paddingLeft;
+			let imgLeft = paddingLeft+detRowDendroWidth;
+			let colDendroTop = paddingTop;
+			let imgTop = paddingTop+detColDendroHeight;
+			if (rowDendroConfig.show !== 'ALL') {
+				imgLeft = paddingLeft;
+				detMapW = detImgW;
+				detRowClassWidth = detMapW*(NgChm.DET.calculateTotalClassBarHeight("row")/NgChm.DMM.primaryMap.canvas.width);
+				detRowDendroWidth = 0;
+			}
+			if (colDendroConfig.show !== 'ALL') {
+				imgTop = paddingTop;
+				detMapH = detImgH;
+				detColClassHeight = detMapH*(NgChm.DET.calculateTotalClassBarHeight("col")/NgChm.DMM.primaryMap.canvas.height);
+				detColDendroHeight = 0;
+			}
+			resizeDetailDendroCanvases(detMapW,detMapH,detRowDendroWidth,detColDendroHeight);
+			var detRowDendroData = mapItem.rowDendroCanvas.toDataURL('image/png');
+			var detColDendroData = mapItem.colDendroCanvas.toDataURL('image/png');
+			var detImgData = mapItem.canvas.toDataURL('image/png');  //new 
+			var detBoxImgData = mapItem.boxCanvas.toDataURL('image/png'); //new
+			if (rowDendroConfig.show === 'ALL') {
+				doc.addImage(detRowDendroData, 'PNG', rowDendroLeft, imgTop+detColClassHeight, detRowDendroWidth, detMapH-detColClassHeight);
+			}
+			if (colDendroConfig.show === 'ALL') {
+				doc.addImage(detColDendroData, 'PNG',imgLeft+detRowClassWidth, colDendroTop, detMapW-detRowClassWidth,detColDendroHeight);
+			}
+			doc.addImage(detImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
+			doc.addImage(detBoxImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
+			drawDetailSelectionsAndLabels(mapItem);
 		}
-		if (colDendroConfig.show !== 'ALL') {
-			imgTop = paddingTop;
-			detMapH = detImgH;
-			detColClassHeight = detMapH*(NgChm.DET.calculateTotalClassBarHeight("col")/NgChm.DET.canvas.height);
-			detColDendroHeight = 0;
-		}
-		
-		resizeDetailDendroCanvases(detMapW,detMapH,detRowDendroWidth,detColDendroHeight);
-		var detRowDendroData = document.getElementById("detail_row_dendro_canvas").toDataURL('image/png');
-		var detColDendroData = document.getElementById("detail_column_dendro_canvas").toDataURL('image/png');
-	
-		if (rowDendroConfig.show === 'ALL') {
-			doc.addImage(detRowDendroData, 'PNG', rowDendroLeft, imgTop+detColClassHeight, detRowDendroWidth, detMapH-detColClassHeight);
-		}
-		if (colDendroConfig.show === 'ALL') {
-			doc.addImage(detColDendroData, 'PNG',imgLeft+detRowClassWidth, colDendroTop, detMapW-detRowClassWidth,detColDendroHeight);
-		}
-		doc.addImage(detImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
-		doc.addImage(detBoxImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
 	}
-
+	
 	/**********************************************************************************
 	 * FUNCTION:  drawDetailSelectionsAndLabels - This function draws any selection 
 	 * boxes and then labels onto the detail heat map page.
 	 **********************************************************************************/
-	function drawDetailSelectionsAndLabels() {
-		var detClient2PdfWRatio = NgChm.DET.canvas.clientWidth/detMapW;  // scale factor to place the labels in their proper locations
-		var detClient2PdfHRatio = NgChm.DET.canvas.clientHeight/detMapH;
+	function drawDetailSelectionsAndLabels(mapItem) {
+		var detClient2PdfWRatio = mapItem.canvas.clientWidth/detMapW;  // scale factor to place the labels in their proper locations
+		var detClient2PdfHRatio = mapItem.canvas.clientHeight/detMapH;
 		// Draw selection boxes first (this way they will not overlap text)
-		drawDetailSelectionBoxes(detClient2PdfWRatio,detClient2PdfHRatio);
+		drawDetailSelectionBoxes(mapItem, detClient2PdfWRatio,detClient2PdfHRatio);
 		// Draw selection boxes first (this way they will not overlap text)
-		drawDetailLabels(detClient2PdfWRatio,detClient2PdfHRatio);
+		drawDetailLabels(mapItem,detClient2PdfWRatio,detClient2PdfHRatio);
 	}
 
 	/**********************************************************************************
 	 * FUNCTION:  drawDetailSelectionsAndLabels - This function draws any selection 
 	 * boxes and selected label boxes onto the detail heat map page.
 	 **********************************************************************************/
-	function drawDetailSelectionBoxes(detClient2PdfWRatio,detClient2PdfHRatio,selectedColor) {
+	function drawDetailSelectionBoxes(mapItem,detClient2PdfWRatio,detClient2PdfHRatio,selectedColor) {
+		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
+		const mapLabels = mapItem.labelElements;
 		// Draw selection boxes first (this way they will not overlap text)
 		var rowLabels = 0;
 		// Get selection color for current datalayer to be used in highlighting selected labels
 		var dataLayers = NgChm.heatMap.getDataLayers();
-		var layer = dataLayers[NgChm.SEL.currentDl];
+		var layer = dataLayers[mapItem.currentDl];
 		var selectedColor = colorMap.getHexToRgba(layer.selection_color);
-		for (var i = 0; i < allLabels.length; i++){
-			var label = allLabels[i];
+		for (var i in mapLabels) {
+			var label = mapLabels[i].div;		
 			if (label.dataset.axis == "Row"){
-				if (NgChm.DET.labelIndexInSearch(NgChm.SEL.currentRow+i,"Row")) {
+				if (NgChm.DET.labelIndexInSearch(mapItem.currentRow+i,"Row")) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
-					doc.rect((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, longestRowLabelUnits+2, theFont,'F');
+					doc.rect((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, longestRowLabelUnits+2, theFont,'F');
 				}
 				rowLabels++;
 			} else if (label.dataset.axis == "Column") {
-				if (NgChm.DET.labelIndexInSearch(NgChm.SEL.currentCol+i-rowLabels,"Column")) {
+				if (NgChm.DET.labelIndexInSearch(mapItem.currentCol+i-rowLabels,"Column")) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
-					doc.rect((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth-2, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight,  theFont+2.5, longestColLabelUnits+2,'F'); 
+					doc.rect((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth-2, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight,  theFont+2.5, longestColLabelUnits+2,'F'); 
 				}
 			}
 		}
@@ -954,24 +982,24 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	 * FUNCTION:  drawDetailLabels - This function draws any labels onto
 	 * the heat map page.
 	 **********************************************************************************/
-	function drawDetailLabels(detClient2PdfWRatio,detClient2PdfHRatio) {
-		for (var i = 0; i < allLabels.length; i++){
-			var label = allLabels[i];
+	function drawDetailLabels(mapItem,detClient2PdfWRatio,detClient2PdfHRatio) {
+		const mapLabels = mapItem.labelElements;
+		for (var j in mapLabels) {
+			var label = mapLabels[j].div;		
 			if ((label.dataset.axis == "Row") || (label.dataset.axis == "ColumnCovar")) {
 				if (label.id.indexOf("legendDet") > -1) {
-					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight+theFont*.75-1, label.innerHTML, null);
+					doc.text((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight+theFont*.75-1, label.innerHTML, null);
 				} else {
-					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight+theFont*.75, label.innerHTML, null);
+					doc.text((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight+theFont*.75, label.innerHTML, null);
 				}
 				
 			} else if ((label.dataset.axis == "Column") || (label.dataset.axis == "RowCovar")) {
 				if (label.id.indexOf("legendDet") > -1) {
-					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight, label.innerHTML, null, 270);
+					doc.text((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight, label.innerHTML, null, 270);
 				} else {
-					doc.text((label.offsetLeft-NgChm.DET.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth, (label.offsetTop-NgChm.DET.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight, label.innerHTML, null, 270);
+					doc.text((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight, label.innerHTML, null, 270);
 				}
 			} 
-	
 		}
 	}
 	
@@ -982,7 +1010,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 	function drawDataDistributionPlot() {
 		sectionHeader = "Data Matrix Distribution"
 		doc.addPage();
-		createHeader(theFont);
+		createHeader(theFont, null);
 		doc.setFontSize(classBarHeaderSize);
 		doc.setFontType("bold");
 		doc.text(10, paddingTop, sectionHeader , null);
@@ -1197,7 +1225,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		}
     	if ((topOff + classBarHeaderHeight + (categories*13) > pageHeight)) {
     		doc.addPage(); // ... make a new page and reset topOff
-    		createHeader(theFont, sectionHeader);
+    		createHeader(theFont, null, sectionHeader);
     		topOff = paddingTop + 15;
     	} else {
 			doc.setFontSize(classBarHeaderSize);
@@ -1247,7 +1275,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 			}
 			if ((topOff + classBarHeaderHeight + (thresholds.length*13) > pageHeight) && !isLastClassBarToBeDrawn(key,type)) {
 				doc.addPage(); // ... make a new page and reset topOff
-				createHeader(theFont, sectionHeader + " (continued)");
+				createHeader(theFont, null, sectionHeader + " (continued)");
 				topOff = paddingTop + 15;
 				leftOff = 20; // ...reset leftOff...
 			}  
@@ -1352,7 +1380,7 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 		}
 		if ((topOff + classBarHeaderHeight + 130) > pageHeight) {
 			doc.addPage(); // ... make a new page and reset topOff
-			createHeader(theFont, sectionHeader + " (continued)");
+			createHeader(theFont, null, sectionHeader + " (continued)");
 			topOff = paddingTop + 15;
 			leftOff = 20; // ...reset leftOff...
 		}  
