@@ -311,19 +311,21 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		thisPane.style.height = topContainer.clientHeight + 'px';
 		thisPane.style.display = '';
 		//Resize panels
-		NgChm.SUM.calcSummaryLayout();NgChm.SUM.redrawSummaryPane();
-		NgChm.DMM.detailResize();NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
+		NgChm.SUM.calcSummaryLayout();
+		NgChm.SUM.redrawSummaryPane();
+		NgChm.DMM.detailResize();
+		NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
 	}
 	
 	function closeFullScreen (paneId) {
 		isPaneExpanded = false;
 		const thisPane = document.getElementById(paneId);
 		const thisPaneParent = thisPane.parentElement;
-		//Hide all panes
+		//display all panes
 		displayPanes('');
-		//Hide all re-sizers
+		//display all re-sizers
 		displayResizers ('');
-		//Hide all containers but the ones holding the pane being expanded AND the top container
+		//display all containers
 		displayContainers('flex');
 		//Resize the pane being expanded to fill it's parent container
 		thisPaneParent.style.width = origContainer.width;
@@ -335,8 +337,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		origContainer = {};
 		activeContainers = [];
 		//Resize all panels
-		NgChm.SUM.calcSummaryLayout();NgChm.SUM.redrawSummaryPane();
-		NgChm.DMM.detailResize();NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
+		NgChm.SUM.calcSummaryLayout();
+		NgChm.SUM.redrawSummaryPane();
+		NgChm.DMM.detailResize();
+		NgChm.DET.setDrawDetailTimeout(NgChm.DET.redrawSelectionTimeout, false);
 	}
 	
 	//Grab a list of panes and show/hide them all
@@ -432,6 +436,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	//	otherwise:
 	// 		- Resize each subcontainer by e.detail.amount
 	function resizeHandler (e) {
+/*		if (e.target.style.display === "none") {
+			console.log("resizeHandler for none pane");
+			return;
+		}  */
 
 		if (debug) console.log ({ m: 'paneresize', e });
 
@@ -440,7 +448,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		const bb = e.target.getBoundingClientRect();
 
 		// If shrinking, shrink children first.
-		if (e.detail.amount < 0) resizeChildren();
+		if (e.detail.amount < 0) {
+			resizeChildren();
+		}
 
 		// Resize this container/pane.
 		e.target.style[e.detail.what]=(bb[e.detail.what]+e.detail.amount)+'px';
