@@ -1668,7 +1668,7 @@ NgChm.createNS('NgChm.LNK');
 
 
 			const coordsSelect = NgChm.UTIL.newElement('SELECT');
-			function getCoordinates() {
+			function getCoordinates(plugin) {
                 let coords = axis1cvOrder.filter(x => /\.coordinate\./.test(x))
                 coords = new Set(coords.map((coord) => coord.split(".coordinate.")[0]))
                 optionsBox.appendChild(NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt("Select coordinate")]));
@@ -1679,12 +1679,12 @@ NgChm.createNS('NgChm.LNK');
                 optionsBox.appendChild(coordsSelect);
                 coordsSelect.onchange = function(e) {
                     console.log(axis1cvOrder)
-                    var selectedCoord = coordsSelect.options[coordsSelect.selectedIndex].value;
-                    var options = axis1cvOrder.filter((coord) => coord.includes(selectedCoord))
+                    let  selectedCoord = coordsSelect.options[coordsSelect.selectedIndex].value;
+                    let options = axis1cvOrder.filter((coord) => coord.includes(selectedCoord))
                     let coords=[0,1]
+                    let coordName=plugin.config.axes[0].coco[0].name
                     coords.forEach((id)=>{
-                    	console.log(id)
-                    	let coordID ="Coordinate"+id
+                    	let coordID =coordName+id
                     	let coord = document.getElementById(coordID)
 	                    coord.length=0
 	                    options.forEach((option) =>{
@@ -1712,7 +1712,7 @@ NgChm.createNS('NgChm.LNK');
 
 
 			if (plugin.config.axes[0].hasOwnProperty('extra_covariates')){
-				getCoordinates()
+				getCoordinates(plugin)
 			}
 			
 
