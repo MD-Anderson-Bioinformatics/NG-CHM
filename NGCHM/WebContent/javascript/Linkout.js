@@ -1709,7 +1709,12 @@ NgChm.createNS('NgChm.LNK');
 			}
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
-			getCoordinates()
+
+
+			if (plugin.config.axes[0].hasOwnProperty('extra_covariates')){
+				getCoordinates()
+			}
+			
 
 			function createLinearSelectors (sss, numSelectors, selectorName, params, helpText) {
 				params = params || [];
