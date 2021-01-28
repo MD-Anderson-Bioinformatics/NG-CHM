@@ -80,7 +80,7 @@ NgChm.DMM.completeMapItemConfig = function (chm,mapItem) {
 	mapItem.labelPostScript = NgChm.DMM.nextMapNumber === 1 ? '' : '_' + NgChm.DMM.nextMapNumber;
 	mapItem.rowLabelDiv =  'rowL'+mapItem.labelElement.id.substring(1);
 	mapItem.colLabelDiv =  'colL'+mapItem.labelElement.id.substring(1);
-	NgChm.DET.setDetailMapDisplay(chm,mapItem);	
+	NgChm.DET.setDetailMapDisplay(mapItem);	
 }
 
 /*********************************************************************************************
