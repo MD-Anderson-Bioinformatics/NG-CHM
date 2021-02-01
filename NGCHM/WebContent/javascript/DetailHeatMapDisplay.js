@@ -122,7 +122,7 @@ NgChm.DET.flushDrawingCache = function (tile) {
  * FUNCTION:  setDetailMapDisplay - The purpose of this function is to complete the construction
  * of a detail heat map object and add it to the DetailMaps object array.
  *********************************************************************************************/
-NgChm.DET.setDetailMapDisplay = function (chm,mapItem) {
+NgChm.DET.setDetailMapDisplay = function (mapItem) {
 	NgChm.DET.setDendroShow(mapItem);
 	// Small Maps - Set detail data size.  If there are less than 42 rows or columns
 	// set the to show the box size closest to the lower value ELSE
@@ -193,7 +193,10 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 		dataBoxHeight: mapItem.dataBoxHeight,
 		rowBarWidths: NgChm.heatMap.getCovariateBarHeights("row"),
 		colBarHeights: NgChm.heatMap.getCovariateBarHeights("column"),
-
+		rowBarTypes: NgChm.heatMap.getCovariateBarTypes("row"),
+		colBarTypes: NgChm.heatMap.getCovariateBarTypes("column"),
+		rowDendroHeight: NgChm.heatMap.getRowDendroConfig().height,
+		colDendroHeight: NgChm.heatMap.getColDendroConfig().height,
 		searchRows: NgChm.SRCH.getSearchRows(),
 		searchCols: NgChm.SRCH.getSearchCols(),
 		searchGridColor: [0,0,0]
@@ -564,8 +567,10 @@ NgChm.DET.drawSelections = function () {
 		//Draw the border
 		if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0) {
 			let ctx=mapItem.boxCanvas.getContext("2d");
-			const boxX = (NgChm.DET.calculateTotalClassBarHeight("row") / mapItem.canvas.width) * mapItem.boxCanvas.width;
-			const boxY = (NgChm.DET.calculateTotalClassBarHeight("column") / mapItem.canvas.height) * mapItem.boxCanvas.height;
+			const canH = mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column");
+			const canW = mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
+			const boxX = (NgChm.DET.calculateTotalClassBarHeight("row") / canW) * mapItem.boxCanvas.width;
+			const boxY = (NgChm.DET.calculateTotalClassBarHeight("column") / canH) * mapItem.boxCanvas.height;
 			const boxW = mapItem.boxCanvas.width-boxX;
 			const boxH = mapItem.boxCanvas.height-boxY;
 			ctx.lineWidth=1;
@@ -1233,6 +1238,7 @@ NgChm.DET.detailDrawRowClassBarLabels = function (mapItem) {
 				const barWidth = (currentClassBar.height*scale);
 				let xPos = startingPoint + (barWidth/2) - (mapItem.rowClassLabelFont/2);
 				let yPos = mapItem.canvas.offsetTop + mapItem.canvas.clientHeight + 4;
+				NgChm.DET.removeClassBarLegendElements(key,mapItem);
 				if (currentClassBar.show === 'Y') {
 					NgChm.DET.drawRowClassBarLegends(mapItem);
 					const currFont = Math.min((currentClassBar.height - NgChm.DET.paddingHeight) * scale, NgChm.DET.maxLabelSize);
@@ -1284,6 +1290,7 @@ NgChm.DET.detailDrawColClassBarLabels = function (mapItem) {
 				let xPos = mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth + 3;
 				const key = colClassBarConfigOrder[i];
 				const currentClassBar = colClassBarConfig[key];
+				NgChm.DET.removeClassBarLegendElements(key,mapItem);
 				if (currentClassBar.show === 'Y') {
 					NgChm.DET.drawColClassBarLegends(mapItem);  
 					const currFont = Math.min((currentClassBar.height - NgChm.DET.paddingHeight) * scale, NgChm.DET.maxLabelSize);
@@ -1360,6 +1367,8 @@ NgChm.DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
 	const beginClasses = mapItem.canvas.offsetLeft-5;
 	const endClasses = beginClasses+(classHgt*scale)-3;
 	const classHeight = (endClasses-beginClasses)*scale;
+	//Don't draw legend if bar is not wide enough
+	if (classHeight < 18) return;
 	const beginPos =  beginClasses+(classHeight*prevEndPct)+(NgChm.DET.paddingHeight*(i+1));
 	const endPos =  beginClasses+(classHeight*currEndPct);
 	const midPos =  beginPos+((endPos-beginPos)/2);
@@ -1375,11 +1384,11 @@ NgChm.DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
 		midVal = midVal.toFixed(1)
 	}
 	//Create div and place high legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+"legendDetLow","-"+lowVal,topPos,beginPos,true);
+	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow","-"+lowVal,topPos,beginPos,true);
 	//Create div and place middle legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+"legendDetMid","-"+midVal,topPos,midPos,true);
+	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetMid","-"+midVal,topPos,midPos,true);
 	//Create div and place middle legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+"legendDetHigh","-"+highVal,topPos,endPos,true);
+	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh","-"+highVal,topPos,endPos,true);
 }
 
 /************************************************************************************************
@@ -1432,9 +1441,12 @@ NgChm.DET.drawColClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
 	const classHeight = (endClasses-beginClasses)*scale;
 
 	//find the first, middle, and last vertical positions for the bar legend being drawn
-	const topPos =  beginClasses+(classHeight*prevEndPct)+NgChm.DET.paddingHeight;
-	const endPos =  beginClasses+(classHeight*currEndPct)+NgChm.DET.paddingHeight;
-	const midPos =  topPos+((endPos-topPos)/2);
+	const topPos =  beginClasses+(classHeight*prevEndPct);
+	const barHeight = ((currentClassBar.height*scale) - NgChm.DET.paddingHeight);
+	//Don't draw legend if bar is not tall enough
+	if (barHeight < 18) return;
+	const endPos =  topPos + barHeight;
+	const midPos =  topPos+(barHeight/2);
 
 	//get your horizontal start position (to the right of bars)
 	const leftPos = mapItem.canvas.offsetLeft + mapItem.canvas.offsetWidth;
@@ -1452,13 +1464,30 @@ NgChm.DET.drawColClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
 	}
 	
 	//Create div and place high legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+"legendDetHigh-","-",topPos,leftPos,false);
-	NgChm.DET.setLegendDivElement(mapItem,key+"legendDetHigh",highVal,topPos+4,leftPos+3,false);
+	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh-","-",topPos,leftPos,false);
+	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh",highVal,topPos+4,leftPos+3,false);
 	//Create div and place mid legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+"legendDetMid","- "+midVal,midPos,leftPos,false);
+	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetMid","- "+midVal,midPos,leftPos,false);
 	//Create div and place low legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+"legendDetLow",lowVal,endPos-3,leftPos+3,false);
-	NgChm.DET.setLegendDivElement(mapItem,key+"legendDetLow-","-",endPos,leftPos,false);
+	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow",lowVal,endPos-3,leftPos+3,false);
+	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow-","-",endPos,leftPos,false);
+}
+
+/************************************************************************************************
+ * FUNCTION - removeColClassBarLegendElements: This function removes any existing legend elements
+ * for a bar/scatter plot class bar that is being redrawn.  
+ ************************************************************************************************/
+NgChm.DET.removeClassBarLegendElements = function(key,mapItem) {
+	let legItem = document.getElementById(key+mapItem.panelNbr+"legendDetHigh-");
+	if (legItem !== null) legItem.remove();
+	legItem = document.getElementById(key+mapItem.panelNbr+"legendDetHigh");
+	if (legItem !== null) legItem.remove();
+	legItem = document.getElementById(key+mapItem.panelNbr+"legendDetMid");
+	if (legItem !== null) legItem.remove();
+	legItem = document.getElementById(key+mapItem.panelNbr+"legendDetLow");
+	if (legItem !== null) legItem.remove();
+	legItem = document.getElementById(key+mapItem.panelNbr+"legendDetLow-");
+	if (legItem !== null) legItem.remove();
 }
 
 /************************************************************************************************
@@ -1818,14 +1847,19 @@ NgChm.DET.colDendroResize = function() {
 		if (mapItem.colDendroCanvas !== null) {
 			const dendroCanvas = mapItem.colDendroCanvas;
 			const left = mapItem.canvas.offsetLeft;
-			dendroCanvas.style.left = (left + mapItem.canvas.clientWidth * (1-mapItem.dataViewWidth/mapItem.canvas.width)) + 'px';
+			const canW = mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
+			dendroCanvas.style.left = (left + mapItem.canvas.clientWidth * (1-mapItem.dataViewWidth/canW)) + 'px';
 			if (mapItem.colDendro.isVisible()){
+				//If summary side is hidden, retain existing dendro height
+				const sumMinimized = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) < 5 ? true : false;
 				const dendroSumPct = (parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(NgChm.SUM.canvas.style.height, 10) + parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(NgChm.SUM.cCCanvas.style.height, 10)));
 				const totalDetHeight = (mapItem.chm.offsetHeight - 50);
 				const height = (totalDetHeight * dendroSumPct); 
-				dendroCanvas.style.height = parseInt(height, 10) + 'px';
-				dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width)) + 'px';
-				dendroCanvas.height = Math.round(height);
+				if (sumMinimized === false) {
+					dendroCanvas.style.height = parseInt(height, 10) + 'px';
+					dendroCanvas.height = Math.round(height);
+				}
+				dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/canW)) + 'px';
 				dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
 				mapItem.colDendro.draw();
 			} else {
@@ -1845,15 +1879,20 @@ NgChm.DET.rowDendroResize = function() {
 		if (mapItem.rowDendroCanvas !== null) {
 			const dendroCanvas = mapItem.rowDendroCanvas;
 			const top = mapItem.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
-			dendroCanvas.style.top = (top + mapItem.canvas.clientHeight * (1-mapItem.dataViewHeight/mapItem.canvas.height)) + 'px';
+			const canH = mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column")
+			dendroCanvas.style.top = (top + mapItem.canvas.clientHeight * (1-mapItem.dataViewHeight/canH)) + 'px';
 			if (mapItem.rowDendro.isVisible()){
-				const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/mapItem.canvas.height);
+				//If summary side is hidden, retain existing dendro width
+				const sumMinimized = parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) < 5 ? true : false;
+				const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
 				const dendroSumPct = (parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(NgChm.SUM.canvas.style.width, 10) + parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(NgChm.SUM.rCCanvas.style.width, 10)));
 				const totalDetWidth = (mapItem.chm.offsetWidth - 50);
 				const width = (totalDetWidth * dendroSumPct); 
-				dendroCanvas.style.width = parseInt(width, 10) + 'px';
+				if (sumMinimized === false) {
+					dendroCanvas.style.width = parseInt(width, 10) + 'px';
+					dendroCanvas.width = Math.round(width);
+				}
 				dendroCanvas.style.height = (height-2) + 'px';
-				dendroCanvas.width = Math.round(width);
 				dendroCanvas.height = Math.round(height);
 				mapItem.rowDendro.draw();
 			} else {

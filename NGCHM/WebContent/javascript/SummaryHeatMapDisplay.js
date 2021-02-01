@@ -113,35 +113,6 @@ NgChm.SUM.processSummaryMapUpdate = function(event, tile) {
 	//Ignore updates to other tile types.
 }
 
-NgChm.SUM.rowDendroResize = function() {
-	const dendroCanvas = NgChm.SUM.rowDendro.dendroCanvas;
-	const width = NgChm.SUM.rowDendro.getConfigSize() * NgChm.SUM.chmElement.clientWidth*NgChm.SUM.widthPct;
-	const height = NgChm.SUM.canvas.clientHeight*NgChm.SUM.matrixHeight/NgChm.SUM.totalHeight*NgChm.SUM.heightScale;
-	const top = NgChm.SUM.canvas.offsetTop + (NgChm.SUM.totalHeight - NgChm.SUM.matrixHeight*NgChm.SUM.heightScale)/NgChm.SUM.totalHeight*NgChm.SUM.canvas.offsetHeight;
-
-	NgChm.UTIL.setElementPositionSize (dendroCanvas, {
-		top, height,
-		width: NgChm.SUM.rowDendro.isVisible() ? width : 0
-	}, false);
-}
-
-NgChm.SUM.colDendroResize = function() {
-	const dendroCanvas = NgChm.SUM.colDendro.dendroCanvas;
-	const height = NgChm.SUM.colDendro.getConfigSize() * NgChm.SUM.chmElement.clientHeight*NgChm.SUM.heightPct;
-	const width = NgChm.SUM.canvas.clientWidth*NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth;
-	const left = NgChm.SUM.canvas.offsetLeft + (1-NgChm.SUM.matrixWidth*NgChm.SUM.widthScale/NgChm.SUM.totalWidth)*NgChm.SUM.canvas.offsetWidth;
-
-	dendroCanvas.style.width = width;
-	dendroCanvas.style.left = left;
-	if (NgChm.SUM.colDendro.isVisible()){
-		dendroCanvas.style.height = height;
-		dendroCanvas.width = Math.round(width);
-		dendroCanvas.height = Math.round(height);
-	}else{
-		dendroCanvas.style.height = 0;
-	}
-}
-
 // Perform all initialization functions for Summary heat map
 NgChm.SUM.summaryInit = function() {
 	

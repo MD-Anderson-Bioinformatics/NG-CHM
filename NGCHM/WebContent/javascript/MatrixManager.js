@@ -319,6 +319,14 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		.map(([key,config]) => config.show === 'Y' ? (config.height|0) : 0)
 	}
 
+	// Return an array of the display types of all covariate bars on an axis.
+	// Hidden bars have a height of zero.  The order of entries is fixed but not
+	// specified.
+	this.getCovariateBarTypes = function (axis) {
+		return Object.entries(this.getAxisCovariateConfig(axis))
+		.map(([key,config]) => config.show === 'Y' ? (config.bar_type) : 0)
+	}
+
 	// Return the total display height of all covariate bars on an axis.
 	this.calculateTotalClassBarHeight = function (axis) {
 		return this.getCovariateBarHeights(axis).reduce((t,h) => t+h, 0);
