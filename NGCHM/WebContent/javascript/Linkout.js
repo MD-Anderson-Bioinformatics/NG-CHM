@@ -1684,7 +1684,6 @@ NgChm.createNS('NgChm.LNK');
 	                })
 	                optionsBox.appendChild(coordsSelect);
 	                coordsSelect.onchange = function(e) {
-	                    console.log(axis1cvOrder)
 	                    let  selectedCoord = coordsSelect.options[coordsSelect.selectedIndex].value;
 	                    let options = axis1cvOrder.filter((coord) => coord.includes(selectedCoord))
 	                    let coords=[0,1]
