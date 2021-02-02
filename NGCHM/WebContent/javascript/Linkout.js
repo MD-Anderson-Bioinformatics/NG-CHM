@@ -1652,7 +1652,7 @@ NgChm.createNS('NgChm.LNK');
 				if (debug) console.log ({ m: 'setAxis', axis, params });
 				axis1Config = NgChm.heatMap.getAxisCovariateConfig (axis);
 				axis1cvOrder = NgChm.heatMap.getAxisCovariateOrder (axis);
-				if (axis1cvOrder.length===0){
+				if (axis1cvOrder.length===0 && plugin.config.axes[0].hasOwnProperty('extra_covariates')){
 					alert("No coordinate to select on this axis.")
 				}
 				otherAxis = NgChm.MMGR.isRow (axis) ? 'Column' : 'Row';
