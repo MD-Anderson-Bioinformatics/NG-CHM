@@ -914,17 +914,15 @@ NgChm.createNS('NgChm.LNK');
 		const { plugin, params } = pluginData[nonce];
 		pluginData[nonce].params = options;
 		loc.paneTitle.innerText = plugin.name + '. ' + options.plotTitle;
-		// if (plugin.config.axes[0].hasOwnProperty('extra_covariates')) {
-		if (options.axes[0].coords !='') {
-            let config = JSON.parse(JSON.stringify(options))
-            NgChm.LNK.initializePanePlugin_extraCovariates(nonce, config, options.axes[0].coords)
+		if (plugin.config.axes[0].hasOwnProperty('extra_covariates')) {
+            NgChm.LNK.initializePanePlugin_extraCovariates(nonce, options);
         } else {
             NgChm.LNK.initializePanePlugin(nonce, options);
         }
     };
 
     // Add extra covariates info to the message
-    NgChm.LNK.initializePanePlugin_extraCovariates = function(nonce, config, extraPatterns) {
+    NgChm.LNK.initializePanePlugin_extraCovariates = function(nonce, config) {
         const data = {
             axes: []
         };
@@ -932,12 +930,7 @@ NgChm.createNS('NgChm.LNK');
         for (let ai = 0; ai < config.axes.length; ai++) {
             let covariates = Object.keys(NgChm.heatMap.getAxisCovariateData(config.axes[ai].axisName))
             let extraCovariates = []
-                // Select covariates based on regular expression
-            // extraPatterns.forEach((extraPattern) => {
-            //     extraCovariates = extraCovariates.concat(covariates.filter((cov) => cov.match(extraPattern)))
-            // })
-
-            extraCovariates = covariates.filter((cov)=>cov.includes(extraPatterns))
+            extraCovariates = covariates.filter((cov)=>cov.includes(config.axes[0].coords))
 
             let selectedCoords = config.axes[ai].coordinates.map((coord) => coord.covName)
             let selectedIndex = selectedCoords.map((selectedCoord) => extraCovariates.indexOf(selectedCoord))
@@ -1659,9 +1652,17 @@ NgChm.createNS('NgChm.LNK');
 				if (debug) console.log ({ m: 'setAxis', axis, params });
 				axis1Config = NgChm.heatMap.getAxisCovariateConfig (axis);
 				axis1cvOrder = NgChm.heatMap.getAxisCovariateOrder (axis);
+				if (axis1cvOrder.length===0){
+					alert("No coordinate to select on this axis.")
+				}
 				otherAxis = NgChm.MMGR.isRow (axis) ? 'Column' : 'Row';
-				defaultCoord = axis1cvOrder.filter(x => /\.coordinate\.1/.test(x));
-				defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, '');
+				if (plugin.config.axes[0].hasOwnProperty('extra_covariates')){
+					defaultCoord = axis1cvOrder.filter(x => /^PC/.test(x));
+					defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, '');
+				}else{
+					defaultCoord = axis1cvOrder.filter(x => /\.coordinate\.1/.test(x));
+					defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, '');
+				}
 				defaultCovar = axis1cvOrder.filter(x => !/\.coordinate\.\d+$/.test(x));
 				defaultCovar = defaultCovar.length === 0 ? null : defaultCovar[defaultCovar.length-1];
 			}
@@ -1671,33 +1672,39 @@ NgChm.createNS('NgChm.LNK');
 			function getCoordinates(plugin) {
                 let coords = axis1cvOrder.filter(x => /\.coordinate\./.test(x))
                 coords = new Set(coords.map((coord) => coord.split(".coordinate.")[0]))
-                optionsBox.appendChild(NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt("Select coordinate")]));
-
-                coords.forEach((coord) => {
-                    coordsSelect.add(optionNode('coord', coord))
-                })
-                optionsBox.appendChild(coordsSelect);
-                coordsSelect.onchange = function(e) {
-                    console.log(axis1cvOrder)
-                    let  selectedCoord = coordsSelect.options[coordsSelect.selectedIndex].value;
-                    let options = axis1cvOrder.filter((coord) => coord.includes(selectedCoord))
-                    let coords=[0,1]
-                    let coordName=plugin.config.axes[0].coco[0].name
-                    coords.forEach((id)=>{
-                    	let coordID =coordName+id
-                    	let coord = document.getElementById(coordID)
-	                    coord.length=0
-	                    options.forEach((option) =>{
-	                    	coord.add(optionNode('covariate',option))
+                if (coords.size > 0){
+	                optionsBox.appendChild(NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt("Select coordinate")]));
+	                let selectedIndex = 0
+	                coords.forEach((coord) => {
+	                    coordsSelect.add(optionNode('coord', coord))
+	                    if (coord.includes("PC")){
+	                    	coordsSelect.selectedIndex=selectedIndex
+	                    }
+	                    selectedIndex+=1
+	                })
+	                optionsBox.appendChild(coordsSelect);
+	                coordsSelect.onchange = function(e) {
+	                    console.log(axis1cvOrder)
+	                    let  selectedCoord = coordsSelect.options[coordsSelect.selectedIndex].value;
+	                    let options = axis1cvOrder.filter((coord) => coord.includes(selectedCoord))
+	                    let coords=[0,1]
+	                    let coordName=plugin.config.axes[0].coco[0].name
+	                    coords.forEach((id)=>{
+	                    	let coordID =coordName+id
+	                    	let coord = document.getElementById(coordID)
+		                    coord.length=0
+		                    options.forEach((option) =>{
+		                    	coord.add(optionNode('covariate',option))
+		                    })
+		                    coord.value=options[id]
+		                    let label = document.getElementById("label_"+coordID)
+		                    label.value = options[id].replace(".coordinate."," ")
+		                    coord.onchange = function(e) {
+		                		label.value = coord.options[coord.selectedIndex].value.replace(".coordinate."," ")
+		                	}
 	                    })
-	                    coord.value=options[id]
-	                    let label = document.getElementById("label_"+coordID)
-	                    label.value = options[id].replace(".coordinate."," ")
-	                    coord.onchange = function(e) {
-	                		label.value = coord.options[coord.selectedIndex].value.replace(".coordinate."," ")
-	                	}
-                    })
-                }
+	                }
+	            }
             }
 
 
@@ -1760,7 +1767,26 @@ NgChm.createNS('NgChm.LNK');
 							defaultOpt = defaultCovar;
 						}
 						let onlyContinuous = selectorName === 'Coordinate'
-						sss[cid].selOpt = addCovariateOptions (defaultOpt, axis1Config, selectEl, selectedElementsOption, onlyContinuous);
+
+						if (plugin.config.axes[0].hasOwnProperty('extra_covariates') && selectorName === 'Coordinate') {
+							let filteredConfig = Object.keys(axis1Config)
+							.filter(key=>key.includes("PC"))
+							.reduce((obj, key) => {
+							    obj[key] = axis1Config[key];
+							    return obj;
+							  }, {});
+							sss[cid].selOpt = addCovariateOptions (defaultOpt, filteredConfig, selectEl, "", onlyContinuous);
+						}else if (plugin.config.axes[0].hasOwnProperty('extra_covariates') && selectorName !== 'Coordinate') {
+							let filteredConfig = Object.keys(axis1Config)
+							.filter(key=>!key.includes(".coordinate."))
+							.reduce((obj, key) => {
+							    obj[key] = axis1Config[key];
+							    return obj;
+							  }, {});
+							sss[cid].selOpt = addCovariateOptions (defaultOpt, filteredConfig, selectEl, selectedElementsOption, onlyContinuous);
+						}else{
+							sss[cid].selOpt = addCovariateOptions (defaultOpt, axis1Config, selectEl, selectedElementsOption, onlyContinuous);
+						}
 					}
 					updateAxis();
 					const userLabel = createLabeledTextInput(selParams.label);
