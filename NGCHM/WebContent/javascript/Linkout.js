@@ -1657,6 +1657,7 @@ NgChm.createNS('NgChm.LNK');
 				}
 				otherAxis = NgChm.MMGR.isRow (axis) ? 'Column' : 'Row';
 				if (plugin.config.axes[0].hasOwnProperty('extra_covariates')){
+					getCoordinates(plugin)
 					defaultCoord = axis1cvOrder.filter(x => /^PC/.test(x));
 					defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, '');
 				}else{
@@ -1673,8 +1674,8 @@ NgChm.createNS('NgChm.LNK');
                 let coords = axis1cvOrder.filter(x => /\.coordinate\./.test(x))
                 coords = new Set(coords.map((coord) => coord.split(".coordinate.")[0]))
                 if (coords.size > 0){
-	                optionsBox.appendChild(NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt("Select coordinate")]));
 	                let selectedIndex = 0
+	                coordsSelect.length=0
 	                coords.forEach((coord) => {
 	                    coordsSelect.add(optionNode('coord', coord))
 	                    if (coord.includes("PC")){
@@ -1682,7 +1683,7 @@ NgChm.createNS('NgChm.LNK');
 	                    }
 	                    selectedIndex+=1
 	                })
-	                optionsBox.appendChild(coordsSelect);
+	                
 	                coordsSelect.onchange = function(e) {
 	                    let  selectedCoord = coordsSelect.options[coordsSelect.selectedIndex].value;
 	                    let options = axis1cvOrder.filter((coord) => coord.includes(selectedCoord))
@@ -1715,11 +1716,13 @@ NgChm.createNS('NgChm.LNK');
 			}
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
-
-
 			if (plugin.config.axes[0].hasOwnProperty('extra_covariates')){
-				getCoordinates(plugin)
+				optionsBox.appendChild(NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt("Select coordinate")]));
+				optionsBox.appendChild(coordsSelect);
 			}
+
+
+			
 			
 
 			function createLinearSelectors (sss, numSelectors, selectorName, params, helpText) {
