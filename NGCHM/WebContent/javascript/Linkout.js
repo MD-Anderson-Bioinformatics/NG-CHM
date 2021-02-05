@@ -1592,12 +1592,19 @@ NgChm.createNS('NgChm.LNK');
 
 		/** Add covariate options to dropdown
 
+			This function adds items to the dropdown for selecting Coordinates/ColorBy options in the
+			gear menu. The return value of this function is the dropdown option that allows the user to 
+			select rows/columns via the GRAB/SHOW buttons. If the input 'selecteElementsOption' is null, then
+			the return value will be null, and the GRAB/SHOW option will not be available on the gear menu.
+			
 			@function addCovariateOptions
 			@param {} defaultOpt
 			@param {Object} axisConfig
 			@param {Object} selectElement
-			@param {Object} selectedElementsOption
+			@param {String} selectedElementsOption Text for dropdown to select rows/columns w/ GRAB/SHOW buttons. If null, then
+			                no option will be given for using GRAB/SHOW for selection in gear menu.
 			@param {Boolean} onlyContinuous if true, only add continuous covariates to dropdown.
+			@return {optionNode} selOpt Option for selecting rows/columns w/ GRAB/SHOW buttons (see function optionNode()).
 		*/
 		function addCovariateOptions (defaultOpt, axisConfig, selectElement, selectedElementsOption, onlyContinuous) {
 			let defaultIndex = 0;
@@ -1610,6 +1617,10 @@ NgChm.createNS('NgChm.LNK');
 				}
 			}
 			if (defaultOpt === null) defaultIndex = selectElement.children.length;
+			if (selectedElementsOption == null) {  // no GRAB/SHOW will be available in gear menu
+				return null
+			}
+			// selOpt is the dropdown option for selecting rows/columns via the GRAB/SHOW buttons.
 			const selOpt = optionNode ('data', selectedElementsOption);
 			if (defaultOpt === selectedElementsOption) defaultIndex = selectElement.children.length;
 			selectElement.add (selOpt);
@@ -1777,7 +1788,7 @@ NgChm.createNS('NgChm.LNK');
 							    obj[key] = axis1Config[key];
 							    return obj;
 							  }, {});
-							sss[cid].selOpt = addCovariateOptions (defaultOpt, filteredConfig, selectEl, "", onlyContinuous);
+							sss[cid].selOpt = addCovariateOptions (defaultOpt, filteredConfig, selectEl, null, onlyContinuous);
 						}else if (plugin.config.axes[0].hasOwnProperty('extra_covariates') && selectorName !== 'Coordinate') {
 							let filteredConfig = Object.keys(axis1Config)
 							.filter(key=>!key.includes(".coordinate."))
@@ -1785,7 +1796,7 @@ NgChm.createNS('NgChm.LNK');
 							    obj[key] = axis1Config[key];
 							    return obj;
 							  }, {});
-							sss[cid].selOpt = addCovariateOptions (defaultOpt, filteredConfig, selectEl, selectedElementsOption, onlyContinuous);
+							sss[cid].selOpt = addCovariateOptions (defaultOpt, filteredConfig, selectEl, null, onlyContinuous);
 						}else{
 							sss[cid].selOpt = addCovariateOptions (defaultOpt, axis1Config, selectEl, selectedElementsOption, onlyContinuous);
 						}
