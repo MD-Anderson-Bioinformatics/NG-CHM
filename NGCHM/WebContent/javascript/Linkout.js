@@ -1617,6 +1617,7 @@ NgChm.createNS('NgChm.LNK');
 				}
 			}
 			if (defaultOpt === null) defaultIndex = selectElement.children.length;
+			selectElement.selectedIndex = defaultIndex;
 			if (selectedElementsOption == null) {  // no GRAB/SHOW will be available in gear menu
 				return null
 			}
@@ -1624,7 +1625,6 @@ NgChm.createNS('NgChm.LNK');
 			const selOpt = optionNode ('data', selectedElementsOption);
 			if (defaultOpt === selectedElementsOption) defaultIndex = selectElement.children.length;
 			selectElement.add (selOpt);
-			selectElement.selectedIndex = defaultIndex;
 			return selOpt;
 		}
 
