@@ -1830,7 +1830,8 @@ NgChm.createNS('NgChm.LNK');
 						const data = sss[cid].data;
 						countNode.textContent = '' + data.length + ' ' + otherAxis + 's';
 						const selectedItem = sss[cid].select.children[sss[cid].select.selectedIndex];
-						if (sss[cid].select.selectedIndex === sss[cid].select.length-1) {
+						if (sss[cid].select[sss[cid].select.selectedIndex].value.indexOf('Selected ') === 0) {
+							// for dropdown selection to show GRAB/SHOW buttons
 							infoEl.classList.remove ('hide');
 							if (label) {
 								userLabel.setLabel ( label);
@@ -1846,6 +1847,7 @@ NgChm.createNS('NgChm.LNK');
 								userLabel.setLabel ( 'Average of ' + countNode.textContent);
 							}
 						} else {
+							// for regular coordinate/covariate dropdown (no GRAB/SHOW buttons)
 							infoEl.classList.add ('hide');
 							if (label) {
 								userLabel.setLabel ( label);
