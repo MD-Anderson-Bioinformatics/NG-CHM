@@ -1220,6 +1220,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	doc.write("<!DOCTYPE html><HTML><BODY style='margin:0px;width:100vw;height: 100vh;display: flex;flex-direction: column;'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><div><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
 	doc.close();
 };
+NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';     
     
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
@@ -1236,27 +1237,6 @@ NgChm.UTIL.redrawSearchResults = function () {
 	NgChm.SEL.updateSelections();
 	NgChm.SRCH.showSearchResults();
 };
-
-/**********************************************************************************
- * FUNCTION - b64toBlob: This function reads a .ngchm file from a blob.  It is used
- * in html pages that contain an entire heat map (.ngchm, widget, html, embed)
- **********************************************************************************/
-NgChm.UTIL.b64toBlob = function (b64Data) {
-	  const sliceSize = 512;
-	  let byteCharacters = atob(b64Data);
-	  let byteArrays = [];
-	  for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-	    const slice = byteCharacters.slice(offset, offset + sliceSize);
-	    let byteNumbers = new Array(slice.length);
-	    for (var i = 0; i < slice.length; i++) {
-	      byteNumbers[i] = slice.charCodeAt(i);
-	    }
-	    let byteArray = new Uint8Array(byteNumbers);
-	    byteArrays.push(byteArray);
-	  }
-	  const blob = new Blob(byteArrays);
-	  return blob;
-}
 
 /**********************************************************************************
  * FUNCTION - loadAllTilesTimer: This function checks the dimensions of the heat map
@@ -1283,8 +1263,8 @@ NgChm.UTIL.loadAllTilesTimer = function() {
 }
 
 /**********************************************************************************
- * FUNCTION - b64toBlob: This function loads an .ngchm file from a blob.  It is
- * used in .html heat map files that contain: .ngchm, widget, html, and embedded logic. 
+ * FUNCTION - b64toBlob: This function reads a .ngchm file from a blob.  It is used
+ * in html pages that contain an entire heat map (.ngchm, widget, html, embed)
  **********************************************************************************/
 NgChm.UTIL.b64toBlob = function (b64Data) {
 	  const sliceSize = 512;
