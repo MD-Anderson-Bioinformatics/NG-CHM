@@ -750,7 +750,7 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
 		if ((current > 0) &&
 		    (Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)) &&
 		    (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))){
-			NgChm.DET.setDetailDataSize (mapItem,NgChm.DET.zoomBoxSizes[current-1], mapItem);
+			NgChm.DET.setDetailDataSize (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection(mapItem);
 		} else {
 			//If we can't zoom out anymore see if ribbon mode would show more of the map or , switch to full map view.
@@ -781,7 +781,6 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
             NgChm.DEV.detailFullMap(mapItem);
 		}	
     }
-    NgChm.UTIL.redrawCanvases();
 }
 
 /**********************************************************************************
@@ -791,9 +790,9 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
  **********************************************************************************/
 NgChm.DEV.callDetailDrawFunction = function(modeVal) {  //SEL
 	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
-		NgChm.DEV.detailHRibbon(NgChm.DMM.primaryMap.chm);
+		NgChm.DEV.detailHRibbon(NgChm.DMM.primaryMap);
 	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
-		NgChm.DEV.detailVRibbon(NgChm.DMM.primaryMap.chm);
+		NgChm.DEV.detailVRibbon(NgChm.DMM.primaryMap);
 	if (modeVal == 'FULL_MAP')
 		NgChm.DEV.detailFullMap(NgChm.DMM.primaryMap.chm);
 	if (modeVal == 'NORMAL') {

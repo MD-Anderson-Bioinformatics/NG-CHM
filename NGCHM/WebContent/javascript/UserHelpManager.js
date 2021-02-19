@@ -877,7 +877,7 @@ NgChm.UHM.ribbonHBtnOver = function(btn,val) {
 	if (!btn.src.includes(selStr)) {
 		ribbonButton = 'images/ribbonH.png';
 	}
-	if (NgChm.DMM.primaryMap.mode !=='RIBBONH') {
+	if (!NgChm.DMM.primaryMap.mode.includes('RIBBONH')) { 
 		if (val === 0) {
 			btn.setAttribute('src', ribbonButton);
 		} else {
@@ -891,7 +891,7 @@ NgChm.UHM.ribbonVBtnOver = function(btn,val) {
 	if (!btn.src.includes(selStr)) {
 		ribbonButton = 'images/ribbonV.png';
 	}
-	if (NgChm.DMM.primaryMap.mode !=='RIBBONV') {
+	if (!NgChm.DMM.primaryMap.mode.includes('RIBBONV')) { 
 		if (val === 0) {
 			btn.setAttribute('src', ribbonButton);
 		} else {

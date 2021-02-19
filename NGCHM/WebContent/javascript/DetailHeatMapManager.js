@@ -240,11 +240,15 @@ NgChm.DMM.getMapItemFromDendro = function (dendro) {
  * is visible (i.e. contained in a visible pane).
  *********************************************************************************************/
 NgChm.DMM.isVisible = function isVisible () {
-	if (NgChm.DMM.DetailMaps.length > 0) {
-		return true;
-	} else {
-		return false;
+	let isViz = false
+	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
+		const mapItem = NgChm.DMM.DetailMaps[i];
+		const loc = NgChm.Pane.findPaneLocation (mapItem.chm);
+		if (!loc.pane.classList.contains('collapsed')) {
+			isViz = true;
+		}
 	}
+	return isViz;
 }
 
 /************************************************************************************************

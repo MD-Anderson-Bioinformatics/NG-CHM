@@ -914,17 +914,20 @@ NgChm.SUM.onMouseUpCanvas = function(evt) {
 //This is a helper function that can set a sub-ribbon view that best matches a user
 //selected region of the map.
 NgChm.SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
+	const selRows = Math.abs(endRow - startRow);
+	const selCols = Math.abs(endCol - startCol);
 	//In case there was a previous dendo selection - clear it.
 	NgChm.SUM.clearSelectionMarks();
 	NgChm.SUM.colDendro.draw();
 	NgChm.SUM.rowDendro.draw();
 	//If tiny tiny box was selected, discard and go back to previous selection size
 	if (endRow-startRow<1 && endCol-startCol<1) {
-		NgChm.DET.setDetailDataSize (NgChm.DMM.primaryMap.dataBoxWidth, NgChm.DMM.primaryMap);
+		NgChm.DET.setDetailDataSize (NgChm.DMM.primaryMap, NgChm.DMM.primaryMap.dataBoxWidth);
 	//If there are more rows than columns do a horizontal sub-ribbon view that fits the selection. 	
-	} else if (NgChm.heatMap.getNumRows("d") >= NgChm.heatMap.getNumColumns("d")) {
+//	} else if (NgChm.heatMap.getNumRows("d") >= NgChm.heatMap.getNumColumns("d")) {
+	} else if (selRows >= selCols) {
 		var boxSize = NgChm.DET.getNearestBoxHeight(NgChm.DMM.primaryMap, endRow - startRow + 1);
-		NgChm.DET.setDetailDataHeight(boxSize, NgChm.DMM.primaryMap); 
+		NgChm.DET.setDetailDataHeight(NgChm.DMM.primaryMap,boxSize); 
 		NgChm.DMM.primaryMap.selectedStart= startCol;
 		NgChm.DMM.primaryMap.selectedStop=endCol;
 		NgChm.DMM.primaryMap.currentRow = startRow;

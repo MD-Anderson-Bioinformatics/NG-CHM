@@ -1527,9 +1527,19 @@ NgChm.createNS('NgChm.LNK');
 			lastApplied = []
 			lastApplied.push({rangeStrings: ['','']})
 		}
+		//Remove any other open gear panels
+		removeOpenGearPanels();
+
 		let panel = NgChm.UTIL.newElement('DIV.gearPanel');
 		panel.id = paneId + "Gear";
 
+		function removeOpenGearPanels () {
+			const gears = document.getElementsByClassName('gearPanel');
+			for (item of gears) { 
+	            item.remove(); 
+	        } 
+		}
+		
 		function optionNode (type, value) {
 			const optNode = NgChm.UTIL.newElement('OPTION');
 			optNode.appendChild(NgChm.UTIL.newTxt(value));

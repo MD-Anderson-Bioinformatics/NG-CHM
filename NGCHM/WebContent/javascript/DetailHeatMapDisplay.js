@@ -124,16 +124,9 @@ NgChm.DET.flushDrawingCache = function (tile) {
  *********************************************************************************************/
 NgChm.DET.setDetailMapDisplay = function (mapItem) {
 	NgChm.DET.setDendroShow(mapItem);
-	// Small Maps - Set detail data size.  If there are less than 42 rows or columns
-	// set the to show the box size closest to the lower value ELSE
-	// set it to show 42 rows/cols.
-	const rows = NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL);
-	const cols = NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL);
-	if ((rows < 42) || (cols < 42)) {
-		const boxSize = NgChm.DET.getNearestBoxSize(mapItem, Math.min(rows,cols));
-		NgChm.DET.setDetailDataSize(mapItem,boxSize); 
-	} else {
-		NgChm.DET.setDetailDataSize(mapItem,12);
+	//If we are opening the first detail "copy" of this map set the data sizing for initial display
+	if (NgChm.DMM.DetailMaps.length === 0) {
+		NgChm.DET.setInitialDetailDisplaySize(mapItem);
 	}
 	NgChm.LNK.createLabelMenus();
 	NgChm.SRCH.createEmptySearchItems();
@@ -162,6 +155,24 @@ NgChm.DET.setDetailMapDisplay = function (mapItem) {
   	if (mapItem.version === 'P') {
   		NgChm.DMM.primaryMap = mapItem;
   	}
+}
+
+/*********************************************************************************************
+ * FUNCTION:  setInitialDetailDisplaySize - The purpose of this function is to set the initial
+ * detail display sizing (dataPerRow/Col, dataViewHeight/Width) for the heat map.
+ *********************************************************************************************/
+NgChm.DET.setInitialDetailDisplaySize = function (mapItem) {
+	// Small Maps - Set detail data size.  If there are less than 42 rows or columns
+	// set the to show the box size closest to the lower value ELSE
+	// set it to show 42 rows/cols.
+	const rows = NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL);
+	const cols = NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL);
+	if ((rows < 42) || (cols < 42)) {
+		const boxSize = NgChm.DET.getNearestBoxSize(mapItem, Math.min(rows,cols));
+		NgChm.DET.setDetailDataSize(mapItem,boxSize); 
+	} else {
+		NgChm.DET.setDetailDataSize(mapItem,12);
+	}
 }
 
 /*********************************************************************************************
