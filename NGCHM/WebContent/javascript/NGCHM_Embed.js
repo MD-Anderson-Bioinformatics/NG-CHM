@@ -122,7 +122,9 @@ embedNGCHM.setParameters = function setParameters (params = {}) {
 embedNGCHM.setUpFrame = function setUpFrame (iframeName) {
     const frame = window.frames[iframeName];  
     const info = iframeInfo[iframeName];
-    if (info.srcType === 'base64') {
+    if (info.srcType === 'blob') {
+        frame.NgChm.UTIL.embedCHM(info.srcSpec);
+    } else if (info.srcType === 'base64') {
         frame.NgChm.UTIL.embedCHM(frame.NgChm.UTIL.b64toBlob(info.srcSpec));
     } else if (info.srcType === 'fileName') {
         frame.NgChm.UTIL.embedCHM(info.srcSpec);
