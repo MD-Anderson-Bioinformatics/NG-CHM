@@ -197,11 +197,13 @@ NgChm.PDF.getViewerHeatmapPDF = function() {
 }
 
 NgChm.PDF.genViewerHeatmapPDF = function() {
-	NgChm.PDF.isGenerating = true;
 	//Validate User-entered font size
 	if (validateInputFont() === false) {
+		document.body.style.cursor = 'default';
 		return
 	}
+	NgChm.PDF.isGenerating = true;
+
 	// close the PDF menu when you download
 	NgChm.PDF.pdfCancelButton();
 
@@ -567,7 +569,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 		if ((NgChm.PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined')) {
 			doc.addImage(NgChm.PDF.mdaLogo, 'PNG',5,5,header.clientWidth,header.clientHeight);
 			// Center Heat Map name in header whitespace to left of logo and step down the font if excessively long.
-			let fullTitle
+			let fullTitle = "";
 			if (titleText !== null) {
 				fullTitle = titleText + ": ";
 			}
@@ -621,6 +623,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 	 * either type (row/col) of classification bar.
 	 **********************************************************************************/
 	function drawMissingColor(bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, totalValues) {
+		var barScale = isChecked("pdfInputPortrait") ? .50 : .65;
 		if (condenseClassBars){
 			var barW = 10;
 			doc.rect(leftOff, bartop, barW, barHeight, "FD");
@@ -628,7 +631,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 			doc.text(leftOff +barW + 5, bartop + classBarLegendTextSize, "Missing Value", null);
 			doc.text(leftOff +barW + threshMaxLen + 10, bartop + classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/totalValues*100).toFixed(2) + "%)" , null);
 		} else {
-			var barW = missingCount/maxCount*classBarFigureW;
+			var barW = (missingCount/maxCount*classBarFigureW)*barScale;
 			doc.rect(leftOff + maxLabelLength, bartop, barW, barHeight, "FD");
 			doc.setFontSize(classBarLegendTextSize);
 			doc.text(leftOff + maxLabelLength - doc.getStringUnitWidth("Missing Value")*classBarLegendTextSize - 4, bartop + classBarLegendTextSize, "Missing Value" , null);
