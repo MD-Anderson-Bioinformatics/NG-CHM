@@ -1154,6 +1154,36 @@ NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight,customJS) {
 }
 
 /**********************************************************************************
+ * FUNCTION - showEmbed: This function shows the embedded heat map when the
+ * user clicks on the embedded map image.  It is used by NGCHM_Embed.js from 
+ * the minimized file ngchmEmbed-min.js
+ **********************************************************************************/
+NgChm.UTIL.showEmbedded = function (baseDiv,iframeStyle,customJS) {
+	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
+	NgChm.UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	NgChm.UTIL.embedThumbHeight = embeddedWrapper.style.height;
+	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
+	var embeddedMap = document.getElementById('NGCHMEmbed');
+	var iFrame = window.frameElement; // reference to iframe element container
+	iFrame.className='ngchm';
+	iFrame.style = iframeStyle;
+	iFrame.style.display = 'flex';
+	embeddedMap.style.height = '92vh';
+	embeddedMap.style.width = '97vw';
+	embeddedMap.style.display = 'flex';
+	embeddedMap.style.flexDirection = 'column';
+	embeddedWrapper.style.display = 'none';
+	embeddedCollapse.style.display = ''; 
+	if (NgChm.UTIL.embedLoaded === false) {
+		NgChm.UTIL.embedLoaded = true;
+		NgChm.UTIL.loadLocalModeCHM(false);
+		if (customJS !== "") {
+			setTimeout(function(){ NgChm.CUST.addExtraCustomJS(customJS);}, 2000);
+		}
+	}
+}
+
+/**********************************************************************************
  * FUNCTION - hideEmbed: This function hides the embedded map when the user 
  * clicks on the collapse map button.
  **********************************************************************************/

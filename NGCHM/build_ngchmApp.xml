@@ -50,7 +50,19 @@
         </apply>
     </target>  
 	
-    <target name="create_app_html" depends="classfiles,minify_js"> 
+    <target name="minify_embedder_js">
+	<apply executable="java" parallel="false">
+	    <fileset dir="${js.dir}" includes="NGCHM_Embed.js"/>
+	    <arg line="-jar"/>
+	    <arg path="${dir.jarfile}/closure-compiler-v20200204.jar"/>
+	    <srcfile/>
+		<arg line="--js_output_file"/>
+	    <mapper type="glob" from="*.js" to="ngchmEmbed-min.js"/>
+	    <targetfile/>
+	</apply>
+    </target>  
+
+	<target name="create_app_html" depends="classfiles,minify_js"> 
 	<java classname="${src.dir}NGCHM_AppGenerator">
 	    <arg value="${web.dir}"/>
 	    <arg value="ngChmApp.html"/>
@@ -60,7 +72,7 @@
 	</java>
     </target>
 	
-    <target name="create_widget_js" depends="classfiles,minify_js">
+    <target name="create_widget_js" depends="classfiles,minify_js,minify_embedder_js">
 	<java classname="${src.dir}NGCHM_Widgetizer">
 	    <arg value="${web.dir}"/>
 	    <arg value="ngchmWidget-min.js"/>
