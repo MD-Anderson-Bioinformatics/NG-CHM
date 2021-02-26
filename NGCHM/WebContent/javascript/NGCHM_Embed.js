@@ -20,7 +20,7 @@ const defaultParams = {
     widgetPath: 'ngchmWidget-min.js',
     //Optional configuration for iframe
     scrolling: "no",
-    style: "height:100%; width:100%; border-style:none;",
+    style: "height:100vh; width:100vw; border-style:none;",
     //Required sandbox parameters to permit full heat map functionality
     sandbox: 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-downloads',
     // style of the top-level div within the embedded iframe
@@ -49,7 +49,7 @@ function embedNGCHM (selector, srcType, srcSpec, params = {}) {
     const P = Object.assign({}, defaultParams, params);
 
     //Retrieve required heat map div (above)
-    const embeddedDiv = document.querySelector(selector);
+    const embeddedDiv = document.querySelector("#"+selector);
     if (!embeddedDiv) {alert('Failed to find target "' + selector + '" for embedded NGCHM'); return;}
 
 	//Exit if no ngchm has been provided
@@ -77,12 +77,23 @@ function embedNGCHM (selector, srcType, srcSpec, params = {}) {
     function S(a,b="") { doc.write (`<script ${a}>${b}<` + '/script>'); }
 }
 
+//Exported function to be called to embed an expandable NGCHM.
+//- selector a document.querySelector that identifies the DOM element in which to embed the NGCHM
+//- srcType  type of NGCHM source to use. Only implemented value is 'base64' for a base-64 encoded blob.
+//- srcSpec  where to get the embedded NGCHM. Value depends on srcType.  For 'base64', it is the base-64 encoded blob.
+//- params   overrides defaultParams for this specific embedded NGCHM only (optional).
+//
+//Example:
+//embedExpandableNGCHM ('#iFrameDiv', 'base64', base64_NGCHM);
+//
+//embedExpandableNGCHM may be called multiple times for different DOM elements to embed multiple maps.
+//
 function embedExpandableNGCHM (selector, srcType, srcSpec, params = {}) {
 
     const P = Object.assign({}, defaultParams, params);
 
     //Retrieve required heat map div (above)
-    const embeddedDiv = document.querySelector(selector);
+    const embeddedDiv = document.querySelector("#"+selector);
     if (!embeddedDiv) {alert('Failed to find target "' + selector + '" for embedded NGCHM'); return;}
 
 	//Exit if no ngchm has been provided
