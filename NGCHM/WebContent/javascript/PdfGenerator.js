@@ -60,7 +60,12 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	if (labels.length > 0) {
 		document.getElementById("pdfInputFont").value = parseInt(labels[0].style["font-size"]);
 	} else {
-		document.getElementById("pdfInputFont").value = Math.min(NgChm.DMM.primaryMap.colLabelFont,NgChm.DMM.primaryMap.rowLabelFont);
+		const fSize = Math.min(NgChm.DMM.primaryMap.colLabelFont,NgChm.DMM.primaryMap.rowLabelFont);
+		if (fSize > 0) {
+			document.getElementById("pdfInputFont").value = fSize;
+		} else {
+			document.getElementById("pdfInputFont").value = NgChm.DET.minLabelSize;
+		}
 	}
     NgChm.UTIL.redrawCanvases();
 }

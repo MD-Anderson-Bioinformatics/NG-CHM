@@ -1260,7 +1260,7 @@ NgChm.SUM.drawRowClassBarLabels = function () {
 		var key = classBarConfigOrder[j];
 		var currentClassBar = classBarsConfig[key];
 		if (currentClassBar.show === 'Y') {
-			var covLabel = NgChm.UTIL.getLabelText(key,'COL');
+			var covLabel = NgChm.UTIL.getLabelText(key,'COL', true);
 			var covPct = parseInt(currentClassBar.height) / totalHeight;
 			//scaled width of current bar
 			var barWidth = (NgChm.SUM.rowClassBarWidth*covPct);
@@ -1304,7 +1304,7 @@ NgChm.SUM.drawColClassBarLabel = function(key, currentClassBar, prevHeight) {
 	//find the first, middle, and last vertical positions for the bar legend being drawn
 	var topPos =  beginClasses+prevHeight;
 	var midPos =  topPos+((currentClassBar.height-15)/2)-1;
-	var midVal = NgChm.UTIL.getLabelText(key,'ROW'); 
+	var midVal = NgChm.UTIL.getLabelText(key,'ROW', true); 
 	//Create div and place mid legend value
 	NgChm.SUM.setLabelDivElement(key+"ColLabel",midVal,midPos,leftPos,false);
 }

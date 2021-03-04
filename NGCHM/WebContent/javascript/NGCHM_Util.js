@@ -259,12 +259,16 @@ NgChm.UTIL.getShownLabels = function (axis) {
  * label is in excess, the first 9 and last 8 characters will be written out 
  * separated by ellipsis (...);
  **********************************************************************************/
-NgChm.UTIL.getLabelText = function(text,type) { 
+NgChm.UTIL.getLabelText = function(text,type,builder) { 
 	var size = parseInt(NgChm.heatMap.getColConfig().label_display_length);
 	var elPos = NgChm.heatMap.getColConfig().label_display_method;
 	if (type.toUpperCase() === "ROW") {
 		size = parseInt(NgChm.heatMap.getRowConfig().label_display_length);
 		elPos = NgChm.heatMap.getRowConfig().label_display_method;
+	}
+	//Done for displaying labels on Summary side in builder
+	if (typeof builder !== 'undefined') {
+		size = 16;
 	}
 	if (text.length > size) {
 		if (elPos === 'END') {
@@ -727,31 +731,6 @@ NgChm.UTIL.initDisplayVars = function() {
 	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	
 	NgChm.UTIL.removeElementsByClass("DynamicLabel");
 	NgChm.SRCH.currentSearchItem = {};
-//	NgChm.DMM.primaryMap = null;
-//	NgChm.DMM.DetailMaps = [];
-//	NgChm.DET.firstSwitch = true;
-//	NgChm.DET.initialized = false;
-//	NgChm.DET.resetLabelLengths();  
-//	NgChm.DET.labelElements = {};
-//	NgChm.DET.oldLabelElements = {};
-//	NgChm.DET.dataViewHeight = 506;
-//	NgChm.DET.dataViewWidth = 506;
-//	NgChm.DET.colDendro = null;
-//	NgChm.DET.rowDendro = null;
-//	NgChm.DET.oldMousePos = [0, 0];
-//	NgChm.DET.offsetX = 0;
-//	NgChm.DET.offsetY = 0;
-//	NgChm.DET.pageX = 0;
-//	NgChm.DET.pageY = 0;
-//	NgChm.DET.dendroHeight = 105;
-//	NgChm.DET.dendroWidth = 105;
-//	NgChm.DET.labelLastClicked = {};
-//	NgChm.DET.rowLabelLen = 0;
-//	NgChm.DET.colLabelLen = 0;
-//	NgChm.DET.rowLabelFont = 0;
-//	NgChm.DET.colLabelFont = 0;
-//	NgChm.DET.colClassLabelFont = 0;
-//	NgChm.DET.rowClassLabelFont = 0;
 }
 
 /**********************************************************************************
@@ -829,16 +808,18 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 		var canvas = document.createElement("canvas");
 		var ctx = canvas.getContext("2d");
 		ctx.imageSmoothingEnabled = false;
+		const rowDConfShow = NgChm.heatMap.getRowDendroConfig().show;
+		const colDConfShow = NgChm.heatMap.getColDendroConfig().show;
+		var cDShow = (colDConfShow === 'NONE') || (colDConfShow === 'NA') ? false : true;
+		var rDShow = (rowDConfShow === 'NONE') || (rowDConfShow === 'NA') ? false : true;
 		var mapWidth = width;
 		var mapHeight = height;
 		var cDWidth = width;
-		var cDHeight = height/4;
-		var rDWidth = width/4;
+		var cDHeight = (cDShow === false) ? 0 : height/4;
+		var rDWidth = (rDShow === false) ? 0 : width/4;
 		var rDHeight = height;
 		canvas.width = width + rDWidth;
 		canvas.height= height + cDHeight;
-		var cDShow = (NgChm.heatMap.getColDendroConfig().show === 'ALL') || (NgChm.heatMap.getColDendroConfig().show === 'SUMMARY') ? true : false;
-		var rDShow = (NgChm.heatMap.getRowDendroConfig().show === 'ALL') || (NgChm.heatMap.getRowDendroConfig().show === 'SUMMARY') ? true : false;
 		var mapStartX = 0;
 		var mapStartY = 0;
 		// draw the img into canvas
