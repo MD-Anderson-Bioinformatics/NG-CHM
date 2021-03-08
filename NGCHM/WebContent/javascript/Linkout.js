@@ -1536,7 +1536,8 @@ NgChm.createNS('NgChm.LNK');
 		function removeOpenGearPanels () {
 			const gears = document.getElementsByClassName('gearPanel');
 			for (item of gears) { 
-	            item.remove(); 
+				const paneId = item.id.substring(0,item.id.indexOf("Gear"));
+				NgChm.Pane.clearExistingGearDialog(paneId); 
 	        } 
 		}
 		

@@ -734,7 +734,6 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 			NgChm.SEL.updateSelection(mapItem,true);
 		}
 	}
-    NgChm.UTIL.redrawCanvases();
 }	
 
 /**********************************************************************************
@@ -794,7 +793,7 @@ NgChm.DEV.callDetailDrawFunction = function(modeVal) {  //SEL
 	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
 		NgChm.DEV.detailVRibbon(NgChm.DMM.primaryMap);
 	if (modeVal == 'FULL_MAP')
-		NgChm.DEV.detailFullMap(NgChm.DMM.primaryMap.chm);
+		NgChm.DEV.detailFullMap(NgChm.DMM.primaryMap);
 	if (modeVal == 'NORMAL') {
 		NgChm.DEV.detailNormal(NgChm.DMM.primaryMap.chm);	
 	}

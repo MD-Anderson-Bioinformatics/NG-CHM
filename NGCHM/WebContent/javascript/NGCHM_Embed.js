@@ -71,6 +71,9 @@ function embedNGCHM (selector, srcType, srcSpec, params = {}) {
     doc.write(`<!DOCTYPE html><HTML><BODY>`);
     doc.write(`<div style='${P.docStyle}'><div id='NGCHMEmbed' style='${P.embedStyle}'></div></div>`);
     S(`src='${P.widgetPath}'`);
+    if ('${P.customJS}' !== '') {
+        S(`src='${P.customJS}'`);
+    }
     S("",`window.parent.embedNGCHM.setUpFrame("${ngchmIFrame.name}");`);
     doc.write(`</BODY></HTML>`);
     doc.close();
