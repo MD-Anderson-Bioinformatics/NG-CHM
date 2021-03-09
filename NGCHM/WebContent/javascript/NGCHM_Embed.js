@@ -56,6 +56,7 @@ function embedNGCHM (selector, srcType, srcSpec, params = {}) {
 	if (srcSpec === undefined) {alert('No source file specified for embedded NGCHM for the DIV: ' + selector); return;}
 	
 	const ngchmIFrame = document.createElement('iframe');
+    ngchmIFrame.id = 'i' + selector; 
     ngchmIFrame.name = 'mapIframe' + sequenceNo; 
     sequenceNo++;
     ngchmIFrame.scrolling = P.scrolling;
@@ -103,6 +104,7 @@ function embedExpandableNGCHM (selector, srcType, srcSpec, params = {}) {
 	if (srcSpec === undefined) {alert('No source file specified for embedded NGCHM for the DIV: ' + selector); return;}
 
 	const ngchmIFrame = document.createElement('iframe');
+    ngchmIFrame.id = 'i' + selector; 
     ngchmIFrame.name = 'mapIframe' + sequenceNo; 
     sequenceNo++;
     ngchmIFrame.scrolling = P.scrolling;
@@ -142,7 +144,9 @@ embedNGCHM.setUpFrame = function setUpFrame (iframeName) {
         frame.NgChm.UTIL.embedCHM(frame.NgChm.UTIL.b64toBlob(info.srcSpec));
     } else if (info.srcType === 'fileName') {
         frame.NgChm.UTIL.embedCHM(info.srcSpec);
-    } else {
+    } else if (info.srcType === 'url') {
+        frame.NgChm.UTIL.embedCHM(info.srcSpec);
+   } else {
         alert ('Unknown type of embedded NGCHM: ' + info.srcType);
     }
 };
