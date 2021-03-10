@@ -398,10 +398,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return mapData.col_data.classifications;
 	}
 	
-	this.getMapInformation = function() {
-		return mapConfig.data_configuration.map_information;
-	}
-	
 	this.getDataLayers = function() {
 		return mapConfig.data_configuration.map_information.data_layer;
 	}
