@@ -490,6 +490,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return mapConfig.data_configuration.map_information; 
 	}
 
+	// Get pane configuration from mapConfig.json
+	this.getPaneConfiguration = function() {
+		return mapConfig.pane_configuration;
+	}
+
 	this.getRowDendroConfig = function() {
 		return mapConfig.row_configuration.dendrogram;
 	}
