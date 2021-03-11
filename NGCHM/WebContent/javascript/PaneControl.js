@@ -718,6 +718,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	}
 
 	// Create an Icon Menu for the DOM element icon.
+	// This function is invoked when the user clicks on the Pane Menu Icon.
 	function newIconMenu (icon) {
 		const menu = NgChm.UTIL.newElement('DIV.menuPanel');
 		const paneLoc = findPaneLocation(icon);
@@ -736,6 +737,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				callback ();
 			};
 			mi.innerText = text;
+			mi.classList.add(text.replace(/\s+/g,''))
 			menu.appendChild(mi);
 		}
 
@@ -1035,7 +1037,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 		document.addEventListener('click', closeMenu);
 		openIconMenu = menu;
-	}
+	}  // end of newIconMenu
 
 	const neighborPopups = [];
 	const neighborIcons = [];
