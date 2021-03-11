@@ -28,6 +28,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	
 	// function splitPaneCheck (vertical, loc) - check if OK to split pane
 	NgChm.Pane.splitPaneCheck = splitPaneCheck;
+	NgChm.Pane.findPaneLocation = findPaneLocation;
 
 	// function splitPane (vertical, loc) - split the pane at PaneLocation loc
 	NgChm.Pane.splitPane = splitPane;
