@@ -602,6 +602,7 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 NgChm.UTIL.loadCHMFromURL = function (sizeBuilderView) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', NgChm.MMGR.embeddedMapName, true);
+	xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
 	xhr.responseType = 'blob';
 	xhr.onload = function(e) {
 	  if (this.status == 200) {
