@@ -13,29 +13,34 @@
 	            </a>
 	       	</div>
             <div>
-               <p style="font-family: sans-serif; font-size: 22px"><b>NGCHM Viewer Help</b></p>
+               <p style="font-family: sans-serif; font-size: 22px"><b>NG-CHM Heat Map Viewer Help</b></p>
        		</div>
 	    </div>  
 	
 		<div id="helpContainer" style="font-family: sans-serif; font-size: 14px">
 	
 	    <h2>Overview</h2>
-		<p>The NGCHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data.
+		<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data.
 		This help page provides an introduction to the controls and features of the application.  For information on building heat maps
-		and additional advanced features of the NGCHM viewer, please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a>.
+		and additional advanced features of the NG-CHM Heat Map Viewer, please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a>.
 		</p>
 		<p style="text-align:center;"><img src='images/help/heatmap.png' height="452" width="800"></p>
-		<p>The NGCHM Heat Map Viewer contains two panels.  The Summary Panel on the left provides a full view of your heat map.  The Detail Panel on the
+		<p>The NG-CHM Heat Map Viewer contains two initial panes (Summary & Detail).  The Summary Pane on the left provides a full view of your heat map.  The Detail Pane on the
 		right provides a zoomed in view of a portion of the heat map.  Click anywhere on the summary picture to see the detail of that portion of the 
-		map. The colored highlight box on the Summary Panel indicates the portion of the heat map currently displayed in the Detail Panel.  You may zoom in or out
+		map. The colored highlight box on the Summary Pane indicates the portion of the heat map currently displayed in the Detail Pane.  You may zoom in or out
 		with the mouse scroll wheel or zoom in/out buttons to see smaller or larger portions of the map in the Detail View.  When the zoom level permits,
-		row and column labels will be displayed in the Detail Panel.  You may also use arrow keys to move up/down/left/right one row in the Detail Panel.
-		The divider bar may be moved by clicking on it and dragging left or right to change
-		the relative size of the Summary and Detail Panels.  </p>
+		row and column labels will be displayed in the Detail Pane.  You may also use arrow keys to move up/down/left/right one row in the Detail Pane.
+		The divider bar may be moved by clicking on it and dragging left or right to change	the relative size of the Summary and Detail Panes.  </p>
 	
 	
 	    <h2>Video Tutorial</h2>
 		<p>We have a video series of short tutorial videos to introduce the various capabilities and controls of the NG-CHM Viewer: <a href="https://youtu.be/D4_bNqEhUlw" target="new">Basic NG-CHM Navigation</a></p>
+
+	    <h2>Pane Interface</h2>
+		<p>The NG-CHM Viewer has been designed as a configurable multi-pane interface. The initial presentation of the interface is, as shown above, a two pane interface with Summary and Detail panes.
+		However, the user may control the number of panes by adding more panes to the screen.  These panes can contain a variety of content options.  Please see the Pane Menu section below for information 
+		on all of the features available within an NG-CHM Viewer pane. </p>
+		<p style="text-align:center;"><img src='images/help/heatmapPanes.png' height="452" width="800"></p>
 
 	    <h2>Controls</h2>
 		<p>There are a variety of buttons on the header bar to manipulate the heat map view.  Each has a tooltip that can be displayed by hovering over 
@@ -51,31 +56,35 @@
 			    <th>Description</th>
 			</tr>
 			<tr>
+				<td align="center"><img src="images/primary.png"></td>
+				<td>Primary sets a selected Detail pane to the "Primary" pane. The primary pane is the one open Detail Pane that always remains in sync with the Summary Pane. Each Detail Pane that is not the Primary will contain this control on its header bar. </td>
+			</tr>
+			<tr>
 				<td align="center"><img src="images/zoom-in.png"></td>
-				<td>Zoom in on the Detail Panel making rows and columns larger. Mouse scroll forward will also zoom in. On touch enabled devices, use a two finger pinch inward to zoom in.</td>
+				<td>Zoom in on the Detail Pane making rows and columns larger. Mouse scroll forward will also zoom in. On touch enabled devices, use a two finger pinch inward to zoom in. Each Detail Pane will contain this control on its header bar.</td>
 			</tr>
 			<tr>
 				<td align="center"><img src="images/zoom-out.png"></td>
-				<td>Zoom our on the Detail Panel to show more rows and columns. Mouse scroll backward will also zoom out. On touch enabled devices, use a two finger pinch outward to zoom out.</td>
+				<td>Zoom our on the Detail Pane to show more rows and columns. Mouse scroll backward will also zoom out. On touch enabled devices, use a two finger pinch outward to zoom out. Each Detail Pane will contain this control on its header bar.</td>
 			</tr>	
 			<tr>
 				<td align="center"><img src="images/full.png"></td>
-				<td>Set the Detail Panel in normal mode where the data points are square and the number of rows/columns shown
-				will be controlled only by the zoom level. Normal mode contrasts with ribbon view modes.  When selected, the background of the button will be darker.</td>
+				<td>Set the Detail Pane in normal mode where the data points are square and the number of rows/columns shown
+				will be controlled only by the zoom level. Normal mode contrasts with ribbon view modes.  When selected, the background of the button will be darker. Each Detail Pane will contain this control on its header bar.</td>
 			</tr>	
 			<tr>
 				<td align="center"><img src="images/ribbonH.png"></td>
-				<td>Set the Detail Panel in ribbon horizontal mode.  It is often useful to be able to see the full width of the heat map
+				<td>Set the Detail Pane in ribbon horizontal mode.  It is often useful to be able to see the full width of the heat map
 				but also see the row labels.  Ribbon horizontal mode shows a horizontal slice of the heat map containing all the columns 
 				and a few of the rows.  The zoom level will then control how many rows are shown. When selected the button background will be
-				darker.  Select the normal mode button to exit ribbon view.</td>
+				darker.  Select the normal mode button to exit ribbon view. Each Detail Pane will contain this control on its header bar.</td>
 			</tr>	
 			<tr>
 				<td align="center"><img src="images/ribbonV.png"></td>
-				<td>Set the Detail Panel in ribbon vertical mode.  It is sometimes useful to be able to see the full height of the heat map
+				<td>Set the Detail Pane in ribbon vertical mode.  It is sometimes useful to be able to see the full height of the heat map
 				but also see the column labels.  Ribbon vertical mode shows a vertical slice of the heat map containing all the rows 
 				and a few of the columns.  The zoom level will then control how many columns are shown. When selected the button background will be
-				darker.  Select the normal mode button to exit ribbon view.</td>
+				darker.  Select the normal mode button to exit ribbon view. Each Detail Pane will contain this control on its header bar.</td>
 			</tr>	
 			<tr>
 				<td align="center"><b>Search: </b></td>
@@ -85,16 +94,7 @@
 				if some search terms are not found and will turn red if no search terms are found.  Use the -> and <- buttons next to the search box
 				to have the detail view jump to the next or previous row / column that match the search terms.  The labels of rows and columns that 
 				match the search term will be selected (green background) and '<' with a green background will be placed at the position of matches
-				in the Summary Panel. To clear selections from a search, use the red X button next to the search box.</td>
-			</tr>	
-			<tr>
-				<td align="center"><img src="images/split.png"></td>
-				<td>This button will split the Summary Panel and Detail Panel into two coordinated browser instances.  This is helpful if you are working
-				on a computer with multiple monitors and would like to see the Summary Panel on one screen and Detail Panel on another.</td>
-			</tr>	
-			<tr>
-				<td align="center"><img src="images/join.png"></td>
-				<td>If you have split the Summary and Detail Panel into two browsers, this will join them back together into a single browser.</td>
+				in the Summary Pane. To clear selections from a search, use the red X button next to the search box.</td>
 			</tr>	
 			<tr>
 				<td align="center"><img src="images/barColors.png"></td>
@@ -102,17 +102,21 @@
 			</tr>	
 			<tr>
 				<td align="center"><img src="images/barMenu.png"></td>
-				<td>The NG-CHM collapsable (hamburger) menu button opens a drop-down menu containing features for performing a variety of tasks related to the displayed heat map.  Please see the NG-CHM Collapsable Menu section below for more information on available menu features.</td>
+				<td>The NG-CHM collapsible (hamburger) menu button opens a drop-down menu containing features for performing a variety of tasks related to the displayed heat map.  Please see the NG-CHM Collapsable Menu section below for more information on available menu features.</td>
 			</tr>	
 			<tr>
 				<td align="center"><img src="images/layersOff.png"></td>
 				<td>For advanced maps with multiple data layers, this control allows you to toggle between the different data layers.
 				  Please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a> for details.</td>
 			</tr>			
+			<tr>
+				<td align="center"><img src="images/paneMenu.png"></td>
+				<td>The Pane Menu button opens a drop-down menu containing features for filling a given pane with different content.  Please see the Pane Menu section below for more information on available menu features.</td>
+			</tr>			
 		</table>
 	   <h2>NG-CHM Collapsable Menu Button</h2>
 	   
-	   <p>The NG-CHM collapsable (hamburger) menu button opens a drop-down menu containing features for performing a variety of tasks related to the displayed heat map.  It possible for individual NG-CHM systems to be upgraded to place additional menu items into the collapsable menu.</p>
+	   <p>The NG-CHM collapsable (hamburger) menu button opens a drop-down menu containing features for performing a variety of tasks related to the displayed heat map.  It possible for individual NG-CHM systems to be upgraded to place additional menu items into the collapsible menu.</p>
   		<table class="onlineHelp" align="center">
 	    	<colgroup>
 	     	  <col span="1" style="width: 20%;">
@@ -130,12 +134,12 @@
 			</tr>	
 			<tr>
 				<td align="center"><img src="images/thumbnail.png"></td>
-				<td>The thumb nail button downloads a small .PNG image of the displayed heat map summary panel.</td>
+				<td>The thumb nail button downloads a small .PNG image of the displayed heat map summary pane.</td>
 			<tr>
 				<td align="center"><img src="images/saveButton.png"></td>
 				<td>The save button allows users to save a local copy of a heat map.  Changes made through the configuration panel are saved to the 
 				local copy of the heat map.  Heat maps are stored as a collection of files compressed into a zip file.  Local heat map files can be
-				viewed in several ways including a local stand-alone version of NGCHM Heat Map Viewer. Please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a> for details.</td>
+				viewed in several ways including a local stand-alone version of NG-CHM Heat Map Viewer. Please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a> for details.</td>
 			</tr>	
 			<tr>
 				<td align="center"><img src="images/gear.png"></td>
@@ -157,6 +161,59 @@
 			</tr>	
 		</table>
 
+	   <h2>Pane Menu</h2>
+	   
+	   <p>The Pane Menu icon button opens a drop-down menu containing features for filling a given pane with various types of content. The Pane Menu icon will appear on the pane header, in the right corner, on each open pane in the NG-CHM Viewer interface. Clicking
+	   on the button will present the user with options for what they want to see displayed in a given pane. </p>
+  		<table class="onlineHelp" align="center">
+	    	<colgroup>
+	     	  <col span="1" style="width: 20%;">
+	     	  <col span="1" style="width: 80%;">
+	    	</colgroup>
+			<tr>
+				<th>Menu Selection</th>
+			    <th>Description</th>
+			</tr>
+			<tr>
+				<td align="center"><b>Summary heatmap</b></td>
+				<td>This menu item will populate the selected pane with the Summary view of the heat map. There can only be one Summary pane visible in the NG-CHM Viewer application, so if there is a Summary pane visible when the user selects this option, the Summary display will be removed from any other panes.</td>
+			</tr>	
+			<tr>
+				<td align="center"><b>Detail heatmap</b></td>
+				<td>This menu item will populate the selected pane with a Detail view of the heat map. The pane will be displayed showing the current selected area in the Summary pane. The user may open multiple detail panes within the NG-CHM Viewer application.</td>
+			<tr>
+				<td align="center"><b>Linkouts</b></td>
+				<td>This menu item will populate the selected pane with the content from linkout web sites. In the Detail Pane, some heat maps have a link out capability that supports deeper exploration of heat map data. Pre-constructed link out functions are available for certain data types, for example Hugo gene symbols.   Please see our <a href="http://bioinformatics.mdanderson.org/main/NG-CHM-V2:Overview" target="new">full documentation</a> for more information on linkouts.</td>
+			</tr>	
+			<tr>
+				<td align="center"><b>2D Scatterplot</b></td>
+				<td>This menu item will open a two dimensional scatterplot plugin in the selected pane. The configurable scatterplot can interact with the heat map based upon selections made by the user.</td>
+			</tr>	
+			<tr>
+				<td align="center"><b>3D Scatterplot</b></td>
+				<td>This menu item will open a two dimensional scatterplot plugin in the selected pane. The configurable scatterplot can interact with the heat map based upon selections made by the user.</td>
+			</tr>	
+			<tr>
+				<td align="center"><b>PathwayMapper</b></td>
+				<td>This menu item will open the PathwayMapper plugin in the selected pane. PathwayMapper is a collaborative visual plugin for cancer pathways. PathwayMapper can be used as an interactive graphical editing tool for creating and modifying pathways with the ability to overlay genomic data.</td>
+			</tr>	
+			<tr>
+				<td align="center"><b>Add Pane Below</b></td>
+				<td>This menu item will open a new pane just below the selected pane. 
+			</tr>	
+			<tr>
+				<td align="center"><b>Add Pane Below</b></td>
+				<td>This menu item will open a new pane just to the right of the selected pane. 
+			</tr>	
+			<tr>
+				<td align="center"><b>Collapse</b></td>
+				<td>This menu item will collapse the contents of the selected pane. 
+			</tr>	
+			<tr>
+				<td align="center"><b>Close</b></td>
+				<td>This menu item will close the selected pane. 
+			</tr>	
+		</table>
 	
 	   <h2>Selection</h2>
 	
@@ -164,19 +221,19 @@
 	   select a block of labels or control-click to individually select multiple labels.  When labels are selected, you can right click, or long tap for touch enabled devices, on one of them to access a
 	   pop-up menu of actions that can be performed on the selected labels.  For advanced maps, a variety of context specific link out options may be available.</p>
 	   
-	   <p>Drag selection is also possible.  On the Detail Panel hold down shift and the left mouse button while dragging the mouse pointer across the rows and columns
+	   <p>Drag selection is also possible.  On the Detail Pane hold down shift and the left mouse button while dragging the mouse pointer across the rows and columns
 	   you wish to select.</p>
 	   <p style="text-align:center;"><img src='images/help/DragSelect.png'></p>
 		
 	   <p>For clustered heat maps, It is possible to select rows / columns by clicking on the dendrogram branch of the rows/columns you wish to select.
 		   
-	   <p>Selection operations performed on the Summary Panel will not select rows and columns but will select the view shown in the Detail Panel.  Use shift and hold 
-	   down the left mouse button while dragging the mouse pointer across the region that you would like to view in the Summary Panel.  For touch enabled devices, use two fingers to select and drag the area you would like to view. The Detail Panel will select the
+	   <p>Selection operations performed on the Summary Pane will not select rows and columns but will select the view shown in the Detail Pane.  Use shift and hold 
+	   down the left mouse button while dragging the mouse pointer across the region that you would like to view in the Summary Pane.  For touch enabled devices, use two fingers to select and drag the area you would like to view. The Detail Pane will select the
 	   closest matching zoom level for the region you wish to view.</p>
 	   
-	   <p>For clustered heat maps, a selection option in the Summary Panel can be used to view a section of the map associated with a dendrogram branch.  This feature
+	   <p>For clustered heat maps, a selection option in the Summary Pane can be used to view a section of the map associated with a dendrogram branch.  This feature
 	   is particularly useful for investigation of sub-sections of the heat map related class of samples (e.g. subgroup of cancer patients identified by a dendrogram branch).
-	   Selecting a dendrogram branch in the Summary Panel will lock the Detail Panel to only portion of the heat map associated with the selected branch of the dendrogram. You
+	   Selecting a dendrogram branch in the Summary Pane will lock the Detail Pane to only portion of the heat map associated with the selected branch of the dendrogram. You
 	   can scroll up/down or left/right through dendrogram branch data.  This view is essentially a restricted ribbon view.  To get out of the sub-dendrogram view, click on the
 	   normal mode button.
 	   

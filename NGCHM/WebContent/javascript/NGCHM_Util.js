@@ -511,6 +511,7 @@ NgChm.UTIL.isBuilderView = false;
  * viewer.  
  **********************************************************************************/
 NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
+	
 	NgChm.UTIL.isBuilderView = sizeBuilderView;
 	NgChm.UTIL.setBrowserMinFontSize();
 	//Run startup checks that enable startup warnings button.
@@ -565,7 +566,10 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		NgChm.UTIL.loadBlobModeCHM(sizeBuilderView)
 		return;
 	}
-	
+	if (NgChm.UTIL.isValidURL(NgChm.MMGR.embeddedMapName) === true) {
+		NgChm.UTIL.loadCHMFromURL(sizeBuilderView)
+		return;
+	}
 	//Else, fetch the .ngchm file
 	var req = new XMLHttpRequest();
 	req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName);
@@ -589,6 +593,25 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		}
 	};	
 	req.send();	
+}
+
+/**********************************************************************************
+ * FUNCTION - loadCHMFromURL: Works kind of like local mode but works when javascript
+ * passes in the ngchm as a blob.
+ **********************************************************************************/
+NgChm.UTIL.loadCHMFromURL = function (sizeBuilderView) {
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', NgChm.MMGR.embeddedMapName, true);
+	xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+	xhr.responseType = 'blob';
+	xhr.onload = function(e) {
+	  if (this.status == 200) {
+	    var myBlob = this.response;
+		NgChm.UTIL.resetCHM();
+		NgChm.UTIL.displayFileModeCHM(myBlob,sizeBuilderView);
+	  }
+	};
+	xhr.send();
 }
 
 /**********************************************************************************
@@ -914,6 +937,20 @@ NgChm.UTIL.isNaN = function (n) {
 		nan = true;
 	}
     return nan;
+}
+
+/**********************************************************************************
+ * FUNCTION - validURL: This function checks to see if a string contains a valid
+ * URL address.
+ **********************************************************************************/
+NgChm.UTIL.isValidURL = function (str) {
+	  let url;
+	  try {
+	    url = new URL(str);
+	  } catch (_) {
+	    return false;  
+	  }
+	  return true;
 }
 
 /**********************************************************************************
