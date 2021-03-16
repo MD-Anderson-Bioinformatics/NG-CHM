@@ -47,17 +47,11 @@ const defaultParams = {
 //
 // embedNGCHM may be called multiple times for different DOM elements to embed multiple maps.
 //
+
 function embedNGCHM (selector, srcType, srcSpec, params = {}) {
 
     const P = Object.assign({}, defaultParams, params);
-    
-    let embeddedDiv = null;
-    //Retrieve required heat map div (above)
-    if (selector.charAt(0) === '#') {
-        embeddedDiv = document.querySelector(selector);
-    } else {
-        embeddedDiv = document.getElementById(selector);
-    }
+    const embeddedDiv = getEmbeddedDIV(selector);
     if (!embeddedDiv) {alert('Failed to find target "' + selector + '" for embedded NGCHM'); return;}
 
 	//Exit if no ngchm has been provided
@@ -95,30 +89,28 @@ function embedNGCHM (selector, srcType, srcSpec, params = {}) {
     function S(a,b="") { doc.write (`<script ${a}>${b}<` + '/script>'); }
 };
 
-embedNGCHM.showEmbedded = function showEmbedded(baseDiv,params) {
-	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
-	NgChm.UTIL.embedThumbWidth = embeddedWrapper.style.width;
-	NgChm.UTIL.embedThumbHeight = embeddedWrapper.style.height;
-	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
-	var embeddedMap = document.getElementById('NGCHMEmbed');
-	var iFrame = window.frameElement; // reference to iframe element container
-	iFrame.className='ngchm';
-	iFrame.style = iframeStyle;
-	iFrame.style.display = 'flex';
-	embeddedMap.style.height = '92vh';
-	embeddedMap.style.width = '97vw';
-	embeddedMap.style.display = 'flex';
-	embeddedMap.style.flexDirection = 'column';
-	embeddedWrapper.style.display = 'none';
-	embeddedCollapse.style.display = ''; 
-	if (NgChm.UTIL.embedLoaded === false) {
-		NgChm.UTIL.embedLoaded = true;
-		NgChm.UTIL.loadLocalModeCHM(false);
-		if (customJS !== "") {
-			setTimeout(function(){ NgChm.CUST.addExtraCustomJS(customJS);}, 2000);
-		}
-	}
+//Retrieve DOM DIV element for selector
+function getEmbeddedDIV(selector) {
+	let embeddedDiv = null;
+    if (elementIsDIV(selector)) {
+    	embeddedDiv = selector;
+    } else if (selector.charAt(0) === '#') {
+        embeddedDiv = document.querySelector(selector);
+    } else {
+        embeddedDiv = document.getElementById(selector);
+    }
+    return embeddedDiv;
 }
+
+//Check to see if selector is an actual DOM DIV element
+function elementIsDIV(Obj) {
+   if (Obj instanceof Element) {
+	   if (Obj.tagName == 'DIV') {
+		   return true;
+	   } 
+   }
+   return false; 
+} 
 
 // Auxiliary function to override default parameters for all subsequent calls to embedNGCHM.
 //
