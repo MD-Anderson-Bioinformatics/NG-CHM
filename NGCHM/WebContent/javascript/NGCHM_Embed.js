@@ -47,15 +47,14 @@ const defaultParams = {
 //
 // embedNGCHM may be called multiple times for different DOM elements to embed multiple maps.
 //
-
 function embedNGCHM (selector, srcType, srcSpec, params = {}) {
 
     const P = Object.assign({}, defaultParams, params);
-    const embeddedDiv = getEmbeddedDIV(selector);
-    if (!embeddedDiv) {alert('Failed to find target "' + selector + '" for embedded NGCHM'); return;}
+    const embeddedParent = getParentFromSelector(selector);
+    if (!embeddedParent) {alert('Failed to find target "' + selector + '" for embedded NGCHM'); return;}
 
 	//Exit if no ngchm has been provided
-	if (srcSpec === undefined) {alert('No source file specified for embedded NGCHM for the DIV: ' + selector); return;}
+	if (srcSpec === undefined) {alert('No source file specified for embedded NGCHM for the embedded parent element: ' + selector); return;}
 
 	const ngchmIFrame = document.createElement('iframe');
     ngchmIFrame.id = 'i' + selector; 
@@ -66,7 +65,7 @@ function embedNGCHM (selector, srcType, srcSpec, params = {}) {
     // Save details required by iFrame initialization callback.
     iframeInfo[ngchmIFrame.name] = { srcType, srcSpec };
     //Add Iframe to required DIV
-    embeddedDiv.appendChild(ngchmIFrame); 
+    embeddedParent.appendChild(ngchmIFrame); 
     //Construct a fully configured embedded iframe and add it to the html page
     const doc = ngchmIFrame.contentWindow.document;
 	doc.open();
@@ -89,28 +88,10 @@ function embedNGCHM (selector, srcType, srcSpec, params = {}) {
     function S(a,b="") { doc.write (`<script ${a}>${b}<` + '/script>'); }
 };
 
-//Retrieve DOM DIV element for selector
-function getEmbeddedDIV(selector) {
-	let embeddedDiv = null;
-    if (elementIsDIV(selector)) {
-    	embeddedDiv = selector;
-    } else if (selector.charAt(0) === '#') {
-        embeddedDiv = document.querySelector(selector);
-    } else {
-        embeddedDiv = document.getElementById(selector);
-    }
-    return embeddedDiv;
+//Retrieve embedded parent element from selector
+function getParentFromSelector(selector) {
+	return selector instanceof Element ? selector : document.querySelector(selector) || document.getElementById(selector);
 }
-
-//Check to see if selector is an actual DOM DIV element
-function elementIsDIV(Obj) {
-   if (Obj instanceof Element) {
-	   if (Obj.tagName == 'DIV') {
-		   return true;
-	   } 
-   }
-   return false; 
-} 
 
 // Auxiliary function to override default parameters for all subsequent calls to embedNGCHM.
 //
