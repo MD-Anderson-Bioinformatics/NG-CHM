@@ -654,7 +654,6 @@ NgChm.UTIL.loadFileModeCHM = function () {
 //
 NgChm.UTIL.editWidget = function editWidget (options) {
 	options = options || [];
-	//console.log ('NgChm.UTIL.editWidget called');
 	if (options.indexOf('noheader') !== -1) {
 		document.getElementById('mdaServiceHeader').classList.add('hide');
 	}
@@ -679,7 +678,6 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
     NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
     NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
-//	console.log ('sizeBuilderView set');
 	NgChm.UTIL.showDetailPane = false;
 	NgChm.Pane.showPaneHeader = false;
         NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
@@ -1205,14 +1203,20 @@ NgChm.UTIL.showEmbedded = function (baseDiv,iframeStyle,customJS) {
  * FUNCTION - hideEmbed: This function hides the embedded map when the user 
  * clicks on the collapse map button.
  **********************************************************************************/
-NgChm.UTIL.hideEmbed = function (baseDiv) {
+NgChm.UTIL.hideEmbed = function (thumbStyle) {
 	var iFrame = window.frameElement; // reference to iframe element container
 	iFrame.className='ngchmThumbnail';
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
-	iFrame.style.height = NgChm.UTIL.embedThumbHeight;
-	embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
 	var embeddedMap = document.getElementById('NGCHMEmbed');
-	embeddedMap.style.height = NgChm.UTIL.embedThumbHeight;
+	if (typeof thumbStyle === 'undefined') {
+		iFrame.style.height = NgChm.UTIL.embedThumbHeight;
+		embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
+		embeddedMap.style.height = NgChm.UTIL.embedThumbHeight;
+	} else {
+		iFrame.style = thumbStyle;
+		embeddedWrapper.style = thumbStyle;
+		embeddedMap.style = thumbStyle;
+	}
 	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	embeddedMap.style.display = 'none';
 	embeddedCollapse.style.display = 'none';
