@@ -311,7 +311,6 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		thisPane.style.height = topContainer.clientHeight + 'px';
 		thisPane.style.display = '';
 		//Resize panels
-//		NgChm.UTIL.chmResize();
 		NgChm.DMM.detailResize();
 		NgChm.SUM.summaryResize();
 	}
