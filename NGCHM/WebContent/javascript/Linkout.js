@@ -439,6 +439,7 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	NgChm.LNK.labelHelpOpen = function(axis, e){
+		NgChm.DEV.targetCanvas = e.currentTarget;
 		NgChm.LNK.labelHelpCloseAll();
 		//Get the label item that the user clicked on (by axis) and save that value for use in NgChm.LNK.selection
 	    var index = e.target.dataset.index;

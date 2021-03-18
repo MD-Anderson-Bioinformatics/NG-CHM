@@ -3,6 +3,8 @@
 //Define Namespace for NgChm Events
 NgChm.createNS('NgChm.DEV');
 
+NgChm.DEV.targetCanvas = null;
+
 /**********************************************************************************
  * FUNCTION - addEvents: These function adds event listeners to canvases on a
  * given heat map panel.  
@@ -787,15 +789,16 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
  * mode changes on the Summary Panel by calling the appropriate detail drawing
  * function. It acts only on the Primary heat map pane.
  **********************************************************************************/
-NgChm.DEV.callDetailDrawFunction = function(modeVal) {  //SEL
+NgChm.DEV.callDetailDrawFunction = function(modeVal, target) { 
+	let mapItem = (typeof target !== 'undefined') ? target : NgChm.DMM.primaryMap;
 	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
-		NgChm.DEV.detailHRibbon(NgChm.DMM.primaryMap);
+		NgChm.DEV.detailHRibbon(mapItem);
 	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
-		NgChm.DEV.detailVRibbon(NgChm.DMM.primaryMap);
+		NgChm.DEV.detailVRibbon(mapItem);
 	if (modeVal == 'FULL_MAP')
-		NgChm.DEV.detailFullMap(NgChm.DMM.primaryMap);
+		NgChm.DEV.detailFullMap(mapItem);
 	if (modeVal == 'NORMAL') {
-		NgChm.DEV.detailNormal(NgChm.DMM.primaryMap.chm);	
+		NgChm.DEV.detailNormal(mapItem);	
 	}
 }
 

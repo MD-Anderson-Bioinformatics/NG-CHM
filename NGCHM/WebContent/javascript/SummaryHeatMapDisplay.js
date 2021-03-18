@@ -914,6 +914,8 @@ NgChm.SUM.onMouseUpCanvas = function(evt) {
 //This is a helper function that can set a sub-ribbon view that best matches a user
 //selected region of the map.
 NgChm.SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
+	let mapItem = (NgChm.DEV.targetCanvas !== null) ? NgChm.DMM.getMapItemFromCanvas(NgChm.DEV.targetCanvas) : NgChm.DMM.primaryMap;
+	NgChm.DEV.targetCanvas = null;
 	const selRows = Math.abs(endRow - startRow);
 	const selCols = Math.abs(endCol - startCol);
 	//In case there was a previous dendo selection - clear it.
@@ -922,26 +924,25 @@ NgChm.SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
 	NgChm.SUM.rowDendro.draw();
 	//If tiny tiny box was selected, discard and go back to previous selection size
 	if (endRow-startRow<1 && endCol-startCol<1) {
-		NgChm.DET.setDetailDataSize (NgChm.DMM.primaryMap, NgChm.DMM.primaryMap.dataBoxWidth);
+		NgChm.DET.setDetailDataSize (mapItem, mapItem.dataBoxWidth);
 	//If there are more rows than columns do a horizontal sub-ribbon view that fits the selection. 	
-//	} else if (NgChm.heatMap.getNumRows("d") >= NgChm.heatMap.getNumColumns("d")) {
 	} else if (selRows >= selCols) {
-		var boxSize = NgChm.DET.getNearestBoxHeight(NgChm.DMM.primaryMap, endRow - startRow + 1);
-		NgChm.DET.setDetailDataHeight(NgChm.DMM.primaryMap,boxSize); 
-		NgChm.DMM.primaryMap.selectedStart= startCol;
-		NgChm.DMM.primaryMap.selectedStop=endCol;
-		NgChm.DMM.primaryMap.currentRow = startRow;
-		NgChm.DEV.callDetailDrawFunction('RIBBONH');
+		var boxSize = NgChm.DET.getNearestBoxHeight(mapItem, endRow - startRow + 1);
+		NgChm.DET.setDetailDataHeight(mapItem,boxSize); 
+		mapItem.selectedStart= startCol;
+		mapItem.selectedStop=endCol;
+		mapItem.currentRow = startRow;
+		NgChm.DEV.callDetailDrawFunction('RIBBONH', mapItem);
 	} else {
 		//More columns than rows, do a vertical sub-ribbon view that fits the selection. 	
-		var boxSize = NgChm.DET.getNearestBoxSize(NgChm.DMM.primaryMap, endCol - startCol + 1);
-		NgChm.DET.setDetailDataWidth(NgChm.DMM.primaryMap,boxSize); 
-		NgChm.DMM.primaryMap.selectedStart=startRow;
-		NgChm.DMM.primaryMap.selectedStop=endRow;
-		NgChm.DMM.primaryMap.currentCol = startCol; 
-		NgChm.DEV.callDetailDrawFunction('RIBBONV');
+		var boxSize = NgChm.DET.getNearestBoxSize(mapItem, endCol - startCol + 1);
+		NgChm.DET.setDetailDataWidth(mapItem,boxSize); 
+		mapItem.selectedStart=startRow;
+		mapItem.selectedStop=endRow;
+		mapItem.currentCol = startCol; 
+		NgChm.DEV.callDetailDrawFunction('RIBBONV', mapItem);
 	}
-	NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
+	NgChm.SEL.updateSelection(mapItem);
 }
 
 NgChm.SUM.clickSelection = function(xPos, yPos) {
