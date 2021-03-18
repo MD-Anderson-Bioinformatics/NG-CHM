@@ -1203,6 +1203,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				pClone = p.cloneNode(true);
 				NgChm.DMM.nextMapNumber++;
 				pClone.id = p.id + NgChm.DMM.nextMapNumber;
+				//If primary is collapsed set chm detail of clone to visible
+				if ((pClone.className === 'detail_chm') && (pClone.style.display === 'none')) {
+					pClone.style.display = 'inline-block';
+				}
 				renameElements(pClone);
 				clientElements.push (pClone);
 				NgChm.DMM.AddDetailMap(pClone, newPane);
