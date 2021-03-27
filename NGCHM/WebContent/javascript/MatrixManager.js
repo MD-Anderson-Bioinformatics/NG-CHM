@@ -94,7 +94,8 @@ let	wS = `const debug = ${debug};`;
 	wS += `var active = 0;`;              // Number of tile requests in flight
 	wS += `const pending = [];`;          // Additional tile requests
 	wS += `const baseURL = "${baseURL}";`; // Base URL to prepend to requests.
-	wS += `const mapId = "${NgChm.UTIL.mapId}";`; // Map ID.
+	wS += `var mapId = "${NgChm.UTIL.mapId}";`; // Map ID.
+	wS += `const mapNameRef = "${NgChm.UTIL.mapNameRef}";`; // Map name (if specified).
 
 	// Create a function that determines the get tile request.
 	// Body of function depends on the fileSrc of the NG-CHM.
@@ -172,6 +173,38 @@ let	wS = `const debug = ${debug};`;
 	}
 	wS += handleMessage.toString();
 
+	// This function will be stringified and sent to the web loader.
+	function getConfigAndData() {
+		// Retrieve all map configuration data.
+		loadJson('mapConfig');
+		// Retrieve all map supporting data (e.g. labels, dendros) from JSON.
+		loadJson('mapData');
+	}
+	wS += getConfigAndData.toString();
+
+	// If the map was specified by name, send the code to find the
+	// map's id by name.  Otherwise just get the map's config
+	// and data.
+	if (NgChm.UTIL.mapId === '' && NgChm.UTIL.mapNameRef !== '') {
+		function getMapId () {
+			fetch (baseURL + "GetMapByName/" + mapNameRef)
+			.then (res => {
+				if (res.status === 200) {
+					res.json().then (mapinfo => {
+						mapId = mapinfo.data.id;
+						getConfigAndData();
+					});
+				} else {
+					postMessage({ op: 'jsonLoadFailed', name: 'GetMapByName' });
+				}
+			});
+		}
+		wS += getMapId.toString();
+		wS += 'getMapId();';
+	} else {
+		wS += 'getConfigAndData();';
+	}
+
 	wS += `onmessage = handleMessage;`;
 	if (debug) wS += `console.log ({ m:'TileLoader loaded', t: performance.now() });`;
 
@@ -179,6 +212,22 @@ let	wS = `const debug = ${debug};`;
 	const blob = new Blob([wS], {type: 'application/javascript'});
 	if (debug) console.log({ m: 'MMGR.createWebLoader', blob, wS });
 	NgChm.MMGR.webLoader = new Worker(URL.createObjectURL(blob));
+	// It is possible for the web worker to post a reply to the main thread
+	// before the message handler is defined.  Stash any such messages away
+	// and play them back once it has been.
+	const pendingMessages = [];
+	NgChm.MMGR.webLoader.onmessage = function(e) {
+		pendingMessages.push(e);
+	};
+	NgChm.MMGR.webLoader.setMessageHandler = function (mh) {
+		// Run asychronously so that the heatmap can be defined before processing messages.
+		setTimeout(function() {
+		    while (pendingMessages.length > 0) {
+			    mh (pendingMessages.shift());
+		    }
+		    NgChm.MMGR.webLoader.onmessage = mh;
+		}, 0);
+	};
 
 	// Called locally.
 	function getLoaderBaseURL (fileSrc) {
@@ -841,15 +890,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Initialization - this code is run once when the map is created.
 	
-	if (fileSrc !== NgChm.MMGR.FILE_SOURCE){
-		//fileSrc is web so get JSON files from server
+	if (fileSrc !== NgChm.MMGR.FILE_SOURCE) {
 		if (fileSrc !== NgChm.MMGR.WEB_SOURCE) createWebLoader(fileSrc);
 		connectWebLoader(fileSrc);
-		//Retrieve  all map configuration data.
-		webFetchJson('mapConfig');
-		//Retrieve  all map supporting data (e.g. labels, dendros) from JSON.
-		webFetchJson('mapData');
-
 	} else {
 		//Check file mode viewer software version (excepting when using embedded widget)
 		if (typeof embedDiv === 'undefined') {
@@ -1187,7 +1230,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	// Handle replies from tileio worker.
 	function connectWebLoader () {
 		const debug = false;
-		NgChm.MMGR.webLoader.onmessage = function(e) {
+		jsonSetterFunctions.mapConfig = addMapConfig;
+		jsonSetterFunctions.mapData = addMapData;
+		NgChm.MMGR.webLoader.setMessageHandler (function(e) {
 			if (debug) console.log({ m: 'Received message from webLoader', e });
 			if (e.data.op === 'tileLoaded') {
 				const tiledata = new Float32Array(e.data.buffer);
@@ -1206,9 +1251,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			} else {
 				console.log({ m: 'connectWebLoader: unknown op', e });
 			}
-		};
-		jsonSetterFunctions.mapConfig = addMapConfig;
-		jsonSetterFunctions.mapData = addMapData;
+		});
 	};
 
 	// Create the specified cache entry.
