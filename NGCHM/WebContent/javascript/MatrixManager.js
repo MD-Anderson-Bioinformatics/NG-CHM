@@ -46,7 +46,7 @@ NgChm.createNS = function (namespace) {
 NgChm.createNS('NgChm.MMGR');
 
 //For web-based NGCHMs, we will create a Worker process to overlap I/O and computation.
-NgChm.MMGR.tileLoader = null;
+NgChm.MMGR.webLoader = null;
 
 //Supported map data summary levels.
 NgChm.MMGR.THUMBNAIL_LEVEL = 'tn';
@@ -83,7 +83,7 @@ NgChm.MMGR.MatrixManager = function(fileSrc) {
 
 //Create a worker thread to request/receive json data and tiles.  Using a separate
 //thread allows the large I/O to overlap extended periods of heavy computation.
-NgChm.MMGR.createWebTileLoader = function () {
+NgChm.MMGR.createWebLoader = function () {
 	const debug = false;
 
 	// Define worker script.
@@ -153,8 +153,8 @@ let	wS = `const debug = ${debug};`;
 
 	// Create blob and start worker.
 	const blob = new Blob([wS], {type: 'application/javascript'});
-	if (debug) console.log({ m: 'MMGR.createWebTileLoader', blob, wS });
-	NgChm.MMGR.tileLoader = new Worker(URL.createObjectURL(blob));
+	if (debug) console.log({ m: 'MMGR.createWebLoader', blob, wS });
+	NgChm.MMGR.webLoader = new Worker(URL.createObjectURL(blob));
 };
 
 NgChm.MMGR.isRow = function isRow (axis) {
@@ -803,7 +803,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		webFetchJson('mapConfig', addMapConfig);
 		//Retrieve  all map supporting data (e.g. labels, dendros) from JSON.
 		webFetchJson('mapData', addMapData);
-		connectWebTileLoader();
+		connectWebLoader();
 	} else {
 		//Check file mode viewer software version (excepting when using embedded widget)
 		if (typeof embedDiv === 'undefined') {
@@ -1139,10 +1139,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 	
 	// Handle replies from tileio worker.
-	function connectWebTileLoader () {
+	function connectWebLoader () {
 		const debug = false;
-		NgChm.MMGR.tileLoader.onmessage = function(e) {
-			if (debug) console.log({ m: 'Received message from tileLoader', e });
+		NgChm.MMGR.webLoader.onmessage = function(e) {
+			if (debug) console.log({ m: 'Received message from webLoader', e });
 			if (e.data.op === 'tileLoaded') {
 				const tiledata = new Float32Array(e.data.buffer);
 				setTileCacheEntry (e.data.job.tileCacheName, tiledata);
@@ -1150,7 +1150,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
 			} else if (e.data.op === 'jsonLoaded') {
 				if (!jsonSetterFunctions.hasOwnProperty(e.data.name)) {
-					console.log({ m: 'connectWebTileLoader: unknown JSON request', e });
+					console.log({ m: 'connectWebLoader: unknown JSON request', e });
 					return;
 				}
 				jsonSetterFunctions[e.data.name] (e.data.json);
@@ -1158,7 +1158,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				console.error(`Failed to get JSON file ${e.data.name} for ${heatMapName} from server`);
 				NgChm.UHM.mapNotFound(heatMapName);
 			} else {
-				console.log({ m: 'connectWebTileLoader: unknown op', e });
+				console.log({ m: 'connectWebLoader: unknown op', e });
 			}
 		};
 
@@ -1265,7 +1265,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			} else {
 				URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+layer+"/"+level+"/"+tileName+".bin";
 			}
-			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
+			NgChm.MMGR.webLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
 		} else {
 			//File fileSrc - get tile from zip
 			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.tile'];
@@ -1306,7 +1306,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			// Web worker has a different origin than main thread.
 			URL = document.location.origin + (URL[0] === '/' ? '' : '/') + URL;
 		}
-		NgChm.MMGR.tileLoader.postMessage({ op: 'loadJSON', name: jsonFile, URL });
+		NgChm.MMGR.webLoader.postMessage({ op: 'loadJSON', name: jsonFile, URL });
 	}
 	
 	//Helper function to fetch a json file from server.  
