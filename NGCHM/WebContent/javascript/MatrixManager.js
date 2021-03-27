@@ -81,9 +81,8 @@ NgChm.MMGR.MatrixManager = function(fileSrc) {
 };    	
 
 
-//Create a worker thread to request/receive tiles.  Using a separate
-//thread allows the large tile I/O to overlap extended periods of heavy
-//computation.
+//Create a worker thread to request/receive json data and tiles.  Using a separate
+//thread allows the large I/O to overlap extended periods of heavy computation.
 NgChm.MMGR.createWebTileLoader = function () {
 	const debug = false;
 
@@ -122,10 +121,30 @@ let	wS = `const debug = ${debug};`;
 	}
 	wS += loadTile.toString();
 
+	// The following function is stringified and sent to the web loader.
+	function loadJson (name, URL) {
+		const req = new XMLHttpRequest();
+		req.open("GET", URL, true);
+		req.responseType = "json";
+		req.onreadystatechange = function () {
+			if (req.readyState == req.DONE) {
+				if (req.status != 200) {
+					postMessage({ op: 'jsonLoadFailed', name });
+				} else {
+					// Send json to main thread.
+					postMessage({ op:'jsonLoaded', name, json: req.response });
+				}
+			}
+		};
+		req.send();
+	};
+	wS += loadJson.toString();
+
 	// This function will be stringified and sent to the web loader.
 	function handleMessage(e) {
 		if (debug) console.log({ m: 'Worker: got message', e, t: performance.now() });
 		if (e.data.op === 'loadTile') { loadTile (e.data.job); }
+		else if (e.data.op === 'loadJSON') { loadJson (e.data.name, e.data.URL); }
 	}
 	wS += handleMessage.toString();
 
@@ -159,7 +178,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	var flickInitialized = false;
 	var unAppliedChanges = false;
 	NgChm.MMGR.source= fileSrc;
-	
+	const jsonSetterFunctions = [];
+
 	const isRow = NgChm.MMGR.isRow;
 
 	this.isMapLoaded = function () {
@@ -1128,6 +1148,15 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				setTileCacheEntry (e.data.job.tileCacheName, tiledata);
 			} else if (e.data.op === 'tileLoadFailed') {
 				removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
+			} else if (e.data.op === 'jsonLoaded') {
+				if (!jsonSetterFunctions.hasOwnProperty(e.data.name)) {
+					console.log({ m: 'connectWebTileLoader: unknown JSON request', e });
+					return;
+				}
+				jsonSetterFunctions[e.data.name] (e.data.json);
+			} else if (e.data.op === 'jsonLoadFailed') {
+				console.error(`Failed to get JSON file ${e.data.name} for ${heatMapName} from server`);
+				NgChm.UHM.mapNotFound(heatMapName);
 			} else {
 				console.log({ m: 'connectWebTileLoader: unknown op', e });
 			}
@@ -1262,27 +1291,22 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 	};	
 	
-	//Helper function to fetch a json file from server.  
-	//Specify which file to get and what funciton to call when it arrives.
+	//Fetch a JSON file from server.
+	//Specify which file to get and what function to call when it arrives.
+	//Request is passed to the web loader so that it
+	//can be processed concurrently with the main thread.
 	function webFetchJson(jsonFile, setterFunction) {
+		jsonSetterFunctions[jsonFile] = setterFunction;
+		let URL;
 		var req = new XMLHttpRequest();
 		if (fileSrc !== NgChm.MMGR.WEB_SOURCE) {
-			req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+jsonFile+".json");
+			URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+jsonFile+".json";
 		} else {
-			req.open("GET", NgChm.CFG.api + "GetDescriptor?map=" + heatMapName + "&type=" + jsonFile, true);
+			URL = NgChm.CFG.api + "GetDescriptor?map=" + heatMapName + "&type=" + jsonFile;
+			// Web worker has a different origin than main thread.
+			URL = document.location.origin + (URL[0] === '/' ? '' : '/') + URL;
 		}
-		req.onreadystatechange = function () {
-			if (req.readyState == req.DONE) {
-		        if (req.status != 200) {
-		            console.log('Failed to get json file ' + jsonFile + ' for ' + heatMapName + ' from server: ' + req.status);
-		            NgChm.UHM.mapNotFound(heatMapName);
-		        } else {
-		        	//Got the result - call appropriate setter.
-		        	setterFunction(JSON.parse(req.response));
-			    }
-			}
-		};
-		req.send();
+		NgChm.MMGR.tileLoader.postMessage({ op: 'loadJSON', name: jsonFile, URL });
 	}
 	
 	//Helper function to fetch a json file from server.  
