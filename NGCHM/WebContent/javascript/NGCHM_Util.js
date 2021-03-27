@@ -10,6 +10,8 @@ NgChm.UTIL.getURLParameter = function(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||'';
 }
 
+NgChm.UTIL.mapId = NgChm.UTIL.getURLParameter('map');
+
 NgChm.UTIL.capitalize = function capitalize (str) {
 	return str.substr(0,1).toUpperCase() + str.substr(1);
 };
@@ -499,7 +501,7 @@ NgChm.UTIL.convertToArray = function(value) {
 	//Call functions that enable viewing in IE.
 	NgChm.UTIL.iESupport();
 
-	if (NgChm.MMGR.embeddedMapName === null && NgChm.UTIL.getURLParameter('map') !== '') {
+	if (NgChm.MMGR.embeddedMapName === null && NgChm.UTIL.mapId !== '') {
 		NgChm.MMGR.createWebTileLoader();
 	}
 })();
@@ -521,7 +523,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 
 
 	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
-	if ((NgChm.UTIL.getURLParameter('map') === "") && (NgChm.MMGR.embeddedMapName === null)) {
+	if ((NgChm.UTIL.mapId === "") && (NgChm.MMGR.embeddedMapName === null)) {
 		//In local mode, need user to select the zip file with data (required by browser security)
 		var chmFileItem  = document.getElementById('fileButton');
 		document.getElementById('fileOpen_btn').style.display = '';
@@ -531,7 +533,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	} else {
 		document.getElementById('loader').style.display = '';
 		//Run from a web server.
-		var mapName = NgChm.UTIL.getURLParameter('map');
+		var mapName = NgChm.UTIL.mapId;
 		var dataSource = NgChm.MMGR.WEB_SOURCE;
 		if ((NgChm.MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) { 
 			mapName = NgChm.MMGR.embeddedMapName;
