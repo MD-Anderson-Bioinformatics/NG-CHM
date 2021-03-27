@@ -165,10 +165,10 @@ NgChm.UTIL.redrawCanvases = function () {
     if ((NgChm.UTIL.getBrowserType() !== "Firefox") && (NgChm.heatMap !== null)) {
         NgChm.SUM.drawHeatMap();
         NgChm.DET.setDrawDetailsTimeout (NgChm.DET.redrawSelectionTimeout);
-        if (NgChm.SUM.rCCanvas.width > 0) {
+        if (NgChm.SUM.rCCanvas && NgChm.SUM.rCCanvas.width > 0) {
             NgChm.SUM.drawRowClassBars();
         }
-        if (NgChm.SUM.cCCanvas.height > 0) {
+        if (NgChm.SUM.cCCanvas && NgChm.SUM.cCCanvas.height > 0) {
             NgChm.SUM.drawColClassBars();
         }
     }
