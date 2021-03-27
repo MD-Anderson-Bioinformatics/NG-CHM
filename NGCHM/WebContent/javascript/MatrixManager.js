@@ -83,8 +83,9 @@ NgChm.MMGR.MatrixManager = function(fileSrc) {
 
 //Create a worker thread to request/receive json data and tiles.  Using a separate
 //thread allows the large I/O to overlap extended periods of heavy computation.
-NgChm.MMGR.createWebLoader = function () {
+NgChm.MMGR.createWebLoader = function (fileSrc) {
 	const debug = false;
+	const baseURL = getLoaderBaseURL (fileSrc);
 
 	// Define worker script.
 //	let wS = `"use strict";`
@@ -92,6 +93,19 @@ let	wS = `const debug = ${debug};`;
 	wS += `const maxActiveRequests = 2;`; // Maximum number of tile requests that can be in flight concurrently
 	wS += `var active = 0;`;              // Number of tile requests in flight
 	wS += `const pending = [];`;          // Additional tile requests
+	wS += `const baseURL = "${baseURL}";`; // Base URL to prepend to requests.
+	wS += `const mapId = "${NgChm.UTIL.mapId}";`; // Map ID.
+
+	// Create a function that determines the get tile request.
+	// Body of function depends on the fileSrc of the NG-CHM.
+	wS += 'function tileURL(job){return baseURL+';
+	if (fileSrc === NgChm.MMGR.WEB_SOURCE) {
+		wS += '"GetTile?map=" + mapId + "&datalayer=" + job.layer + "&level=" + job.level + "&tile=" + job.tileName';
+	} else {
+		// [bmb] Is LOCAL_SOURCE ever used?  ".bin" files were obsoleted years ago.
+		wS += 'job.layer+"/"+job.level+"/"+job.tileName+".bin"';
+	}
+	wS += ";}";
 
 	// The following function is stringified and sent to the web loader.
 	function loadTile (job) {
@@ -101,7 +115,7 @@ let	wS = `const debug = ${debug};`;
 		}
 		active++;
 		const req = new XMLHttpRequest();
-		req.open("GET", job.URL, true);
+		req.open("GET", tileURL(job), true);
 		req.responseType = "arraybuffer";
 		req.onreadystatechange = function () {
 			if (req.readyState == req.DONE) {
@@ -121,10 +135,20 @@ let	wS = `const debug = ${debug};`;
 	}
 	wS += loadTile.toString();
 
+	// Create a function that determines the get JSON file request.
+	// Body of function depends on the fileSrc of the NG-CHM.
+	wS += 'function jsonFileURL(name){return baseURL+';
+	if (fileSrc === NgChm.MMGR.WEB_SOURCE) {
+		wS += '"GetDescriptor?map=" + mapId + "&type=" + name';
+	} else {
+		wS += 'name+".json"';
+	}
+	wS += ";}";
+
 	// The following function is stringified and sent to the web loader.
-	function loadJson (name, URL) {
+	function loadJson (name) {
 		const req = new XMLHttpRequest();
-		req.open("GET", URL, true);
+		req.open("GET", jsonFileURL(name), true);
 		req.responseType = "json";
 		req.onreadystatechange = function () {
 			if (req.readyState == req.DONE) {
@@ -144,7 +168,7 @@ let	wS = `const debug = ${debug};`;
 	function handleMessage(e) {
 		if (debug) console.log({ m: 'Worker: got message', e, t: performance.now() });
 		if (e.data.op === 'loadTile') { loadTile (e.data.job); }
-		else if (e.data.op === 'loadJSON') { loadJson (e.data.name, e.data.URL); }
+		else if (e.data.op === 'loadJSON') { loadJson (e.data.name); }
 	}
 	wS += handleMessage.toString();
 
@@ -155,6 +179,26 @@ let	wS = `const debug = ${debug};`;
 	const blob = new Blob([wS], {type: 'application/javascript'});
 	if (debug) console.log({ m: 'MMGR.createWebLoader', blob, wS });
 	NgChm.MMGR.webLoader = new Worker(URL.createObjectURL(blob));
+
+	// Called locally.
+	function getLoaderBaseURL (fileSrc) {
+		var URL;
+		if (fileSrc == NgChm.MMGR.WEB_SOURCE) {
+			// Because a tile worker thread doesn't share our origin, we have to pass it
+			// an absolute URL, and to substitute in the CFG.api variable, we want to
+			// build the URL using the same logic as a browser for relative vs. absolute
+			// paths.
+			URL = document.location.origin;
+			if (NgChm.CFG.api[0] !== '/') {	// absolute
+				URL += '/' + window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/'));
+			}
+			URL += NgChm.CFG.api;
+		} else {
+			console.log (`getLoaderBaseURL: fileSrc==${fileSrc}`);
+			URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/";
+		}
+		return URL;
+	}
 };
 
 NgChm.MMGR.isRow = function isRow (axis) {
@@ -799,11 +843,13 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	if (fileSrc !== NgChm.MMGR.FILE_SOURCE){
 		//fileSrc is web so get JSON files from server
+		if (fileSrc !== NgChm.MMGR.WEB_SOURCE) createWebLoader(fileSrc);
+		connectWebLoader(fileSrc);
 		//Retrieve  all map configuration data.
-		webFetchJson('mapConfig', addMapConfig);
+		webFetchJson('mapConfig');
 		//Retrieve  all map supporting data (e.g. labels, dendros) from JSON.
-		webFetchJson('mapData', addMapData);
-		connectWebLoader();
+		webFetchJson('mapData');
+
 	} else {
 		//Check file mode viewer software version (excepting when using embedded widget)
 		if (typeof embedDiv === 'undefined') {
@@ -1161,7 +1207,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				console.log({ m: 'connectWebLoader: unknown op', e });
 			}
 		};
-
+		jsonSetterFunctions.mapConfig = addMapConfig;
+		jsonSetterFunctions.mapData = addMapData;
 	};
 
 	// Create the specified cache entry.
@@ -1248,24 +1295,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
   	//ToDo: need to remove items from the cache if it is maxed out. - don't get rid of thumb nail or summary.
 
 		if ((fileSrc == NgChm.MMGR.WEB_SOURCE) || (fileSrc == NgChm.MMGR.LOCAL_SOURCE)) {
-			let URL;
-			if (fileSrc == NgChm.MMGR.WEB_SOURCE) {
-				let getTileString = "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
-				// Because a tile worker thread doesn't share our origin, we have to pass it
-				// an absolute URL, and to substitute in the CFG.api variable, we want to
-				// build the URL using the same logic as a browser for relative vs. absolute
-				// paths.
-				if (NgChm.CFG.api[0] === '/') {	// absolute
-					URL = document.location.origin + NgChm.CFG.api + getTileString;
-				} else {
-					URL = document.location.origin + '/' +
-						window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/')) +
-						NgChm.CFG.api + getTileString;
-				}
-			} else {
-				URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+layer+"/"+level+"/"+tileName+".bin";
-			}
-			NgChm.MMGR.webLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
+			NgChm.MMGR.webLoader.postMessage({ op: 'loadTile', job: { tileCacheName, layer, level, tileName} });
 		} else {
 			//File fileSrc - get tile from zip
 			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.tile'];
@@ -1289,24 +1319,14 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				});		
 			}
 		}
-	};	
-	
+	}
+
 	//Fetch a JSON file from server.
 	//Specify which file to get and what function to call when it arrives.
 	//Request is passed to the web loader so that it
 	//can be processed concurrently with the main thread.
-	function webFetchJson(jsonFile, setterFunction) {
-		jsonSetterFunctions[jsonFile] = setterFunction;
-		let URL;
-		var req = new XMLHttpRequest();
-		if (fileSrc !== NgChm.MMGR.WEB_SOURCE) {
-			URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+jsonFile+".json";
-		} else {
-			URL = NgChm.CFG.api + "GetDescriptor?map=" + heatMapName + "&type=" + jsonFile;
-			// Web worker has a different origin than main thread.
-			URL = document.location.origin + (URL[0] === '/' ? '' : '/') + URL;
-		}
-		NgChm.MMGR.webLoader.postMessage({ op: 'loadJSON', name: jsonFile, URL });
+	function webFetchJson(jsonFile) {
+		NgChm.MMGR.webLoader.postMessage({ op: 'loadJSON', name: jsonFile });
 	}
 	
 	//Helper function to fetch a json file from server.  

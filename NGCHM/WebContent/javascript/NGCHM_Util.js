@@ -503,7 +503,7 @@ NgChm.UTIL.convertToArray = function(value) {
 	NgChm.UTIL.iESupport();
 
 	if (NgChm.MMGR.embeddedMapName === null && (NgChm.UTIL.mapId !== '' || NgChm.UTIL.mapNameRef !== '')) {
-		NgChm.MMGR.createWebLoader();
+		NgChm.MMGR.createWebLoader(NgChm.MMGR.WEB_SOURCE);
 	}
 })();
 
