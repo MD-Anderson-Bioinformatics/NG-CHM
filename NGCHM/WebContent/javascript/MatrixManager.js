@@ -75,8 +75,8 @@ NgChm.MMGR.MatrixManager = function(fileSrc) {
 	
 	//Main function of the matrix manager - retrieve a heat map object.
 	//mapFile parameter is only used for local file based heat maps.
-	this.getHeatMap = function (heatMapName, updateCallback, mapFile) {
-		return  new NgChm.MMGR.HeatMap(heatMapName, updateCallback, fileSrc, mapFile);
+	this.getHeatMap = function (heatMapName, updateCallbacks, mapFile) {
+		return  new NgChm.MMGR.HeatMap(heatMapName, updateCallbacks, fileSrc, mapFile);
 	}	
 };    	
 
@@ -145,7 +145,7 @@ NgChm.MMGR.isRow = function isRow (axis) {
 //HeatMap Object - holds heat map properties and a tile cache
 //Used to get HeatMapData object.
 //ToDo switch from using heat map name to blob key?
-NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
+NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	//This holds the various zoom levels of data.
 	var mapConfig = null;
 	var mapData = null;
@@ -155,7 +155,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	var zipFiles = {};
 	var colorMapMgr;
 	var initialized = 0;
-	var eventListeners = [];
+	const eventListeners = updateCallbacks.slice(0);  // Create a copy.
 	var flickInitialized = false;
 	var unAppliedChanges = false;
 	NgChm.MMGR.source= fileSrc;
@@ -776,9 +776,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	//************************************************************************************************************
 	
 	//Initialization - this code is run once when the map is created.
-	
-	//Add the original update call back to the event listeners list.
-	eventListeners.push(updateCallback);
 	
 	if (fileSrc !== NgChm.MMGR.FILE_SOURCE){
 		//fileSrc is web so get JSON files from server
