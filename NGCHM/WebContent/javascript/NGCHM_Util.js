@@ -10,6 +10,9 @@ NgChm.UTIL.getURLParameter = function(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||'';
 }
 
+NgChm.UTIL.mapId = NgChm.UTIL.getURLParameter('map');
+NgChm.UTIL.mapNameRef = NgChm.UTIL.getURLParameter('name');
+
 NgChm.UTIL.capitalize = function capitalize (str) {
 	return str.substr(0,1).toUpperCase() + str.substr(1);
 };
@@ -163,10 +166,10 @@ NgChm.UTIL.redrawCanvases = function () {
     if ((NgChm.UTIL.getBrowserType() !== "Firefox") && (NgChm.heatMap !== null)) {
         NgChm.SUM.drawHeatMap();
         NgChm.DET.setDrawDetailsTimeout (NgChm.DET.redrawSelectionTimeout);
-        if (NgChm.SUM.rCCanvas.width > 0) {
+        if (NgChm.SUM.rCCanvas && NgChm.SUM.rCCanvas.width > 0) {
             NgChm.SUM.drawRowClassBars();
         }
-        if (NgChm.SUM.cCCanvas.height > 0) {
+        if (NgChm.SUM.cCCanvas && NgChm.SUM.cCCanvas.height > 0) {
             NgChm.SUM.drawColClassBars();
         }
     }
@@ -499,8 +502,8 @@ NgChm.UTIL.convertToArray = function(value) {
 	//Call functions that enable viewing in IE.
 	NgChm.UTIL.iESupport();
 
-	if (NgChm.MMGR.embeddedMapName === null && NgChm.UTIL.getURLParameter('map') !== '') {
-		NgChm.MMGR.createWebTileLoader();
+	if (NgChm.MMGR.embeddedMapName === null && (NgChm.UTIL.mapId !== '' || NgChm.UTIL.mapNameRef !== '')) {
+		NgChm.MMGR.createWebLoader(NgChm.MMGR.WEB_SOURCE);
 	}
 })();
 
@@ -521,7 +524,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 
 
 	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
-	if ((NgChm.UTIL.getURLParameter('map') === "") && (NgChm.MMGR.embeddedMapName === null)) {
+	if ((NgChm.UTIL.mapId === "") && (NgChm.UTIL.mapNameRef === "") && (NgChm.MMGR.embeddedMapName === null)) {
 		//In local mode, need user to select the zip file with data (required by browser security)
 		var chmFileItem  = document.getElementById('fileButton');
 		document.getElementById('fileOpen_btn').style.display = '';
@@ -531,7 +534,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	} else {
 		document.getElementById('loader').style.display = '';
 		//Run from a web server.
-		var mapName = NgChm.UTIL.getURLParameter('map');
+		var mapName = NgChm.UTIL.mapId;
 		var dataSource = NgChm.MMGR.WEB_SOURCE;
 		if ((NgChm.MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) { 
 			mapName = NgChm.MMGR.embeddedMapName;
@@ -548,8 +551,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 				dataSource = NgChm.MMGR.LOCAL_SOURCE;
 			}
 			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
-			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
-			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+			NgChm.heatMap = matrixMgr.getHeatMap(mapName, [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate]);
 		}
  	} 
 	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
@@ -675,8 +677,7 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	zip.useWebWorkers = false;
 	NgChm.UTIL.resetCHM();
     NgChm.UTIL.initDisplayVars();
-    NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
-    NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+    NgChm.heatMap = matrixMgr.getHeatMap("",  [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate], chmFile);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
 	NgChm.UTIL.showDetailPane = false;
 	NgChm.Pane.showPaneHeader = false;

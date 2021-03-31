@@ -38,7 +38,7 @@ linkouts.getMapName = function(){
 }
 
 linkouts.getMapFileName = function(){
-	return NgChm.UTIL.getURLParameter("map");
+	return NgChm.UTIL.mapId;
 }
 
 // returns type of object we're linking from.
@@ -48,7 +48,7 @@ linkouts.getSourceObjectType = function() {
 
 // returns a 'unique' identifier for the current source object.
 linkouts.getSourceObjectUniqueId = function() {
-	return NgChm.UTIL.getURLParameter("map");
+	return NgChm.UTIL.mapId;
 };
 
 //adds axis linkout objects to the linkouts global variable
