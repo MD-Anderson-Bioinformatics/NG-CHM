@@ -74,7 +74,7 @@ public class NGCHM_AppGenerator {
     				//Ignore
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
-    				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("\">"));
+    				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
     				bw.write("<style type='text/css'>");
      				bw.write(styleToString(args[0], cssFile));
      				bw.write("</style>\n");

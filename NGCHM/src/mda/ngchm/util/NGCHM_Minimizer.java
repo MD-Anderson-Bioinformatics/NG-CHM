@@ -97,7 +97,7 @@ public class NGCHM_Minimizer {
     		String line = br.readLine();
      		while (line != null) {
     			if (line.contains("src=\"javascript")){
-					String jsFile = line.substring(line.indexOf("src=\"")+5,line.indexOf("\">"));
+					String jsFile = line.substring(line.indexOf("src=\"")+5,line.indexOf("?"));
 					if (!jsFile.equals("javascript/lib/jspdf.min.js")) {
 			       		bw.write("/* BEGIN Javascript file: " + jsFile + " */ \n");
 		   				writeJSFile(args[0], jsFile, bw);

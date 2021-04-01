@@ -527,14 +527,14 @@ NgChm.DET.setDetailDataWidth = function (mapItem, size) {
 	NgChm.SEL.setDataPerRowFromDet(Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/mapItem.dataBoxWidth), mapItem);
 
 	//Adjust the current column based on zoom but don't go outside or the heat map matrix dimensions.
-	if (prevDataPerRow != null) {
+	if ((prevDataPerRow != null) && (mapItem.zoomOutPos === null)){
 		if (prevDataPerRow > mapItem.dataPerRow) {
 			mapItem.currentCol += Math.floor((prevDataPerRow - mapItem.dataPerRow) / 2);
 		} else {
 			mapItem.currentCol -= Math.floor((mapItem.dataPerRow - prevDataPerRow) / 2);
 		}
-		NgChm.SEL.checkCol(mapItem);
 	}
+	NgChm.SEL.checkCol(mapItem);
 }
 
 /**********************************************************************************
@@ -547,13 +547,13 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 	NgChm.SEL.setDataPerColFromDet(Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/mapItem.dataBoxHeight), mapItem);
 	
 	//Adjust the current row but don't go outside of the current heat map dimensions
-	if (prevDataPerCol != null) {
+	if ((prevDataPerCol != null) && (mapItem.zoomOutPos === null)){
 		if (prevDataPerCol > mapItem.dataPerCol)
 			mapItem.currentRow += Math.floor((prevDataPerCol - mapItem.dataPerCol) / 2);
 		else
 			mapItem.currentRow -= Math.floor((mapItem.dataPerCol - prevDataPerCol) / 2);
-		NgChm.SEL.checkRow(mapItem);
 	}
+	NgChm.SEL.checkRow(mapItem);
 }
 
 //----------------------------------------------------------------------------------------------//

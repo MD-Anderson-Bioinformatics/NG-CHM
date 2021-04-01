@@ -289,7 +289,7 @@ NgChm.SUM.setSelectionDivSize = function(width, height){ // input params used fo
 	var rowTI = document.getElementById("summary_row_top_items_canvas");
 	//Size and position Column Selections Canvas
 	const colSelVP = {
-		top: NgChm.SUM.colDendro.getDivHeight() + NgChm.SUM.colClassBarHeight + NgChm.SUM.canvas.clientHeight,
+		top: NgChm.SUM.colDendro.getDivHeight() + NgChm.SUM.cCCanvas.clientHeight + NgChm.SUM.canvas.clientHeight,
 		width: NgChm.SUM.canvas.clientWidth,
 		height: 10
 	};

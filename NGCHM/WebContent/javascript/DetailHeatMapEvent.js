@@ -712,6 +712,10 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 	NgChm.LNK.labelHelpCloseAll();
 	let current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 	if (mapItem.mode == 'FULL_MAP') {
+		if (mapItem.zoomOutPos !== null) { 
+			mapItem.currentRow = mapItem.zoomOutPos.row;
+			mapItem.currentCol = mapItem.zoomOutPos.col;
+		}
 		if ((mapItem.prevMode == 'RIBBONH') || (mapItem.prevMode == 'RIBBONH_DETAIL')) {
 			NgChm.DEV.detailHRibbonButton(mapItem.chm);
 		} else if  ((mapItem.prevMode == 'RIBBONV') || (mapItem.prevMode == 'RIBBONV_DETAIL')) {
@@ -719,21 +723,47 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 		} else {
 			NgChm.DEV.detailNormal(mapItem.chm);
 		}
+		if (mapItem.zoomOutNormal !== null) { 
+			mapItem.mode = 'NORMAL';
+		}
 	} else if (mapItem.mode == 'NORMAL') {
+		let zoomBoxSize = null;
+		if (mapItem.zoomOutPos !== null) { 
+			mapItem.currentRow = mapItem.zoomOutPos.row;
+			mapItem.currentCol = mapItem.zoomOutPos.col;
+			zoomBoxSize = NgChm.DET.zoomBoxSizes[current];
+			NgChm.DEV.setButtons(mapItem);
+		} else {
+			zoomBoxSize = NgChm.DET.zoomBoxSizes[current+1];
+		}
 		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
-			NgChm.DET.setDetailDataSize (mapItem,NgChm.DET.zoomBoxSizes[current+1]);
+			NgChm.DET.setDetailDataSize (mapItem,zoomBoxSize);
 			NgChm.SEL.updateSelection(mapItem,true);
+		}
+		if (mapItem.zoomOutPos !== null) { 
+			mapItem.zoomOutNormal = null;
+			mapItem.zoomOutPos = null;
 		}
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
-		current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
-		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
-			NgChm.DET.setDetailDataHeight (mapItem,NgChm.DET.zoomBoxSizes[current+1]);
-			NgChm.SEL.updateSelection(mapItem,true);
+		if (mapItem.zoomOutNormal !== null) { 
+			mapItem.mode = 'NORMAL';
+			NgChm.DEV.detailDataZoomIn(mapItem);
+		} else {
+			current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
+			if (current < NgChm.DET.zoomBoxSizes.length - 1) {
+				NgChm.DET.setDetailDataHeight (mapItem,NgChm.DET.zoomBoxSizes[current+1]);
+				NgChm.SEL.updateSelection(mapItem,true);
+			}
 		}
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
-		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
-			NgChm.DET.setDetailDataWidth(mapItem,NgChm.DET.zoomBoxSizes[current+1]);
-			NgChm.SEL.updateSelection(mapItem,true);
+		if (mapItem.zoomOutNormal !== null) { 
+			mapItem.mode = 'NORMAL';
+			NgChm.DEV.detailDataZoomIn(mapItem);
+		} else {
+			if (current < NgChm.DET.zoomBoxSizes.length - 1) {
+				NgChm.DET.setDetailDataWidth(mapItem,NgChm.DET.zoomBoxSizes[current+1]);
+				NgChm.SEL.updateSelection(mapItem,true);
+			}
 		}
 	}
 }	
@@ -754,6 +784,8 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
 			NgChm.DET.setDetailDataSize (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection(mapItem);
 		} else {
+			mapItem.zoomOutNormal = true;
+			mapItem.zoomOutPos = {row: mapItem.currentRow,col: mapItem.currentCol};
 			//If we can't zoom out anymore see if ribbon mode would show more of the map or , switch to full map view.
 			if ((current > 0) && (NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) ) {
 				NgChm.DEV.detailVRibbonButton(mapItem.chm);
@@ -770,6 +802,9 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
 			NgChm.DET.setDetailDataHeight (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection(mapItem);
 		}	else {
+			if (mapItem.zoomOutPos === null) { 
+				mapItem.zoomOutPos = {row: mapItem.currentRow,col: mapItem.currentCol}
+			};
             NgChm.DEV.detailFullMap(mapItem);
 		}	
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')){
@@ -779,6 +814,9 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
 			NgChm.DET.setDetailDataWidth (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection(mapItem);
 		}	else {
+			if (mapItem.zoomOutPos === null) { 
+				mapItem.zoomOutPos = {row: mapItem.currentRow,col: mapItem.currentCol}
+			};
             NgChm.DEV.detailFullMap(mapItem);
 		}	
     }

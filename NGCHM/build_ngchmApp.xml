@@ -72,6 +72,15 @@
 	</java>
     </target>
 	
+	<target name="version_app_html" depends="classfiles,minify_js"> 
+	<java classname="${src.dir}NGCHM_AppVersioner">
+	    <arg value="${web.dir}"/>
+	    <classpath>
+	        <pathelement path="build/classes"/>
+	    </classpath>
+	</java>
+    </target>
+	
     <target name="create_widget_js" depends="classfiles,minify_js,minify_embedder_js">
 	<java classname="${src.dir}NGCHM_Widgetizer">
 	    <arg value="${web.dir}"/>
@@ -83,7 +92,7 @@
 	</java>
     </target>
 	
-    <target name="build_ngchm_app" depends="create_app_html">
+    <target name="build_ngchm_app" depends="create_app_html,version_app_html">
 	<delete>
         	<fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
@@ -91,7 +100,7 @@
 	</delete>
     </target>
 	
-    <target name="build_ngchm_widget" depends="create_widget_js">
+    <target name="build_ngchm_widget" depends="create_widget_js,version_app_html">
 	<delete>
     		<fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
@@ -99,12 +108,13 @@
 	</delete>
     </target>
 
-    <target name="build_ngchm_all" depends="create_app_html,create_widget_js">
+    <target name="build_ngchm_all" depends="create_app_html,create_widget_js,version_app_html">
 	<delete>
     		<fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>
+    <move file="${web.dir}chmTemp.html" tofile="${web.dir}chm.html"/>
     </target>
 
 </project>

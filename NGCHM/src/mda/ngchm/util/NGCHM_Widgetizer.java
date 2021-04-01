@@ -123,7 +123,7 @@ public class NGCHM_Widgetizer {
      				}
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
-    				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("\">"));
+    				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
     				delayedLines.append("var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
      				delayedLines.append("css.innerHTML = \"" + styleToString(args[0], cssFile) + "\";\ndocument.body.appendChild(css);\n");
     			} else if (line.contains("images/")) {

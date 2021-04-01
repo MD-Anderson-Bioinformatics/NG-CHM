@@ -21,7 +21,7 @@ NgChm.DMM.mapTemplate = {
 	  saveRow: null, saveCol: null, dataBoxHeight: null, dataBoxWidth: null, rowDendro: null, colDendro: null, dendroHeight: 105, dendroWidth: 105, dataViewHeight: 506,
 	  dataViewWidth: 506, minLabelSize: 5, labelLastClicked: {}, dragOffsetX: null, dragOffsetY: null, rowLabelLen: 0, colLabelLen: 0,
 	  rowLabelFont: 0, colLabelFont: 0,colClassLabelFont: 0, rowClassLabelFont: 0, labelElements: {}, oldLabelElements: {}, tmpLabelSizeElements: [], 
-	  labelSizeWidthCalcPool: [], labelSizeCache: {}
+	  labelSizeWidthCalcPool: [], labelSizeCache: {},zoomOutNormal: null, zoomOutPos: null
 } 
 
 /*********************************************************************************************
