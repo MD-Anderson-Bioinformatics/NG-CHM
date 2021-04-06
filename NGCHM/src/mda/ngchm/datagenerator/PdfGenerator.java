@@ -18,7 +18,6 @@ import java.io.InputStream;
 import java.util.Base64;
 import java.util.List;
 
-import org.apache.pdfbox.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -742,9 +741,26 @@ public class PdfGenerator {
 			if (rotate) {
 				contentStream.setTextRotation(-20.42, startX, startY);
 			}
-			contentStream.showText(text);
+			
+		   StringBuilder sb = new StringBuilder();
+		   for (int i=0; i<text.length(); i++) {
+				Character c = text.charAt(i);
+				if (Character.UnicodeBlock.of(c) != Character.UnicodeBlock.BASIC_LATIN) {
+					System.out.println(" PDFBox: Unprintable character found in text: " + text + ". Converting to ??.");
+					sb.append("??");
+				} else {
+					sb.append(c);
+				}
+			}
+		    String textStr = sb.toString();
+			contentStream.showText(textStr);
 			contentStream.endText();
 		} catch (Exception ex) {
+			try {
+				contentStream.endText();
+			} catch (Exception e) {
+				System.out.println("Eating that exception");
+			}
 			System.out.println("Exception in PdfGenerator.writePDFText: " + ex.toString());
 	        ex.printStackTrace();
 		} 

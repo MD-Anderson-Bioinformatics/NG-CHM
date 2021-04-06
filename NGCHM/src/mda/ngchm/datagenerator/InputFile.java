@@ -112,7 +112,7 @@ public class InputFile {
 		        for (int i=1; i < breaks.size();i++) {
 		        	float curValue = Float.valueOf(breaks.get(i).toString());
 		        	if (curValue <= preValue) {
-		        		System.out.println("GALAXY PARAMETER ERROR: Supplied Matrix Breakpoint values are not in ascending order. Heat map generation halted.");
+		        		System.out.println("HEAT MAP PARAMETER ERROR: Supplied Matrix Breakpoint values are not in ascending order. Heat map generation halted.");
 		        		break;
 		        	}
 		        	preValue = curValue;
