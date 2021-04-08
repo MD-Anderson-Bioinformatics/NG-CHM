@@ -244,7 +244,7 @@ NgChm.DMM.isVisible = function isVisible () {
 	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
 		const mapItem = NgChm.DMM.DetailMaps[i];
 		const loc = NgChm.Pane.findPaneLocation (mapItem.chm);
-		if (!loc.pane.classList.contains('collapsed')) {
+		if ((!loc.pane.classList.contains('collapsed')) && (loc.pane.style.display !== 'none')){
 			isViz = true;
 		}
 	}

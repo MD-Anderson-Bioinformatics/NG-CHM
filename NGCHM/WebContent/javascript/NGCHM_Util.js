@@ -786,7 +786,9 @@ NgChm.UTIL.downloadSummaryMapPng = function () {
 
 NgChm.UTIL.downloadSummaryPng = function (e) { 
 	if (typeof e !== 'undefined') {
-		if (e.classList.contains('disabled')) return;
+		if (e.classList.contains('disabled')) {
+			return;
+		}
 	}
     var mapName = NgChm.heatMap.getMapInformation().name;
     var colDCanvas = document.getElementById("column_dendro_canvas");
@@ -879,6 +881,10 @@ NgChm.UTIL.imageCanvas = function (canvas) {
 NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
 	var img = new Image();
     var url = origCanvas.toDataURL('image/png');
+	if (url.length < 10) {
+		NgChm.UHM.systemMessage("Download Thumbnail Warning", "The Summary Pane must be open and visible in the NG-CHM Viewer in order to download a thumbnail image of the heat map.")
+		return;
+	}
 
 	// When the images is loaded, resize it in canvas.
 	img.onload = function(){

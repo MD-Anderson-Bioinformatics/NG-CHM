@@ -1602,6 +1602,7 @@ NgChm.SUM.calculateSummaryTotalClassBarHeight = function(axis) {
 NgChm.SUM.isVisible = function isVisible () {
 	if (NgChm.SUM.chmElement == null) return false;
 	const loc = NgChm.Pane.findPaneLocation (NgChm.SUM.chmElement);
+	if (loc.pane.style.display === 'none') return false;
 	return !loc.pane.classList.contains('collapsed');
 };
 
