@@ -154,7 +154,7 @@ public class ImportData {
 	 * This method retrieves and sets all heatmap properties on the 
 	 * ImportData object. 
 	 ******************************************************************/
-	private void setHeatmapProperties(File filename) throws Exception{
+	private void setHeatmapProperties(File filename) throws Exception {
         JSONParser parser = new JSONParser();
         FileReader propsFile = new FileReader(filename);
         try {     

@@ -75,6 +75,10 @@ NgChm.MMGR.MatrixManager = function(fileSrc) {
 	
 	//Main function of the matrix manager - retrieve a heat map object.
 	//mapFile parameter is only used for local file based heat maps.
+	//This function is called from a number of places:
+	//It is called from NgChm.UTIL.onLoadCHM when displaying a map in the NG-CHM Viewer and for embedded NG-CHM maps
+	//It is called from NgChm.UTIL.displayFileModeCHM when displaying a map in the stand-alone NG-CHM Viewer
+	//It is called in script in the mda_heatmap_viz.mako file when displaying a map in the Galaxy NG-CHM Viewer
 	this.getHeatMap = function (heatMapName, updateCallbacks, mapFile) {
 		return  new NgChm.MMGR.HeatMap(heatMapName, updateCallbacks, fileSrc, mapFile);
 	}	

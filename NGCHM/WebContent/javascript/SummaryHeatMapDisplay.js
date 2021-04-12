@@ -289,7 +289,7 @@ NgChm.SUM.setSelectionDivSize = function(width, height){ // input params used fo
 	var rowTI = document.getElementById("summary_row_top_items_canvas");
 	//Size and position Column Selections Canvas
 	const colSelVP = {
-		top: NgChm.SUM.colDendro.getDivHeight() + NgChm.SUM.colClassBarHeight + NgChm.SUM.canvas.clientHeight,
+		top: NgChm.SUM.colDendro.getDivHeight() + NgChm.SUM.cCCanvas.clientHeight + NgChm.SUM.canvas.clientHeight,
 		width: NgChm.SUM.canvas.clientWidth,
 		height: 10
 	};
@@ -1602,6 +1602,7 @@ NgChm.SUM.calculateSummaryTotalClassBarHeight = function(axis) {
 NgChm.SUM.isVisible = function isVisible () {
 	if (NgChm.SUM.chmElement == null) return false;
 	const loc = NgChm.Pane.findPaneLocation (NgChm.SUM.chmElement);
+	if (loc.pane.style.display === 'none') return false;
 	return !loc.pane.classList.contains('collapsed');
 };
 
