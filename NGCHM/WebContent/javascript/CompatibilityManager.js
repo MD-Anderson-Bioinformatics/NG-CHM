@@ -94,7 +94,7 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 		}
 	}
 	//If any new configs were added to the heatmap's config, save the config file.
-	if (foundUpdate === true) {
+	if (foundUpdate === true && mapConfig.data_configuration.map_information.read_only !== "Y") {
 		var success = NgChm.heatMap.autoSaveHeatMap();
 	}
 }
