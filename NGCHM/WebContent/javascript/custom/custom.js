@@ -3,12 +3,20 @@
 //==============================================//
 linkouts.setVersion('2020-04-07');
 
-// Scatter Plot plugin:
+// 2D Scatter Plot plugin:
 linkouts.addPanePlugin ({
-	name: 'ScatterPlot',
+	name: '2D ScatterPlot',
 	helpText: 'Creates a two-dimensional scatter plot',
 	params: {},
 	src: 'https://www.ngchm.net/Plugins/ScatterPlot/index.html'
+});
+
+//3D Scatter Plot plugin:
+linkouts.addPanePlugin ({
+	name: '3D ScatterPlot',
+	helpText: 'Creates a three-dimensional scatter plot',
+	params: {},
+	src: 'https://www.ngchm.net/Plugins/ScatterPlot3D/index.html'
 });
 
 //==============================================//
