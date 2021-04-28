@@ -1048,7 +1048,7 @@ NgChm.SUM.resetBoxCanvas = function() {
 	ctx.strokeStyle="#000000";
 	
 	// If no row or column cuts, draw the heat map border in black
-	if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0){
+	if (NgChm.UTIL.mapHasGaps() === false){
 		ctx.strokeRect(0,0,NgChm.SUM.boxCanvas.width,NgChm.SUM.boxCanvas.height);
 	}
 	
