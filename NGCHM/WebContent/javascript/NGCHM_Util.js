@@ -1049,6 +1049,18 @@ NgChm.UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,it
 }
 
 /**********************************************************************************
+ * FUNCTION - mapHasGaps: The purpose of this function indicate true/false whether
+ * a given heat map contains gaps.
+ **********************************************************************************/
+NgChm.UTIL.mapHasGaps = function () {
+	if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+/**********************************************************************************
  * FUNCTION - clearCheckBoxDropdown: The purpose of this function is to remove all
  * check box rows from within a given checkBox dropdown control.
  **********************************************************************************/

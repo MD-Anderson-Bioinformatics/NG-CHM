@@ -576,7 +576,7 @@ NgChm.DET.drawSelections = function () {
 		ctx.clearRect(0, 0, mapItem.boxCanvas.width, mapItem.boxCanvas.height);
 	
 		//Draw the border
-		if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0) {
+		if (NgChm.UTIL.mapHasGaps() === false) {
 			let ctx=mapItem.boxCanvas.getContext("2d");
 			const canH = mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column");
 			const canW = mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
