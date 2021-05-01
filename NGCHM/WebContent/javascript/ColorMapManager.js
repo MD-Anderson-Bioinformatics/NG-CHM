@@ -95,7 +95,7 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 			color = rgbaMissingColor;
 		}else if(value <= NgChm.SUM.minValues){
 			var layers = NgChm.heatMap.getDataLayers();
-			var dl = layers[NgChm.SEL.currentDl];
+			var dl = layers[NgChm.SEL.getCurrentDL()];
 			if (typeof dl.cuts_color !== 'undefined') {
 				color = this.getHexToRgba(dl.cuts_color);
 			} else {

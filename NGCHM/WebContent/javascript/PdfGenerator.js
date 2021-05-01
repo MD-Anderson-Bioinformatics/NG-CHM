@@ -343,7 +343,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 		}
 
 	}
-	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
+	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.getCurrentDL());
 
 	// Add row and column labels to the PDF
 	if (mapsToShow !== "S") {
@@ -991,7 +991,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 	 * boxes and selected label boxes onto the detail heat map page.
 	 **********************************************************************************/
 	function drawDetailSelectionBoxes(mapItem,detClient2PdfWRatio,detClient2PdfHRatio,selectedColor) {
-		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
+		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.getCurrentDL());
 		const mapLabels = mapItem.labelElements;
 		// Draw selection boxes first (this way they will not overlap text)
 		var rowLabels = 0;
@@ -1062,7 +1062,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 	 **********************************************************************************/
 	function getDataMatrixDistributionPlot(){
 		// function ripped from UPM used in the gear panel
-		var currentDl = NgChm.SEL.currentDl;
+		var currentDl = NgChm.SEL.getCurrentDL();
 		var cm = NgChm.heatMap.getColorMapManager().getColorMap("data",currentDl);
 		var thresholds = cm.getThresholds();
 		var numBreaks = thresholds.length;

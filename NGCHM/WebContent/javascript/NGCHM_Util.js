@@ -708,7 +708,7 @@ NgChm.UTIL.builderViewSizing = function (event) {
  **********************************************************************************/
 NgChm.UTIL.resetCHM = function () {
 //	NgChm.SEL.mode = 'NORMAL';      
-	NgChm.SEL.currentDl = "dl1"; 
+	NgChm.SEL.setCurrentDL ("dl1");
 	NgChm.SEL.currentRow=null; 
 	NgChm.SEL.currentCol=null; 
 //	NgChm.SEL.dataPerRow=null; 

@@ -550,7 +550,7 @@ NgChm.DEV.flickChange = function(fromList) {
 			return;
 		}
 	} 
-	NgChm.SEL.currentDl = mapItem.currentDl;
+	NgChm.SEL.setCurrentDL (mapItem.currentDl);
 	NgChm.SEL.flickInit();
     NgChm.SUM.buildSummaryTexture();
 	NgChm.DET.setDrawDetailTimeout(mapItem,NgChm.DET.redrawSelectionTimeout);

@@ -2,6 +2,22 @@
 /**
  *  */
 
+:root {
+        /* Variables used to specify the colors of selected labels.
+         * Set by javascript based on the current color scheme.
+         */
+	--in-selection-color: rgb(0,0,0);
+	--in-selection-background-color: rgb(0,255,56);
+}
+
+/* Extra class added to selected labels.
+ * Used for coloring their text and background colors.
+ */
+.inSelection {
+	color: var(--in-selection-color);
+	background-color: var(--in-selection-background-color);
+}
+
 body.NgChmViewer {
 	margin: 8px;
 	width: calc(100vw - 16px);
