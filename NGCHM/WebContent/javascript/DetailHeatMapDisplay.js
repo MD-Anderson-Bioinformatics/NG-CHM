@@ -1591,21 +1591,6 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
 	if (NgChm.DET.labelIndexInSearch(index,axis)) {
 		div.classList.add('inSelection');
 	}
-	if (text == "<") {
-		// What is a label with text == "<"?
-		// Can this condition be eliminated?
-		const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",mapItem.currentDl);
-		const dataLayer = NgChm.heatMap.getDataLayers()[mapItem.currentDl];
-		const selectionRgba = colorMap.getHexToRgba(dataLayer.selection_color);
-		let divFontColor = "#FFFFFF";
-		const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
-		if (colorMap.isColorDark(selColor)) {
-			divFontColor = "#000000";
-		}
-	//	div.style.backgroundColor = "rgba(3,255,3,0.2)";
-		div.style.color = divFontColor;
-		div.style.backgroundColor = "rgba("+selectionRgba.r+","+selectionRgba.g+","+selectionRgba.b+",0.2)";
-	}
 	if (rotate == 'T') {
 		div.style.transformOrigin = 'left top';
 		div.style.transform = 'rotate(90deg)';
