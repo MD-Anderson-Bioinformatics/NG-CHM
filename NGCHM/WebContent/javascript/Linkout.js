@@ -2799,7 +2799,8 @@ NgChm.createNS('NgChm.LNK');
 		{ label: 'T-test', value: 'T-test' }
 	];
 
-	/**
+	defineVanodiMessageHandler ('getTestData',
+	    /**
 		Calls getAxisTestData to perform statistical tests, and posts results to plugin
 
 		@function vanodiSendTestData
@@ -2811,8 +2812,8 @@ NgChm.createNS('NgChm.LNK');
 		@option {Array<String>} axisLabels labels of nodes from plugin (e.g. gene symbols from PathwayMapper)
 		@option {Array<String>} group1 NGCHM labels for group 1
 		@option {Array<String>} group2 NGCHM labels for group 2
-	*/
-	defineVanodiMessageHandler ('getTestData', function vanodiSendTestData (instance, msg) {
+	    */
+	    function vanodiSendTestData (instance, msg) {
 		// axisName: 'row',
 		// axisLabels: labels of axisName elements to test
 		// testToRun: name of test to run
