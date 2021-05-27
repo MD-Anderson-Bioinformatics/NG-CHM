@@ -129,7 +129,6 @@ NgChm.DET.setDetailMapDisplay = function (mapItem) {
 		NgChm.DET.setInitialDetailDisplaySize(mapItem);
 	}
 	NgChm.LNK.createLabelMenus();
-	NgChm.SRCH.createEmptySearchItems();
 	NgChm.DET.setDendroShow(mapItem);
 	if (mapItem.canvas) {
 		mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
@@ -2336,6 +2335,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		let isPrimary = false;
 		if (firstSwitch) {
 			// First time detail NGCHM created.
+			NgChm.SRCH.createEmptySearchItems();
 			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild (document.getElementById('detail_chm'));
 			firstSwitch = false;

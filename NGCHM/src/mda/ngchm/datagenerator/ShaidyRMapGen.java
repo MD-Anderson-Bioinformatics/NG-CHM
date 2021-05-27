@@ -1,3 +1,25 @@
+/*******************************************************************
+ * CLASS: ShaidyRMapGen
+ *
+ * This class provides and interface between the Shaidy system and
+ * the NG-CHM HeatmapDataGenerator.  A JAR containing the class is
+ * ported to the Shaidy system. The primary purpose of this class
+ * is to map the chm.json file (created by Shaidy) to the 
+ * heatmapProperties.json file (utilized by the HMDG).  The file is
+ * mapped creating the properties file and then the HMDG is called
+ * with that file as an input.
+ * 
+ * There are 3 arguments to this process:
+ * 1. Shaidy Root Directory - Location of Shaidy repository
+ * 2. chm shaidy Id - CHM id within Shaidy
+ * 3. viewer Id - Sub directory for map within Shaidy repository
+ * 
+ * ALSO: This class is where the version value is set for the 
+ * ShaidyR implementation.
+ * 
+ * Author: Mark Stucky
+ * Date: December 14, 2015
+ ******************************************************************/
 package mda.ngchm.datagenerator;
 
 import static mda.ngchm.datagenerator.ImportConstants.EMPTY;

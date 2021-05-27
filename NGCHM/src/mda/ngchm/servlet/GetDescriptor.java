@@ -1,3 +1,18 @@
+/*******************************************************************
+ * SERVLET CLASS: GetDescriptor
+ *
+ * This class contains the logic necessary to retrieve the two main
+ * configuration files (mapConfig.json and mapData.json) for a given
+ * heat map from the server and return them to the client as JSON
+ * output. It is called on the client  * side from the MatrixManager 
+ * JS file.
+ * 
+ * Argument1: map - Name of the heat map on the server
+ * Argument2: type - Type of file (mapConfig or mapData) being requested.
+ * 
+ * Author: Mark Stucky
+ * Date: 2016
+ ******************************************************************/
 package mda.ngchm.servlet;
 
 import java.io.BufferedReader;

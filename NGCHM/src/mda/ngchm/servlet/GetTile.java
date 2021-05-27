@@ -1,3 +1,18 @@
+/*******************************************************************
+ * SERVLET CLASS: GetTile
+ *
+ * This class contains the logic necessary to retrieve binary data tile
+ * files for a given heat map from the server. It is called on the client
+ * side from the MatrixManager JS file.
+ * 
+ * Argument1: map - Name of the heat map on the server
+ * Argument2: data layer - The data layer (dl1,dl2,etc...) being requested,.
+ * Argument3: data level - The data layer (s,d,rh,rv,tn) being requested,.
+ * Argument2: tile name - tile file name being requested.
+ * 
+ * Author: Mark Stucky
+ * Date: 2016
+ ******************************************************************/
 package mda.ngchm.servlet;
 
 import java.io.File;
