@@ -16,6 +16,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// function initializePanes() - call to (re-)initialize pane interface
 	NgChm.Pane.initializePanes = initializePanes;
+	NgChm.Pane.newPane = newPane;
+	NgChm.Pane.resizePane = resizePane;
+	NgChm.Pane.initializeGearIconMenu = initializeGearIconMenu;
 
 	// function findPaneLocation(el) - return PaneLocation containing element el
 	NgChm.Pane.findPaneLocation = findPaneLocation;

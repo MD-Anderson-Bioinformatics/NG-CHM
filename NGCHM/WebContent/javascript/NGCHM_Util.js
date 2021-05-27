@@ -551,7 +551,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 				dataSource = NgChm.MMGR.LOCAL_SOURCE;
 			}
 			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
-			NgChm.heatMap = matrixMgr.getHeatMap(mapName, [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate]);
+			NgChm.heatMap = matrixMgr.getHeatMap(mapName, [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate, NgChm.StateMan.listening]);
 		}
  	} 
 	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
@@ -677,7 +677,7 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	zip.useWebWorkers = false;
 	NgChm.UTIL.resetCHM();
     NgChm.UTIL.initDisplayVars();
-    NgChm.heatMap = matrixMgr.getHeatMap("",  [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate], chmFile);
+    NgChm.heatMap = matrixMgr.getHeatMap("",  [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate, NgChm.StateMan.listening], chmFile);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
 	NgChm.UTIL.showDetailPane = false;
 	NgChm.Pane.showPaneHeader = false;
