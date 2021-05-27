@@ -611,6 +611,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return mapConfig.data_configuration.map_information; 
 	}
 
+	// Get panel configuration from mapConfig.json
+	this.getPanelConfiguration = function() {
+		return mapConfig.panel_configuration;
+	}
+
 	this.getRowDendroConfig = function() {
 		return mapConfig.row_configuration.dendrogram;
 	}
@@ -934,6 +939,15 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		});
 	}
 	
+	/**
+	* Save the pane layout to mapConfig
+	*/
+	function savePaneLayoutToMapConfig() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { mapConfig['panel_configuration'] = {} }
+		let layoutToSave = document.getElementById('ngChmContainer1');
+		let layoutJSON = domJSON.toJSON(layoutToSave,{absolutePaths:false});
+		mapConfig['panel_configuration']['panels'] = layoutJSON;
+	}
 	function zipSaveMapProperties() {
 
 		  function onProgress(a, b) {
@@ -955,6 +969,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 								// Directly add all text zip entries directly to the new zip file
 								// except for mapConfig.  For this entry, add the modified config data.
 								if (keyVal.indexOf('mapConfig') > -1) {
+									savePaneLayoutToMapConfig();
 									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConfig));
 								} else {
 									zipFetchText(entry, fileIndex, addTextContents);
@@ -1142,6 +1157,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		document.addEventListener("keydown", NgChm.DEV.keyNavigate);
 
 		addDataLayers(mc);
+		if (mc.hasOwnProperty('panel_configuration')) {
+			NgChm.StateMan.reconstructPanelsFromMapConfig()
+		}
 	}
 	
 	function prefetchInitialTiles(datalayers, datalevels, levels) {

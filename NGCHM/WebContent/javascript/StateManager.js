@@ -9,6 +9,7 @@
  *	Define Namespace for NgChm StateManager
  */
 NgChm.createNS('NgChm.StateMan')
+NgChm.StateMan.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
 
 /**
  *	Set up a temporary 'onclick' event on the MDA logo for reconstructing
@@ -22,11 +23,24 @@ NgChm.StateMan.listening = function(event,title) {
 }
 
 /**
- *	Reconstruct base container layout from domJSON output.
+ *	Reconstruct the panels from data in the mapConfig.json file
+ */
+async function reconstructPanelsFromMapConfig() {
+	if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
+		reconstructPaneLayout();
+		setPanes();
+	} else { // wait for NGCHM to initialize itself
+		setTimeout(reconstructPanelsFromMapConfig, 100)
+	}
+}
+
+/**
+ *	Reconstruct base container and pane layout from domJSON output.
+ *	This function does NOT set the pane contents.
  */ 
 function reconstructPaneLayout() {
 	let elementToReconstruct = document.getElementById('ngChmContainer1')
-	let elementJSON = domJSON.toJSON(elementToReconstruct,{absolutePaths:false})
+	let elementJSON = NgChm.heatMap.getPanelConfiguration()['panels'];
 	let reconstructedElement = domJSON.toDOM(elementJSON)
 	elementToReconstruct.parentNode.replaceChild(reconstructedElement, elementToReconstruct)
 }
