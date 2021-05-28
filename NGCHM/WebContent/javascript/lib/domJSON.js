@@ -535,6 +535,8 @@
 			if (!(node.classList.contains('ngChmContainer') || 
 					node.classList.contains('pane') || 
 					node.classList.contains('resizerHelper') ||
+					node.classList.contains('resizerSplitterHorizontal') ||
+					node.classList.contains('resizerSplitterVertical') ||
 					node.classList.contains('paneTitle') ||
 					node.classList.contains('paneHeader')
 				)) {

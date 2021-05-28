@@ -29,6 +29,8 @@ async function reconstructPanelsFromMapConfig() {
 	if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
 		reconstructPaneLayout();
 		setPanes();
+		addDividerControlsToResizeHelpers();
+		addResizeHandlersToContainers();
 	} else { // wait for NGCHM to initialize itself
 		setTimeout(reconstructPanelsFromMapConfig, 100)
 	}
@@ -43,6 +45,27 @@ function reconstructPaneLayout() {
 	let elementJSON = NgChm.heatMap.getPanelConfiguration()['panels'];
 	let reconstructedElement = domJSON.toDOM(elementJSON)
 	elementToReconstruct.parentNode.replaceChild(reconstructedElement, elementToReconstruct)
+}
+
+
+/**
+ * Add DividerControl methods to resizeHelper elements
+ */
+function addDividerControlsToResizeHelpers() {
+	let dividers = document.getElementsByClassName("resizerHelper")
+	for (i=0; i<dividers.length; i++) {
+		dividers[i].dividerController = new NgChm.Pane.DividerControl(dividers[i])
+	}
+}
+
+/**
+ * Add paneresize event handlers to ngChmContainer elements
+ */
+function addResizeHandlersToContainers() {
+	let containers = document.getElementsByClassName("ngChmContainer")
+	for (i=0; i<containers.length; i++) {
+		containers[i].addEventListener('paneresize', NgChm.Pane.resizeHandler)
+	}
 }
 
 /**
