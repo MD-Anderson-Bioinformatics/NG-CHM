@@ -20,6 +20,7 @@ async function reconstructPanelsFromMapConfig() {
 		setPanes();
 		addDividerControlsToResizeHelpers();
 		addResizeHandlersToContainers();
+		window.dispatchEvent(new Event('resize'))
 	} else { // wait for NGCHM to initialize itself
 		setTimeout(reconstructPanelsFromMapConfig, 100)
 	}
