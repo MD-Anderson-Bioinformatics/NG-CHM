@@ -12,17 +12,6 @@ NgChm.createNS('NgChm.StateMan')
 NgChm.StateMan.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
 
 /**
- *	Set up a temporary 'onclick' event on the MDA logo for reconstructing
- *	the panel layout. These are initial ideas for the save-state feature.
- */
-NgChm.StateMan.listening = function(event,title) {
-	document.getElementById("mdaLogo").onclick = function() {
-		reconstructPaneLayout()
-		setPanes()
-	}
-}
-
-/**
  *	Reconstruct the panels from data in the mapConfig.json file
  */
 async function reconstructPanelsFromMapConfig() {
@@ -37,8 +26,8 @@ async function reconstructPanelsFromMapConfig() {
 }
 
 /**
- *	Reconstruct base container and pane layout from domJSON output.
- *	This function does NOT set the pane contents.
+ *	Reconstruct container and pane layout.
+ *	This function does NOT set the pane contents (see setPanes).
  */ 
 function reconstructPaneLayout() {
 	let elementToReconstruct = document.getElementById('ngChmContainer1')
