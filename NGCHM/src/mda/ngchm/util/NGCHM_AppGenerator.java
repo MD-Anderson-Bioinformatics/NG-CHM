@@ -1,3 +1,22 @@
+/*******************************************************************
+ * CLASS: NGCHM_AppGenerator
+ *
+ * This class contains the logic necessary to create the stand-alone
+ * NG-CHM Viewer .HTML file. It is typically called from the ANT
+ * script (build_ngchmApp.xml). It reads in the chm.html file. Using
+ * the script include statements, it reads in any CSS files and writes
+ * them into the stand-alone.  It also reads/writes the minimized ngchm-min.js
+ * into the stand-alone html. All images are converted to base64 images
+ * as they are written into the stand-alone html file.
+ * 
+ * Argument1: Input - Path to the Web directory (e.g. ./WebContent/) 
+ * 				of the project 
+ * Argument2: Output - File name for stand-alone html (e.g. ngChmApp.html)
+ * 
+ * Author: Mark Stucky
+ * Date: 2017
+ ******************************************************************/
+
 package mda.ngchm.util;
 
 import java.io.BufferedReader;
@@ -11,6 +30,12 @@ import java.util.Date;
 
 public class NGCHM_AppGenerator {
 
+	/*******************************************************************
+	 * METHOD: encodeFileToBase64Binary
+	 *
+	 * This method reads in an image file and writes it out in base64 
+	 * binary representation.
+	 ******************************************************************/
    private static String encodeFileToBase64Binary(String image) throws Exception {
           String encodedfile = null;
           try {
@@ -28,6 +53,13 @@ public class NGCHM_AppGenerator {
           return encodedfile;
     }
      
+	/*******************************************************************
+	 * METHOD: styleToString
+	 *
+	 * This method reads in CSS file line and writes it out to the 
+	 * stand-alone html output file.  Any images contained in the CSS
+	 * will be written in base64 binary.
+	 ******************************************************************/
    public static String styleToString(String webDir, String cssFile) throws Exception {
    	StringBuffer strBuff = new StringBuffer();
    	
@@ -53,6 +85,13 @@ public class NGCHM_AppGenerator {
    	return strBuff.toString();
    }
 	
+	/*******************************************************************
+	 * METHOD: main
+	 *
+	 * This method is the driver for the entire stand-alone html file
+	 * build process. chm.html, ngchm-min.js and jspdf.min.js are read
+	 * in and the stand-alone is written out.
+	 ******************************************************************/
     public static void main(String[] args) {
 		System.out.println("BEGIN NGCHM_AppGenerator  " + new Date());
         try {

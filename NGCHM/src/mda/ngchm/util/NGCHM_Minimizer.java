@@ -1,3 +1,24 @@
+/*******************************************************************
+ * CLASS: NGCHM_Minimizer
+ *
+ * This class contains the logic necessary merge all of the javascript
+ * included in the Viewer project into a single JS file (ngchm.js). It 
+ * is typically called from the ANT script (build_ngchmApp.xml). That 
+ * script will later minify the JS into ngchm-min.js. This file will
+ * later be used to construct both the NG-CHM widget (ngchmWidget-min.js)
+ * and stand-alone NG-CHM Viewer (ngChmApp.html).  The chm.html file
+ * will be traversed.  Each time a JS include statement is found, that
+ * file is read in and written to the output file.  Any images that are
+ * found in the JS as it is being processed will be written out as base64
+ * images to the output file.
+ * 
+ * Argument1: Input - Path to the Web directory (e.g. ./WebContent/) 
+ * 				of the project to the chm.html file
+ * Argument2: Output - Name of the output file (e.g. ngchm.js).
+ * 
+ * Author: Mark Stucky
+ * Date: 2016
+ ******************************************************************/
 package mda.ngchm.util;
 
 import java.io.BufferedReader;
@@ -11,6 +32,12 @@ import java.util.Date;
 
 public class NGCHM_Minimizer {
 
+	/*******************************************************************
+	 * METHOD: encodeFileToBase64Binary
+	 *
+	 * This method reads in an image file and writes it out in base64 
+	 * binary representation.
+	 ******************************************************************/
    private static String encodeFileToBase64Binary(String image) throws Exception {
           String encodedfile = null;
           try {
@@ -28,8 +55,12 @@ public class NGCHM_Minimizer {
           return encodedfile;
     }
      
-    //Get the contents of a javascript file and write it to the combined file, changing
-    //any images into encoded strings.
+	/*******************************************************************
+	 * METHOD: writeJSFile
+	 *
+	 * This method reads the contents of a javascript file and write its 
+	 * to the combined file, changing any images into base64 encoded strings.
+	 ******************************************************************/
     private static void writeJSFile(String webDir, String jsFile, BufferedWriter combinedWidget) throws Exception {
 		BufferedReader br = new BufferedReader(new FileReader(webDir + "/" + jsFile ));
 		String line = br.readLine();
@@ -68,6 +99,12 @@ public class NGCHM_Minimizer {
 		br.close();	
     }
     
+	/*******************************************************************
+	 * METHOD: writeCustomJS
+	 *
+	 * This method writes the contents of custom-min.js to the ngchm.js
+	 * output file.
+	 ******************************************************************/
     private static void writeCustomJS(String webDir, BufferedWriter combinedWidget) throws Exception { 
  		BufferedReader br = new BufferedReader(new FileReader(webDir + "/javascript/custom/custom-min.js" ));
  		String writeStr = "var s = document.getElementsByTagName('script')[0];\n";
@@ -84,6 +121,13 @@ public class NGCHM_Minimizer {
  		br.close();	
      }
      
+	/*******************************************************************
+	 * METHOD: main
+	 *
+	 * This method is the driver for the js minimizer process. It reads
+	 * in the chm.html file and writes out the contents of all JS files
+	 * included therein into the output file (ngchm.js)
+	 ******************************************************************/
     public static void main(String[] args) {
 		System.out.println("BEGIN NGCHM Minimizer  " + new Date());
         try {
