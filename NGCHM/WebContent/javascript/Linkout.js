@@ -1022,11 +1022,11 @@ NgChm.createNS('NgChm.LNK');
 	// Return an array of values for the rows/columns specified by idx along axis.
 	function getDataValues (axis, idx) {
 		const isRow = NgChm.MMGR.isRow (axis);
-		const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+		const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
 		const colorThresholds = colorMap.getThresholds();
 		idx = idx === undefined ? [] : Array.isArray(idx) ? idx : [idx];
 		const win = {
-			layer: NgChm.SEL.currentDl,
+			layer: NgChm.SEL.getCurrentDL(),
 			level: NgChm.MMGR.DETAIL_LEVEL,
 			firstRow: 1,
 			firstCol: 1,
@@ -1091,7 +1091,7 @@ NgChm.createNS('NgChm.LNK');
 		for (let i=0; i < axisIdx.length; i++) {
 			// Get access window for each axisIdx (one vector per iteration)
 			const win = {
-				layer: NgChm.SEL.currentDl,
+				layer: NgChm.SEL.getCurrentDL(),
 				level: NgChm.MMGR.DETAIL_LEVEL,
 				firstRow: isRow ? 1+axisIdx[i] : 1,
 				firstCol: isRow ? 1 : 1+axisIdx[i],
@@ -1194,7 +1194,7 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	function getDataColors (axis, idx) {
-		const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+		const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
 		const { breaks, classColors } = getDiscMapFromContMap (colorMap.getThresholds(), colorMap.getColors());
 		const values = getDataValues (axis, idx);
 		const valClasses = getValueClassesColors (values, breaks, classColors, colorMap.getMissingColor(),'Class');
@@ -1318,7 +1318,7 @@ NgChm.createNS('NgChm.LNK');
 		};
 
 		if (msg.testToRun === 'Mean') {
-		    const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+		    const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
 		    const vColorMap = {
 		        thresholds: colorMap.getThresholds(),
 			colors: colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded),
@@ -1416,7 +1416,7 @@ NgChm.createNS('NgChm.LNK');
 				const idx = axis[valueField][ci].labelIdx; 
 				const values = getDataValues(isRow ? 'column' : 'row', idx);
 				cocodata[valueField].push(values);
-				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.currentDl);
+				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
 
 				var colorsForThisData = []
 				for (var idv = 0; idv < values.length; idv++) {

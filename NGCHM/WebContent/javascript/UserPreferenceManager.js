@@ -123,7 +123,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		NgChm.UPM.searchPerformed = false;
 		NgChm.UPM.showClassPrefs();
 	} else {
-		NgChm.UPM.showLayerBreak(NgChm.SEL.currentDl);
+		NgChm.UPM.showLayerBreak(NgChm.SEL.getCurrentDL());
 		NgChm.UPM.showLayerPrefs();
 	}
 	errorMsg = null;

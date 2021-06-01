@@ -379,7 +379,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	// Retrieve color map Manager for this heat map.
 	this.getColorMapManager = function() {
-		if (initialized != 1)
+		if (mapConfig == null)
 			return null;
 		
 		if (colorMapMgr == null ) {
@@ -524,7 +524,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 
 	this.getCurrentDataLayer = function() {
-		return this.getDataLayers()[NgChm.SEL.currentDl];
+		return this.getDataLayers()[NgChm.SEL.getCurrentDL()];
 	};
 
 	this.getDividerPref = function() {
@@ -579,6 +579,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig.data_configuration.map_information.data_layer[key].grid_color = gridColorVal;
 		mapConfig.data_configuration.map_information.data_layer[key].cuts_color = gapColorVal;
 		mapConfig.data_configuration.map_information.data_layer[key].selection_color = selectionColorVal;
+		if (key == NgChm.SEL.getCurrentDL()) {
+		    NgChm.SEL.setSelectionColors ();
+		}
 	}
 	
 	//Get Row Organization
@@ -727,9 +730,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (hasDetailTiles() === false) {
 			return true;
 		} else {
+		const currentDl = NgChm.SEL.getCurrentDL();
 	    	for (var i = details.startRowTile; i <= details.endRowTile; i++) {
 	    		for (var j = details.startColTile; j <= details.endColTile; j++) {
-	    			var tileCacheName=NgChm.SEL.currentDl + "." +NgChm.MMGR.DETAIL_LEVEL + "." + i + "." + j;
+				var tileCacheName=currentDl + "." + NgChm.MMGR.DETAIL_LEVEL + "." + i + "." + j;
 	    			if (getTileCacheData(tileCacheName) === null) {
 	     				//Do not yet have tile in cache return false
 	    				return false;
@@ -861,7 +865,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				}
 				flick1.innerHTML=flickOptions;
 				flick2.innerHTML=flickOptions;
-				flick1.value=NgChm.SEL.currentDl;
+				flick1.value=NgChm.SEL.getCurrentDL();
 				flick2.value=orderedKeys[1];
 				flicks.style.display='';
 				flicks.style.right=1;
@@ -869,7 +873,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					flickViewsOff.style.display='';
 				}
 			} else {
-				NgChm.SEL.currentDl = "dl1";
+				NgChm.SEL.setCurrentDL("dl1");
 				flicks.style.display='none';
 			}
 			flickInitialized = true;
@@ -1137,6 +1141,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (NgChm.UTIL.getURLParameter("column") !== "" && !isNaN(Number(NgChm.UTIL.getURLParameter("column")))){
 			NgChm.SEL.currentCol = Number(NgChm.UTIL.getURLParameter("column"))
 		}
+	        NgChm.SEL.setSelectionColors();
 		NgChm.UTIL.configurePanelInterface();
 		NgChm.SUM.initSummaryDisplay();
 		document.addEventListener("keydown", NgChm.DEV.keyNavigate);
@@ -1286,15 +1291,15 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			if ((mapData != null) &&
 				(mapConfig != null) &&
 				(Object.keys(datalevels).length > 0) &&
-				(haveTileData(NgChm.SEL.currentDl+"."+NgChm.MMGR.THUMBNAIL_LEVEL+".1.1")) &&
+				(haveTileData(NgChm.SEL.getCurrentDL()+"."+NgChm.MMGR.THUMBNAIL_LEVEL+".1.1")) &&
 				 (initialized == 0)) {
 					initialized = 1;
 					sendAllListeners(NgChm.MMGR.Event_INITIALIZED);
 			}
 			//Unlikely, but possible to get init finished after all the summary tiles.
 			//As a back stop, if we already have the top left summary tile, send a data update event too.
-			if (haveTileData(NgChm.SEL.currentDl+"."+NgChm.MMGR.SUMMARY_LEVEL+".1.1")) {
-				sendAllListeners(NgChm.MMGR.Event_NEWDATA, { layer: NgChm.SEL.currentDl, level: NgChm.MMGR.SUMMARY_LEVEL, row: 1, col: 1});
+			if (haveTileData(NgChm.SEL.getCurrentDL()+"."+NgChm.MMGR.SUMMARY_LEVEL+".1.1")) {
+				sendAllListeners(NgChm.MMGR.Event_NEWDATA, { layer: NgChm.SEL.getCurrentDL(), level: NgChm.MMGR.SUMMARY_LEVEL, row: 1, col: 1});
 			}
 		} else	if ((event === NgChm.MMGR.Event_NEWDATA) && (initialized === 1)) {
 			sendAllListeners(event, tile);
@@ -1429,7 +1434,7 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		//Calculate which tile holds the row / column we are looking for.
 		var tileRow = Math.floor((row-1)/rowsPerTile) + 1;
 		var tileCol = Math.floor((column-1)/colsPerTile) + 1;
-		var arrayData = getTileCacheData(NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol);
+		var arrayData = getTileCacheData(NgChm.SEL.getCurrentDL()+"."+level+"."+tileRow+"."+tileCol);
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {
@@ -1454,9 +1459,10 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		var endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
 		var endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
     	
+	const currentDl = NgChm.SEL.getCurrentDL();
     	for (var i = startRowTile; i <= endRowTile; i++) {
     		for (var j = startColTile; j <= endColTile; j++) {
-    			getTile(NgChm.SEL.currentDl, level, i, j);
+			getTile(currentDl, level, i, j);
     		}
     	}
     	return {startRowTile: startRowTile, endRowTile: endRowTile, startColTile: startColTile, endColTile: endColTile}

@@ -603,11 +603,15 @@ NgChm.SRCH.findNextSearchItem = function (index, axis) {
 	const searchTarget = document.getElementById('search_target').value;
 	let curr = index;
 	while( !NgChm.SRCH.searchItems[axis][++curr] && curr <  axisLength){}; // find first searchItem in row
-	if (curr >= axisLength) { // if no searchItems exist in first axis, move to other axis
+	if (NgChm.SRCH.searchItems[axis][curr] === 1) {
+		NgChm.SRCH.setSearchItem(axis, curr);
+	} else if (curr >= axisLength) { // if no more searchItems exist in first axis, move to other axis
 		if (document.getElementById('search_target').value === 'Both') {
 			curr = -1;
 			while( !NgChm.SRCH.searchItems[otherAxis][++curr] && curr <  otherAxisLength){};
-			if (curr >=otherAxisLength){ // if no matches in the other axis, check the earlier indices of the first axis (loop back)
+			if (NgChm.SRCH.searchItems[otherAxis][curr] === 1) {
+				NgChm.SRCH.setSearchItem(otherAxis, curr);
+			} else if (curr >= otherAxisLength){ // if no matches in the other axis, check the earlier indices of the first axis (loop back)
 				NgChm.SRCH.findNextReturnOnAxis(curr, index, axis);
 			} else {
 				NgChm.SRCH.setSearchItem(otherAxis, curr);
