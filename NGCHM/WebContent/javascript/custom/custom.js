@@ -36,13 +36,13 @@ linkouts.addPanePlugin ({
 	/*BEGIN SAMPLE Linkouts to the Hamburger Menu
 	//TODO: replace with "real" hamburger linkout(s)
 	//Using default icon
-	linkouts.addHamburgerLinkout({name: "menuLink2", label: "Execute Menu Link 1", action: "linkoutHelp();"});
+	linkouts.addHamburgerLinkout({name: "menuLink2", label: "Execute Menu Link 1", action: linkoutHelp});
 	//Using different icon from server
-	linkouts.addHamburgerLinkout({name: "menuLink3", label: "Execute Menu Link 2", icon: "images/redX.png", action: "linkoutHelp();"}); 
+	linkouts.addHamburgerLinkout({name: "menuLink3", label: "Execute Menu Link 2", icon: "images/redX.png", action: linkoutHelp}); 
 	//Using external icon from the web
-	linkouts.addHamburgerLinkout({name: "menuLink4", label: "Execute Menu Link 3", icon: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png", action: "openWidgetHelp();"});
+	linkouts.addHamburgerLinkout({name: "menuLink4", label: "Execute Menu Link 3", icon: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png", action: openWidgetHelp});
 	//No label provided
-	linkouts.addHamburgerLinkout({name: "menuLink5", action: "openWidgetHelp();"});
+	linkouts.addHamburgerLinkout({name: "menuLink5", action: openWidgetHelp});
 	//No action provided
 	linkouts.addHamburgerLinkout({name: "menuLink6"});
 	//END SAMPLE Linkouts to the Hamburger Menu*/

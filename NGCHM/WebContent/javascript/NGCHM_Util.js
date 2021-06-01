@@ -406,8 +406,8 @@ NgChm.UTIL.showDetailPane = true;
 // the interface configuration parameters.
 //
 (function() {
+	const debug = false;
 	var firstTime = true;
-
 	NgChm.UTIL.configurePanelInterface = function configurePanelInterface () {
 		if (NgChm.MMGR.source === NgChm.MMGR.FILE_SOURCE) {
 			firstTime = true;
@@ -428,6 +428,43 @@ NgChm.UTIL.showDetailPane = true;
 			return;
 		}
 		document.getElementById('loader').style.display = 'none';
+		//
+		// Define the DROP TARGET and set the drop event handler(s).
+		if (debug) console.log ('Configuring drop event handler');
+		const dropTarget = document.getElementById('droptarget');
+		function handleDropData (txt) {
+		       if (debug) console.log ({ m: 'Got drop data', txt });
+		       const j = JSON.parse (txt);
+		       if (j && j.type === 'linkout.spec' && j.kind && j.spec) {
+			   NgChm.LNK.loadLinkoutSpec (j.kind, j.spec);
+		       }
+		}
+		['dragenter','dragover','dragleave','drop'].forEach(eventName => {
+		    dropTarget.addEventListener(eventName, function dropHandler(ev) {
+		        ev.preventDefault();
+			ev.stopPropagation();
+			if (eventName == 'drop') {
+			    if (debug) console.log({ m: 'drop related event', eventName, ev });
+			    const dt = ev.dataTransfer;
+			    const files = dt.files;
+			    ([...files]).forEach(file => {
+			        if (debug) console.log ({ m: 'dropFile', file });
+				if (file.type == 'application/json') {
+				    const reader = new FileReader();
+				    reader.onloadend = () => { handleDropData (reader.result); };
+				    reader.readAsText(file);
+				}
+			    });
+			    const txt = dt.getData("Application/json");
+			    if (txt) handleDropData (txt);
+			    dropTarget.classList.remove('visible');
+			} else if (eventName === 'dragenter') {
+			    dropTarget.classList.add('visible');
+			} else if (eventName === 'dragleave') {
+			    dropTarget.classList.remove('visible');
+			}
+		    });
+		});
 		const initialLoc = NgChm.Pane.initializePanes ();
 		if (NgChm.UTIL.showSummaryPane && NgChm.UTIL.showDetailPane) {
 			const s = NgChm.Pane.splitPane (false, initialLoc);
