@@ -625,32 +625,27 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 		if (rowRanges.length > 0 || colRanges.length > 0) {
 			if (rowRanges.length === 0) {
 				//Draw vertical lines across entire heatMap
-				for (let i=0;i<colRanges.length;i++) {
-					const range = colRanges[i];
-					const colStart = range[0];
-					const colEnd = range[1];
-					drawSearchBox(mapItem,0,mapNumRows,colStart,colEnd);
-				}
+				const topY = mapItemVars.topY;
+				const bottom = mapItemVars.boxCanvasHeight;
+				calcVisColRanges (colRanges, mapItem).forEach(([left, right]) => {
+					drawSearchBox(mapItem, topY, bottom, left, right);
+				});
 			} else if (colRanges.length === 0) {
 				//Draw horizontal lines across entire heatMap
-				for (let i=0;i<rowRanges.length;i++) {
-					const range = rowRanges[i];
-					const rowStart = range[0];
-					const rowEnd = range[1];
-					drawSearchBox(mapItem,rowStart,rowEnd,0,mapNumCols);
-				}
+			        const left = mapItemVars.topX;
+				const right = mapItemVars.boxCanvasWidth;
+				calcVisRowRanges (rowRanges, mapItem).forEach(([topY,bottom]) => {
+					drawSearchBox(mapItem, topY, bottom, left, right);
+				});
 			} else {
-				for (let i=0;i<rowRanges.length;i++) {
-					//Draw discrete selection boxes on heatMap
-					const rowRange = rowRanges[i];
-					const rowStart = rowRange[0];
-					const rowEnd = rowRange[1];
-					for (let j=0;j<colRanges.length;j++) {
-						const colRange = colRanges[j];
-						const colStart = colRange[0];
-						const colEnd = colRange[1];
-						drawSearchBox(mapItem,rowStart,rowEnd,colStart,colEnd);
-					}				
+				//Draw discrete selection boxes on heatMap
+				const visColRanges = calcVisColRanges (colRanges, mapItem);
+				if (visColRanges.length > 0) {
+				        calcVisRowRanges (rowRanges, mapItem).forEach(([topY,bottom]) => {
+				                visColRanges.forEach(([left, right]) => {
+						        drawSearchBox(mapItem,topY,bottom,left,right);
+					        });
+				        });
 				}
 			}
 		}
@@ -697,30 +692,64 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 		mapItemVars.start = performance.now();
 	}
     }
-	
+
+    /**********************************************************************************
+     * FUNCTION - calcVisRanges: Convert selectionRanges into visibleRanges
+     *
+     * Parameters:
+     * axis : the axis concerned
+     * ranges : an array of selectionRanges
+     * currentPosn : start coordinate of the current view for the specified axis
+     * viewportStart : top/left pixel of the viewport
+     * viewportEnd : bottom/right pixel of the viewport
+     * cellSize : number of pixels in a cell
+     *
+     * Output:
+     * an array of visible pixel ranges (each an array of two pixel coordinate values)
+     *
+     * Only at least partially visible ranges are include in the output array.
+     *
+     **********************************************************************************/
+    function calcVisRanges (axis, ranges, currentPosn, viewportStart, viewportEnd, cellSize) {
+	const visRanges = [];
+	ranges.forEach (([selStart,selEnd]) => {
+	    const adjustedStart = (selStart - currentPosn)*cellSize;
+	    const adjustedEnd = ((selEnd - selStart)+1)*cellSize;
+	    const boxStart = viewportStart+adjustedStart;
+	    const boxEnd = boxStart+adjustedEnd;
+	    if (boxStart < viewportEnd && boxEnd > viewportStart) {
+		visRanges.push([boxStart, boxEnd]);
+	    }
+	});
+	if (debug) console.log ("Found ", visRanges.length, " visible ", axis, " ranges");
+	return visRanges;
+    }
+
+    /**********************************************************************************
+     * FUNCTION - calcVisColRanges: Convert column selectionRanges into column visibleRanges
+     */
+    function calcVisColRanges (ranges, mapItem) {
+	return calcVisRanges ("column", ranges, mapItem.currentCol, mapItemVars.topX, mapItemVars.boxCanvasWidth, mapItemVars.cellWidth);
+    }
+
+    /**********************************************************************************
+     * FUNCTION - calcVisRowRanges: Convert row selectionRanges into row visibleRanges
+     */
+    function calcVisRowRanges (ranges, mapItem) {
+	return calcVisRanges ("row", ranges, mapItem.currentRow, mapItemVars.topY, mapItemVars.boxCanvasHeight, mapItemVars.cellHeight);
+    }
+
     /**********************************************************************************
      * FUNCTION - drawSearchBox: The purpose of this function is to draw the search
      * box on a given heat map panel.
+     * At least one edge of the box should be visible.
+     * boxY: top edge
+     * boxY2: bottom edge
+     * boxX; left edge
+     * boxX2: right edge
      **********************************************************************************/
-    function drawSearchBox (mapItem, csRowStart, csRowEnd, csColStart, csColEnd) {
+    function drawSearchBox (mapItem, boxY, boxY2, boxX, boxX2) {
 
-	//how much to move row/col offset from currentRow in pixels
-	const adjustedRowStart = (csRowStart - mapItem.currentRow)*mapItemVars.cellHeight;
-	const adjustedColStart = (csColStart - mapItem.currentCol)*mapItemVars.cellWidth;
-	const adjustedRowEnd = ((csRowEnd - csRowStart)+1)*mapItemVars.cellHeight;
-	const adjustedColEnd = ((csColEnd - csColStart)+1)*mapItemVars.cellWidth;
-	
-	//adjusted row/col start position (without regard to visibility in the viewport)
-	const boxX = mapItemVars.topX+adjustedColStart;
-	const boxY = mapItemVars.topY+adjustedRowStart;
-	const boxX2 = boxX+adjustedColEnd;
-	const boxY2 = boxY+adjustedRowEnd; 
-	
-	// If entire box is outside of the visible area, return without drawing.
-	if (boxX >= mapItemVars.boxCanvasWidth || boxX2 <= mapItemVars.topX) return;
-	if (boxY >= mapItemVars.boxCanvasHeight || boxY2 <= mapItemVars.topY) return;
-
-	// At least one edge of the box is visible.
 	mapItemVars.ctx.beginPath();
 
 	// draw top horizontal line
