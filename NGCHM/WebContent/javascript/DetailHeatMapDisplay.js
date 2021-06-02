@@ -674,16 +674,23 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 	//height/width of heat map rectangle in pixels
 	mapItemVars.mapXWidth = mapItem.boxCanvas.width - mapItemVars.topX;
 	mapItemVars.mapYHeight = mapItem.boxCanvas.height - mapItemVars.topY;
-	//height/width of a data cell in pixels
-	mapItemVars.cellWidth = mapItemVars.mapXWidth/NgChm.SEL.getCurrentDetDataPerRow(mapItem);
-	mapItemVars.cellHeight = mapItemVars.mapYHeight/NgChm.SEL.getCurrentDetDataPerCol(mapItem);
-	if (mapItem.mode !== 'NORMAL') {
+
+	// width of a data cell in pixels
+	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONV') {
+		mapItemVars.cellWidth = mapItemVars.mapXWidth/NgChm.SEL.getCurrentDetDataPerRow(mapItem);
+	} else {
 		mapItemVars.cellWidth = mapItemVars.mapXWidth/mapItem.dataPerRow;
+	}
+	// height of a data cell in pixels
+	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONH') {
+		mapItemVars.cellHeight = mapItemVars.mapYHeight/NgChm.SEL.getCurrentDetDataPerCol(mapItem);
+	} else {
 		mapItemVars.cellHeight = mapItemVars.mapYHeight/mapItem.dataPerCol;
 	}
-	//bottom-right corner of visible area
-	mapItemVars.bottomX = mapItemVars.topX + (NgChm.SEL.getCurrentDetDataPerCol(mapItem)*mapItemVars.cellWidth);
-	mapItemVars.bottomY = mapItemVars.topY + (NgChm.SEL.getCurrentDetDataPerRow(mapItem)*mapItemVars.cellHeight);
+
+	// Save a copy of these in case querying boxCanvas a lot is expensive.
+	mapItemVars.boxCanvasWidth = mapItem.boxCanvas.width;
+	mapItemVars.boxCanvasHeight = mapItem.boxCanvas.height;
 
 	if (debug) {
 		mapItemVars.strokes = 0;
@@ -709,31 +716,33 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 	const boxX2 = boxX+adjustedColEnd;
 	const boxY2 = boxY+adjustedRowEnd; 
 	
-	// Use a single path for all edges.
-	let pathStarted = false;
+	// If entire box is outside of the visible area, return without drawing.
+	if (boxX >= mapItemVars.boxCanvasWidth || boxX2 <= mapItemVars.topX) return;
+	if (boxY >= mapItemVars.boxCanvasHeight || boxY2 <= mapItemVars.topY) return;
+
+	// At least one edge of the box is visible.
+	mapItemVars.ctx.beginPath();
 
 	// draw top horizontal line
-	if (isHorizLineVisible(mapItemVars.topY, boxY)) {
-		drawHorizLine(mapItemVars.topX,boxX, boxX2, boxY);
+	if (isHorizLineVisible(boxY)) {
+		drawHorizLine(boxX, boxX2, boxY);
 	}
 	// draw left side line
-	if (isVertLineVisible(mapItemVars.topX, boxX)) {
-		drawVertLine(mapItemVars.topY, boxY, boxY2, boxX);
+	if (isVertLineVisible(boxX)) {
+		drawVertLine(boxY, boxY2, boxX);
 	}
 	// draw bottom line
-	if (isHorizLineVisible(mapItemVars.topY, boxY2)) {
-		drawHorizLine(mapItemVars.topX,boxX, boxX2, boxY2);
+	if (isHorizLineVisible(boxY2)) {
+		drawHorizLine(boxX, boxX2, boxY2);
 	}
 	// draw right side line
-	if (isVertLineVisible(mapItemVars.topX, boxX2)) {
-		drawVertLine(mapItemVars.topY, boxY, boxY2, boxX2);
+	if (isVertLineVisible(boxX2)) {
+		drawVertLine(boxY, boxY2, boxX2);
 	}
 
-	// If any edges drawn, stroke the path.
-	if (pathStarted) {
-	    if (debug) mapItemVars.strokes++;
-	    mapItemVars.ctx.stroke();
-	}
+	// Stroke the path.
+	if (debug) mapItemVars.strokes++;
+	mapItemVars.ctx.stroke();
 
 	/*********************************************************************************************
 	 * FUNCTIONS:  isHorizLineVisible AND isVertLineVisible
@@ -741,19 +750,20 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 	 * These functions check the position of a horizontal/vertical line to see if it is currently
 	 * visible in the detail viewport.
 	 *********************************************************************************************/
-	function isHorizLineVisible (topY, boxY) {
-	    return (boxY >= topY);
+	function isHorizLineVisible (boxY) {
+	    return (boxY >= mapItemVars.topY) && (boxY <= mapItemVars.boxCanvasHeight);
 	}
 
-	function isVertLineVisible (topX, boxX) {
-	    return (boxX >= topX);
+	function isVertLineVisible (boxX) {
+	    return (boxX >= mapItemVars.topX) && (boxX <= mapItemVars.boxCanvasWidth);
 	}
 
 	/**********************************************************************************
 	 * FUNCTION - drawHorizLine: The purpose of this function is to draw a search
 	 * box horizontal line on a given heat map panel.
 	 **********************************************************************************/
-	function drawHorizLine (topX, boxX, boxX2, boxY) {
+	function drawHorizLine (boxX, boxX2, boxY) {
+	    const topX = mapItemVars.topX;
 	    const lineStart = boxX >= topX ? boxX : topX;
 	    const lineEnd = boxX2 >= topX ? boxX2 : topX;
 	    if (lineStart !== lineEnd) {
@@ -765,7 +775,8 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 	 * FUNCTION - drawVertLine: The purpose of this function is to draw a search
 	 * box vertical line on a given heat map panel.
 	 **********************************************************************************/
-	function drawVertLine (topY, boxY, boxY2, boxX) {
+	function drawVertLine (boxY, boxY2, boxX) {
+	    const topY = mapItemVars.topY;
 	    const lineStart = boxY >= topY ? boxY : topY;
 	    const lineEnd = boxY2 >= topY ? boxY2 : topY;
 	    if (lineStart !== lineEnd) {
@@ -778,10 +789,6 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 	 * on a given heat map canvas.
 	 **********************************************************************************/
 	function strokeLine (fromX, fromY, toX, toY) {
-	    if (!pathStarted) {
-	        pathStarted = true;
-	        mapItemVars.ctx.beginPath();
-	    }
 	    mapItemVars.ctx.moveTo(fromX,fromY);
 	    mapItemVars.ctx.lineTo(toX, toY);
 	}
