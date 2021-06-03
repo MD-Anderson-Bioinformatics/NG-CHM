@@ -21,6 +21,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	NgChm.Pane.initializeGearIconMenu = initializeGearIconMenu;
 	NgChm.Pane.DividerControl = DividerControl;
 	NgChm.Pane.resizeHandler = resizeHandler;
+	NgChm.Pane.resetPaneCounter = resetPaneCounter;
 
 	// function findPaneLocation(el) - return PaneLocation containing element el
 	NgChm.Pane.findPaneLocation = findPaneLocation;
@@ -77,6 +78,13 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// Return unique ID for a pane element - to aid in automated tests
 	var nextUniquePaneId = 1;
+	function resetPaneCounter(count) {
+		if (count == null) { 
+			nextUniquePaneId = 1 
+		} else {
+			nextUniquePaneId = count;
+		}
+	}
 	function getUniquePaneId () {
 		return "pane" + nextUniquePaneId++;
 	}

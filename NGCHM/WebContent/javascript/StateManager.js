@@ -78,6 +78,7 @@ NgChm.createNS('NgChm.StateMan');
 		for (let i=0; i<panes.length; i++) {
 			setPaneContent(panes[i].id)
 		}
+		NgChm.Pane.resetPaneCounter(panes.length+1);
 	}
 
 	/**
