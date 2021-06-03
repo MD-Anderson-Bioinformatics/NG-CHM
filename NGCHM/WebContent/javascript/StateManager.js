@@ -96,8 +96,8 @@ NgChm.createNS('NgChm.StateMan');
 			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane),false)
 		} else {
 			try {
-				NgChm.LNK.switchPaneToPlugin(NgChm.Pane.findPaneLocation(pane),
-					customjsPlugins.filter(pc => pc.name == pane.textContent)[0])
+				let specifiedPlugin = customjsPlugins.filter(pc => pane.textContent.indexOf(pc.name) > -1)[0]
+				NgChm.LNK.switchPaneToPlugin(NgChm.Pane.findPaneLocation(pane),specifiedPlugin)
 				NgChm.Pane.initializeGearIconMenu(document.getElementById(paneid+'Icon'))
 			} catch(err) {
 				console.error(err)
