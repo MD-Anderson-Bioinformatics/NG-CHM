@@ -557,17 +557,18 @@ NgChm.SUM.flushDrawingCache = function(tile) {
 NgChm.SUM.buildSummaryTexture = function() {
 	const debug = false;
 
+	const currentDl = NgChm.SEL.getCurrentDL();
 	let renderBuffer;
-	if (NgChm.SUM.summaryHeatMapCache.hasOwnProperty(NgChm.SEL.currentDl)) {
-		renderBuffer = NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl];
+	if (NgChm.SUM.summaryHeatMapCache.hasOwnProperty(currentDl)) {
+		renderBuffer = NgChm.SUM.summaryHeatMapCache[currentDl];
 	} else {
 		renderBuffer = NgChm.DRAW.createRenderBuffer (NgChm.SUM.totalWidth*NgChm.SUM.widthScale, NgChm.SUM.totalHeight*NgChm.SUM.heightScale, 1.0);
-		NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl] = renderBuffer;
-		NgChm.SUM.summaryHeatMapValidator[NgChm.SEL.currentDl] = '';
+		NgChm.SUM.summaryHeatMapCache[currentDl] = renderBuffer;
+		NgChm.SUM.summaryHeatMapValidator[currentDl] = '';
 	}
 	NgChm.SUM.eventTimer = 0;
 
-	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
+	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",currentDl);
 
 	// Together with the data, these parameters determine the color of a matrix value.
 	const pixelColorScheme = {
@@ -577,7 +578,7 @@ NgChm.SUM.buildSummaryTexture = function() {
 	};
 
 	const summaryProps = {
-		dataLayer: NgChm.SEL.currentDl,
+		dataLayer: currentDl,
 		width: renderBuffer.width,
 		height: renderBuffer.height,
 		widthScale: NgChm.SUM.widthScale,
@@ -588,16 +589,16 @@ NgChm.SUM.buildSummaryTexture = function() {
 	if (debug) console.log ({
 		m: 'NgChm.SUM.buildSummaryTexture',
 		summaryProps,
-		'new data': NgChm.SUM.summaryHeatMapValidator[NgChm.SEL.currentDl] === '',
-		valid: NgChm.SUM.summaryHeatMapValidator[NgChm.SEL.currentDl] === validator,
+		'new data': NgChm.SUM.summaryHeatMapValidator[currentDl] === '',
+		valid: NgChm.SUM.summaryHeatMapValidator[currentDl] === validator,
 		t: performance.now()
 	});
 
 	// Render
-	if (validator !== NgChm.SUM.summaryHeatMapValidator[NgChm.SEL.currentDl]) {
+	if (validator !== NgChm.SUM.summaryHeatMapValidator[currentDl]) {
 		NgChm.SUM.renderSummaryHeatmap(renderBuffer);
 		if (debug) console.log('Rendering summary heatmap finished at ' + performance.now());
-		NgChm.SUM.summaryHeatMapValidator[NgChm.SEL.currentDl] = validator;
+		NgChm.SUM.summaryHeatMapValidator[currentDl] = validator;
 	}
 	if ((NgChm.SUM.gl) && (renderBuffer !== undefined)) { 
 		NgChm.SUM.drawHeatMapRenderBuffer(renderBuffer);
@@ -606,27 +607,29 @@ NgChm.SUM.buildSummaryTexture = function() {
 
 // Redisplay the summary heat map for the current data layer.
 NgChm.SUM.drawHeatMap = function() {
-	if ((NgChm.SUM.gl)  && (NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl] !== undefined)) {
-		NgChm.SUM.drawHeatMapRenderBuffer (NgChm.SUM.summaryHeatMapCache[NgChm.SEL.currentDl]);
+	const currentDl = NgChm.SEL.getCurrentDL();
+	if ((NgChm.SUM.gl)  && (NgChm.SUM.summaryHeatMapCache[currentDl] !== undefined)) {
+		NgChm.SUM.drawHeatMapRenderBuffer (NgChm.SUM.summaryHeatMapCache[currentDl]);
 	}
 }
 
 // Renders the Summary Heat Map for the current data layer into the specified renderBuffer.
 NgChm.SUM.renderSummaryHeatmap = function (renderBuffer) {
-	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
+	const currentDl = NgChm.SEL.getCurrentDL();
+	var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",currentDl);
 	var colors = colorMap.getColors();
 	var missing = colorMap.getMissingColor();
 	var pos = 0;
 	//Setup texture to draw on canvas.
 	//Needs to go backward because WebGL draws bottom up.
-	NgChm.SUM.avgValue[NgChm.SEL.currentDl] = 0;
+	NgChm.SUM.avgValue[currentDl] = 0;
 	for (var i = NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL); i > 0; i--) {
 		var line = new Array(NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL)*NgChm.SUM.widthScale*NgChm.SUM.BYTE_PER_RGBA);
 		var linepos = 0;
 		for (var j = 1; j <= NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL); j++) { // draw the heatmap
 			var val = NgChm.heatMap.getValue(NgChm.MMGR.SUMMARY_LEVEL, i, j);
 			if ((val < NgChm.SUM.maxValues) && (val > NgChm.SUM.minValues)) {
-				NgChm.SUM.avgValue[NgChm.SEL.currentDl] += val;
+				NgChm.SUM.avgValue[currentDl] += val;
 			}
 			var color = colorMap.getColor(val);
 			for (var k = 0; k < NgChm.SUM.widthScale; k++){
@@ -644,7 +647,7 @@ NgChm.SUM.renderSummaryHeatmap = function (renderBuffer) {
 			}
 		}
 	}
-	NgChm.SUM.avgValue[NgChm.SEL.currentDl] = (NgChm.SUM.avgValue[NgChm.SEL.currentDl] / (NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL) * NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL)));
+	NgChm.SUM.avgValue[currentDl] = (NgChm.SUM.avgValue[currentDl] / (NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL) * NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL)));
 };
 
 //WebGL code to draw the Summary Heat Map.
@@ -1056,8 +1059,9 @@ NgChm.SUM.resetBoxCanvas = function() {
 	//Furthermore, if the average color is dark make those rectangles
 	//lighter than the heatmap, otherwise, darker.
 	if (NgChm.DMM.primaryMap.mode.startsWith('RIBBON')) {
-		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",NgChm.SEL.currentDl);
-		var color = colorMap.getColor(NgChm.SUM.avgValue[NgChm.SEL.currentDl]);
+		const currentDl = NgChm.SEL.getCurrentDL();
+		var colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",currentDl);
+		var color = colorMap.getColor(NgChm.SUM.avgValue[currentDl]);
 		if (colorMap.isColorDark(color)) {
 			ctx.fillStyle="rgba(10, 10, 10, 0.25)"; 
 		} else {

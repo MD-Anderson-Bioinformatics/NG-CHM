@@ -2,6 +2,22 @@
 /**
  *  */
 
+:root {
+        /* Variables used to specify the colors of selected labels.
+         * Set by javascript based on the current color scheme.
+         */
+	--in-selection-color: rgb(0,0,0);
+	--in-selection-background-color: rgb(0,255,56);
+}
+
+/* Extra class added to selected labels.
+ * Used for coloring their text and background colors.
+ */
+.inSelection {
+	color: var(--in-selection-color);
+	background-color: var(--in-selection-background-color);
+}
+
 body.NgChmViewer {
 	margin: 8px;
 	width: calc(100vw - 16px);
@@ -436,6 +452,7 @@ span.button.negative {
 	top: 0px;
 	position: absolute;
 	right: 60px;
+	z-index: 2;
 }
 
 #helptext {
@@ -862,12 +879,14 @@ table.onlineHelp th {
 	right: 30px;
 	top: 0px;
     position: absolute;
+    z-index: 2;
 }
 
 .farRightButton {
 	right: 0px;
 	top: 0px;
     position: absolute;
+    z-index: 2;
 }
 
 .tdTop {
@@ -1117,3 +1136,23 @@ iframe.nopointer {
 }
 
 
+div#droptarget {
+    position:  absolute;
+    top: 0px;
+    right: 0px;
+    width: fit-content;
+    height: fit-content;
+    text-align: center;
+    vertical-align: middle;
+    padding: 1em 2em;
+    z-index: 1;
+    color: rgba(0,0,0,0);
+    background-color: rgba(1,0,0,0.01);
+    user-select: none;
+}
+
+div#droptarget.visible {
+    z-index: 100;
+    color: rgba(0,0,0,1);
+    background-color: rgba(255,128,128,1);
+}

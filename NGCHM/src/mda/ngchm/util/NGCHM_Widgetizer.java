@@ -1,3 +1,23 @@
+/*******************************************************************
+ * CLASS: NGCHM_Widgetizer
+ *
+ * This class contains the logic necessary merge all of the javascript
+ * included in the Viewer project into a single widgetized NG-CHM JS file
+ * (ngchmWidget-min.js). It is typically called from the ANT script 
+ * (build_ngchmApp.xml). It uses chm.html as an input template.  Previously
+ * created minimized JS files are written into the widget.  CSS is written
+ * into the widget at the very end.  Any images are converted to base64
+ * images.  Viewer header and footers are excluded from the widget. At the
+ * end a final segment of all-new JS is written so that the widget may
+ * embed a heat map into whatever product that it is included within.
+ * 
+ * Argument1: Input - Path to the Web directory (e.g. ./WebContent/) 
+ * 				of the project to the chm.html file
+ * Argument2: Output - Name of the output file (e.g. ngchmWidget-min.js).
+ * 
+ * Author: Mark Stucky
+ * Date: 2016
+ ******************************************************************/
 package mda.ngchm.util;
 
 import java.io.BufferedReader;
@@ -11,7 +31,12 @@ import java.util.Date;
 
 public class NGCHM_Widgetizer {
 
-
+	/*******************************************************************
+	 * METHOD: encodeFileToBase64Binary
+	 *
+	 * This method reads in an image file and writes it out in base64 
+	 * binary representation.
+	 ******************************************************************/
    private static String encodeFileToBase64Binary(String image) throws Exception {
           String encodedfile = null;
           try {
@@ -29,6 +54,13 @@ public class NGCHM_Widgetizer {
           return encodedfile;
     }
      
+	/*******************************************************************
+	 * METHOD: styleToString
+	 *
+	 * This method reads in CSS file line and writes it out to the 
+	 * stand-alone html output file.  Any images contained in the CSS
+	 * will be written in base64 binary.
+	 ******************************************************************/
     public static String styleToString(String webDir, String cssFile) throws Exception {
     	StringBuffer strBuff = new StringBuffer();
     	
@@ -54,6 +86,12 @@ public class NGCHM_Widgetizer {
     	return strBuff.toString();
     }
 	
+	/*******************************************************************
+	 * METHOD: excludeDiv
+	 *
+	 * This method excludes certain header/footer DIVs from being 
+	 * written into the widget.
+	 ******************************************************************/
     public static void excludeDiv(BufferedReader br) throws Exception {
     	String line = "";
 		while (!line.contains("/div")) {
@@ -62,7 +100,13 @@ public class NGCHM_Widgetizer {
     	return;
     }
 	
-
+	/*******************************************************************
+	 * METHOD: main
+	 *
+	 * This method is the driver for the js widgetizer process. It reads
+	 * in the chm.html file, css files, and already minimized JS files
+	 * and writes out the contents into the output file (ngchmWidget-min.js)
+	 ******************************************************************/
     public static void main(String[] args) {
 		System.out.println("BEGIN NGCHM Widgetizer  " + new Date());
         try {
@@ -84,7 +128,6 @@ public class NGCHM_Widgetizer {
     		boolean isScript = false;
     		boolean isFirstJSFile = true;
     		while (line != null) {
-    			//For css file - convert it into a string and use javascript to add it to the html document 
     			if (line.contains("src=\"javascript")){
     				if (isFirstJSFile) {
     					isFirstJSFile = false;
@@ -121,6 +164,7 @@ public class NGCHM_Widgetizer {
      				} else {
         				scriptedLines.append(line + "\n");
      				}
+        			//For css file - convert it into a string and use javascript to add it to the html document 
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
     				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));

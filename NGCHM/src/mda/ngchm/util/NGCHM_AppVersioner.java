@@ -1,3 +1,21 @@
+/*******************************************************************
+ * CLASS: NGCHM_AppVersioner
+ *
+ * This class contains the logic necessary to "version" the ngChm
+ * primary html file (chm.html).  It is typically called from the ANT
+ * script (build_ngchmApp.xml). The html file is read in.  As is
+ * the CompatibilityManager.js file.  The latest version number is pulled
+ * from the compatibility manager and written into a new version of the
+ * chmTemp.html file which is written back into the web content directory.
+ * A later step in the script build_ngchmApp.xml will MOVE chmTemp.html
+ * to chm.html in the web content directory.
+ * 
+ * Argument1: Input - Path to the Web directory (e.g. ./WebContent/) 
+ * 				of the project 
+ * 
+ * Author: Mark Stucky
+ * Date: 2021
+ ******************************************************************/
 package mda.ngchm.util;
 
 import java.io.BufferedReader;
@@ -12,6 +30,13 @@ import java.util.Date;
 
 public class NGCHM_AppVersioner {
 
+	/*******************************************************************
+	 * METHOD: getVersion
+	 *
+	 * This method reads in the CompatibilityManager.js file and extracts
+	 * the latest version number.  The number is returned to the calling
+	 * method.
+	 ******************************************************************/
 	public static String getVersion(File compatibilityJS) throws FileNotFoundException, IOException {
 	    String currentVersion = null;
    		BufferedReader br = new BufferedReader(new FileReader(compatibilityJS));
@@ -28,6 +53,13 @@ public class NGCHM_AppVersioner {
 
 	}
 	
+	/*******************************************************************
+	 * METHOD: main
+	 *
+	 * This method is the driver for the app versioning process. It reads
+	 * in the chm.html file and writes out a chmTemp.html version of that
+	 * file.
+	 ******************************************************************/
     public static void main(String[] args) {
 		System.out.println("BEGIN NGCHM_AppVersioner  " + new Date());
         try {

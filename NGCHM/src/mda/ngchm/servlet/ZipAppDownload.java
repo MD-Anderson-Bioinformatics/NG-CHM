@@ -1,3 +1,13 @@
+/*******************************************************************
+ * SERVLET CLASS: ZipAppDownload
+ *
+ * This class contains the logic necessary to return the stand-alone
+ * NG-CHM Viewer to the client when the user requests a download.  It 
+ * is called on the client side from the MatrixManager JS file.
+ * 
+ * Author: Mark Stucky
+ * Date: 2016
+ ******************************************************************/
 package mda.ngchm.servlet;
 
 import java.io.BufferedReader;
@@ -13,7 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Servlet implementation class GetMatrix
+ * Servlet implementation class ZipAppDownload
  */
 @WebServlet("/ZipAppDownload")
 public class ZipAppDownload extends HttpServlet {

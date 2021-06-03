@@ -129,7 +129,6 @@ NgChm.DET.setDetailMapDisplay = function (mapItem) {
 		NgChm.DET.setInitialDetailDisplaySize(mapItem);
 	}
 	NgChm.LNK.createLabelMenus();
-	NgChm.SRCH.createEmptySearchItems();
 	NgChm.DET.setDendroShow(mapItem);
 	if (mapItem.canvas) {
 		mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
@@ -1578,16 +1577,8 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
 	    NgChm.DET.updateLabelDiv (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
 	    return;
 	}
-	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",mapItem.currentDl);
-	const dataLayer = NgChm.heatMap.getDataLayers()[mapItem.currentDl];
-	const selectionRgba = colorMap.getHexToRgba(dataLayer.selection_color);
 	div = document.createElement('div');
 	mapItem.labelElements[id] = { div, parent };
-	let divFontColor = "#FFFFFF";
-	const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
-	if (colorMap.isColorDark(selColor)) {
-		divFontColor = "#000000";
-	}
 	div.id = id;
 	div.className = className;
 	div.dataset.index = index;
@@ -1597,13 +1588,7 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
 		div.dataset.axis = 'Row';
 	}
 	if (NgChm.DET.labelIndexInSearch(index,axis)) {
-		div.style.backgroundColor = dataLayer.selection_color;
-		div.style.color = divFontColor;
-	}
-	if (text == "<") {
-	//	div.style.backgroundColor = "rgba(3,255,3,0.2)";
-		div.style.color = divFontColor;
-		div.style.backgroundColor = "rgba("+selectionRgba.r+","+selectionRgba.g+","+selectionRgba.b+",0.2)";
+		div.classList.add('inSelection');
 	}
 	if (rotate == 'T') {
 		div.style.transformOrigin = 'left top';
@@ -1681,18 +1666,10 @@ NgChm.DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longT
 	mapItem.labelElements[id] = { div, parent };
 	delete mapItem.oldLabelElements[id];
 
-	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",mapItem.currentDl);
-	const dataLayer = NgChm.heatMap.getDataLayers()[mapItem.currentDl];
-	const selectionRgba = colorMap.getHexToRgba(dataLayer.selection_color);
-	const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
-	const divFontColor = colorMap.isColorDark(selColor) ? "#000000" : "#FFFFFF";
-
 	if (NgChm.DET.labelIndexInSearch(index,axis)) {
-		div.style.backgroundColor = dataLayer.selection_color;
-		div.style.color = divFontColor;
+		div.classList.add ('inSelection');
 	} else {
-		div.style.removeProperty('background-color');
-		div.style.removeProperty('color');
+		div.classList.remove ('inSelection');
 	}
 	
 	//div.style.position = "absolute";
@@ -2336,6 +2313,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		let isPrimary = false;
 		if (firstSwitch) {
 			// First time detail NGCHM created.
+			NgChm.SRCH.createEmptySearchItems();
 			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild (document.getElementById('detail_chm'));
 			firstSwitch = false;

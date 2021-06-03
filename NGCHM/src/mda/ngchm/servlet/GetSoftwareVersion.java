@@ -1,3 +1,14 @@
+/*******************************************************************
+ * SERVLET CLASS: GetSoftwareVersion
+ *
+ * This class contains the logic necessary to retrive the software
+ * version number from the CompatibilityManager.js file and return
+ * that value to the caller.  It is currently not called by the
+ * NG-CHM project but may be called by other MDA source systems.
+ * 
+ * Author: Mark Stucky
+ * Date: 2016
+ ******************************************************************/
 package mda.ngchm.servlet;
 
 import java.io.BufferedReader;

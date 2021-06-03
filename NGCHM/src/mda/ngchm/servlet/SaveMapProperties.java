@@ -1,3 +1,16 @@
+/*******************************************************************
+ * SERVLET CLASS: SaveMapProperties
+ *
+ * This class contains the logic necessary to save configuration data
+ * for a given heat map sent from the client to the server.  JSON data
+ * is received and written to the server. It is called on the client
+ * side from the MatrixManager JS file.
+ * 
+ * Argument1: response output stream containing JSON data.
+ * 
+ * Author: Mark Stucky
+ * Date: 2016
+ ******************************************************************/
 package mda.ngchm.servlet;
 
 import java.io.BufferedReader;
