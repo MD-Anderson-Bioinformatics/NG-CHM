@@ -84,10 +84,6 @@ NgChm.createNS('NgChm.StateMan');
 
 	/**
 	 *	Set a pane's content based on 'textContent' attribute
-	 *	
-	 *	Inputs:
-	 *	@param {string} paneid id of pane (e.g. 'pane1')
-	 *	
 	 */
 	function setPaneContent(paneid) {
 		let pane = document.getElementById(paneid)
