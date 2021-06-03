@@ -950,7 +950,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { mapConfig['panel_configuration'] = {} }
 		let layoutToSave = document.getElementById('ngChmContainer1');
 		let layoutJSON = domJSON.toJSON(layoutToSave,{absolutePaths:false});
-		mapConfig['panel_configuration']['panels'] = layoutJSON;
+		mapConfig['panel_configuration']['panel_layout'] = layoutJSON;
 	}
 	function zipSaveMapProperties() {
 

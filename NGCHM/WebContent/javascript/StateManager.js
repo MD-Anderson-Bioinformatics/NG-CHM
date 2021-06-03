@@ -29,9 +29,9 @@ NgChm.createNS('NgChm.StateMan');
 	 */ 
 	function reconstructPanelLayoutFromMapConfig() {
 		let baseNgChmContainer = document.getElementById('ngChmContainer1')
-		let panelsJSON = NgChm.heatMap.getPanelConfiguration()['panels'];
-		let reconstructedPanels = domJSON.toDOM(panelsJSON)
-		baseNgChmContainer.parentNode.replaceChild(reconstructedPanels, baseNgChmContainer)
+		let panel_layoutJSON = NgChm.heatMap.getPanelConfiguration()['panel_layout'];
+		let reconstructedPanelLayout = domJSON.toDOM(panel_layoutJSON)
+		baseNgChmContainer.parentNode.replaceChild(reconstructedPanelLayout, baseNgChmContainer)
 	}
 
 	/**
