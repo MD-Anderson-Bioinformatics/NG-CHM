@@ -2757,7 +2757,7 @@ NgChm.createNS('NgChm.LNK');
 			loc.paneTitle.innerText = instance.plugin.name;
 			NgChm.LNK.initializePanePlugin (msg.nonce, instance.params);
 		}
-		NgChm.StateMan.sendMapConfigPluginInfoToPlugin(instance)
+		NgChm.StateMan.initializeWithMapConfigData(instance)
 	});
 
 	defineVanodiMessageHandler ('getLabels', function vanodiSendLabels (instance, msg) {

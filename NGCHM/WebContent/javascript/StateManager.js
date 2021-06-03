@@ -8,7 +8,7 @@ NgChm.createNS('NgChm.StateMan');
 (function(){
 
 	NgChm.StateMan.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
-	NgChm.StateMan.sendMapConfigPluginInfoToPlugin = sendMapConfigPluginInfoToPlugin;
+	NgChm.StateMan.initializeWithMapConfigData = initializeWithMapConfigData;
 	/**
 	 *	Reconstruct the panels from data in the mapConfig.json file
 	 */
@@ -107,9 +107,9 @@ NgChm.createNS('NgChm.StateMan');
 	}
 
 	/**
-	* Send data from mapConfig.json to plugin
+	* Send any exiting data from mapConfig.json to plugin and close Gear Menu
 	*/
-	function sendMapConfigPluginInfoToPlugin(pluginInstance) {
+	function initializeWithMapConfigData(pluginInstance) {
 		let paneId = getPaneIdFromInstance(pluginInstance)
 		let pluginConfigData = getPluginDataFromMapConfig(paneId)
 		if (pluginConfigData) {
@@ -117,6 +117,7 @@ NgChm.createNS('NgChm.StateMan');
 			let config = pluginConfigData.config;
 			let data = pluginConfigData.data;
 			NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data})
+			NgChm.Pane.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'))
 		} else {
 			return false;
 		}
