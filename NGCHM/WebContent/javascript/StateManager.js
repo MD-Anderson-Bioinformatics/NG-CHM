@@ -8,6 +8,7 @@ NgChm.createNS('NgChm.StateMan');
 (function(){
 
 	NgChm.StateMan.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
+	NgChm.StateMan.sendMapConfigPluginInfoToPlugin = sendMapConfigPluginInfoToPlugin;
 	/**
 	 *	Reconstruct the panels from data in the mapConfig.json file
 	 */
@@ -108,5 +109,35 @@ NgChm.createNS('NgChm.StateMan');
 		}
 		NgChm.Pane.resizePane(pane)
 	}
+
+	/**
+	* Send data from mapConfig.json to plugin
+	*/
+	function sendMapConfigPluginInfoToPlugin(pluginInstance) {
+		let paneId = getPaneIdFromInstance(pluginInstance)
+		let pluginConfigData = getPluginDataFromMapConfig(paneId)
+		if (pluginConfigData) {
+			let nonce = pluginInstance.nonce;
+			let config = pluginConfigData.config;
+			let data = pluginConfigData.data;
+			NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data})
+		} else {
+			return false;
+		}
+	}
+
+	function getPaneIdFromInstance(pluginInstance) {
+		let paneId = pluginInstance.iframe.parentElement.parentElement.id
+		if (paneId == null) {
+			throw "No pane found for this plugin"
+		}
+		return paneId;
+	}
+
+	function getPluginDataFromMapConfig(paneId) {
+		let pluginConfigData = NgChm.heatMap.getPanelConfiguration()[paneId]
+		return pluginConfigData;
+	}
+
 })();
 
