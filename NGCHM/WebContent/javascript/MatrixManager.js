@@ -952,6 +952,22 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		let layoutJSON = domJSON.toJSON(layoutToSave,{absolutePaths:false});
 		mapConfig['panel_configuration']['panel_layout'] = layoutJSON;
 	}
+	/**
+	* Save data sent to plugin to mapConfig 
+	*/
+	NgChm.MMGR.saveDataSentToPluginToMapConfig = function(nonce, postedConfig, postedData) {
+		try {
+			var paneId = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement.id
+		} catch(err) {
+			throw "Cannot determine pane for given nonce"
+			return false
+		}
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { mapConfig['panel_configuration'] = {} }
+		if (!mapConfig.panel_configuration.hasOwnProperty(paneId)) { mapConfig.panel_configuration[paneId] = {} }
+		mapConfig.panel_configuration[paneId].config = postedConfig;
+		mapConfig.panel_configuration[paneId].data = postedData;
+	}
+
 	function zipSaveMapProperties() {
 
 		  function onProgress(a, b) {

@@ -1325,6 +1325,7 @@ NgChm.createNS('NgChm.LNK');
 			}
 		}
 		NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
+		NgChm.MMGR.saveDataSentToPluginToMapConfig(nonce, config, data);
 	}; // end of initializePanePlugin
 
 
