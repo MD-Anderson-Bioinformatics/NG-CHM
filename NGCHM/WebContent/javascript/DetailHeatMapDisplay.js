@@ -553,191 +553,278 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 			mapItem.currentRow -= Math.floor((mapItem.dataPerCol - prevDataPerCol) / 2);
 	}
 	NgChm.SEL.checkRow(mapItem);
-}
+};
 
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
 //BEGIN SELECTION BOX DETAIL DISPLAY FUNCTIONS
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
+(function() {
 
-/*********************************************************************************************
- * FUNCTION:  drawSelections - This function calls a function that will generate 2 arrays 
- * containing the contiguous search ranges (row/col).  It then iterates thru those arrays 
- * that users have selected and calls the function that will draw line OR boxes on the 
- * heatMap detail box canvas.  If either of the 2 arrays is empty, lines will be drawn 
- * otherwise boxes.  
- *********************************************************************************************/
-NgChm.DET.drawSelections = function () {
+    /*********************************************************************************************
+     * FUNCTION:  drawSelections - This function calls a function that will generate 2 arrays
+     * containing the contiguous search ranges (row/col).  It then iterates thru those arrays
+     * that users have selected and calls the function that will draw line OR boxes on the
+     * heatMap detail box canvas.  If either of the 2 arrays is empty, lines will be drawn
+     * otherwise boxes.
+     *********************************************************************************************/
+
+    /* IIFE-scoped variables. */
+
+    const debug = false;
+    const mapItemVars = {}; /* Variables that depend on the current map item. */
+    var totalColBarHeight;  /* Total height of all column covariate bars. */
+    var totalRowBarHeight;  /* Total width of all row covariate bars. */
+
+    NgChm.DET.drawSelections = function drawSelections () {
+
+	// Determine values that are constant across all detail panes.
+	//
+        const dataLayers = NgChm.heatMap.getDataLayers();
+	const mapNumRows = NgChm.heatMap.getNumRows('d');
+	const mapNumCols = NgChm.heatMap.getNumColumns('d');
+
+	// Retrieve contiguous row and column search arrays
+	const searchRows = NgChm.SRCH.getSearchRows();
+	const rowRanges = NgChm.DET.getContigSearchRanges(searchRows);
+	const searchCols = NgChm.SRCH.getSearchCols();
+	const colRanges = NgChm.DET.getContigSearchRanges(searchCols);
+
+	// Get total row and column bar "heights".
+	totalColBarHeight = NgChm.DET.calculateTotalClassBarHeight("column");
+	totalRowBarHeight = NgChm.DET.calculateTotalClassBarHeight("row");
+
 	for (let k=0; k<NgChm.DMM.DetailMaps.length;k++ ) {
+	        // Get context for this detail map.
 		const mapItem = NgChm.DMM.DetailMaps[k];
-		let ctx=mapItem.boxCanvas.getContext("2d");
-		ctx.clearRect(0, 0, mapItem.boxCanvas.width, mapItem.boxCanvas.height);
+		mapItemVars.ctx = mapItem.boxCanvas.getContext("2d");
+		calcMapItemVariables (mapItem);
+
+		// Clear entire box canvas.
+		mapItemVars.ctx.clearRect(0, 0, mapItem.boxCanvas.width, mapItem.boxCanvas.height);
 	
 		//Draw the border
 		if (NgChm.UTIL.mapHasGaps() === false) {
-			let ctx=mapItem.boxCanvas.getContext("2d");
-			const canH = mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column");
-			const canW = mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
-			const boxX = (NgChm.DET.calculateTotalClassBarHeight("row") / canW) * mapItem.boxCanvas.width;
-			const boxY = (NgChm.DET.calculateTotalClassBarHeight("column") / canH) * mapItem.boxCanvas.height;
+			const canH = mapItem.dataViewHeight + totalColBarHeight;
+			const canW = mapItem.dataViewWidth + totalRowBarHeight;
+			const boxX = (totalRowBarHeight / canW) * mapItem.boxCanvas.width;
+			const boxY = (totalColBarHeight / canH) * mapItem.boxCanvas.height;
 			const boxW = mapItem.boxCanvas.width-boxX;
 			const boxH = mapItem.boxCanvas.height-boxY;
-			ctx.lineWidth=1;
-			ctx.strokeStyle="#000000";
-			ctx.strokeRect(boxX,boxY,boxW,boxH);
+			mapItemVars.ctx.lineWidth=1;
+			mapItemVars.ctx.strokeStyle="#000000";
+			mapItemVars.ctx.strokeRect(boxX,boxY,boxW,boxH);
 		}
 		
-		//Retrieve contiguous row and column search arrays
-		const searchRows = NgChm.SRCH.getSearchRows();
-		const rowRanges = NgChm.DET.getContigSearchRanges(searchRows);
-		const searchCols = NgChm.SRCH.getSearchCols();
-		const colRanges = NgChm.DET.getContigSearchRanges(searchCols);
+	        // Retrieve selection color for and set ctx for coloring search boxes.
+	        const dataLayer = dataLayers[mapItem.currentDl];
+	        mapItemVars.ctx.lineWidth=3;
+	        mapItemVars.ctx.strokeStyle=dataLayer.selection_color;
+
 		if (rowRanges.length > 0 || colRanges.length > 0) {
 			if (rowRanges.length === 0) {
 				//Draw vertical lines across entire heatMap
-				for (let i=0;i<colRanges.length;i++) {
-					const range = colRanges[i];
-					const colStart = range[0];
-					const colEnd = range[1];
-					NgChm.DET.drawSearchBox(mapItem,0,NgChm.heatMap.getNumRows('d'),colStart,colEnd);
-				}
+				const topY = mapItemVars.topY;
+				const bottom = mapItemVars.boxCanvasHeight;
+				calcVisColRanges (colRanges, mapItem).forEach(([left, right]) => {
+					drawSearchBox(mapItem, topY, bottom, left, right);
+				});
 			} else if (colRanges.length === 0) {
 				//Draw horizontal lines across entire heatMap
-				for (let i=0;i<rowRanges.length;i++) {
-					const range = rowRanges[i];
-					const rowStart = range[0];
-					const rowEnd = range[1];
-					NgChm.DET.drawSearchBox(mapItem,rowStart,rowEnd,0,NgChm.heatMap.getNumColumns('d'));
-				}
+			        const left = mapItemVars.topX;
+				const right = mapItemVars.boxCanvasWidth;
+				calcVisRowRanges (rowRanges, mapItem).forEach(([topY,bottom]) => {
+					drawSearchBox(mapItem, topY, bottom, left, right);
+				});
 			} else {
-				for (let i=0;i<rowRanges.length;i++) {
-					//Draw discrete selection boxes on heatMap
-					const rowRange = rowRanges[i];
-					const rowStart = rowRange[0];
-					const rowEnd = rowRange[1];
-					for (let j=0;j<colRanges.length;j++) {
-						const colRange = colRanges[j];
-						const colStart = colRange[0];
-						const colEnd = colRange[1];
-						NgChm.DET.drawSearchBox(mapItem,rowStart,rowEnd,colStart,colEnd);
-					}				
+				//Draw discrete selection boxes on heatMap
+				const visColRanges = calcVisColRanges (colRanges, mapItem);
+				if (visColRanges.length > 0) {
+				        calcVisRowRanges (rowRanges, mapItem).forEach(([topY,bottom]) => {
+				                visColRanges.forEach(([left, right]) => {
+						        drawSearchBox(mapItem,topY,bottom,left,right);
+					        });
+				        });
 				}
 			}
 		}
+		if (debug) {
+			const elapsedTime = Math.round(10*(performance.now() - mapItemVars.start))/10;
+			console.log ("Detail map ", k+1, ": Drew ", mapItemVars.strokes, " boxes in ", elapsedTime, " ms.");
+		}
 	}
-}
+	mapItemVars.ctx = null;   // Remove reference to last context.
+    };
 
-/**********************************************************************************
- * FUNCTION - drawSearchBox: The purpose of this function is to draw the search
- * box on a given heat map panel.
- **********************************************************************************/
-NgChm.DET.drawSearchBox = function (mapItem, csRowStart, csRowEnd, csColStart, csColEnd) {
+    /**********************************************************************************
+     * FUNCTION calcMapItemVariables. Calculate variables that depend on the mapItem but
+     * not the current search box.
+     **********************************************************************************/
+    function calcMapItemVariables (mapItem) {
 
 	//top-left corner of visible area
-	const topX = ((NgChm.DET.calculateTotalClassBarHeight("row") / mapItem.canvas.width) * mapItem.boxCanvas.width);
-	const topY = ((NgChm.DET.calculateTotalClassBarHeight("column") / mapItem.canvas.height) * mapItem.boxCanvas.height);
+	mapItemVars.topX = ((totalRowBarHeight / mapItem.canvas.width) * mapItem.boxCanvas.width);
+	mapItemVars.topY = ((totalColBarHeight / mapItem.canvas.height) * mapItem.boxCanvas.height);
 	
 	//height/width of heat map rectangle in pixels
-	const mapXWidth = mapItem.boxCanvas.width - topX;
-	const mapYHeight = mapItem.boxCanvas.height - topY;
-	//height/width of a data cell in pixels
-	let cellWidth = mapXWidth/NgChm.SEL.getCurrentDetDataPerRow(mapItem);
-	let cellHeight = mapYHeight/NgChm.SEL.getCurrentDetDataPerCol(mapItem);
-	if (mapItem.mode !== 'NORMAL') {
-		cellWidth = mapXWidth/mapItem.dataPerRow;
-		cellHeight = mapYHeight/mapItem.dataPerCol;
+	mapItemVars.mapXWidth = mapItem.boxCanvas.width - mapItemVars.topX;
+	mapItemVars.mapYHeight = mapItem.boxCanvas.height - mapItemVars.topY;
+
+	// width of a data cell in pixels
+	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONV') {
+		mapItemVars.cellWidth = mapItemVars.mapXWidth/NgChm.SEL.getCurrentDetDataPerRow(mapItem);
+	} else {
+		mapItemVars.cellWidth = mapItemVars.mapXWidth/mapItem.dataPerRow;
 	}
-	//bottom-right corner of visible area
-	const bottomX = topX + (NgChm.SEL.getCurrentDetDataPerCol(mapItem)*cellWidth);
-	const bottomY = topY + (NgChm.SEL.getCurrentDetDataPerRow(mapItem)*cellHeight);
-	
-	//how much to move row/col offset from currentRow in pixels
-	const adjustedRowStart = (csRowStart - mapItem.currentRow)*cellHeight;
-	const adjustedColStart = (csColStart - mapItem.currentCol)*cellWidth;
-	const adjustedRowEnd = ((csRowEnd - csRowStart)+1)*cellHeight;
-	const adjustedColEnd = ((csColEnd - csColStart)+1)*cellWidth;
-	
-	//adjusted row/col start position (without regard to visibility in the viewport)
-	const boxX = topX+adjustedColStart;
-	const boxY = topY+adjustedRowStart;
-	const boxX2 = boxX+adjustedColEnd;
-	const boxY2 = boxY+adjustedRowEnd; 
-	
-	//Retrieve selection color for coloring search box
-	let ctx=mapItem.boxCanvas.getContext("2d");
-	const dataLayers = NgChm.heatMap.getDataLayers();
-	const dataLayer = dataLayers[mapItem.currentDl];
-	ctx.lineWidth=3;
-	ctx.strokeStyle=dataLayer.selection_color;
+	// height of a data cell in pixels
+	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONH') {
+		mapItemVars.cellHeight = mapItemVars.mapYHeight/NgChm.SEL.getCurrentDetDataPerCol(mapItem);
+	} else {
+		mapItemVars.cellHeight = mapItemVars.mapYHeight/mapItem.dataPerCol;
+	}
+
+	// Save a copy of these in case querying boxCanvas a lot is expensive.
+	mapItemVars.boxCanvasWidth = mapItem.boxCanvas.width;
+	mapItemVars.boxCanvasHeight = mapItem.boxCanvas.height;
+
+	if (debug) {
+		mapItemVars.strokes = 0;
+		mapItemVars.start = performance.now();
+	}
+    }
+
+    /**********************************************************************************
+     * FUNCTION - calcVisRanges: Convert selectionRanges into visibleRanges
+     *
+     * Parameters:
+     * axis : the axis concerned
+     * ranges : an array of selectionRanges
+     * currentPosn : start coordinate of the current view for the specified axis
+     * viewportStart : top/left pixel of the viewport
+     * viewportEnd : bottom/right pixel of the viewport
+     * cellSize : number of pixels in a cell
+     *
+     * Output:
+     * an array of visible pixel ranges (each an array of two pixel coordinate values)
+     *
+     * Only at least partially visible ranges are included in the output array.
+     *
+     **********************************************************************************/
+    function calcVisRanges (axis, ranges, currentPosn, viewportStart, viewportEnd, cellSize) {
+	const visRanges = [];
+	ranges.forEach (([selStart,selEnd]) => {
+	    const adjustedStart = (selStart - currentPosn)*cellSize;
+	    const adjustedEnd = ((selEnd - selStart)+1)*cellSize;
+	    const boxStart = viewportStart+adjustedStart;
+	    const boxEnd = boxStart+adjustedEnd;
+	    if (boxStart < viewportEnd && boxEnd > viewportStart) {
+		visRanges.push([boxStart, boxEnd]);
+	    }
+	});
+	if (debug) console.log ("Found ", visRanges.length, " visible ", axis, " ranges");
+	return visRanges;
+    }
+
+    /**********************************************************************************
+     * FUNCTION - calcVisColRanges: Convert column selectionRanges into column visibleRanges
+     */
+    function calcVisColRanges (ranges, mapItem) {
+	return calcVisRanges ("column", ranges, mapItem.currentCol, mapItemVars.topX, mapItemVars.boxCanvasWidth, mapItemVars.cellWidth);
+    }
+
+    /**********************************************************************************
+     * FUNCTION - calcVisRowRanges: Convert row selectionRanges into row visibleRanges
+     */
+    function calcVisRowRanges (ranges, mapItem) {
+	return calcVisRanges ("row", ranges, mapItem.currentRow, mapItemVars.topY, mapItemVars.boxCanvasHeight, mapItemVars.cellHeight);
+    }
+
+    /**********************************************************************************
+     * FUNCTION - drawSearchBox: The purpose of this function is to draw the search
+     * box on a given heat map panel.
+     * At least one edge of the box should be visible.
+     * boxY: top edge
+     * boxY2: bottom edge
+     * boxX; left edge
+     * boxX2: right edge
+     **********************************************************************************/
+    function drawSearchBox (mapItem, boxY, boxY2, boxX, boxX2) {
+
+	mapItemVars.ctx.beginPath();
 
 	// draw top horizontal line
-	if (NgChm.DET.isHorizLineVisible(topY, boxY)) {
-		NgChm.DET.drawHorizLine(mapItem, topX,boxX, boxX2, boxY);
+	if (isHorizLineVisible(boxY)) {
+		drawHorizLine(boxX, boxX2, boxY);
 	}
 	// draw left side line
-	if (NgChm.DET.isVertLineVisible(topX, boxX)) {
-		NgChm.DET.drawVertLine(mapItem, topY, boxY, boxY2, boxX);
+	if (isVertLineVisible(boxX)) {
+		drawVertLine(boxY, boxY2, boxX);
 	}
 	// draw bottom line
-	if (NgChm.DET.isHorizLineVisible(topY, boxY2)) {
-		NgChm.DET.drawHorizLine(mapItem, topX,boxX, boxX2, boxY2);
+	if (isHorizLineVisible(boxY2)) {
+		drawHorizLine(boxX, boxX2, boxY2);
 	}
 	// draw right side line
-	if (NgChm.DET.isVertLineVisible(topX, boxX2)) {
-		NgChm.DET.drawVertLine(mapItem, topY, boxY, boxY2, boxX2);
+	if (isVertLineVisible(boxX2)) {
+		drawVertLine(boxY, boxY2, boxX2);
 	}
-}
 
-/*********************************************************************************************
- * FUNCTIONS:  isHorizLineVisible AND isVertLineVisible
- * 
- * These functions check the position of a horizontal/vertical line to see if it is currently 
- * visible in the detail viewport.
- *********************************************************************************************/
-NgChm.DET.isHorizLineVisible = function (topY, boxY) {
-	return (boxY >= topY);
-}
+	// Stroke the path.
+	if (debug) mapItemVars.strokes++;
+	mapItemVars.ctx.stroke();
 
-NgChm.DET.isVertLineVisible = function (topX, boxX) {
-	return (boxX >= topX);
-}
-
-/**********************************************************************************
- * FUNCTION - drawHorizLine: The purpose of this function is to draw a search
- * box horizontal line on a given heat map panel.
- **********************************************************************************/
-NgChm.DET.drawHorizLine = function (mapItem, topX, boxX, boxX2, boxY) {
-	const lineStart = boxX >= topX ? boxX : topX;
-	const lineEnd = boxX2 >= topX ? boxX2 : topX;
-	if (lineStart !== lineEnd) {
-		NgChm.DET.strokeLine(mapItem,lineStart,boxY,lineEnd, boxY);
+	/*********************************************************************************************
+	 * FUNCTIONS:  isHorizLineVisible AND isVertLineVisible
+	 *
+	 * These functions check the position of a horizontal/vertical line to see if it is currently
+	 * visible in the detail viewport.
+	 *********************************************************************************************/
+	function isHorizLineVisible (boxY) {
+	    return (boxY >= mapItemVars.topY) && (boxY <= mapItemVars.boxCanvasHeight);
 	}
-}
 
-/**********************************************************************************
- * FUNCTION - drawVertLine: The purpose of this function is to draw a search
- * box vertical line on a given heat map panel.
- **********************************************************************************/
-NgChm.DET.drawVertLine = function (mapItem, topY, boxY, boxY2, boxX) {
-	const lineStart = boxY >= topY ? boxY : topY;
-	const lineEnd = boxY2 >= topY ? boxY2 : topY;
-	if (lineStart !== lineEnd) {
-		NgChm.DET.strokeLine(mapItem, boxX,lineStart,boxX, lineEnd);
+	function isVertLineVisible (boxX) {
+	    return (boxX >= mapItemVars.topX) && (boxX <= mapItemVars.boxCanvasWidth);
 	}
-}
 
-/**********************************************************************************
- * FUNCTION - drawVertLine: The purpose of this function is to draw a line
- * on a given heat map canvas.
- **********************************************************************************/
-NgChm.DET.strokeLine = function (mapItem, fromX, fromY, toX,toY) {
-	let ctx=mapItem.boxCanvas.getContext("2d");
-	ctx.beginPath();
-	ctx.moveTo(fromX,fromY);
-	ctx.lineTo(toX, toY); 
-	ctx.stroke(); 
-}
+	/**********************************************************************************
+	 * FUNCTION - drawHorizLine: The purpose of this function is to draw a search
+	 * box horizontal line on a given heat map panel.
+	 **********************************************************************************/
+	function drawHorizLine (boxX, boxX2, boxY) {
+	    const topX = mapItemVars.topX;
+	    const lineStart = boxX >= topX ? boxX : topX;
+	    const lineEnd = boxX2 >= topX ? boxX2 : topX;
+	    if (lineStart !== lineEnd) {
+		    strokeLine(lineStart,boxY,lineEnd, boxY);
+	    }
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - drawVertLine: The purpose of this function is to draw a search
+	 * box vertical line on a given heat map panel.
+	 **********************************************************************************/
+	function drawVertLine (boxY, boxY2, boxX) {
+	    const topY = mapItemVars.topY;
+	    const lineStart = boxY >= topY ? boxY : topY;
+	    const lineEnd = boxY2 >= topY ? boxY2 : topY;
+	    if (lineStart !== lineEnd) {
+		    strokeLine(boxX,lineStart,boxX, lineEnd);
+	    }
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - drawVertLine: The purpose of this function is to draw a line
+	 * on a given heat map canvas.
+	 **********************************************************************************/
+	function strokeLine (fromX, fromY, toX, toY) {
+	    mapItemVars.ctx.moveTo(fromX,fromY);
+	    mapItemVars.ctx.lineTo(toX, toY);
+	}
+    }
+})();
+//END SELECTION BOX DETAIL DISPLAY FUNCTIONS
 
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
