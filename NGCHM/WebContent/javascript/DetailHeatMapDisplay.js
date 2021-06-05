@@ -654,6 +654,7 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 			console.log ("Detail map ", k+1, ": Drew ", mapItemVars.strokes, " boxes in ", elapsedTime, " ms.");
 		}
 	}
+	mapItemVars.ctx = null;   // Remove reference to last context.
     };
 
     /**********************************************************************************
@@ -707,7 +708,7 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
      * Output:
      * an array of visible pixel ranges (each an array of two pixel coordinate values)
      *
-     * Only at least partially visible ranges are include in the output array.
+     * Only at least partially visible ranges are included in the output array.
      *
      **********************************************************************************/
     function calcVisRanges (axis, ranges, currentPosn, viewportStart, viewportEnd, cellSize) {
