@@ -906,6 +906,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (typeof embedDiv === 'undefined') {
 			fileModeFetchVersion();
 		}
+		if (chmFile.size === 0) {
+			NgChm.UHM.mapLoadError (chmFile.name, "File is empty (zero bytes)");
+			return;
+		}
 		//fileSrc is file so get the JSON files from the zip file.
 		//First create a dictionary of all the files in the zip.
 		var zipBR = new zip.BlobReader(chmFile);
@@ -916,16 +920,32 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				//The user may have renamed the zip file OR it was downloaded
 				//as a second+ generation of a file by the same name (e.g. with a " (1)" 
 				//in the name).
-				var entryName = entries[0].filename;
-				heatMapName = entryName.substring(0,entryName.indexOf("/"));
+			        if (entries.length == 0) {
+				    NgChm.UHM.mapLoadError (chmFile.name, "Empty zip file");
+				    return;
+				}
+				const entryName = entries[0].filename;
+				const slashIdx = entryName.indexOf("/");
+				if (slashIdx < 0) {
+				    NgChm.UHM.mapLoadError (chmFile.name, "File format not recognized");
+				    return;
+				}
+				heatMapName = entryName.substring(0,slashIdx);
 				for (var i = 0; i < entries.length; i++) {
 					zipFiles[entries[i].filename] = entries[i];
 				}
-				zipFetchJson(zipFiles[heatMapName + "/mapConfig.json"], addMapConfig);	 
-				zipFetchJson(zipFiles[heatMapName + "/mapData.json"], addMapData);	 
+				const mapConfigName = heatMapName + "/mapConfig.json";
+				const mapDataName = heatMapName + "/mapData.json";
+				if ((mapConfigName in zipFiles) && (mapDataName in zipFiles)) {
+				    zipFetchJson(zipFiles[mapConfigName], addMapConfig);
+				    zipFetchJson(zipFiles[mapDataName], addMapData);
+				} else {
+				    NgChm.UHM.mapLoadError (chmFile.name, "Missing NGCHM content");
+				}
 			});
 		}, function(error) {
 			console.log('Zip file read error ' + error);
+			NgChm.UHM.mapLoadError (chmFile.name, error);
 		});	
 	}
 	
