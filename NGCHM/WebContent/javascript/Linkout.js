@@ -2759,9 +2759,8 @@ NgChm.createNS('NgChm.LNK');
 			console.error('Incoming message missing attribute "propertyName"')
 			return
 		}
-		const { plugin, params, iframe, source } = pluginData[msg.nonce];
-        NgChm.LNK.sendMessageToPlugin ({
-            nonce: msg.nonce,
+		NgChm.LNK.sendMessageToPlugin ({
+			nonce: msg.nonce,
 			op: 'property',
 			propertyName: msg.propertyName,
 			propertyValue: linkouts.getAttribute(msg.propertyName) 
