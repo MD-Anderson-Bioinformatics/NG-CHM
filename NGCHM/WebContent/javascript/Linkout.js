@@ -1301,7 +1301,7 @@ NgChm.createNS('NgChm.LNK');
 		};
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
-			let fullLabels = NgChm.heatMap.getAxisLabels(axis.axisName).labels;
+			const fullLabels = NgChm.heatMap.getAxisLabels(axis.axisName).labels;
 		        const searchItemsIdx = NgChm.SRCH.getAxisSearchResults (axis.axisName);
 			let selectedLabels = []
 			for (let i=0; i<searchItemsIdx.length; i++) {
@@ -1309,13 +1309,15 @@ NgChm.createNS('NgChm.LNK');
 				selectedLabel = selectedLabel.indexOf('|') !== -1 ? selectedLabel.substring(0,selectedLabel.indexOf('|')) : selectedLabel;
 				selectedLabels.push(selectedLabel)
 			}
+			const gapIndices = [];
+			fullLabels.forEach((value,index) => { if (value === "") gapIndices.push (index); });
 			data.axes.push({
-				fullLabels: fullLabels,
-				actualLabels: NgChm.UTIL.getActualLabels(axis.axisName),
+				fullLabels: filterGaps (fullLabels, gapIndices),
+				actualLabels: filterGaps (NgChm.UTIL.getActualLabels(axis.axisName), gapIndices),
 				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
-				setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx]);
+				setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx], gapIndices);
 			}
 			for (let idx = 0; idx < axis.groups.length; idx++) {
 				setAxisGroupData (data.axes[ai], axis, axis.groups[idx]);
@@ -1324,6 +1326,9 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
 	}; // end of initializePanePlugin
 
+	function filterGaps (data, gapIndices) {
+	    return data.filter ((value,index) => !(gapIndices.includes(index)));
+	}
 
 	/**
 		Using information in msg about which tests to perform, performs statistical tests and returns results.
@@ -1471,7 +1476,7 @@ NgChm.createNS('NgChm.LNK');
 
 	// Add the values and colors to cocodata for the 'coco' attributes of axis.
 	// Currently, 'coco' is either coordinate or covariate.
-	function setAxisCoCoData (cocodata, axis, coco) {
+	function setAxisCoCoData (cocodata, axis, coco, gapIndices) {
 		const colorMapMgr = NgChm.heatMap.getColorMapManager();
 		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
 		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
@@ -1490,29 +1495,30 @@ NgChm.createNS('NgChm.LNK');
 			if (ctype === 'covariate') { // i.e. from one of the covariate bars
 				if (axisCovCfg.hasOwnProperty (label)) {
 					const cfg = axisCovCfg[label];
+					const values = filterGaps (covData[label].values, gapIndices);
 					if (cfg.color_map.type === 'continuous') { // i.e. from covariate bar w/ continuous values
-						const { classValues, colors, colorMap } = getContCovariateColors (cfg, covData[label].values);
+						const { classValues, colors, colorMap } = getContCovariateColors (cfg, values);
 						cocodata[colorMapField].push(colorMap);
 						cocodata[colorField].push(colors); // the color corresponding to the 'Class' for each value
-						cocodata[valueField].push(covData[label].values) // the actual values (not 'Class' values) 
+						cocodata[valueField].push(values) // the actual values (not 'Class' values)
 					} else { // i.e. from covariate bar w/ discrete values
-						const { classColors, colors } = getDiscCovariateColors (axis.axisName, label, covData[label].values, colorMapMgr);
+						const { classColors, colors } = getDiscCovariateColors (axis.axisName, label, values, colorMapMgr);
 						cocodata[colorMapField].push(classColors);
 						cocodata[colorField].push(colors);
-						cocodata[valueField].push(covData[label].values); 
+						cocodata[valueField].push(values);
 					}
 				} else {
 					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values
 				const idx = axis[valueField][ci].labelIdx; 
-				const values = getDataValues(isRow ? 'column' : 'row', idx);
+				const values = filterGaps (getDataValues(isRow ? 'column' : 'row', idx), gapIndices);
 				cocodata[valueField].push(values);
 				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
 
-				var colorsForThisData = []
-				for (var idv = 0; idv < values.length; idv++) {
-					colorsForThisData.push(NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getColor(values[idv]))));
+				const colorsForThisData = []
+				for (let idv = 0; idv < values.length; idv++) {
+				    colorsForThisData.push(NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getColor(values[idv]))));
 				}
 				cocodata[colorMapField].push(getVanodiColorMap (colorMap.getThresholds(), colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded)));
 				cocodata[colorField].push(colorsForThisData);
