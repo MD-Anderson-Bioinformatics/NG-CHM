@@ -207,8 +207,8 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 		colBarTypes: NgChm.heatMap.getCovariateBarTypes("column"),
 		rowDendroHeight: NgChm.heatMap.getRowDendroConfig().height,
 		colDendroHeight: NgChm.heatMap.getColDendroConfig().height,
-		searchRows: NgChm.SRCH.getSearchRows(),
-		searchCols: NgChm.SRCH.getSearchCols(),
+		searchRows: NgChm.SRCH.getAxisSearchResults("Row"),
+		searchCols: NgChm.SRCH.getAxisSearchResults("Column"),
 		searchGridColor: [0,0,0]
 	};
 
@@ -586,9 +586,9 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 	const mapNumCols = NgChm.heatMap.getNumColumns('d');
 
 	// Retrieve contiguous row and column search arrays
-	const searchRows = NgChm.SRCH.getSearchRows();
+	const searchRows = NgChm.SRCH.getAxisSearchResults("Row");
 	const rowRanges = NgChm.DET.getContigSearchRanges(searchRows);
-	const searchCols = NgChm.SRCH.getSearchCols();
+	const searchCols = NgChm.SRCH.getAxisSearchResults("Column");
 	const colRanges = NgChm.DET.getContigSearchRanges(searchCols);
 
 	// Get total row and column bar "heights".
@@ -1674,7 +1674,7 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
 	} else {
 		div.dataset.axis = 'Row';
 	}
-	if (NgChm.DET.labelIndexInSearch(index,axis)) {
+	if (NgChm.SRCH.labelIndexInSearch && NgChm.SRCH.labelIndexInSearch(axis,index)) {
 		div.classList.add('inSelection');
 	}
 	if (rotate == 'T') {
@@ -1753,7 +1753,7 @@ NgChm.DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longT
 	mapItem.labelElements[id] = { div, parent };
 	delete mapItem.oldLabelElements[id];
 
-	if (NgChm.DET.labelIndexInSearch(index,axis)) {
+	if (NgChm.SRCH.labelIndexInSearch(axis,index)) {
 		div.classList.add ('inSelection');
 	} else {
 		div.classList.remove ('inSelection');
@@ -1806,52 +1806,6 @@ NgChm.DET.getContigSearchRanges = function (searchArr) {
 		}
 	}
 	return ranges;
-}
-
-/*********************************************************************************************
- * FUNCTION:  labelIndexInSearch - This function is basically an Array.contains function, 
- * but for searchItems
- *********************************************************************************************/
-NgChm.DET.labelIndexInSearch = function (index,axis) {
-	if (index == null || axis == null){
-		return false;
-	}
-	if (NgChm.SRCH.searchItems[axis][index] == 1){
-		return true;
-	}else{
-		return false;
-	}
-}
-
-/*********************************************************************************************
- * FUNCTION:  labelIndexInSearch - This function retrieves and array of search labels based
- * upon type an axis.
- *********************************************************************************************/
-NgChm.DET.getSearchLabelsByAxis = function (axis, labelType) {
-	let searchLabels = [];
-	const labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] : 
-		axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getRowClassificationConfig()) : 
-			[NgChm.heatMap.getRowLabels()["labels"], NgChm.heatMap.getColLabels()['labels'] ];
-	for (let i in NgChm.SRCH.searchItems[axis]){
-		if (axis.includes("Covar")){
-			if (labelType == linkouts.VISIBLE_LABELS){
-				searchLabels.push(labels[i].split("|")[0]);
-			} else if (labelType == linkouts.HIDDEN_LABELS){
-				searchLabels.push(labels[i].split("|")[1]);
-			} else {
-				searchLabels.push(labels[i]);
-			}
-		} else {
-			if (labelType == linkouts.VISIBLE_LABELS){
-				searchLabels.push(labels[i-1].split("|")[0]);
-			} else if (labelType == linkouts.HIDDEN_LABELS){
-				searchLabels.push(labels[i-1].split("|")[1]);
-			} else {
-				searchLabels.push(labels[i-1]);
-			}
-		}
-	}
-	return searchLabels;
 }
 
 /*********************************************************************************************
@@ -2400,7 +2354,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		let isPrimary = false;
 		if (firstSwitch) {
 			// First time detail NGCHM created.
-			NgChm.SRCH.createEmptySearchItems();
+			NgChm.SRCH.clearAllSearchResults();
 			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild (document.getElementById('detail_chm'));
 			firstSwitch = false;

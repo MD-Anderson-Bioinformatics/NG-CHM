@@ -384,32 +384,28 @@ NgChm.DEV.labelClick = function (e) {
 		if (NgChm.DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
 			const anchorIndex = Number(NgChm.DET.labelLastClicked[axis]);
 			const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-			for (let i = startIndex; i <= endIndex; i++){
-				if (!NgChm.DET.labelIndexInSearch(i, axis)){
-					NgChm.SRCH.searchItems[axis][i] = 1;
-				}
-			}
+			NgChm.SRCH.setAxisSearchResults (axis, startIndex, endIndex);
 		} else { // otherwise, treat as normal click
 			NgChm.SRCH.clearSearchItems(focusNode.dataset.axis);
-			searchIndex = NgChm.DET.labelIndexInSearch(focusIndex,axis);
+			searchIndex = NgChm.SRCH.labelIndexInSearch(axis,focusIndex);
 			if (searchIndex ){
-				delete NgChm.SRCH.searchItems[axis][index];
+				NgChm.SRCH.clearAxisSearchItems (axis, index, index);
 			} else {
-				NgChm.SRCH.searchItems[axis][focusIndex] = 1;
+				NgChm.SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 			}
 		}
 		NgChm.DET.labelLastClicked[axis] = focusIndex;
 	} else if (e.ctrlKey || e.metaKey){ // ctrl or Mac key + click
-		searchIndex = NgChm.DET.labelIndexInSearch(index, axis);
+		searchIndex = NgChm.SRCH.labelIndexInSearch(axis, index);
 		if (searchIndex){ // if already searched, remove from search items
-			delete NgChm.SRCH.searchItems[axis][index];
+			NgChm.SRCH.clearAxisSearchItems (axis, index, index);
 		} else {
-			NgChm.SRCH.searchItems[axis][index] = 1;
+			NgChm.SRCH.setAxisSearchResults (axis, index, index);
 		}
 		NgChm.DET.labelLastClicked[axis] = index;
 	} else { // standard click
 		NgChm.SRCH.clearSearchItems(axis);
-		NgChm.SRCH.searchItems[axis][index] = 1;
+		NgChm.SRCH.setAxisSearchResults (axis, index, index);
 		NgChm.DET.labelLastClicked[axis] = index;
 	}
 	const clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
@@ -444,18 +440,14 @@ NgChm.DEV.labelDrag = function(e){
 	if (NgChm.DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
 		const anchorIndex = Number(NgChm.DET.labelLastClicked[axis]);
 		const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-		for (let i = startIndex; i <= endIndex; i++){
-			if (!NgChm.DET.labelIndexInSearch(i, axis)){
-				NgChm.SRCH.searchItems[axis][i] = 1;
-			}
-		}
+		NgChm.SRCH.setAxisSearchResults (axis, startIndex, endIndex);
 	} else { // otherwise, treat as normal click
 		NgChm.SRCH.clearSearchItems(focusNode.dataset.axis);
-		const searchIndex = NgChm.DET.labelIndexInSearch(focusIndex,axis);
+		const searchIndex = NgChm.SRCH.labelIndexInSearch(axis,focusIndex);
 		if (searchIndex ){
-			delete NgChm.SRCH.searchItems[axis][index];
+			NgChm.SRCH.clearAxisSearchItems (axis, index, index);
 		} else {
-			NgChm.SRCH.searchItems[axis][focusIndex] = 1;
+			NgChm.SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 		}
 	}
 	NgChm.DET.labelLastClicked[axis] = focusIndex;
@@ -666,13 +658,9 @@ NgChm.DEV.handleSelectDrag = function (e) {
     	const endCol = Math.max(NgChm.DEV.getColFromLayerX(mapItem, coords.x),NgChm.DEV.getColFromLayerX(mapItem, mapItem.dragOffsetX));
     	const startRow = Math.min(NgChm.DEV.getRowFromLayerY(mapItem, coords.y),NgChm.DEV.getRowFromLayerY(mapItem, mapItem.dragOffsetY));
     	const startCol = Math.min(NgChm.DEV.getColFromLayerX(mapItem, coords.x),NgChm.DEV.getColFromLayerX(mapItem, mapItem.dragOffsetX));
-		NgChm.SRCH.clearSearch(e);
-    	for (let i = startRow; i <= endRow; i++){
-    		NgChm.SRCH.searchItems["Row"][i] = 1;
-    	}
-    	for (let i = startCol; i <= endCol; i++){
-    		NgChm.SRCH.searchItems["Column"][i] = 1;
-    	}
+	NgChm.SRCH.clearSearch(e);
+	NgChm.SRCH.setAxisSearchResults ("Row", startRow, endRow);
+	NgChm.SRCH.setAxisSearchResults ("Column", startCol, endCol);
         NgChm.SUM.drawSelectionMarks();
         NgChm.SUM.drawTopItems();
         NgChm.DET.updateDisplayedLabels();
