@@ -1067,10 +1067,12 @@ NgChm.createNS('NgChm.LNK');
 		const uniqueClassValues = Array.from(new Set(NgChm.heatMap.getAxisCovariateData(axis)[label].values));
 		const classColors = [];
 		for (let i=0; i<uniqueClassValues.length; i++) {
+		    if (uniqueClassValues[i] !== '!CUT!') {
 			classColors.push({
 				"Class": uniqueClassValues[i],
 				"Color": NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getClassificationColor(uniqueClassValues[i])))
 			});
+		    }
 		}
 		// for each of the values input, get the corresponding class color to return
 		var valColors = []  // array of colors for each value
@@ -1107,7 +1109,9 @@ NgChm.createNS('NgChm.LNK');
 	function getVanodiColorMap (thresholds, colors) {
 		const classColors = [];
 		for (let idx = 0; idx < thresholds.length; idx++) {
-		    classColors.push({ 'Class': thresholds[idx], 'Color': colors[idx] });
+		    if (thresholds[idx] !== "!CUT!") {
+		        classColors.push({ 'Class': thresholds[idx], 'Color': colors[idx] });
+		    }
 		}
 		return classColors;
 	}
