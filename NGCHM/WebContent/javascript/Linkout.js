@@ -2725,8 +2725,9 @@ NgChm.createNS('NgChm.LNK');
 	    vanodiMessageHandlers[op] = fn;
 	};
 	function processVanodiMessage (instance, msg) {
+	    const debug = false;
 	    const fn = vanodiMessageHandlers[msg.op];
-	    console.log({ m: 'Processing Vanodi message', instance, msg, fn });
+	    if (debug) console.log({ m: 'Processing Vanodi message', instance, msg, fn });
 	    if (fn) fn (instance, msg);
 	}
 
