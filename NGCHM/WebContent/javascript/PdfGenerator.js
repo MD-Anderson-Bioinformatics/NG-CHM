@@ -1002,13 +1002,13 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 		for (var i in mapLabels) {
 			var label = mapLabels[i].div;		
 			if (label.dataset.axis == "Row"){
-				if (NgChm.DET.labelIndexInSearch(mapItem.currentRow+i,"Row")) {
+				if (NgChm.SRCH.labelIndexInSearch("Row",mapItem.currentRow+i)) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 					doc.rect((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, longestRowLabelUnits+2, theFont,'F');
 				}
 				rowLabels++;
 			} else if (label.dataset.axis == "Column") {
-				if (NgChm.DET.labelIndexInSearch(mapItem.currentCol+i-rowLabels,"Column")) {
+				if (NgChm.SRCH.labelIndexInSearch("Column",mapItem.currentCol+i-rowLabels)) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 					doc.rect((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth-2, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight,  theFont+2.5, longestColLabelUnits+2,'F'); 
 				}

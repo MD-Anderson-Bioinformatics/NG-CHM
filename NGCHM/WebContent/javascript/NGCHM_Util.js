@@ -752,7 +752,7 @@ NgChm.UTIL.resetCHM = function () {
 //	NgChm.SEL.dataPerCol=null; 
 //	NgChm.SEL.selectedStart=0; 
 //	NgChm.SEL.selectedStop=0; 
-	NgChm.SRCH.searchItems={};
+	NgChm.SRCH.clearAllSearchResults ();
 	NgChm.SEL.scrollTime = null; 
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;
@@ -789,8 +789,8 @@ NgChm.UTIL.initDisplayVars = function() {
 	NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
 	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	
 	NgChm.UTIL.removeElementsByClass("DynamicLabel");
-	NgChm.SRCH.currentSearchItem = {};
-}
+	NgChm.SRCH.clearCurrentSearchItem ();
+};
 
 /**********************************************************************************
  * FUNCTION - shadeColor: This function darken or lighten a color given a percentage.

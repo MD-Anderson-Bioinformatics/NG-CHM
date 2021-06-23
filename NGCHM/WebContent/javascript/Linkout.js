@@ -230,22 +230,22 @@ NgChm.createNS('NgChm.LNK');
 					searchLabels.push( generateSearchLabel(NgChm.LNK.selection,formatIndex));
 				} else {
 				//ELSE the linkout is multi select, load all selected items to searchLabels (not necessarily the item that was clicked on)
-					for (var i in NgChm.SRCH.searchItems[axis]){
+					NgChm.SRCH.getAxisSearchResults(axis).forEach(i => {
 						if (axis.includes("Covar")){ // Covariate linkouts have not been tested very extensively. May need revision in future. 
 							searchLabels.push( generateSearchLabel(labels[i],formatIndex)) ;
 						} else {
 							searchLabels.push( generateSearchLabel(labels[i-1],formatIndex));
 						}
-					}
+					});
 				}
 			} else {
 				searchLabels = {"Row" : [], "Column" : []};
-				for (var i in NgChm.SRCH.searchItems["Row"]){
+				NgChm.SRCH.getAxisSearchResults("Row").forEach (i => {
 					searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],[formatIndex[0]]) );
-				}
-				for (var i in NgChm.SRCH.searchItems["Column"]){
+				});
+				NgChm.SRCH.getAxisSearchResults("Column").forEach (i => {
 					searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],[formatIndex[0]]) );
-				}
+				});
 				if (linkout.title !== 'Copy selected labels to clipboard') {
 					if (searchLabels["Row"].length === 0) {
 						searchLabels["Row"] = NgChm.DET.getAllLabelsByAxis("Row");
@@ -277,12 +277,12 @@ NgChm.createNS('NgChm.LNK');
 				formatIndex.col[i] = NgChm.heatMap.getColLabels()["label_type"].indexOf(type);
 			}
 			// Build the searchLabels and put them into the return object
-			for (var i in NgChm.SRCH.searchItems["Row"]){
+			NgChm.SRCH.getAxisSearchResults("Row").forEach( i => {
 				searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],formatIndex.row) );
-			}
-			for (var i in NgChm.SRCH.searchItems["Column"]){
+			});
+			NgChm.SRCH.getAxisSearchResults("Column").forEach( i => {
 				searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],formatIndex.col) );
-			} 
+			});
 			
 		}
 		return searchLabels;
@@ -304,10 +304,10 @@ NgChm.createNS('NgChm.LNK');
 
 	NgChm.LNK.createMatrixData = function(searchLabels) {
 		let tilesReady = false;
-		if (Object.keys(NgChm.SRCH.searchItems["Row"]).length === 0) {
+		if (NgChm.SRCH.getAxisSearchResults("Row").length === 0) {
 		    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.DMM.primaryMap, NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
 		    tilesReady = NgChm.heatMap.allTilesAvailable();
-		} else if (Object.keys(NgChm.SRCH.searchItems["Column"]).length === 0) {
+		} else if (NgChm.SRCH.getAxisSearchResults("Column").length === 0) {
 		    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.DMM.primaryMap, NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
 		    tilesReady = NgChm.heatMap.allTilesAvailable();
 		} else {
@@ -335,15 +335,15 @@ NgChm.createNS('NgChm.LNK');
 	NgChm.LNK.createMatrixDataTsv = function(searchLabels) {
 		var matrix = new Array();
 
-		let rowSearchItems = NgChm.SRCH.searchItems["Row"];
+		let rowSearchItems = NgChm.SRCH.getAxisSearchResults("Row");
 		//Check to see if we need new searchItems because entire axis is selected by 
 		//default of no items being selected on opposing axis, Otherwise, use
 		//searchItems selected.
-		if (Object.keys(NgChm.SRCH.searchItems["Row"]).length === 0) {
+		if (rowSearchItems.length === 0) {
 			rowSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Row");
 		}
-		let colSearchItems = NgChm.SRCH.searchItems["Column"];
-		if (Object.keys(NgChm.SRCH.searchItems["Column"]).length === 0) {
+		let colSearchItems = NgChm.SRCH.getAxisSearchResults("Column");
+		if (colSearchItems.length === 0) {
 			colSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Column");
 		}
 		
@@ -367,15 +367,15 @@ NgChm.createNS('NgChm.LNK');
 		
 		//Load up an array containing data values for the selected data matrix
 		var dataMatrix = new Array();
-		for (var x in rowSearchItems){
-			for (var y in colSearchItems){
-				var matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,x,y);
+		rowSearchItems.forEach( x => {
+			colSearchItems.forEach( y => {
+				let matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,x,y);
 				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
 				if (matrixValue !== NgChm.SUM.minValues-1) {
 					dataMatrix.push(matrixValue);
 				}
-			}
-		}
+			});
+		});
 		//Fill in the remainder of the matrix with labels from searchLabels and data from dataMatrix
 		var dataIdx = 0;
 		matrixCtr = 1;
@@ -401,14 +401,14 @@ NgChm.createNS('NgChm.LNK');
 	//(e.g. the selection is the result of a dendro selection on one
 	//axis with nothing selected on the other)
 	NgChm.LNK.getEntireAxisSearchItems = function(searchLabels,axis) {
-		let searchItems = {};
+		let searchItems = [];
 		for (let i=1;i<=searchLabels[axis].length;i++) {
 			if (searchLabels[axis][i-1] !== '') {
-				searchItems[i] = 1;
+				searchItems.push(i);
 			}
 		}
 		return searchItems;
-	}
+	};
 
 	NgChm.LNK.createLabelMenus = function(){
 		if (!document.getElementById("RowLabelMenu")){
@@ -458,7 +458,7 @@ NgChm.createNS('NgChm.LNK');
 
 		var labelMenu =  axis !== "Matrix" ? document.getElementById(axis + 'LabelMenu') : document.getElementById("MatrixMenu");
 		var labelMenuTable = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenuTable') : document.getElementById('MatrixMenuTable');
-	    var axisLabelsLength = axis !== "Matrix" ? NgChm.DET.getSearchLabelsByAxis(axis).length : {"Row":NgChm.DET.getSearchLabelsByAxis("Row").length ,"Column":  NgChm.DET.getSearchLabelsByAxis("Column").length};
+	    var axisLabelsLength = axis !== "Matrix" ? NgChm.SRCH.getSearchLabelsByAxis(axis).length : {"Row":NgChm.SRCH.getSearchLabelsByAxis("Row").length ,"Column":  NgChm.SRCH.getSearchLabelsByAxis("Column").length};
 	    var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
 	    var row = header.getElementsByTagName('TR')[0];
 	    if (((axisLabelsLength > 0) || (NgChm.LNK.selection !== '')) && axis !== "Matrix"){
@@ -522,9 +522,9 @@ NgChm.createNS('NgChm.LNK');
 
 	// Check to see if the item that the user clicked on is part of selected labels group
 	NgChm.LNK.itemInSelection = function (axis) {
-		var labels = axis == "Row" ? NgChm.heatMap.getRowLabels() : axis == "Column" ? NgChm.heatMap.getColLabels() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : []; 
-		for (var key in NgChm.SRCH.searchItems[axis]){
-			var selItem 
+		const labels = axis == "Row" ? NgChm.heatMap.getRowLabels() : axis == "Column" ? NgChm.heatMap.getColLabels() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : []; 
+		NgChm.SRCH.getAxisSearchResults(axis).forEach( key => {
+			let selItem;
 			if (axis.includes("Covar")){
 				selItem = labels[key];
 			} else {
@@ -533,18 +533,15 @@ NgChm.createNS('NgChm.LNK');
 			if (selItem === NgChm.LNK.selection) {
 				return true;
 			}
-		}
+		});
 		return false;
 	}
+
 	//Check to see if we have selections
 	NgChm.LNK.hasSelection = function (axis) {
 		// Check to see if clicked item is part of selected labels group
-		var ctr = 0;
-		for (var key in NgChm.SRCH.searchItems[axis]){
-			ctr++;
-		}
-		return ctr > 0 ? true : false;
-	}
+		return NgChm.SRCH.getAxisSearchResults(axis).length > 0;
+	};
 
 	//adds the row linkouts and the column linkouts to the menus
 	NgChm.LNK.populateLabelMenu = function(axis, axisLabelsLength){
@@ -708,24 +705,24 @@ NgChm.createNS('NgChm.LNK');
 			var add = false;
 			if ( linkout.labelType == "ColumnCovar"){
 				for (var i=0; i < linkout.reqAttributes.length; i++){
-					for (var j in NgChm.SRCH.searchItems[axis]){
+					NgChm.SRCH.getAxisSearchResults(axis).forEach( j => {
 						var name = NgChm.heatMap.getColClassificationConfigOrder()[j];
 						if (NgChm.heatMap.getColClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
 							add = true;
 						}
-					}
+					});
 					if (NgChm.heatMap.getColClassificationConfig()[NgChm.LNK.selection].data_type == linkout.reqAttributes[i]){
 						add = true;
 					}
 				}
 			} else if (linkout.labelType == "RowCovar"){
 				for (var i=0; i < linkout.reqAttributes.length; i++){
-					for (var j in NgChm.SRCH.searchItems[axis]){
+					NgChm.SRCH.getAxisSearchResults(axis).forEach( j => {
 						var name = NgChm.heatMap.getRowClassificationConfigOrder()[j];
 						if (NgChm.heatMap.getRowClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
 							add = true;
 						}
-					}
+					});
 					if (NgChm.heatMap.getRowClassificationConfig()[NgChm.LNK.selection].data_type == linkout.reqAttributes[i]){
 						add = true;
 					}
@@ -794,36 +791,38 @@ NgChm.createNS('NgChm.LNK');
 		window.open("","",'width=335,height=330,resizable=1').document.write(labels.join("<br>"));
 	}
 
-	NgChm.LNK.copyEntireClassBarToClipBoard = function(labels,axis){
-		var newWindow = window.open("","",'width=335,height=330,resizable=1');
-		var newDoc = newWindow.document;
-		var axisLabels = axis == "ColumnCovar" ? NgChm.heatMap.getColLabels()["labels"] : NgChm.heatMap.getRowLabels()["labels"]; 
-		var classBars = axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationData() : NgChm.heatMap.getRowClassificationData(); 
+	NgChm.LNK.copyEntireClassBarToClipBoard = function(labels,covarAxis){
+		const newWindow = window.open("","",'width=335,height=330,resizable=1');
+		const newDoc = newWindow.document;
+		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
+		const axisLabels = NgChm.heatMap.getAxisLabels(axis)["labels"];
+		const classBars = NgChm.heatMap.getAxisCovariateData(axis);
 		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
-		for (var i = 0; i < axisLabels.length; i++){
+		for (let i = 0; i < axisLabels.length; i++){
 			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
-			for (var j = 0; j < labels.length; j++){
+			for (let j = 0; j < labels.length; j++){
 				newDoc.write(classBars[labels[j]].values[i] + "&emsp;");
 			}
 			newDoc.write("<br>");
 		}
-	}
+	};
 
-	NgChm.LNK.copyPartialClassBarToClipBoard = function(labels,axis){
-		var newWindow = window.open("","",'width=335,height=330,resizable=1');
-		var newDoc = newWindow.document;
-		var axisLabels = axis == "ColumnCovar" ? NgChm.DET.getSearchLabelsByAxis("Column") : NgChm.DET.getSearchLabelsByAxis("Row");
-		var labelIndex = axis == "ColumnCovar" ? NgChm.SRCH.getSearchCols() : NgChm.SRCH.getSearchRows(); 
-		var classBars = axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationData() : NgChm.heatMap.getRowClassificationData(); 
+	NgChm.LNK.copyPartialClassBarToClipBoard = function(labels, covarAxis){
+		const newWindow = window.open("","",'width=335,height=330,resizable=1');
+		const newDoc = newWindow.document;
+		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
+		const axisLabels = NgChm.SRCH.getSearchLabelsByAxis(axis);
+		const labelIndex = NgChm.SRCH.getAxisSearchResults(axis);
+		const classBars = NgChm.heatMap.getAxisCovariateData(axis);
 		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
-		for (var i = 0; i < axisLabels.length; i++){
+		for (let i = 0; i < axisLabels.length; i++){
 			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
-			for (var j = 0; j < labels.length; j++){
+			for (let j = 0; j < labels.length; j++){
 				newDoc.write(classBars[labels[j]].values[labelIndex[i]-1] + "&emsp;");
 			}
 			newDoc.write("<br>");
 		}
-	}
+	};
 
 	NgChm.LNK.copySelectionToClipboard = function(labels,axis){
 		window.open("","",'width=335,height=330,resizable=1').document.write("<b>Rows:</b><br>" + labels["Row"].join("<br>") + "<br><br><b>Columns:</b><br>" + labels["Column"].join("<br>"));
@@ -856,16 +855,14 @@ NgChm.createNS('NgChm.LNK');
 	//row/col selected and last row/col selected so it will work well with a drag
 	//selected box but not with random selections all over the map.
 	NgChm.LNK.setDetailView = function(searchLabels){
-		let rowSearchItems = NgChm.SRCH.searchItems["Row"];
-		if (Object.keys(NgChm.SRCH.searchItems["Row"]).length === 0) {
-			rowSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Row");
+		let selRows = NgChm.SRCH.getAxisSearchResults("Row");
+		if (selRows.length === 0) {
+			selRows = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Row");
 		}
-		let colSearchItems = NgChm.SRCH.searchItems["Column"];
-		if (Object.keys(NgChm.SRCH.searchItems["Column"]).length === 0) {
-			colSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Column");
+		let selCols = NgChm.SRCH.getAxisSearchResults("Column");
+		if (selCols.length === 0) {
+			selCols = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Column");
 		}
-		var selCols = Object.keys(colSearchItems)
-		var selRows = Object.keys(rowSearchItems)
 		var startCol = parseInt(selCols[0])
 		var endCol = parseInt(selCols[selCols.length-1])
 		var startRow = parseInt(selRows[0])
@@ -1070,10 +1067,12 @@ NgChm.createNS('NgChm.LNK');
 		const uniqueClassValues = Array.from(new Set(NgChm.heatMap.getAxisCovariateData(axis)[label].values));
 		const classColors = [];
 		for (let i=0; i<uniqueClassValues.length; i++) {
+		    if (uniqueClassValues[i] !== '!CUT!') {
 			classColors.push({
 				"Class": uniqueClassValues[i],
 				"Color": NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getClassificationColor(uniqueClassValues[i])))
 			});
+		    }
 		}
 		// for each of the values input, get the corresponding class color to return
 		var valColors = []  // array of colors for each value
@@ -1110,7 +1109,9 @@ NgChm.createNS('NgChm.LNK');
 	function getVanodiColorMap (thresholds, colors) {
 		const classColors = [];
 		for (let idx = 0; idx < thresholds.length; idx++) {
-		    classColors.push({ 'Class': thresholds[idx], 'Color': colors[idx] });
+		    if (thresholds[idx] !== "!CUT!") {
+		        classColors.push({ 'Class': thresholds[idx], 'Color': colors[idx] });
+		    }
 		}
 		return classColors;
 	}
@@ -1304,21 +1305,23 @@ NgChm.createNS('NgChm.LNK');
 		};
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
-			let fullLabels = NgChm.heatMap.getAxisLabels(axis.axisName).labels;
-			let searchItemsIdx = NgChm.MMGR.isRow(axis.axisName) ? NgChm.SRCH.getSearchRows() : NgChm.SRCH.getSearchCols();
+			const fullLabels = NgChm.heatMap.getAxisLabels(axis.axisName).labels;
+		        const searchItemsIdx = NgChm.SRCH.getAxisSearchResults (axis.axisName);
 			let selectedLabels = []
 			for (let i=0; i<searchItemsIdx.length; i++) {
 				let selectedLabel = fullLabels[searchItemsIdx[i] - 1];
 				selectedLabel = selectedLabel.indexOf('|') !== -1 ? selectedLabel.substring(0,selectedLabel.indexOf('|')) : selectedLabel;
 				selectedLabels.push(selectedLabel)
 			}
+			const gapIndices = [];
+			fullLabels.forEach((value,index) => { if (value === "") gapIndices.push (index); });
 			data.axes.push({
-				fullLabels: fullLabels,
-				actualLabels: NgChm.UTIL.getActualLabels(axis.axisName),
+				fullLabels: filterGaps (fullLabels, gapIndices),
+				actualLabels: filterGaps (NgChm.UTIL.getActualLabels(axis.axisName), gapIndices),
 				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
-				setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx]);
+				setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx], gapIndices);
 			}
 			for (let idx = 0; idx < axis.groups.length; idx++) {
 				setAxisGroupData (data.axes[ai], axis, axis.groups[idx]);
@@ -1327,6 +1330,9 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
 	}; // end of initializePanePlugin
 
+	function filterGaps (data, gapIndices) {
+	    return data.filter ((value,index) => !(gapIndices.includes(index)));
+	}
 
 	/**
 		Using information in msg about which tests to perform, performs statistical tests and returns results.
@@ -1474,7 +1480,7 @@ NgChm.createNS('NgChm.LNK');
 
 	// Add the values and colors to cocodata for the 'coco' attributes of axis.
 	// Currently, 'coco' is either coordinate or covariate.
-	function setAxisCoCoData (cocodata, axis, coco) {
+	function setAxisCoCoData (cocodata, axis, coco, gapIndices) {
 		const colorMapMgr = NgChm.heatMap.getColorMapManager();
 		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
 		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
@@ -1493,29 +1499,30 @@ NgChm.createNS('NgChm.LNK');
 			if (ctype === 'covariate') { // i.e. from one of the covariate bars
 				if (axisCovCfg.hasOwnProperty (label)) {
 					const cfg = axisCovCfg[label];
+					const values = filterGaps (covData[label].values, gapIndices);
 					if (cfg.color_map.type === 'continuous') { // i.e. from covariate bar w/ continuous values
-						const { classValues, colors, colorMap } = getContCovariateColors (cfg, covData[label].values);
+						const { classValues, colors, colorMap } = getContCovariateColors (cfg, values);
 						cocodata[colorMapField].push(colorMap);
 						cocodata[colorField].push(colors); // the color corresponding to the 'Class' for each value
-						cocodata[valueField].push(covData[label].values) // the actual values (not 'Class' values) 
+						cocodata[valueField].push(values) // the actual values (not 'Class' values)
 					} else { // i.e. from covariate bar w/ discrete values
-						const { classColors, colors } = getDiscCovariateColors (axis.axisName, label, covData[label].values, colorMapMgr);
+						const { classColors, colors } = getDiscCovariateColors (axis.axisName, label, values, colorMapMgr);
 						cocodata[colorMapField].push(classColors);
 						cocodata[colorField].push(colors);
-						cocodata[valueField].push(covData[label].values); 
+						cocodata[valueField].push(values);
 					}
 				} else {
 					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values
 				const idx = axis[valueField][ci].labelIdx; 
-				const values = getDataValues(isRow ? 'column' : 'row', idx);
+				const values = filterGaps (getDataValues(isRow ? 'column' : 'row', idx), gapIndices);
 				cocodata[valueField].push(values);
 				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
 
-				var colorsForThisData = []
-				for (var idv = 0; idv < values.length; idv++) {
-					colorsForThisData.push(NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getColor(values[idv]))));
+				const colorsForThisData = []
+				for (let idv = 0; idv < values.length; idv++) {
+				    colorsForThisData.push(NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getColor(values[idv]))));
 				}
 				cocodata[colorMapField].push(getVanodiColorMap (colorMap.getThresholds(), colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded)));
 				cocodata[colorField].push(colorsForThisData);
@@ -1830,17 +1837,14 @@ NgChm.createNS('NgChm.LNK');
 
 					infoEl.children[1].onclick = function (e) {
 						if (debug) console.log ('GRAB');
-						if (Object.keys(NgChm.SRCH.searchItems[otherAxis]).length < 1) {
+						const results = NgChm.SRCH.getAxisSearchResults(otherAxis)
+						if (results.length < 1) {
 							NgChm.UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 							return;
 						}
 						sss[cid].grabbers.clearData();
-						let count = 0;
-						for (let i in NgChm.SRCH.searchItems[otherAxis]) {
-							if (debug) console.log ({ m: 'Grabbed', i });
-							sss[cid].data.push (i);
-							count++;
-						}
+						sss[cid].data = NgChm.SRCH.getAxisSearchResults(otherAxis);
+						if (debug) console.log ({ m: 'Grabbed', results: sss[cid].data });
 						sss[cid].grabbers.setSummary();
 					};
 					infoEl.children[2].onclick = function (e) {
@@ -1849,12 +1853,8 @@ NgChm.createNS('NgChm.LNK');
 							NgChm.UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 							return;
 						}
-						for (let i in NgChm.SRCH.searchItems[otherAxis]) {
-							delete NgChm.SRCH.searchItems[otherAxis][i];
-						}
-						for (let i = 0; i < sss[cid].data.length; i++) {
-							NgChm.SRCH.searchItems[otherAxis][sss[cid].data[i]] = 1;
-						}
+						NgChm.SRCH.clearAllAxisSearchItems (otherAxis);
+						NgChm.SRCH.setAxisSearchResultsVec (otherAxis, sss[cid].data);
 						NgChm.UTIL.redrawSearchResults ();
 					};
 					optionsBox.appendChild (infoEl);
@@ -1990,17 +1990,17 @@ NgChm.createNS('NgChm.LNK');
 
 						function doGrab (e) {
 							if (debug) console.log ('GRAB');
-							if (Object.keys(NgChm.SRCH.searchItems[axisNameU]).length < 1) {
+							if (NgChm.SRCH.getAxisSearchResults(axisNameU).length < 1) {
 								NgChm.UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 								return;
 							}
 							clearData(idx);
 							let count = 0;
-							for (let i in NgChm.SRCH.searchItems[axisNameU]) {
-								if (debug) console.log ({ m: 'Grabbed', i });
-								sss[cid].data[idx].push (i);
+							NgChm.SRCH.getAxisSearchResults(axisNameU).forEach(si => {
+								if (debug) console.log ({ m: 'Grabbed', si });
+								sss[cid].data[idx].push (si);
 								count++;
-							}
+							});
 							setSummary(true);
 						}
 						function doShow (e) {
@@ -2009,12 +2009,8 @@ NgChm.createNS('NgChm.LNK');
 								NgChm.UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 								return;
 							}
-							for (let i in NgChm.SRCH.searchItems[axisNameU]) {
-								delete NgChm.SRCH.searchItems[axisNameU][i];
-							}
-							for (let i = 0; i < sss[cid].data[idx].length; i++) {
-								NgChm.SRCH.searchItems[axisNameU][sss[cid].data[idx][i]] = 1;
-							}
+							NgChm.SRCH.clearAllAxisSearchItems (axisNameU);
+							NgChm.SRCH.setAxisSearchResultsVec (axisNameU, sss[cid].data[idx]);
 							NgChm.UTIL.redrawSearchResults ();
 						}
 						function updateAxis (newAxis) {
@@ -2121,26 +2117,14 @@ NgChm.createNS('NgChm.LNK');
 						   This is the onchange function for the range INPUT boxes (rangeSelectorEl.lastChild).
 						*/
 						function getIndexes(e) { // gets index values from range to add to sss
-							const groupIndex = e.target.getAttribute('data-covariate-group')
 							const selectedCov = selectEl.options[selectEl.selectedIndex].value;
-							const covariateValues = NgChm.heatMap.getAxisCovariateData(thisAxis)[selectedCov].values;
-							let indexesToKeep = []
-							const parsedString = NgChm.SRCH.parseSearchExpression(e.target.value); // parse user-input range string
-							const isValid = NgChm.SRCH.isSearchValid(parsedString.firstOper, parsedString.firstValue, parsedString.secondOper, parsedString.secondValue)
+							const [ isValid, searchResults ] = NgChm.SRCH.continuousCovarSearch (thisAxis, selectedCov, e.target.value);
 							if (!isValid) {
 								NgChm.UHM.systemMessage('Invalid Range Text','ERROR: Range selection text is not valid. Examples of acceptable ranges: ">2<=5", ">=1<10"');
 								return;
 							}
-							for (let j=0; j<covariateValues.length; j++) {
-								let covVal = covariateValues[j]
-								let selectItem = NgChm.SRCH.evaluateExpression(parsedString.firstOper, parseFloat(parsedString.firstValue), parseFloat(covVal))
-								if (parsedString.secondOper !== null && selectItem === true) {
-									selectItem = NgChm.SRCH.evaluateExpression(parsedString.secondOper, parseFloat(parsedString.secondValue), parseFloat(covVal))
-								}
-								if (selectItem === true) {indexesToKeep.push(j)}
-							}
-							indexesToKeep = [...new Set(indexesToKeep)]
-							sss[cid].data[groupIndex] = indexesToKeep;
+							const groupIndex = e.target.getAttribute('data-covariate-group')
+							sss[cid].data[groupIndex] = searchResults;
 							const common = sss[cid].data[0].filter(value => sss[cid].data[1].includes(value))
 							if (common.length > 0) {
 								NgChm.UHM.systemMessage('Group Selection Warning',
@@ -2741,8 +2725,9 @@ NgChm.createNS('NgChm.LNK');
 	    vanodiMessageHandlers[op] = fn;
 	};
 	function processVanodiMessage (instance, msg) {
+	    const debug = false;
 	    const fn = vanodiMessageHandlers[msg.op];
-	    console.log({ m: 'Processing Vanodi message', instance, msg, fn });
+	    if (debug) console.log({ m: 'Processing Vanodi message', instance, msg, fn });
 	    if (fn) fn (instance, msg);
 	}
 
@@ -2785,9 +2770,8 @@ NgChm.createNS('NgChm.LNK');
 			console.error('Incoming message missing attribute "propertyName"')
 			return
 		}
-		const { plugin, params, iframe, source } = pluginData[msg.nonce];
-        NgChm.LNK.sendMessageToPlugin ({
-            nonce: msg.nonce,
+		NgChm.LNK.sendMessageToPlugin ({
+			nonce: msg.nonce,
 			op: 'property',
 			propertyName: msg.propertyName,
 			propertyValue: linkouts.getAttribute(msg.propertyName) 
@@ -2846,7 +2830,7 @@ NgChm.createNS('NgChm.LNK');
 	*/
 	NgChm.LNK.postSelectionToLinkouts = function(axis, clickType, lastClickIndex, srcNonce) {
 		const allLabels = NgChm.heatMap.getAxisLabels(axis).labels;
-		const searchItems = NgChm.MMGR.isRow(axis) ? NgChm.SRCH.getSearchRows() : NgChm.SRCH.getSearchCols();
+	        const searchItems = NgChm.SRCH.getAxisSearchResults (axis);
 		const pointLabelNames = [];
 		for (let i=0; i<searchItems.length; i++) {
 			let pointId = allLabels[searchItems[i] - 1];
@@ -2883,9 +2867,9 @@ NgChm.createNS('NgChm.LNK');
 				indexes.push(i+1);  
 			}
 		}
-		for (var i=0; i<indexes.length; i++) { // add those indexes to the search items 
-			NgChm.SRCH.searchItems[axis][indexes[i]] = 1;
-			NgChm.DET.labelLastClicked[axis] = indexes[i]
+		if (indexes.length > 0) {
+		    NgChm.SRCH.setAxisSearchResultsVec (axis, indexes);
+		    NgChm.DET.labelLastClicked[axis] = indexes[indexes.length-1];
 		}
 		NgChm.DET.updateDisplayedLabels();
 		NgChm.SUM.redrawSelectionMarks();
@@ -2902,7 +2886,7 @@ NgChm.createNS('NgChm.LNK');
 		const allLabels = NgChm.UTIL.getActualLabels(axis);
 		const pointId = msg.selection.pointId
 		const ptIdx = allLabels.indexOf(pointId) + 1;
-		NgChm.SRCH.searchItems[axis][ptIdx] = 1;
+		NgChm.SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
 		NgChm.DET.labelLastClicked[axis] = ptIdx;
 		NgChm.DET.updateDisplayedLabels();
 		NgChm.SEL.updateSelections();
