@@ -66,6 +66,7 @@ NgChm.MMGR.source= null;
 NgChm.MMGR.embeddedMapName= null;
 NgChm.MMGR.localRepository= '/NGCHM';
 NgChm.MMGR.latestReadWindow= null;
+NgChm.MMGR.lastTileLoaded = false;
 
 
 //Create a MatrixManager to retrieve heat maps. 
@@ -726,22 +727,13 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 	//This function tells us if all files are in the cache.
 	this.allTilesAvailable = function() {
-		const details = NgChm.MMGR.latestReadWindow;
 		if (hasDetailTiles() === false) {
 			return true;
+		} else if (NgChm.MMGR.lastTileLoaded) {
+			return true;
 		} else {
-		const currentDl = NgChm.SEL.getCurrentDL();
-	    	for (var i = details.startRowTile; i <= details.endRowTile; i++) {
-	    		for (var j = details.startColTile; j <= details.endColTile; j++) {
-				var tileCacheName=currentDl + "." + NgChm.MMGR.DETAIL_LEVEL + "." + i + "." + j;
-	    			if (getTileCacheData(tileCacheName) === null) {
-	     				//Do not yet have tile in cache return false
-	    				return false;
-	    			}
-	    		}
-	    	}
+			return false;
 		}
-		return true;
 	};
 	
 	//This function is used to set a read window for high resolution data layers.
@@ -1246,6 +1238,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 
 	// Set the data for the specified tile.
+	// If tile is the last tile, set 'lastTileLoaded' flag to true
 	// Also broadcasts a message that the tile has been received.
 	function setTileCacheEntry (tileCacheName, arrayData) {
 		const entry = tileCache[tileCacheName];
@@ -1254,6 +1247,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 		entry.state = 'ready';
 		sendCallBack(NgChm.MMGR.Event_NEWDATA, Object.assign({},entry.props));
+		if (entry.props.row == NgChm.heatMap.getMapInformation().levels.d.tile_rows &&
+			entry.props.col == NgChm.heatMap.getMapInformation().levels.d.tile_cols) {
+			NgChm.MMGR.lastTileLoaded = true;
+		}
 	}
 	
 	// Handle replies from tileio worker.
