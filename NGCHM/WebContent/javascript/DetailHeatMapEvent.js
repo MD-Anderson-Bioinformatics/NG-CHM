@@ -694,67 +694,82 @@ NgChm.DEV.getColFromLayerX = function (mapItem,layerX) {
 /**********************************************************************************
  * FUNCTION - detailDataZoomIn: The purpose of this function is to handle all of
  * the processing necessary to zoom inwards on a given heat map panel.
+ *
+ * Zooming out may change the user-selected mode from normal mode, to a ribbon mode,
+ * eventually to full map mode.  To enable the user-selected mode to be restored on
+ * zoom in, each zoom out pushes the zoom mode onto a stack which is used here to
+ * determine if we should undo the automatic changes in zoom mode.  Explicit user
+ * changes to the zoom mode will clear the mode history.
  **********************************************************************************/
 NgChm.DEV.detailDataZoomIn = function (mapItem) {
 	NgChm.UHM.hlpC();	
 	NgChm.LNK.labelHelpCloseAll();
-	let current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
+	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	if (mapItem.mode == 'FULL_MAP') {
-		if (mapItem.zoomOutPos !== null) { 
-			mapItem.currentRow = mapItem.zoomOutPos.row;
-			mapItem.currentCol = mapItem.zoomOutPos.col;
+	        let mode = mapItem.mode, row=1, col=1;
+		if (mapItem.modeHistory.length > 0) {
+		        ({ mode, row, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
 		}
-		if ((mapItem.prevMode == 'RIBBONH') || (mapItem.prevMode == 'RIBBONH_DETAIL')) {
-			NgChm.DEV.detailHRibbonButton(mapItem.chm);
-		} else if  ((mapItem.prevMode == 'RIBBONV') || (mapItem.prevMode == 'RIBBONV_DETAIL')) {
-            NgChm.DEV.detailVRibbonButton(mapItem.chm);
+		if ((mode == 'RIBBONH') || (mode == 'RIBBONH_DETAIL')) {
+			mapItem.currentRow = row;
+			NgChm.DEV.detailHRibbonButton(mapItem);
+		} else if  ((mode == 'RIBBONV') || (mode == 'RIBBONV_DETAIL')) {
+			mapItem.currentCol = col;
+			NgChm.DEV.detailVRibbonButton(mapItem);
 		} else {
-			NgChm.DEV.detailNormal(mapItem.chm);
+			mapItem.saveRow = row;
+			mapItem.saveCol = col;
+			NgChm.DEV.detailNormal(mapItem);
 		}
-		if (mapItem.zoomOutNormal !== null) { 
-			mapItem.mode = 'NORMAL';
-		}
+		mapItem.modeHistory.pop();
 	} else if (mapItem.mode == 'NORMAL') {
-		let zoomBoxSize = null;
-		if (mapItem.zoomOutPos !== null) { 
-			mapItem.currentRow = mapItem.zoomOutPos.row;
-			mapItem.currentCol = mapItem.zoomOutPos.col;
-			zoomBoxSize = NgChm.DET.zoomBoxSizes[current];
-			NgChm.DEV.setButtons(mapItem);
-		} else {
-			zoomBoxSize = NgChm.DET.zoomBoxSizes[current+1];
+		if (mapItem.modeHistory.length > 0) {
+		        mapItem.modeHistory = [];
 		}
+		let current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
-			NgChm.DET.setDetailDataSize (mapItem,zoomBoxSize);
-			NgChm.SEL.updateSelection(mapItem,true);
+			let zoomBoxSize = NgChm.DET.zoomBoxSizes[current+1];
+			NgChm.DET.setDetailDataSize (mapItem, zoomBoxSize);
 		}
-		if (mapItem.zoomOutPos !== null) { 
-			mapItem.zoomOutNormal = null;
-			mapItem.zoomOutPos = null;
-		}
+		NgChm.SEL.updateSelection(mapItem,true);
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
-		if (mapItem.zoomOutNormal !== null) { 
-			mapItem.mode = 'NORMAL';
-			NgChm.DEV.detailDataZoomIn(mapItem);
+	        let mode = mapItem.mode, col;
+		if (mapItem.modeHistory.length > 0) {
+		    ({ mode, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    if (mode == 'NORMAL') {
+		        mapItem.saveCol = col;
+		    }
+		}
+		if (mode == 'NORMAL') {
+			NgChm.DEV.detailNormal (mapItem);
 		} else {
-			current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
+			let current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 			if (current < NgChm.DET.zoomBoxSizes.length - 1) {
 				NgChm.DET.setDetailDataHeight (mapItem,NgChm.DET.zoomBoxSizes[current+1]);
-				NgChm.SEL.updateSelection(mapItem,true);
 			}
+			NgChm.SEL.updateSelection(mapItem, true);
 		}
+		mapItem.modeHistory.pop();
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
-		if (mapItem.zoomOutNormal !== null) { 
-			mapItem.mode = 'NORMAL';
-			NgChm.DEV.detailDataZoomIn(mapItem);
+	        let mode = mapItem.mode, row;
+		if (mapItem.modeHistory.length > 0) {
+		    ({ mode, row } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    if (mode == 'NORMAL') {
+		        mapItem.saveRow = row;
+		    }
+		}
+		if (mode == 'NORMAL') {
+			NgChm.DEV.detailNormal (mapItem);
 		} else {
+			let current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 			if (current < NgChm.DET.zoomBoxSizes.length - 1) {
 				NgChm.DET.setDetailDataWidth(mapItem,NgChm.DET.zoomBoxSizes[current+1]);
-				NgChm.SEL.updateSelection(mapItem,true);
 			}
+			NgChm.SEL.updateSelection(mapItem, true);
 		}
+		mapItem.modeHistory.pop();
 	}
-}	
+};
 
 /**********************************************************************************
  * FUNCTION - detailDataZoomOut: The purpose of this function is to handle all of
@@ -762,8 +777,14 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
  **********************************************************************************/
 NgChm.DEV.detailDataZoomOut = function (chm) {
 	const mapItem = NgChm.DMM.getMapItemFromChm(chm);
+	if (mapItem.mode == 'FULL_MAP') {
+	    // Already in full map view. We actually can't zoom out any further.
+	    return;
+	}
 	NgChm.UHM.hlpC();	
 	NgChm.LNK.labelHelpCloseAll();
+	if (!mapItem.modeHistory) mapItem.modeHistory = [];
+	mapItem.modeHistory.push ({ mode: mapItem.mode, row: mapItem.currentRow, col: mapItem.currentCol });
 	if (mapItem.mode == 'NORMAL') {
 		const current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
@@ -772,13 +793,11 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
 			NgChm.DET.setDetailDataSize (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection(mapItem);
 		} else {
-			mapItem.zoomOutNormal = true;
-			mapItem.zoomOutPos = {row: mapItem.currentRow,col: mapItem.currentCol};
 			//If we can't zoom out anymore see if ribbon mode would show more of the map or , switch to full map view.
 			if ((current > 0) && (NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) ) {
-				NgChm.DEV.detailVRibbonButton(mapItem.chm);
+				NgChm.DEV.detailVRibbonButton(mapItem);
 			} else if ((current > 0) && (NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) ) {
-				NgChm.DEV.detailHRibbonButton(mapItem.chm);
+				NgChm.DEV.detailHRibbonButton(mapItem);
 			} else {
 				NgChm.DEV.detailFullMap(mapItem);
 			}	
@@ -787,28 +806,28 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
 		const current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 		if ((current > 0) &&
 		    (Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL))) {
+			// Additional zoom out in ribbon mode.
 			NgChm.DET.setDetailDataHeight (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection(mapItem);
-		}	else {
-			if (mapItem.zoomOutPos === null) { 
-				mapItem.zoomOutPos = {row: mapItem.currentRow,col: mapItem.currentCol}
-			};
-            NgChm.DEV.detailFullMap(mapItem);
+		} else {
+			// Switch to full map view.
+			NgChm.DEV.detailFullMap(mapItem);
 		}	
-	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')){
+	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
 		const current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
 		    (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))){
+			// Additional zoom out in ribbon mode.
 			NgChm.DET.setDetailDataWidth (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
 			NgChm.SEL.updateSelection(mapItem);
-		}	else {
-			if (mapItem.zoomOutPos === null) { 
-				mapItem.zoomOutPos = {row: mapItem.currentRow,col: mapItem.currentCol}
-			};
-            NgChm.DEV.detailFullMap(mapItem);
+		} else {
+			// Switch to full map view.
+			NgChm.DEV.detailFullMap(mapItem);
 		}	
-    }
-}
+        } else {
+	    console.error ('Unknown zoom mode ', mapItem.mode);
+	}
+};
 
 /**********************************************************************************
  * FUNCTION - callDetailDrawFunction: The purpose of this function is to respond to
@@ -828,12 +847,20 @@ NgChm.DEV.callDetailDrawFunction = function(modeVal, target) {
 	}
 }
 
+/***********************************************************************************
+ * FUNCTION - clearModeHistory: Clears mode history.  Should be done every time the
+ * user explicitly changes the zoom mode.
+ ***********************************************************************************/
+NgChm.DEV.clearModeHistory = function (mapItem) {
+	mapItem.modeHistory = [];
+};
+
 /**********************************************************************************
  * FUNCTION - detailNormal: The purpose of this function is to handle all of
  * the processing necessary to return a heat map panel to normal mode.
+ * mapItem is the detail view map item.
  **********************************************************************************/
-NgChm.DEV.detailNormal = function (chm) {
-	const mapItem = NgChm.DMM.getMapItemFromChm(chm);
+NgChm.DEV.detailNormal = function (mapItem) {
 	NgChm.UHM.hlpC();	
 	const previousMode = mapItem.mode;
 	NgChm.SEL.setMode(mapItem,'NORMAL');
@@ -930,8 +957,7 @@ NgChm.DEV.setButtons = function (mapItem) {
  * FUNCTION - detailHRibbonButton: The purpose of this function is to clear dendro
  * selections and call processing to change to Horizontal Ribbon Mode.
  **********************************************************************************/
-NgChm.DEV.detailHRibbonButton = function (chm) {
-	const mapItem = NgChm.DMM.getMapItemFromChm(chm);
+NgChm.DEV.detailHRibbonButton = function (mapItem) {
 	NgChm.DDR.clearDendroSelection(mapItem);
 	NgChm.DEV.detailHRibbon(mapItem);
 }
@@ -966,6 +992,7 @@ NgChm.DEV.detailHRibbon = function (mapItem) {
 	} else {
 		mapItem.saveCol = mapItem.selectedStart;
 		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
+		NgChm.DEV.clearModeHistory (mapItem);
 		mapItem.mode='RIBBONH_DETAIL'
 		const width = Math.max(1, Math.floor(500/selectionSize));
 		mapItem.dataViewWidth = (selectionSize * width) + NgChm.DET.dataViewBorder;
@@ -999,8 +1026,7 @@ NgChm.DEV.detailHRibbon = function (mapItem) {
  * FUNCTION - detailVRibbonButton: The purpose of this function is to clear dendro
  * selections and call processing to change to Vertical Ribbon Mode.
  **********************************************************************************/
-NgChm.DEV.detailVRibbonButton = function (chm) {
-	const mapItem = NgChm.DMM.getMapItemFromChm(chm);
+NgChm.DEV.detailVRibbonButton = function (mapItem) {
 	NgChm.DDR.clearDendroSelection(mapItem);
 	NgChm.DEV.detailVRibbon(mapItem);
 }
@@ -1035,6 +1061,7 @@ NgChm.DEV.detailVRibbon = function (mapItem) {
 		mapItem.saveRow = mapItem.selectedStart;
 		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
 		if (selectionSize < 500) {
+			NgChm.DEV.clearModeHistory (mapItem);
 			NgChm.SEL.setMode(mapItem, 'RIBBONV_DETAIL');
 		} else {
 			const rvRate = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);

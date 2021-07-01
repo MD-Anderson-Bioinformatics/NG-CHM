@@ -184,6 +184,7 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 		NgChm.DMM.detailResize();
 		NgChm.DET.resizeOnNextDraw = false;
 	}
+	NgChm.DET.setViewPort(mapItem);
 	NgChm.DET.setDetBoxCanvasSize(mapItem);
 
 	// Together with the data, these parameters determine the color of a matrix value.
@@ -526,7 +527,8 @@ NgChm.DET.setDetailDataWidth = function (mapItem, size) {
 	NgChm.SEL.setDataPerRowFromDet(Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/mapItem.dataBoxWidth), mapItem);
 
 	//Adjust the current column based on zoom but don't go outside or the heat map matrix dimensions.
-	if ((prevDataPerRow != null) && (mapItem.zoomOutPos === null)){
+	if (!mapItem.modeHistory) mapItem.modeHistory = [];
+	if ((prevDataPerRow != null) && (mapItem.modeHistory.length === 0)){
 		if (prevDataPerRow > mapItem.dataPerRow) {
 			mapItem.currentCol += Math.floor((prevDataPerRow - mapItem.dataPerRow) / 2);
 		} else {
@@ -544,9 +546,10 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 	const prevDataPerCol = mapItem.dataPerCol;
 	mapItem.dataBoxHeight = size;
 	NgChm.SEL.setDataPerColFromDet(Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/mapItem.dataBoxHeight), mapItem);
+	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	
 	//Adjust the current row but don't go outside of the current heat map dimensions
-	if ((prevDataPerCol != null) && (mapItem.zoomOutPos === null)){
+	if ((prevDataPerCol != null) && (mapItem.modeHistory.length === 0)){
 		if (prevDataPerCol > mapItem.dataPerCol)
 			mapItem.currentRow += Math.floor((prevDataPerCol - mapItem.dataPerCol) / 2);
 		else
@@ -841,51 +844,63 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 NgChm.DET.sizeCanvasForLabels = function() {
 	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
 		const mapItem = NgChm.DMM.DetailMaps[i];
+		NgChm.DET.resetLabelLengths(mapItem);
 		if (mapItem.pane !== "") {  //Used by builder which does not contain the detail pane necessary, nor the use, for this logic
 			NgChm.DET.calcRowAndColLabels(mapItem);
 			NgChm.DET.calcClassRowAndColLabels(mapItem);
-		
-			const detPane = NgChm.Pane.findPaneLocation (mapItem.chm);
-			//Get full available width/height for detail NGCHM
-			const dFullW = detPane.pane.clientWidth;
-			const dFullH = detPane.pane.clientHeight - detPane.paneHeader.offsetHeight;
-			let left = 0;
-			if ((mapItem.rowDendro !== null) && (mapItem.rowDendro !== undefined)) {
-				left = mapItem.rowDendro.getDivWidth();
-			}
-			let top = 0;
-			if ((mapItem.colDendro !== null) && (mapItem.colDendro !== undefined)) {
-				top = mapItem.colDendro.getDivHeight();
-			}
-			//Set sizes of canvas and boxCanvas based upon width, label, and an offset for whitespace
-			const heatmapVP = {
-				top, left,
-				width: dFullW - (mapItem.rowLabelLen + 10) - left,
-				height: dFullH - (mapItem.colLabelLen + 10) - top
-			};
-			NgChm.UTIL.setElementPositionSize (mapItem.canvas, heatmapVP, true);
-			NgChm.UTIL.setElementPositionSize (mapItem.boxCanvas, heatmapVP, true);
-		
-			// Set sizes for the label divs
-			const rowLabelVP = {
-				top: mapItem.chm.offsetTop,
-				left: mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth,
-				width: dFullW - mapItem.canvas.offsetLeft - mapItem.canvas.offsetWidth,
-				height: dFullH - (mapItem.colLabelLen + 15)
-			};
-			NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), rowLabelVP, true);
-		
-			const heightCalc = dFullH - mapItem.canvas.offsetTop - mapItem.canvas.offsetHeight;
-			const colLabelVP = {
-				top: mapItem.canvas.offsetTop + mapItem.canvas.offsetHeight,
-				left: 0,
-				width: dFullW - (mapItem.rowLabelLen + 10),
-				height:  heightCalc === 0 ? 11 : heightCalc
-			};
-			NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), colLabelVP, true);
+			NgChm.DET.setViewPort(mapItem);
 		}
 	}
-}
+};
+
+/************************************************************************************************
+ * FUNCTION - setViewPort: This function resizes the heat map, row label, and column label
+ * canvases for mapItem (an open detail heat map panel).
+ * It sets the sizes of the main canvas, the box canvas, and the row/col label DIVs.
+ ************************************************************************************************/
+NgChm.DET.setViewPort = function (mapItem) {
+    const detPane = NgChm.Pane.findPaneLocation (mapItem.chm);
+
+    //Get available width/height
+    const dFullW = detPane.pane.clientWidth;
+    const dFullH = detPane.pane.clientHeight - detPane.paneHeader.offsetHeight;
+
+    let left = 0;
+    if ((mapItem.rowDendro !== null) && (mapItem.rowDendro !== undefined)) {
+	    left = mapItem.rowDendro.getDivWidth();
+    }
+    let top = 0;
+    if ((mapItem.colDendro !== null) && (mapItem.colDendro !== undefined)) {
+	    top = mapItem.colDendro.getDivHeight();
+    }
+
+    //Set sizes of canvas and boxCanvas based upon width, label, and an offset for whitespace
+    const heatmapVP = {
+	    top, left,
+	    width: dFullW - (mapItem.rowLabelLen + 10) - left,
+	    height: dFullH - (mapItem.colLabelLen + 10) - top
+    };
+    NgChm.UTIL.setElementPositionSize (mapItem.canvas, heatmapVP, true);
+    NgChm.UTIL.setElementPositionSize (mapItem.boxCanvas, heatmapVP, true);
+
+    // Set sizes for the label divs
+    const rowLabelVP = {
+	    top: mapItem.chm.offsetTop,
+	    left: mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth,
+	    width: dFullW - mapItem.canvas.offsetLeft - mapItem.canvas.offsetWidth,
+	    height: dFullH - (mapItem.colLabelLen + 15)
+    };
+    NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), rowLabelVP, true);
+
+    const heightCalc = dFullH - mapItem.canvas.offsetTop - mapItem.canvas.offsetHeight;
+    const colLabelVP = {
+	    top: mapItem.canvas.offsetTop + mapItem.canvas.offsetHeight,
+	    left: 0,
+	    width: dFullW - (mapItem.rowLabelLen + 10),
+	    height:  heightCalc === 0 ? 11 : heightCalc
+    };
+    NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), colLabelVP, true);
+};
 
 /************************************************************************************************
  * FUNCTION - calcRowAndColLabels: This function determines if labels are to be drawn on each 
@@ -1201,7 +1216,6 @@ NgChm.DET.updateDisplayedLabels = function () {
 		mapItem.labelElement.style.setProperty('display', 'none');
 	
 		// Update existing labels / draw new labels.
-		NgChm.DET.resetLabelLengths(mapItem);
 		NgChm.DET.detailDrawRowClassBarLabels(mapItem);
 		NgChm.DET.detailDrawColClassBarLabels(mapItem);
 		NgChm.DET.drawRowAndColLabels(mapItem);
@@ -2386,9 +2400,21 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		    zoomButton ('primary_btn'+NgChm.DMM.nextMapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
 		    zoomButton ('zoomOut_btn'+NgChm.DMM.nextMapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
 		    zoomButton ('zoomIn_btn'+NgChm.DMM.nextMapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
-		    modeButton ('full_btn'+NgChm.DMM.nextMapNumber, 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, NgChm.DEV.detailNormal.bind('chm', loc.pane.children[1])),
-		    modeButton ('ribbonH_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton.bind('chm', loc.pane.children[1])),
-		    modeButton ('ribbonV_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton.bind('chm', loc.pane.children[1]))
+		    modeButton ('full_btn'+NgChm.DMM.nextMapNumber, 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, () => {
+			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
+			NgChm.DEV.clearModeHistory (mapItem);
+			NgChm.DEV.detailNormal (mapItem);
+		    }),
+		    modeButton ('ribbonH_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, () => {
+			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
+			NgChm.DEV.clearModeHistory (mapItem);
+			NgChm.DEV.detailHRibbonButton (mapItem);
+		    }),
+		    modeButton ('ribbonV_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, () => {
+			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
+			NgChm.DEV.clearModeHistory (mapItem);
+			NgChm.DEV.detailVRibbonButton (mapItem)
+		    })
 		]);
 		if (isPrimary === true) {
 			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = 'none';
