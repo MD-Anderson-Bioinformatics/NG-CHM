@@ -758,6 +758,26 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return details;
 	};
 
+	/*
+		Similar to setReadWindow. However this function returns a promise
+		that resolves when the needed tiles are ready in cache.
+	*/
+	this.setReadWindowPromise = function(level, row, column, numRows, numColumns) {
+		return new Promise((resolve, reject) => {
+			if (level != NgChm.MMGR.THUMBNAIL_LEVEL && level != NgChm.MMGR.SUMMARY_LEVEL) {
+				datalevels[level].setReadWindowPromise(row, column, numRows, numColumns)
+					.then((result) => {
+						resolve(result)
+					})
+					.catch((error) => {
+						reject(error)
+					})
+			} else {
+				resolve(null)
+			}
+		})
+	}
+
 	// This function is used to set a read window for high resolution data layers.
 	// Calling getAccessWindow will cause the HeatMap object to retrieve tiles needed
 	// for reading this area if the tiles are not already in the cache.
@@ -774,6 +794,30 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				return datalevels[level].getValue(row, column);
 			};
 		}
+	};
+
+	/*
+		Similar to getAccessWindow. However this function returns a promise that resolves
+		when all the tiles of the read window are available in cache.
+	*/
+	this.getAccessWindowPromise = function(win) {
+		return new Promise((resolve,reject) => {
+			this.setReadWindowPromise(win.level, win.firstRow, win.firstCol, win.numRows, win.numCols)
+			.then((result) => {
+				let resultsObject = {
+					getValue: getGetValue(win.level),
+					win: win
+				}
+				function getGetValue(level) {
+					return function(row, column) {
+						return datalevels[level].getValue(row, column)
+					}
+				}
+				resolve(resultsObject)
+			}).catch((error) => {
+				reject (error)
+			});
+		})
 	};
 	
 	//Method used to register another callback function for a user that wants to be notifed
@@ -1119,7 +1163,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 									datalayers,
 									lowerLevelId ? datalevels[lowerLevelId] : null,
 									getTileCacheData,
-									getTile);
+									getTile, waitForTileCacheReady);
 				} else if (altLevelId) {
 					datalevels[levelId] = datalevels[altLevelId];
 					// Record all levels for which altLevelId is serving as an immediate alternate.
@@ -1393,6 +1437,39 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 	}
 
+	/*
+		Calls getTile, and returns a promise that resolves when the tile is ready in cache
+	*/
+	function waitForTileCacheReady(layer, level, tileRow, tileColumn) {
+		getTile(layer, level, tileRow, tileColumn)
+		let maxWaitsForTile = 30;
+		let tileCacheName=layer + "." +level + "." + tileRow + "." + tileColumn;
+		function isTileReadyInCache() {
+			if (tileCache.hasOwnProperty(tileCacheName) && tileCache[tileCacheName].state == 'ready') {
+				return true;
+			} else { 
+				throw 'Tile not ready in cache';
+			}
+		}
+		function waitToCheckAgain(reason) {
+			return new Promise((resolve, reject) => {
+				setTimeout(reject.bind(null,reason), 200)
+			})
+		}
+		let haveTile = Promise.reject();
+		return new Promise((resolve, reject) => {
+			for (let i=0; i<maxWaitsForTile; i++) {
+				haveTile = haveTile.catch(isTileReadyInCache).catch(waitToCheckAgain);
+			}
+			haveTile.then((result) => {
+				resolve('Tile '+tileCacheName+' ready in cache')
+			}).catch((err) => {
+				reject('Exceeded max waiting time for tile '+tileCacheName+' to be in cache.')
+			})
+		})
+	}
+
+
 	//Fetch a JSON file from server.
 	//Specify which file to get and what function to call when it arrives.
 	//Request is passed to the web loader so that it
@@ -1436,7 +1513,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 
 //Internal object for traversing the data at a given zoom level.
-NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile) {
+NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile, waitForTileCacheReady) {
 	this.totalRows = jsonData.total_rows;
 	this.totalColumns = jsonData.total_cols;
     var numTileRows = jsonData.tile_rows;
@@ -1487,6 +1564,33 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
     	}
     	return {startRowTile: startRowTile, endRowTile: endRowTile, startColTile: startColTile, endColTile: endColTile}
     }
+
+	/*
+		Similar to setReadWindow. However this function returns a Promise that
+		resolves when all needed tiles are available in cache.
+	*/
+	this.setReadWindowPromise = function(row, column, numRows, numColumns) {
+		let startRowTile = Math.floor(row/rowsPerTile) + 1;
+		let startColTile = Math.floor(column/colsPerTile) + 1;
+		let endRowCalc = (row+(numRows-1))/rowsPerTile;
+		let endColCalc = (column+(numColumns-1))/colsPerTile;
+		let endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
+		let endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
+		const currentDl = NgChm.SEL.getCurrentDL();
+		var ensureTilesInCache = []
+		for (var i = startRowTile; i <= endRowTile; i++) {
+			for (var j = startColTile; j <= endColTile; j++) {
+				ensureTilesInCache.push(waitForTileCacheReady(currentDl, level, i, j));
+			}
+		}
+		return new Promise((resolve, reject) => {
+			Promise.all(ensureTilesInCache).then(tilesInCache => {
+				resolve(tilesInCache)
+			}).catch(error => {
+				reject(error)
+			})
+		})
+	}
 
 	// External user of the matrix data lets us know where they plan to read.
 	// Pull tiles for that area if we don't already have them.
