@@ -1139,23 +1139,34 @@ NgChm.createNS('NgChm.LNK');
 				rawCounts.push(0);
 			}
 		}
+		let getAccessWindowPromises = []
 		for (let dd = 0; dd < idx.length; dd++) {
 			if (isRow) win.firstRow = idx[dd]; else win.firstCol = idx[dd];
-			const awin = NgChm.heatMap.getAccessWindow(win);
-			for (let j= 0; j < win.numRows; j++) {
-				for (let i=0;  i< win.numCols; i++) {
-					const val = awin.getValue (j + win.firstRow, i + win.firstCol);
-					if (!isNaN(val) && val > NgChm.SUM.minValues && val < NgChm.SUM.maxValues) {
-						rawValues[j*win.numCols+i] += val;
-						rawCounts[j*win.numCols+i] ++;
+			getAccessWindowPromises.push(NgChm.heatMap.getAccessWindowPromise(win))
+		}
+		return new Promise((resolve, reject) => {
+			Promise.all(getAccessWindowPromises).then(accessWindows => {
+				try {
+					accessWindows.forEach(accessWindow => {
+						for (let j= 0; j < win.numRows; j++) {
+							for (let i=0;  i< win.numCols; i++) {
+								const val = accessWindow.getValue (j + win.firstRow, i + win.firstCol);
+								if (!isNaN(val) && val > NgChm.SUM.minValues && val < NgChm.SUM.maxValues) {
+									rawValues[j*win.numCols+i] += val;
+									rawCounts[j*win.numCols+i] ++;
+								}
+							}
+						}
+					})
+					for (let i = 0; i < rawValues.length; i++) {
+						values.push (rawCounts[i] === 0 ? NaN : rawValues[i] / rawCounts[i]);
 					}
+					resolve (values);
+				} catch(error) {
+					reject(error)
 				}
-			}
-		}
-		for (let i = 0; i < rawValues.length; i++) {
-			values.push (rawCounts[i] === 0 ? NaN : rawValues[i] / rawCounts[i]);
-		}
-		return values;
+			})
+		})
 	} // end function getDataValues
 
 	/*  Function to return mean, variance, and number of items in a group of rows/columns
@@ -1308,7 +1319,7 @@ NgChm.createNS('NgChm.LNK');
 	}
 	// end bunch of helper functions
 
-	NgChm.LNK.initializePanePlugin = function(nonce, config) {
+	NgChm.LNK.initializePanePlugin = async function(nonce, config) {
 		const data = {
 			axes: []
 		};
@@ -1330,7 +1341,7 @@ NgChm.createNS('NgChm.LNK');
 				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
-				setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx], gapIndices);
+				await setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx], gapIndices);
 			}
 			for (let idx = 0; idx < axis.groups.length; idx++) {
 				setAxisGroupData (data.axes[ai], axis, axis.groups[idx]);
@@ -1488,7 +1499,7 @@ NgChm.createNS('NgChm.LNK');
 
 	// Add the values and colors to cocodata for the 'coco' attributes of axis.
 	// Currently, 'coco' is either coordinate or covariate.
-	function setAxisCoCoData (cocodata, axis, coco, gapIndices) {
+	async function setAxisCoCoData (cocodata, axis, coco, gapIndices) {
 		const colorMapMgr = NgChm.heatMap.getColorMapManager();
 		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
 		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
@@ -1524,7 +1535,8 @@ NgChm.createNS('NgChm.LNK');
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values
 				const idx = axis[valueField][ci].labelIdx; 
-				const values = filterGaps (getDataValues(isRow ? 'column' : 'row', idx), gapIndices);
+				let unfilteredValues = await getDataValues(isRow ? 'column' : 'row', idx)
+				const values = filterGaps (unfilteredValues, gapIndices);
 				cocodata[valueField].push(values);
 				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
 
