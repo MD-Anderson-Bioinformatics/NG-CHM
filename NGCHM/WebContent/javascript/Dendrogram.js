@@ -614,9 +614,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		// is it a standard click?
 		if (!shift && !ctrl){
 			NgChm.SRCH.clearSearchItems(this.axis);
-			for (var i = selectLeft; i < selectRight+1;i++){
-				NgChm.SRCH.searchItems[this.axis][i] = 1;
-			}
+			NgChm.SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
 			NgChm.SRCH.showSearchResults();	
 			
 			this.selectedBars = [selectedBar];
@@ -630,9 +628,8 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			} 
 			if (bar.left >= left && bar.right <= right && bar.height-1 <= height){ // if the new selected bar is in the bounds of an older one... (-1 added to height since highlighted bars can cause issues without it)
 				deleteBar.push(i);
-				for (var j = selectLeft; j < selectRight+1;j++){ // remove all the search items that were selected by that old bar 
-					delete NgChm.SRCH.searchItems[this.axis][j];
-				}
+				// remove all the search items that were selected by that old bar
+				NgChm.SRCH.clearAxisSearchItems(this.axis, selectLeft, selectRight);
 				NgChm.SUM.redrawSelectionMarks();
 				if (bar.right == selectedBar.right && bar.height == selectedBar.height){ // a bar that's already selected has been selected so we remove it
 					addBar = false;
@@ -648,9 +645,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		var selectRight = Math.round((right+pointsPerLeaf/2)/pointsPerLeaf);
 		if (addBar){
 			if (shift){
-				for (var i = selectLeft; i < selectRight+1;i++){
-					NgChm.SRCH.searchItems[this.axis][i] = 1;
-				}
+				NgChm.SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
 				var numBars = this.selectedBars.length;
 				var startIndex = 0, endIndex = -1;
 				if (this.selectedBars[numBars-1]){
@@ -671,14 +666,10 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 					}
 				}
 				
-				for (var i = startIndex; i < endIndex; i++){
-					NgChm.SRCH.searchItems[this.axis][i] = 1;
-				}
+				NgChm.SRCH.setAxisSearchResults(this.axis, startIndex, endIndex-1);
 				this.selectedBars.push(selectedBar);
 			} else if (ctrl) {
-				for (var i = selectLeft; i < selectRight+1;i++){
-					NgChm.SRCH.searchItems[this.axis][i] = 1;
-				}
+				NgChm.SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
 				this.selectedBars.push(selectedBar);
 			}
 		}

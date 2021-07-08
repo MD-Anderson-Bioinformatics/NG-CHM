@@ -73,7 +73,7 @@
 						<img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.hlp(this,"Open .NG-CHM Heat Map",130);' onclick='NgChm.SEL.openFileToggle();'/>
 						<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen" /> 
 						<strong>Search:</strong>&nbsp;
-						<select name="search_on" id="search_on" class='srchSelect' onchange="NgChm.SRCH.searchOnSel();">
+						<select name="search_on" id="search_on" class='srchSelect'>
 							<option value="labels">Labels</option>
 						</select>
 						<input id="search_text" name="search" type="text" class='srchText' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.",300);' />
@@ -92,10 +92,10 @@
 							<option value="Row">Row</option>
 						</select>
 						<span class="dblSpace"/>
-					    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'  onclick='NgChm.SRCH.detailSearch();'/>
-					    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.hlp(this,"Previous Search Result",115);' style="display:none;" onclick='NgChm.SRCH.searchPrev();'/>
-					    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.hlp(this,"Next Search Result",100)' style="display:none;" onclick='NgChm.SRCH.searchNext();'/>
-					    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.hlp(this,"Clear Search Results",105)' style="display:none;" onclick="NgChm.SRCH.clearSearch(event);"/>
+					    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'/>
+					    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.hlp(this,"Previous Search Result",115);' style="display:none;"/>
+					    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.hlp(this,"Next Search Result",100)' style="display:none;"/>
+					    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.hlp(this,"Clear Search Results",105)' style="display:none;"/>
 		  			 </div> 
 				  </div>
 				  <div class="divRow">

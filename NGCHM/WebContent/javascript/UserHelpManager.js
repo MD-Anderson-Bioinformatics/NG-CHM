@@ -527,10 +527,11 @@ NgChm.UHM.showSearchError = function(type) {
 	var searchBar = document.getElementById('search_text');
 	searchError.style.top = (searchBar.offsetTop + searchBar.offsetHeight) + 'px';
 	searchError.style.left = (searchBar.offsetLeft + searchBar.offsetWidth) + 'px';
+	const searchItem = NgChm.SRCH.getCurrentSearchItem();
 	switch (type){
 		case 0: searchError.innerHTML = "No matching labels found"; break;
-		case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + NgChm.SRCH.currentSearchItem.label;break;
-		case 2: searchError.innerHTML = "All " + NgChm.SRCH.currentSearchItem.axis +  " items are visible. Change the view mode to see " + NgChm.SRCH.currentSearchItem.label;break;
+		case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + searchItem.label;break;
+		case 2: searchError.innerHTML = "All " + searchItem.axis +  " items are visible. Change the view mode to see " + searchItem.label;break;
 	}
 	NgChm.UHM.hlpC();
 	document.body.appendChild(searchError);
@@ -692,8 +693,8 @@ NgChm.UHM.noWebGlContext = function(isDisabled) {
 }
 
 /**********************************************************************************
- * FUNCTION - noWebGlContext: This function displays an error when no WebGl context
- * is available on the user's machine.
+ * FUNCTION - mapNotFound: This function displays an error when a server NG-CHM
+ * cannot be accessed.
  **********************************************************************************/
 NgChm.UHM.mapNotFound = function(heatMapName) {
 	NgChm.UHM.initMessageBox();
@@ -701,7 +702,19 @@ NgChm.UHM.mapNotFound = function(heatMapName) {
 	NgChm.UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you requested cannot be found OR connectivity to the Heat Map repository has been interrupted.<br><br>Please check the Heat Map name and try again.");
 	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
-}
+};
+
+/**********************************************************************************
+ * FUNCTION - mapLoadError: This function displays an error when a .ngchm file
+ * cannot be loaded.
+ **********************************************************************************/
+NgChm.UHM.mapLoadError = function(heatMapName, details) {
+	NgChm.UHM.initMessageBox();
+	NgChm.UHM.setMessageBoxHeader("Requested Heat Map Not Loaded");
+	NgChm.UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you selected cannot be loaded.<br><br>Reason: " + details);
+	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	document.getElementById('msgBox').style.display = '';
+};
 
 /**********************************************************************************
  * FUNCTION - linkoutError: This function displays a linkout error message.

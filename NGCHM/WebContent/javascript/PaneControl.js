@@ -745,12 +745,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		function menuItem (text, callback) {
 			const mi = NgChm.UTIL.newElement('DIV.menuItem');
 			mi.onclick = () => {
-				//Once the gaps issue has been fixed, just remove this conditional and leave the call the the callback
-				if (((text === "PathwayMapper")|| (text === "2D ScatterPlot") || (text === "3D ScatterPlot")) && (NgChm.UTIL.mapHasGaps() === true)) {
-					NgChm.UHM.systemMessage(text + " Unavailable For This Heat Map", "The menu feature " + text + " is currently unavailable for maps with embedded gaps. The feature will be coming soon for these maps in a future release.<br><br>If possible, try building the map without gaps.<br><br>");
-				} else {
-					callback ();
-				}
+			    callback ();
 			};
 			mi.innerText = text;
 			menu.appendChild(mi);

@@ -1800,7 +1800,7 @@ NgChm.SUM.drawSelectionMarks = function() {
 // Draw the selection marks on the specified axis.
 NgChm.SUM.drawAxisSelectionMarks = function(axis) {
 	const isRow = NgChm.MMGR.isRow (axis);
-	const selection = NgChm.SRCH.getSearchItemsForAxis(axis);
+	const selection = NgChm.SRCH.getAxisSearchResults(axis);
 	const canvas = document.getElementById (isRow ? "summary_row_select_canvas" : "summary_col_select_canvas");
 	if (canvas === null) { return;}
 	const limit = isRow ? canvas.height : canvas.width;
