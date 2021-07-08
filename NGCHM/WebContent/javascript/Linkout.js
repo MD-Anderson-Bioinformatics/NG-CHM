@@ -1381,7 +1381,7 @@ NgChm.createNS('NgChm.LNK');
 		// testToRun: name of test to run
 		// group1: labels of other axis elements in group 1
 		// group2: labels of other axis elements in group 2 (optional)
-	function getAxisTestData (msg) {
+	async function getAxisTestData (msg) {
 		if (msg.axisLabels.length < 1) {
 			NgChm.UHM.systemMessage("NG-CHM PathwayMapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again."); 
 			return false;
@@ -1427,74 +1427,71 @@ NgChm.createNS('NgChm.LNK');
 			NgChm.UHM.systemMessage('Group too small','Group 2 must have at least 2 members.')
 			return false;
 		}
-		return new Promise((resolve, reject) => {
-			Promise.all([getSummaryStatistics(msg.axisName, axisIdx, idx1), getSummaryStatistics(msg.axisName, axisIdx, idx2)]).then(summaryStatistics => {
-				let summaryStatistics1 = summaryStatistics[0]
-				let summaryStatistics2 = summaryStatistics[1]
-				var cocodata = {
-					labels: [],
-					results: []
-				};
-				if (msg.testToRun === 'Mean') {
-					const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
-					const vColorMap = {
-						thresholds: colorMap.getThresholds(),
-						colors: colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded),
-						type: "linear",
-						missing: '#fefefe'
-					};
-					cocodata.results.push({
-						label: "mean",
-						values: [],
-						colorMap: vColorMap
-					});
-					for (let i=0; i < axisIdx.length; i++) {
-						const summary1 = summaryStatistics1[i];
-						cocodata.labels.push (pluginLabels[i]);
-						if (msg.group2 == null || msg.group2.length == 0) {
-							cocodata.results[0].values.push(summary1.mu);
-						} else {
-							const summary2 = summaryStatistics2[i];
-							cocodata.results[0].values.push(summary1.mu - summary2.mu);
-						}
-					}
-				} else if (msg.testToRun === 'T-test') {
-					cocodata.results.push({
-						label: "t_statistics",
-						values: [],
-						colorMap: {
-							type: "linear",
-							thresholds: [ -3.291, -1.96, 1.96, 3.291 ],
-							colors: [ '#1c2ed4', '#cbcff7', '#f9d4d4', '#d41c1c' ],
-							missing: '#fefefe'
-						}
-					});
-					cocodata.results.push({
-						label: "p_values",
-						values: [],
-						colorMap: {
-							type: "linear",
-							thresholds: [ 0.001, 0.05, 1 ],
-							colors: [ '#fefefe', '#777777', '#000000' ],
-							missing: '#fefefe'
-						}
-					});
-					for (let i=0; i < axisIdx.length; i++) {
-						const summary1 = summaryStatistics1[i];
-						const summary2 = summaryStatistics2[i];
-						const tvalue = Welch_tValue(summary1, summary2);
-						const dof = degreesOfFreedom(summary1, summary2);
-						const pvalue = pValue(tvalue, dof);
-						cocodata.labels.push (pluginLabels[i]);
-						cocodata.results[0].values.push(tvalue);
-						cocodata.results[1].values.push(pvalue);
-					}
-				}
-				resolve(cocodata)
-			}).catch(error => {
-				reject(error)
-			})
-		})
+		var summaryStatistics1 = await getSummaryStatistics(msg.axisName, axisIdx, idx1);
+		var summaryStatistics2 = await getSummaryStatistics(msg.axisName, axisIdx, idx2);
+
+		var cocodata = {
+			labels: [],
+			results: []
+		};
+
+		if (msg.testToRun === 'Mean') {
+		    const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
+		    const vColorMap = {
+		        thresholds: colorMap.getThresholds(),
+			colors: colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded),
+		        type: "linear",
+		        missing: '#fefefe'
+		    };
+		    cocodata.results.push({
+			    label: "mean",
+			    values: [],
+			    colorMap: vColorMap
+		    });
+		    for (let i=0; i < axisIdx.length; i++) {
+			    const summary1 = summaryStatistics1[i];
+			    cocodata.labels.push (pluginLabels[i]);
+			    if (msg.group2 == null || msg.group2.length == 0) {
+				cocodata.results[0].values.push(summary1.mu);
+			    } else {
+			        const summary2 = summaryStatistics2[i];
+				cocodata.results[0].values.push(summary1.mu - summary2.mu);
+			    }
+		    }
+		} else if (msg.testToRun === 'T-test') {
+		    cocodata.results.push({
+			    label: "t_statistics",
+			    values: [],
+			    colorMap: {
+				    type: "linear",
+				    thresholds: [ -3.291, -1.96, 1.96, 3.291 ],
+				    colors: [ '#1c2ed4', '#cbcff7', '#f9d4d4', '#d41c1c' ],
+				    missing: '#fefefe'
+			    }
+		    }); cocodata.results.push({
+			    label: "p_values",
+			    values: [],
+			    colorMap: {
+				    type: "linear",
+				    thresholds: [ 0.001, 0.05, 1 ],
+				    colors: [ '#fefefe', '#777777', '#000000' ],
+				    missing: '#fefefe'
+			    }
+		    });
+
+		    for (let i=0; i < axisIdx.length; i++) {
+			    const summary1 = summaryStatistics1[i];
+			    const summary2 = summaryStatistics2[i];
+			    const tvalue = Welch_tValue(summary1, summary2);
+			    const dof = degreesOfFreedom(summary1, summary2);
+			    const pvalue = pValue(tvalue, dof);
+			    cocodata.labels.push (pluginLabels[i]);
+			    cocodata.results[0].values.push(tvalue);
+			    cocodata.results[1].values.push(pvalue);
+		    }
+		}
+		//console.log ({ m: '< getAxisTestData', msg, cocodata });
+		return cocodata;
 	} // end function getAxisTestData
 
 	// Add the values and colors to cocodata for the 'coco' attributes of axis.
@@ -2817,7 +2814,7 @@ NgChm.createNS('NgChm.LNK');
 		@option {Array<String>} group1 NGCHM labels for group 1
 		@option {Array<String>} group2 NGCHM labels for group 2
 	    */
-	    function vanodiSendTestData (instance, msg) {
+	    async function vanodiSendTestData (instance, msg) {
 		// axisName: 'row',
 		// axisLabels: labels of axisName elements to test
 		// testToRun: name of test to run
@@ -2832,15 +2829,9 @@ NgChm.createNS('NgChm.LNK');
 		} else if (msg.group1 == null) {
 			console.log ({ m: 'Malformed getTestData request', msg, detail: 'group1 is required' });
 		} else {
-			/*var testData = getAxisTestData (msg);
+			var testData = await getAxisTestData(msg);
 			if (testData == false) {return;} // return if no data to send
-			NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });*/
-			getAxisTestData(msg).then(testData => {
-				if (testData == false) { return;}
-				NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });
-			}).catch(error => {
-				throw error
-			})
+			NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });
 		}
 	});
 
