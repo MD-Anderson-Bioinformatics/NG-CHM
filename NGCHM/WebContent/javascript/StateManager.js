@@ -132,8 +132,16 @@ NgChm.createNS('NgChm.StateMan');
 	}
 
 	function getPluginDataFromMapConfig(paneId) {
-		let pluginConfigData = NgChm.heatMap.getPanelConfiguration()[paneId]
-		return pluginConfigData;
+		try {
+			let pluginConfigData = NgChm.heatMap.getPanelConfiguration()[paneId]
+			return pluginConfigData;
+		} catch (error) {
+			if (error instanceof TypeError) {
+				return false
+			} else {
+				throw error
+			}
+		}
 	}
 
 })();
