@@ -76,10 +76,13 @@ NgChm.createNS('NgChm.StateMan');
 	 */
 	function setPanesContent() {
 		let panes = document.getElementsByClassName("pane")
+		let highestDetailMapNumber = 0
 		for (let i=0; i<panes.length; i++) {
 			setPaneContent(panes[i].id)
+			if (NgChm.DMM.nextMapNumber > highestDetailMapNumber) { highestDetailMapNumber = NgChm.DMM.nextMapNumber }
 		}
 		NgChm.Pane.resetPaneCounter(panes.length+1);
+		NgChm.DMM.nextMapNumber = highestDetailMapNumber
 	}
 
 	/**
@@ -90,7 +93,11 @@ NgChm.createNS('NgChm.StateMan');
 		let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
 		if (pane.textContent.includes("Heat Map Summary")) {
 			NgChm.SUM.switchPaneToSummary(NgChm.Pane.findPaneLocation(pane))
+		} else if (pane.textContent.includes("Heat Map Detail - Primary")) {
+			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane),false)
+			NgChm.DMM.switchToPrimary(pane.childNodes[1]);
 		} else if (pane.textContent.includes("Heat Map Detail")) {
+			NgChm.DMM.nextMapNumber = parseInt(pane.textContent.split('Ver ')[1]) - 1
 			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane),false)
 		} else {
 			try {
