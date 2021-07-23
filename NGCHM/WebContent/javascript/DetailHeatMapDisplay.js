@@ -174,6 +174,56 @@ NgChm.DET.setInitialDetailDisplaySize = function (mapItem) {
 	}
 }
 
+/*
+	Construct DOM template for Detail Heat Map and append to div with id = 'template' 
+*/
+NgChm.DET.constructDetailMapDOMTemplate = function() {
+	let detailTemplate = document.createElement('div')
+	detailTemplate.setAttribute('id','detail_chm')
+	detailTemplate.setAttribute('class','detail_chm')
+	detailTemplate.setAttribute('style','position: absolute;')
+	let columnDendro = document.createElement('canvas')
+	columnDendro.setAttribute('id','detail_column_dendro_canvas')
+	columnDendro.setAttribute('width','1200')
+	columnDendro.setAttribute('height','500')
+	columnDendro.setAttribute('style','position: absolute;')
+	detailTemplate.appendChild(columnDendro)
+	let rowDendro = document.createElement('canvas')
+	rowDendro.setAttribute('id','detail_row_dendro_canvas')
+	rowDendro.setAttribute('width','1200')
+	rowDendro.setAttribute('height','500')
+	rowDendro.setAttribute('style','position: absolute;')
+	detailTemplate.appendChild(rowDendro)
+	let detailCanvas = document.createElement('canvas')
+	detailCanvas.setAttribute('id','detail_canvas')
+	detailCanvas.setAttribute('class','detail_canvas')
+	detailCanvas.setAttribute('tabindex','1')
+	detailTemplate.appendChild(detailCanvas)
+	let detailBoxCanvas = document.createElement('canvas')
+	detailBoxCanvas.setAttribute('id','detail_box_canvas')
+	detailBoxCanvas.setAttribute('class','detail_box_canvas')
+	detailTemplate.appendChild(detailBoxCanvas)
+	// labels div has children colLabels and rowLabels
+	let labels = document.createElement('div')
+	labels.setAttribute('id','labelDiv')
+	labels.setAttribute('style','display: inline-block;')
+	let colLabels = document.createElement('div')
+	colLabels.setAttribute('id','colLabelDiv')
+	colLabels.setAttribute('data-axis','Column')
+	colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
+	colLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
+	labels.appendChild(colLabels)
+	let rowLabels = document.createElement('div')
+	rowLabels.setAttribute('id','rowLabelDiv')
+	rowLabels.setAttribute('data-axis','Row')
+	rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
+	rowLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
+	labels.appendChild(rowLabels)
+	detailTemplate.appendChild(labels)
+	let templates = document.getElementById('templates')
+	templates.appendChild(detailTemplate)
+}
+
 /*********************************************************************************************
  * FUNCTION:  drawDetailHeatMap - The purpose of this function is to draw the region of the 
  * NGCHM specified by drawWin to a detail heat map pane.
@@ -2360,18 +2410,18 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	NgChm.Pane.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
 
 	let savedChmElements = [];
-	let firstSwitch = true;
 
 	function switchPaneToDetail (loc) { 
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		let isPrimary = false;
-		if (firstSwitch) {
+		let detailCanvas = document.getElementById('detail_canvas')
+		if (detailCanvas == undefined) {
 			// First time detail NGCHM created.
+			NgChm.DET.constructDetailMapDOMTemplate()
 			NgChm.SRCH.clearAllSearchResults();
 			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild (document.getElementById('detail_chm'));
-			firstSwitch = false;
 			isPrimary = true;
 		} else {
 			NgChm.Pane.clearExistingGearDialog(loc.pane.id);
