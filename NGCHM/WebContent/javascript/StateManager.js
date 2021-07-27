@@ -9,6 +9,7 @@ NgChm.createNS('NgChm.StateMan');
 
 	NgChm.StateMan.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
 	NgChm.StateMan.initializeWithMapConfigData = initializeWithMapConfigData;
+
 	/**
 	 *	Reconstruct the panels from data in the mapConfig.json file
 	 */
@@ -20,11 +21,27 @@ NgChm.createNS('NgChm.StateMan');
 			addDividerControlsToResizeHelpers();
 			addResizeHandlersToContainers();
 			window.dispatchEvent(new Event('resize'))
+			triggerUpdateSelection();
 		} else { // wait for NGCHM to initialize itself
-			setTimeout(reconstructPanelsFromMapConfig, 100)
+			setTimeout(reconstructPanelsFromMapConfig, 500)
 		}
 	}
-	
+
+	/**
+	 * After a time, call updateSelection on the primary map to
+	 * force a redraw. This is a very bad hack: without the setTimeout,
+	 * the call to updateSelection() does not seem to draw the primary detail map, 
+	 * and the primary detail map area is blank (but labels and outline are drawn). 
+	 * But we are unsure about what the code needs wait for...so for the moment
+	 * we have this hack.
+	 * TODO: fix this hack.
+	*/
+	async function triggerUpdateSelection(){
+		setTimeout( () => {
+			NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
+		}, 100)
+	}
+
 	/**
 	 *	Reconstruct ngChmContainer and pane layout.
 	 */ 
@@ -72,13 +89,17 @@ NgChm.createNS('NgChm.StateMan');
 	}
 
 	/**
-	 *	For each pane, call the function that adds appropriate content
+	 *	Set the primary detail pane's content first, then set the remaining
+	 *	panes' content. (it doesn't seem to work as desired without setting the
+	 *	primary detail pane first. TODO: clean this up!)
 	 */
 	function setPanesContent() {
+		NgChm.DMM.nextMapNumber = 0
+		setPrimaryDetailPaneContent()
 		let panes = document.getElementsByClassName("pane")
 		let highestDetailMapNumber = 0
 		for (let i=0; i<panes.length; i++) {
-			setPaneContent(panes[i].id)
+			setPaneContentUnlessPrimaryDetail(panes[i].id)
 			if (NgChm.DMM.nextMapNumber > highestDetailMapNumber) { highestDetailMapNumber = NgChm.DMM.nextMapNumber }
 		}
 		NgChm.Pane.resetPaneCounter(panes.length+1);
@@ -86,19 +107,50 @@ NgChm.createNS('NgChm.StateMan');
 	}
 
 	/**
-	 *	Set a pane's content based on 'textContent' attribute
+	 * Iterate over panes and return the primary detail pane. If no primary detail pane,
+	 * return null.
 	 */
-	function setPaneContent(paneid) {
+	function getPrimaryDetailPane() {
+		let panes = document.getElementsByClassName("pane")
+		for (let i=0; i<panes.length; i++) {
+			let pane = document.getElementById(panes[i].id)
+			if (pane.textContent.includes("Heat Map Detail - Primary")) {
+				return pane
+			}
+		}
+		return null
+	}
+
+	/**
+	 * Draw the primary detail map in the primary detail pane.
+	 */
+	function setPrimaryDetailPaneContent() {
+		let pane = getPrimaryDetailPane();
+		NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane))
+		let canvas = pane.querySelector('.detail_canvas')
+		let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas)
+		let chm = document.getElementById('detail_chm')
+		NgChm.DMM.completeMapItemConfig(chm, mapItem)
+		NgChm.DET.setDrawDetailTimeout(mapItem,5,false)
+		NgChm.DET.drawRowAndColLabels(mapItem)
+		NgChm.DMM.switchToPrimary(pane.childNodes[1]);
+	}
+
+	/**
+	 *	Set a pane's content based on 'textContent' attribute, unless a primary pane (then just
+	 *	return)
+	 */
+	function setPaneContentUnlessPrimaryDetail(paneid) {
 		let pane = document.getElementById(paneid)
 		let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
 		if (pane.textContent.includes("Heat Map Summary")) {
 			NgChm.SUM.switchPaneToSummary(NgChm.Pane.findPaneLocation(pane))
 		} else if (pane.textContent.includes("Heat Map Detail - Primary")) {
-			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane),false)
-			NgChm.DMM.switchToPrimary(pane.childNodes[1]);
+			return
 		} else if (pane.textContent.includes("Heat Map Detail")) {
 			NgChm.DMM.nextMapNumber = parseInt(pane.textContent.split('Ver ')[1]) - 1
-			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane),false)
+			let loc = NgChm.Pane.findPaneLocation(pane)
+			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane))
 		} else {
 			try {
 				let specifiedPlugin = customjsPlugins.filter(pc => pane.textContent.indexOf(pc.name) > -1)[0]
@@ -110,7 +162,6 @@ NgChm.createNS('NgChm.StateMan');
 				throw("Error loading plugin")
 			}
 		}
-		NgChm.Pane.resizePane(pane)
 	}
 
 	/**
