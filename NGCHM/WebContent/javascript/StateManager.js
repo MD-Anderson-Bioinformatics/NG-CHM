@@ -94,10 +94,10 @@ NgChm.createNS('NgChm.StateMan');
 	 *	primary detail pane first. TODO: clean this up!)
 	 */
 	function setPanesContent() {
-		NgChm.DMM.nextMapNumber = 0
+		NgChm.DMM.nextMapNumber = 1
 		setPrimaryDetailPaneContent()
 		let panes = document.getElementsByClassName("pane")
-		let highestDetailMapNumber = 0
+		let highestDetailMapNumber = 1 
 		for (let i=0; i<panes.length; i++) {
 			setPaneContentUnlessPrimaryDetail(panes[i].id)
 			if (NgChm.DMM.nextMapNumber > highestDetailMapNumber) { highestDetailMapNumber = NgChm.DMM.nextMapNumber }
