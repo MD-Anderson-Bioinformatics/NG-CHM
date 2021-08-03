@@ -133,6 +133,7 @@ NgChm.createNS('NgChm.StateMan');
 		NgChm.DMM.completeMapItemConfig(chm, mapItem)
 		NgChm.DET.setDrawDetailTimeout(mapItem,5,false)
 		NgChm.DET.drawRowAndColLabels(mapItem)
+		NgChm.DEV.addEvents(pane.getAttribute('id'))
 		NgChm.DMM.switchToPrimary(pane.childNodes[1]);
 	}
 
