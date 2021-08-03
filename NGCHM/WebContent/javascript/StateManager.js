@@ -135,6 +135,7 @@ NgChm.createNS('NgChm.StateMan');
 		NgChm.DET.drawRowAndColLabels(mapItem)
 		NgChm.DEV.addEvents(pane.getAttribute('id'))
 		NgChm.DMM.switchToPrimary(pane.childNodes[1]);
+		NgChm.DET.updateDisplayedLabels();
 	}
 
 	/**
