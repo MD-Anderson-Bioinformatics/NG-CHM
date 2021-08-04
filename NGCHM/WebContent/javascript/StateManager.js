@@ -22,6 +22,7 @@ NgChm.createNS('NgChm.StateMan');
 			addResizeHandlersToContainers();
 			window.dispatchEvent(new Event('resize'))
 			triggerUpdateSelectionOnDetailMaps();
+			NgChm.SUM.summaryPaneResizeHandler()
 		} else { // wait for NGCHM to initialize itself
 			setTimeout(reconstructPanelsFromMapConfig, 500)
 		}
