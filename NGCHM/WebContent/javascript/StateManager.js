@@ -15,6 +15,7 @@ NgChm.createNS('NgChm.StateMan');
 	 */
 	async function reconstructPanelsFromMapConfig() {
 		if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
+			NgChm.DET.initialSwitchPaneToDetail = true;
 			reconstructPanelLayoutFromMapConfig();
 			recreateReconstructedPanes();
 			setPanesContent()

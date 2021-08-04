@@ -2410,19 +2410,20 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	NgChm.Pane.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
 
 	let savedChmElements = [];
+	NgChm.DET.initialSwitchPaneToDetail = true
 
 	function switchPaneToDetail (loc) { 
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		let isPrimary = false;
-		let detailCanvas = document.getElementById('detail_canvas')
-		if (detailCanvas == undefined) {
+		if (NgChm.DET.initialSwitchPaneToDetail == true) {
 			// First time detail NGCHM created.
 			NgChm.DET.constructDetailMapDOMTemplate()
 			NgChm.SRCH.clearAllSearchResults();
 			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild (document.getElementById('detail_chm'));
 			isPrimary = true;
+			NgChm.DET.initialSwitchPaneToDetail = false;
 		} else {
 			NgChm.Pane.clearExistingGearDialog(loc.pane.id);
 			if (savedChmElements.length > 0) {
