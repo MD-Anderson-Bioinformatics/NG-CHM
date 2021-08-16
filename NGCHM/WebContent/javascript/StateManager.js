@@ -11,7 +11,12 @@ NgChm.createNS('NgChm.StateMan');
 	NgChm.StateMan.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
 
 	/**
-	 *	Reconstruct the panels from data in the mapConfig.json file
+	 * Reconstruct the panels from data in the mapConfig.json file
+	 *
+	 * This function combines and if/else with setTmeout in order to wait for the general 
+	 * initialization of the NGCHM to complete before attempting to reconstruct the panel layout. 
+	 * This is a hack.
+	 * TODO: Understand the NGCHM initialization code well enough to not need this hack.
 	 */
 	async function reconstructPanelsFromMapConfig() {
 		if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
@@ -30,8 +35,9 @@ NgChm.createNS('NgChm.StateMan');
 	}
 
 	/**
-	 * After a time delay, call updateSelection on each detail map in order to 
-	 * force a redraw. This is a very bad hack: without the setTimeout,
+	 * After a time delay, call updateSelection on each detail map in order to force a redraw.
+	 *
+	 * This is a very bad hack: without the setTimeout,
 	 * the call to updateSelection() does not seem to draw the detail maps,
 	 * and the map areas are blank (but labels and outline are drawn). 
 	 * But we are unsure about what the code needs wait for...so for the moment
