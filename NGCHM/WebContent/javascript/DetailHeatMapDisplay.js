@@ -1274,11 +1274,8 @@ NgChm.DET.updateDisplayedLabels = function () {
 		for (let oldEl in mapItem.oldLabelElements) {
 			const e = mapItem.oldLabelElements[oldEl];
 			if (e.div.classList.contains('DynamicLabel')) {
-				try {
+				if (e.parent.contains(e.div)) {
 					e.parent.removeChild(e.div);
-				} catch (err) {
-					console.log({ m: 'Unable to remove old label element ', oldEl, e });
-					console.error(err);
 				}
 			} else {
 				// Move non-dynamic labels (e.g. missingCovariateBar indicators) to current labels.
