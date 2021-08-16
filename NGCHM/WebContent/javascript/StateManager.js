@@ -8,7 +8,7 @@ NgChm.createNS('NgChm.StateMan');
 (function(){
 
 	NgChm.StateMan.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
-	NgChm.StateMan.initializeWithMapConfigData = initializeWithMapConfigData;
+	NgChm.StateMan.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
 
 	/**
 	 *	Reconstruct the panels from data in the mapConfig.json file
@@ -179,7 +179,7 @@ NgChm.createNS('NgChm.StateMan');
 	/**
 	* Send any exiting data from mapConfig.json to plugin and close Gear Menu
 	*/
-	function initializeWithMapConfigData(pluginInstance) {
+	function initializePluginWithMapConfigData(pluginInstance) {
 		let paneId = getPaneIdFromInstance(pluginInstance)
 		let pluginConfigData = getPluginDataFromMapConfig(paneId)
 		if (pluginConfigData) {
