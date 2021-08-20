@@ -1000,37 +1000,40 @@ NgChm.UTIL.isValidURL = function (str) {
  * passed in.
  **********************************************************************************/
 NgChm.UTIL.dragElement = function (elmnt) {
-	  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-	  if (document.getElementById(elmnt.id + "Hdr")) {
-	    /* if present, the header is where you move the DIV from:*/
-	    document.getElementById(elmnt.id + "Hdr").onmousedown = dragMouseDown;
-	  }
-
-	  function dragMouseDown(e) {
-	    e = e || window.event;
-	    e.preventDefault();
-	    // get the mouse cursor position at startup:
-	    pos3 = e.clientX;
-	    pos4 = e.clientY;
-	    document.onmouseup = closeDragElement;
-	    // call a function whenever the cursor moves:
-	    document.onmousemove = elementDrag;
-	  }
-
-	  function elementDrag(e) {
-	    e = e || window.event;
-	    e.preventDefault();
-	    // calculate the new cursor position:
-	    elmnt.style.top = e.clientY + 'px';
-	    elmnt.style.left = e.clientX + 'px';
-	  }
-
-	  function closeDragElement() {
-	    /* stop moving when mouse button is released:*/
-	    document.onmouseup = null;
-	    document.onmousemove = null;
-	  }
+	if (document.getElementById(elmnt.id + "Hdr")) {
+		/* if present, the header is where you move the DIV from:*/
+		document.getElementById(elmnt.id + "Hdr").onmousedown = dragMouseDown;
 	}
+
+	function dragMouseDown(e) {
+		e = e || window.event;
+		e.preventDefault();
+		document.onmouseup = closeDragElement;
+		// call a function whenever the cursor moves.
+		document.onmousemove = makeElementDrag(e.clientX, e.clientY);
+	}
+
+	function makeElementDrag(oldX, oldY) {
+		// This creates a closure over the original X/Y
+		return function (e) {
+			e = e || window.event;
+			e.preventDefault();
+
+			var deltaX = oldX - e.clientX;
+			var deltaY = oldY - e.clientY;
+			oldX = e.clientX;
+			oldY = e.clientY;
+			elmnt.style.top = (elmnt.offsetTop - deltaY) + "px";
+			elmnt.style.left = (elmnt.offsetLeft - deltaX) + "px";
+		};
+	}
+
+	function closeDragElement() {
+		/* stop moving when mouse button is released:*/
+		document.onmouseup = null;
+		document.onmousemove = null;
+	}
+}
 
 /**********************************************************************************
  * FUNCTION - roundUpDown: The purpose of this function is to take an input number
