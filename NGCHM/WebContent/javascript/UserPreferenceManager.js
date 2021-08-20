@@ -151,7 +151,7 @@ NgChm.UPM.locatePrefsPanel = function() {
 	
 	prefspanel.style.height = (contBB.height + iconBB.height) + 'px';
 	document.getElementById("prefsMove_btn").dataset.state = 'moveLeft';
-	prefspanel.style.left = (NgChm.UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
+	prefspanel.style.left = contBB.width + NgChm.UTIL.containerElement.offsetLeft - prefspanel.offsetWidth + "px"};
 }
 
 /**********************************************************************************
@@ -286,7 +286,7 @@ NgChm.UPM.prefsMoveButton = function() {
 		moveBtn.setAttribute('src', 'images/prefsLeft.png');
 		moveBtn.dataset.state = 'moveLeft';
 		prefspanel.style.right = "";
-		prefspanel.style.left = (NgChm.UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
+		prefspanel.style.left = NgChm.UTIL.containerElement.getBoundingClientRect().width + NgChm.UTIL.containerElement.offsetLeft - prefspanel.offsetWidth + "px"};
 	}
 }
 
