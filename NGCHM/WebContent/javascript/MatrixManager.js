@@ -983,9 +983,15 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			return false
 		}
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { mapConfig['panel_configuration'] = {} }
-		if (!mapConfig.panel_configuration.hasOwnProperty(paneId)) { mapConfig.panel_configuration[paneId] = {} }
+		if (!mapConfig.panel_configuration.hasOwnProperty(paneId) || mapConfig.panel_configuration[paneId] == null) { mapConfig.panel_configuration[paneId] = {} }
 		mapConfig.panel_configuration[paneId].config = postedConfig;
 		mapConfig.panel_configuration[paneId].data = postedData;
+	}
+
+	NgChm.MMGR.removeDataSentToPluginFromMapConfig = function(paneid) {
+		if (mapConfig.hasOwnProperty('panel_configuration')) {
+			mapConfig.panel_configuration[paneid] = null;
+		}
 	}
 
 	function zipSaveMapProperties() {

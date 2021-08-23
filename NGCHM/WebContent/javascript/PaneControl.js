@@ -1201,7 +1201,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		const gearIcon = loc.paneHeader.getElementsByClassName('gearIcon')[0];
 		gearIcon.classList.add('hide');
 		NgChm.Pane.setPaneClientIcons (loc, []);
-
+		NgChm.MMGR.removeDataSentToPluginFromMapConfig(loc.pane.id)
 		// Return remaining client elements to caller.
 		return clientElements;
 	}

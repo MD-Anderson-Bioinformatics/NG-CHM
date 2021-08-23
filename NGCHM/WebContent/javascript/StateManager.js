@@ -99,8 +99,8 @@ NgChm.createNS('NgChm.StateMan');
 		for (let i=0; i<panes.length; i++) {
 			let displayedPane = document.getElementById(panes[i].id)
 			let newPane = NgChm.Pane.newPane({height: displayedPane.clientHeight+"px", width: displayedPane.clientWidth+"px"}, displayedPane.textContent,
-			displayedPane.id)
-				displayedPane.parentNode.replaceChild(newPane,displayedPane)
+				displayedPane.id)
+			displayedPane.parentNode.replaceChild(newPane,displayedPane)
 		}
 	}
 
@@ -118,8 +118,23 @@ NgChm.createNS('NgChm.StateMan');
 			setPaneContentUnlessPrimaryDetail(panes[i].id)
 			if (NgChm.DMM.nextMapNumber > highestDetailMapNumber) { highestDetailMapNumber = NgChm.DMM.nextMapNumber }
 		}
-		NgChm.Pane.resetPaneCounter(panes.length+1);
+		let highestPaneId = getHighestPaneId()
+		NgChm.Pane.resetPaneCounter(highestPaneId + 1);
 		NgChm.DMM.nextMapNumber = highestDetailMapNumber
+	}
+
+	/**
+		Return hightest pane id for panes currently in DOM
+	*/
+	function getHighestPaneId() {
+		let panes = document.getElementsByClassName("pane")
+		try {
+			let paneIds = [...panes].map(p => {return p.id}).map(p => {return parseInt(p.replace('pane',''))})
+			return Math.max(...paneIds)
+		} catch(err) {
+			console.error("Cannot determine hightest pane id")
+			throw err
+		}
 	}
 
 	/**
@@ -142,6 +157,7 @@ NgChm.createNS('NgChm.StateMan');
 	 */
 	function setPrimaryDetailPaneContent() {
 		let pane = getPrimaryDetailPane();
+		NgChm.DMM.primaryMap.pane = pane.id
 		NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane))
 		let canvas = pane.querySelector('.detail_canvas')
 		let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas)
@@ -169,6 +185,8 @@ NgChm.createNS('NgChm.StateMan');
 			NgChm.DMM.nextMapNumber = parseInt(pane.textContent.split('Ver ')[1]) - 1
 			let loc = NgChm.Pane.findPaneLocation(pane)
 			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane))
+		} else if (pane.textContent == 'empty') {
+			return //empty pane
 		} else {
 			try {
 				let specifiedPlugin = customjsPlugins.filter(pc => pane.textContent.indexOf(pc.name) > -1)[0]
