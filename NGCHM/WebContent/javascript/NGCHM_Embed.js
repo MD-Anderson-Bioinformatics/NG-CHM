@@ -18,6 +18,8 @@ const defaultParams = {
     //to path to another sub-directory within web content: e.g. './subdir/ngchmWidget-min.js'
     //to path to a URL location e.g. 'http://widgetloc.com/ngchmWidget-1.2.0-min.js' (one we have tested with: 'http://cloudflare.com/..../ngchmWidget-1.2.0-min.js')
     widgetPath: 'ngchmWidget-min.js',
+    //Path to minified source for widget.  Leave null to use widgetPath above.
+    widgetSource: null,
     //Optional configuration for iframe
     scrolling: "no",
     style: "height:100vh; width:100vw; border-style:none;",
@@ -33,7 +35,9 @@ const defaultParams = {
     // Path to additional custom JS file
     customJS: '',
     // Optional configuration for expandable NG-CHM display
-    expandable: false
+    expandable: false,
+    // Optional onload function on generated iframe
+    onload: null
 };
 
 // Exported function to be called to embed an NGCHM.
@@ -62,6 +66,7 @@ function embedNGCHM (selector, srcType, srcSpec, params = {}) {
     sequenceNo++;
     ngchmIFrame.scrolling = P.scrolling;
     ngchmIFrame.sandbox = P.sandbox;
+    if (P.onload !== null) { ngchmIFrame.onload = P.onload; }
     // Save details required by iFrame initialization callback.
     iframeInfo[ngchmIFrame.name] = { srcType, srcSpec };
     //Add Iframe to required DIV
