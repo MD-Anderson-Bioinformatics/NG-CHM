@@ -700,6 +700,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			let awaitingPluginData = setInterval(function() {
 				waitForPluginDataCount = waitForPluginDataCount + 1; // only wait so long 
 				if (NgChm.LNK.havePluginData() || waitForPluginDataCount > 3) {
+					NgChm.LNK.warnAboutMissingPluginData();
 					zipSaveMapProperties();
 					clearInterval(awaitingPluginData);
 				}

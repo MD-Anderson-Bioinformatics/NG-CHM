@@ -1027,6 +1027,32 @@ NgChm.createNS('NgChm.LNK');
 		}
 	    }
 
+	    /* Display warning message if some plugins did not provide their data
+	    */
+	    NgChm.LNK.warnAboutMissingPluginData = function warnAboutMissingPluginData() {
+		if (NgChm.LNK.havePluginData()) {
+			return false; // have all plugins' data...no need for warning message
+		}
+		let warningText = "Unable to save some date elements from the following plugins: <br>"
+		let pluginInstances = NgChm.LNK.getPluginInstances();
+		Object.keys(pluginInstances).forEach(pi => {
+			if (typeof pluginInstances[pi]['dataFromPlugin'] == 'undefined') {
+				warningText += "<br>&nbsp;&nbsp;" + pluginInstances[pi]['plugin']['name'];
+			}
+		});
+		let dialog = document.getElementById('msgBox');
+		NgChm.UHM.initMessageBox();
+		NgChm.UHM.setMessageBoxHeader("Warning: Unable to save some plugin data");
+		NgChm.UHM.setMessageBoxText(warningText);
+		NgChm.UHM.setMessageBoxButton(1, 'images/okButton.png', 'OK Button');
+		dialog.style.display = '';
+		let okButton = dialog.querySelector('#msgBoxBtnImg_1');
+		okButton.addEventListener('click', function handleOkClick(e) {
+			okButton.removeEventListener('click', handleOkClick);
+			NgChm.UHM.messageBoxCancel();
+		})
+	    }
+
 	    // Send a Vanodi message to all plugin instances except the one identified by srcNonce.
 	    NgChm.LNK.sendMessageToAllOtherPlugins = function sendMessageToAllOtherPlugins (srcNonce, msg) {
 		const iframes = document.getElementsByTagName('iframe');
