@@ -211,6 +211,8 @@ NgChm.createNS('NgChm.StateMan');
 			let config = pluginConfigData.config;
 			let data = pluginConfigData.data;
 			NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data})
+			let dataFromPlugin = pluginConfigData.dataFromPlugin
+			NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin})
 			NgChm.Pane.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'))
 		} else {
 			return false;
