@@ -935,6 +935,10 @@ NgChm.createNS('NgChm.LNK');
 			return instances;
 		}
 
+	    NgChm.LNK.removePluginInstance = function removePluginInstance(nonceToRemove) {
+	    	delete instances[nonceToRemove];
+	    }
+
 	    NgChm.LNK.getPluginInstanceByName = function getPluginInstanceByName (name) {
 		let p = 0;
 		const k = Object.keys(instances);
@@ -1083,7 +1087,9 @@ NgChm.createNS('NgChm.LNK');
 	    loc.paneTitle.innerText = plugin.name;
 	    loc.pane.appendChild (linkoutElement);
 
-	    linkoutElement.appendChild(NgChm.LNK.createPluginInstance('panel-plugin', plugin));
+	    let pluginIframe = NgChm.LNK.createPluginInstance('panel-plugin', plugin);
+	    loc.pane.nonce = pluginIframe.dataset.nonce;
+	    linkoutElement.appendChild(pluginIframe);
 	};
 
 	// Start bunch of private helper functions for collecting/packaging data to send to plugin

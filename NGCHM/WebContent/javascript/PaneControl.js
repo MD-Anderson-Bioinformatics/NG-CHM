@@ -1184,6 +1184,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// - the removed client elements are returned.
 	function emptyPaneLocation (loc) {
 		if (loc.pane === null) return;  //builder logic
+		NgChm.LNK.removePluginInstance(loc.pane.nonce);
 		// Remove all client elements from the pane.
 		const clientElements = [];
 		for (let idx = 0; idx < loc.pane.childNodes.length; idx++) {
