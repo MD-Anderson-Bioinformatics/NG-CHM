@@ -689,13 +689,21 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 	
 	this.saveHeatMapToNgchm = function () {
+		NgChm.LNK.requestDataFromPlugins();
 		var success = true;
 		NgChm.UHM.initMessageBox();
 		if (fileSrc === NgChm.MMGR.WEB_SOURCE) {
 			success = zipMapProperties(JSON.stringify(mapConfig)); 
 			NgChm.UHM.zipSaveNotification(false);
 		} else {
-			zipSaveMapProperties();
+			let waitForPluginDataCount = 0;
+			let awaitingPluginData = setInterval(function() {
+				waitForPluginDataCount = waitForPluginDataCount + 1; // only wait so long 
+				if (NgChm.LNK.havePluginData() || waitForPluginDataCount > 3) {
+					zipSaveMapProperties();
+					clearInterval(awaitingPluginData);
+				}
+			}, 1000);
 			NgChm.UHM.zipSaveNotification(false);
 		}
 		NgChm.heatMap.setUnAppliedChanges(false);
@@ -992,6 +1000,25 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (mapConfig.hasOwnProperty('panel_configuration')) {
 			mapConfig.panel_configuration[paneid] = null;
 		}
+	}
+
+	/*
+	  Saves data from plugin to mapConfig--this is data that did NOT originally come from the NGCHM.
+	*/
+	NgChm.MMGR.saveDataFromPluginToMapConfig = function(nonce, dataFromPlugin) {
+		try {
+			var paneId = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement.id;
+		} catch(err) {
+			throw "Cannot determine pane for given nonce";
+			return false;
+		}
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
+			mapConfig['panel_configuration'] = {};
+		}
+		if (!mapConfig.panel_configuration.hasOwnProperty(paneId) || mapConfig.panel_configuration[paneId] == null) { 
+			mapConfig.panel_configuration[paneId] = {};
+		}
+		mapConfig.panel_configuration[paneId].dataFromPlugin = dataFromPlugin;
 	}
 
 	function zipSaveMapProperties() {
