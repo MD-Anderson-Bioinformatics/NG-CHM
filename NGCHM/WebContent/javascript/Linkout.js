@@ -1100,7 +1100,7 @@ NgChm.createNS('NgChm.LNK');
 	// Switch the empty pane identified by PaneLocation loc to a new
 	// instance of the specified panel plugin.
 	NgChm.LNK.switchPaneToPlugin = function (loc, plugin) {
-
+	    NgChm.heatMap.setUnAppliedChanges(true);
 	    const params = plugin.params;
 	    if (!params) {
 		const help = NgChm.UTIL.newElement('DIV.linkouts');
@@ -1393,6 +1393,7 @@ NgChm.createNS('NgChm.LNK');
 				setAxisGroupData (data.axes[ai], axis, axis.groups[idx]);
 			}
 		}
+		NgChm.heatMap.setUnAppliedChanges(true);
 		NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
 		NgChm.MMGR.saveDataSentToPluginToMapConfig(nonce, config, data);
 	}; // end of initializePanePlugin

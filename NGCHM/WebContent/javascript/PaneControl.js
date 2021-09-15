@@ -502,6 +502,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// - paneid is the id to assign the new pane (if null, a unique paneid will be generated)
 	// If a title is given, the pane will be initialized with a paneHeader.
 	function newPane(style, title, paneid) {
+		NgChm.heatMap.setUnAppliedChanges(true);
 		if (paneid == null) paneid = getUniquePaneId();
 		const pane = NgChm.UTIL.newElement('DIV.pane', { style, id: paneid });
 		pane.addEventListener('paneresize', resizeHandler);
@@ -891,6 +892,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				menuItemDisabled ('Close');
 			} else {
 				menuItem ('Close', () => {
+					NgChm.heatMap.setUnAppliedChanges(true);
 					emptyPaneLocation (paneLoc);
 					if (debug) console.log({ m: 'closePane', paneLoc, parentC, siblings: paneLoc.container.children });
 					try { // remove Gear dialong if it exists
