@@ -449,15 +449,18 @@ public class ShaidyRMapGen {
 						if (count > 0) fileout.print(",");
 						fileout.print("{\"" + label + "\": \"" + value + "\"}");
 						count++;
-						if (label.toLowerCase().equals("chm.info.caption"))
+						if (label.toLowerCase().equals("chm.info.description")) {
 							description = value;
+						} else if (label.toLowerCase().equals("chm.info.caption")) { // maintained for backward compatibility
+							description = value;
+						}
 					} 	
 				}
 			}
 			fileout.println("],");
 
 			if (description.equals("-"))
-				warnings.append("Warning: No heat map description provided in properties : chm.info.caption.\n");
+				warnings.append("Warning: No heat map description provided in properties : chm.info.description.\n");
 			fileout.println("\t\"chm_description\": \""+ description + "\",");
 
 			
