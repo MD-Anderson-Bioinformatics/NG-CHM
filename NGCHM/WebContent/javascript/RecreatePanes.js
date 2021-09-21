@@ -3,12 +3,12 @@
  *	NGCHM namespace responsible for reconstructing a saved pane layout.
  */
 
-NgChm.createNS('NgChm.StateMan');
+NgChm.createNS('NgChm.RecPanes');
 
 (function(){
 	"use strict";
-	NgChm.StateMan.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
-	NgChm.StateMan.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
+	NgChm.RecPanes.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
+	NgChm.RecPanes.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
 
 	/**
 	 * Reconstruct the panels from data in the mapConfig.json file

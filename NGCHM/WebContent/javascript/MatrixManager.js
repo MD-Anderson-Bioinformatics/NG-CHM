@@ -1233,7 +1233,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 		addDataLayers(mc);
 		if (mc.hasOwnProperty('panel_configuration')) {
-			NgChm.StateMan.reconstructPanelsFromMapConfig()
+			NgChm.RecPanes.reconstructPanelsFromMapConfig()
 		}
 	}
 	
