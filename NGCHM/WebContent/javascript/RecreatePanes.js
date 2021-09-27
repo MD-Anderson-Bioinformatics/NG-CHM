@@ -20,7 +20,7 @@ NgChm.createNS('NgChm.RecPanes');
 	 */
 	async function reconstructPanelsFromMapConfig() {
 		if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
-			NgChm.DET.initialSwitchPaneToDetail = true;
+			NgChm.RecPanes.savedInitialDetailPane = document.getElementById('detail_chm');
 			reconstructPanelLayoutFromMapConfig();
 			recreateReconstructedPanes();
 			setPanesContent();
@@ -46,6 +46,7 @@ NgChm.createNS('NgChm.RecPanes');
 	 * TODO: fix this hack.
 	*/
 	function triggerUpdateSelectionOnDetailMaps() {
+		if (document.getElementsByClassName('detail_chm').length < 1) { return; }
 		var idx = 0;
 		function triggerUpdateSelection() {
 			setTimeout( () => {
@@ -158,6 +159,7 @@ NgChm.createNS('NgChm.RecPanes');
 	 */
 	function setPrimaryDetailPaneContent() {
 		let pane = getPrimaryDetailPane();
+		if (pane == null) {return false;}
 		NgChm.DMM.primaryMap.pane = pane.id;
 		NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
 		let canvas = pane.querySelector('.detail_canvas');

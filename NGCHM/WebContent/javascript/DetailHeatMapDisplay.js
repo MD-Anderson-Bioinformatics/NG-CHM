@@ -2413,7 +2413,21 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		let isPrimary = false;
-		if (NgChm.DET.initialSwitchPaneToDetail == true) {
+		if (NgChm.RecPanes.savedInitialDetailPane != undefined) {
+			// this if block is executed if the initial detail pane was saved in RecreatePanes
+			NgChm.SRCH.clearAllSearchResults();
+			NgChm.Pane.emptyPaneLocation (loc);
+			loc.pane.appendChild(NgChm.RecPanes.savedInitialDetailPane);
+			let canvas = loc.pane.querySelector('.detail_canvas');
+			let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
+			mapItem.pane = loc.pane.id;
+			NgChm.DMM.primaryMap = mapItem;
+			NgChm.DMM.DetailMaps.push(mapItem);
+			NgChm.DET.updateDisplayedLabels();
+			isPrimary = true;
+			NgChm.DET.initialSwitchPaneToDetail = false;
+			NgChm.RecPanes.savedInitialDetailPane = undefined;
+		} else if (NgChm.DET.initialSwitchPaneToDetail == true) {
 			// First time detail NGCHM created.
 			NgChm.DET.constructDetailMapDOMTemplate()
 			NgChm.SRCH.clearAllSearchResults();

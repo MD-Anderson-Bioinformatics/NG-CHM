@@ -2281,6 +2281,7 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 	// This function is called when a pane showing the summary NG-CHM is resized.
 	// Calculate a new layout and redraw the pane's contents.
 	function resizeSummaryPane (loc) {
+		if (document.getElementById('summary_chm') == null) {return;}
 		NgChm.SUM.calcSummaryLayout();
 		NgChm.SUM.redrawSummaryPane ();
 	}
