@@ -24,7 +24,8 @@ NgChm.createNS('NgChm.RecPanes');
 			reconstructPanelLayoutFromMapConfig();
 			recreateReconstructedPanes();
 			setPanesContent();
-			// horrible hack to remove extra primaryDetail map
+			// TODO: fix this hack for multiple primaryMaps added to DetailMaps.
+			//       perhaps best done by fixing the 'wait for initialization' hack
 			if (NgChm.DMM.DetailMaps.filter( x => x.version ).length > 1) {
 				for (let idx = 0; idx < NgChm.DMM.DetailMaps.length; idx++) {
 					NgChm.DMM.DetailMaps.splice(idx,1);
