@@ -858,7 +858,9 @@ NgChm.SUM.onMouseOut = function(evt) {
 	NgChm.SUM.canvas.style.cursor="default";
 	//Gotta redraw everything because of event cascade occurring when mousing out of the layers that contain the canvas 
 	// (container and summary_chm) we set the right position mousing up on the canvas above, but move events are still coming in.
-	NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
+	if (NgChm.DMM.DetailMaps.length > 0) { // only 'redraw everything' if there are detail maps showing
+		NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
+	}
 }
 
 NgChm.SUM.onMouseMoveCanvas = function(evt) {
