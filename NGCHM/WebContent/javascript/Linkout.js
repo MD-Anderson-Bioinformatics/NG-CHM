@@ -1205,23 +1205,34 @@ NgChm.createNS('NgChm.LNK');
 				rawCounts.push(0);
 			}
 		}
+		let getAccessWindowPromises = []
 		for (let dd = 0; dd < idx.length; dd++) {
 			if (isRow) win.firstRow = idx[dd]; else win.firstCol = idx[dd];
-			const awin = NgChm.heatMap.getAccessWindow(win);
-			for (let j= 0; j < win.numRows; j++) {
-				for (let i=0;  i< win.numCols; i++) {
-					const val = awin.getValue (j + win.firstRow, i + win.firstCol);
-					if (!isNaN(val) && val > NgChm.SUM.minValues && val < NgChm.SUM.maxValues) {
-						rawValues[j*win.numCols+i] += val;
-						rawCounts[j*win.numCols+i] ++;
+			getAccessWindowPromises.push(NgChm.heatMap.getAccessWindowPromise(win))
+		}
+		return new Promise((resolve, reject) => {
+			Promise.all(getAccessWindowPromises).then(accessWindows => {
+				try {
+					accessWindows.forEach(accessWindow => {
+						for (let j= 0; j < win.numRows; j++) {
+							for (let i=0;  i< win.numCols; i++) {
+								const val = accessWindow.getValue (j + win.firstRow, i + win.firstCol);
+								if (!isNaN(val) && val > NgChm.SUM.minValues && val < NgChm.SUM.maxValues) {
+									rawValues[j*win.numCols+i] += val;
+									rawCounts[j*win.numCols+i] ++;
+								}
+							}
+						}
+					})
+					for (let i = 0; i < rawValues.length; i++) {
+						values.push (rawCounts[i] === 0 ? NaN : rawValues[i] / rawCounts[i]);
 					}
+					resolve (values);
+				} catch(error) {
+					reject(error)
 				}
-			}
-		}
-		for (let i = 0; i < rawValues.length; i++) {
-			values.push (rawCounts[i] === 0 ? NaN : rawValues[i] / rawCounts[i]);
-		}
-		return values;
+			})
+		})
 	} // end function getDataValues
 
 	/*  Function to return mean, variance, and number of items in a group of rows/columns
@@ -1251,7 +1262,8 @@ NgChm.createNS('NgChm.LNK');
 		const values = [];
 		// Both axisIdx and groupIdx can be disjoint.
 		// TODO: Improve efficiency by grouping adjacent indices.
-		for (let i=0; i < axisIdx.length; i++) {
+		let getAccessWindowPromises = []
+		for (let i=0; i<axisIdx.length; i++) {
 			// Get access window for each axisIdx (one vector per iteration)
 			const win = {
 				layer: NgChm.SEL.getCurrentDL(),
@@ -1261,24 +1273,32 @@ NgChm.createNS('NgChm.LNK');
 				numRows: isRow ? 1 : NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),
 				numCols: isRow ? NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL) : 1
 			};
-			const accessWindow = NgChm.heatMap.getAccessWindow(win)
-			const thisVec = []
-			// Iterate over groupIdx to get vector of values from heatmap for summarization.
-			if (isRow) {
-				for (let j=0; j < groupIdx.length; j++) {
-					const val = accessWindow.getValue(win.firstRow, 1+groupIdx[j]);
-					thisVec.push(val);
-				}
-			} else {
-				for (let j=0; j < groupIdx.length; j++) {
-					const val = accessWindow.getValue(1+groupIdx[j], win.firstCol);
-					thisVec.push(val);
-				}
-			}
-			var statsForVec = getStats(thisVec)
-			values.push(statsForVec)
+			getAccessWindowPromises.push(NgChm.heatMap.getAccessWindowPromise(win))
 		}
-		return values;
+		return new Promise((resolve, reject) => {
+			Promise.all(getAccessWindowPromises).then(accessWindows => {
+				accessWindows.forEach(accessWindow => {
+					const thisVec = []
+					// Iterate over groupIdx to get vector of values from heatmap for summarization.
+					if (isRow) {
+						for (let j=0; j < groupIdx.length; j++) {
+							const val = accessWindow.getValue(accessWindow.win.firstRow, 1+groupIdx[j]);
+							thisVec.push(val);
+						}
+					} else {
+						for (let j=0; j < groupIdx.length; j++) {
+							const val = accessWindow.getValue(1+groupIdx[j], accessWindow.win.firstCol);
+							thisVec.push(val);
+						}
+					}
+					var statsForVec = getStats(thisVec)
+					values.push(statsForVec)
+				})
+				resolve(values)
+			}).catch(error => {
+				reject(error)
+			})
+		})
 	} // end function getSummaryStatistics 
 
 	function getDiscMapFromContMap (colorThresholds, colorVec) {
@@ -1365,7 +1385,7 @@ NgChm.createNS('NgChm.LNK');
 	}
 	// end bunch of helper functions
 
-	NgChm.LNK.initializePanePlugin = function(nonce, config) {
+	NgChm.LNK.initializePanePlugin = async function(nonce, config) {
 		const data = {
 			axes: []
 		};
@@ -1387,7 +1407,7 @@ NgChm.createNS('NgChm.LNK');
 				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
-				setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx], gapIndices);
+				await setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx], gapIndices);
 			}
 			for (let idx = 0; idx < axis.groups.length; idx++) {
 				setAxisGroupData (data.axes[ai], axis, axis.groups[idx]);
@@ -1429,14 +1449,11 @@ NgChm.createNS('NgChm.LNK');
 		// testToRun: name of test to run
 		// group1: labels of other axis elements in group 1
 		// group2: labels of other axis elements in group 2 (optional)
-	function getAxisTestData (msg) {
-		//console.log ({ m: '> getAxisTestData', msg });
+	async function getAxisTestData (msg) {
 		if (msg.axisLabels.length < 1) {
 			NgChm.UHM.systemMessage("NG-CHM PathwayMapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again."); 
 			return false;
 		}
-		var allSummaries = [];
-		var nResultsToReturn;
 		var otherAxisName = NgChm.MMGR.isRow(msg.axisName) ? 'column' : 'row';
 		var otherAxisLabels = NgChm.UTIL.getActualLabels (otherAxisName);
 		var heatMapAxisLabels = NgChm.UTIL.getActualLabels (msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
@@ -1478,8 +1495,8 @@ NgChm.createNS('NgChm.LNK');
 			NgChm.UHM.systemMessage('Group too small','Group 2 must have at least 2 members.')
 			return false;
 		}
-		var summaryStatistics1 = getSummaryStatistics(msg.axisName, axisIdx, idx1);
-		var summaryStatistics2 = getSummaryStatistics(msg.axisName, axisIdx, idx2);
+		var summaryStatistics1 = await getSummaryStatistics(msg.axisName, axisIdx, idx1);
+		var summaryStatistics2 = await getSummaryStatistics(msg.axisName, axisIdx, idx2);
 
 		var cocodata = {
 			labels: [],
@@ -1519,8 +1536,7 @@ NgChm.createNS('NgChm.LNK');
 				    colors: [ '#1c2ed4', '#cbcff7', '#f9d4d4', '#d41c1c' ],
 				    missing: '#fefefe'
 			    }
-		    });
-		    cocodata.results.push({
+		    }); cocodata.results.push({
 			    label: "p_values",
 			    values: [],
 			    colorMap: {
@@ -1548,7 +1564,7 @@ NgChm.createNS('NgChm.LNK');
 
 	// Add the values and colors to cocodata for the 'coco' attributes of axis.
 	// Currently, 'coco' is either coordinate or covariate.
-	function setAxisCoCoData (cocodata, axis, coco, gapIndices) {
+	async function setAxisCoCoData (cocodata, axis, coco, gapIndices) {
 		const colorMapMgr = NgChm.heatMap.getColorMapManager();
 		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
 		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
@@ -1584,7 +1600,8 @@ NgChm.createNS('NgChm.LNK');
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values
 				const idx = axis[valueField][ci].labelIdx; 
-				const values = filterGaps (getDataValues(isRow ? 'column' : 'row', idx), gapIndices);
+				let unfilteredValues = await getDataValues(isRow ? 'column' : 'row', idx)
+				const values = filterGaps (unfilteredValues, gapIndices);
 				cocodata[valueField].push(values);
 				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
 
@@ -2874,7 +2891,7 @@ NgChm.createNS('NgChm.LNK');
 		@option {Array<String>} group1 NGCHM labels for group 1
 		@option {Array<String>} group2 NGCHM labels for group 2
 	    */
-	    function vanodiSendTestData (instance, msg) {
+	    async function vanodiSendTestData (instance, msg) {
 		// axisName: 'row',
 		// axisLabels: labels of axisName elements to test
 		// testToRun: name of test to run
@@ -2889,7 +2906,7 @@ NgChm.createNS('NgChm.LNK');
 		} else if (msg.group1 == null) {
 			console.log ({ m: 'Malformed getTestData request', msg, detail: 'group1 is required' });
 		} else {
-			var testData = getAxisTestData (msg);
+			var testData = await getAxisTestData(msg);
 			if (testData == false) {return;} // return if no data to send
 			NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });
 		}
