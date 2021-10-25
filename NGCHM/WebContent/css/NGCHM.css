@@ -36,8 +36,23 @@ div.mdaServiceHeader
 	color: #666;
 	margin: 0px 0px 0px 0px;
 	background-color: white;
-	border-bottom: 4px solid #da0505;
 	font-family: sans-serif;
+    background: 
+        linear-gradient(
+            to right,
+            #614794, 
+            #279CA3, 
+            #78C14C,
+            #F1BD3A,
+            #F1BD3A,
+            #78C14C,
+            #279CA3,
+            #614794
+        )
+        left
+        bottom
+        no-repeat;
+    background-size: 100% 4px;
 }
 
 div.mdaServiceHeaderLogo
@@ -56,11 +71,12 @@ div.mdaServiceHeaderLogo img
 div.paneHeader {
 	display: flex;
 	width: 100%;
-	background-color: #cccccc;
+	background-color: #B4A7D6;
 	font-family: sans-serif;
 	font-weight: bold;
 	margin: 0px 0px 4px 0px;
 	padding: 5px 5px 0px 5px;
+    min-height: 28px;
 }
 
 div.paneHeader.activePane {
@@ -1147,7 +1163,7 @@ div#droptarget {
     padding: 1em 2em;
     z-index: 1;
     color: rgba(0,0,0,0);
-    background-color: rgba(1,0,0,0.01);
+    background-color: rgba(0,0,0,0.0);
     user-select: none;
 }
 

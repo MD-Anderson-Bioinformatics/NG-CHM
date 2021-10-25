@@ -516,19 +516,12 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			initializeGearIconMenu (img2);
 			ig.appendChild(img2);
 
-			const img = NgChm.UTIL.newElement('IMG.paneMenuIcon', {
-				src: 'images/paneMenu.png',
-				alt: 'Open pane menu',
-				align: 'top'
-			});
-			initializePaneIconMenu (img);
 			const imgScr = NgChm.UTIL.newElement('IMG.paneScreenModeIcon', {
 				src: 'images/iconFullScreen.png',
 				alt: 'Expand Pane',
 				align: 'left'
 			});
 			initializePaneScreenMode(imgScr, paneid);
-			ig.appendChild(img);
 			sc.appendChild(imgScr);
 
 		}

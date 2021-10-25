@@ -559,38 +559,8 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	NgChm.UTIL.setDragPanels();
 	NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
 
+	NgChm.UTIL.loadANACHM(sizeBuilderView);
 
-	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
-	if ((NgChm.UTIL.mapId === "") && (NgChm.UTIL.mapNameRef === "") && (NgChm.MMGR.embeddedMapName === null)) {
-		//In local mode, need user to select the zip file with data (required by browser security)
-		var chmFileItem  = document.getElementById('fileButton');
-		document.getElementById('fileOpen_btn').style.display = '';
-		document.getElementById('detail_buttons').style.display = 'none';
-		chmFileItem.style.display = '';
-		chmFileItem.addEventListener('change', NgChm.UTIL.loadFileModeCHM, false);
-	} else {
-		document.getElementById('loader').style.display = '';
-		//Run from a web server.
-		var mapName = NgChm.UTIL.mapId;
-		var dataSource = NgChm.MMGR.WEB_SOURCE;
-		if ((NgChm.MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) { 
-			mapName = NgChm.MMGR.embeddedMapName;
-			dataSource = NgChm.MMGR.FILE_SOURCE;
-			var embedButton = document.getElementById('NGCHMEmbedButton');
-			if (embedButton !== null) {
-				document.getElementById('NGCHMEmbed').style.display = 'none';
-			} else {
-				NgChm.UTIL.loadLocalModeCHM(sizeBuilderView);
-			}
-		} else {  
-			if (NgChm.MMGR.embeddedMapName !== null) {
-				mapName = NgChm.MMGR.embeddedMapName;
-				dataSource = NgChm.MMGR.LOCAL_SOURCE;
-			}
-			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
-			NgChm.heatMap = matrixMgr.getHeatMap(mapName, [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate]);
-		}
- 	} 
 	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
 	document.getElementById("detail_canvas").focus();
 };
@@ -632,6 +602,30 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		}
 	};	
 	req.send();	
+}
+
+/**********************************************************************************
+ * FUNCTION - loadANACHM: Called with a URI to a data blob created by ANA.
+ **********************************************************************************/
+NgChm.UTIL.loadANACHM = function (sizeBuilderView) {
+	var xhr = new XMLHttpRequest();
+	const queryString = location.search;
+	const urlParams = new URLSearchParams(queryString);
+	const blobUri = urlParams.get('bloburi')
+	if (!blobUri) {
+		return;
+	}
+	xhr.open('GET', unescape(blobUri))
+	xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+	xhr.responseType = 'blob';
+	xhr.onload = function(e) {
+	  if (this.status == 200) {
+	    var myBlob = this.response;
+		NgChm.UTIL.resetCHM();
+		NgChm.UTIL.displayFileModeCHM(myBlob,sizeBuilderView);
+	  }
+	};
+	xhr.send();
 }
 
 /**********************************************************************************

@@ -158,8 +158,8 @@ NgChm.SUM.summaryInit = function() {
 	
 	var nameDiv = document.getElementById("mapName");  
 	var mapName = NgChm.heatMap.getMapInformation().name;
-	if (mapName.length > 30){
-		mapName = mapName.substring(0,30) + "...";
+	if (mapName.length > 50){
+		mapName = mapName.substring(0,50) + "...";
 	}
 
 	nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
