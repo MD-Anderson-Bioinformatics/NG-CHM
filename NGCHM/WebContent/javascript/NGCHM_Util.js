@@ -559,6 +559,17 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	NgChm.UTIL.setDragPanels();
 	NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
 
+	const queryString = location.search;
+	const urlParams = new URLSearchParams(queryString);
+	const blobUri = urlParams.get('bloburi')
+	if (!blobUri) {
+		//If no URI specified, need user to select the local data file.
+		var chmFileItem  = document.getElementById('fileButton');
+		document.getElementById('fileOpen_btn').style.display = '';
+		document.getElementById('detail_buttons').style.display = 'none';
+		chmFileItem.style.display = '';
+		chmFileItem.addEventListener('change', NgChm.UTIL.loadFileModeCHM, false);
+	}
 	NgChm.UTIL.loadANACHM(sizeBuilderView);
 
 	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
