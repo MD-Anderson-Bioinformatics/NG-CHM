@@ -38,6 +38,7 @@ NgChm.createNS('NgChm.RecPanes');
 			triggerUpdateSelectionOnDetailMaps();
 			NgChm.SUM.summaryPaneResizeHandler();
 			NgChm.heatMap.setUnAppliedChanges(false);
+			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
 		} else { // wait for NGCHM to initialize itself
 			setTimeout(reconstructPanelsFromMapConfig, 500);
 		}
