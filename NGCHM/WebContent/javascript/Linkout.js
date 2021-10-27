@@ -1033,7 +1033,7 @@ NgChm.createNS('NgChm.LNK');
 		if (NgChm.LNK.havePluginData()) {
 			return false; // have all plugins' data...no need for warning message
 		}
-		let warningText = "Unable to save some date elements from the following plugins: <br>"
+		let warningText = "Unable to save some data elements from the following plugins: <br>"
 		let pluginInstances = NgChm.LNK.getPluginInstances();
 		Object.keys(pluginInstances).forEach(pi => {
 			if (typeof pluginInstances[pi]['dataFromPlugin'] == 'undefined') {
