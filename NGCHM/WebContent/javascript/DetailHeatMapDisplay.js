@@ -1803,8 +1803,7 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
  ************************************************************************************************/
 NgChm.DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
 	if (mapItem.oldLabelElements[id].parent !== parent) {
-		console.error (new Error ('updateLabelDiv: parent elements do not match'));
-		console.log ({ id, parent, oldElement: NgChm.DET.oldLabelElements[id] });
+		return; // sometimes this if statement is triggered during recreation of panes from a saved state
 	}
 	// Get existing label element and move from old to current collection.
 	const div = mapItem.oldLabelElements[id].div;
