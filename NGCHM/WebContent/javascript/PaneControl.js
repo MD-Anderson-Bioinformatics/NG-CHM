@@ -193,6 +193,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		return initialLoc;
 
 		function resizeNGCHM () {
+			const topContainer = document.getElementById('ngChmContainer');
 			const debug = false;
 			if (debug) console.log ('NGCHM resized');
 			if (topContainer && topContainer.parentElement) {
