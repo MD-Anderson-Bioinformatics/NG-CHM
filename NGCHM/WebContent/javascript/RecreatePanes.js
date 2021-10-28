@@ -200,14 +200,23 @@ NgChm.createNS('NgChm.RecPanes');
 		} else if (pane.textContent == 'empty') {
 			return;
 		} else {
-			try {
-				let specifiedPlugin = customjsPlugins.filter(pc => pane.textContent.indexOf(pc.name) > -1)[0];
-				NgChm.LNK.switchPaneToPlugin(NgChm.Pane.findPaneLocation(pane),specifiedPlugin);
-				NgChm.Pane.initializeGearIconMenu(document.getElementById(paneid+'Icon'));
-			} catch(err) {
-				console.error(err);
-				console.error("Specified plugin: ",pane.textContent);
-				throw("Error loading plugin");
+			let specifiedPlugin = customjsPlugins.filter(pc => pane.textContent.indexOf(pc.name) > -1)[0];
+			if (specifiedPlugin == undefined) { // then assume pane was a linkout pane
+				NgChm.LNK.linkoutElement = NgChm.UTIL.newElement('DIV.linkouts');
+				let loc = NgChm.Pane.findPaneLocation(pane);
+				NgChm.Pane.setPaneTitle(loc, 'Linkouts');
+				loc.pane.appendChild(NgChm.LNK.linkoutElement);
+				let linkoutData = getPluginOrLinkoutDataFromMapConfig(pane.id);
+				NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
+			} else {
+				try {
+					NgChm.LNK.switchPaneToPlugin(NgChm.Pane.findPaneLocation(pane),specifiedPlugin);
+					NgChm.Pane.initializeGearIconMenu(document.getElementById(paneid+'Icon'));
+				} catch(err) {
+					console.error(err);
+					console.error("Specified plugin: ",pane.textContent);
+					throw("Error loading plugin");
+				}
 			}
 		}
 	}
@@ -217,7 +226,7 @@ NgChm.createNS('NgChm.RecPanes');
 	*/
 	function initializePluginWithMapConfigData(pluginInstance) {
 		let paneId = getPaneIdFromInstance(pluginInstance);
-		let pluginConfigData = getPluginDataFromMapConfig(paneId);
+		let pluginConfigData = getPluginOrLinkoutDataFromMapConfig(paneId);
 		if (pluginConfigData) {
 			let nonce = pluginInstance.nonce;
 			let config = pluginConfigData.config;
@@ -239,7 +248,7 @@ NgChm.createNS('NgChm.RecPanes');
 		return paneId;
 	}
 
-	function getPluginDataFromMapConfig(paneId) {
+	function getPluginOrLinkoutDataFromMapConfig(paneId) {
 		try {
 			let pluginConfigData = NgChm.heatMap.getPanelConfiguration()[paneId];
 			return pluginConfigData;

@@ -1051,6 +1051,20 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 	}
 
+	/**
+	* Save linkout pane data to mapConfig
+	*/
+	NgChm.MMGR.saveLinkoutPaneToMapConfig = function(url, pane) {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
+			mapConfig['panel_configuration'] = {} 
+		}
+		mapConfig.panel_configuration[pane.pane.id] = {
+			'type': 'linkout',
+			'url': url,
+			'paneTitle': pane.paneTitle.innerText
+		} 
+	}
+
 	/*
 	  Saves data from plugin to mapConfig--this is data that did NOT originally come from the NGCHM.
 	*/

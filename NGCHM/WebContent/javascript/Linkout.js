@@ -119,6 +119,7 @@ NgChm.createNS('NgChm.LNK');
                         if (name) {
 				NgChm.Pane.setPaneTitle (pane, name);
                         }
+			NgChm.MMGR.saveLinkoutPaneToMapConfig(url,pane);
                 }
 	};
 
