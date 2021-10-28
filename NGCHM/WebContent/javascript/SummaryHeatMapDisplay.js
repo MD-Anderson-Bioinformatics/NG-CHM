@@ -2239,7 +2239,6 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 		if (firstSwitch) {
 			// This is the first time a summary NGCHM is displayed.
 			// Simply move the template element into the target pane.
-			NgChm.Pane.emptyPaneLocation (loc);
 			NgChm.SUM.chmElement = document.getElementById('summary_chm');
 			loc.pane.appendChild (NgChm.SUM.chmElement);
 			firstSwitch = false;

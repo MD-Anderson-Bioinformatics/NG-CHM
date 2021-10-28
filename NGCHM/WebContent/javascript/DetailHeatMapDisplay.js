@@ -2415,7 +2415,6 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		if (NgChm.RecPanes.savedInitialDetailPane != undefined) {
 			// this if block is executed if the initial detail pane was saved in RecreatePanes
 			NgChm.SRCH.clearAllSearchResults();
-			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild(NgChm.RecPanes.savedInitialDetailPane);
 			let canvas = loc.pane.querySelector('.detail_canvas');
 			let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
@@ -2430,7 +2429,6 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 			// First time detail NGCHM created.
 			NgChm.DET.constructDetailMapDOMTemplate()
 			NgChm.SRCH.clearAllSearchResults();
-			NgChm.Pane.emptyPaneLocation (loc);
 			loc.pane.appendChild (document.getElementById('detail_chm'));
 			isPrimary = true;
 			NgChm.DET.initialSwitchPaneToDetail = false;
