@@ -36,14 +36,14 @@ jobs:
         run: |
           cd NGCHM
           ant -f build_ngchmApp.xml
-      - name: Check out NGCHMSupportFiles
+      - name: Check out NGCHMSupportFiles repo
         uses: actions/checkout@v2
         with:
           repository: ${{ env.NGCHMSupportFiles_REPOSITORY }}
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           ref: ${{ env.NGCHMSupportFiles_BRANCH }}
           path: './NGCHMSupportFiles'
-      - name: Copy artifacts to NGCHMSupportFiles, and update version
+      - name: Copy artifacts to NGCHMSupportFiles and update NGCHMSupportFiles version
         run: |
           cd NGCHMSupportFiles
           cp ../NGCHM/ShaidyMapGen.jar inst/java
@@ -55,7 +55,7 @@ jobs:
         run: |
           cd NGCHMSupportFiles
           R CMD build .
-      - name: Commit and push update
+      - name: Commit and push update to NGCHMSupportFiles repo
         run: |
           cd NGCHMSupportFiles
           git config --local user.email "actions@github.com"
@@ -65,7 +65,7 @@ jobs:
           git add DESCRIPTION
           git commit -m "Update for NG-CHM Release ${{ steps.get_version.outputs.version }}"
           git push origin ${{ env.NGCHMSupportFiles_BRANCH }}
-      - name: Create a release
+      - name: Create a release in NGCHMSupportFiles repo
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
