@@ -1064,7 +1064,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig.panel_configuration[paneId].data = postedData;
 	}
 
-	NgChm.MMGR.removeDataSentToPluginFromMapConfig = function(paneid) {
+	NgChm.MMGR.removePaneInfoFromMapConfig = function(paneid) {
 		if (mapConfig.hasOwnProperty('panel_configuration')) {
 			mapConfig.panel_configuration[paneid] = null;
 		}
