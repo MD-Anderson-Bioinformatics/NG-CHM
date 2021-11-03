@@ -170,16 +170,21 @@ NgChm.createNS('NgChm.RecPanes');
 		let pane = getPrimaryDetailPane();
 		if (pane == null) {return false;}
 		NgChm.DMM.primaryMap.pane = pane.id;
+		let paneInfo = getPaneInfoFromMapConfig(pane.id); /*must call before swtichPaneToDetail bc will rm mapConfig info for pane*/
 		NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
 		let canvas = pane.querySelector('.detail_canvas');
 		let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
-		let chm = document.getElementById('detail_chm');
+		let chm = mapItem.chm;
 		NgChm.DMM.completeMapItemConfig(chm, mapItem);
 		NgChm.DET.setDrawDetailTimeout(mapItem,5,false);
 		NgChm.DET.drawRowAndColLabels(mapItem);
 		NgChm.DEV.addEvents(pane.getAttribute('id'));
 		NgChm.DMM.switchToPrimary(pane.childNodes[1]);
 		NgChm.DET.updateDisplayedLabels();
+		NgChm.DET.setDetailDataSize(mapItem, paneInfo.zoomBoxSize);
+		NgChm.SEL.setCurrentRowFromSum(mapItem, paneInfo.currentRow);
+		NgChm.SEL.setCurrentColFromSum(mapItem, paneInfo.currentCol);
+		NgChm.SEL.updateSelection(mapItem);
 	}
 
 	/**
