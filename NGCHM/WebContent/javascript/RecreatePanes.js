@@ -206,7 +206,7 @@ NgChm.createNS('NgChm.RecPanes');
 				let loc = NgChm.Pane.findPaneLocation(pane);
 				NgChm.Pane.setPaneTitle(loc, 'Linkouts');
 				loc.pane.appendChild(NgChm.LNK.linkoutElement);
-				let linkoutData = getPluginOrLinkoutDataFromMapConfig(pane.id);
+				let linkoutData = getPaneInfoFromMapConfig(pane.id);
 				NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
 			} else {
 				try {
@@ -226,7 +226,7 @@ NgChm.createNS('NgChm.RecPanes');
 	*/
 	function initializePluginWithMapConfigData(pluginInstance) {
 		let paneId = getPaneIdFromInstance(pluginInstance);
-		let pluginConfigData = getPluginOrLinkoutDataFromMapConfig(paneId);
+		let pluginConfigData = getPaneInfoFromMapConfig(paneId);
 		if (pluginConfigData) {
 			let nonce = pluginInstance.nonce;
 			let config = pluginConfigData.config;
@@ -248,10 +248,10 @@ NgChm.createNS('NgChm.RecPanes');
 		return paneId;
 	}
 
-	function getPluginOrLinkoutDataFromMapConfig(paneId) {
+	function getPaneInfoFromMapConfig(paneId) {
 		try {
-			let pluginConfigData = NgChm.heatMap.getPanelConfiguration()[paneId];
-			return pluginConfigData;
+			let paneInfo = NgChm.heatMap.getPanelConfiguration()[paneId];
+			return paneInfo;
 		} catch (error) {
 			if (error instanceof TypeError) {
 				return false;
