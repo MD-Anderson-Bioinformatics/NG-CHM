@@ -1025,6 +1025,25 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		let layoutJSON = domJSON.toJSON(layoutToSave,{absolutePaths:false});
 		mapConfig['panel_configuration']['panel_layout'] = layoutJSON;
 	}
+
+	/**
+	* Save enough information from the detail map to reconstruct the zoom/pan state
+	*/
+	function saveDetailMapInfoToMapConfig() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
+		NgChm.DMM.DetailMaps.forEach(dm => {
+			if (dm.dataBoxHeight != dm.dataBoxWidth){
+				console.error({msg: 'expected these to be equal', dataBoxHeight: dataBoxHeight, dataBoxWidth: dataBoxWidth});
+			}
+			mapConfig.panel_configuration[dm.pane] = {
+				'type': 'detailMap',
+				'zoomBoxSize': dm.dataBoxHeight,
+				'currentRow': dm.currentRow,
+				'currentCol': dm.currentCol
+			}
+		})
+	}
+
 	/**
 	* Save data sent to plugin to mapConfig 
 	*/
@@ -1106,6 +1125,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 								// except for mapConfig.  For this entry, add the modified config data.
 								if (keyVal.indexOf('mapConfig') > -1) {
 									savePaneLayoutToMapConfig();
+									saveDetailMapInfoToMapConfig();
 									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConfig));
 								} else {
 									zipFetchText(entry, fileIndex, addTextContents);
