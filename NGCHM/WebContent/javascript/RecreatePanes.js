@@ -122,17 +122,17 @@ NgChm.createNS('NgChm.RecPanes');
 	 *	primary detail pane first. TODO: clean this up!)
 	 */
 	function setPanesContent() {
-		NgChm.DMM.nextMapNumber = 1;
 		setPrimaryDetailPaneContent();
-		let panes = document.getElementsByClassName("pane");
-		let highestDetailMapNumber = 1;
-		for (let i=0; i<panes.length; i++) {
-			setPaneContentUnlessPrimaryDetail(panes[i].id);
-			if (NgChm.DMM.nextMapNumber > highestDetailMapNumber) { highestDetailMapNumber = NgChm.DMM.nextMapNumber; }
-		}
-		let highestPaneId = getHighestPaneId();
-		NgChm.Pane.resetPaneCounter(highestPaneId + 1);
-		NgChm.DMM.nextMapNumber = highestDetailMapNumber;
+		let panesArray = Array.from(document.getElementsByClassName("pane"));
+		panesArray.sort(function(a, b) { // sort to numerical pane order 
+			if (a.id > b.id) return 1;  // e.g.: 'pane3' > 'pane2' = true
+			if (a.id < b.id) return -1;  // e.g.: 'pane3' < 'pane4' = true
+			return 0;
+		})
+		panesArray.forEach(pane => {
+			setPaneContent(pane.id);
+		})
+		NgChm.Pane.resetPaneCounter(getHighestPaneId() + 1);
 	}
 
 	/**
@@ -175,34 +175,36 @@ NgChm.createNS('NgChm.RecPanes');
 		NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
 		let canvas = pane.querySelector('.detail_canvas');
 		let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
-		let chm = mapItem.chm;
+		let chm = document.getElementById('detail_chm');
 		NgChm.DMM.completeMapItemConfig(chm, mapItem);
 		NgChm.DET.setDrawDetailTimeout(mapItem,5,false);
 		NgChm.DET.drawRowAndColLabels(mapItem);
 		NgChm.DEV.addEvents(pane.getAttribute('id'));
 		NgChm.DMM.switchToPrimary(pane.childNodes[1]);
-		NgChm.DET.updateDisplayedLabels();
 		NgChm.DET.setDetailDataSize(mapItem, paneInfo.zoomBoxSize);
 		NgChm.SEL.setCurrentRowFromSum(mapItem, paneInfo.currentRow);
 		NgChm.SEL.setCurrentColFromSum(mapItem, paneInfo.currentCol);
 		NgChm.SEL.updateSelection(mapItem);
+		NgChm.DET.updateDisplayedLabels();
 	}
 
 	/**
 	 *	Set a pane's content based on 'textContent' attribute, unless a primary pane (then just
 	 *	return)
 	 */
-	function setPaneContentUnlessPrimaryDetail(paneid) {
+	function setPaneContent(paneid) {
 		let pane = document.getElementById(paneid);
 		let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
 		if (pane.textContent.includes("Heat Map Summary")) {
 			NgChm.SUM.switchPaneToSummary(NgChm.Pane.findPaneLocation(pane));
-		} else if (pane.textContent.includes("Heat Map Detail - Primary")) {
-			return;
 		} else if (pane.textContent.includes("Heat Map Detail")) {
-			NgChm.DMM.nextMapNumber = parseInt(pane.textContent.split('Ver ')[1]) - 1;
+			let paneInfo = getPaneInfoFromMapConfig(paneid);
+			paneInfo.versionNumber == "" ? NgChm.DMM.nextMapNumber = 1 : NgChm.DMM.nextMapNumber = parseInt(paneInfo.versionNumber)-1;
 			let loc = NgChm.Pane.findPaneLocation(pane);
 			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
+			if (paneInfo.version == "P") {
+				NgChm.DMM.switchToPrimary(pane.childNodes[1]);
+			}
 		} else if (pane.textContent == 'empty') {
 			return;
 		} else {
