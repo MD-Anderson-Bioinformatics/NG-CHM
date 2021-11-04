@@ -205,6 +205,13 @@ NgChm.createNS('NgChm.RecPanes');
 			if (paneInfo.version == "P") {
 				NgChm.DMM.switchToPrimary(pane.childNodes[1]);
 			}
+			// set zoom/pan state of detail map
+			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
+			NgChm.DET.setDetailDataSize(mapItem, paneInfo.zoomBoxSize);
+			NgChm.SEL.setCurrentRowFromSum(mapItem, paneInfo.currentRow);
+			NgChm.SEL.setCurrentColFromSum(mapItem, paneInfo.currentCol);
+			NgChm.SEL.updateSelection(mapItem);
+			NgChm.DET.updateDisplayedLabels();
 		} else if (pane.textContent == 'empty') {
 			return;
 		} else {
