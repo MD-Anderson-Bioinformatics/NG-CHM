@@ -119,7 +119,7 @@ NgChm.createNS('NgChm.LNK');
                         if (name) {
 				NgChm.Pane.setPaneTitle (pane, name);
                         }
-			NgChm.MMGR.saveLinkoutPaneToMapConfig(url,pane);
+			NgChm.MMGR.saveLinkoutPaneToMapConfig(pane.pane.id, url, name);
                 }
 	};
 
@@ -882,6 +882,7 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.LNK.linkoutElement = NgChm.UTIL.newElement ('DIV.linkouts');
 		NgChm.Pane.setPaneTitle (loc, 'Linkouts');
 		loc.pane.appendChild (NgChm.LNK.linkoutElement);
+		NgChm.MMGR.saveLinkoutPaneToMapConfig(loc.pane.id, "", "Linkouts");
 	};
 	NgChm.Pane.registerPaneContentOption ('Linkouts', NgChm.LNK.switchPaneToLinkouts);
 

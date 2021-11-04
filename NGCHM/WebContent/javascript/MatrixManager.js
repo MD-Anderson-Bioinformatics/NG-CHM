@@ -1064,6 +1064,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 		mapConfig.panel_configuration[paneId].config = postedConfig;
 		mapConfig.panel_configuration[paneId].data = postedData;
+		mapConfig.panel_configuration[paneId].type = 'plugin';
 	}
 
 	NgChm.MMGR.removePaneInfoFromMapConfig = function(paneid) {
@@ -1075,14 +1076,14 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	/**
 	* Save linkout pane data to mapConfig
 	*/
-	NgChm.MMGR.saveLinkoutPaneToMapConfig = function(url, pane) {
+	NgChm.MMGR.saveLinkoutPaneToMapConfig = function(paneid, url, paneTitle) {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
 			mapConfig['panel_configuration'] = {} 
 		}
-		mapConfig.panel_configuration[pane.pane.id] = {
+		mapConfig.panel_configuration[paneid] = {
 			'type': 'linkout',
 			'url': url,
-			'paneTitle': pane.paneTitle.innerText
+			'paneTitle': paneTitle
 		} 
 	}
 
