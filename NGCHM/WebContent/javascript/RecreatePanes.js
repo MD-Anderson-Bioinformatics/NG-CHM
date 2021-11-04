@@ -222,7 +222,9 @@ NgChm.createNS('NgChm.RecPanes');
 				NgChm.Pane.setPaneTitle(loc, 'Linkouts');
 				loc.pane.appendChild(NgChm.LNK.linkoutElement);
 				let linkoutData = getPaneInfoFromMapConfig(pane.id);
+				if (linkoutData != null) {
 				NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
+				}
 			} else {
 				try {
 					NgChm.LNK.switchPaneToPlugin(NgChm.Pane.findPaneLocation(pane),specifiedPlugin);
