@@ -21,7 +21,7 @@ NgChm.createNS('NgChm.RecPanes');
 	async function reconstructPanelsFromMapConfig() {
 		if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
 			NgChm.RecPanes.savedInitialDetailPane = document.getElementById('detail_chm');
-			NgChm.RecPanes.mapConfigPanelConfiguration = NgChm.heatMap.getPanelConfiguration();
+			NgChm.RecPanes.mapConfigPanelConfiguration = Object.assign({},NgChm.heatMap.getPanelConfiguration());
 			reconstructPanelLayoutFromMapConfig();
 			recreateReconstructedPanes();
 			setPanesContent();
@@ -219,7 +219,7 @@ NgChm.createNS('NgChm.RecPanes');
 			if (specifiedPlugin == undefined) { // then assume pane was a linkout pane
 				let loc = NgChm.Pane.findPaneLocation(pane);
 				NgChm.LNK.switchPaneToLinkouts(loc);
-				let linkoutData = getPaneInfoFromMapConfig(pane.id);
+				let linkoutData = getPaneInfoFromMapConfig(paneid);
 				if (linkoutData != null) {
 				NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
 				}
