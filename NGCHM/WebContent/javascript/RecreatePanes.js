@@ -217,10 +217,8 @@ NgChm.createNS('NgChm.RecPanes');
 		} else {
 			let specifiedPlugin = customjsPlugins.filter(pc => pane.textContent.indexOf(pc.name) > -1)[0];
 			if (specifiedPlugin == undefined) { // then assume pane was a linkout pane
-				NgChm.LNK.linkoutElement = NgChm.UTIL.newElement('DIV.linkouts');
 				let loc = NgChm.Pane.findPaneLocation(pane);
-				NgChm.Pane.setPaneTitle(loc, 'Linkouts');
-				loc.pane.appendChild(NgChm.LNK.linkoutElement);
+				NgChm.LNK.switchPaneToLinkouts(loc);
 				let linkoutData = getPaneInfoFromMapConfig(pane.id);
 				if (linkoutData != null) {
 				NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
