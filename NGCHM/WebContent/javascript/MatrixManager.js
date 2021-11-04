@@ -1039,7 +1039,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				'type': 'detailMap',
 				'zoomBoxSize': dm.dataBoxHeight,
 				'currentRow': dm.currentRow,
-				'currentCol': dm.currentCol
+				'currentCol': dm.currentCol,
+				'versionNumber': dm.chm.id.replace('detail_chm',''),
+				'version': dm.version
 			}
 		})
 	}
