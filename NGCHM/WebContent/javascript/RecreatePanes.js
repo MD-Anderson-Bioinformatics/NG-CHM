@@ -21,6 +21,7 @@ NgChm.createNS('NgChm.RecPanes');
 	async function reconstructPanelsFromMapConfig() {
 		if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
 			NgChm.RecPanes.savedInitialDetailPane = document.getElementById('detail_chm');
+			NgChm.RecPanes.mapConfigPanelConfiguration = NgChm.heatMap.getPanelConfiguration();
 			reconstructPanelLayoutFromMapConfig();
 			recreateReconstructedPanes();
 			setPanesContent();
@@ -74,7 +75,7 @@ NgChm.createNS('NgChm.RecPanes');
 	 */ 
 	function reconstructPanelLayoutFromMapConfig() {
 		let baseNgChmContainer = document.getElementById('ngChmContainer');
-		let panel_layoutJSON = NgChm.heatMap.getPanelConfiguration().panel_layout;
+		let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
 		let reconstructedPanelLayout = domJSON.toDOM(panel_layoutJSON);
 		baseNgChmContainer.parentNode.replaceChild(reconstructedPanelLayout, baseNgChmContainer);
 	}
@@ -255,7 +256,7 @@ NgChm.createNS('NgChm.RecPanes');
 
 	function getPaneInfoFromMapConfig(paneId) {
 		try {
-			let paneInfo = NgChm.heatMap.getPanelConfiguration()[paneId];
+			let paneInfo = NgChm.RecPanes.mapConfigPanelConfiguration[paneId];
 			return paneInfo;
 		} catch (error) {
 			if (error instanceof TypeError) {
