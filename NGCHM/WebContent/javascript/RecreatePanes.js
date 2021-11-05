@@ -65,7 +65,7 @@ NgChm.createNS('NgChm.RecPanes');
 				if (idx < NgChm.DMM.DetailMaps.length) {
 					triggerUpdateSelection();
 				}
-			}, 100);
+			}, 500);
 		}
 		triggerUpdateSelection();
 	}
@@ -75,10 +75,10 @@ NgChm.createNS('NgChm.RecPanes');
 	 */ 
 	function reconstructPanelLayoutFromMapConfig() {
 		try {
-		let baseNgChmContainer = document.getElementById('ngChmContainer');
-		let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
-		let reconstructedPanelLayout = domJSON.toDOM(panel_layoutJSON);
-		baseNgChmContainer.parentNode.replaceChild(reconstructedPanelLayout, baseNgChmContainer);
+			let baseNgChmContainer = document.getElementById('ngChmContainer');
+			let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
+			let reconstructedPanelLayout = domJSON.toDOM(panel_layoutJSON);
+			baseNgChmContainer.parentNode.replaceChild(reconstructedPanelLayout, baseNgChmContainer);
 		} catch(err) {
 			console.error("Cannot reconstruct panel layout: "+err);
 			throw "Error reconstructing panel layout from mapConfig.";
@@ -224,7 +224,7 @@ NgChm.createNS('NgChm.RecPanes');
 				NgChm.LNK.switchPaneToLinkouts(loc);
 				let linkoutData = getPaneInfoFromMapConfig(paneid);
 				if (linkoutData != null) {
-				NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
+					NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
 				}
 			} else {
 				try {
