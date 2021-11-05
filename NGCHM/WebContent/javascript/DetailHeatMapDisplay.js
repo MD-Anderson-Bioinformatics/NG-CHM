@@ -74,6 +74,7 @@ NgChm.DET.setDrawDetailsTimeout = function (ms, noResize) {
  * the resize routine will be skipped on the next redraw.
  *********************************************************************************************/
 NgChm.DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
+	if (!NgChm.DMM.isDetailMapDisplayed()) { return false }
 	if (NgChm.DET.drawEventTimer) {
 		clearTimeout (NgChm.DET.drawEventTimer);
 	}

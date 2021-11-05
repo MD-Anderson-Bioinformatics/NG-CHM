@@ -269,6 +269,12 @@ NgChm.DMM.detailResize = function () {
 	 }
 }
 
-
+NgChm.DMM.isDetailMapDisplayed = function() {
+	if (NgChm.DMM.DetailMaps.length > 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 
