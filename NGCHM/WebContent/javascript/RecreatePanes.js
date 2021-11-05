@@ -177,6 +177,7 @@ NgChm.createNS('NgChm.RecPanes');
 		if (pane == null) {return false;}
 		NgChm.DMM.primaryMap.pane = pane.id;
 		let paneInfo = getPaneInfoFromMapConfig(pane.id); /*must call before swtichPaneToDetail bc will rm mapConfig info for pane*/
+		paneInfo.versionNumber == "" ? NgChm.DMM.nextMapNumber = 1 : NgChm.DMM.nextMapNumber = parseInt(paneInfo.versionNumber)-1;
 		NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
 		let canvas = pane.querySelector('.detail_canvas');
 		let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
@@ -186,11 +187,7 @@ NgChm.createNS('NgChm.RecPanes');
 		NgChm.DET.drawRowAndColLabels(mapItem);
 		NgChm.DEV.addEvents(pane.getAttribute('id'));
 		NgChm.DMM.switchToPrimary(pane.childNodes[1]);
-		NgChm.DET.setDetailDataSize(mapItem, paneInfo.zoomBoxSize);
-		NgChm.SEL.setCurrentRowFromSum(mapItem, paneInfo.currentRow);
-		NgChm.SEL.setCurrentColFromSum(mapItem, paneInfo.currentCol);
 		NgChm.SEL.updateSelection(mapItem);
-		NgChm.DET.updateDisplayedLabels();
 	}
 
 	/**
@@ -210,13 +207,14 @@ NgChm.createNS('NgChm.RecPanes');
 			if (paneInfo.version == "P") {
 				NgChm.DMM.switchToPrimary(pane.childNodes[1]);
 			}
+			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
 			NgChm.DET.setDetailDataSize(mapItem, paneInfo.zoomBoxSize);
-			NgChm.SEL.setCurrentRowFromSum(mapItem, paneInfo.currentRow);
-			NgChm.SEL.setCurrentColFromSum(mapItem, paneInfo.currentCol);
+			mapItem.currentRow = paneInfo.currentRow;
+			mapItem.currentCol = paneInfo.currentCol;
 			NgChm.SEL.updateSelection(mapItem);
-			NgChm.DET.updateDisplayedLabels();
+
 		} else if (pane.textContent == 'empty') {
 			return;
 		} else {
