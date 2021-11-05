@@ -74,10 +74,15 @@ NgChm.createNS('NgChm.RecPanes');
 	 *	Reconstruct ngChmContainer and pane layout.
 	 */ 
 	function reconstructPanelLayoutFromMapConfig() {
+		try {
 		let baseNgChmContainer = document.getElementById('ngChmContainer');
 		let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
 		let reconstructedPanelLayout = domJSON.toDOM(panel_layoutJSON);
 		baseNgChmContainer.parentNode.replaceChild(reconstructedPanelLayout, baseNgChmContainer);
+		} catch(err) {
+			console.error("Cannot reconstruct panel layout: "+err);
+			throw "Error reconstructing panel layout from mapConfig.";
+		}
 	}
 
 	/**
