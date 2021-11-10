@@ -65,7 +65,7 @@ NgChm.createNS('NgChm.RecPanes');
 				if (idx < NgChm.DMM.DetailMaps.length) {
 					triggerUpdateSelection();
 				}
-			}, 500);
+			}, 1000);
 		}
 		triggerUpdateSelection();
 	}
