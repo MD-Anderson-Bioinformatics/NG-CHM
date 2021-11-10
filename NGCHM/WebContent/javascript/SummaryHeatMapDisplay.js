@@ -968,6 +968,7 @@ NgChm.SUM.dragMove = function(evt) {
 	NgChm.SEL.setCurrentRowFromSum(NgChm.DMM.primaryMap,sumRow);
 	NgChm.SEL.setCurrentColFromSum(NgChm.DMM.primaryMap,sumCol); 
 	NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
+	NgChm.heatMap.setUnAppliedChanges(true);
 }
 
 //This function now is just in charge of drawing the green box in the summary side as
