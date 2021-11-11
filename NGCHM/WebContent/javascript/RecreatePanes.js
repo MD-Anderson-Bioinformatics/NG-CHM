@@ -33,6 +33,7 @@ NgChm.createNS('NgChm.RecPanes');
 					break;
 				}
 			}
+			setSelections();;
 			addDividerControlsToResizeHelpers();
 			addResizeHandlersToContainers();
 			window.dispatchEvent(new Event('resize'));
@@ -167,6 +168,13 @@ NgChm.createNS('NgChm.RecPanes');
 			}
 		}
 		return null;
+	}
+
+	function setSelections() {
+		let rowSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['row'];
+		NgChm.SRCH.setAxisSearchResultsVec('Row', rowSelections);
+		let colSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['col'];
+		NgChm.SRCH.setAxisSearchResultsVec('Column', colSelections);
 	}
 
 	/**

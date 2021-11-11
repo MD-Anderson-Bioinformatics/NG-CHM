@@ -1106,6 +1106,15 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig.panel_configuration[paneId].dataFromPlugin = dataFromPlugin;
 	}
 
+	NgChm.MMGR.saveSelectionsToMapConfig = function() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
+			mapConfig['panel_configuration'] = {};
+		}
+		mapConfig.panel_configuration['selections'] = {};
+		mapConfig.panel_configuration.selections['row'] = NgChm.SRCH.getAxisSearchResults('row');
+		mapConfig.panel_configuration.selections['col'] = NgChm.SRCH.getAxisSearchResults('col');
+	}
+
 	function zipSaveMapProperties() {
 
 		  function onProgress(a, b) {
