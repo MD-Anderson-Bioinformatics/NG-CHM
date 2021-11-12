@@ -1032,14 +1032,15 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	function saveDetailMapInfoToMapConfig() {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
 		NgChm.DMM.DetailMaps.forEach(dm => {
-			if (dm.dataBoxHeight != dm.dataBoxWidth){
-				console.error({msg: 'expected these to be equal', dataBoxHeight: dataBoxHeight, dataBoxWidth: dataBoxWidth});
-			}
 			mapConfig.panel_configuration[dm.pane] = {
 				'type': 'detailMap',
-				'zoomBoxSize': dm.dataBoxHeight,
+				'dataBoxHeight': dm.dataBoxHeight,
+				'dataBoxWidth': dm.dataBoxWidth,
 				'currentRow': dm.currentRow,
 				'currentCol': dm.currentCol,
+				'dataPerRow': dm.dataPerRow,
+				'dataPerCol': dm.dataPerCol,
+				'mode': dm.mode,
 				'versionNumber': dm.chm.id.replace('detail_chm',''),
 				'version': dm.version
 			}

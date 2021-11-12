@@ -171,6 +171,7 @@ NgChm.createNS('NgChm.RecPanes');
 	}
 
 	function setSelections() {
+		if (!NgChm.RecPanes.mapConfigPanelConfiguration.hasOwnProperty('selections')) return;
 		let rowSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['row'];
 		NgChm.SRCH.setAxisSearchResultsVec('Row', rowSelections);
 		let colSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['col'];
@@ -204,7 +205,6 @@ NgChm.createNS('NgChm.RecPanes');
 	 */
 	function setPaneContent(paneid) {
 		let pane = document.getElementById(paneid);
-		let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
 		if (pane.textContent.includes("Heat Map Summary")) {
 			NgChm.SUM.switchPaneToSummary(NgChm.Pane.findPaneLocation(pane));
 		} else if (pane.textContent.includes("Heat Map Detail")) {
@@ -218,14 +218,31 @@ NgChm.createNS('NgChm.RecPanes');
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
-			NgChm.DET.setDetailDataSize(mapItem, paneInfo.zoomBoxSize);
 			mapItem.currentRow = paneInfo.currentRow;
 			mapItem.currentCol = paneInfo.currentCol;
+			mapItem.dataPerRow = paneInfo.dataPerRow;
+			mapItem.dataPerCol = paneInfo.dataPerCol;
+			mapItem.dataBoxHeight = paneInfo.dataBoxHeight;
+			mapItem.dataBoxWidth = paneInfo.dataBoxWidth;
+			switch (paneInfo.mode) {
+				case "NORMAL":
+					let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(paneInfo.dataBoxWidth);
+					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
+					break;
+				case "RIBBONV":
+					NgChm.DEV.detailVRibbon(mapItem);
+					break;
+				case "RIBBONH":
+					NgChm.DEV.detailHRibbon(mapItem);
+					break;
+				default: // just use the 'NORMAL' case for unknown modes
+					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
+			}
 			NgChm.SEL.updateSelection(mapItem);
-
 		} else if (pane.textContent == 'empty') {
 			return;
 		} else {
+			let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
 			let specifiedPlugin = customjsPlugins.filter(pc => pane.textContent.indexOf(pc.name) > -1)[0];
 			if (specifiedPlugin == undefined) { // then assume pane was a linkout pane
 				let loc = NgChm.Pane.findPaneLocation(pane);
