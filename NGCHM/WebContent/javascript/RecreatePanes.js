@@ -214,6 +214,7 @@ NgChm.createNS('NgChm.RecPanes');
 			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
 			if (paneInfo.version == "P") {
 				NgChm.DMM.switchToPrimary(pane.childNodes[1]);
+				NgChm.SEL.setCurrentDL(paneInfo.currentDl);
 			}
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
@@ -224,6 +225,7 @@ NgChm.createNS('NgChm.RecPanes');
 			mapItem.dataPerCol = paneInfo.dataPerCol;
 			mapItem.dataBoxHeight = paneInfo.dataBoxHeight;
 			mapItem.dataBoxWidth = paneInfo.dataBoxWidth;
+			mapItem.currentDl = paneInfo.currentDl;
 			switch (paneInfo.mode) {
 				case "NORMAL":
 					let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(paneInfo.dataBoxWidth);

@@ -1042,7 +1042,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				'dataPerCol': dm.dataPerCol,
 				'mode': dm.mode,
 				'versionNumber': dm.chm.id.replace('detail_chm',''),
-				'version': dm.version
+				'version': dm.version,
+				'currentDl': dm.currentDl
 			}
 		})
 	}
