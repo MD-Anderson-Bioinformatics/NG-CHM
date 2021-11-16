@@ -1033,17 +1033,17 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
 		NgChm.DMM.DetailMaps.forEach(dm => {
 			mapConfig.panel_configuration[dm.pane] = {
-				'type': 'detailMap',
+				'currentDl': dm.currentDl,
+				'currentCol': dm.currentCol,
+				'currentRow': dm.currentRow,
 				'dataBoxHeight': dm.dataBoxHeight,
 				'dataBoxWidth': dm.dataBoxWidth,
-				'currentRow': dm.currentRow,
-				'currentCol': dm.currentCol,
-				'dataPerRow': dm.dataPerRow,
 				'dataPerCol': dm.dataPerCol,
+				'dataPerRow': dm.dataPerRow,
 				'mode': dm.mode,
-				'versionNumber': dm.chm.id.replace('detail_chm',''),
+				'type': 'detailMap',
 				'version': dm.version,
-				'currentDl': dm.currentDl
+				'versionNumber': dm.chm.id.replace('detail_chm','')
 			}
 		})
 	}

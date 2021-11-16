@@ -219,14 +219,14 @@ NgChm.createNS('NgChm.RecPanes');
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
-			mapItem.currentRow = paneInfo.currentRow;
+			mapItem.currentDl = paneInfo.currentDl;
 			mapItem.currentCol = paneInfo.currentCol;
-			mapItem.dataPerRow = paneInfo.dataPerRow;
-			mapItem.dataPerCol = paneInfo.dataPerCol;
+			mapItem.currentRow = paneInfo.currentRow;
 			mapItem.dataBoxHeight = paneInfo.dataBoxHeight;
 			mapItem.dataBoxWidth = paneInfo.dataBoxWidth;
+			mapItem.dataPerCol = paneInfo.dataPerCol;
+			mapItem.dataPerRow = paneInfo.dataPerRow;
 			mapItem.mode = paneInfo.mode;
-			mapItem.currentDl = paneInfo.currentDl;
 			let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(paneInfo.dataBoxWidth);
 			switch (paneInfo.mode) {
 				case "NORMAL":
