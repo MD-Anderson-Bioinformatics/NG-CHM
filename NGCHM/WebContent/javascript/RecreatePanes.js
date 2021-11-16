@@ -225,10 +225,11 @@ NgChm.createNS('NgChm.RecPanes');
 			mapItem.dataPerCol = paneInfo.dataPerCol;
 			mapItem.dataBoxHeight = paneInfo.dataBoxHeight;
 			mapItem.dataBoxWidth = paneInfo.dataBoxWidth;
+			mapItem.mode = paneInfo.mode;
 			mapItem.currentDl = paneInfo.currentDl;
+			let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(paneInfo.dataBoxWidth);
 			switch (paneInfo.mode) {
 				case "NORMAL":
-					let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(paneInfo.dataBoxWidth);
 					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
 					break;
 				case "RIBBONV":
@@ -236,6 +237,9 @@ NgChm.createNS('NgChm.RecPanes');
 					break;
 				case "RIBBONH":
 					NgChm.DEV.detailHRibbon(mapItem);
+					break;
+				case "FULL_MAP":
+					NgChm.DEV.detailFullMap(mapItem);
 					break;
 				default: // just use the 'NORMAL' case for unknown modes
 					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
