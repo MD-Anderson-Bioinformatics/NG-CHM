@@ -2415,6 +2415,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		let isPrimary = false;
 		if (NgChm.RecPanes.savedInitialDetailPane != undefined) {
 			// this if block is executed if the initial detail pane was saved in RecreatePanes
+			NgChm.Pane.emptyPaneLocation (loc);
 			NgChm.SRCH.clearAllSearchResults();
 			loc.pane.appendChild(NgChm.RecPanes.savedInitialDetailPane);
 			let canvas = loc.pane.querySelector('.detail_canvas');
