@@ -626,7 +626,16 @@ NgChm.UTIL.loadANACHM = function (sizeBuilderView) {
 	if (!blobUri) {
 		return;
 	}
-	xhr.open('GET', unescape(blobUri))
+
+	// This URI was taken from a query param, but also contains query params of its own.
+	// As such, it is URL-encoded. So, we first unescape to get the full URI.
+	// However, a part of this URI is the SAS for AzureBlob which needs to be encoded, so re-encode that part.
+	// In particular, the SAS contains plus signs that don't consistently get escaped/unescaped. The below code should be consistent.
+	const delim = "&sig=";
+	var unescapedParts = unescape(blobUri).split(delim);
+	var properlyFormed = unescapedParts[0] + delim + encodeURIComponent(unescapedParts[1]);
+
+	xhr.open('GET', properlyFormed)
 	xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
 	xhr.responseType = 'blob';
 	xhr.onload = function(e) {
