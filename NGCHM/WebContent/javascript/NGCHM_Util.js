@@ -625,8 +625,8 @@ NgChm.UTIL.loadANACHM = function (sizeBuilderView) {
 	const blobUri = urlParams.get('bloburi')
 	const delim = "&sig=";
 	const unescapedBlobUri = unescape(blobUri);
-	
-	if (!blobUri || !escapedBlobUri.includes(delim)) {
+
+	if (!blobUri || !unescapedBlobUri.includes(delim)) {
 		return;
 	}
 
