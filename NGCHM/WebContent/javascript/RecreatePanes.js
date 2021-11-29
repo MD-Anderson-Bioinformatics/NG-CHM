@@ -25,14 +25,6 @@ NgChm.createNS('NgChm.RecPanes');
 			reconstructPanelLayoutFromMapConfig();
 			recreateReconstructedPanes();
 			setPanesContent();
-			// TODO: fix this hack for multiple primaryMaps added to DetailMaps.
-			//       perhaps best done by fixing the 'wait for initialization' hack
-			if (NgChm.DMM.DetailMaps.filter( x => x.version ).length > 1) {
-				for (let idx = 0; idx < NgChm.DMM.DetailMaps.length; idx++) {
-					NgChm.DMM.DetailMaps.splice(idx,1);
-					break;
-				}
-			}
 			setSelections();;
 			addDividerControlsToResizeHelpers();
 			addResizeHandlersToContainers();
@@ -104,7 +96,6 @@ NgChm.createNS('NgChm.RecPanes');
 	 *	primary detail pane first. TODO: clean this up!)
 	 */
 	function setPanesContent() {
-		setPrimaryDetailPaneContent();
 		let panesArray = Array.from(document.getElementsByClassName("pane"));
 		panesArray.sort(function(a, b) { // sort to numerical pane order 
 			if (a.id > b.id) return 1;  // e.g.: 'pane3' > 'pane2' = true
@@ -152,27 +143,6 @@ NgChm.createNS('NgChm.RecPanes');
 		NgChm.SRCH.setAxisSearchResultsVec('Row', rowSelections);
 		let colSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['col'];
 		NgChm.SRCH.setAxisSearchResultsVec('Column', colSelections);
-	}
-
-	/**
-	 * Draw the primary detail map in the primary detail pane.
-	 */
-	function setPrimaryDetailPaneContent() {
-		let pane = getPrimaryDetailPane();
-		if (pane == null) {return false;}
-		NgChm.DMM.primaryMap.pane = pane.id;
-		let paneInfo = getPaneInfoFromMapConfig(pane.id); /*must call before swtichPaneToDetail bc will rm mapConfig info for pane*/
-		paneInfo.versionNumber == "" ? NgChm.DMM.nextMapNumber = 1 : NgChm.DMM.nextMapNumber = parseInt(paneInfo.versionNumber)-1;
-		NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
-		let canvas = pane.querySelector('.detail_canvas');
-		let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
-		let chm = document.getElementById('detail_chm');
-		NgChm.DMM.completeMapItemConfig(chm, mapItem);
-		NgChm.DET.setDrawDetailTimeout(mapItem,5,false);
-		NgChm.DET.drawRowAndColLabels(mapItem);
-		NgChm.DEV.addEvents(pane.getAttribute('id'));
-		NgChm.DMM.switchToPrimary(pane.childNodes[1]);
-		NgChm.SEL.updateSelection(mapItem);
 	}
 
 	/**
