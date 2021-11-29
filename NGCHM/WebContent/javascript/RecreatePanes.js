@@ -37,7 +37,7 @@ NgChm.createNS('NgChm.RecPanes');
 			addDividerControlsToResizeHelpers();
 			addResizeHandlersToContainers();
 			window.dispatchEvent(new Event('resize'));
-			triggerUpdateSelectionOnDetailMaps();
+			NgChm.SEL.updateSelections(true);
 			NgChm.SUM.summaryPaneResizeHandler();
 			NgChm.heatMap.setUnAppliedChanges(false);
 			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
@@ -45,31 +45,6 @@ NgChm.createNS('NgChm.RecPanes');
 		} else { // wait for NGCHM to initialize itself
 			setTimeout(reconstructPanelsFromMapConfig, 500);
 		}
-	}
-
-	/**
-	 * After a time delay, call updateSelection on each detail map in order to force a redraw.
-	 *
-	 * This is a very bad hack: without the setTimeout,
-	 * the call to updateSelection() does not seem to draw the detail maps,
-	 * and the map areas are blank (but labels and outline are drawn). 
-	 * But we are unsure about what the code needs wait for...so for the moment
-	 * we have this hack.
-	 * TODO: fix this hack.
-	*/
-	function triggerUpdateSelectionOnDetailMaps() {
-		if (document.getElementsByClassName('detail_chm').length < 1) { return; }
-		var idx = 0;
-		function triggerUpdateSelection() {
-			setTimeout( () => {
-				NgChm.SEL.updateSelection(NgChm.DMM.DetailMaps[idx]);
-				idx = idx + 1;
-				if (idx < NgChm.DMM.DetailMaps.length) {
-					triggerUpdateSelection();
-				}
-			}, 1000);
-		}
-		triggerUpdateSelection();
 	}
 
 	/**
