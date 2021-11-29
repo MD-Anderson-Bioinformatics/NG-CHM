@@ -1033,7 +1033,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
 		NgChm.DMM.DetailMaps.forEach(dm => {
 			mapConfig.panel_configuration[dm.pane] = {
-				'currentDl': dm.currentDl,
+				'currentDl': NgChm.SEL.getCurrentDL(),
 				'currentCol': dm.currentCol,
 				'currentRow': dm.currentRow,
 				'dataBoxHeight': dm.dataBoxHeight,
