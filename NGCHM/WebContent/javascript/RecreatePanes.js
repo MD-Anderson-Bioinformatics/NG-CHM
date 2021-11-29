@@ -41,6 +41,7 @@ NgChm.createNS('NgChm.RecPanes');
 			NgChm.SUM.summaryPaneResizeHandler();
 			NgChm.heatMap.setUnAppliedChanges(false);
 			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
+			setNextMapNumber();
 		} else { // wait for NGCHM to initialize itself
 			setTimeout(reconstructPanelsFromMapConfig, 500);
 		}
@@ -339,6 +340,11 @@ NgChm.createNS('NgChm.RecPanes');
 				throw error;
 			}
 		}
+	}
+
+	function setNextMapNumber() {
+		let currentMapNumbers = NgChm.DMM.DetailMaps.map(dm => parseInt(dm.chm.id.replace('detail_chm',''))).filter(n => !Number.isNaN(n));
+		NgChm.DMM.nextMapNumber = Math.max(...currentMapNumbers);
 	}
 
 })();
