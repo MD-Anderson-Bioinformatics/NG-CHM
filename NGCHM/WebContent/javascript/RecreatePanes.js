@@ -91,9 +91,9 @@ NgChm.createNS('NgChm.RecPanes');
 	}
 
 	/**
-	 *	Set the primary detail pane's content first, then set the remaining
-	 *	panes' content. (it doesn't seem to work as desired without setting the
-	 *	primary detail pane first. TODO: clean this up!)
+	 *	Iterate over panes and set their content
+	 *	The sort is included so that 'nextMapNumber' (i.e. the number suffix to id = 'detail_chm*')
+	 *	goes smoothly
 	 */
 	function setPanesContent() {
 		let panesArray = Array.from(document.getElementsByClassName("pane"));
