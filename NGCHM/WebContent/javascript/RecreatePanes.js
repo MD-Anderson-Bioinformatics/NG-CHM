@@ -310,7 +310,11 @@ NgChm.createNS('NgChm.RecPanes');
 
 	function setNextMapNumber() {
 		let currentMapNumbers = NgChm.DMM.DetailMaps.map(dm => parseInt(dm.chm.id.replace('detail_chm',''))).filter(n => !Number.isNaN(n));
-		NgChm.DMM.nextMapNumber = Math.max(...currentMapNumbers);
+		if (currentMapNumbers.length > 0) {
+			NgChm.DMM.nextMapNumber = Math.max(...currentMapNumbers);
+		} else {
+			NgChm.DMM.nextMapNumber = 1;
+		}
 	}
 
 })();
