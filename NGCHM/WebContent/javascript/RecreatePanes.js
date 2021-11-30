@@ -33,6 +33,7 @@ NgChm.createNS('NgChm.RecPanes');
 			NgChm.SUM.summaryPaneResizeHandler();
 			NgChm.heatMap.setUnAppliedChanges(false);
 			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
+			setFlickState();
 			setNextMapNumber();
 		} else { // wait for NGCHM to initialize itself
 			setTimeout(reconstructPanelsFromMapConfig, 500);
@@ -160,12 +161,10 @@ NgChm.createNS('NgChm.RecPanes');
 			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
 			if (paneInfo.version == "P") {
 				NgChm.DMM.switchToPrimary(pane.childNodes[1]);
-				NgChm.SEL.setCurrentDL(paneInfo.currentDl);
 			}
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
-			mapItem.currentDl = paneInfo.currentDl;
 			mapItem.currentCol = paneInfo.currentCol;
 			mapItem.currentRow = paneInfo.currentRow;
 			mapItem.dataBoxHeight = paneInfo.dataBoxHeight;
@@ -284,6 +283,28 @@ NgChm.createNS('NgChm.RecPanes');
 			} else {
 				throw error;
 			}
+		}
+	}
+
+	/*
+	 * Set the 'flick' control and data layer
+	*/
+	function setFlickState() {
+		if (!NgChm.RecPanes.mapConfigPanelConfiguration.hasOwnProperty('flickInfo')) {
+			return;
+		}
+		try {
+			document.getElementById('flick1').value = NgChm.RecPanes.mapConfigPanelConfiguration.flickInfo.flick1;
+			document.getElementById('flick2').value = NgChm.RecPanes.mapConfigPanelConfiguration.flickInfo.flick2;
+			if (NgChm.RecPanes.mapConfigPanelConfiguration.flickInfo['flick_btn_state'] === 'flickDown') {
+				document.getElementById('flick_btn').dataset.state = 'flickUp'; // <-- set to opposite so flickChange will set to desired
+				NgChm.DEV.flickChange();
+			} else {
+				document.getElementById('flick_btn').dataset.state = 'flickDown'; // <-- set to opposite so flickChange will set to desired
+				NgChm.DEV.flickChange();
+			}
+		} catch(err) {
+			console.error(err)
 		}
 	}
 
