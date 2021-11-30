@@ -1031,7 +1031,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	*/
 	function saveDetailMapInfoToMapConfig() {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
-		mapConfig.panel_configuration['currentDl'] = NgChm.SEL.getCurrentDL();
 		NgChm.DMM.DetailMaps.forEach(dm => {
 			mapConfig.panel_configuration[dm.pane] = {
 				'currentCol': dm.currentCol,
@@ -1046,6 +1045,21 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				'versionNumber': dm.chm.id.replace('detail_chm','')
 			}
 		})
+	}
+
+	/**
+	* Save information about the data layers (i.e. 'flick info') to mapConfig
+	*/
+	function saveFlickInfoToMapConfig() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
+		mapConfig.panel_configuration['flickInfo'] = {};
+		try {
+			mapConfig.panel_configuration.flickInfo['flick_btn_state'] = document.getElementById('flick_btn').dataset.state;
+			mapConfig.panel_configuration.flickInfo['flick1'] = document.getElementById('flick1').value;
+			mapConfig.panel_configuration.flickInfo['flick2'] = document.getElementById('flick2').value;
+		} catch(err) {
+			console.error(err);
+		}
 	}
 
 	/**
@@ -1140,6 +1154,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 								if (keyVal.indexOf('mapConfig') > -1) {
 									savePaneLayoutToMapConfig();
 									saveDetailMapInfoToMapConfig();
+									saveFlickInfoToMapConfig();
 									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConfig));
 								} else {
 									zipFetchText(entry, fileIndex, addTextContents);
