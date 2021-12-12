@@ -293,6 +293,9 @@ NgChm.createNS('NgChm.RecPanes');
 		if (!NgChm.RecPanes.mapConfigPanelConfiguration.hasOwnProperty('flickInfo')) {
 			return;
 		}
+		if (Object.keys(NgChm.heatMap.getDataLayers()).length == 1) {
+			return;
+		}
 		try {
 			document.getElementById('flick1').value = NgChm.RecPanes.mapConfigPanelConfiguration.flickInfo.flick1;
 			document.getElementById('flick2').value = NgChm.RecPanes.mapConfigPanelConfiguration.flickInfo.flick2;
