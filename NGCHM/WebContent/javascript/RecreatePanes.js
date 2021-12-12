@@ -154,6 +154,7 @@ NgChm.createNS('NgChm.RecPanes');
 		let pane = document.getElementById(paneid);
 		if (pane.textContent.includes("Heat Map Summary")) {
 			NgChm.SUM.switchPaneToSummary(NgChm.Pane.findPaneLocation(pane));
+			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
 		} else if (pane.textContent.includes("Heat Map Detail")) {
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
 			paneInfo.versionNumber == "" ? NgChm.DMM.nextMapNumber = 1 : NgChm.DMM.nextMapNumber = parseInt(paneInfo.versionNumber)-1;
@@ -190,6 +191,7 @@ NgChm.createNS('NgChm.RecPanes');
 					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
 			}
 			NgChm.SEL.updateSelection(mapItem);
+			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
 		} else if (pane.textContent == 'empty') {
 			return;
 		} else {
@@ -220,7 +222,7 @@ NgChm.createNS('NgChm.RecPanes');
 	*
 	* It's confusing because there are many things called 'data'. To hopefully help clarify:
 	*
-	*   pluginConfigData: 
+	*   paneInfo.config and paneInfo.data: 
 	*      This is the data send to the plugin when user clicked 'APPLY' on the Gear Menu
 	*      before they saved the map. All plugins should have this data.
 	*      
@@ -237,17 +239,21 @@ NgChm.createNS('NgChm.RecPanes');
 	*/
 	function initializePluginWithMapConfigData(pluginInstance) {
 		let paneId = getPaneIdFromInstance(pluginInstance);
-		let pluginConfigData = getPaneInfoFromMapConfig(paneId);
-		if (pluginConfigData) {
+		let paneInfo = getPaneInfoFromMapConfig(paneId);
+		if (typeof paneInfo == 'undefined' || paneInfo.type != "plugin") {
+			return;
+		}
+		if (paneInfo) {
 			let nonce = pluginInstance.nonce;
-			let config = pluginConfigData.config;
-			let data = pluginConfigData.data;
+			let config = paneInfo.config;
+			let data = paneInfo.data;
 			let selectedLabels = getSelectedLabels(config.axes[0].axisName);
 			data.axes[0].selectedLabels = selectedLabels;
 			NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
-			let dataFromPlugin = pluginConfigData.dataFromPlugin;
+			let dataFromPlugin = paneInfo.dataFromPlugin;
 			NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
 			NgChm.Pane.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'));
+			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneId];
 		} else {
 			return false;
 		}
