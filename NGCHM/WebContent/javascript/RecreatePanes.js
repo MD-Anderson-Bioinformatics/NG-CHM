@@ -158,7 +158,6 @@ NgChm.createNS('NgChm.RecPanes');
 		} else if (pane.textContent.includes("Heat Map Detail")) {
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
 			paneInfo.versionNumber == "" ? NgChm.DMM.nextMapNumber = 1 : NgChm.DMM.nextMapNumber = parseInt(paneInfo.versionNumber)-1;
-			let loc = NgChm.Pane.findPaneLocation(pane);
 			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
 			if (paneInfo.version == "P") {
 				NgChm.DMM.switchToPrimary(pane.childNodes[1]);
