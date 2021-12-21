@@ -29,12 +29,14 @@ NgChm.createNS('NgChm.RecPanes');
 			addDividerControlsToResizeHelpers();
 			addResizeHandlersToContainers();
 			window.dispatchEvent(new Event('resize'));
-			NgChm.SEL.updateSelections(true);
 			NgChm.SUM.summaryPaneResizeHandler();
 			NgChm.heatMap.setUnAppliedChanges(false);
 			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
 			setFlickState();
 			setNextMapNumber();
+			setTimeout(() => {
+				NgChm.SEL.updateSelections(true);
+			}, 500);
 		} else { // wait for NGCHM to initialize itself
 			setTimeout(reconstructPanelsFromMapConfig, 500);
 		}
