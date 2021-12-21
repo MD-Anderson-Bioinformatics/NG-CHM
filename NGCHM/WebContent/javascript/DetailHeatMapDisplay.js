@@ -74,6 +74,7 @@ NgChm.DET.setDrawDetailsTimeout = function (ms, noResize) {
  * the resize routine will be skipped on the next redraw.
  *********************************************************************************************/
 NgChm.DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
+	if (!NgChm.DMM.isDetailMapDisplayed()) { return false }
 	if (NgChm.DET.drawEventTimer) {
 		clearTimeout (NgChm.DET.drawEventTimer);
 	}
@@ -172,6 +173,56 @@ NgChm.DET.setInitialDetailDisplaySize = function (mapItem) {
 	} else {
 		NgChm.DET.setDetailDataSize(mapItem,12);
 	}
+}
+
+/*
+	Construct DOM template for Detail Heat Map and append to div with id = 'template' 
+*/
+NgChm.DET.constructDetailMapDOMTemplate = function() {
+	let detailTemplate = document.createElement('div')
+	detailTemplate.setAttribute('id','detail_chm')
+	detailTemplate.setAttribute('class','detail_chm')
+	detailTemplate.setAttribute('style','position: absolute;')
+	let columnDendro = document.createElement('canvas')
+	columnDendro.setAttribute('id','detail_column_dendro_canvas')
+	columnDendro.setAttribute('width','1200')
+	columnDendro.setAttribute('height','500')
+	columnDendro.setAttribute('style','position: absolute;')
+	detailTemplate.appendChild(columnDendro)
+	let rowDendro = document.createElement('canvas')
+	rowDendro.setAttribute('id','detail_row_dendro_canvas')
+	rowDendro.setAttribute('width','1200')
+	rowDendro.setAttribute('height','500')
+	rowDendro.setAttribute('style','position: absolute;')
+	detailTemplate.appendChild(rowDendro)
+	let detailCanvas = document.createElement('canvas')
+	detailCanvas.setAttribute('id','detail_canvas')
+	detailCanvas.setAttribute('class','detail_canvas')
+	detailCanvas.setAttribute('tabindex','1')
+	detailTemplate.appendChild(detailCanvas)
+	let detailBoxCanvas = document.createElement('canvas')
+	detailBoxCanvas.setAttribute('id','detail_box_canvas')
+	detailBoxCanvas.setAttribute('class','detail_box_canvas')
+	detailTemplate.appendChild(detailBoxCanvas)
+	// labels div has children colLabels and rowLabels
+	let labels = document.createElement('div')
+	labels.setAttribute('id','labelDiv')
+	labels.setAttribute('style','display: inline-block;')
+	let colLabels = document.createElement('div')
+	colLabels.setAttribute('id','colLabelDiv')
+	colLabels.setAttribute('data-axis','Column')
+	colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
+	colLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
+	labels.appendChild(colLabels)
+	let rowLabels = document.createElement('div')
+	rowLabels.setAttribute('id','rowLabelDiv')
+	rowLabels.setAttribute('data-axis','Row')
+	rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
+	rowLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
+	labels.appendChild(rowLabels)
+	detailTemplate.appendChild(labels)
+	let templates = document.getElementById('templates')
+	templates.appendChild(detailTemplate)
 }
 
 /*********************************************************************************************
@@ -1224,11 +1275,8 @@ NgChm.DET.updateDisplayedLabels = function () {
 		for (let oldEl in mapItem.oldLabelElements) {
 			const e = mapItem.oldLabelElements[oldEl];
 			if (e.div.classList.contains('DynamicLabel')) {
-				try {
+				if (e.parent.contains(e.div)) {
 					e.parent.removeChild(e.div);
-				} catch (err) {
-					console.log({ m: 'Unable to remove old label element ', oldEl, e });
-					console.error(err);
 				}
 			} else {
 				// Move non-dynamic labels (e.g. missingCovariateBar indicators) to current labels.
@@ -1756,8 +1804,7 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
  ************************************************************************************************/
 NgChm.DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
 	if (mapItem.oldLabelElements[id].parent !== parent) {
-		console.error (new Error ('updateLabelDiv: parent elements do not match'));
-		console.log ({ id, parent, oldElement: NgChm.DET.oldLabelElements[id] });
+		return; // sometimes this if statement is triggered during recreation of panes from a saved state
 	}
 	// Get existing label element and move from old to current collection.
 	const div = mapItem.oldLabelElements[id].div;
@@ -2360,19 +2407,33 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	NgChm.Pane.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
 
 	let savedChmElements = [];
-	let firstSwitch = true;
+	NgChm.DET.initialSwitchPaneToDetail = true
 
 	function switchPaneToDetail (loc) { 
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		let isPrimary = false;
-		if (firstSwitch) {
-			// First time detail NGCHM created.
-			NgChm.SRCH.clearAllSearchResults();
+		if (NgChm.RecPanes.savedInitialDetailPane != undefined) {
+			// this if block is executed if the initial detail pane was saved in RecreatePanes
 			NgChm.Pane.emptyPaneLocation (loc);
-			loc.pane.appendChild (document.getElementById('detail_chm'));
-			firstSwitch = false;
+			NgChm.SRCH.clearAllSearchResults();
+			loc.pane.appendChild(NgChm.RecPanes.savedInitialDetailPane);
+			let canvas = loc.pane.querySelector('.detail_canvas');
+			let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
+			mapItem.pane = loc.pane.id;
+			NgChm.DMM.primaryMap = mapItem;
+			NgChm.DMM.DetailMaps.push(mapItem);
+			NgChm.DET.updateDisplayedLabels();
 			isPrimary = true;
+			NgChm.DET.initialSwitchPaneToDetail = false;
+			NgChm.RecPanes.savedInitialDetailPane = undefined;
+		} else if (NgChm.DET.initialSwitchPaneToDetail == true) {
+			// First time detail NGCHM created.
+			NgChm.DET.constructDetailMapDOMTemplate()
+			NgChm.SRCH.clearAllSearchResults();
+			loc.pane.appendChild (document.getElementById('detail_chm'));
+			isPrimary = true;
+			NgChm.DET.initialSwitchPaneToDetail = false;
 		} else {
 			NgChm.Pane.clearExistingGearDialog(loc.pane.id);
 			if (savedChmElements.length > 0) {

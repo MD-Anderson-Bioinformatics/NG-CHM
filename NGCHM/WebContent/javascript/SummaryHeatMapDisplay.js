@@ -858,7 +858,9 @@ NgChm.SUM.onMouseOut = function(evt) {
 	NgChm.SUM.canvas.style.cursor="default";
 	//Gotta redraw everything because of event cascade occurring when mousing out of the layers that contain the canvas 
 	// (container and summary_chm) we set the right position mousing up on the canvas above, but move events are still coming in.
-	NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
+	if (NgChm.DMM.DetailMaps.length > 0) { // only 'redraw everything' if there are detail maps showing
+		NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
+	}
 }
 
 NgChm.SUM.onMouseMoveCanvas = function(evt) {
@@ -966,6 +968,7 @@ NgChm.SUM.dragMove = function(evt) {
 	NgChm.SEL.setCurrentRowFromSum(NgChm.DMM.primaryMap,sumRow);
 	NgChm.SEL.setCurrentColFromSum(NgChm.DMM.primaryMap,sumCol); 
 	NgChm.SEL.updateSelection(NgChm.DMM.primaryMap);
+	NgChm.heatMap.setUnAppliedChanges(true);
 }
 
 //This function now is just in charge of drawing the green box in the summary side as
@@ -2237,7 +2240,6 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 		if (firstSwitch) {
 			// This is the first time a summary NGCHM is displayed.
 			// Simply move the template element into the target pane.
-			NgChm.Pane.emptyPaneLocation (loc);
 			NgChm.SUM.chmElement = document.getElementById('summary_chm');
 			loc.pane.appendChild (NgChm.SUM.chmElement);
 			firstSwitch = false;
@@ -2281,6 +2283,7 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 	// This function is called when a pane showing the summary NG-CHM is resized.
 	// Calculate a new layout and redraw the pane's contents.
 	function resizeSummaryPane (loc) {
+		if (document.getElementById('summary_chm') == null) {return;}
 		NgChm.SUM.calcSummaryLayout();
 		NgChm.SUM.redrawSummaryPane ();
 	}

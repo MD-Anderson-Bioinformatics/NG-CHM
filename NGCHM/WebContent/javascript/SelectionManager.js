@@ -73,6 +73,8 @@ NgChm.SEL.updateSelections = function (noResize) {
 			NgChm.SEL.updateSelection(NgChm.DMM.DetailMaps[i])
 		}
 	}
+	NgChm.MMGR.saveSelectionsToMapConfig();
+	NgChm.heatMap.setUnAppliedChanges(true);
 }
 
 /**********************************************************************************

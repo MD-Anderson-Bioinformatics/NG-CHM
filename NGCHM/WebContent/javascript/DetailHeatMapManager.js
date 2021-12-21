@@ -149,9 +149,6 @@ NgChm.DMM.setPrimaryDetailMap = function (mapItem) {
 	mapItem.version = 'P';
 	NgChm.DMM.primaryMap = mapItem;
 	document.getElementById('primary_btn'+mapItem.panelNbr).style.display = 'none';
-	if (NgChm.heatMap.getColorMapManager() !== null) {
-		NgChm.DEV.flickChange(null);
-	}
 }
 
 /*********************************************************************************************
@@ -269,6 +266,12 @@ NgChm.DMM.detailResize = function () {
 	 }
 }
 
-
+NgChm.DMM.isDetailMapDisplayed = function() {
+	if (NgChm.DMM.DetailMaps.length > 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 

@@ -592,7 +592,6 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 		}
  	} 
 	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
-	document.getElementById("detail_canvas").focus();
 };
 
 /**********************************************************************************

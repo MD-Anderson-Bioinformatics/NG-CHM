@@ -8,6 +8,7 @@
 		<script src="javascript/lib/zip.js?v=2.20.2"></script>
 		<script src="javascript/lib/deflate.js?v=2.20.2"></script>
 		<script src="javascript/lib/inflate.js?v=2.20.2"></script>
+		<script src="javascript/lib/domJSON.js?v=2.20.2"></script>
 		<script src="javascript/Config.js?v=2.20.2"></script>
 		<script src="javascript/MatrixManager.js?v=2.20.2"></script>
 		<script src="javascript/NGCHM_Util.js?v=2.20.2"></script>
@@ -27,6 +28,7 @@
 		<script src="javascript/Customization.js?v=2.20.2"></script>
 		<script src="javascript/CompatibilityManager.js?v=2.20.2"></script>
 		<script src="javascript/SearchManager.js?v=2.20.2"></script>
+		<script src="javascript/RecreatePanes.js?v=2.20.2"></script>
 		<script src="javascript/lib/jspdf.min.js?v=2.20.2"></script>
 		<script src="javascript/lib/jstat.min.js?v=2.20.2"></script>
 		<script src="javascript/use_jstat.js?v=2.20.2"></script>
@@ -124,7 +126,7 @@
 			<div id='loader' style='display: none;'>Loading...</div>
 			<div id="ngChmContainer" class="ngChmContainer" style="position: relative"></div>
 			<div id="footer"></div>
-			<div style="display:none">
+			<div style="display:none" id='templates'>
 				<!-- Templates -->
 				<div id='summary_chm'>
 					<canvas id='column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
@@ -138,16 +140,6 @@
 					<canvas id='summary_col_select_canvas' class='selection_canvas' style='padding-top:2px;z-index:0;'></canvas>
 					<canvas id='summary_row_select_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
 					<div id='sumlabelDiv' style="display: inline-block"></div>
-				</div>
-				<div id='detail_chm' class='detail_chm' style='position: relative;'>
-		 			<canvas id='detail_column_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
-					<canvas id='detail_row_dendro_canvas' width='1200' height='500' style="position: absolute;"></canvas>
-					<canvas id='detail_canvas' class='detail_canvas' tabindex='1'></canvas>
-					<canvas id='detail_box_canvas' class='detail_box_canvas'></canvas>
-					<div id='labelDiv' style="display: inline-block">
-						<div id='colLabelDiv' data-axis="Column" style="display: inline-block; position: absolute; right: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
-						<div id='rowLabelDiv' data-axis ="Row" style="display: inline-block; position: absolute; bottom: 0px; " oncontextmenu="NgChm.DET.labelRightClick(event)"></div>
-					</div>
 				</div>
 			</div>
 			<div id="pdfPrefs" class="hide">
