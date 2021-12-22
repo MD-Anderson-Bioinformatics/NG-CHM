@@ -869,51 +869,6 @@ NgChm.UHM.colorOver = function(val) {
 	menuBtn.mouseIsOver=val;
 }
 
-
-NgChm.UHM.fullBtnOver = function(btn,val) {
-	let selStr = '_selected';
-	let fullButton = 'images/full_selected.png';
-	if (!btn.src.includes(selStr)) {
-		fullButton = 'images/full.png';
-	}
-	if (NgChm.DMM.primaryMap.mode !=='NORMAL') {
-		if (val === 0) {
-			btn.setAttribute('src', fullButton);
-		} else {
-			btn.setAttribute('src', 'images/fullHover.png');
-		}
-	}
-}
-NgChm.UHM.ribbonHBtnOver = function(btn,val) {
-	let selStr = '_selected';
-	let ribbonButton = 'images/ribbonH_selected.png';
-	if (!btn.src.includes(selStr)) {
-		ribbonButton = 'images/ribbonH.png';
-	}
-	if (!NgChm.DMM.primaryMap.mode.includes('RIBBONH')) { 
-		if (val === 0) {
-			btn.setAttribute('src', ribbonButton);
-		} else {
-			btn.setAttribute('src', 'images/ribbonHHover.png');
-		}
-	}
-}
-NgChm.UHM.ribbonVBtnOver = function(btn,val) {
-	let selStr = '_selected';
-	let ribbonButton = 'images/ribbonV_selected.png';
-	if (!btn.src.includes(selStr)) {
-		ribbonButton = 'images/ribbonV.png';
-	}
-	if (!NgChm.DMM.primaryMap.mode.includes('RIBBONV')) { 
-		if (val === 0) {
-			btn.setAttribute('src', ribbonButton);
-		} else {
-			btn.setAttribute('src', 'images/ribbonVHover.png');
-		}
-	}
-}
-
-
 /**********************************************************************************
  * FUNCTION - displayStartupWarnings: The purpose of this function is to display any
  * heat map startup warnings in a popup box when the user opens a heat map.  Multiple
