@@ -898,7 +898,6 @@ NgChm.DEV.detailNormal = function (mapItem) {
 	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
 	 
-	NgChm.DET.detSetupGl(mapItem);
 	NgChm.DET.detInitGl(mapItem);
 	NgChm.DDR.clearDendroSelection();
 	NgChm.SEL.updateSelection(mapItem);
@@ -931,7 +930,6 @@ NgChm.DEV.detailFullMap = function (mapItem) {
 	//Canvas is adjusted to fit the number of rows/columns and matrix height/width of each element.
   	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
   	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
-	NgChm.DET.detSetupGl(mapItem);
 	NgChm.DET.detInitGl(mapItem);
 	NgChm.SEL.updateSelection(mapItem);	
 }
@@ -1020,7 +1018,6 @@ NgChm.DEV.detailHRibbon = function (mapItem) {
 	
 	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
-	NgChm.DET.detSetupGl(mapItem);
 	NgChm.DET.detInitGl(mapItem);
 	NgChm.SEL.updateSelection(mapItem);
 }
@@ -1093,7 +1090,6 @@ NgChm.DEV.detailVRibbon = function (mapItem) {
 		
 	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
-	NgChm.DET.detSetupGl(mapItem);
 	NgChm.DET.detInitGl(mapItem);
 	NgChm.SEL.updateSelection(mapItem);
 	document.getElementById("viewport").setAttribute("content", "height=device-height");
@@ -1159,31 +1155,10 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 	function animate(mapItem,destRow,destCol){
 		NgChm.DET.animating = true;
 
+		NgChm.DET.detInitGl (mapItem);
 		// create new buffer to draw over the current map
-		const buffer = mapItem.gl.createBuffer();
-		mapItem.gl.buffer = buffer;
-		mapItem.gl.bindBuffer(mapItem.gl.ARRAY_BUFFER, buffer);
-		// (-1,-1 is the bottom left corner of the detail canvas, (1,1) is the top right corner
-		const vertices = [    -1 + 2*dendroClassWRatio,  		  -1, // this new buffer will only cover up the matrix area and not the entire detail side
-		                    				1,   		  -1,   
-		                    				1, 1-2*dendroClassHRatio,   
-		                     -1 + 2*dendroClassWRatio,   		  -1,  
-		                     -1 + 2*dendroClassWRatio, 1-2*dendroClassHRatio,   
-		                    				1, 1-2*dendroClassHRatio ];
-		mapItem.gl.bufferData(mapItem.gl.ARRAY_BUFFER, new Float32Array(vertices), mapItem.gl.STATIC_DRAW);
-		const byte_per_vertex = Float32Array.BYTES_PER_ELEMENT;
-		const component_per_vertex = 2;
-		buffer.numItems = vertices.length / component_per_vertex;
-		const stride = component_per_vertex * byte_per_vertex;
-		const program = mapItem.gl.program;
-		const position = mapItem.gl.getAttribLocation(program, 'position');
-		mapItem.gl.enableVertexAttribArray(position);
-		mapItem.gl.vertexAttribPointer(position, 2, mapItem.gl.FLOAT, false, stride, 0);
-		const texcoord = mapItem.gl.getAttribLocation(mapItem.gl.program, "texCoord");
-		const texcoordBuffer = mapItem.gl.createBuffer();
-		mapItem.gl.bindBuffer(mapItem.gl.ARRAY_BUFFER, texcoordBuffer);
 
-		if (animateCount < animateCountMax){ // do we keep animating?
+		if (animateCount < animateCountMax) { // do we keep animating?
 			animateCount++;
 			if (!mapItem.mode.includes("RIBBONH")){
 				animationZoomW += zoomRatioW/animateCountMax;
@@ -1191,6 +1166,7 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 			if (!mapItem.mode.includes("RIBBONV")){
 				animationZoomH += zoomRatioH/animateCountMax;
 			}
+			let texBottom, texLeft, texTop, texRight;;
 			if (mapItem.mode == "FULL_MAP"){
 				let saveRow = mapItem.saveRow;
 				let saveCol = mapItem.saveCol;
@@ -1232,21 +1208,17 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 				const topRatio = (saveRow-1)*mapHRatio /mapItem.dataPerCol /animateCountMax/NgChm.heatMap.getRowSummaryRatio("d");
 				const bottomRatio = Math.max(0,(NgChm.SEL.getCurrentDetDataPerCol(mapItem)*NgChm.heatMap.getRowSummaryRatio("d")-saveRow-1-detNum)*mapHRatio   /NgChm.SEL.getCurrentDetDataPerCol(mapItem) /animateCountMax/NgChm.heatMap.getRowSummaryRatio("d")); // this one works for maps that are not too big!
 				
-				mapItem.gl.bufferData(mapItem.gl.ARRAY_BUFFER, new Float32Array([ dendroClassWRatio+animateCount*leftRatio, animateCount*bottomRatio,
-				                                                                      1-animateCount*rightRatio, animateCount*bottomRatio,
-				                                                                      1-animateCount*rightRatio, mapHRatio-animateCount*topRatio,
-				                                                                      dendroClassWRatio+animateCount*leftRatio, animateCount*bottomRatio,
-				                                                                      dendroClassWRatio+animateCount*leftRatio, mapHRatio-animateCount*topRatio,
-				                                                                      1-animateCount*rightRatio, mapHRatio-animateCount*topRatio ]), mapItem.gl.STATIC_DRAW);
+				texLeft = dendroClassWRatio+animateCount*leftRatio;
+			        texBottom = animateCount*bottomRatio;
+			        texRight = 1-animateCount*rightRatio;
+			        texTop = mapHRatio-animateCount*topRatio;
 			} else if ((currentNumRows-nextNumRows)%2 == 0){ // an even number of data points are going out of view
 				// we zoom the same amount from the top/left as the bottom/right
 				// (0,0) is the bottom left corner, (1,1) is the top right
-				mapItem.gl.bufferData(mapItem.gl.ARRAY_BUFFER, new Float32Array([ dendroClassWRatio+animationZoomW/2, animationZoomH/2,
-				                                                                      1-animationZoomW/2, animationZoomH/2,
-				                                                                      1-animationZoomW/2, mapHRatio-animationZoomH/2,
-				                                                                      dendroClassWRatio+animationZoomW/2, animationZoomH/2,
-				                                                                      dendroClassWRatio+animationZoomW/2, mapHRatio-animationZoomH/2,
-				                                                                      1-animationZoomW/2, mapHRatio-animationZoomH/2 ]), mapItem.gl.STATIC_DRAW);
+				texLeft = dendroClassWRatio+animationZoomW/2;
+			        texBottom = animationZoomH/2;
+			        texRight = 1-animationZoomW/2;
+			        texTop = mapHRatio-animationZoomH/2;
 			} else { // an odd number of data points are going out of view (ie: if the difference in points shown is 9, move 4 from the top/left, move 5 from the bottom/right)
 				// we zoom one less point on the top/left than we do the bottom/right
 				const rowDiff = currentNumRows-nextNumRows;
@@ -1255,50 +1227,40 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 				const bottomRatio = Math.ceil(rowDiff/2)/rowDiff;
 				const leftRatio = Math.floor(colDiff/2)/colDiff;
 				const rightRatio = Math.ceil(colDiff/2)/colDiff;
-				mapItem.gl.bufferData(mapItem.gl.ARRAY_BUFFER, new Float32Array([ dendroClassWRatio+animationZoomW*leftRatio, animationZoomH*bottomRatio,
-				                                                                      1-animationZoomW*rightRatio, animationZoomH*bottomRatio,
-				                                                                      1-animationZoomW*rightRatio, mapHRatio-animationZoomH*topRatio,
-				                                                                      dendroClassWRatio+animationZoomW*leftRatio, animationZoomH*bottomRatio,
-				                                                                      dendroClassWRatio+animationZoomW*leftRatio, mapHRatio-animationZoomH*topRatio,
-				                                                                      1-animationZoomW*rightRatio, mapHRatio-animationZoomH*topRatio ]), mapItem.gl.STATIC_DRAW);
+				texLeft = dendroClassWRatio+animationZoomW*leftRatio;
+			        texBottom = animationZoomH*bottomRatio;
+			        texRight = 1-animationZoomW*rightRatio;
+			        texTop = mapHRatio-animationZoomH*topRatio;
 			}
 			
 			requestAnimationFrame(getAnimate);
 			// draw the updated animation map
-			mapItem.gl.enableVertexAttribArray(texcoord);
-			mapItem.gl.vertexAttribPointer(texcoord, 2, mapItem.gl.FLOAT, false, 0, 0)
-			mapItem.gl.drawArrays(mapItem.gl.TRIANGLE_STRIP, 0, mapItem.gl.buffer.numItems);
+			if (mapItem.glManager.OK) {
+				// Set the clip region to just the matrix area.
+				// (-1,-1 is the bottom left corner of the detail canvas, (1,1) is the top right corner
+			        const right = 1;
+				const bottom = -1;
+			        const left = -1 + 2 * dendroClassWRatio;
+			        const top = 1 - 2 * dendroClassHRatio;
+				mapItem.glManager.setClipRegion (NgChm.DRAW.GL.rectToTriangles(bottom,left,top,right));
+				mapItem.glManager.setTextureRegion (NgChm.DRAW.GL.rectToTriangles(texBottom,texLeft,texTop,texRight));
+				mapItem.glManager.drawTexture ();
+			}
 		} else { // animation stops and actual zoom occurs
 			animationZoomW = 0;
 			animationZoomH = 0;
-			mapItem.gl.clear(mapItem.gl.COLOR_BUFFER_BIT);
-			const buffer = mapItem.gl.createBuffer();
-			mapItem.gl.buffer = buffer;
-			mapItem.gl.bindBuffer(mapItem.gl.ARRAY_BUFFER, buffer);
-			const vertices = [ -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, 1 ]; // reset the vertices to show the full detail side
-			mapItem.gl.bufferData(mapItem.gl.ARRAY_BUFFER, new Float32Array(vertices), mapItem.gl.STATIC_DRAW);
-			const byte_per_vertex = Float32Array.BYTES_PER_ELEMENT;
-			const component_per_vertex = 2;
-			buffer.numItems = vertices.length / component_per_vertex;
-			const stride = component_per_vertex * byte_per_vertex;
-			const program = mapItem.gl.program;
-			const position = mapItem.gl.getAttribLocation(program, 'position');	 	
-			mapItem.gl.enableVertexAttribArray(position);
-			mapItem.gl.vertexAttribPointer(position, 2, mapItem.gl.FLOAT, false, stride, 0);
-
-			// Texture coordinates for map.
-			const texcoord = mapItem.gl.getAttribLocation(program, "texCoord");
-			const texcoordBuffer = mapItem.gl.createBuffer();
-			mapItem.gl.bindBuffer(mapItem.gl.ARRAY_BUFFER, texcoordBuffer);
-			mapItem.gl.bufferData(mapItem.gl.ARRAY_BUFFER, new Float32Array([ 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1 ]), mapItem.gl.STATIC_DRAW);
-			mapItem.gl.enableVertexAttribArray(texcoord);
-			mapItem.gl.vertexAttribPointer(texcoord, 2, mapItem.gl.FLOAT, false, 0, 0)
+			if (mapItem.glManager.OK) {
+			    const ctx = mapItem.glManager.context;
+			    ctx.clear(ctx.COLOR_BUFFER_BIT);
+			    mapItem.glManager.setClipRegion (NgChm.DRAW.GL.fullClipSpace);
+			    mapItem.glManager.setTextureRegion (NgChm.DRAW.GL.fullTextureSpace);
+			}
 			NgChm.DEV.detailDataZoomIn(mapItem);
 			NgChm.DET.animating = false;
 
 		}	
 	}
-	
+
 }
 
 
