@@ -299,4 +299,17 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 	return [ left, bottom, right, bottom, right, top,
 		 left, bottom, left, top, right, top ];
     }
+
+    // Helper function for debugging WebGL context issues.
+    // Intended for use by developers.
+    NgChm.DRAW.GL.getContextSimulator = function (id) {
+	if (!id) {
+	    console.log ("Usage: var ext = NgChm.DRAW.GL.getContextSimulator(id);");
+	    console.log ("       ext.loseContext();");
+	    console.log ("       ext.restoreContext();");
+	    console.log ("Valid ids are like summary_canvas, row_class_canvas, col_class_canvas, detail_canvas, detail_canvas2, etc.");
+	    return;
+	}
+	return document.getElementById(id).getContext("webgl").getExtension("WEBGL_lose_context");
+    }
 })();
