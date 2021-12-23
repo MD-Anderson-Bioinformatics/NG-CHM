@@ -75,8 +75,8 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 	// fragment shaders for the GL context given as the only parameter.  They are called by
 	// GlManager when initializing or re-initializing a context.
 	//
-	constructor (canvas, getVertexShader, getFragmentShader) {
-	    this._state = getTrackedGlContext (canvas);
+	constructor (canvas, getVertexShader, getFragmentShader, onRestore) {
+	    this._state = getTrackedGlContext (canvas, onRestore);
 	    this._OK = false;
 	    this._getVertexShader = getVertexShader;
 	    this._getFragmentShader = getFragmentShader;
@@ -247,8 +247,8 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 
     }
 
-    NgChm.DRAW.GL.createGlManager = function (canvas, getVertexShader, getFragmentShader) {
-	    return new GlManager (canvas, getVertexShader, getFragmentShader);
+    NgChm.DRAW.GL.createGlManager = function (canvas, getVertexShader, getFragmentShader, onRestore) {
+	    return new GlManager (canvas, getVertexShader, getFragmentShader, onRestore);
     };
 
     // Returns a tracked GL context for the specified canvas.
@@ -256,7 +256,7 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
     // - context The WebGL context for the canvas.
     // - lost Boolean, true on initialization or if the context was *ever* lost since the last check
     // - restored Boolean, true if the context has been restored after the most recent loss.
-    function getTrackedGlContext (canvas) {
+    function getTrackedGlContext (canvas, onRestore) {
 	const debug = true;
 	if (!!window.WebGLRenderingContext) {
 	    const names = ["webgl", "experimental-webgl", "moz-webgl", "webkit-3d"];
@@ -266,7 +266,7 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 		    if (context && typeof context.getParameter == "function") {
 			// WebGL is enabled
 			const obj = { lost: true, restored: true, context };
-			(function(obj) {
+			(function(obj, onRestore) {
 			    canvas.addEventListener('webglcontextlost', ev => {
 				ev.preventDefault();
 				if (debug) console.debug ('WebGL context lost at ' + Date());
@@ -277,8 +277,9 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 				ev.preventDefault();
 				if (debug) console.debug ('WebGL context restored at ' + Date());
 				obj.restored = true;
+				if (onRestore) setTimeout(onRestore);
 			    }, false);
-			})(obj);
+			})(obj, onRestore);
 			return obj;
 		    }
 		} catch(e) {}

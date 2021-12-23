@@ -326,7 +326,7 @@ NgChm.SUM.setSelectionDivSize = function(width, height){ // input params used fo
     //Initialize webGl for the Heat Map Canvas
     NgChm.SUM.initHeatMapGl = function() {
 	// First time: create the context manager.
-	if (!NgChm.SUM.mapGlManager) NgChm.SUM.mapGlManager = createSummaryGlManager ( NgChm.SUM.canvas );
+	if (!NgChm.SUM.mapGlManager) NgChm.SUM.mapGlManager = createSummaryGlManager ( NgChm.SUM.canvas, NgChm.SUM.drawHeatMap );
 	// Every time: check if (re-)initialization required and do so if needed.
 	return NgChm.SUM.mapGlManager.check(initSummaryGlContext);
 
@@ -334,19 +334,19 @@ NgChm.SUM.setSelectionDivSize = function(width, height){ // input params used fo
 
     //Initialize webGl for the Row Class Bar Canvas
     NgChm.SUM.initRowClassGl = function() {
-	if (!NgChm.SUM.rcGlManager) NgChm.SUM.rcGlManager = createSummaryGlManager ( NgChm.SUM.rCCanvas );
+	if (!NgChm.SUM.rcGlManager) NgChm.SUM.rcGlManager = createSummaryGlManager ( NgChm.SUM.rCCanvas, NgChm.SUM.drawRowClassBars );
 	return NgChm.SUM.rcGlManager.check(initSummaryGlContext);
     };
 
     //Initialize webGl for the Column Class Bar Canvas
     NgChm.SUM.initColClassGl = function() {
-	if (!NgChm.SUM.ccGlManager) NgChm.SUM.ccGlManager = createSummaryGlManager ( NgChm.SUM.cCCanvas );
+	if (!NgChm.SUM.ccGlManager) NgChm.SUM.ccGlManager = createSummaryGlManager ( NgChm.SUM.cCCanvas, NgChm.SUM.drawColClassBars );
 	return NgChm.SUM.ccGlManager.check(initSummaryGlContext);
     };
 
     // Create a GL manager that uses the summary map vertex and fragment shaders.
-    function createSummaryGlManager (canvas) {
-	    return NgChm.DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader);
+    function createSummaryGlManager (canvas, onRestore) {
+	    return NgChm.DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader, onRestore);
     }
 
     // Vertex shader for summary heat maps.
@@ -551,7 +551,7 @@ NgChm.SUM.buildRowClassTexture = function() {
 };
 
 NgChm.SUM.drawRowClassBars = function() {
-	if (NgChm.SUM.initRowClassGl()) {
+	if (NgChm.SUM.texRc && NgChm.SUM.initRowClassGl()) {
 		NgChm.SUM.rcGlManager.setTextureFromRenderBuffer (NgChm.SUM.texRc);
 		NgChm.SUM.rcGlManager.drawTexture();
 	}
@@ -601,7 +601,7 @@ NgChm.SUM.buildColClassTexture = function() {
 
 //WebGL code to draw the Column Class Bars.
 NgChm.SUM.drawColClassBars = function() {
-	if (NgChm.SUM.initColClassGl()) {
+	if (NgChm.SUM.texCc && NgChm.SUM.initColClassGl()) {
 		NgChm.SUM.ccGlManager.setTextureFromRenderBuffer (NgChm.SUM.texCc);
 		NgChm.SUM.ccGlManager.drawTexture ();
 	}

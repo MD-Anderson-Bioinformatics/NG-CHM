@@ -2280,7 +2280,10 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
      *********************************************************************************************/
     NgChm.DET.detInitGl = function (mapItem) {
 	    if (!mapItem.glManager) {
-		mapItem.glManager = NgChm.DRAW.GL.createGlManager (mapItem.canvas, getDetVertexShader, getDetFragmentShader);
+		mapItem.glManager = NgChm.DRAW.GL.createGlManager (mapItem.canvas, getDetVertexShader, getDetFragmentShader, () => {
+		    const drawWin = NgChm.SEL.getDetailWindow(mapItem);
+		    NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
+		});
 	    }
 	    return mapItem.glManager.check(initDetailContext);
 
