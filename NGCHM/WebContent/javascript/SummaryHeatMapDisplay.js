@@ -235,7 +235,7 @@ NgChm.SUM.setTopItemsSize = function (){
 		for (let i = 0; i < NgChm.SUM.colTopItems.length; i++){
 			let foundLabel = false;
 			let p = document.createElement("p");
-			p.innerHTML = NgChm.UTIL.getLabelText(NgChm.SUM.colTopItems[i].split("|")[0],"col");
+			p.innerText = NgChm.UTIL.getLabelText(NgChm.SUM.colTopItems[i].split("|")[0],"col");
 			p.className = "topItems";
 			NgChm.SUM.chmElement.appendChild(p);
 			for (let j = 0; j < colLabels.length; j++){
@@ -257,7 +257,7 @@ NgChm.SUM.setTopItemsSize = function (){
 		for (let i = 0; i < NgChm.SUM.rowTopItems.length; i++){
 			let foundLabel = false;
 			let p = document.createElement("p");
-			p.innerHTML = NgChm.UTIL.getLabelText(NgChm.SUM.rowTopItems[i].split("|")[0],"row");
+			p.innerText = NgChm.UTIL.getLabelText(NgChm.SUM.rowTopItems[i].split("|")[0],"row");
 			p.className = "topItems";
 			NgChm.SUM.chmElement.appendChild(p);
 			for (let j = 0; j < rowLabels.length; j++){
