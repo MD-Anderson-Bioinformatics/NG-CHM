@@ -565,21 +565,21 @@ span.button.negative {
 .topItems{
 	position: absolute;
 	display:inline-table;
-	font-size: 8;
+	font-size: 8px;
 	margin: 1px;
 }
 
 .classLegend{
 	position: absolute;
 	display:block;
-	font-size: 6;
+	font-size: 6px;
 	margin: 0px;
 }
 
 .classLabel{
 	position: absolute;
 	display:block;
-	font-size: 10;
+	font-size: 10px;
     font-weight: bold;
 	margin: 0px;
 }
@@ -587,7 +587,7 @@ span.button.negative {
 .classLabelVertical{
 	position: absolute;
 	display:block;
-	font-size: 10;
+	font-size: 10px;
     font-weight: bold;
 	margin: 0px;
 	transform: rotate(90deg);
