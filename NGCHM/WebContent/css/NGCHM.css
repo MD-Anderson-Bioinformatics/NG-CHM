@@ -567,6 +567,7 @@ span.button.negative {
 	display:inline-table;
 	font-size: 8px;
 	margin: 1px;
+	white-space: nowrap;
 }
 
 .classLegend{
