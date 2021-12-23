@@ -1729,7 +1729,7 @@ NgChm.SUM.calcSummaryLayout = function() {
 		const hFrac = NgChm.SUM.colDendro ? NgChm.SUM.colDendro.getConfigSize() : 0;
 		if (hFrac > 0) { ydecor += layout.marginThickness; }
 		//const ytotal = Math.floor (NgChm.SUM.chmElement.clientHeight * NgChm.SUM.heightPct) - 35;
-		const ytotal = Math.floor (NgChm.SUM.chmElement.clientHeight) - 35;
+		const ytotal = Math.floor (NgChm.SUM.chmElement.clientHeight) - 1;
 		let ccBarHeight = NgChm.SUM.colClassBarHeight;
 		const yScale = Math.min(1.0, (ytotal/2 - ydecor) / (ccBarHeight + ytotal/2*hFrac));
 		// console.log ({ ydecor, ccBarHeight, hFrac, ytotal, yScale });
