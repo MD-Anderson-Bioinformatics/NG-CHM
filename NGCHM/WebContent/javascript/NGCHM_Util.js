@@ -328,10 +328,11 @@ NgChm.UTIL.setBrowserMinFontSize = function () {
 	  const minMinLabelSize = 5;
 	  var minSettingFound = 0;
 	  var el = document.createElement('div');
-	  document.body.appendChild(el);
 	  el.innerHTML = "<div><p>a b c d e f g h i j k l m n o p q r s t u v w x y z</p></div>";
+	  el.style.position = 'absolute';
 	  el.style.fontSize = '1px';
 	  el.style.width = '64px';
+	  document.body.appendChild(el);
 	  var minimumHeight = el.offsetHeight;
 	  var least = 0;
 	  var most = 64;
