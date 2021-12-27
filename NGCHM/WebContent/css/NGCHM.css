@@ -1192,10 +1192,15 @@ div#droptarget.visible {
     background-color: rgba(255,128,128,1);
 }
 
+/* Use opacity:0 instead of display:none for elements that will be faded in
+ * to avoid redraw/reflow.
+ */
 .faded {
     opacity: 0;
 }
 
+/* Start at opacity 0 and transition to opacity 1.
+ */
 .fadein {
     opacity: 0;
     animation: loading-up var(--load-time);
@@ -1203,6 +1208,8 @@ div#droptarget.visible {
     animation-delay: var(--load-time);
 }
 
+/* Start at opacity 1 and transition to opacity 0.
+ */
 .fadeout {
     opacity: 1;
     animation: loading-down var(--load-time);

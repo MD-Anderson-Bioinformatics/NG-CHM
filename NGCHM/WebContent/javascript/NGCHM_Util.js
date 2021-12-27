@@ -569,6 +569,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 		document.getElementById('detail_buttons').style.display = 'none';
 		chmFileItem.style.display = '';
 		chmFileItem.addEventListener('change', NgChm.UTIL.loadFileModeCHM, false);
+		NgChm.UTIL.UI.showSplashExample();
 	} else {
 		NgChm.UTIL.UI.showLoader("Loading NG-CHM from server...");
 		//Run from a web server.
@@ -1549,10 +1550,17 @@ NgChm.UTIL.isOnObject = function (e,type) {
 
 
 (function() {
-    const exports = { showLoader, hideLoader };
+    const exports = { showSplashExample, showLoader, hideLoader };
     Object.assign (NgChm.createNS ("NgChm.UTIL.UI"), exports);
     var firstLoaderMessage = true;
     var messages = "";
+
+    function showSplashExample () {
+	const splashWaiting = document.getElementById('splashWaiting');
+	const splashExample = document.getElementById('splashExample');
+        splashWaiting.classList.add('hide');
+        splashExample.classList.remove('hide');
+    }
 
     // Replace splash screen with loader screen.
     function showLoader (message) {
@@ -1571,9 +1579,8 @@ NgChm.UTIL.isOnObject = function (e,type) {
     // Replace loader screen with NgCHM.
     function hideLoader () {
 	const loader = document.getElementById('loader');
-	const chm = document.getElementById('ngChmContainer');
 	loader.classList.replace('fadein', 'fadeout');
-	chm.classList.replace('faded', 'fadein');
+	NgChm.UTIL.containerElement.classList.replace('faded', 'fadein');
 	console.log ('Hide Loader ');
     }
 })();
