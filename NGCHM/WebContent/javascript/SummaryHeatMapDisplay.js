@@ -235,7 +235,7 @@ NgChm.SUM.setTopItemsSize = function (){
 		for (let i = 0; i < NgChm.SUM.colTopItems.length; i++){
 			let foundLabel = false;
 			let p = document.createElement("p");
-			p.innerHTML = NgChm.UTIL.getLabelText(NgChm.SUM.colTopItems[i].split("|")[0],"col");
+			p.innerText = NgChm.UTIL.getLabelText(NgChm.SUM.colTopItems[i].split("|")[0],"col");
 			p.className = "topItems";
 			NgChm.SUM.chmElement.appendChild(p);
 			for (let j = 0; j < colLabels.length; j++){
@@ -257,7 +257,7 @@ NgChm.SUM.setTopItemsSize = function (){
 		for (let i = 0; i < NgChm.SUM.rowTopItems.length; i++){
 			let foundLabel = false;
 			let p = document.createElement("p");
-			p.innerHTML = NgChm.UTIL.getLabelText(NgChm.SUM.rowTopItems[i].split("|")[0],"row");
+			p.innerText = NgChm.UTIL.getLabelText(NgChm.SUM.rowTopItems[i].split("|")[0],"row");
 			p.className = "topItems";
 			NgChm.SUM.chmElement.appendChild(p);
 			for (let j = 0; j < rowLabels.length; j++){
@@ -1729,7 +1729,7 @@ NgChm.SUM.calcSummaryLayout = function() {
 		const hFrac = NgChm.SUM.colDendro ? NgChm.SUM.colDendro.getConfigSize() : 0;
 		if (hFrac > 0) { ydecor += layout.marginThickness; }
 		//const ytotal = Math.floor (NgChm.SUM.chmElement.clientHeight * NgChm.SUM.heightPct) - 35;
-		const ytotal = Math.floor (NgChm.SUM.chmElement.clientHeight) - 35;
+		const ytotal = Math.floor (NgChm.SUM.chmElement.clientHeight) - 1;
 		let ccBarHeight = NgChm.SUM.colClassBarHeight;
 		const yScale = Math.min(1.0, (ytotal/2 - ydecor) / (ccBarHeight + ytotal/2*hFrac));
 		// console.log ({ ydecor, ccBarHeight, hFrac, ytotal, yScale });

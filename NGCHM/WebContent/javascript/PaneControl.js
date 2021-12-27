@@ -313,7 +313,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		displayPanes('none');
 		//Hide all resizers
 		displayResizers ('none');
-		//Hide all contaniers but the one holding the pane being expanded AND the top container
+		//Hide all containers but the one holding the pane being expanded AND the top container
 		displayContainers('none');
 		//Retain original sizing for pane and parent container
 		origPane = {width: thisPane.style.width, height: thisPane.style.height};
@@ -324,9 +324,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		thisPane.style.width = topContainer.clientWidth + 'px';
 		thisPane.style.height = topContainer.clientHeight + 'px';
 		thisPane.style.display = '';
-		//Resize panels
-		NgChm.DMM.detailResize();
-		NgChm.SUM.summaryResize();
+		// Resize the pane to 'full window'
+		resizePane (thisPane);
 	}
 	
 	function closeFullScreen (paneId) {
@@ -348,11 +347,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		origPane = {};
 		origContainer = {};
 		activeContainers = [];
-		//Resize all panels
-		NgChm.SUM.calcSummaryLayout();
-		NgChm.SUM.redrawSummaryPane();
-		NgChm.DMM.detailResize();
-		NgChm.UTIL.chmResize();
+		//Resize the pane to its original size.
+		resizePane (thisPane);
 	}
 	
 	//Grab a list of panes and show/hide them all
@@ -1560,6 +1556,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	function resizePane (pane) {
 		const loc = findPaneLocation (pane);
 		if (debug) console.log ({ m: 'resizePane', title: loc.paneTitle.innerText, loc });
+		if (loc.pane.children.length > 1) {
+		    // Set height available for panel contents (child 1) after accounting
+		    // for header height (child 0) and the header's bottom margin (not included in offsetHeight).
+		    loc.pane.children[1].style.height = (loc.pane.clientHeight - loc.pane.children[0].offsetHeight - 4) + 'px';
+		}
 		getPaneEventHandler (loc.pane, 'resize') (loc);
 	}
 
