@@ -31,7 +31,6 @@ NgChm.createNS('NgChm.RecPanes');
 			window.dispatchEvent(new Event('resize'));
 			NgChm.SUM.summaryPaneResizeHandler();
 			NgChm.heatMap.setUnAppliedChanges(false);
-			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
 			setFlickState();
 			setNextMapNumber();
 			setTimeout(() => {
@@ -47,10 +46,9 @@ NgChm.createNS('NgChm.RecPanes');
 	 */ 
 	function reconstructPanelLayoutFromMapConfig() {
 		try {
-			let baseNgChmContainer = document.getElementById('ngChmContainer');
 			let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
 			let reconstructedPanelLayout = domJSON.toDOM(panel_layoutJSON);
-			baseNgChmContainer.parentNode.replaceChild(reconstructedPanelLayout, baseNgChmContainer);
+			NgChm.UTIL.containerElement.replaceChildren(...reconstructedPanelLayout.firstChild.children);
 		} catch(err) {
 			console.error("Cannot reconstruct panel layout: "+err);
 			throw "Error reconstructing panel layout from mapConfig.";
