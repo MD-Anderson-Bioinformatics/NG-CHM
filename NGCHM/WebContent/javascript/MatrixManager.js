@@ -842,9 +842,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Is the heat map ready for business 
 	this.isInitialized = function() {
-		if (initialized === 1) {
-	 		document.getElementById('loader').style.display = 'none';
-		}
 		return initialized;
 	}
 
@@ -1493,6 +1490,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				(haveTileData(NgChm.SEL.getCurrentDL()+"."+NgChm.MMGR.THUMBNAIL_LEVEL+".1.1")) &&
 				 (initialized == 0)) {
 					initialized = 1;
+					if (!mapConfig.hasOwnProperty('panel_configuration')) {
+					    NgChm.UTIL.UI.hideLoader();
+					}
 					sendAllListeners(NgChm.MMGR.Event_INITIALIZED);
 			}
 			//Unlikely, but possible to get init finished after all the summary tiles.

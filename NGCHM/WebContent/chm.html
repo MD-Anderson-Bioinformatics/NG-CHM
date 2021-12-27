@@ -123,8 +123,29 @@
 			    </div>
 		        <img id='aboutMenu_btn' class='farRightButton' src='images/aboutNgchm.png' alt='About NG-CHM' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM About",140,0)' onclick='NgChm.UHM.widgetHelp();' style="vertical-align: top;"/>
 		    </div>
-			<div id='loader' style='display: none;'>Loading...</div>
-			<div id="ngChmContainer" class="ngChmContainer" style="position: relative"></div>
+
+		    <div id='content'>
+			<div id='splash' class='fadein'>
+			    <h2>Next-Generation Clustered Heat Map Viewer</h2>
+			    <P>
+			        Next-Generation Clustered Heat Maps (NG-CHMs) are optimized for the interactive exploration of data matrices, especially <strong>large</strong> ones
+				such as often occur in high-throughput molecular profiling studies (omics).  Although motivated by biological applications,
+                                NG-CHMs can be used for any type of matrix data.
+			    </P><P>
+				For more information about NG-CHMs, see:
+				<UL>
+				    <LI><A href="https://bioinformatics.mdanderson.org/public-software/ngchm/">The NG-CHM Project Page</A>
+				    <UL><LI><A href="https://bioinformatics.mdanderson.org/public-software/ngchm/#building-ng-chms">Building your own NG-CHMs</A></UL>
+				    <LI><A href="https://www.youtube.com/channel/UCADGir2q8IaI9cGQuzjSL9w/featured">The NG-CHM YouTube channel</A>
+				</UL>
+			    </P><P>
+			    You can explore a <A href="https://tcga.ngchm.net/NGCHM/chm.html?map=class_subset_tcga_brca">sample NG-CHM</A>.
+			    </P>
+			</div> <!-- splash -->
+			<div id='loader' class='faded'></div>
+			<div id='ngChmContainer' class='faded ngChmContainer'></div>
+		    </div> <!-- content -->
+
 			<div id="footer"></div>
 			<div style="display:none" id='templates'>
 				<!-- Templates -->

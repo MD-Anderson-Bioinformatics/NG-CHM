@@ -754,7 +754,7 @@ NgChm.UHM.invalidFileFormat = function() {
 NgChm.UHM.initMessageBox = function() {
 	var msgBox = document.getElementById('msgBox');
 	var headerpanel = document.getElementById('mdaServiceHeader');
-	document.getElementById('loader').style.display = 'none'
+	NgChm.UTIL.UI.hideLoader();
 	msgBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	
 	document.getElementById('msgBox').style.display = 'none';
@@ -1175,7 +1175,7 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
 	var pluginCtr = allLinksTbl.rows.length;
 	var headerpanel = document.getElementById('mdaServiceHeader');
-	document.getElementById('loader').style.display = 'none'
+	NgChm.UTIL.UI.hideLoader();
 	linkBox.classList.add ('hide');
 	linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	linkBox.style.right = "5%";

@@ -8,6 +8,8 @@
          */
 	--in-selection-color: rgb(0,0,0);
 	--in-selection-background-color: rgb(0,255,56);
+
+	--load-time: 200ms;
 }
 
 /* Extra class added to selected labels.
@@ -120,11 +122,43 @@ div.pane canvas {
 	position: absolute;
 }
 
-div#ngChmContainer{
-	overflow: hidden;
-	display: flex;
+/* #content contains everything between the page header and footer.
+ * Initially it contains the splash screen.
+ * Once loading commences it's replaced by the loading screen.
+ * After loading completes, the loading screen is replaced by the ngChmContainer.
+ */
+#content {
+        position: relative;
+	width: 100%;
 	flex-grow: 1;
+}
+
+#splash, #loader {
+	position: absolute;
+	top: 4em;
+	left: auto;
+	right: auto;
+	padding: 2em;
+	border: 2px solid rgb(0,0,255);
+	margin: 4em;
+	max-width: 50em;
+	border-radius: 2em;
+	box-shadow: 0.5em 0.5em 1em rgb(127,127,200);
+	z-index: 4;
+}
+
+#ngChmContainer {
+	position: absolute;
+	overflow: hidden;
+	display: block;
+	height: 100%;
+	width: 100%;
 	border-bottom: 1px solid white;
+	opacity: 0;
+}
+
+#loader p {
+	margin-block: 0.5em;
 }
 
 #footer {
@@ -1156,4 +1190,40 @@ div#droptarget.visible {
     z-index: 100;
     color: rgba(0,0,0,1);
     background-color: rgba(255,128,128,1);
+}
+
+.faded {
+    opacity: 0;
+}
+
+.fadein {
+    opacity: 0;
+    animation: loading-up var(--load-time);
+    animation-fill-mode: forwards;
+    animation-delay: var(--load-time);
+}
+
+.fadeout {
+    opacity: 1;
+    animation: loading-down var(--load-time);
+    animation-fill-mode: forwards;
+    pointer-events: none;
+}
+
+@keyframes loading-up {
+    0% {
+	opacity: 0;
+    }
+    100% {
+	opacity: 1;
+    }
+}
+
+@keyframes loading-down {
+    0% {
+	opacity: 1;
+    }
+    100% {
+	opacity: 0;
+    }
 }

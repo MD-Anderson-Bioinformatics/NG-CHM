@@ -428,7 +428,7 @@ NgChm.UTIL.showDetailPane = true;
 		} else {
 			return;
 		}
-		document.getElementById('loader').style.display = 'none';
+		NgChm.UTIL.UI.showLoader("Configuring interface...");
 		//
 		// Define the DROP TARGET and set the drop event handler(s).
 		if (debug) console.log ('Configuring drop event handler');
@@ -570,7 +570,7 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 		chmFileItem.style.display = '';
 		chmFileItem.addEventListener('change', NgChm.UTIL.loadFileModeCHM, false);
 	} else {
-		document.getElementById('loader').style.display = '';
+		NgChm.UTIL.UI.showLoader("Loading NG-CHM from server...");
 		//Run from a web server.
 		var mapName = NgChm.UTIL.mapId;
 		var dataSource = NgChm.MMGR.WEB_SOURCE;
@@ -617,7 +617,7 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		if (req.readyState == req.DONE) {
 			if (req.status != 200) {
 				console.log('Failed in call to get NGCHM from server: ' + req.status);
-				document.getElementById('loader').innerHTML = "Failed in call to get NGCHM from server";
+				NgChm.UTIL.UI.showLoader("Failed to get NGCHM from server");
 			} else {
 				var chmBlob  =  new Blob([req.response],{type:'application/zip'});  // req.response;
 				var chmFile  =  new File([chmBlob], NgChm.MMGR.embeddedMapName);
@@ -668,7 +668,7 @@ NgChm.UTIL.loadBlobModeCHM = function (sizeBuilderView) {
  * file mode and  user selects the chm data .zip file.
  **********************************************************************************/
 NgChm.UTIL.loadFileModeCHM = function () {
-	document.getElementById('loader').style.display = '';
+	NgChm.UTIL.UI.showLoader("Loading NG-CHM from file...");
 	var chmFile  = document.getElementById('chmFile').files[0];
 	var split = chmFile.name.split("."); 
 	if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
@@ -1545,6 +1545,35 @@ NgChm.UTIL.isOnObject = function (e,type) {
     // Convert r b and g values to hex
     rgb = b | (g << 8) | (r << 16); 
     return "#" + (0x1000000 | rgb).toString(16).substring(1);
-}  
+};  
 
 
+(function() {
+    const exports = { showLoader, hideLoader };
+    Object.assign (NgChm.createNS ("NgChm.UTIL.UI"), exports);
+    var firstLoaderMessage = true;
+    var messages = "";
+
+    // Replace splash screen with loader screen.
+    function showLoader (message) {
+	const splash = document.getElementById('splash');
+	const loader = document.getElementById('loader');
+	messages += '<P>' + message;
+	loader.innerHTML = messages;
+	if (firstLoaderMessage) {
+	    loader.classList.replace('faded', 'fadein');
+	    splash.classList.replace('fadein', 'fadeout');
+	    firstLoaderMessage = false;
+	}
+	console.log ('Show Loader ' + message);
+    }
+
+    // Replace loader screen with NgCHM.
+    function hideLoader () {
+	const loader = document.getElementById('loader');
+	const chm = document.getElementById('ngChmContainer');
+	loader.classList.replace('fadein', 'fadeout');
+	chm.classList.replace('faded', 'fadein');
+	console.log ('Hide Loader ');
+    }
+})();
