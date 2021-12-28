@@ -147,6 +147,13 @@ div.pane canvas {
 	z-index: 4;
 }
 
+#splashWaiting {
+	font-style: italic;
+	font-weight: bolder;
+	font-weight: larger;
+	color: blue;
+}
+
 #ngChmContainer {
 	position: absolute;
 	overflow: hidden;
