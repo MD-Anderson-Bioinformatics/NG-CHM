@@ -2409,9 +2409,10 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	let savedChmElements = [];
 	NgChm.DET.initialSwitchPaneToDetail = true
 
-	function switchPaneToDetail (loc) { 
+	function switchPaneToDetail (loc) {
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
+		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
 		let isPrimary = false;
 		if (NgChm.RecPanes.savedInitialDetailPane != undefined) {
 			// this if block is executed if the initial detail pane was saved in RecreatePanes
@@ -2420,7 +2421,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 			loc.pane.appendChild(NgChm.RecPanes.savedInitialDetailPane);
 			let canvas = loc.pane.querySelector('.detail_canvas');
 			let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
-			mapItem.pane = loc.pane.id;
+			mapItem.pane = paneId;
 			NgChm.DMM.primaryMap = mapItem;
 			NgChm.DMM.DetailMaps.push(mapItem);
 			NgChm.DET.updateDisplayedLabels();
@@ -2435,10 +2436,10 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 			isPrimary = true;
 			NgChm.DET.initialSwitchPaneToDetail = false;
 		} else {
-			NgChm.Pane.clearExistingGearDialog(loc.pane.id);
+			NgChm.Pane.clearExistingGearDialog(paneId);
 			if (savedChmElements.length > 0) {
 				// Detail NGCHM not currently showing in a pane.
-				NgChm.DMM.primaryMap.pane = loc.pane.id;
+				NgChm.DMM.primaryMap.pane = paneId;
 			  	NgChm.DMM.DetailMaps.push(NgChm.DMM.primaryMap);
 				NgChm.Pane.emptyPaneLocation (loc);
 				isPrimary = true;
@@ -2448,34 +2449,22 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 				if (oldLoc.pane === loc.pane) return;
 				NgChm.Pane.emptyPaneLocation (loc);
 				// Remove from previous location. Will set savedChmElements.
-				savedChmElements = NgChm.Pane.openDetailPaneLocation (oldLoc, loc.pane.id);
+				savedChmElements = NgChm.Pane.openDetailPaneLocation (oldLoc, paneId);
 			}
 			while (savedChmElements.length > 0) {
 				const el = savedChmElements.shift(); 
 				loc.pane.appendChild (el);
 			}
-			NgChm.DEV.addEvents(loc.pane.id);
+			NgChm.DEV.addEvents(paneId);
 			NgChm.SUM.drawLeftCanvasBox();
 		}
 		NgChm.Pane.setPaneClientIcons(loc, [
 		    zoomButton ('primary_btn'+NgChm.DMM.nextMapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
 		    zoomButton ('zoomOut_btn'+NgChm.DMM.nextMapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
 		    zoomButton ('zoomIn_btn'+NgChm.DMM.nextMapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
-		    modeButton ('full_btn'+NgChm.DMM.nextMapNumber, 'images/full_selected.png', NgChm.UHM.fullBtnOver, 'Normal View', 65, () => {
-			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
-			NgChm.DEV.clearModeHistory (mapItem);
-			NgChm.DEV.detailNormal (mapItem);
-		    }),
-		    modeButton ('ribbonH_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, () => {
-			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
-			NgChm.DEV.clearModeHistory (mapItem);
-			NgChm.DEV.detailHRibbonButton (mapItem);
-		    }),
-		    modeButton ('ribbonV_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, () => {
-			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
-			NgChm.DEV.clearModeHistory (mapItem);
-			NgChm.DEV.detailVRibbonButton (mapItem)
-		    })
+		    modeButton (NgChm.DMM.nextMapNumber, paneId, true,  'NORMAL',  'Normal View', 65, NgChm.DEV.detailNormal),
+		    modeButton (NgChm.DMM.nextMapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton),
+		    modeButton (NgChm.DMM.nextMapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton)
 		]);
 		if (isPrimary === true) {
 			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = 'none';
@@ -2486,6 +2475,40 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		}
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
+	}
+
+	// Return the baseName of the zoom mode buttons.
+	function buttonBaseName (buttonMode) {
+		if (buttonMode == 'RIBBONH') return 'ribbonH';
+		if (buttonMode == 'RIBBONV') return 'ribbonV';
+		return 'full';
+	}
+
+	// Update a mode button image when the mouse enters/leaves the button.
+	// btn is the IMG element for the button.
+	// It should have data.mode set to NORMAL, RIBBONH, or RIBBONV.
+	// The button's image is updated according to the following rules:
+	//
+	// - If in a zoom mode that matches the button, the image is not changed.
+	//   (The button's image should already be set to the _selected image variant.)
+	//   The "includes" check is used so that e.g. both the RIBBONH and RIBBONH_DETAIL
+	//   zoom modes will match the RIBBONH button.
+	//
+	// - Otherwise, if the mouse is hovering over the image: the hover image is used.
+	//
+	// - Otherwise, the base image is used.
+	//
+	function updateButtonImage (btn, hovering) {
+	        const loc = NgChm.Pane.findPaneLocation (btn);
+		const mapItem = NgChm.DMM.getMapItemFromPane (loc.pane.id);
+		const buttonMode = btn.dataset.mode;
+		if (!mapItem.mode.includes(buttonMode)) {
+			let buttonSrc = buttonBaseName (buttonMode);
+			if (hovering) {
+			        buttonSrc += 'Hover';
+			}
+			btn.setAttribute('src', 'images/' + buttonSrc + '.png');
+		}
 	}
 
 	function emptyDetailPane (pane, elements) {
@@ -2517,20 +2540,36 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	    return NgChm.UTIL.newElement ('SPAN.tdTop', {}, [img]);
 	}
 
-	function modeButton (btnId, btnIcon, btnOverFn, btnHelp, btnSize, clickFn) {
-	    const img = NgChm.UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
-	    img.onmouseout = function (e) {
-			btnOverFn (img, 0);
+	// Create a zoomModeButton when creating a new zoomed view.
+	// Parameters:
+	// mapNumber - the number of the new zoomed view
+	// paneId - the panel id containing the new zoomed view
+	// selected - is this button selected initially (must be set for exactly one button in the map)
+	// mode - the type of zoom mode set by pressing the button (NORMAL, RIBBONH, RIBBONV)
+	// btnHelp - help text to display when the user hovers over the button for a while
+	// btnSize - size of the button help text
+	// clickFn - function called when the button is clicked.
+	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
+		const baseName = buttonBaseName (mode);
+		const selStr = selected ? '_selected' : '';
+		const btnIcon = 'images/' + baseName + selStr + '.png';
+		const img = NgChm.UTIL.newElement ('IMG', { src: btnIcon, alt: btnHelp });
+		img.id = baseName + '_btn' + mapNumber;
+		img.dataset.mode = mode;
+		img.onmouseout = function (e) {
+			updateButtonImage (img, false);
 			NgChm.UHM.hlpC();
-	    };
-	    img.onmouseover = function (e) {
-			btnOverFn (img, 1);
+		};
+		img.onmouseover = function (e) {
+			updateButtonImage (img, true);
 			NgChm.UHM.hlp(img, btnHelp, btnSize);
-	    };
-	    img.onclick = function (e) {
-			clickFn();
-	    };
-	    return NgChm.UTIL.newElement ('SPAN.tdTop', {}, [img]);
+		};
+		img.onclick = function (e) {
+			const mapItem = NgChm.DMM.getMapItemFromPane(paneId);
+			NgChm.DEV.clearModeHistory (mapItem);
+			clickFn(mapItem);
+		};
+		return NgChm.UTIL.newElement ('SPAN.tdTop', {}, [img]);
 	}
 
 })();
