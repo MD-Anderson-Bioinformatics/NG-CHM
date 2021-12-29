@@ -235,10 +235,6 @@ public class NGCHM_Widgetizer {
 		bw.write("})()\n");
     		bw.write("document.body.addEventListener('click', NgChm.UHM.closeMenu,true);\n");
     		bw.write(scriptedLines.toString());
-    		//hide save button for "widget mode"
-       		if (mode.equals("web")) {
-       		    bw.write("document.getElementById('save_btn').style.display = 'none';\n"); 
-       		}
     		bw.close();
     		br.close();
     		System.out.println("END NGCHM Widgetizer  " + new Date());
