@@ -1571,9 +1571,9 @@ NgChm.UTIL.isOnObject = function (e,type) {
 	messages += '<P>' + message;
 	loader.innerHTML = messages;
 	if (firstLoaderMessage) {
-	    loader.classList.replace('faded', 'fadein');
+	    loader.classList.replace('faded', 'fadeinslow');
 	    // Splash screen removed in widget.
-	    if (splash) splash.classList.replace('fadein', 'fadeout');
+	    if (splash) splash.classList.replace('fadeinslow', 'fadeout');
 	    firstLoaderMessage = false;
 	}
     }
@@ -1581,7 +1581,7 @@ NgChm.UTIL.isOnObject = function (e,type) {
     // Replace loader screen with NgCHM.
     function hideLoader () {
 	const loader = document.getElementById('loader');
-	loader.classList.replace('fadein', 'fadeout');
+	loader.classList.replace('fadeinslow', 'fadeout');
 	NgChm.UTIL.containerElement.classList.replace('faded', 'fadein');
     }
 })();
