@@ -68,12 +68,20 @@ public class NGCHM_Widgetizer {
     	
 		BufferedReader br = new BufferedReader(new FileReader(webDir + "/" + cssFile));
 		String line = br.readLine();
+		int lineNumber = 1;
 		while (line != null) {
 			String toks[] = line.split("\\s+");
 			for (String tok : toks) {
 				if (tok.contains("images/")) {
 					int start = tok.indexOf("images/");
-					int stop = tok.indexOf(".png") + 4;
+					int stop = tok.indexOf(".png");
+					if (start < 0 || stop < 0) {
+					    System.out.println ("Bad image string: '" + tok + "' in " + webDir + "/" + cssFile + ", line " + lineNumber);
+					}
+				        stop = stop + 4; // End of .png
+					// BMB: Why use start-4 and stop+1 to extract text around image path?
+					// BMB: I think it's because the stylefile wraps it in url( ) and
+					// BMB: we don't want to copy that.
 					strBuff.append(tok.substring(0,start-4));
 					strBuff.append(encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
 					strBuff.append(tok.substring(stop+1) + " ");
@@ -82,6 +90,7 @@ public class NGCHM_Widgetizer {
 				}
 			}
 			line = br.readLine();
+			lineNumber += 1;
 		}
     	
 		br.close();
@@ -139,6 +148,7 @@ public class NGCHM_Widgetizer {
     		String line = br.readLine();
     		boolean isScript = false;
     		boolean isFirstJSFile = true;
+		int lineNumber = 1;
     		while (line != null) {
     			if (line.contains("src=\"javascript")){
     				if (isFirstJSFile) {
@@ -165,30 +175,40 @@ public class NGCHM_Widgetizer {
     					line = br.readLine();
     					line = br.readLine();
     					line = br.readLine();
+					lineNumber += 6;
      				} else {
         				scriptedLines.append(line + "\n");
      				}
         			//For css file - convert it into a string and use javascript to add it to the html document 
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
-    				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
+				int href = line.indexOf("href=\"");
+				int queryStr = line.indexOf("?");
+				if (href < 0 || queryStr < 0) {
+					System.out.println ("Bad stylesheet reference: '" + line + "' in " + args[0] + "/chm.html, line " + lineNumber);
+				}
+				String cssFile = line.substring(href+6, queryStr);
 				cssLines.append("(function() { var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
 				cssLines.append("css.innerText = \"" + styleToString(args[0], cssFile) + "\";\ndocument.head.appendChild(css);\n");
 				cssLines.append("})();\n");
     			} else if (line.contains("images/")) {
-       				//Write out images, as base 64 binary, to HTML string
-    				String toks[] = line.split(" ");
-    				for (String tok : toks) {
-    					if (tok.contains("images/")) {
-    						int start = tok.indexOf("images/");
-    						int stop = tok.indexOf(".png") + 4;
-    						htmlString += tok.substring(0,start);
-    						htmlString += encodeFileToBase64Binary(args[0] + "/" + tok.substring(start,stop));
-    						htmlString += tok.substring(stop) + " ";
-    					} else {
-    						htmlString += tok + " ";
-    					}
-    				}
+				//Write out images, as base 64 binary, to HTML string
+				String toks[] = line.split(" ");
+				for (String tok : toks) {
+					if (tok.contains("images/")) {
+						int start = tok.indexOf("images/");
+						int stop = tok.indexOf(".png");
+						if (start < 0 || stop < 0) {
+							System.out.println ("Bad image string: '" + tok + "' in " + args[0] + "/chm.html, line " + lineNumber);
+						}
+						stop = stop + 4;  // Stop at end of .png
+						htmlString += tok.substring(0,start);
+						htmlString += encodeFileToBase64Binary(args[0] + "/" + tok.substring(start,stop));
+						htmlString += tok.substring(stop) + " ";
+					} else {
+						htmlString += tok + " ";
+					}
+				}
     			} else if (line.contains("body")){
     				//skip
     			} else {	
@@ -201,6 +221,7 @@ public class NGCHM_Widgetizer {
     				}
     			}
     			line = br.readLine();
+			lineNumber += 1;
     		} 	
 		bw.write("/* BEGIN CSS Javascript: */\n");
 		bw.write(cssLines.toString());
