@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.Base64;
 import java.util.Date;
 
@@ -85,6 +87,18 @@ public class NGCHM_AppGenerator {
    	return strBuff.toString();
    }
 	
+   public static void copyToFile (String src, BufferedWriter bw)
+       throws FileNotFoundException, IOException
+   {
+	BufferedReader br = new BufferedReader(new FileReader(src));
+	String jsLine = br.readLine();
+	while (jsLine != null) {
+	    bw.write(jsLine+"\n");
+	    jsLine = br.readLine();
+	}
+	br.close();
+   }
+
 	/*******************************************************************
 	 * METHOD: main
 	 *
@@ -101,8 +115,6 @@ public class NGCHM_AppGenerator {
     		}
 		
     		BufferedReader br = new BufferedReader(new FileReader(args[0] + "chm.html" ));
-    		BufferedReader br2 = new BufferedReader(new FileReader(args[0] + "javascript/ngchm-min.js" ));
-    		BufferedReader br3 = new BufferedReader(new FileReader(args[0] + "javascript/lib/jspdf.min.js" )); 
     		BufferedWriter bw = new BufferedWriter(new FileWriter(args[0] + args[1] ));
      		
     		String line = br.readLine(); 
@@ -120,18 +132,10 @@ public class NGCHM_AppGenerator {
      				if (args[1].equals("ngChm.html")) {
          				bw.write("<script src='javascript/ngchm-min.js'></script>\n");
     				} else {
-         				String jsLine = br2.readLine();
          				bw.write("<script>\n");
          				bw.write("var isNgChmAppViewer=true;\n");
-         				while (jsLine != null) {
-             				bw.write(jsLine+"\n");
-             				jsLine = br2.readLine();
-         				}
-         				jsLine = br3.readLine();
-         				while (jsLine != null) {
-             				bw.write(jsLine+"\n");
-             				jsLine = br3.readLine();
-        				}
+					copyToFile(args[0] + "javascript/ngchm-min.js", bw);
+					copyToFile(args[0] + "javascript/lib/jspdf.min.js", bw);
          				bw.write("</script>\n");
      				}
     			} else if (line.contains("images/")) {
@@ -157,7 +161,6 @@ public class NGCHM_AppGenerator {
     		} 	
     		bw.close();
     		br.close();
-    		br2.close();
     		System.out.println("END NGCHM_AppGenerator " + new Date());
 		
         } catch (Exception e) {

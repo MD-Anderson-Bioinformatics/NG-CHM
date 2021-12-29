@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.Base64;
 import java.util.Date;
 
@@ -100,6 +102,18 @@ public class NGCHM_Widgetizer {
     	return;
     }
 	
+    public static void copyToFile (String src, BufferedWriter bw)
+	throws FileNotFoundException, IOException
+    {
+	BufferedReader br = new BufferedReader(new FileReader(src));
+	String jsLine = br.readLine();
+	while (jsLine != null) {
+	    bw.write(jsLine+"\n");
+	    jsLine = br.readLine();
+	}
+	br.close();
+    }
+
 	/*******************************************************************
 	 * METHOD: main
 	 *
@@ -119,8 +133,6 @@ public class NGCHM_Widgetizer {
     		StringBuffer scriptedLines = new StringBuffer();
     		BufferedWriter  bw = new BufferedWriter(new FileWriter(args[1]));
     		BufferedReader br = new BufferedReader(new FileReader(args[0] + "/chm.html" ));
-    		BufferedReader br2 = new BufferedReader(new FileReader(args[0] + "javascript/ngchm-min.js" ));
-    		BufferedReader br3 = new BufferedReader(new FileReader(args[0] + "javascript/lib/jspdf.min.js" )); 
     		String mode = args[2];
     		String htmlString = "";
     		
@@ -131,16 +143,8 @@ public class NGCHM_Widgetizer {
     			if (line.contains("src=\"javascript")){
     				if (isFirstJSFile) {
     					isFirstJSFile = false;
-         				String jsLine = br2.readLine();
-         				while (jsLine != null) {
-             				bw.write(jsLine+"\n");
-             				jsLine = br2.readLine();
-         				} 
-         				jsLine = br3.readLine();
-         				while (jsLine != null) {
-             				bw.write(jsLine+"\n");
-             				jsLine = br3.readLine();
-        				}
+					copyToFile (args[0] + "javascript/ngchm-min.js", bw);
+					copyToFile (args[0] + "javascript/lib/jspdf.min.js", bw);
     				}
     			} else if (line.contains("text/Javascript")) {
     				//Beginning of embedded Javascript in chm.html
