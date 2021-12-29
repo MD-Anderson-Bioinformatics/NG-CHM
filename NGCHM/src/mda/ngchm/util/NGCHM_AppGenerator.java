@@ -86,7 +86,7 @@ public class NGCHM_AppGenerator {
 		br.close();
    	return strBuff.toString();
    }
-	
+
    public static void copyToFile (String src, BufferedWriter bw)
        throws FileNotFoundException, IOException
    {
@@ -129,15 +129,6 @@ public class NGCHM_AppGenerator {
     				bw.write("<style type='text/css'>");
      				bw.write(styleToString(args[0], cssFile));
      				bw.write("</style>\n");
-     				if (args[1].equals("ngChm.html")) {
-         				bw.write("<script src='javascript/ngchm-min.js'></script>\n");
-    				} else {
-         				bw.write("<script>\n");
-         				bw.write("var isNgChmAppViewer=true;\n");
-					copyToFile(args[0] + "javascript/ngchm-min.js", bw);
-					copyToFile(args[0] + "javascript/lib/jspdf.min.js", bw);
-         				bw.write("</script>\n");
-     				}
     			} else if (line.contains("images/")) {
        				//Write out images, as base 64 binary, to HTML string
     				String toks[] = line.split(" ");
@@ -153,6 +144,18 @@ public class NGCHM_AppGenerator {
     					}
     				}
     				bw.write(htmlString+"\n");
+			} else if (line.contains("</body>")) {
+				// Write all javascript just before closing body tag.
+				if (args[1].equals("ngChm.html")) {
+					bw.write("<script src='javascript/ngchm-min.js'></script>\n");
+				} else {
+					bw.write("<script>\n");
+					bw.write("var isNgChmAppViewer=true;\n");
+					copyToFile(args[0] + "javascript/ngchm-min.js", bw);
+					copyToFile(args[0] + "javascript/lib/jspdf.min.js", bw);
+					bw.write("</script>\n");
+				}
+				bw.write(line+"\n");
     			} else {	
     				//This is standard HTML, write out to html string
     				bw.write(line+"\n");
