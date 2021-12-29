@@ -172,8 +172,9 @@ public class NGCHM_Widgetizer {
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
     				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
-    				delayedLines.append("var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
-     				delayedLines.append("css.innerHTML = \"" + styleToString(args[0], cssFile) + "\";\ndocument.body.appendChild(css);\n");
+				delayedLines.append("(function() { var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
+				delayedLines.append("css.innerText = \"" + styleToString(args[0], cssFile) + "\";\ndocument.head.appendChild(css);\n");
+				delayedLines.append("})();\n");
     			} else if (line.contains("images/")) {
        				//Write out images, as base 64 binary, to HTML string
     				String toks[] = line.split(" ");
@@ -206,10 +207,12 @@ public class NGCHM_Widgetizer {
        		bw.write("/* BEGIN CSS Javascript: */\n");
 			bw.write(delayedLines.toString());
        		bw.write("/* END CSS Javascript: */\n\n");
-	       	bw.write("var ngChmWidgetMode = '" + mode + "'\n");
+		bw.write("var ngChmWidgetMode = '" + mode + "';\n");
+		bw.write("(function() {\n");
     		bw.write("var htmlContent = \"" + finalHtml + "\"\n");
     		bw.write("var embedDiv = document.getElementById(\"NGCHMEmbed\");\n");
     		bw.write("if (embedDiv !== null) {embedDiv.innerHTML = htmlContent;}\n");
+		bw.write("})()\n");
     		bw.write("document.body.addEventListener('click', NgChm.UHM.closeMenu,true);\n");
     		bw.write(scriptedLines.toString());
     		//hide save button for "widget mode"
