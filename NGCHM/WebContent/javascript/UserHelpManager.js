@@ -590,7 +590,9 @@ NgChm.UHM.saveHeatMapChanges = function() {
  * the widgetized version of the NG-CHM embedded viewer.  
  **********************************************************************************/
 NgChm.UHM.widgetHelp = function() {
-	document.getElementById('ngchmLogos').style.display = '';
+	const logos = document.getElementById('ngchmLogos');
+	// Logos are not included in the widgetized version.
+	if (logos) { logos.style.display = ''; }
 	NgChm.UHM.initMessageBox();
     NgChm.UHM.setMessageBoxHeader("About NG-CHM Viewer");
     var mapVersion = ((NgChm.heatMap !== null) && NgChm.heatMap.isMapLoaded()) === true ? NgChm.heatMap.getMapInformation().version_id : "N/A";

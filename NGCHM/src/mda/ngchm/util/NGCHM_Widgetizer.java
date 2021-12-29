@@ -96,21 +96,7 @@ public class NGCHM_Widgetizer {
 		br.close();
     	return strBuff.toString();
     }
-	
-	/*******************************************************************
-	 * METHOD: excludeDiv
-	 *
-	 * This method excludes certain header/footer DIVs from being 
-	 * written into the widget.
-	 ******************************************************************/
-    public static void excludeDiv(BufferedReader br) throws Exception {
-    	String line = "";
-		while (!line.contains("/div")) {
-			line = br.readLine();
-		}
-    	return;
-    }
-	
+
     public static void copyToFile (String src, BufferedWriter bw)
 	throws FileNotFoundException, IOException
     {
@@ -131,6 +117,7 @@ public class NGCHM_Widgetizer {
 	 * and writes out the contents into the output file (ngchmWidget-min.js)
 	 ******************************************************************/
     public static void main(String[] args) {
+		boolean debug = false;
 		System.out.println("BEGIN NGCHM Widgetizer  " + new Date());
         try {
    		if (args.length < 2) {
@@ -140,13 +127,14 @@ public class NGCHM_Widgetizer {
 		
 		StringBuffer cssLines = new StringBuffer();
     		StringBuffer scriptedLines = new StringBuffer();
-    		BufferedWriter  bw = new BufferedWriter(new FileWriter(args[1]));
     		BufferedReader br = new BufferedReader(new FileReader(args[0] + "/chm.html" ));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(args[1]));
     		String mode = args[2];
     		String htmlString = "";
     		
     		String line = br.readLine();
     		boolean isScript = false;
+		boolean copyingToWidget = false;
 		int lineNumber = 1;
     		while (line != null) {
 			if (line.contains("text/Javascript")) {
@@ -184,35 +172,37 @@ public class NGCHM_Widgetizer {
 				cssLines.append("(function() { var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
 				cssLines.append("css.innerText = \"" + styleToString(args[0], cssFile) + "\";\ndocument.head.appendChild(css);\n");
 				cssLines.append("})();\n");
-    			} else if (line.contains("images/")) {
-				//Write out images, as base 64 binary, to HTML string
-				String toks[] = line.split(" ");
-				for (String tok : toks) {
-					if (tok.contains("images/")) {
-						int start = tok.indexOf("images/");
-						int stop = tok.indexOf(".png");
-						if (start < 0 || stop < 0) {
-							System.out.println ("Bad image string: '" + tok + "' in " + args[0] + "/chm.html, line " + lineNumber);
+			} else if (line.contains("<body") || line.contains("WIDGET INCLUDE")){
+				copyingToWidget = true;
+			} else if (line.contains("</body") || line.contains("WIDGET EXCLUDE")){
+				copyingToWidget = false;
+			} else if (copyingToWidget) {
+				if (debug) System.out.println ("Copying to widget: " + line);
+				if (line.contains("images/")) {
+					//Write out images, as base 64 binary, to HTML string
+					String toks[] = line.split(" ");
+					for (String tok : toks) {
+						if (tok.contains("images/")) {
+							int start = tok.indexOf("images/");
+							int stop = tok.indexOf(".png");
+							if (start < 0 || stop < 0) {
+								System.out.println ("Bad image string: '" + tok + "' in " + args[0] + "/chm.html, line " + lineNumber);
+							}
+							stop = stop + 4;  // Stop at end of .png
+							htmlString += tok.substring(0,start);
+							htmlString += encodeFileToBase64Binary(args[0] + "/" + tok.substring(start,stop));
+							htmlString += tok.substring(stop) + " ";
+						} else {
+							htmlString += tok + " ";
 						}
-						stop = stop + 4;  // Stop at end of .png
-						htmlString += tok.substring(0,start);
-						htmlString += encodeFileToBase64Binary(args[0] + "/" + tok.substring(start,stop));
-						htmlString += tok.substring(stop) + " ";
-					} else {
-						htmlString += tok + " ";
 					}
+				} else {
+					//This is standard HTML, write out to html string
+					htmlString += line;
 				}
-    			} else if (line.contains("body")){
-    				//skip
-    			} else {	
-    				if ((line.contains("mda_header")) || (line.contains("insilico_footer"))) {
-    					//Exclude MDA and Insilico logo from widgetized html
-    					excludeDiv(br);
-    				} else {
-        				//This is standard HTML, write out to html string
-        				htmlString += line;
-    				}
-    			}
+			} else {
+				if (debug) System.out.println ("Skipping         : " + line);
+			}
     			line = br.readLine();
 			lineNumber += 1;
     		} 	
