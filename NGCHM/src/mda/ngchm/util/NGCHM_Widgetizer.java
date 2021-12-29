@@ -147,16 +147,9 @@ public class NGCHM_Widgetizer {
     		
     		String line = br.readLine();
     		boolean isScript = false;
-    		boolean isFirstJSFile = true;
 		int lineNumber = 1;
     		while (line != null) {
-    			if (line.contains("src=\"javascript")){
-    				if (isFirstJSFile) {
-    					isFirstJSFile = false;
-					copyToFile (args[0] + "javascript/ngchm-min.js", bw);
-					copyToFile (args[0] + "javascript/lib/jspdf.min.js", bw);
-    				}
-    			} else if (line.contains("text/Javascript")) {
+			if (line.contains("text/Javascript")) {
     				//Beginning of embedded Javascript in chm.html
     				scriptedLines.append("/* BEGIN chm.html Javascript: */\n");
     				isScript = true;
@@ -223,20 +216,30 @@ public class NGCHM_Widgetizer {
     			line = br.readLine();
 			lineNumber += 1;
     		} 	
+		br.close();
+
+		// Inject CSS.
 		bw.write("/* BEGIN CSS Javascript: */\n");
 		bw.write(cssLines.toString());
 		bw.write("/* END CSS Javascript: */\n\n");
+
+		// Inject HTML.
 		String finalHtml = htmlString.replace("\"", "\\\"").replace("\\\\\"", "\\\"");
-		bw.write("var ngChmWidgetMode = '" + mode + "';\n");
 		bw.write("(function() {\n");
     		bw.write("var htmlContent = \"" + finalHtml + "\"\n");
     		bw.write("var embedDiv = document.getElementById(\"NGCHMEmbed\");\n");
     		bw.write("if (embedDiv !== null) {embedDiv.innerHTML = htmlContent;}\n");
 		bw.write("})()\n");
+
+		// Inject scripts.
+		bw.write("var ngChmWidgetMode = '" + mode + "';\n");
+		copyToFile (args[0] + "javascript/ngchm-min.js", bw);
+		copyToFile (args[0] + "javascript/lib/jspdf.min.js", bw);
     		bw.write("document.body.addEventListener('click', NgChm.UHM.closeMenu,true);\n");
     		bw.write(scriptedLines.toString());
+
+		// Close output file.
     		bw.close();
-    		br.close();
     		System.out.println("END NGCHM Widgetizer  " + new Date());
 		
         } catch (Exception e) {
