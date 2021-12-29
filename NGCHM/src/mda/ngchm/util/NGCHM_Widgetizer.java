@@ -129,7 +129,7 @@ public class NGCHM_Widgetizer {
     			System.exit(1);
     		}
 		
-    		StringBuffer delayedLines = new StringBuffer();
+		StringBuffer cssLines = new StringBuffer();
     		StringBuffer scriptedLines = new StringBuffer();
     		BufferedWriter  bw = new BufferedWriter(new FileWriter(args[1]));
     		BufferedReader br = new BufferedReader(new FileReader(args[0] + "/chm.html" ));
@@ -172,9 +172,9 @@ public class NGCHM_Widgetizer {
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
     				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
-				delayedLines.append("(function() { var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
-				delayedLines.append("css.innerText = \"" + styleToString(args[0], cssFile) + "\";\ndocument.head.appendChild(css);\n");
-				delayedLines.append("})();\n");
+				cssLines.append("(function() { var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
+				cssLines.append("css.innerText = \"" + styleToString(args[0], cssFile) + "\";\ndocument.head.appendChild(css);\n");
+				cssLines.append("})();\n");
     			} else if (line.contains("images/")) {
        				//Write out images, as base 64 binary, to HTML string
     				String toks[] = line.split(" ");
@@ -202,11 +202,10 @@ public class NGCHM_Widgetizer {
     			}
     			line = br.readLine();
     		} 	
-			String finalHtml = "";
-			finalHtml = htmlString.replace("\"", "\\\"").replace("\\\\\"", "\\\"");
-       		bw.write("/* BEGIN CSS Javascript: */\n");
-			bw.write(delayedLines.toString());
-       		bw.write("/* END CSS Javascript: */\n\n");
+		bw.write("/* BEGIN CSS Javascript: */\n");
+		bw.write(cssLines.toString());
+		bw.write("/* END CSS Javascript: */\n\n");
+		String finalHtml = htmlString.replace("\"", "\\\"").replace("\\\\\"", "\\\"");
 		bw.write("var ngChmWidgetMode = '" + mode + "';\n");
 		bw.write("(function() {\n");
     		bw.write("var htmlContent = \"" + finalHtml + "\"\n");
