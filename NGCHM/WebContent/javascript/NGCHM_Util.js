@@ -1392,16 +1392,6 @@ NgChm.UTIL.b64toBlob = function (b64Data) {
 	  return blob;
 }
 
-NgChm.UTIL.clickListener = function(e) {
-    var clickedElement;
-    if(e == null) {
-        clickedElement = event.srcElement;
-    } else {
-        clickedElement = e.target;
-    }
-    var here = 1;
-}
-
 /*********************************************************************************************
  * FUNCTION:  getClickType - The purpose of this function returns an integer. 0 for left click; 
  * 1 for right.  It could be expanded further for wheel clicks, browser back, and browser forward 
