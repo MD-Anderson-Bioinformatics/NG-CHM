@@ -2405,6 +2405,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	// See additional comments in that function.
 	NgChm.DET.switchPaneToDetail = switchPaneToDetail;
 	NgChm.Pane.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
+	NgChm.DET.setButtons = setButtons;
 
 	let savedChmElements = [];
 	NgChm.DET.initialSwitchPaneToDetail = true
@@ -2499,6 +2500,29 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		if (buttonMode == 'RIBBONV') return 'ribbonV';
 		return 'full';
 	}
+
+	/**********************************************************************************
+	 * FUNCTION - setButtons: The purpose of this function is to set the state of
+	 * buttons on the detail pane header bar when the user selects a button.
+	 **********************************************************************************/
+	function setButtons (mapItem) {
+		const full_btn = document.getElementById('full_btn'+mapItem.panelNbr);
+		const ribbonH_btn = document.getElementById('ribbonH_btn'+mapItem.panelNbr);
+		const ribbonV_btn = document.getElementById('ribbonV_btn'+mapItem.panelNbr);
+		let full_src= "full";
+		let ribbonH_src= "ribbonH";
+		let ribbonV_src= "ribbonV";
+		if (mapItem.mode=='RIBBONV')
+			ribbonV_src += "_selected";
+		else if (mapItem.mode == "RIBBONH")
+			ribbonH_src += "_selected";
+		else
+			full_src += "_selected";
+		full_btn.src = imageTable[full_src];
+		ribbonH_btn.src = imageTable[ribbonH_src];
+		ribbonV_btn.src = imageTable[ribbonV_src];
+	}
+
 
 	// Update a mode button image when the mouse enters/leaves the button.
 	// btn is the IMG element for the button.
