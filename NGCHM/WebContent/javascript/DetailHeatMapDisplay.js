@@ -2477,6 +2477,22 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
 	}
 
+	// Table to convert image names to image source names.
+	// A table is required for this otherwise trivial conversion
+	// because the minimizer will convert all the filenames in the
+	// table to inline data sources.
+	const imageTable = {
+	    full: 'images/full.png',
+	    fullHover: 'images/fullHover.png',
+	    full_selected: 'images/full_selected.png',
+	    ribbonH: 'images/ribbonH.png',
+	    ribbonHHover: 'images/ribbonHHover.png',
+	    ribbonH_selected: 'images/ribbonH_selected.png',
+	    ribbonV: 'images/ribbonV.png',
+	    ribbonVHover: 'images/ribbonVHover.png',
+	    ribbonV_selected: 'images/ribbonV_selected.png',
+	};
+
 	// Return the baseName of the zoom mode buttons.
 	function buttonBaseName (buttonMode) {
 		if (buttonMode == 'RIBBONH') return 'ribbonH';
@@ -2507,7 +2523,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 			if (hovering) {
 			        buttonSrc += 'Hover';
 			}
-			btn.setAttribute('src', 'images/' + buttonSrc + '.png');
+			btn.setAttribute('src', imageTable[buttonSrc]);
 		}
 	}
 
@@ -2552,8 +2568,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
 		const baseName = buttonBaseName (mode);
 		const selStr = selected ? '_selected' : '';
-		const btnIcon = 'images/' + baseName + selStr + '.png';
-		const img = NgChm.UTIL.newElement ('IMG', { src: btnIcon, alt: btnHelp });
+		const img = NgChm.UTIL.newElement ('IMG', { src: imageTable[baseName+selStr], alt: btnHelp });
 		img.id = baseName + '_btn' + mapNumber;
 		img.dataset.mode = mode;
 		img.onmouseout = function (e) {
