@@ -502,7 +502,7 @@ NgChm.createNS('NgChm.LNK');
 		topDiv.classList.add("labelMenuCaption");
 		topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Classification") + ' Label Menu:' : axis + ' Menu';
 		var closeMenu = document.createElement("IMG");
-		closeMenu.src = "images/closeButton.png";
+		closeMenu.src = NgChm.UTIL.imageTable.closeButton;
 		closeMenu.alt = "close menu";
 		closeMenu.classList.add('labelMenuClose')
 		closeMenu.addEventListener('click', function(){NgChm.LNK.labelHelpClose(axis)},false);
@@ -1046,7 +1046,7 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.UHM.initMessageBox();
 		NgChm.UHM.setMessageBoxHeader("Warning: Unable to save some plugin data");
 		NgChm.UHM.setMessageBoxText(warningText);
-		NgChm.UHM.setMessageBoxButton(1, 'images/okButton.png', 'OK Button');
+		NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.okButton, 'OK Button');
 		dialog.style.display = '';
 		let okButton = dialog.querySelector('#msgBoxBtnImg_1');
 		okButton.addEventListener('click', function handleOkClick(e) {
