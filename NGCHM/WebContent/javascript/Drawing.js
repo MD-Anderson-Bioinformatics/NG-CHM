@@ -281,12 +281,21 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 				// The canvas 'hibernates' after the context restore.
 				// WebGL operations on the canvas aren't redrawn until
 				// there is an additional trigger to force the redraw.
-				// The commented section below works for Mac Chrome 96.0.4664.110.
-				// The uncommented code below works for both Mac Chrome & Mac Safari (14.1.2).
+				//
+				// The 'Chrome on Mac fix' section below works for Mac Chrome 96.0.4664.110.
+				//
+				// The 'Safari fix' code below works for Mac Safari (14.1.2) and some, but not
+				// all, Mac Chrome installs.  Tested with Chrome 96.0.4664.110: some systems
+				// work with just this fix, some don't.
+				//
 				// Chrome on Linux, Firefox on Mac are not affected by the issue.
-				{ //let handler = (e) => console.log(e);
-				  //document.addEventListener('touchmove', handler, {passive: false});
-				  //document.removeEventListener('touchmove', handler);
+				{ // Chrome on Mac fix:
+				  // It is adding the handler for this specific event that revives the canvas.
+				  // No idea why.
+				  let handler = (e) => console.log(e);
+				  document.addEventListener('touchmove', handler, {passive: false});
+				  document.removeEventListener('touchmove', handler);
+				  // Safari fix:
 				  canvas.classList.add('hide');
 				  requestAnimationFrame (() => canvas.classList.remove('hide'));
 				}
