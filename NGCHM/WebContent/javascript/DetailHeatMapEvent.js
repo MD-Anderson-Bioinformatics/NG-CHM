@@ -670,6 +670,8 @@ NgChm.DEV.handleSelectDrag = function (e) {
         NgChm.DET.drawSelections();
         NgChm.SRCH.updateLinkoutSelections();
         NgChm.UTIL.redrawCanvases();
+	NgChm.MMGR.saveSelectionsToMapConfig();
+	NgChm.heatMap.setUnAppliedChanges(true);
     }
 }	
 
