@@ -54,7 +54,7 @@ NgChm.DMM.InitDetailMap = function (chm){
  * Primary heat map object and will be marked as a 'Secondary' heat map object.
  *********************************************************************************************/
 NgChm.DMM.AddDetailMap = function (chm,pane){
-	let newMapObj = Object.assign({}, NgChm.DMM.primaryMap);
+	let newMapObj = Object.assign({}, NgChm.DMM.primaryMap, { glManager: null });
 	newMapObj.pane = pane;
 	newMapObj.version = 'S';
 	NgChm.DMM.completeMapItemConfig(chm,newMapObj);
