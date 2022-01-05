@@ -3,60 +3,23 @@
 	<head>
 		<title>NG-CHM</title>
 		<meta charset="utf-8"/>
+
 		<link rel="shortcut icon" href="ngChmIcon.ico">
 		<link rel="stylesheet" href="css/NGCHM.css?v=2.20.2">
-		<script src="javascript/lib/zip.js?v=2.20.2"></script>
-		<script src="javascript/lib/deflate.js?v=2.20.2"></script>
-		<script src="javascript/lib/inflate.js?v=2.20.2"></script>
-		<script src="javascript/lib/domJSON.js?v=2.20.2"></script>
-		<script src="javascript/Config.js?v=2.20.2"></script>
-		<script src="javascript/MatrixManager.js?v=2.20.2"></script>
-		<script src="javascript/NGCHM_Util.js?v=2.20.2"></script>
-		<script src="javascript/PaneControl.js?v=2.20.2"></script>
-		<script src="javascript/SelectionManager.js?v=2.20.2"></script>
-		<script src="javascript/ColorMapManager.js?v=2.20.2"></script>
-		<script src="javascript/Drawing.js?v=2.20.2"></script>
-		<script src="javascript/SummaryHeatMapDisplay.js?v=2.20.2"></script>
-		<script src="javascript/DetailHeatMapManager.js?v=2.20.2"></script>
-		<script src="javascript/DetailHeatMapEvent.js?v=2.20.2"></script>
-		<script src="javascript/DetailHeatMapDisplay.js?v=2.20.2"></script>
-		<script src="javascript/Dendrogram.js?v=2.20.2"></script>
-		<script src="javascript/UserHelpManager.js?v=2.20.2"></script>
-		<script src="javascript/UserPreferenceManager.js?v=2.20.2"></script>
-		<script src="javascript/PdfGenerator.js?v=2.20.2"></script>
-		<script src="javascript/Linkout.js?v=2.20.2"></script>
-		<script src="javascript/Customization.js?v=2.20.2"></script>
-		<script src="javascript/CompatibilityManager.js?v=2.20.2"></script>
-		<script src="javascript/SearchManager.js?v=2.20.2"></script>
-		<script src="javascript/RecreatePanes.js?v=2.20.2"></script>
-		<script src="javascript/lib/jspdf.min.js?v=2.20.2"></script>
-		<script src="javascript/lib/jstat.min.js?v=2.20.2"></script>
-		<script src="javascript/use_jstat.js?v=2.20.2"></script>
-	
 		<meta id='viewport' name ="viewport" content="width=device-width,user-scalable=no">
-	
-		<script type="text/Javascript">
-			NgChm.heatMap = null;  //global - heatmap object.
-			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
-			document.onclick = NgChm.UTIL.clickListener;
-			window.onload = function() {
-				// Line intentionally left blank
-				// Line intentionally left blank
-				NgChm.UTIL.onLoadCHM();
-				document.body.addEventListener('click', NgChm.UHM.closeMenu,true);
-				document.getElementById('barMenu_btn').mouseIsOver = "";
-			};
-		</script>
+
 	</head>
 	<body class="NgChmViewer" style="font-family: sans-serif; font-size: 100%">
 		    <!--  <a href="javascript:alert(document.compatMode);">What mode am I?</a>   -->
 		    <div class="mdaServiceHeader" id="mdaServiceHeader">
 				<img id='messageOpen_btn' style="position:absolute; vertical-align: top; display: none;" src='images/messageButton.png' width="30" height="30" alt='Open Alert' onmouseout="NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.hlp(this,"Display Startup Warnings",100)' onclick='NgChm.UHM.displayStartupWarnings();'/>
+			<!-- WIDGET EXCLUDE This section removed by widget compiler -->
 		        <div id="mda_header" class="mdaServiceHeaderLogo">
-					<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
-					<img id="mdaLogo" src="images/mdabcblogo262x108.png" width="131" height="54" alt="MD Anderson logo"/>
-			           </a>
-				</div>
+			    <a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
+				<img id="mdaLogo" src="images/mdabcblogo262x108.png" width="131" height="54" alt="MD Anderson logo"/>
+			    </a>
+			</div>
+			<!-- WIDGET INCLUDE -->
 				<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);">
 					<table><tr>
 						<td><div id="fileInstr" style="padding-bottom:5px; font-size: 14px; font-weight:bold;color: rgb(51, 51, 51);">Select .NGCHM file to view:<br></div></td></tr><tr>
@@ -123,8 +86,40 @@
 			    </div>
 		        <img id='aboutMenu_btn' class='farRightButton' src='images/aboutNgchm.png' alt='About NG-CHM' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM About",140,0)' onclick='NgChm.UHM.widgetHelp();' style="vertical-align: top;"/>
 		    </div>
-			<div id='loader' style='display: none;'>Loading...</div>
-			<div id="ngChmContainer" class="ngChmContainer" style="position: relative"></div>
+
+		    <div id='content'>
+			<!-- WIDGET EXCLUDE This section removed by widget compiler. -->
+			<div id='splash' class='fadeinslow'>
+			    <DIV id="closeSplash">X</DIV>
+			    <h2>Next-Generation Clustered Heat Map Viewer</h2>
+			    <P>
+			        Next-Generation Clustered Heat Maps (NG-CHMs) are optimized for the interactive exploration of data matrices, especially <strong>large</strong> ones
+				such as often occur in high-throughput molecular profiling studies (omics).  Although motivated by biological applications,
+                                NG-CHMs can be used for any type of matrix data.
+			    </P><P>
+				For more information about NG-CHMs, see:
+				<UL>
+				    <LI><A href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>The NG-CHM Project Page</A>
+				    <UL><LI><A href='https://bioinformatics.mdanderson.org/public-software/ngchm/#building-ng-chms' target='_blank'>Building your own NG-CHMs</A></UL>
+				    <LI><A href='https://www.youtube.com/channel/UCADGir2q8IaI9cGQuzjSL9w/featured' target='_blank'>The NG-CHM YouTube channel</A>
+				</UL>
+			    </P><P id='splashWaiting'>
+			        Waiting for application loading to complete.
+			    </P>
+			    <DIV id='splashExample' class='hide'>
+				You can:
+				<UL>
+				    <LI>View your own NG-CHM using the 'Choose File' button above, or
+				    <LI>Explore a <A href='https://tcga.ngchm.net/NGCHM/chm.html?map=class_subset_tcga_brca'>sample NG-CHM</A>.
+				</UL>
+			    </DIV>
+			    </P>
+			</div> <!-- splash -->
+			<!-- WIDGET INCLUDE -->
+			<div id='loader' class='faded'></div>
+			<div id='ngChmContainer' class='faded ngChmContainer'></div>
+		    </div> <!-- content -->
+
 			<div id="footer"></div>
 			<div style="display:none" id='templates'>
 				<!-- Templates -->
@@ -200,18 +195,20 @@
 					<tbody>
 						<tr class="chmTblRow">
 							<td>
+							        <!-- WIDGET EXCLUDE -->
 								<div id="ngchmLogos" style="display: none">
 									<div class="mdaServiceHeaderLogo" style="right:5px;top:40px">
-							        	<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
-									    <img id="msgBoxMdaLogo" src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
-									</a>
-							       	</div>
+										<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
+										    <img id="msgBoxMdaLogo" src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
+										</a>
+									</div>
 									<div style="right:5px;top:40px;position:absolute">
 										<a href="http://insilico.us.com/"  target="_blank">
 											<img id='insilicologo' src='images/insilicologo.png' alt='insilico' height=40 />
 										</a>
 									</div>
-							    </div>
+							        </div>
+							        <!-- WIDGET INCLUDE -->
 								<div id="msgBoxTxt" style="display: inherit;font-size: 12px; background-color: rgb(230, 240, 255); width: 400px; height: 80px;"></div>
 								<table>
 									<tbody>
@@ -269,5 +266,45 @@
 				<div id="menuSpaceAbout" class="menuItemBorder"></div>
 				<div id="menuAbout" class="menuItem" onclick='NgChm.UHM.widgetHelp();'><img id='about_btn' src='images/aboutNgchm.png' alt='about ngchm icon'>About NgChm...</div>
 			</div>
+		<script src="javascript/lib/zip.js?v=2.20.2"></script>
+		<script src="javascript/lib/deflate.js?v=2.20.2"></script>
+		<script src="javascript/lib/inflate.js?v=2.20.2"></script>
+		<script src="javascript/lib/domJSON.js?v=2.20.2"></script>
+		<script src="javascript/Config.js?v=2.20.2"></script>
+		<script src="javascript/MatrixManager.js?v=2.20.2"></script>
+		<script src="javascript/NGCHM_Util.js?v=2.20.2"></script>
+		<script src="javascript/PaneControl.js?v=2.20.2"></script>
+		<script src="javascript/SelectionManager.js?v=2.20.2"></script>
+		<script src="javascript/ColorMapManager.js?v=2.20.2"></script>
+		<script src="javascript/Drawing.js?v=2.20.2"></script>
+		<script src="javascript/SummaryHeatMapDisplay.js?v=2.20.2"></script>
+		<script src="javascript/DetailHeatMapManager.js?v=2.20.2"></script>
+		<script src="javascript/DetailHeatMapEvent.js?v=2.20.2"></script>
+		<script src="javascript/DetailHeatMapDisplay.js?v=2.20.2"></script>
+		<script src="javascript/Dendrogram.js?v=2.20.2"></script>
+		<script src="javascript/UserHelpManager.js?v=2.20.2"></script>
+		<script src="javascript/UserPreferenceManager.js?v=2.20.2"></script>
+		<script src="javascript/PdfGenerator.js?v=2.20.2"></script>
+		<script src="javascript/Linkout.js?v=2.20.2"></script>
+		<script src="javascript/Customization.js?v=2.20.2"></script>
+		<script src="javascript/CompatibilityManager.js?v=2.20.2"></script>
+		<script src="javascript/SearchManager.js?v=2.20.2"></script>
+		<script src="javascript/RecreatePanes.js?v=2.20.2"></script>
+		<script src="javascript/lib/jspdf.min.js?v=2.20.2"></script>
+		<script src="javascript/lib/jstat.min.js?v=2.20.2"></script>
+		<script src="javascript/use_jstat.js?v=2.20.2"></script>
+
+		<script type="text/Javascript">
+			NgChm.heatMap = null;  //global - heatmap object.
+			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
+			document.onclick = NgChm.UTIL.clickListener;
+			window.onload = function() {
+				// Line intentionally left blank
+				// Line intentionally left blank
+				NgChm.UTIL.onLoadCHM();
+				document.body.addEventListener('click', NgChm.UHM.closeMenu,true);
+				document.getElementById('barMenu_btn').mouseIsOver = "";
+			};
+		</script>
 	</body>
 </html>

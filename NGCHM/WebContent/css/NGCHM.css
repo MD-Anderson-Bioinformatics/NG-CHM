@@ -8,6 +8,9 @@
          */
 	--in-selection-color: rgb(0,0,0);
 	--in-selection-background-color: rgb(0,255,56);
+
+	--load-time: 200ms;
+	--load-delay: 800ms;
 }
 
 /* Extra class added to selected labels.
@@ -120,11 +123,65 @@ div.pane canvas {
 	position: absolute;
 }
 
-div#ngChmContainer{
-	overflow: hidden;
-	display: flex;
+/* #content contains everything between the page header and footer.
+ * Initially it contains the splash screen.
+ * Once loading commences it's replaced by the loading screen.
+ * After loading completes, the loading screen is replaced by the ngChmContainer.
+ */
+#content {
+        position: relative;
+	width: 100%;
 	flex-grow: 1;
+}
+
+#splash, #loader {
+	position: absolute;
+	top: 4em;
+	left: auto;
+	right: auto;
+	padding: 2em;
+	border: 2px solid rgb(0,0,255);
+	margin: 4em;
+	max-width: 50em;
+	border-radius: 2em;
+	box-shadow: 0.5em 0.5em 1em rgb(127,127,200);
+	z-index: 4;
+}
+
+#closeSplash {
+	position: absolute;
+	top: 1em;
+	right: 2em;
+	font-size: 10pt;
+	padding: 0.1em;
+	border: 2px solid rgb(50,50,50);
+	border-radius: 0.3em;
+}
+
+#closeSplash:hover {
+	color: rgb(225,0,0);
+	border-color: rgb(225,0,0);
+}
+
+#splashWaiting {
+	font-style: italic;
+	font-weight: bolder;
+	font-weight: larger;
+	color: blue;
+}
+
+#ngChmContainer {
+	position: absolute;
+	overflow: hidden;
+	display: block;
+	height: 100%;
+	width: 100%;
 	border-bottom: 1px solid white;
+	opacity: 0;
+}
+
+#loader p {
+	margin-block: 0.5em;
 }
 
 #footer {
@@ -1156,4 +1213,48 @@ div#droptarget.visible {
     z-index: 100;
     color: rgba(0,0,0,1);
     background-color: rgba(255,128,128,1);
+}
+
+/* Use opacity:0 instead of display:none for elements that will be faded in
+ * to avoid redraw/reflow.
+ */
+.faded {
+    opacity: 0;
+}
+
+/* Start at opacity 0 and transition to opacity 1.
+ */
+.fadein {
+    opacity: 0;
+    animation-name: loading-up;
+    animation-duration: var(--load-time);
+    animation-fill-mode: forwards;
+}
+
+/* Delay so users with fast connections don't so
+ * an annoying flash.
+ */
+.fadeinslow {
+    opacity: 0;
+    animation-name: loading-up;
+    animation-duration: var(--load-time);
+    animation-fill-mode: forwards;
+    animation-delay: var(--load-delay);
+}
+
+/* Transition from current opacity to opacity 0.
+ */
+.fadeout {
+    opacity: 0;
+    transition: opacity 150ms;
+    pointer-events: none;
+}
+
+@keyframes loading-up {
+    0% {
+	opacity: 0;
+    }
+    100% {
+	opacity: 1;
+    }
 }
