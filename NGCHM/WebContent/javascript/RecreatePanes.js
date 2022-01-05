@@ -35,6 +35,7 @@ NgChm.createNS('NgChm.RecPanes');
 			setNextMapNumber();
 			setTimeout(() => {
 				NgChm.SEL.updateSelections(true);
+				NgChm.UTIL.UI.hideLoader();  // Hide loader screen, display NG-CHM.
 			}, 500);
 		} else { // wait for NGCHM to initialize itself
 			setTimeout(reconstructPanelsFromMapConfig, 500);

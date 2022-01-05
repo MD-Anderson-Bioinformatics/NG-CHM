@@ -590,7 +590,9 @@ NgChm.UHM.saveHeatMapChanges = function() {
  * the widgetized version of the NG-CHM embedded viewer.  
  **********************************************************************************/
 NgChm.UHM.widgetHelp = function() {
-	document.getElementById('ngchmLogos').style.display = '';
+	const logos = document.getElementById('ngchmLogos');
+	// Logos are not included in the widgetized version.
+	if (logos) { logos.style.display = ''; }
 	NgChm.UHM.initMessageBox();
     NgChm.UHM.setMessageBoxHeader("About NG-CHM Viewer");
     var mapVersion = ((NgChm.heatMap !== null) && NgChm.heatMap.isMapLoaded()) === true ? NgChm.heatMap.getMapInformation().version_id : "N/A";
@@ -754,7 +756,7 @@ NgChm.UHM.invalidFileFormat = function() {
 NgChm.UHM.initMessageBox = function() {
 	var msgBox = document.getElementById('msgBox');
 	var headerpanel = document.getElementById('mdaServiceHeader');
-	document.getElementById('loader').style.display = 'none'
+	NgChm.UTIL.UI.hideLoader();
 	msgBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	
 	document.getElementById('msgBox').style.display = 'none';
@@ -1130,7 +1132,7 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
 	var pluginCtr = allLinksTbl.rows.length;
 	var headerpanel = document.getElementById('mdaServiceHeader');
-	document.getElementById('loader').style.display = 'none'
+	NgChm.UTIL.UI.hideLoader();
 	linkBox.classList.add ('hide');
 	linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	linkBox.style.right = "5%";

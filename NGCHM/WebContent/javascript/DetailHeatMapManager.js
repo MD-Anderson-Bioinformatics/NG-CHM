@@ -40,7 +40,6 @@ NgChm.DMM.getMapTemplate = function () {
 NgChm.DMM.InitDetailMap = function (chm){
 	document.getElementById('aboutMenu_btn').style.display = 'none';
 	document.getElementById('detail_buttons').style.display = '';
-	document.getElementById('loader').style.display = 'none';
 	let newMapObj = NgChm.DMM.getMapTemplate();
 	NgChm.DMM.primaryMap = newMapObj;
 	newMapObj.pane = chm.parentElement.id;
@@ -54,7 +53,7 @@ NgChm.DMM.InitDetailMap = function (chm){
  * Primary heat map object and will be marked as a 'Secondary' heat map object.
  *********************************************************************************************/
 NgChm.DMM.AddDetailMap = function (chm,pane){
-	let newMapObj = Object.assign({}, NgChm.DMM.primaryMap);
+	let newMapObj = Object.assign({}, NgChm.DMM.primaryMap, { glManager: null });
 	newMapObj.pane = pane;
 	newMapObj.version = 'S';
 	NgChm.DMM.completeMapItemConfig(chm,newMapObj);

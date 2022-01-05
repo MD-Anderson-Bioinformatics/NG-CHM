@@ -137,7 +137,6 @@ NgChm.DET.setDetailMapDisplay = function (mapItem) {
 	}
 	
 	setTimeout (function() {
-		NgChm.DET.detSetupGl(mapItem);
 		NgChm.DET.detInitGl(mapItem);
 		NgChm.SEL.updateSelection(mapItem);
 		if (NgChm.UTIL.getURLParameter("selected") !== ""){
@@ -280,22 +279,14 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 
 	const renderBuffer = NgChm.DET.getDetailHeatMap (mapItem, drawWin, params);
 
-	//WebGL code to draw the summary heat map.
-	mapItem.gl.useProgram(mapItem.gl.program);
-	mapItem.gl.activeTexture(mapItem.gl.TEXTURE0);
-	mapItem.gl.texImage2D(
-			mapItem.gl.TEXTURE_2D,
-			0,
-			mapItem.gl.RGBA,
-			renderBuffer.width,
-			renderBuffer.height,
-			0,
-			mapItem.gl.RGBA,
-			mapItem.gl.UNSIGNED_BYTE,
-			renderBuffer.pixels);
-	mapItem.gl.uniform2fv(mapItem.uScale, mapItem.canvasScaleArray);
-	mapItem.gl.uniform2fv(mapItem.uTranslate, mapItem.canvasTranslateArray);
-	mapItem.gl.drawArrays(mapItem.gl.TRIANGLE_STRIP, 0, mapItem.gl.buffer.numItems);
+	//WebGL code to draw the renderBuffer.
+	if (NgChm.DET.detInitGl (mapItem)) {
+	    const ctx = mapItem.glManager.context;
+	    mapItem.glManager.setTextureFromRenderBuffer(renderBuffer);
+	    ctx.uniform2fv(mapItem.uScale, mapItem.canvasScaleArray);
+	    ctx.uniform2fv(mapItem.uTranslate, mapItem.canvasTranslateArray);
+	    mapItem.glManager.drawTexture();
+	}
 
 	// Draw the dendrograms
 	mapItem.colDendro.draw();
@@ -2268,7 +2259,7 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		}
 	}
 	return pos;
-}
+};
 
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
@@ -2276,128 +2267,91 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
 
-/*********************************************************************************************
- * FUNCTION:  detSetupGl - The purpose of this function is to set up the WebGl context for
- * a detail heat map canvas.
- *********************************************************************************************/
-NgChm.DET.detSetupGl = function (mapItem) {
-	mapItem.gl = NgChm.SUM.webGlGetContext(mapItem.canvas);
-	if (!mapItem.gl) { return; }
-	mapItem.gl.viewportWidth = mapItem.dataViewWidth+NgChm.DET.calculateTotalClassBarHeight("row");
-	mapItem.gl.viewportHeight = mapItem.dataViewHeight+NgChm.DET.calculateTotalClassBarHeight("column");
-	mapItem.gl.clearColor(1, 1, 1, 1);
+(function() {
 
-	const program = mapItem.gl.createProgram();
-	const vertexShader = NgChm.DET.getDetVertexShader(mapItem.gl);
-	const fragmentShader = NgChm.DET.getDetFragmentShader(mapItem.gl);
-	mapItem.gl.program = program;
-	mapItem.gl.attachShader(program, vertexShader);
-	mapItem.gl.attachShader(program, fragmentShader);
-	mapItem.gl.linkProgram(program);
-	mapItem.gl.useProgram(program);
-}
+    /*********************************************************************************************
+     * FUNCTION:  detInitGl - The purpose of this function is to initialize a WebGl canvas for
+     * the presentation of a detail heat map.
+     *
+     * This function *must* be called after any context switch and before any GL functions.
+     * The window may lose the GL context at any context switch (for details, see DRAW.GL.createGlManager).
+     * If we don't have the GL context (glManager.OK is false), do not execute any GL functions.
+     *
+     *********************************************************************************************/
+    NgChm.DET.detInitGl = function (mapItem) {
+	    if (!mapItem.glManager) {
+		mapItem.glManager = NgChm.DRAW.GL.createGlManager (mapItem.canvas, getDetVertexShader, getDetFragmentShader, () => {
+		    const drawWin = NgChm.SEL.getDetailWindow(mapItem);
+		    NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
+		});
+	    }
+	    return mapItem.glManager.check(initDetailContext);
 
-/*********************************************************************************************
- * FUNCTION:  detInitGl - The purpose of this function is to initialize a WebGl canvas for 
- * the presentation of a detail heat map
- *********************************************************************************************/
-NgChm.DET.detInitGl = function (mapItem) {
-	if (!mapItem.gl) return;
+	    // (Re-)intialize a WebGl context for a detail map.
+	    // Each detail pane uses a different canvas and hence WebGl Context.
+	    // Each detail map uses a single context for the heat map and the covariate bars.
+	    function initDetailContext (manager, ctx, program) {
 
-	mapItem.gl.viewport(0, 0, mapItem.gl.viewportWidth, mapItem.gl.viewportHeight);
-	mapItem.gl.clear(mapItem.gl.COLOR_BUFFER_BIT);
+		ctx.viewportWidth = mapItem.dataViewWidth+NgChm.DET.calculateTotalClassBarHeight("row");
+		ctx.viewportHeight = mapItem.dataViewHeight+NgChm.DET.calculateTotalClassBarHeight("column");
+		ctx.viewport(0, 0, ctx.viewportWidth, ctx.viewportHeight);
 
-	// Vertices
-	const buffer = mapItem.gl.createBuffer();
-	mapItem.gl.buffer = buffer;
-	mapItem.gl.bindBuffer(mapItem.gl.ARRAY_BUFFER, buffer);
-	const vertices = [ -1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1, 1 ];
-	mapItem.gl.bufferData(mapItem.gl.ARRAY_BUFFER, new Float32Array(vertices), mapItem.gl.STATIC_DRAW);
-	const byte_per_vertex = Float32Array.BYTES_PER_ELEMENT;
-	const component_per_vertex = 2;
-	buffer.numItems = vertices.length / component_per_vertex;
-	const stride = component_per_vertex * byte_per_vertex;
-	const program = mapItem.gl.program;
-	const position = mapItem.gl.getAttribLocation(program, 'position');
- 	
-	
-	mapItem.uScale = mapItem.gl.getUniformLocation(program, 'u_scale');
-	mapItem.uTranslate = mapItem.gl.getUniformLocation(program, 'u_translate');
-	mapItem.gl.enableVertexAttribArray(position);
-	mapItem.gl.vertexAttribPointer(position, 2, mapItem.gl.FLOAT, false, stride, 0);
+		ctx.clear(ctx.COLOR_BUFFER_BIT);
 
-	// Texture coordinates for map.
-	const texcoord = mapItem.gl.getAttribLocation(program, "texCoord");
-	const texcoordBuffer = mapItem.gl.createBuffer();
-	mapItem.gl.bindBuffer(mapItem.gl.ARRAY_BUFFER, texcoordBuffer);
-	mapItem.gl.bufferData(mapItem.gl.ARRAY_BUFFER, new Float32Array([ 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1 ]), mapItem.gl.STATIC_DRAW);
-	mapItem.gl.enableVertexAttribArray(texcoord);
-	mapItem.gl.vertexAttribPointer(texcoord, 2, mapItem.gl.FLOAT, false, 0, 0)
-	
-	// Texture
-	const texture = mapItem.gl.createTexture();
-	mapItem.gl.bindTexture(mapItem.gl.TEXTURE_2D, texture);
-	mapItem.gl.texParameteri(
-			mapItem.gl.TEXTURE_2D, 
-			mapItem.gl.TEXTURE_WRAP_S, 
-			mapItem.gl.CLAMP_TO_EDGE);
-	mapItem.gl.texParameteri(
-			mapItem.gl.TEXTURE_2D, 
-			mapItem.gl.TEXTURE_WRAP_T, 
-			mapItem.gl.CLAMP_TO_EDGE);
-	mapItem.gl.texParameteri(
-			mapItem.gl.TEXTURE_2D, 
-			mapItem.gl.TEXTURE_MIN_FILTER,
-			mapItem.gl.NEAREST);
-	mapItem.gl.texParameteri(
-			mapItem.gl.TEXTURE_2D, 
-			mapItem.gl.TEXTURE_MAG_FILTER, 
-			mapItem.gl.NEAREST);
-}
+		manager.setClipRegion (NgChm.DRAW.GL.fullClipSpace);
+		manager.setTextureRegion (NgChm.DRAW.GL.fullTextureSpace);
 
-NgChm.DET.getDetVertexShader = function (theGL) {
-	const source = 'attribute vec2 position;    ' +
-	             'attribute vec2 texCoord;    ' +
-		         'varying vec2 v_texPosition; ' +
-		         'uniform vec2 u_translate;   ' +
-		         'uniform vec2 u_scale;       ' +
-		         'void main () {              ' +
-		         '  vec2 scaledPosition = position * u_scale;               ' +
-		         '  vec2 translatedPosition = scaledPosition + u_translate; ' +
-		         '  gl_Position = vec4(translatedPosition, 0, 1);           ' +
-		         '  v_texPosition = texCoord;                               ' +
-		         '}';
-    //'  v_texPosition = position * 0.5 + 0.5;                   ' +
+		mapItem.uScale = ctx.getUniformLocation(program, 'u_scale');
+		mapItem.uTranslate = ctx.getUniformLocation(program, 'u_translate');
 
-	const shader = theGL.createShader(theGL.VERTEX_SHADER);
-	theGL.shaderSource(shader, source);
-	theGL.compileShader(shader);
-	if (!theGL.getShaderParameter(shader, theGL.COMPILE_STATUS)) {
-		console.log(theGL.getShaderInfoLog(shader)); //alert
+		return true;
+	    }
+    };
+
+    const vertexShaderSource = `
+	attribute vec2 position;
+	attribute vec2 texCoord;
+	varying vec2 v_texPosition;
+	uniform vec2 u_translate;
+	uniform vec2 u_scale;
+	void main () {
+	  vec2 scaledPosition = position * u_scale;
+	  vec2 translatedPosition = scaledPosition + u_translate;
+	  gl_Position = vec4(translatedPosition, 0, 1);
+	  v_texPosition = texCoord;
+	}
+    `;
+    //'   v_texPosition = position * 0.5 + 0.5;                   ' +
+    function getDetVertexShader (theGL) {
+	    const shader = theGL.createShader(theGL.VERTEX_SHADER);
+	    theGL.shaderSource(shader, vertexShaderSource);
+	    theGL.compileShader(shader);
+	    if (!theGL.getShaderParameter(shader, theGL.COMPILE_STATUS)) {
+		    console.error(theGL.getShaderInfoLog(shader)); //alert
+	    }
+	    return shader;
     }
 
-	return shader;
-}
-
-NgChm.DET.getDetFragmentShader = function (theGL) {
-	const source = 'precision mediump float;        ' +
-		  		 'varying vec2 v_texPosition;     ' +
- 		 		 'varying float v_boxFlag;        ' +
- 		 		 'uniform sampler2D u_texture;    ' +
- 		 		 'void main () {                  ' +
- 		 		 '	  gl_FragColor = texture2D(u_texture, v_texPosition); ' +
- 		 		 '}'; 
-
-
-	const shader = theGL.createShader(theGL.FRAGMENT_SHADER);
-	theGL.shaderSource(shader, source);
-	theGL.compileShader(shader);
-	if (!theGL.getShaderParameter(shader, theGL.COMPILE_STATUS)) {
-		console.log(theGL.getShaderInfoLog(shader)); //alert
+    const fragmentShaderSource = `
+	precision mediump float;
+	varying vec2 v_texPosition;
+	varying float v_boxFlag;
+	uniform sampler2D u_texture;
+	void main () {
+		  gl_FragColor = texture2D(u_texture, v_texPosition);
+	}
+    `;
+    function getDetFragmentShader (theGL) {
+	    const shader = theGL.createShader(theGL.FRAGMENT_SHADER);
+	    theGL.shaderSource(shader, fragmentShaderSource);
+	    theGL.compileShader(shader);
+	    if (!theGL.getShaderParameter(shader, theGL.COMPILE_STATUS)) {
+		    console.error(theGL.getShaderInfoLog(shader)); //alert
+	    }
+	    return shader;
     }
 
-	return shader;
-};
+})();
 
 (function() {
 	// Define a function to switch a panel to the detail view.

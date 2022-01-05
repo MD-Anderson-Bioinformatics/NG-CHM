@@ -428,7 +428,7 @@ NgChm.UTIL.showDetailPane = true;
 		} else {
 			return;
 		}
-		document.getElementById('loader').style.display = 'none';
+		NgChm.UTIL.UI.showLoader("Configuring interface...");
 		//
 		// Define the DROP TARGET and set the drop event handler(s).
 		if (debug) console.log ('Configuring drop event handler');
@@ -569,8 +569,9 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 		document.getElementById('detail_buttons').style.display = 'none';
 		chmFileItem.style.display = '';
 		chmFileItem.addEventListener('change', NgChm.UTIL.loadFileModeCHM, false);
+		NgChm.UTIL.UI.showSplashExample();
 	} else {
-		document.getElementById('loader').style.display = '';
+		NgChm.UTIL.UI.showLoader("Loading NG-CHM from server...");
 		//Run from a web server.
 		var mapName = NgChm.UTIL.mapId;
 		var dataSource = NgChm.MMGR.WEB_SOURCE;
@@ -617,7 +618,7 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		if (req.readyState == req.DONE) {
 			if (req.status != 200) {
 				console.log('Failed in call to get NGCHM from server: ' + req.status);
-				document.getElementById('loader').innerHTML = "Failed in call to get NGCHM from server";
+				NgChm.UTIL.UI.showLoader("Failed to get NGCHM from server");
 			} else {
 				var chmBlob  =  new Blob([req.response],{type:'application/zip'});  // req.response;
 				var chmFile  =  new File([chmBlob], NgChm.MMGR.embeddedMapName);
@@ -668,7 +669,7 @@ NgChm.UTIL.loadBlobModeCHM = function (sizeBuilderView) {
  * file mode and  user selects the chm data .zip file.
  **********************************************************************************/
 NgChm.UTIL.loadFileModeCHM = function () {
-	document.getElementById('loader').style.display = '';
+	NgChm.UTIL.UI.showLoader("Loading NG-CHM from file...");
 	var chmFile  = document.getElementById('chmFile').files[0];
 	var split = chmFile.name.split("."); 
 	if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
@@ -1545,7 +1546,7 @@ NgChm.UTIL.isOnObject = function (e,type) {
     // Convert r b and g values to hex
     rgb = b | (g << 8) | (r << 16); 
     return "#" + (0x1000000 | rgb).toString(16).substring(1);
-}  
+};  
 
 // A table of frequently used images.
 // Used to reduce widget size by having a single data: URL for each image instead of one per use.
@@ -1556,3 +1557,52 @@ NgChm.UTIL.imageTable = {
     prefCancel: 'images/prefCancel.png',
     saveNgchm: 'images/saveNgchm.png',
 };
+
+(function() {
+    const exports = { showSplashExample, showLoader, hideLoader };
+    Object.assign (NgChm.createNS ("NgChm.UTIL.UI"), exports);
+    var firstLoaderMessage = true;
+    var messages = "";
+
+    // Add event handler for closing splash screen.
+    (function() {
+	const closeBtn = document.getElementById('closeSplash');
+	if (closeBtn) {
+	    closeBtn.addEventListener('click', () => {
+		const splash = document.getElementById('splash');
+		splash.classList.add('hide');
+	    }, { passive: true });
+	}
+    })();
+
+    function showSplashExample () {
+	const splashWaiting = document.getElementById('splashWaiting');
+	// Splash screen removed in widget.
+	if (!splashWaiting) return;
+	const splashExample = document.getElementById('splashExample');
+        splashWaiting.classList.add('hide');
+        splashExample.classList.remove('hide');
+    }
+
+    // Replace splash screen with loader screen.
+    function showLoader (message) {
+	const splash = document.getElementById('splash');
+	const loader = document.getElementById('loader');
+	messages += '<P>' + message;
+	loader.innerHTML = messages;
+	if (firstLoaderMessage) {
+	    loader.classList.replace('faded', 'fadeinslow');
+	    // Splash screen removed in widget.
+	    if (splash) splash.classList.replace('fadeinslow', 'fadeout');
+	    firstLoaderMessage = false;
+	}
+    }
+
+    // Replace loader screen with NgCHM.
+    function hideLoader () {
+	const loader = document.getElementById('loader');
+	loader.classList.replace('fadeinslow', 'fadeout');
+	NgChm.UTIL.containerElement.classList.replace('faded', 'fadein');
+    }
+})();
+
