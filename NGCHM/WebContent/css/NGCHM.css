@@ -941,10 +941,11 @@ table.onlineHelp th {
 }
 
 .farRightButton {
-	right: 0px;
-	top: 0px;
+    right: 0px;
+    top: 0px;
     position: absolute;
     z-index: 2;
+    vertical-align: top;
 }
 
 .tdTop {
@@ -1213,6 +1214,21 @@ div#droptarget.visible {
     z-index: 100;
     color: rgba(0,0,0,1);
     background-color: rgba(255,128,128,1);
+}
+
+#bubbleHelp {
+    opacity: 0;
+    animation: loading-up var(--load-time);
+    animation-fill-mode: forwards;
+}
+#bubbleHelp span {
+    display: block;
+    font-size: small;
+    color: rgb(8,67,193);
+}
+#bubbleHelp span.title {
+    font-weight: bold;
+    padding-bottom: 3px;
 }
 
 /* Use opacity:0 instead of display:none for elements that will be faded in

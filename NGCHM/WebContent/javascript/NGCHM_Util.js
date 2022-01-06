@@ -129,7 +129,14 @@ NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
 		});
 	}
 	while (content.length > 0) {
-		el.appendChild (content.shift());
+		let c = content.shift();
+		if (typeof c == "string") {
+		    let tmp = document.createElement('div');
+		    tmp.innerHTML = c;
+		    while (tmp.firstChild) el.appendChild(tmp.firstChild);
+		} else {
+		    el.appendChild (c);
+		}
 	}
 	if (fn) {
 		const x = fn (el);
@@ -1546,6 +1553,13 @@ NgChm.UTIL.imageTable = {
     okButton: 'images/okButton.png',
     prefCancel: 'images/prefCancel.png',
     saveNgchm: 'images/saveNgchm.png',
+    openMapHover: 'images/openMapHover.png',
+    goHover: 'images/goHover.png',
+    prevHover: 'images/prevHover.png',
+    nextHover: 'images/nextHover.png',
+    cancelHover: 'images/cancelHover.png',
+    barColorsHover: 'images/barColorsHover.png',
+    barMenuHover: 'images/barMenuHover.png',
 };
 
 (function() {

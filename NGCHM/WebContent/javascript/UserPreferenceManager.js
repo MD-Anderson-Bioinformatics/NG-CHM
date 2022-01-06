@@ -6,6 +6,46 @@
 //Define Namespace for NgChm UserPreferenceManager
 NgChm.createNS('NgChm.UPM');
 
+// Define action handlers for static NgChm.UPM UI elements.
+(function () {
+    let uiElement;
+
+    uiElement = document.getElementById('colorMenu_btn');
+    uiElement.onclick = (ev) => {
+	NgChm.UPM.editPreferences(ev.target, null);
+    };
+
+    uiElement = document.getElementById('prefsMove_btn');
+    uiElement.onclick = () => {
+	NgChm.UPM.prefsMoveButton();
+    };
+
+    uiElement = document.getElementById('redX_btn');
+    uiElement.onclick = () => {
+	NgChm.UPM.prefsCancelButton();
+    };
+
+    uiElement = document.getElementById('prefLayer_btn');
+    uiElement.onclick = () => {
+	NgChm.UPM.showLayerPrefs();
+    };
+
+    uiElement = document.getElementById('prefRowsCols_btn');
+    uiElement.onclick = () => {
+	NgChm.UPM.showRowsColsPrefs();
+    };
+
+    uiElement = document.getElementById('prefClass_btn');
+    uiElement.onclick = () => {
+	NgChm.UPM.showClassPrefs();
+    };
+
+    uiElement = document.getElementById('menuGear');
+    uiElement.onclick = (ev) => {
+	NgChm.UPM.editPreferences(ev.target,null);
+    };
+})();
+
 //Global variables for preference processing
 NgChm.UPM.bkpColorMaps = null;
 NgChm.UPM.filterVal = null;
