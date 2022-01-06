@@ -743,7 +743,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		function menuItem (text, callback) {
 			const mi = NgChm.UTIL.newElement('DIV.menuItem');
 			mi.onclick = () => {
-			    callback ();
+			    callback (findPaneLocation(icon));
 			};
 			mi.innerText = text;
 			menu.appendChild(mi);
@@ -1037,6 +1037,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			}
 		}
 
+		menuItem ('Tour', function(loc) {
+		    NgChm.TOUR.showTour (loc);
+		});
 		insertPopupNearIcon (menu, icon);
 
 		function closeMenu() {

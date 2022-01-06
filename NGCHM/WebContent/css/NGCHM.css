@@ -504,14 +504,6 @@ span.button.negative {
 	display:inline-block;
 }
 
-#pdf_gear{
-	display: inline-block;
-	top: 0px;
-	position: absolute;
-	right: 60px;
-	z-index: 2;
-}
-
 #helptext {
     margin: 5px !important;
     padding: 10px 10px 10px 10px !important;
@@ -933,20 +925,47 @@ table.onlineHelp th {
   color: black;
 }
 
-#colorMenu_btn {
-	right: 30px;
-	top: 0px;
-    position: absolute;
-    z-index: 2;
-}
-
+/* farRightButtons are the group of controls in the very top-right of the mdaServiceHeader.
+ * All are positioned absolutely at the top of the mdaServiceHeader, near the right.
+ * The number of pixels from the right is specified individually for each.
+ *
+ * Note: droptarget is also positioned at the top-right of the mdaServiceHeader, above the
+ *       topRightButtons, but is invisible unless someone is dropping something on the NG-CHM.
+ */
 .farRightButton {
-    right: 0px;
     top: 0px;
     position: absolute;
     z-index: 2;
     vertical-align: top;
 }
+
+/* Buttons displayed when no map is loaded: */
+#aboutMenu_btn {
+    right: 30px;
+}
+
+#introAboutButton {
+    right: 0px;
+}
+
+/* Buttons displayed when a map is loaded: */
+#pdf_gear {  /* This is actually the layer controller. */
+    display: inline-block;
+    right: 90px;
+}
+
+#colorMenu_btn {
+    right: 60px;
+}
+
+#barMenu_btn {
+    right: 30px;
+}
+
+#introButton {
+    right: 0px;
+}
+/* End of farRightButtons. */
 
 .tdTop {
     vertical-align: text-top;
@@ -1214,6 +1233,19 @@ div#droptarget.visible {
     z-index: 100;
     color: rgba(0,0,0,1);
     background-color: rgba(255,128,128,1);
+}
+
+
+.tour-button {
+    color: #ffffff;
+    background-color: #0000ff;
+    padding: 0.3em;
+    font-weight: 900;
+    border-radius: 1em;
+}
+.tour-button:hover {
+    color: #0000af;
+    background-color: #dfdf6f;
 }
 
 #bubbleHelp {

@@ -177,13 +177,13 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
  * panel on the screen.
  **********************************************************************************/
 NgChm.UPM.locatePrefsPanel = function() {
-	var prefspanel = document.getElementById("prefs");
-	var barMenu_btn = document.getElementById("barMenu_btn");
+	const prefspanel = document.getElementById("prefs");
+	const icon = document.querySelector("*[data-prefs-panel-locator]");
 	const contBB = NgChm.UTIL.containerElement.getBoundingClientRect();
-	const iconBB = barMenu_btn.getBoundingClientRect();
+	const iconBB = icon.getBoundingClientRect();
 	prefspanel.style.top=NgChm.UTIL.containerElement.parentElement.offsetTop + 30 + 'px';
 	//done for builder panel sizing ONLY
-	var screenNotes  = document.getElementById('screenNotesDisplay')
+	const screenNotes = document.getElementById('screenNotesDisplay');
 	if (screenNotes !== null) {
 		notesBB = screenNotes.getBoundingClientRect();
 		prefspanel.style.top = (iconBB.top - notesBB.height) + 'px';

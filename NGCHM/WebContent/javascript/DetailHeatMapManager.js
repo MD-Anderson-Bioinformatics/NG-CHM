@@ -38,8 +38,9 @@ NgChm.DMM.getMapTemplate = function () {
  * be populated based upon an initial values map template.
  *********************************************************************************************/
 NgChm.DMM.InitDetailMap = function (chm){
-	document.getElementById('aboutMenu_btn').style.display = 'none';
-	document.getElementById('detail_buttons').style.display = '';
+	// FIXME (BMB): The following two lines should be in the global map initialization, not here.
+	[...document.querySelectorAll('*[data-hide-on-load]')].forEach(e => e.style.display = 'none');
+	[...document.querySelectorAll('*[data-show-on-load]')].forEach(e => e.style.display = '');
 	let newMapObj = NgChm.DMM.getMapTemplate();
 	NgChm.DMM.primaryMap = newMapObj;
 	newMapObj.pane = chm.parentElement.id;

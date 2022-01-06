@@ -7,6 +7,7 @@
 		<link rel="shortcut icon" href="ngChmIcon.ico">
 		<link rel="stylesheet" href="css/NGCHM.css?v=2.20.2">
 		<meta id='viewport' name ="viewport" content="width=device-width,user-scalable=no">
+		<link rel="stylesheet" href="css/introjs.css?v=2.20.2">
 
 	</head>
 	<body class="NgChmViewer" style="font-family: sans-serif; font-size: 100%">
@@ -22,7 +23,9 @@
 			</div>
 			<!-- WIDGET INCLUDE -->
 				<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);"
-				    data-tooltip='Use this button to load a stand-alone .ngchm file.<P>Press the button, select the .ngchm file to view, and press Open.<P>To create an NGCHM, see <A HREF="https://bioinformatics.mdanderson.org/public-software/ngchm/#building-ng-chms">here</A>.' >
+				     data-title='File Chooser'
+				     data-intro='Use this button to load a stand-alone .ngchm file.<P>Press the button, select the .ngchm file to view, and press Open.<P>To create an NGCHM, see <A HREF="https://bioinformatics.mdanderson.org/public-software/ngchm/#building-ng-chms">here</A>.'
+				>
 				  <table>
 				    <tr>
 				      <td><div id="fileInstr" style="padding-bottom:5px; font-size: 14px; font-weight:bold;color: rgb(51, 51, 51);">Select .NGCHM file to view:</div></td>
@@ -33,24 +36,43 @@
 				    </tr>
 				  </table>
 				</div>
-				<div class="divTable" id="detail_buttons" style='display:none;'>
+				<div class="divTable" id="detail_buttons" data-show-on-load style='display:none;'>
 				  <div class="divRow">
-				    <div class="divLeft" id="mapName"></div>
+				    <div class="divLeft" id="mapName"
+					 data-title='Map Name'
+					 data-intro="The map's name. Hover over the name to see the map's caption (if provided)."
+				    >
+				    </div>
 				  </div>
 				  <div class="divRow">
 		  		    <div class="divLeft">  
 						<img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM'
 						     data-hover-img='openMapHover'
-						     data-tooltip='Open .NG-CHM Heat Map' />
-						<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen" />
+						     data-tooltip='Open .NG-CHM Heat Map'
+						     data-title='Open File'
+						     data-intro='Click to open a new NG-CHM (replacing the current NG-CHM).'
+						/>
+						<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen"
+						     data-title='Go Back'
+						     data-intro='Click to return to the referring web page.'
+						/>
 						<strong>Search:</strong>&nbsp;
-						<select name="search_on" id="search_on" class='srchSelect' >
+						<select name="search_on" id="search_on" class='srchSelect'
+						    data-title='Search Target'
+						    data-intro='Select whether to search on map labels or a specific covariate.'
+						>
 							<option value="labels">Labels</option>
 						</select>
 						<input id="search_text" name="search" type="text" class='srchText'
-						    data-tooltip='Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.' />
+						    data-title='Search Text'
+						    data-intro='The text to search on. By default, partial matches succeed. Enclose the search term in double quotes to force exact matches.'
+						    data-tooltip='Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.'
+						/>
 						<input id="search_cov_cont" name="search_cont" type="text" class='srchText' style='display:none;'
-						    data-tooltip='Search row/column covariate values.  Enter search term and click Go. The search will find rows/cols with continuous covariate values that fall within the search expressions entered. Search expressions should be entered in the form of a comma-delimited string with each segment representing an expression. Valid expressions would include individual numeric values, values preceded by one of the following operators: >, >=< <, <= (e.g. >10), and/or range expressions with 2 operators creating a range of values (e.g.>10<=20). Expressions that do not match these patterns will be ignored. If the search box turns red, no rows/cols containing the selected covariate values were found.' />
+	                                            data-title='Search Continuous Covariate'
+						    data-intro='The numeric comma-delimited values or ranges to search for. Ranges can be one- or two-sided.'
+						    data-tooltip='Search row/column covariate values.  Enter search term and click Go. The search will find rows/cols with continuous covariate values that fall within the search expressions entered. Search expressions should be entered in the form of a comma-delimited string with each segment representing an expression. Valid expressions would include individual numeric values, values preceded by one of the following operators: >, >=< <, <= (e.g. >10), and/or range expressions with 2 operators creating a range of values (e.g.>10<=20). Expressions that do not match these patterns will be ignored. If the search box turns red, no rows/cols containing the selected covariate values were found.'
+						/>
 						<div id="search_cov_disc" style="display:none;"> 
 							<div class="dropDownMultiSelect">
 						        <div id="srchCovSelectBox" class="dropDownSelectBox" onclick="NgChm.UTIL.showCheckBoxDropDown('srchCovCheckBoxes');">   
@@ -59,27 +81,42 @@
 						        </div>
 							</div>
 						</div>
-						<select name="search_target" id="search_target" class='srchSelect' >
+						<select name="search_target" id="search_target" class='srchSelect'
+	                                            data-title='Search Target Axis'
+						    data-intro='Limit searches to rows only, columns only, or both rows and columns.'
+						>
 							<option value="Both">Both</option>
 							<option value="Column">Column</option>
 							<option value="Row">Row</option>
 						</select>
 						<span class="dblSpace"/>
 					    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go'
+	                                         data-title='Go Button'
+						 data-intro='Perform the search and go to the first search result (if any).'
 						 data-hover-img='goHover'
-					         data-tooltip='Search Row/Column Labels' />
+					         data-tooltip='Search Row/Column Labels'
+					    />
 					    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous'
+	                                         data-title='Previous Result'
+						 data-intro='Go to the previous search result (if any).'
 						 data-hover-img='prevHover'
 					         data-tooltip='Previous Search Result'
-						 style="display:none;"/>
+						 style="display:none;"
+					    />
 					    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next'
+	                                         data-title='Next Result'
+						 data-intro='Go to the next search result (if any).'
 					         data-hover-img='nextHover'
 						 data-tooltip='Next Search Result'
-						 style="display:none;"/>
+						 style="display:none;"
+					    />
 					    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel'
+	                                         data-title='Clear Results'
+						 data-intro='Clear the selection for the specified axis (or axes).'
 					         data-hover-img='cancelHover'
 						 data-tooltip='Clear Search Results'
-						 style="display:none;"/>
+						 style="display:none;"
+					    />
 		  			 </div> 
 				  </div>
 				  <div class="divRow">
@@ -88,7 +125,10 @@
 					</div>
 				  </div>
 		<!--  	    </div>	-->
-				    <div id="pdf_gear" style="text-align: right;" class="farRightButton" >
+				    <div id="pdf_gear" style="text-align: right;" class="farRightButton"
+					data-title='Layer controller'
+					data-intro='Click the layers icon to open the controller. Use the toggle to switch between two data layers. Select the layers using the drop-down menus.'
+				    >
 						<div id="flicks" style="display: none;">
 						    <div id="noFlickViews" style="display: none;">
 							<table><tr><td><img id='flickOff' src='images/layersOff.png' alt='open data layer control icon'
@@ -107,16 +147,38 @@
 					<img id='colorMenu_btn' class='farRightButton' src='images/barColors.png' alt='Open Alert'
 					     data-hover-img='barColorsHover'
 					     data-tooltip='Edit Map Colors'
+					     data-title='Color Editor'
+					     data-intro='Open a dialog to change the map colors.'
 					/>
 					<img id='barMenu_btn' class='farRightButton' src='images/barMenu.png' alt='Open Menu'
+					     data-title='Hamburger Menu'
+					     data-intro='Opens a drop-down menu of additional choices, including a map preferences dialog, a PDF generator, saving a local copy, and getting additional help.'
 					     data-hover-img='barMenuHover'
 					     data-tooltip='Open NG-CHM Options Menu'
 					/>
+					<div id='introButton' class="farRightButton" style="top: 0.2em;"
+					     data-show-on-load
+					     data-prefs-panel-locator
+					     data-title='Guided Tour'
+					     data-intro='Click a tour icon at anytime to initiate a guided tour of on-screen elements.<P>The tour may change based on the current content of the window.'
+					>
+					    <span class="tour-button">?</span>
+					</div>
 			                <div id="droptarget" class="">DROP HERE</div>
 			    </div>
 		        <img id='aboutMenu_btn' src='images/aboutNgchm.png' class='farRightButton' alt='About NG-CHM'
+			     data-hide-on-load
+			     data-title='About NG-CHMs'
+			     data-intro='Open for information about the NG-CHM system'
 			     data-tooltip='Open NG-CHM About'
 			/>
+			<div id='introAboutButton' class="farRightButton" style="top: 0.2em;"
+			     data-hide-on-load
+			     data-title='Guided Tour'
+			     data-intro='Click anytime to initiate a guided tour of on-screen elements.<P>The tour may change based on the current content of the window.'
+			>
+			    <span class="tour-button">?</span>
+			</div>
 		    </div>
 
 		    <div id='content'>
@@ -145,6 +207,9 @@
 				    <LI>Explore a <A href='https://tcga.ngchm.net/NGCHM/chm.html?map=class_subset_tcga_brca'>sample NG-CHM</A>.
 				</UL>
 			    </DIV>
+			    <P>
+				For a quick tour of the NG-CHM User Interface (UI), click
+				<span class="tour-button">?</span>.
 			    </P>
 			</div> <!-- splash -->
 			<!-- WIDGET INCLUDE -->
@@ -332,9 +397,11 @@
 		<script src="javascript/CompatibilityManager.js?v=2.20.2"></script>
 		<script src="javascript/SearchManager.js?v=2.20.2"></script>
 		<script src="javascript/RecreatePanes.js?v=2.20.2"></script>
+		<script src="javascript/Tour.js?v=2.20.2"></script>
 		<script src="javascript/lib/jspdf.min.js?v=2.20.2"></script>
 		<script src="javascript/lib/jstat.min.js?v=2.20.2"></script>
 		<script src="javascript/use_jstat.js?v=2.20.2"></script>
+		<script src="javascript/lib/intro.min.js?v=2.20.2"></script>
 
 		<script type="text/Javascript">
 			NgChm.heatMap = null;  //global - heatmap object.
