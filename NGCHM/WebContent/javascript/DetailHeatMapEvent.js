@@ -490,7 +490,7 @@ NgChm.DEV.matrixRightClick = function (e) {
     let selection = window.getSelection();
     selection.removeAllRanges();
     return false;
-}
+};
 
 /************************************************************************************************
  * FUNCTION: flickChange - Responds to a change in the flick view control.  All of these actions 
@@ -500,43 +500,48 @@ NgChm.DEV.matrixRightClick = function (e) {
  * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown. 
  * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
  ***********************************************************************************************/ 
-NgChm.DEV.flickChange = function(fromList) {
+(function() {
+    // Table of flick button images so that Widgetizer only adds one
+    // data: URL for each to the widget.
+    const toggleButtons = {
+	flickUp: 'images/toggleUp.png',
+	flickDown: 'images/toggleDown.png'
+    };
+    NgChm.DEV.flickChange = function(fromList) {
 	const mapItem = NgChm.DMM.primaryMap;
 	const flickBtn = document.getElementById("flick_btn");
 	const flickDrop1 = document.getElementById("flick1");
 	const flickDrop2 = document.getElementById("flick2");
 	if (typeof fromList === 'undefined') {
 		if (flickBtn.dataset.state === 'flickUp') {
-			flickBtn.setAttribute('src', 'images/toggleDown.png');
 			flickBtn.dataset.state = 'flickDown';
 			mapItem.currentDl = flickDrop2.value;
 		} else {
-			flickBtn.setAttribute('src', 'images/toggleUp.png');
 			flickBtn.dataset.state = 'flickUp';
 			mapItem.currentDl = flickDrop1.value;
 		}
+		flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
 	} else if (fromList === null) {
 		if (flickBtn.dataset.state === 'flickUp') {
-			flickBtn.setAttribute('src', 'images/toggleUp.png');
 			flickBtn.dataset.state = 'flickUp';
 			mapItem.currentDl = flickDrop1.value === "" ? 'dl1' : flickDrop1.value;
 		} else {
-			flickBtn.setAttribute('src', 'images/toggleDown.png');
 			flickBtn.dataset.state = 'flickDown';
 			mapItem.currentDl = flickDrop2.value === "" ? 'dl1' : flickDrop2.value;
 		}
+		flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
 	} else {
 		if ((fromList === "flick1") && (flickBtn.dataset.state === 'flickUp')) {
 			mapItem.currentDl = document.getElementById(fromList).value;
 		} else if ((fromList === "flick2") && (flickBtn.dataset.state === 'flickDown')) {
 			mapItem.currentDl = document.getElementById(fromList).value;
 		} else if ((fromList === "toggle1") && (flickBtn.dataset.state === 'flickDown')) {
-			flickBtn.setAttribute('src', 'images/toggleUp.png');
 			flickBtn.dataset.state = 'flickUp';
+			flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
 			mapItem.currentDl = flickDrop1.value;
 		} else if ((fromList === "toggle2") && (flickBtn.dataset.state === 'flickUp')) {
-			flickBtn.setAttribute('src', 'images/toggleDown.png');
 			flickBtn.dataset.state = 'flickDown';
+			flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
 			mapItem.currentDl = flickDrop2.value;
 		} else {
 			return;
@@ -550,7 +555,8 @@ NgChm.DEV.flickChange = function(fromList) {
 	})
 	NgChm.DET.setDrawDetailsTimeout(NgChm.DET.redrawSelectionTimeout,true);
 	NgChm.SEL.updateSelections(true);
-}
+    };
+})();
 
 /*********************************************************************************************
  * FUNCTION:  handleMouseOut - The purpose of this function is to handle the situation where 
@@ -867,7 +873,7 @@ NgChm.DEV.detailNormal = function (mapItem) {
 	NgChm.UHM.hlpC();	
 	const previousMode = mapItem.mode;
 	NgChm.SEL.setMode(mapItem,'NORMAL');
-	NgChm.DEV.setButtons(mapItem);
+	NgChm.DET.setButtons(mapItem);
 	mapItem.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
 	mapItem.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
 	if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
@@ -935,26 +941,6 @@ NgChm.DEV.detailFullMap = function (mapItem) {
 }
 
 /**********************************************************************************
- * FUNCTION - setButtons: The purpose of this function is to set the state of 
- * buttons on the detail pane header bar when the user selects a button.
- **********************************************************************************/
-NgChm.DEV.setButtons = function (mapItem) {
-	const full = document.getElementById('full_btn'+mapItem.panelNbr);
-	const ribbonH = document.getElementById('ribbonH_btn'+mapItem.panelNbr);
-	const ribbonV = document.getElementById('ribbonV_btn'+mapItem.panelNbr);
-	full.src= "images/full.png";
-	ribbonH.src= "images/ribbonH.png";
-	ribbonV.src= "images/ribbonV.png";
-	if (mapItem.mode=='RIBBONV')
-		ribbonV.src= "images/ribbonV_selected.png";
-	else if (mapItem.mode == "RIBBONH")
-		ribbonH.src= "images/ribbonH_selected.png";
-	else
-		full.src= "images/full_selected.png";	
-}
-
-
-/**********************************************************************************
  * FUNCTION - detailHRibbonButton: The purpose of this function is to clear dendro
  * selections and call processing to change to Horizontal Ribbon Mode.
  **********************************************************************************/
@@ -975,7 +961,7 @@ NgChm.DEV.detailHRibbon = function (mapItem) {
 	const prevWidth = mapItem.dataBoxWidth;
 	mapItem.saveCol = mapItem.currentCol;
 	NgChm.SEL.setMode(mapItem,'RIBBONH');
-	NgChm.DEV.setButtons(mapItem);
+	NgChm.DET.setButtons(mapItem);
 	if (previousMode=='FULL_MAP') {
 		NgChm.DET.setDetailDataHeight(mapItem, NgChm.DET.zoomBoxSizes[0]);
 	}
@@ -1044,7 +1030,7 @@ NgChm.DEV.detailVRibbon = function (mapItem) {
 	mapItem.saveRow = mapItem.currentRow;
 	
 	NgChm.SEL.setMode(mapItem, 'RIBBONV');
-	NgChm.DEV.setButtons(mapItem);
+	NgChm.DET.setButtons(mapItem);
 
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.

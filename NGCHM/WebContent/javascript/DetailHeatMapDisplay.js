@@ -2359,6 +2359,7 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	// See additional comments in that function.
 	NgChm.DET.switchPaneToDetail = switchPaneToDetail;
 	NgChm.Pane.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
+	NgChm.DET.setButtons = setButtons;
 
 	let savedChmElements = [];
 	NgChm.DET.initialSwitchPaneToDetail = true
@@ -2431,12 +2432,51 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
 	}
 
+	// Table to convert image names to image source names.
+	// A table is required for this otherwise trivial conversion
+	// because the minimizer will convert all the filenames in the
+	// table to inline data sources.
+	const imageTable = {
+	    full: 'images/full.png',
+	    fullHover: 'images/fullHover.png',
+	    full_selected: 'images/full_selected.png',
+	    ribbonH: 'images/ribbonH.png',
+	    ribbonHHover: 'images/ribbonHHover.png',
+	    ribbonH_selected: 'images/ribbonH_selected.png',
+	    ribbonV: 'images/ribbonV.png',
+	    ribbonVHover: 'images/ribbonVHover.png',
+	    ribbonV_selected: 'images/ribbonV_selected.png',
+	};
+
 	// Return the baseName of the zoom mode buttons.
 	function buttonBaseName (buttonMode) {
 		if (buttonMode == 'RIBBONH') return 'ribbonH';
 		if (buttonMode == 'RIBBONV') return 'ribbonV';
 		return 'full';
 	}
+
+	/**********************************************************************************
+	 * FUNCTION - setButtons: The purpose of this function is to set the state of
+	 * buttons on the detail pane header bar when the user selects a button.
+	 **********************************************************************************/
+	function setButtons (mapItem) {
+		const full_btn = document.getElementById('full_btn'+mapItem.panelNbr);
+		const ribbonH_btn = document.getElementById('ribbonH_btn'+mapItem.panelNbr);
+		const ribbonV_btn = document.getElementById('ribbonV_btn'+mapItem.panelNbr);
+		let full_src= "full";
+		let ribbonH_src= "ribbonH";
+		let ribbonV_src= "ribbonV";
+		if (mapItem.mode=='RIBBONV')
+			ribbonV_src += "_selected";
+		else if (mapItem.mode == "RIBBONH")
+			ribbonH_src += "_selected";
+		else
+			full_src += "_selected";
+		full_btn.src = imageTable[full_src];
+		ribbonH_btn.src = imageTable[ribbonH_src];
+		ribbonV_btn.src = imageTable[ribbonV_src];
+	}
+
 
 	// Update a mode button image when the mouse enters/leaves the button.
 	// btn is the IMG element for the button.
@@ -2461,7 +2501,7 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 			if (hovering) {
 			        buttonSrc += 'Hover';
 			}
-			btn.setAttribute('src', 'images/' + buttonSrc + '.png');
+			btn.setAttribute('src', imageTable[buttonSrc]);
 		}
 	}
 
@@ -2506,8 +2546,7 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
 		const baseName = buttonBaseName (mode);
 		const selStr = selected ? '_selected' : '';
-		const btnIcon = 'images/' + baseName + selStr + '.png';
-		const img = NgChm.UTIL.newElement ('IMG', { src: btnIcon, alt: btnHelp });
+		const img = NgChm.UTIL.newElement ('IMG', { src: imageTable[baseName+selStr], alt: btnHelp });
 		img.id = baseName + '_btn' + mapNumber;
 		img.dataset.mode = mode;
 		img.onmouseout = function (e) {

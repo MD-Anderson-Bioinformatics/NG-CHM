@@ -587,8 +587,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				NgChm.UHM.initMessageBox();
 				NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 				NgChm.UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
-				NgChm.UHM.setMessageBoxButton(1, 'images/cancelSmall.png', 'Cancel Button')
-				NgChm.UHM.setMessageBoxButton(2, 'images/okButton.png', 'OK Button')
+				NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.cancelSmall, 'Cancel Button')
+				NgChm.UHM.setMessageBoxButton(2, NgChm.UTIL.imageTable.okButton, 'OK Button')
 				dialog.style.display = '';
 				return new Promise(function(resolve, reject) {
 					let okButton = dialog.querySelector('#msgBoxBtnImg_2')
@@ -990,8 +990,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 						NgChm.UHM.initMessageBox();
 						NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 						NgChm.UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
-						NgChm.UHM.setMessageBoxButton(1, 'images/cancelSmall.png', 'Cancel Button')
-						NgChm.UHM.setMessageBoxButton(2, 'images/okButton.png', 'OK Button')
+						NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.cancelSmall, 'Cancel Button')
+						NgChm.UHM.setMessageBoxButton(2, NgChm.UTIL.imageTable.okButton, 'OK Button')
 						dialog.style.display = '';
 						return new Promise(function(resolve, reject) {
 							let okButton = dialog.querySelector('#msgBoxBtnImg_2')

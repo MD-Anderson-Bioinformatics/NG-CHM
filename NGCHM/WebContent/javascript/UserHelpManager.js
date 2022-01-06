@@ -559,28 +559,28 @@ NgChm.UHM.saveHeatMapChanges = function() {
 				text = "<br>You have elected to save changes made to this NG-CHM heat map file.<br><br>You may save them to a new NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 			}
 			NgChm.UHM.setMessageBoxText(text);
-			NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
-			NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "Cancel Save", "NgChm.UHM.messageBoxCancel");
+			NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.saveNgchm, "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
+			NgChm.UHM.setMessageBoxButton(4, NgChm.UTIL.imageTable.closeButton, "Cancel Save", "NgChm.UHM.messageBoxCancel");
 		} else {
 			// If so, is read only?
 			if (NgChm.heatMap.isReadOnly()) {
 				text = "<br>You have elected to save changes made to this READ-ONLY heat map. READ-ONLY heat maps cannot be updated.<br><br>However, you may save these changes to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				NgChm.UHM.setMessageBoxText(text);
-				NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
-				NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "Cancel Save", "NgChm.UHM.messageBoxCancel");
+				NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.saveNgchm, "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
+				NgChm.UHM.setMessageBoxButton(4, NgChm.UTIL.imageTable.closeButton, "Cancel Save", "NgChm.UHM.messageBoxCancel");
 			} else {
 				text = "<br>You have elected to save changes made to this heat map.<br><br>You have the option to save these changes to the original map OR to save them to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				NgChm.UHM.setMessageBoxText(text);
-				NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
+				NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.saveNgchm, "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
 				NgChm.UHM.setMessageBoxButton(2, "images/saveOriginal.png", "Save Original Heat Map", "NgChm.heatMap.saveHeatMapToServer");
-				NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "Cancel Save", "NgChm.UHM.messageBoxCancel");
+				NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.closeButton, "Cancel Save", "NgChm.UHM.messageBoxCancel");
 			}
 		}
 	} else {
 		text = "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 		NgChm.UHM.setMessageBoxText(text);
-		NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
-		NgChm.UHM.setMessageBoxButton(4, "images/closeButton.png", "Cancel Save", "NgChm.UHM.messageBoxCancel");
+		NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.saveNgchm, "Save To NG-CHM File", "NgChm.heatMap.saveHeatMapToNgchm");
+		NgChm.UHM.setMessageBoxButton(4, NgChm.UTIL.imageTable.closeButton, "Cancel Save", "NgChm.UHM.messageBoxCancel");
 	}
 	document.getElementById('msgBox').style.display = '';
 }
@@ -604,7 +604,7 @@ NgChm.UHM.widgetHelp = function() {
 	text = text + "<p><b>Citation:</b> Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a></p>";
 	text = text + "<p>The NG-CHM Viewer is also available for a variety of other platforms.</p>";
 	NgChm.UHM.setMessageBoxText(text);
-	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "Close button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.closeButton, "Close button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -619,13 +619,13 @@ NgChm.UHM.zipSaveNotification = function(autoSave) {
 	NgChm.UHM.setMessageBoxHeader("NG-CHM File Viewer");
 	if (autoSave) {
 		text = "<br>This NG-CHM archive file contains an out dated heat map configuration that has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>In order to upgrade the NG-CHM and avoid this notice in the future, you will want to replace your original file with the version now being displayed.<br><br>";
-		NgChm.UHM.setMessageBoxButton(1, "images/saveNgchm.png", "Save NG-CHM button", "NgChm.heatMap.zipSaveNgchm");
+		NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.saveNgchm, "Save NG-CHM button", "NgChm.heatMap.zipSaveNgchm");
 	} else {
 		text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>" 
 		NgChm.UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", "NgChm.UHM.zipAppDownload");
 	}
 	NgChm.UHM.setMessageBoxText(text);
-	NgChm.UHM.setMessageBoxButton(3, "images/cancelSmall.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.cancelSmall, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -639,7 +639,7 @@ NgChm.UHM.viewerAppVersionExpiredNotification = function(oldVersion, newVersion)
 	NgChm.UHM.setMessageBoxHeader("New NG-CHM File Viewer Version Available");
 	NgChm.UHM.setMessageBoxText("<br>The version of the NG-CHM File Viewer application that you are running ("+oldVersion+") has been superceded by a newer version ("+newVersion+"). You will be able to view all pre-existing heat maps with this new backward-compatible version. However, you may wish to download the latest version of the viewer.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>");
 	NgChm.UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", "NgChm.UHM.zipAppDownload");
-	NgChm.UHM.setMessageBoxButton(3, "images/closeButton.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.closeButton, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -652,7 +652,7 @@ NgChm.UHM.hamburgerLinkMissing = function() {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("NG-CHM Menu Link Error");
 	NgChm.UHM.setMessageBoxText("<br>No destination has been defined for the menu link.");
-	NgChm.UHM.setMessageBoxButton(1, "images/closeButton.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.closeButton, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -664,7 +664,7 @@ NgChm.UHM.systemMessage = function(header, message) {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader(header);
 	NgChm.UHM.setMessageBoxText("<br>" + message);
-	NgChm.UHM.setMessageBoxButton(1, "images/closeButton.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.closeButton, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -690,7 +690,7 @@ NgChm.UHM.noWebGlContext = function(isDisabled) {
 	} else {
 		NgChm.UHM.setMessageBoxText("<br>No WebGL context is available.  The NG-CHM Application requires the WebGL Javascript API in order to render images of Next Generation Clustered Heat Maps. Most web browsers and graphics processors support WebGL.<br><br>Please ensure that the browser that you are using and your computer's processor are WebGL compatible.");
 	}
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.prefCancel, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -702,7 +702,7 @@ NgChm.UHM.mapNotFound = function(heatMapName) {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("Requested Heat Map Not Found");
 	NgChm.UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you requested cannot be found OR connectivity to the Heat Map repository has been interrupted.<br><br>Please check the Heat Map name and try again.");
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.prefCancel, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 };
 
@@ -714,7 +714,7 @@ NgChm.UHM.mapLoadError = function(heatMapName, details) {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("Requested Heat Map Not Loaded");
 	NgChm.UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you selected cannot be loaded.<br><br>Reason: " + details);
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.prefCancel, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 };
 
@@ -725,7 +725,7 @@ NgChm.UHM.linkoutError = function(msgText) {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("Heat Map Linkout"); 
 	NgChm.UHM.setMessageBoxText(msgText);
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.prefCancel, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -738,7 +738,7 @@ NgChm.UHM.invalidFileFormat = function() {
 	NgChm.UHM.initMessageBox();
 	NgChm.UHM.setMessageBoxHeader("Invalid File Format");
 	NgChm.UHM.setMessageBoxText("<br>The file chosen is not an NG-CHM file.<br><br>Please select a .ngchm file and try again.");
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.prefCancel, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
 }
 
@@ -905,7 +905,7 @@ NgChm.UHM.displayStartupWarnings = function() {
 	}
 	NgChm.UHM.setMessageBoxHeader(headingText); 
 	NgChm.UHM.setMessageBoxText(warningText);
-	NgChm.UHM.setMessageBoxButton(3, "images/prefCancel.png", "Cancel button", "NgChm.UHM.messageBoxCancel");
+	NgChm.UHM.setMessageBoxButton(3, NgChm.UTIL.imageTable.prefCancel, "Cancel button", "NgChm.UHM.messageBoxCancel");
 	document.getElementById('msgBox').style.display = '';
     NgChm.UTIL.redrawCanvases();
 }

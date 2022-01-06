@@ -1548,6 +1548,15 @@ NgChm.UTIL.isOnObject = function (e,type) {
     return "#" + (0x1000000 | rgb).toString(16).substring(1);
 };  
 
+// A table of frequently used images.
+// Used to reduce widget size by having a single data: URL for each image instead of one per use.
+NgChm.UTIL.imageTable = {
+    cancelSmall: 'images/cancelSmall.png',
+    closeButton: 'images/closeButton.png',
+    okButton: 'images/okButton.png',
+    prefCancel: 'images/prefCancel.png',
+    saveNgchm: 'images/saveNgchm.png',
+};
 
 (function() {
     const exports = { showSplashExample, showLoader, hideLoader };
@@ -1596,3 +1605,4 @@ NgChm.UTIL.isOnObject = function (e,type) {
 	NgChm.UTIL.containerElement.classList.replace('faded', 'fadein');
     }
 })();
+
