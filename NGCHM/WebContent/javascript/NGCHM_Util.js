@@ -1606,7 +1606,9 @@ NgChm.UTIL.imageTable = {
     function hideLoader () {
 	const loader = document.getElementById('loader');
 	loader.classList.replace('fadeinslow', 'fadeout');
+	[...document.querySelectorAll('*[data-hide-on-load]')].forEach(e => e.classList.add('hide'));
 	NgChm.UTIL.containerElement.classList.replace('faded', 'fadein');
+	[...document.querySelectorAll('*[data-show-on-load]')].forEach(e => e.classList.remove('hide'));
     }
 })();
 
