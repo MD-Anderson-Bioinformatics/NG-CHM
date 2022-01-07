@@ -129,7 +129,14 @@ NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
 		});
 	}
 	while (content.length > 0) {
-		el.appendChild (content.shift());
+		let c = content.shift();
+		if (typeof c == "string") {
+		    let tmp = document.createElement('div');
+		    tmp.innerHTML = c;
+		    while (tmp.firstChild) el.appendChild(tmp.firstChild);
+		} else {
+		    el.appendChild (c);
+		}
 	}
 	if (fn) {
 		const x = fn (el);
@@ -1392,16 +1399,6 @@ NgChm.UTIL.b64toBlob = function (b64Data) {
 	  return blob;
 }
 
-NgChm.UTIL.clickListener = function(e) {
-    var clickedElement;
-    if(e == null) {
-        clickedElement = event.srcElement;
-    } else {
-        clickedElement = e.target;
-    }
-    var here = 1;
-}
-
 /*********************************************************************************************
  * FUNCTION:  getClickType - The purpose of this function returns an integer. 0 for left click; 
  * 1 for right.  It could be expanded further for wheel clicks, browser back, and browser forward 
@@ -1556,6 +1553,13 @@ NgChm.UTIL.imageTable = {
     okButton: 'images/okButton.png',
     prefCancel: 'images/prefCancel.png',
     saveNgchm: 'images/saveNgchm.png',
+    openMapHover: 'images/openMapHover.png',
+    goHover: 'images/goHover.png',
+    prevHover: 'images/prevHover.png',
+    nextHover: 'images/nextHover.png',
+    cancelHover: 'images/cancelHover.png',
+    barColorsHover: 'images/barColorsHover.png',
+    barMenuHover: 'images/barMenuHover.png',
 };
 
 (function() {
@@ -1602,7 +1606,9 @@ NgChm.UTIL.imageTable = {
     function hideLoader () {
 	const loader = document.getElementById('loader');
 	loader.classList.replace('fadeinslow', 'fadeout');
+	[...document.querySelectorAll('*[data-hide-on-load]')].forEach(e => e.classList.add('hide'));
 	NgChm.UTIL.containerElement.classList.replace('faded', 'fadein');
+	[...document.querySelectorAll('*[data-show-on-load]')].forEach(e => e.classList.remove('hide'));
     }
 })();
 

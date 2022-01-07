@@ -10,6 +10,117 @@ NgChm.UHM.postMapDetails = false;	// Should we post map details to an enclosing 
 NgChm.UHM.postMapToWhom = null;		// Identity of the window to post map details to
 NgChm.UHM.myNonce = 'N';			// Shared secret for vetting message sender
 
+// Define action handlers for static NgChm.UHM UI elements.
+//
+(function () {
+    let uiElement;
+
+    const barMenu = document.getElementById('barMenu_btn');
+    barMenu.onclick = (ev) => {
+	NgChm.UHM.openMenu(ev.target);
+    };
+
+    const aboutMenu = document.getElementById('aboutMenu_btn');
+    aboutMenu.onclick = (ev) => {
+	NgChm.UHM.widgetHelp();
+    };
+
+    uiElement = document.getElementById('messageOpen_btn');
+    uiElement.onclick = () => {
+	NgChm.UHM.displayStartupWarnings();
+    };
+
+    // Special tooltip with content populated from the loaded heat map.
+    uiElement = document.getElementById('mapName');
+    uiElement.addEventListener('mouseover', (ev) => {
+	NgChm.UHM.hlp(ev.target,"Map Name: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().name : "Not yet available") + "<br><br>Description: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().description : "N/A"),350);
+    }, { passive: true });
+
+    uiElement = document.getElementById('fileOpen_btn');
+    uiElement.onclick = () => {
+	NgChm.SEL.openFileToggle();
+    };
+
+    uiElement = document.getElementById('flickOff');
+    uiElement.onclick = () => {
+	NgChm.SEL.flickToggleOn();
+    };
+
+    uiElement = document.getElementById('mapLinks_btn');
+    uiElement.onclick = () => {
+	NgChm.UHM.showMapPlugins();
+    };
+
+    uiElement = document.getElementById('allLinks_btn');
+    uiElement.onclick = () => {
+	NgChm.UHM.showAllPlugins();
+    };
+
+    uiElement = document.getElementById('linkBoxFoot');
+    uiElement.onclick = () => {
+	NgChm.UHM.linkBoxCancel();
+    };
+
+    uiElement = document.getElementById('menuSave');
+    uiElement.onclick = () => {
+	NgChm.UHM.saveHeatMapChanges();
+    };
+
+    uiElement = document.getElementById('menuLink');
+    uiElement.onclick = () => {
+	NgChm.UHM.openLinkoutHelp();
+    };
+
+    uiElement = document.getElementById('menuHelp');
+    uiElement.onclick = () => {
+	NgChm.UHM.openHelp(this);
+    };
+
+    uiElement = document.getElementById('menuAbout');
+    uiElement.onclick = () => {
+	NgChm.UHM.widgetHelp();
+    };
+
+})();
+
+// Add a global event handler for processing mouseover and mouseout events.
+//
+// The handler adds the data-hovering property to an HTML element while the
+// mouse is hovering over the element and removes it when the mouse moves away.
+//
+// The handler will display and clear tooltips if the mouse hovers over an element long enough.
+// Add a tooltip to an HTML element by setting the data-tooltip property.
+(function() {
+    document.addEventListener("mouseover", mouseover, { passive: true });
+    document.addEventListener("mouseout", mouseout, { passive: true });
+    document.addEventListener("click", click, { passive: true });
+
+    function click (ev) {
+	// Clear any (pending) tooltips if the user clicks on the element.
+	NgChm.UHM.hlpC();
+	NgChm.UHM.closeMenu();
+    }
+
+    function mouseout (ev) {
+	delete ev.target.dataset.hovering;
+	if (ev.target.dataset.hasOwnProperty('nohoverImg')) {
+	    ev.target.src = ev.target.dataset.nohoverImg;
+	}
+	NgChm.UHM.hlpC();
+    }
+
+    function mouseover(ev) {
+	ev.target.dataset.hovering = '';
+	if (ev.target.dataset.hasOwnProperty('hoverImg')) {
+	    if (!ev.target.dataset.hasOwnProperty('nohoverImg')) ev.target.dataset.nohoverImg = ev.target.src;
+	    ev.target.src = NgChm.UTIL.imageTable[ev.target.dataset.hoverImg];
+	}
+	if (ev.target.dataset.hasOwnProperty('tooltip')) {
+	    NgChm.UHM.hlp (ev.target, ev.target.dataset.tooltip || ev.target.dataset.intro || ev.target.dataset.title || "Undefined tooltip", 140, 0);
+	}
+    }
+})();
+
 // This function is called when the NgChm receives a message.  It is intended for
 // customizing behavior when the NgChm is included in an iFrame.
 //
@@ -399,24 +510,23 @@ NgChm.UHM.locateHelpBox = function(helptext,mapItem) {
  **********************************************************************************/
 NgChm.UHM.hlp = function(e, text, width, reverse, delay=1500) {
 	NgChm.UHM.hlpC();
-	const helptext = document.createElement('div');
-	helptext.id = 'bubbleHelp';
-	helptext.style.display = "none";
 	NgChm.UHM.detailPoint = setTimeout(function(){
+		const bodyElem = document.querySelector('body');
+		if (!bodyElem) return;
+
 		const elemPos = NgChm.UHM.getElemPosition(e);
-		const bodyElem = document.getElementsByTagName('body')[0];
-		if (bodyElem) {
-			bodyElem.appendChild(helptext);
-		}
+		const title = NgChm.UTIL.newElement('span.title', {}, [NgChm.UTIL.newTxt(e.dataset.title || "")]);
+		const content = NgChm.UTIL.newElement('span.intro', {}, [e.dataset.intro || text]);
+		const helptext = NgChm.UTIL.newElement('div#bubbleHelp', {}, [title,content]);
 		if (reverse !== undefined) {
 			helptext.style.left = (elemPos.left - width) + 'px';
 		} else {
 			helptext.style.left = elemPos.left + 'px';
 		}
 		helptext.style.top = (elemPos.top + 20) + 'px';
-		helptext.style.width = width + 'px';
 		helptext.innerHTML = "<b><font size='2' color='#0843c1'>"+text+"</font></b>";
 		helptext.style.display = "inherit";
+		bodyElem.appendChild(helptext);
 	}, delay);
 }
 
@@ -842,14 +952,14 @@ NgChm.UHM.openMenu = function(e) {
 }
 
 NgChm.UHM.closeMenu = function() {
-	var barMenuBtn = document.getElementById('barMenu_btn');
+	const barMenuBtn = document.getElementById('barMenu_btn');
 	if (barMenuBtn !== null) {
-		if (document.getElementById('barMenu_btn').mouseIsOver < 1) {
-			var menu = document.getElementById('burgerMenuPanel');
+		if (!barMenuBtn.dataset.hasOwnProperty('hovering')) {
+			const menu = document.getElementById('burgerMenuPanel');
 			menu.style.display = 'none';
 		}
 	}
-}
+};
 
 NgChm.UHM.menuOver = function(val) {
 	var menuBtn = document.getElementById('barMenu_btn')
