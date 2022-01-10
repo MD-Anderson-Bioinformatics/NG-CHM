@@ -116,12 +116,24 @@ public class NGCHM_AppGenerator {
 		
     		BufferedReader br = new BufferedReader(new FileReader(args[0] + "chm.html" ));
     		BufferedWriter bw = new BufferedWriter(new FileWriter(args[0] + args[1] ));
+		StringBuffer scriptedLines = new StringBuffer();
+		boolean isScript = false;
      		
     		String line = br.readLine(); 
      		while (line != null) {
      			String htmlString = "";
+			if (line.contains("text/Javascript")) {
+				//Beginning of embedded Javascript in chm.html
+				scriptedLines.append("/* BEGIN chm.html Javascript: */\n");
+				isScript = true;
+			} else if (isScript && line.contains("</script>")) {
+				//End of embedded Javascript in chm.html
+				scriptedLines.append("/* END chm.html Javascript: */\n\n");
+				isScript = false;
+			} else if (isScript) {
+				scriptedLines.append(line + "\n");
     			//For css file - convert it into a string and use javascript to add it to the html document 
-    			if (line.contains("src=\"javascript")){
+			} else if (line.contains("src=\"javascript")){
     				//Ignore
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
@@ -153,6 +165,7 @@ public class NGCHM_AppGenerator {
 					bw.write("var isNgChmAppViewer=true;\n");
 					copyToFile(args[0] + "javascript/ngchm-min.js", bw);
 					copyToFile(args[0] + "javascript/lib/jspdf.min.js", bw);
+					bw.write(scriptedLines.toString());
 					bw.write("</script>\n");
 				}
 				bw.write(line+"\n");

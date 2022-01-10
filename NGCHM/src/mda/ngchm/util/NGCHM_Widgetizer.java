@@ -141,7 +141,7 @@ public class NGCHM_Widgetizer {
     				//Beginning of embedded Javascript in chm.html
     				scriptedLines.append("/* BEGIN chm.html Javascript: */\n");
     				isScript = true;
-    			} else if (line.contains("</script>")) {  
+			} else if (isScript && line.contains("</script>")) {
     				//End of embedded Javascript in chm.html
     				scriptedLines.append("/* END chm.html Javascript: */\n\n");
     				isScript = false;
