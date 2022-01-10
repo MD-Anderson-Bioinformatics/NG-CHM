@@ -2285,16 +2285,19 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		    NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
 		});
 	    }
-	    return mapItem.glManager.check(initDetailContext);
+	    const ready = mapItem.glManager.check(initDetailContext);
+	    if (ready) {
+		const ctx = mapItem.glManager.context;
+		ctx.viewportWidth = mapItem.dataViewWidth+NgChm.DET.calculateTotalClassBarHeight("row");
+		ctx.viewportHeight = mapItem.dataViewHeight+NgChm.DET.calculateTotalClassBarHeight("column");
+		ctx.viewport(0, 0, ctx.viewportWidth, ctx.viewportHeight);
+	    }
+	    return ready;
 
 	    // (Re-)intialize a WebGl context for a detail map.
 	    // Each detail pane uses a different canvas and hence WebGl Context.
 	    // Each detail map uses a single context for the heat map and the covariate bars.
 	    function initDetailContext (manager, ctx, program) {
-
-		ctx.viewportWidth = mapItem.dataViewWidth+NgChm.DET.calculateTotalClassBarHeight("row");
-		ctx.viewportHeight = mapItem.dataViewHeight+NgChm.DET.calculateTotalClassBarHeight("column");
-		ctx.viewport(0, 0, ctx.viewportWidth, ctx.viewportHeight);
 
 		ctx.clear(ctx.COLOR_BUFFER_BIT);
 
