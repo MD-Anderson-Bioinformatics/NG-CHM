@@ -432,6 +432,7 @@ NgChm.UPM.prefsSuccess = function() {
 	//and formally apply all changes to the heat map, re-draw, and exit preferences.
 	NgChm.UPM.bkpColorMaps = null;
 	NgChm.SUM.summaryInit();  
+	NgChm.DMM.resizeDetailMapCanvases ();
 	NgChm.SEL.updateSelections(true);
 	NgChm.UPM.applyDone = true;
 	NgChm.UPM.setMessage("");

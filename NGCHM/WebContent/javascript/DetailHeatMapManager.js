@@ -163,6 +163,20 @@ NgChm.DMM.getMapItemFromEvent = function (e) {
 }
 
 /*********************************************************************************************
+ * FUNCTION:  resizeDetailMapCanvases - Set the size of all detail canvases following a
+ * potential size in change (such as changes to the covariate bars).
+ *********************************************************************************************/
+NgChm.DMM.resizeDetailMapCanvases = function resizeDetailMapCanvases () {
+	const rowBarsWidth = NgChm.DET.calculateTotalClassBarHeight("row");
+	const colBarsHeight = NgChm.DET.calculateTotalClassBarHeight("column");
+	for (let i=0; i<NgChm.DMM.DetailMaps.length; i++) {
+		const mapItem = NgChm.DMM.DetailMaps[i];
+		mapItem.canvas.width =  mapItem.dataViewWidth + rowBarsWidth;
+		mapItem.canvas.height = mapItem.dataViewHeight + colBarsHeight;
+	}
+};
+
+/*********************************************************************************************
  * FUNCTION:  getMapItemFromChm - The purpose of this function is to retrieve a detail heat map 
  * object using the chm. 
  *********************************************************************************************/
