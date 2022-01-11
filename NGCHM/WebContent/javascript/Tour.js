@@ -51,7 +51,7 @@ function showTour (loc) {
 	addTourOfSummaryNGCHM (document, steps);
 	addTourOfDetailNGCHM (document, steps);
     }
-    steps.push ({ title: "End of Tour", intro: "We have briefly highlighted and described the major features of the NG-CHM viewer.<P>Our <A href='https://www.youtube.com/channel/UCADGir2q8IaI9cGQuzjSL9w/playlists'>YouTube channel</A> has a <A href='https://www.youtube.com/playlist?list=PLIBaINv-Qmd05G3Kj7SbBbSAPZrG-H5bq'>playlist of short videos</A> describing and demonstrating key user interface elements." });
+    steps.push ({ title: "End of Tour", intro: "We have briefly highlighted and described the major features of the NG-CHM viewer.<P>Our <A href='https://www.youtube.com/channel/UCADGir2q8IaI9cGQuzjSL9w/playlists' target='_blank'>YouTube channel</A> has a <A href='https://www.youtube.com/playlist?list=PLIBaINv-Qmd05G3Kj7SbBbSAPZrG-H5bq' target='_blank'>playlist of short videos</A> describing and demonstrating key user interface elements." });
     introJs().setOptions({steps}).start();
 }
 
