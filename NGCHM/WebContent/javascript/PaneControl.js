@@ -337,7 +337,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		//display all re-sizers
 		displayResizers ('');
 		//display all containers
-		displayContainers('flex');
+		displayContainers('');
 		//Resize the pane being expanded to fill it's parent container
 		thisPaneParent.style.width = origContainer.width;
 		thisPaneParent.style.height = origContainer.height;
