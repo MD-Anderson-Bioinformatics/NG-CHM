@@ -1112,6 +1112,7 @@ NgChm.createNS('NgChm.LNK');
 	    }
 
 	    const linkoutElement = NgChm.UTIL.newElement ('DIV.linkouts');
+	    loc.pane.dataset.pluginName = plugin.name;
 	    loc.paneTitle.innerText = plugin.name;
 	    loc.pane.appendChild (linkoutElement);
 

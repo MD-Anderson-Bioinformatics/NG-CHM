@@ -1019,8 +1019,22 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	function savePaneLayoutToMapConfig() {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { mapConfig['panel_configuration'] = {} }
 		let layoutToSave = document.getElementById('ngChmContainer');
-		let layoutJSON = domJSON.toJSON(layoutToSave,{absolutePaths:false});
+		let layoutJSON = NgChm.Pane.paneLayout(layoutToSave);
 		mapConfig['panel_configuration']['panel_layout'] = layoutJSON;
+	}
+
+	/**
+	 * Save the summary pane details to mapConfig.
+	 * (This just saves which pane, if any, is the summary pane.)
+	 */
+	function saveSummaryMapInfoToMapConfig() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
+		const pane = NgChm.SUM.chmElement && NgChm.SUM.chmElement.parentElement;
+		if (pane && pane.classList.contains("pane")) {
+			mapConfig.panel_configuration[pane.id] = {
+			    type: 'summaryMap'
+			};
+		}
 	}
 
 	/**
@@ -1064,11 +1078,12 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	*/
 	NgChm.MMGR.saveDataSentToPluginToMapConfig = function(nonce, postedConfig, postedData) {
 		try {
-			var paneId = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement.id
+			var pane = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement
 		} catch(err) {
 			throw "Cannot determine pane for given nonce"
 			return false
 		}
+		const paneId = pane.id;
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
 			mapConfig['panel_configuration'] = {} 
 		}
@@ -1078,6 +1093,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig.panel_configuration[paneId].config = postedConfig;
 		mapConfig.panel_configuration[paneId].data = postedData;
 		mapConfig.panel_configuration[paneId].type = 'plugin';
+		mapConfig.panel_configuration[paneId].pluginName = pane.dataset.pluginName;
 	}
 
 	NgChm.MMGR.removePaneInfoFromMapConfig = function(paneid) {
@@ -1150,6 +1166,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 								// except for mapConfig.  For this entry, add the modified config data.
 								if (keyVal.indexOf('mapConfig') > -1) {
 									savePaneLayoutToMapConfig();
+									saveSummaryMapInfoToMapConfig();
 									saveDetailMapInfoToMapConfig();
 									saveFlickInfoToMapConfig();
 									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConfig));

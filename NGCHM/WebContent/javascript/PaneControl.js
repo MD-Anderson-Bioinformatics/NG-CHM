@@ -15,6 +15,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	//
 
 	// function initializePanes() - call to (re-)initialize pane interface
+	NgChm.Pane.paneLayout = layout;
 	NgChm.Pane.initializePanes = initializePanes;
 	NgChm.Pane.newPane = newPane;
 	NgChm.Pane.resizePane = resizePane;
@@ -22,6 +23,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	NgChm.Pane.DividerControl = DividerControl;
 	NgChm.Pane.resizeHandler = resizeHandler;
 	NgChm.Pane.resetPaneCounter = resetPaneCounter;
+	NgChm.Pane.toggleScreenMode = toggleScreenMode;
+	NgChm.Pane.collapsePane = collapsePane;
 
 	// function findPaneLocation(el) - return PaneLocation containing element el
 	NgChm.Pane.findPaneLocation = findPaneLocation;
@@ -170,6 +173,43 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		return res;
 	}
 
+	// Return a save state specification for the layout of el.
+	// Users should pass the top-level ngChmContainer object.
+	// The function calls itself recursively for subsidiary panes and containers.
+	//
+	// Expanded is set to true for an expanded pane and its width and height are
+	// set to their original values. Similarly, the width and height of its enclosing
+	// container are also set to their original values.
+	function layout (el) {
+	    const details = { id: el.id, width: el.style.width, height: el.style.height };
+	    if (el.classList.contains('pane')) {
+		details.type = 'pane';
+		details.collapsed = el.classList.contains('collapsed');
+		details.expanded = isPaneExpanded && el.style.display !== 'none';
+		if (details.expanded) {
+		    details.width = origPane.width;
+		    details.height = origPane.height;
+		    details.origContainer = origContainer;  // Pass up to enclosing container.
+		}
+		return details;
+	    } else if (el.classList.contains('ngChmContainer')) {
+		details.type = 'container';
+		details.vertical = el.classList.contains('vertical');
+		details.children = [...el.children].map(layout).filter(d => d !== null);
+		details.children.forEach (ch => {
+		    if (ch.origContainer) {
+			details.width = ch.origContainer.width;
+			details.height = ch.origContainer.height;
+			delete ch.origContainer;
+		    }
+		});
+		return details;
+	    } else {
+		// Don't include resizer's etc.
+		return null;
+	    }
+	}
+
 	var panesInitialized = false;
 	// Exported function.
 	// Create the initial panel structure.
@@ -267,6 +307,14 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	let activeContainers = [];
 	let isPaneExpanded = false;
 
+	// Toggle screen mode for the specified pane.
+	function toggleScreenMode (paneId) {
+		const icon = document.getElementById(paneId + "_ScreenMode");
+		if (icon) {
+		    changeScreenMode (icon);
+		}
+	}
+
 	// Initialize DOM IMG element for the screen mode (expand/contract) function.
 	function initializePaneScreenMode (icon, paneId) {
 		icon.id = paneId + "_ScreenMode";
@@ -276,20 +324,19 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		icon.onmouseover = function(e) {
 			NgChm.UHM.hlp(icon, 'Expand/Contract Panel', 120, 0);
 		};
-		icon.addEventListener ('click', function(icon) {
-			changeScreenMode (icon);
+		icon.addEventListener ('click', function(ev) {
+			changeScreenMode (ev.currentTarget);
 		}, true);
 	}
 
 	// Change screen mode and icon button when user invokes functionality.
 	function changeScreenMode (icon) {
-		let iconTarget = icon.currentTarget;
-		let paneId = icon.currentTarget.id.split("_")[0];
+		let paneId = icon.id.split("_")[0];
 		if (isPaneExpanded === true) {
-			icon.currentTarget.src = 'images/iconFullScreen.png';
+			icon.src = 'images/iconFullScreen.png';
 			closeFullScreen(paneId);
 		} else {
-			icon.currentTarget.src = 'images/iconCloseFullScreen.png';
+			icon.src = 'images/iconCloseFullScreen.png';
 			openFullScreen(paneId);
 		}
 	}
@@ -694,9 +741,22 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	const collapsedPanes = [];
 
-	function collapsePane (loc) {
+	function collapsePane (paneLoc) {
 		if (debug) console.log ('collapsePane');
-		loc.pane.classList.add('collapsed');
+		paneLoc.pane.classList.add('collapsed');
+		collapsedPanes.push (paneLoc.pane);
+		let p = paneLoc.pane.firstElementChild;
+		while (p) {
+			if (p !== paneLoc.paneHeader) p.style.display = 'none';
+			p = p.nextElementSibling;
+		}
+		paneLoc.paneTitle.style.display = 'none';
+		paneLoc.paneHeader.style.width = 'fit-content';
+		if (paneLoc.container.classList.contains('vertical')) {
+			paneLoc.pane.style.height = 'fit-content';
+		} else {
+			paneLoc.pane.style.width = 'fit-content';
+		}
 	}
 
 	function expandPane (loc) {
@@ -853,20 +913,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				menuItemDisabled ('Collapse');
 			} else {
 				menuItem ('Collapse', () => {
-					collapsedPanes.push (paneLoc.pane);
 					collapsePane (findPaneLocation(icon));
-					let p = paneLoc.pane.firstElementChild;
-					while (p) {
-						if (p !== paneLoc.paneHeader) p.style.display = 'none';
-						p = p.nextElementSibling;
-					}
-					paneLoc.paneTitle.style.display = 'none';
-					paneLoc.paneHeader.style.width = 'fit-content';
-					if (paneLoc.container.classList.contains('vertical')) {
-						paneLoc.pane.style.height = 'fit-content';
-					} else {
-						paneLoc.pane.style.width = 'fit-content';
-					}
 					if (debug) console.log ({ width: paneLoc.pane.clientWidth, height: paneLoc.pane.clientHeight });
 					const target = getExpandedSibling (paneLoc);
 					if (target == null) {
