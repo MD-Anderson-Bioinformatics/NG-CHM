@@ -38,6 +38,7 @@ NgChm.createNS('NgChm.RecPanes');
 				    delete expanded.dataset.expandedPanel;
 				    NgChm.Pane.toggleScreenMode (expanded.id);
 				}
+				[...document.getElementsByClassName('pane')].forEach(NgChm.Pane.resizePane);
 				NgChm.UTIL.UI.hideLoader();  // Hide loader screen, display NG-CHM.
 			}, 500);
 		} else { // wait for NGCHM to initialize itself
