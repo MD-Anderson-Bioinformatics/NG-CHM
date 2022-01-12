@@ -347,8 +347,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		origPane = {};
 		origContainer = {};
 		activeContainers = [];
-		//Resize the pane to its original size.
-		resizePane (thisPane);
+		//Resize all panes to their original size.
+		[...document.getElementsByClassName('pane')].forEach(resizePane);
 	}
 	
 	//Grab a list of panes and show/hide them all
