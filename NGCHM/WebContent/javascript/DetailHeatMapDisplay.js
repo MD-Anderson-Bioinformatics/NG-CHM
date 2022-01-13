@@ -508,6 +508,60 @@ NgChm.DET.getNearestBoxSize = function (mapItem, sizeToGet) {
 }
 
 /*********************************************************************************************
+ * FUNCTION: getDetailSaveState  -  Return save state required for restoring this detail view.
+ *********************************************************************************************/
+NgChm.DET.getDetailSaveState = function (dm) {
+	// Subtract dataViewBorder from dataViewWidth/Height in case it ever changes.
+	// Such a change may break restoring an identical view.
+	return {
+	    'currentCol': dm.currentCol,
+	    'currentRow': dm.currentRow,
+	    'dataBoxHeight': dm.dataBoxHeight,
+	    'dataBoxWidth': dm.dataBoxWidth,
+	    'dataPerCol': dm.dataPerCol,
+	    'dataPerRow': dm.dataPerRow,
+	    'dataViewWidth': dm.dataViewWidth - NgChm.DET.dataViewBorder,
+	    'dataViewHeight': dm.dataViewHeight - NgChm.DET.dataViewBorder,
+	    'mode': dm.mode,
+	    'type': 'detailMap',
+	    'version': dm.version,
+	    'versionNumber': dm.chm.id.replace('detail_chm',''),
+	};
+};
+
+/*********************************************************************************************
+ * FUNCTION: restoreFromSavedState  -  Restore detail view from saved state.
+ *********************************************************************************************/
+NgChm.restoreFromSavedState = function (mapItem, savedState) {
+	mapItem.currentCol = savedState.currentCol;
+	mapItem.currentRow = savedState.currentRow;
+	mapItem.dataViewWidth = savedState.dataViewWidth + NgChm.DET.dataViewBorder;
+	mapItem.dataViewHeight = savedState.dataViewHeight + NgChm.DET.dataViewBorder;
+	mapItem.dataBoxHeight = savedState.dataBoxHeight;
+	mapItem.dataBoxWidth = savedState.dataBoxWidth;
+	mapItem.dataPerCol = savedState.dataPerCol;
+	mapItem.dataPerRow = savedState.dataPerRow;
+	mapItem.mode = savedState.mode;
+	let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
+	switch (savedState.mode) {
+		case "NORMAL":
+			NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
+			break;
+		case "RIBBONV":
+			NgChm.DEV.detailVRibbon(mapItem);
+			break;
+		case "RIBBONH":
+			NgChm.DEV.detailHRibbon(mapItem);
+			break;
+		case "FULL_MAP":
+			NgChm.DEV.detailFullMap(mapItem);
+			break;
+		default: // just use the 'NORMAL' case for unknown modes
+			NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
+	};
+};
+
+/*********************************************************************************************
  * FUNCTION: getNearestBoxHeight  -  The purpose of this function is to loop zoomBoxSizes to pick the one that 
  * will be large enough to encompass user-selected area.
  *********************************************************************************************/

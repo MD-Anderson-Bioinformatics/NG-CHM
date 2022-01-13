@@ -218,30 +218,7 @@ NgChm.createNS('NgChm.RecPanes');
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
-			mapItem.currentCol = paneInfo.currentCol;
-			mapItem.currentRow = paneInfo.currentRow;
-			mapItem.dataBoxHeight = paneInfo.dataBoxHeight;
-			mapItem.dataBoxWidth = paneInfo.dataBoxWidth;
-			mapItem.dataPerCol = paneInfo.dataPerCol;
-			mapItem.dataPerRow = paneInfo.dataPerRow;
-			mapItem.mode = paneInfo.mode;
-			let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(paneInfo.dataBoxWidth);
-			switch (paneInfo.mode) {
-				case "NORMAL":
-					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
-					break;
-				case "RIBBONV":
-					NgChm.DEV.detailVRibbon(mapItem);
-					break;
-				case "RIBBONH":
-					NgChm.DEV.detailHRibbon(mapItem);
-					break;
-				case "FULL_MAP":
-					NgChm.DEV.detailFullMap(mapItem);
-					break;
-				default: // just use the 'NORMAL' case for unknown modes
-					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
-			}
+			NgChm.restoreFromSavedState (mapItem, paneInfo);
 			NgChm.SEL.updateSelection(mapItem);
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
 		} else if (config.type == 'plugin') {
