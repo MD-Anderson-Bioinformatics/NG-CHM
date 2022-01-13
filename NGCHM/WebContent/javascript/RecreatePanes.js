@@ -186,6 +186,11 @@ NgChm.createNS('NgChm.RecPanes');
 		NgChm.SRCH.setAxisSearchResultsVec('Row', rowSelections);
 		let colSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['col'];
 		NgChm.SRCH.setAxisSearchResultsVec('Column', colSelections);
+
+		let dendroBars = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['selectedRowDendroBars'];
+		if (dendroBars) NgChm.SUM.rowDendro.restoreSelectedBars(dendroBars);
+		dendroBars = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['selectedColDendroBars'];
+		if (dendroBars) NgChm.SUM.colDendro.restoreSelectedBars(dendroBars);
 	}
 
 	/**

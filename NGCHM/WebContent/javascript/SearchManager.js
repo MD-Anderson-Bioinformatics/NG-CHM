@@ -35,6 +35,13 @@ NgChm.createNS('NgChm.SRCH');
      * SEARCH FUNCTIONS SECTION
      ***********************************************************/
 
+    NgChm.SRCH.getSearchSaveState = function () {
+	const state = {};
+	state['row'] = NgChm.SRCH.getAxisSearchResults('row');
+	state['col'] = NgChm.SRCH.getAxisSearchResults('col');
+	return state;
+    };
+
     /**********************************************************************************
      * FUNCTION - clearAllSearchResults: This function initializes/resets all
      * search-related state variables.

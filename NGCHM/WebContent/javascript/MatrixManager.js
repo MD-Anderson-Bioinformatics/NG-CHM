@@ -1135,13 +1135,23 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig.panel_configuration[paneId].dataFromPlugin = dataFromPlugin;
 	}
 
-	NgChm.MMGR.saveSelectionsToMapConfig = function() {
+	function saveSelectionsToMapConfig () {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
 			mapConfig['panel_configuration'] = {};
 		}
-		mapConfig.panel_configuration['selections'] = {};
-		mapConfig.panel_configuration.selections['row'] = NgChm.SRCH.getAxisSearchResults('row');
-		mapConfig.panel_configuration.selections['col'] = NgChm.SRCH.getAxisSearchResults('col');
+		mapConfig.panel_configuration['selections'] = NgChm.SRCH.getSearchSaveState();
+		if (NgChm.SUM.rowDendro) {
+		    const bars = NgChm.SUM.rowDendro.saveSelectedBars();
+		    if (bars.length > 0) {
+			mapConfig.panel_configuration['selections']['selectedRowDendroBars'] = bars;
+		    }
+		}
+		if (NgChm.SUM.colDendro) {
+		    const bars = NgChm.SUM.colDendro.saveSelectedBars();
+		    if (bars.length > 0) {
+			mapConfig.panel_configuration['selections']['selectedColDendroBars'] = bars;
+		    }
+		}
 	}
 
 	function zipSaveMapProperties() {
@@ -1169,6 +1179,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 									saveSummaryMapInfoToMapConfig();
 									saveDetailMapInfoToMapConfig();
 									saveFlickInfoToMapConfig();
+									saveSelectionsToMapConfig();
 									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConfig));
 								} else {
 									zipFetchText(entry, fileIndex, addTextContents);

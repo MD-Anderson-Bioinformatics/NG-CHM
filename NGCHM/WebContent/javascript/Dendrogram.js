@@ -599,6 +599,15 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 	this.getSelectedBars = function(){
 		return this.selectedBars;
 	};
+	this.saveSelectedBars = function(bars) {
+		// Get selected bars for adding to saved state.
+		return this.selectedBars.map(bar => bar.idx);
+	}
+	this.restoreSelectedBars = function(bars) {
+		// Restore selected bars from saved state.
+		// Saved state is assumed to include the resulting selection separately.
+		this.selectedBars = bars.map(idx => this.bars[idx]);
+	};
 	this.clearSelectedBars = function(){
 		this.selectedBars = [];
 	};
