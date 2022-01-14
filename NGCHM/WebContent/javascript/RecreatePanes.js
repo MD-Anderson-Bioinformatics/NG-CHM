@@ -284,6 +284,7 @@ NgChm.createNS('NgChm.RecPanes');
 			let data = paneInfo.data;
 			let selectedLabels = getSelectedLabels(config.axes[0].axisName);
 			data.axes[0].selectedLabels = selectedLabels;
+			pluginInstance.params = config;
 			NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
 			let dataFromPlugin = paneInfo.dataFromPlugin;
 			NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
