@@ -2616,6 +2616,7 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 			savedChmElements = elements;
 		}
 		NgChm.DMM.RemoveDetailMap(pane.pane.id); 
+		NgChm.SUM.drawLeftCanvasBox ();
 	}
 
 	function resizeDetailPane (loc) {
