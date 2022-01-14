@@ -903,11 +903,12 @@ NgChm.createNS('NgChm.LNK');
 			for (let idx = 0; idx < panePlugins.length; idx++) {
 			    if (panePlugins[idx].name === pp.name) {
 				panePlugins[idx] = pp;
-				return;
+				return pp;
 			    }
 			}
 			// Add new pane plugin if no plugin with the same name already exists.
 			panePlugins.push (pp);
+			return pp;
 		};
 
 		NgChm.LNK.getPanePlugins = function() {
@@ -3031,12 +3032,22 @@ NgChm.createNS('NgChm.LNK');
         NgChm.LNK.loadLinkoutSpec = function loadLinkoutSpec (kind, spec) {
 	   console.log ({ m: 'loadLinkoutSpec', kind, spec });
 	   if (kind === 'panel-plugin') {
-	       // Panel plugin was dropped.  Add plugin to available panel plugins.
-	       NgChm.LNK.registerPanePlugin(spec);
-	       NgChm.UHM.hlp (document.getElementById('barMenu_btn'), 'Added panel plugin ' + spec.name, 150, false, 0);
-	       setTimeout (NgChm.UHM.hlpC, 5000);
+	        // Panel plugin was dropped.  Add plugin to available panel plugins.
+	        const plugin = NgChm.LNK.registerPanePlugin(spec);
+		let panes = document.querySelectorAll(`[data-plugin-name='${spec.name}']`);
+		[...panes].forEach(pane => {
+		    const loc = NgChm.Pane.findPaneLocation(pane);
+		    const iframes = loc.pane.getElementsByTagName('IFRAME');
+		    const oldNonce = iframes.length > 0 ? iframes[0].dataset.nonce : false;
+		    const oldInstance = oldNonce ? NgChm.LNK.getPluginInstance (oldNonce) : null;
+		    NgChm.Pane.emptyPaneLocation (loc);
+		    NgChm.LNK.switchPaneToPlugin (loc, plugin);
+		    if (oldInstance) NgChm.LNK.setPanePluginOptions (pane, oldInstance.params);
+		});
+	        NgChm.UHM.hlp (document.getElementById('barMenu_btn'), 'Added panel plugin ' + spec.name, 150, false, 0);
+	        setTimeout (NgChm.UHM.hlpC, 5000);
 	   } else {
-	       NgChm.LNK.addLinkoutPlugin(kind, spec);
+	        NgChm.LNK.addLinkoutPlugin(kind, spec);
 	   }
 	};
 })(); // end of big IIFE

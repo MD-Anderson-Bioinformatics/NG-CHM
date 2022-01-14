@@ -239,6 +239,14 @@ NgChm.createNS('NgChm.RecPanes');
 					console.error("Specified plugin: ", config.pluginName);
 					throw("Error loading plugin");
 				}
+			} else {
+				// Show brief message about the missing plugin in the panel.
+				const loc = NgChm.Pane.findPaneLocation(pane);
+				loc.pane.dataset.pluginName = config.pluginName;
+				loc.paneTitle.innerText = config.pluginName;
+				const message = document.createElement('DIV');
+				message.innerText = `This restored panel requires the "${config.pluginName}" plugin, which is not available. Adding the plugin will initialize the panel.`;
+				loc.pane.appendChild (message);
 			}
 		} else if (config.type === 'linkout') {
 			let loc = NgChm.Pane.findPaneLocation(pane);
