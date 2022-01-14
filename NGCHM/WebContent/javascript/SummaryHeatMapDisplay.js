@@ -135,28 +135,6 @@ NgChm.SUM.initSummaryData = function() {
 	NgChm.SUM.calcTotalSize();
 };
 
-// Initialize summary information required for drawing summary views.
-//
-NgChm.SUM.initializeSummaryPanel = function () {
-	if (NgChm.SUM.chmElement !== null) {
-		// Execute at most once.
-		return;
-	}
-
-	NgChm.SUM.chmElement = document.getElementById('summary_chm');
-	NgChm.SUM.initSummaryDisplay();
-
-	//Resize summary area for small or skewed maps.
-	NgChm.SUM.canvas.width =  NgChm.SUM.totalWidth;
-	NgChm.SUM.canvas.height = NgChm.SUM.totalHeight;
-	NgChm.SUM.boxCanvas.width =  NgChm.SUM.totalWidth;
-	NgChm.SUM.boxCanvas.height = NgChm.SUM.totalHeight;
-	NgChm.SUM.rCCanvas.height = NgChm.SUM.totalHeight;
-	NgChm.SUM.cCCanvas.width =  NgChm.SUM.totalWidth;
-
-	NgChm.SUM.redrawSummaryPanel ();
-};
-
 NgChm.SUM.redrawSummaryPanel = function() {
 	// Nothing to redraw if never initialized.
 	if (!NgChm.SUM.chmElement) return;
@@ -2016,58 +1994,58 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 	// There is a single summary view that, at any particular time,
 	// may or may not be displayed in a visible pane.
 	// If a pane showing the summary view is switched to something else,
-	// we remove the summary view elements but preserve them in savedChmElements.
+	// we remove the summary view elements but preserve them in DIV#templates.
 	// These elements are then copied back into the DOM when switchPaneToSummary is called.
 
 	// NgChm.SUM.chmElement is set to a DOM element iff the summary NG-CHM is
 	// contained in a visible pane.  If NgChm.SUM.chmElement == null, the summary
 	// NG-CHM is not visible.
 
-	var savedChmElements = [];
-	var firstSwitch = true;
-
 	function switchPaneToSummary (loc) {
 		NgChm.Pane.clearExistingGearDialog(loc.pane.id);
-		if (firstSwitch) {
-			// This is the first time a summary NGCHM is displayed.
-			// Simply move the template element into the target pane.
-			NgChm.Pane.emptyPaneLocation (loc);
-			NgChm.SUM.initializeSummaryPanel();
-			loc.pane.appendChild (NgChm.SUM.chmElement);
-			firstSwitch = false;
-		} else {
-			// The summary NGCHM has already been created.
-			if (savedChmElements.length > 0) {
-				// The summary NGCHM not is currently showing in a pane.
-				NgChm.Pane.emptyPaneLocation (loc);
-			} else {
-				// The summary NGCHM is currently showing in a pane.
-				const oldLoc = NgChm.Pane.findPaneLocation (NgChm.SUM.chmElement);
-				// Check that the current and target panes are different.
-				if (oldLoc.pane === loc.pane) return;
-				// Empty the target pane.
-				NgChm.Pane.emptyPaneLocation (loc);
-				// Remove the summary NGCHM from its current pane
-				// and save contents in savedChmElements.
-				NgChm.Pane.emptyPaneLocation (oldLoc);
-			}
-			// Move the saved summary NGCHM view into the target pane.
-			while (savedChmElements.length > 0) {
-				const el = savedChmElements.shift();
-				if (el.id === 'summary_chm') NgChm.SUM.chmElement = el;
-				loc.pane.appendChild (el);
-			}
+		if (NgChm.SUM.chmElement) {
+			// The summary NGCHM is currently showing in a pane.
+			// Proceed only if the current and target panes are different.
+			const oldLoc = NgChm.Pane.findPaneLocation (NgChm.SUM.chmElement);
+			if (oldLoc.pane === loc.pane) return;
+			// Remove the summary NGCHM from its current pane
+			NgChm.Pane.emptyPaneLocation (oldLoc);
 		}
-		NgChm.SUM.chmElement.style.display = '';
+		NgChm.Pane.emptyPaneLocation (loc);
+		initializeSummaryPanel(loc.pane);
 		NgChm.Pane.setPaneTitle (loc, 'Heat Map Summary');
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptySummaryPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeSummaryPane);
 	}
 
+	// Initialize summary information required for drawing summary views.
+	//
+	function initializeSummaryPanel (pane) {
+		if (NgChm.SUM.chmElement !== null) {
+			// Execute at most once.
+			return;
+		}
+
+		NgChm.SUM.chmElement = document.getElementById('summary_chm');
+		pane.appendChild (NgChm.SUM.chmElement);
+		NgChm.SUM.chmElement.style.display = '';
+		NgChm.SUM.initSummaryDisplay();
+
+		//Resize summary area for small or skewed maps.
+		NgChm.SUM.canvas.width =  NgChm.SUM.totalWidth;
+		NgChm.SUM.canvas.height = NgChm.SUM.totalHeight;
+		NgChm.SUM.boxCanvas.width =  NgChm.SUM.totalWidth;
+		NgChm.SUM.boxCanvas.height = NgChm.SUM.totalHeight;
+		NgChm.SUM.rCCanvas.height = NgChm.SUM.totalHeight;
+		NgChm.SUM.cCCanvas.width =  NgChm.SUM.totalWidth;
+
+		NgChm.SUM.redrawSummaryPanel ();
+	};
+
 	// This function is called when a pane showing the summary NG-CHM is emptied.
-	// Preserve the removed elements and clear NgChm.SUM.chmElement.
+	// Save NgChm.SUM.chmElement in templates and clear it.
 	function emptySummaryPane (pane, elements) {
-		savedChmElements = elements;
+		document.getElementById ('templates').appendChild (NgChm.SUM.chmElement);
 		NgChm.SUM.chmElement = null;
 	}
 
