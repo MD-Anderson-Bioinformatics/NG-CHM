@@ -28,7 +28,7 @@ NgChm.DDR.minDendroHeight = 500;
 NgChm.DDR.minDendroWidth = 500;
 
 NgChm.DDR.clearDendroSelection = function() {
-	if (NgChm.DMM.primaryMap.selectedStart != 0) {
+	if (NgChm.DMM.primaryMap && NgChm.DMM.primaryMap.selectedStart != 0) {
 		NgChm.DMM.primaryMap.selectedStart = 0;
 		NgChm.DMM.primaryMap.selectedStop = 0;
 		NgChm.SUM.rowDendro.clearRibbonMode();
@@ -398,6 +398,8 @@ NgChm.DDR.RowDendrogram = function() {
  */
 NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 
+	const debug = false;
+
 	this.dendroConfig = config;
 	this.dendroData = data;
 	this.numLeaves = numLeaves;
@@ -526,15 +528,17 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 	// Clear ribbon mode for this dendrogram.
 	this.clearRibbonMode = function() {
 		this.ribbonModeBar = -1;
-		NgChm.DMM.primaryMap.selectedStart = 0;
-		NgChm.DMM.primaryMap.selectedStop = 0;
+		if (NgChm.DMM.primaryMap) {
+		    NgChm.DMM.primaryMap.selectedStart = 0;
+		    NgChm.DMM.primaryMap.selectedStop = 0;
+		}
 	};
 
 	// Enter/leave ribbon mode.  Called when the user has clicked near
 	// a bar in the dendrogram.
 	this.setRibbonMode = function (barIndex) {
 		const sameBarClicked = barIndex === this.ribbonModeBar;
-                console.log ('Same bar clicked: ' + sameBarClicked);
+                if (debug) console.log ('Same bar clicked: ' + sameBarClicked);
 		if (sameBarClicked) {
 			this.clearRibbonMode();
 			this.draw();
@@ -555,10 +559,12 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			NgChm.SUM.colDendro.draw();
 
 			// Set start and stop coordinates
-			const rmBar = this.bars[barIndex];
-			NgChm.DMM.primaryMap.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
-			NgChm.DMM.primaryMap.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
-			console.log ({ rmBar, start: NgChm.DMM.primaryMap.selectedStart, stop: NgChm.DMM.primaryMap.selectedStop });
+			if (NgChm.DMM.primaryMap) {
+			    const rmBar = this.bars[barIndex];
+			    NgChm.DMM.primaryMap.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
+			    NgChm.DMM.primaryMap.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
+			    if (debug) console.log ({ rmBar, start: NgChm.DMM.primaryMap.selectedStart, stop: NgChm.DMM.primaryMap.selectedStop });
+			}
 			NgChm.SRCH.showSearchResults();	
 
 			NgChm.DEV.callDetailDrawFunction(this.axis === 'Row' ? 'RIBBONV' : 'RIBBONH');

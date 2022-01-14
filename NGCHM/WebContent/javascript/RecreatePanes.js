@@ -7,30 +7,49 @@ NgChm.createNS('NgChm.RecPanes');
 
 (function(){
 	"use strict";
+	const debug = true;
+
 	NgChm.RecPanes.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
 	NgChm.RecPanes.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
 
 	/**
 	 * Reconstruct the panels from data in the mapConfig.json file
 	 *
-	 * This function combines and if/else with setTmeout in order to wait for the general 
-	 * initialization of the NGCHM to complete before attempting to reconstruct the panel layout. 
+	 * This function combines an if/else with setTmeout in order to wait for the plugins to
+	 * complete loading before attempting to reconstruct the panel layout.
 	 * This is a hack.
 	 * TODO: Understand the NGCHM initialization code well enough to not need this hack.
 	 */
-	async function reconstructPanelsFromMapConfig() {
-		if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
-			NgChm.RecPanes.savedInitialDetailPane = document.getElementById('detail_chm');
-			NgChm.RecPanes.mapConfigPanelConfiguration = Object.assign({},NgChm.heatMap.getPanelConfiguration());
-			reconstructPanelLayoutFromMapConfig();
+	function reconstructPanelsFromMapConfig(initialLoc, savedState) {
+
+	    if (debug) console.log("Reconstructing panes");
+	    NgChm.RecPanes.mapConfigPanelConfiguration = Object.assign({}, savedState);
+	    try {
+		    let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
+		    let reconstructedPanelLayout = createLayout(panel_layoutJSON);
+		    NgChm.UTIL.containerElement.replaceChildren(reconstructedPanelLayout.firstChild);
+	    } catch(err) {
+		    console.error("Cannot reconstruct panel layout: "+err);
+		    throw "Error reconstructing panel layout from mapConfig.";
+		    return;
+	    }
+	    addDividerControlsToResizeHelpers();
+	    addResizeHandlersToContainers();
+
+	    waitForPlugins();
+
+	    // Plugin panes require plugins loaded first.
+	    // FIXME: Modify to populate plugin panels after plugins load.
+	    function waitForPlugins () {
+		if (NgChm.LNK.getPanePlugins().length>0) { // FIXME: Assumes there are pane plugins
+			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
-			setSelections();;
-			addDividerControlsToResizeHelpers();
-			addResizeHandlersToContainers();
+			setNextMapNumber();
+			setFlickState();
+			setSelections();  // Set saved results, if any.
+			NgChm.SRCH.doInitialSearch();  // Will override saved results, if requested.
 			NgChm.Pane.resizeNGCHM();
 			NgChm.heatMap.setUnAppliedChanges(false);
-			setFlickState();
-			setNextMapNumber();
 			setTimeout(() => {
 				NgChm.SEL.updateSelections(true);
 				const expanded = document.querySelector("DIV[data-expanded-panel]");
@@ -41,9 +60,11 @@ NgChm.createNS('NgChm.RecPanes');
 				[...document.getElementsByClassName('pane')].forEach(NgChm.Pane.resizePane);
 				NgChm.UTIL.UI.hideLoader();  // Hide loader screen, display NG-CHM.
 			}, 500);
-		} else { // wait for NGCHM to initialize itself
-			setTimeout(reconstructPanelsFromMapConfig, 500);
+		} else { // wait for plugins to load
+			if (debug) console.log("Waiting for plugins to load");
+			setTimeout(waitForPlugins, 500);
 		}
+	    }
 	}
 
 	/**
@@ -97,20 +118,6 @@ NgChm.createNS('NgChm.RecPanes');
 	    } else {
 		console.error ("Attemping to restore unknown saveSpec object: " + saveSpec.type);
 	    }
-	}
-
-	/**
-	 *	Reconstruct ngChmContainer and pane layout.
-	 */ 
-	function reconstructPanelLayoutFromMapConfig() {
-		try {
-			let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
-			let reconstructedPanelLayout = createLayout(panel_layoutJSON);
-			NgChm.UTIL.containerElement.replaceChildren(reconstructedPanelLayout.firstChild);
-		} catch(err) {
-			console.error("Cannot reconstruct panel layout: "+err);
-			throw "Error reconstructing panel layout from mapConfig.";
-		}
 	}
 
 	/**
@@ -194,8 +201,7 @@ NgChm.createNS('NgChm.RecPanes');
 	}
 
 	/**
-	 *	Set a pane's content based on 'textContent' attribute, unless a primary pane (then just
-	 *	return)
+	 *	Set a pane's content based on 'config.type' attribute.
 	 */
 	function setPaneContent(paneid) {
 		let pane = document.getElementById(paneid);
@@ -213,7 +219,7 @@ NgChm.createNS('NgChm.RecPanes');
 			paneInfo.versionNumber == "" ? NgChm.DMM.nextMapNumber = 1 : NgChm.DMM.nextMapNumber = parseInt(paneInfo.versionNumber)-1;
 			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
 			if (paneInfo.version == "P") {
-				NgChm.DMM.switchToPrimary(pane.childNodes[1]);
+				NgChm.DMM.switchToPrimary(pane.children[1]);
 			}
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
@@ -221,7 +227,7 @@ NgChm.createNS('NgChm.RecPanes');
 			NgChm.restoreFromSavedState (mapItem, paneInfo);
 			NgChm.SEL.updateSelection(mapItem);
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
-		} else if (config.type == 'plugin') {
+		} else if (config.type === 'plugin') {
 			let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
 			let specifiedPlugin = customjsPlugins.filter(pc => config.pluginName == pc.name);
 			if (specifiedPlugin.length > 0) {
@@ -234,7 +240,7 @@ NgChm.createNS('NgChm.RecPanes');
 					throw("Error loading plugin");
 				}
 			}
-		} else if (config.type == 'linkout') {
+		} else if (config.type === 'linkout') {
 			let loc = NgChm.Pane.findPaneLocation(pane);
 			NgChm.LNK.switchPaneToLinkouts(loc);
 			let linkoutData = getPaneInfoFromMapConfig(paneid);

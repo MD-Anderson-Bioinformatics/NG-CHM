@@ -67,6 +67,10 @@ NgChm.UTIL.addScripts = function(srcs, callback) {
 // If el is a canvas and styleOnly is not truthy, set the canvas
 // width and height properties to the same width and height as el.
 NgChm.UTIL.setElementPositionSize = function (el, vp, styleOnly) {
+	if (!el || !el.style) {
+	    console.error ("setElemetPositionSize on non-element", el);
+	    let foo = 1;
+	}
 	if (vp.left) el.style.left = vp.left + 'px';
 	if (vp.top) el.style.top = vp.top + 'px';
 	el.style.width = vp.width + 'px';
@@ -409,14 +413,14 @@ NgChm.UTIL.startupChecks = function () {
 NgChm.UTIL.showSummaryPane = true;
 NgChm.UTIL.showDetailPane = true;
 
-// Function configurePanelInterface must called once immediately after the HeatMap configuration is loaded.
+// Function configurePanelInterface must called once immediately after the HeatMap is loaded.
 // It configures the initial Panel user interface according to the heat map preferences and
 // the interface configuration parameters.
 //
 (function() {
 	const debug = false;
 	var firstTime = true;
-	NgChm.UTIL.configurePanelInterface = function configurePanelInterface () {
+	NgChm.UTIL.configurePanelInterface = function configurePanelInterface (mapConfig) {
 		if (NgChm.MMGR.source === NgChm.MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (NgChm.SUM.chmElement) {
@@ -473,16 +477,22 @@ NgChm.UTIL.showDetailPane = true;
 			}
 		    });
 		});
+		NgChm.SUM.initSummaryData();
 		const initialLoc = NgChm.Pane.initializePanes ();
-		if (NgChm.UTIL.showSummaryPane && NgChm.UTIL.showDetailPane) {
+		if (mapConfig.hasOwnProperty('panel_configuration')) {
+			NgChm.RecPanes.reconstructPanelsFromMapConfig(initialLoc, mapConfig['panel_configuration']);
+		} else if (NgChm.UTIL.showSummaryPane && NgChm.UTIL.showDetailPane) {
 			const s = NgChm.Pane.splitPane (false, initialLoc);
 			NgChm.Pane.setPanePropWidths (NgChm.heatMap.getDividerPref(), s.child1, s.child2, s.divider);
 			NgChm.SUM.switchPaneToSummary (NgChm.Pane.findPaneLocation(s.child1));
 			NgChm.DET.switchPaneToDetail (NgChm.Pane.findPaneLocation(s.child2));
+			NgChm.SRCH.doInitialSearch();
 		} else if (NgChm.UTIL.showSummaryPane) {
 			NgChm.SUM.switchPaneToSummary (initialLoc);
+			NgChm.SRCH.doInitialSearch();
 		} else if (NgChm.UTIL.showDetailPane) {
 			NgChm.DET.switchPaneToDetail (initialLoc);
+			NgChm.SRCH.doInitialSearch();
 		} 
 	};
 })();
@@ -553,6 +563,8 @@ NgChm.UTIL.convertToArray = function(value) {
 })();
 
 NgChm.UTIL.isBuilderView = false;
+NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
+
 /**********************************************************************************
  * FUNCTION - onLoadCHM: This function performs "on load" processing for the NG_CHM
  * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
@@ -565,7 +577,6 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 	//Run startup checks that enable startup warnings button.
 	NgChm.UTIL.startupChecks();
 	NgChm.UTIL.setDragPanels();
-	NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
 
 
 	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (

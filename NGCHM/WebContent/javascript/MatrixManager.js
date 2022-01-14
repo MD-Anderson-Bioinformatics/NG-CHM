@@ -845,19 +845,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return initialized;
 	}
 
-	//If collectionHome param exists on URL, add "back" button to screen.
-	this.configureButtonBar = function(){
-		var splitButton = document.getElementById("split_btn");
-		if ((splitButton != null) && (fileSrc === NgChm.MMGR.FILE_SOURCE)) {
-			splitButton.style.display = 'none';
-		}
-		var backButton = document.getElementById("back_btn");
-		var url = NgChm.UTIL.getURLParameter("collectionHome");
-		if (url !== "") {
-			backButton.style.display = '';
-		}
-	}
-	
 	this.configSearchCovars = function () {  //TODO Get rid of duplicates
 		var searchOn = document.getElementById('search_on');
 		var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
@@ -889,7 +876,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			opt.value = "row|" + key; 
 			searchOn.appendChild(opt); 
 		}
-	}	
+	};
+
 	this.configureFlick = function(){
 		if (!flickInitialized) {
 			var flicks = document.getElementById("flicks");
@@ -1352,13 +1340,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			NgChm.SEL.currentCol = Number(NgChm.UTIL.getURLParameter("column"))
 		}
 	        NgChm.SEL.setSelectionColors();
-		NgChm.UTIL.configurePanelInterface();
 		document.addEventListener("keydown", NgChm.DEV.keyNavigate);
 
 		addDataLayers(mc);
-		if (mc.hasOwnProperty('panel_configuration')) {
-			NgChm.RecPanes.reconstructPanelsFromMapConfig()
-		}
 	}
 	
 	function prefetchInitialTiles(datalayers, datalevels, levels) {
@@ -1506,6 +1490,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				(haveTileData(NgChm.SEL.getCurrentDL()+"."+NgChm.MMGR.THUMBNAIL_LEVEL+".1.1")) &&
 				 (initialized == 0)) {
 					initialized = 1;
+					configurePageHeader();
+					NgChm.heatMap.configureFlick();
+					NgChm.heatMap.configSearchCovars();
+					NgChm.UTIL.configurePanelInterface(mapConfig);
 					if (!mapConfig.hasOwnProperty('panel_configuration')) {
 					    NgChm.UTIL.UI.hideLoader();
 					}
@@ -1520,7 +1508,31 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			sendAllListeners(event, tile);
 		}
 	}	
-	
+
+	// Configure elements of the page header and top bar that depend on the
+	// loaded NGCHM.
+	function configurePageHeader() {
+		// Show back button if collectionHome specified.
+		const backButton = document.getElementById("back_btn");
+		const url = NgChm.UTIL.getURLParameter("collectionHome");
+		if (url !== "") {
+			backButton.style.display = '';
+		}
+
+		// Set document title if not a local file.
+		if (NgChm.MMGR.source !== NgChm.MMGR.LOCAL_SOURCE) {
+			document.title = NgChm.heatMap.getMapInformation().name;
+		}
+
+		// Populate the header's nameDiv.
+		const nameDiv = document.getElementById("mapName");  
+		let mapName = NgChm.heatMap.getMapInformation().name;
+		if (mapName.length > 30){
+			mapName = mapName.substring(0,27) + "...";
+		}
+		nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
+	}
+
 	//send to all event listeners
 	function sendAllListeners(event, tile){
 		sendAll (event, tile);

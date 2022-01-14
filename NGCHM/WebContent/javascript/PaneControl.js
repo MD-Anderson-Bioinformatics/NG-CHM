@@ -32,9 +32,6 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// function emptyPaneLocation(loc) - remove and return client elements from pane location
 	NgChm.Pane.emptyPaneLocation = emptyPaneLocation;
 
-	// function openDetailPaneLocation(oldLoc, loc.pane.id) - Add new secondary detail pane
-	NgChm.Pane.openDetailPaneLocation = openDetailPaneLocation;
-	
 	// function splitPaneCheck (vertical, loc) - check if OK to split pane
 	NgChm.Pane.splitPaneCheck = splitPaneCheck;
 
@@ -1256,61 +1253,6 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		return clientElements;
 	}
 	
-	function openDetailPaneLocation (loc, newPane) {
-		// Remove all client elements from the pane.
-		const clientElements = [];
-		let pClone = null;	
-		for (let idx = 0; idx < loc.pane.childNodes.length; idx++) {
-			const p = loc.pane.childNodes[idx];
-			if (p !== loc.paneHeader) {
-				pClone = p.cloneNode(true);
-				NgChm.DMM.nextMapNumber++;
-				pClone.id = 'detail_chm' + NgChm.DMM.nextMapNumber;
-				//If primary is collapsed set chm detail of clone to visible
-				if ((pClone.className === 'detail_chm') && (pClone.style.display === 'none')) {
-					pClone.style.display = 'inline-block';
-				}
-				renameElements(pClone);
-				clientElements.push (pClone);
-				NgChm.DMM.AddDetailMap(pClone, newPane);
-				
-			}
-		}
-		// Return remaining client elements to caller.
-		return clientElements;
-	}
-
-	function renameElements (pClone) {
-		// Rename all client elements on the pane.
-		for (let idx = 0; idx < pClone.children.length; idx++) {
-			const p = pClone.children[idx];
-			p.id = p.id + NgChm.DMM.nextMapNumber;
-			if (p.children.length > 0) {
-				let removals = [];
-		        for (let idx2 = 0; idx2 < p.children.length; idx2++) {
-					const q = p.children[idx2];
-					//rename all but label elements and place label elements in a deletion array
-					if ((q.id.includes('rowLabelDiv')) || (q.id.includes('colLabelDiv'))) {
-						q.id = q.id + NgChm.DMM.nextMapNumber;
-					} else {
-						removals.push(q.id);
-					}
-		        }
-		        //strip out all label elements
-		        for (let idx3 = 0; idx3 < removals.length; idx3++) {
-					const rem = removals[idx3];
-			        for (let idx4 = 0; idx4 < p.children.length; idx4++) {
-						const q = p.children[idx4];
-						if (rem === q.id) {
-							q.remove();
-							break;
-						}
-			        }
-		        }
-			}
-		}
-	}
-
 	// Create an initial, immediate child pane of the top-level container.
 	// Used only during initialization of the panel interface.
 	function createInitialPane () {
