@@ -42,7 +42,7 @@
  * minimized custom.js file is added to the document body element as the
  * value of the ngchm-custom-file data attribute.
  *
- * Note: images referenced in the custom.js file and not automatically copied to
+ * Note: images referenced in the custom.js file are not automatically copied to
  *       the output directory.
  *
  * Usage:
@@ -95,7 +95,7 @@ public class NGCHM_ServerAppGenerator {
 			fileInputStreamReader.read(bytes);
 			fileInputStreamReader.close();
 		} catch (Exception e) {
-			System.out.println("Usage: Error reading file bytes " + fileName);
+			System.out.println("ServerAppGenerator: Error reading file bytes " + fileName);
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -106,7 +106,7 @@ public class NGCHM_ServerAppGenerator {
 	 * METHOD: encodeFileToBase64Binary
 	 *
 	 * This method reads in an image file and converts it to a base64-encoded
-	 * string representation.  It is not current used.  It is kept in case
+	 * string representation.  It is not currently used.  It is kept in case
 	 * we ever need it again.
 	 ******************************************************************/
 	private static String encodeFileToBase64Binary(String image) {
@@ -115,7 +115,7 @@ public class NGCHM_ServerAppGenerator {
 			byte[] bytes = getFileBytes (image);
 			encodedfile = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
 		} catch (Exception e) {
-			System.out.println("Usage: Error encoding image " + image);
+			System.out.println("ServerAppGenerator: Error encoding image " + image);
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -141,7 +141,7 @@ public class NGCHM_ServerAppGenerator {
 				hashtext = "0" + hashtext;
 			}
 		} catch (Exception e) {
-			System.out.println("Usage: Error digesting file " + fileName);
+			System.out.println("ServerAppGenerator: Error digesting file " + fileName);
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -168,7 +168,7 @@ public class NGCHM_ServerAppGenerator {
 				outputStream.write(buffer, 0, bytesRead);
 			}
 		} catch (Exception e) {
-			System.out.println("Usage: Error copying file " + inputFile + " to " + outputFile);
+			System.out.println("ServerAppGenerator: Error copying file " + inputFile + " to " + outputFile);
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -265,6 +265,7 @@ public class NGCHM_ServerAppGenerator {
 		}
 		errorReader.close();
 
+		/* Rename minified file to include its digest in name. */
 		String digest = getFileDigest(tmpFile);
 		String minFile = prefix + digest + suffix;
 		File tmp = new File(tmpFile);
@@ -272,6 +273,7 @@ public class NGCHM_ServerAppGenerator {
 		if (!min.exists()) {
 		    tmp.renameTo(min);
 		}
+
 	        System.out.println (srcFile + " => " + minFile);
 		return minFile;
 	}
@@ -366,7 +368,7 @@ public class NGCHM_ServerAppGenerator {
 	 * The generated Javascript is minified and given a name that includes
 	 * a SHA-1 digest of its contents.
 	 *
-	 * A script element referencing the new Javascript  file is output to the BufferedWriter
+	 * A script element referencing the new Javascript file is output to the BufferedWriter
 	 * for the chm.html file being output.
 	 *
 	 ******************************************************************/
@@ -414,6 +416,12 @@ public class NGCHM_ServerAppGenerator {
 		bw.write("<script defer src='" + minChunkFile + "'></script>\n");
 	}
 
+	/*******************************************************************
+	 * METHOD: testDirectory
+	 *
+	 * Create directory at path if it doesn't already exist.
+	 *
+	 ******************************************************************/
 	private static void testDirectory (String path)
 	{
 		File directory = new File (path);
@@ -442,25 +450,28 @@ public class NGCHM_ServerAppGenerator {
 			System.out.println("Usage: NGCHM_ServerAppGenerator <web directory> <output directory> <closure.jar path>");
 			System.exit(1);
 		}
+		final String sourceDir = args[0];
+		final String outputDir = args[1];
+		final String closureJar = args[2];
 
-		if (args[0].equals(args[1])) {
+		if (sourceDir.equals(outputDir)) {
 			System.out.println("Error: <web directory> must differ from <output directory>");
 			System.exit(1);
 		}
 
 		// Check that the output directories exist and maken them if not.
-		testDirectory (args[1]);
-		testDirectory (args[1] + "/images");
-		testDirectory (args[1] + "/css");
-		testDirectory (args[1] + "/javascript");
+		testDirectory (outputDir);
+		testDirectory (outputDir + "/images");
+		testDirectory (outputDir + "/css");
+		testDirectory (outputDir + "/javascript");
 
 		// Process custom javascript early so we know the name of the minified custom.js.
 		// We will add a ngchm-custom-file data attribute to the document body so that the
 		// Javascript can determine its location.
 		String customFile = "";
 		try {
-			String srcFile = args[0] + "/javascript/custom/custom.js";
-			customFile = minify (srcFile, args[1], "javascript/custom-", ".js", args[2]);
+			String srcFile = sourceDir + "/javascript/custom/custom.js";
+			customFile = minify (srcFile, outputDir, "javascript/custom-", ".js", closureJar);
 		} catch (Exception e) {
 			System.out.println("NGCHM_ServerAppGenerator failed when processing javascript/custom/custom.js");
 			e.printStackTrace();
@@ -469,8 +480,8 @@ public class NGCHM_ServerAppGenerator {
 
 
 		try {
-			BufferedReader br = new BufferedReader(new FileReader(args[0] + "chm.html" ));
-			BufferedWriter bw = new BufferedWriter(new FileWriter(args[1] + "chm.html" ));
+			BufferedReader br = new BufferedReader(new FileReader(sourceDir + "chm.html" ));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(outputDir + "chm.html" ));
 			int chunkNumber = 1;
 			StringBuffer scriptedLines = new StringBuffer();
 			StringBuffer cssLines = new StringBuffer();
@@ -489,20 +500,20 @@ public class NGCHM_ServerAppGenerator {
 				} else if (isScript) {
 					scriptedLines.append(line + "\n");
 				} else if (line.contains("NEW CHUNK") && (scriptedLines.length() > 0)) {
-					outputChunk (chunkNumber, scriptedLines, args[1], bw, args[2]);
+					outputChunk (chunkNumber, scriptedLines, outputDir, bw, closureJar);
 					chunkNumber++;
 					scriptedLines.setLength(0);
 				} else if (line.contains("src=\"javascript")){
 					// Add to current chunk.
 					String jsFile = line.substring(line.indexOf("src=\"")+5,line.indexOf("?"));
-					scriptedLines.append (readFileAsString (args[0], args[1], jsFile));
+					scriptedLines.append (readFileAsString (sourceDir, outputDir, jsFile));
 				}  else if (line.contains("<link rel=\"stylesheet")) {
 					String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
 					if (line.contains("<!--DEFER-->")) {
 						// Save css to be added into html file later.
-						cssLines.append (readStyleAsString(args[0], args[1], cssFile));
+						cssLines.append (readStyleAsString(sourceDir, outputDir, cssFile));
 					} else {
-						injectInlineCSS (cssFile, args[0], args[1], bw);
+						injectInlineCSS (cssFile, sourceDir, outputDir, bw);
 					}
 				} else if (line.contains("<body")) {
 					if (customFile.length() > 0) {
@@ -513,12 +524,12 @@ public class NGCHM_ServerAppGenerator {
 				} else if (line.contains("</body>")) {
 					// Write any remaining javascript just before closing body tag.
 					if (scriptedLines.length() > 0) {
-						outputChunk (chunkNumber, scriptedLines, args[1], bw, args[2]);
+						outputChunk (chunkNumber, scriptedLines, outputDir, bw, closureJar);
 						chunkNumber++;
 					}
 					// Inject any deferred CSS.
 					if (cssLines.length() > 0) {
-						injectDeferredCSS (chunkNumber, cssLines, args[1], bw, args[2]);
+						injectDeferredCSS (chunkNumber, cssLines, outputDir, bw, closureJar);
 						chunkNumber++;
 						cssLines.setLength(0);
 					}
@@ -526,7 +537,7 @@ public class NGCHM_ServerAppGenerator {
 					bw.write(line+"\n");
 				} else {
 					//This is standard HTML, write out to html string
-					copyLineAndImages (line, args[0], args[1]);
+					copyLineAndImages (line, sourceDir, outputDir);
 					bw.write(line+"\n");
 				}
 				line = br.readLine();
