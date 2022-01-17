@@ -25,9 +25,12 @@
  * Javascript file that is loaded after all others.
  *
  * Javascript files included by chm.html are concatenated into large "chunks"
- * and passed through the closure compiler to minimize their size.  The
+ * and optionally passed through the closure compiler to minimize their size.  The
  * start of a new chunk is specified by including a line containing the HTML
  * comment <!-- NEW CHUNK --> before the first script tag of the new chunk.
+ * Javascript files are minimized by default. To prevent minimization, for example
+ * to preserve copyright notices or if the file is already minimized, include
+ * the HTML comment <!--PRESERVE--> on the line that includes the script.
  *
  * No transformations to included images are performed by this tool.
  * However, all referenced images are copied to the output directory under "/images".
@@ -178,7 +181,7 @@ public class NGCHM_ServerAppGenerator {
 	 * Static members imageFiles and imageCounts.
 	 *
 	 * These two lists are used to count the number of distinct times each
-	 * image is references in the source files.  imageCounts[idx] is the
+	 * image is referenced in the source files.  imageCounts[idx] is the
 	 * number of times imageFiles[idx] has been referenced.
 	 ******************************************************************/
 	private static List<String> imageFiles = new ArrayList<String>(100);
@@ -190,7 +193,9 @@ public class NGCHM_ServerAppGenerator {
 	 * This method copies any image referenced on line from the inputDir
 	 * to the outDir and its reference count is incremented.
 	 ******************************************************************/
-	private static void copyLineAndImages (String line, String inputDir, String outputDir) throws Exception {
+	private static void copyLineAndImages (String line, String inputDir, String outputDir)
+		throws Exception
+	{
 		if (line.contains("images/")) {
 			// Copy any images on line to output directory.
 			String toks[] = line.split(" ");
@@ -231,23 +236,21 @@ public class NGCHM_ServerAppGenerator {
 	}
 
 	/*******************************************************************
-	 * METHOD: minify
+	 * METHOD: minifyFile
 	 *
 	 * This method minimizes the Javascript source file srcFile using the
 	 * closure compiler at the SIMPLE_OPTIMIZATIONS level.
-	 * The minimized output file is written to the outDir directory.
-	 * The name of the output file is formed by concatenating the supplied prefix,
-	 * the SHA-1 digest of the file's contents, and the supplied suffix.
+	 *
+	 * The minimized output is returned.
+	 *
 	 * Error/warning messages written by the closure compiler to its
 	 * standard error are output to the console.
 	 *
-	 * The name of the minified file is returned.
-	 *
 	 ******************************************************************/
-	public static String minify (String srcFile, String outDir, String prefix, String suffix, String closure)
+	public static String minifyFile (String srcFile, String outDir, String closure)
 		throws FileNotFoundException, IOException
 	{
-		String tmpFile = outDir + "/tmp.min" + suffix;
+		String tmpFile = outDir + "/tmp.min.js";
 		String[] cmd = { "java", "-jar", closure,
 		                 srcFile,
 			         "--compilation_level", "SIMPLE_OPTIMIZATIONS",
@@ -265,17 +268,81 @@ public class NGCHM_ServerAppGenerator {
 		}
 		errorReader.close();
 
-		/* Rename minified file to include its digest in name. */
-		String digest = getFileDigest(tmpFile);
-		String minFile = prefix + digest + suffix;
+		StringBuffer strBuff = new StringBuffer();
+
+		BufferedReader br = new BufferedReader(new FileReader(tmpFile));
+		line = br.readLine();
+		while (line != null) {
+			strBuff.append(line+"\n");
+			line = br.readLine();
+		}
+		br.close();
+		return strBuff.toString();
+	}
+
+	/*******************************************************************
+	 * METHOD: minifyString
+	 *
+	 * This method minimizes the Javascript in string src using the
+	 * closure compiler at the SIMPLE_OPTIMIZATIONS level.
+	 *
+	 * The minimized output is returned as a string.
+	 *
+	 ******************************************************************/
+	public static String minifyString (String src, String outDir, String closure)
+		throws FileNotFoundException, IOException
+	{
+		String tmpFile = outDir + "/minify-tmp.js";
+		BufferedWriter cw = new BufferedWriter(new FileWriter(tmpFile));
+		cw.write(src);
+		cw.close();
+		String minjs = minifyFile (tmpFile, outDir, closure);
+
 		File tmp = new File(tmpFile);
-		File min = new File(outDir + "/" + minFile);
-		if (!min.exists()) {
-		    tmp.renameTo(min);
+		tmp.delete();
+
+		return minjs;
+	}
+
+	/*******************************************************************
+	 * METHOD: createChunk
+	 *
+	 * This method concatenates a list of optionally minimized Javascript
+	 * strings into a file written to outDir.
+	 *
+	 * The name of the output file is formed by concatenating the supplied prefix,
+	 * the SHA-1 digest of the file's contents, and the supplied suffix.
+	 *
+	 * The list of strings is cleared.
+	 * The name of the generated file is returned.
+	 *
+	 ******************************************************************/
+	public static String createChunk (List<String> pieces, String outDir, String prefix, String suffix)
+		throws IOException
+	{
+		String tmpFile = outDir + prefix + "tmp" + suffix;
+		BufferedWriter cw = new BufferedWriter(new FileWriter(tmpFile));
+
+		/* Output all chunk pieces to chunk file. */
+		for (int i = 0; i < pieces.size(); i++) {
+			cw.write(pieces.get(i));
+		}
+		cw.close();
+		pieces.clear();
+
+		/* Rename chunk file to include its digest in name. */
+		String digest = getFileDigest(tmpFile);
+		String chunkFile = prefix + digest + suffix;
+		File tmp = new File(tmpFile);
+		File chunk = new File(outDir + "/" + chunkFile);
+		if (chunk.exists()) {
+		    // Preserve date etc. of the existing file.
+		    tmp.delete();
+		} else {
+		    tmp.renameTo(chunk);
 		}
 
-	        System.out.println (srcFile + " => " + minFile);
-		return minFile;
+		return chunkFile;
 	}
 
 	/*******************************************************************
@@ -360,19 +427,15 @@ public class NGCHM_ServerAppGenerator {
 	}
 
 	/*******************************************************************
-	 * METHOD: injectDeferredCSS
+	 * METHOD: minifyDeferredCSS
 	 *
 	 * This method creates a minified Javascript module for injecting
 	 * deferred CSS into the document's head element.
 	 *
-	 * The generated Javascript is minified and given a name that includes
-	 * a SHA-1 digest of its contents.
-	 *
-	 * A script element referencing the new Javascript file is output to the BufferedWriter
-	 * for the chm.html file being output.
+	 * The generated Javascript is returned.
 	 *
 	 ******************************************************************/
-	public static void injectDeferredCSS (int chunkNumber, StringBuffer css, String serverDir, BufferedWriter bw, String closure)
+	public static String minifyDeferredCSS (StringBuffer css, String serverDir, String closure)
 		throws FileNotFoundException, IOException
 	{
 		String js = "(function() {\n"
@@ -381,39 +444,24 @@ public class NGCHM_ServerAppGenerator {
 		          + "css.textContent='" + css.toString() + "';\n"
 		          + "document.head.appendChild(css);\n"
 		          + "})()\n";
-
-		String chunkFile = serverDir + "/javascript/chunk" + chunkNumber + ".js";
-		BufferedWriter cw = new BufferedWriter(new FileWriter(chunkFile));
-		cw.write(js);
-		cw.close();
-		String minChunkFile = minify (chunkFile, serverDir, "javascript/ngchm-", ".js", closure);
-
-		bw.write("<script defer src='" + minChunkFile + "'></script>\n");
+		return minifyString (js, serverDir, closure);
 	}
 
 	/*******************************************************************
 	 * METHOD: outputChunk
 	 *
-	 * This method creates a minified Javascript module for the current
+	 * This method outputs a minified Javascript module for the current
 	 * chunk of accumulated Javascript.
 	 *
-	 * The accumulated Javascript is minified and given a name that includes
-	 * a SHA-1 digest of its contents.
-	 *
-	 * A script element referencing the new Javascript file is output to the BufferedWriter
-	 * for the chm.html file being output.
+	 * A script element including the new Javascript file is appended to
+	 * the BufferedWriter for the chm.html file being output.
 	 *
 	 ******************************************************************/
-	public static void outputChunk (int chunkNumber, StringBuffer scriptBuffer, String serverDir, BufferedWriter bw, String closure)
+	public static void outputChunk (List<String> pieces, String outputDir, BufferedWriter bw)
 		throws FileNotFoundException, IOException
 	{
-		String chunkFile = serverDir + "/javascript/chunk" + chunkNumber + ".js";
-		BufferedWriter cw = new BufferedWriter(new FileWriter(chunkFile));
-		cw.write(scriptBuffer.toString());
-		cw.close();
-		String minChunkFile = minify (chunkFile, serverDir, "javascript/ngchm-", ".js", closure);
-
-		bw.write("<script defer src='" + minChunkFile + "'></script>\n");
+		String chunkFile = createChunk (pieces, outputDir, "javascript/ngchm-", ".js");
+		bw.write("<script defer src='" + chunkFile + "'></script>\n");
 	}
 
 	/*******************************************************************
@@ -465,13 +513,16 @@ public class NGCHM_ServerAppGenerator {
 		testDirectory (outputDir + "/css");
 		testDirectory (outputDir + "/javascript");
 
+		List<String> chunkPieces = new ArrayList<String>(100);
+
 		// Process custom javascript early so we know the name of the minified custom.js.
 		// We will add a ngchm-custom-file data attribute to the document body so that the
 		// Javascript can determine its location.
 		String customFile = "";
 		try {
 			String srcFile = sourceDir + "/javascript/custom/custom.js";
-			customFile = minify (srcFile, outputDir, "javascript/custom-", ".js", closureJar);
+			chunkPieces.add (minifyFile (srcFile, outputDir, closureJar));
+			customFile = createChunk (chunkPieces, outputDir, "javascript/custom-", ".js");
 		} catch (Exception e) {
 			System.out.println("NGCHM_ServerAppGenerator failed when processing javascript/custom/custom.js");
 			e.printStackTrace();
@@ -479,10 +530,10 @@ public class NGCHM_ServerAppGenerator {
 		}
 
 
+		// Process chm.html
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(sourceDir + "chm.html" ));
 			BufferedWriter bw = new BufferedWriter(new FileWriter(outputDir + "chm.html" ));
-			int chunkNumber = 1;
 			StringBuffer scriptedLines = new StringBuffer();
 			StringBuffer cssLines = new StringBuffer();
 			boolean isScript = false;
@@ -497,19 +548,23 @@ public class NGCHM_ServerAppGenerator {
 					//End of embedded Javascript in chm.html
 					scriptedLines.append("/* END chm.html Javascript: */\n\n");
 					isScript = false;
+					chunkPieces.add (minifyString (scriptedLines.toString(), outputDir, closureJar));
 				} else if (isScript) {
 					scriptedLines.append(line + "\n");
-				} else if (line.contains("NEW CHUNK") && (scriptedLines.length() > 0)) {
-					outputChunk (chunkNumber, scriptedLines, outputDir, bw, closureJar);
-					chunkNumber++;
-					scriptedLines.setLength(0);
+				} else if (line.contains("NEW CHUNK") && (chunkPieces.size() > 0)) {
+					outputChunk (chunkPieces, outputDir, bw);
 				} else if (line.contains("src=\"javascript")){
 					// Add to current chunk.
 					String jsFile = line.substring(line.indexOf("src=\"")+5,line.indexOf("?"));
-					scriptedLines.append (readFileAsString (sourceDir, outputDir, jsFile));
+					String content = readFileAsString (sourceDir, outputDir, jsFile);
+					if (line.contains("PRESERVE")) {
+						chunkPieces.add (content);
+					} else {
+						chunkPieces.add (minifyString(content, outputDir, closureJar));
+					}
 				}  else if (line.contains("<link rel=\"stylesheet")) {
 					String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
-					if (line.contains("<!--DEFER-->")) {
+					if (line.contains("DEFER")) {
 						// Save css to be added into html file later.
 						cssLines.append (readStyleAsString(sourceDir, outputDir, cssFile));
 					} else {
@@ -523,15 +578,13 @@ public class NGCHM_ServerAppGenerator {
 					bw.write(line+"\n");
 				} else if (line.contains("</body>")) {
 					// Write any remaining javascript just before closing body tag.
-					if (scriptedLines.length() > 0) {
-						outputChunk (chunkNumber, scriptedLines, outputDir, bw, closureJar);
-						chunkNumber++;
+					if (chunkPieces.size() > 0) {
+						outputChunk (chunkPieces, outputDir, bw);
 					}
 					// Inject any deferred CSS.
 					if (cssLines.length() > 0) {
-						injectDeferredCSS (chunkNumber, cssLines, outputDir, bw, closureJar);
-						chunkNumber++;
-						cssLines.setLength(0);
+						chunkPieces.add(minifyDeferredCSS (cssLines, outputDir, closureJar));
+						outputChunk (chunkPieces, outputDir, bw);
 					}
 					// Close the body.
 					bw.write(line+"\n");
