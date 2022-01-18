@@ -10,6 +10,9 @@ NgChm.UTIL.getURLParameter = function(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||'';
 }
 
+NgChm.UTIL.mapId = NgChm.UTIL.getURLParameter('map');
+NgChm.UTIL.mapNameRef = NgChm.UTIL.getURLParameter('name');
+
 NgChm.UTIL.capitalize = function capitalize (str) {
 	return str.substr(0,1).toUpperCase() + str.substr(1);
 };
@@ -126,7 +129,14 @@ NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
 		});
 	}
 	while (content.length > 0) {
-		el.appendChild (content.shift());
+		let c = content.shift();
+		if (typeof c == "string") {
+		    let tmp = document.createElement('div');
+		    tmp.innerHTML = c;
+		    while (tmp.firstChild) el.appendChild(tmp.firstChild);
+		} else {
+		    el.appendChild (c);
+		}
 	}
 	if (fn) {
 		const x = fn (el);
@@ -162,11 +172,11 @@ NgChm.UTIL.chmResize = function() {
 NgChm.UTIL.redrawCanvases = function () {
     if ((NgChm.UTIL.getBrowserType() !== "Firefox") && (NgChm.heatMap !== null)) {
         NgChm.SUM.drawHeatMap();
-        NgChm.DET.setDrawDetailTimeout (NgChm.DET.redrawSelectionTimeout);
-        if (NgChm.SUM.rCCanvas.width > 0) {
+        NgChm.DET.setDrawDetailsTimeout (NgChm.DET.redrawSelectionTimeout);
+        if (NgChm.SUM.rCCanvas && NgChm.SUM.rCCanvas.width > 0) {
             NgChm.SUM.drawRowClassBars();
         }
-        if (NgChm.SUM.cCCanvas.height > 0) {
+        if (NgChm.SUM.cCCanvas && NgChm.SUM.cCCanvas.height > 0) {
             NgChm.SUM.drawColClassBars();
         }
     }
@@ -259,12 +269,16 @@ NgChm.UTIL.getShownLabels = function (axis) {
  * label is in excess, the first 9 and last 8 characters will be written out 
  * separated by ellipsis (...);
  **********************************************************************************/
-NgChm.UTIL.getLabelText = function(text,type) { 
+NgChm.UTIL.getLabelText = function(text,type,builder) { 
 	var size = parseInt(NgChm.heatMap.getColConfig().label_display_length);
 	var elPos = NgChm.heatMap.getColConfig().label_display_method;
 	if (type.toUpperCase() === "ROW") {
 		size = parseInt(NgChm.heatMap.getRowConfig().label_display_length);
 		elPos = NgChm.heatMap.getRowConfig().label_display_method;
+	}
+	//Done for displaying labels on Summary side in builder
+	if (typeof builder !== 'undefined') {
+		size = 16;
 	}
 	if (text.length > size) {
 		if (elPos === 'END') {
@@ -321,10 +335,11 @@ NgChm.UTIL.setBrowserMinFontSize = function () {
 	  const minMinLabelSize = 5;
 	  var minSettingFound = 0;
 	  var el = document.createElement('div');
-	  document.body.appendChild(el);
 	  el.innerHTML = "<div><p>a b c d e f g h i j k l m n o p q r s t u v w x y z</p></div>";
+	  el.style.position = 'absolute';
 	  el.style.fontSize = '1px';
 	  el.style.width = '64px';
+	  document.body.appendChild(el);
 	  var minimumHeight = el.offsetHeight;
 	  var least = 0;
 	  var most = 64;
@@ -399,16 +414,18 @@ NgChm.UTIL.showDetailPane = true;
 // the interface configuration parameters.
 //
 (function() {
+	const debug = false;
 	var firstTime = true;
-
 	NgChm.UTIL.configurePanelInterface = function configurePanelInterface () {
 		if (NgChm.MMGR.source === NgChm.MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (NgChm.SUM.chmElement) {
 				NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.SUM.chmElement));
 			}
-			if (NgChm.DET.chmElement) {
-				NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.DET.chmElement));
+			if (NgChm.DMM.DetailMaps.length > 0) {
+				for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
+					NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.DMM.DetailMaps[i].chm));
+				}
 			}
 		}
 		// Split the initial pane horizontally and insert the
@@ -418,7 +435,44 @@ NgChm.UTIL.showDetailPane = true;
 		} else {
 			return;
 		}
-		document.getElementById('loader').style.display = 'none';
+		NgChm.UTIL.UI.showLoader("Configuring interface...");
+		//
+		// Define the DROP TARGET and set the drop event handler(s).
+		if (debug) console.log ('Configuring drop event handler');
+		const dropTarget = document.getElementById('droptarget');
+		function handleDropData (txt) {
+		       if (debug) console.log ({ m: 'Got drop data', txt });
+		       const j = JSON.parse (txt);
+		       if (j && j.type === 'linkout.spec' && j.kind && j.spec) {
+			   NgChm.LNK.loadLinkoutSpec (j.kind, j.spec);
+		       }
+		}
+		['dragenter','dragover','dragleave','drop'].forEach(eventName => {
+		    dropTarget.addEventListener(eventName, function dropHandler(ev) {
+		        ev.preventDefault();
+			ev.stopPropagation();
+			if (eventName == 'drop') {
+			    if (debug) console.log({ m: 'drop related event', eventName, ev });
+			    const dt = ev.dataTransfer;
+			    const files = dt.files;
+			    ([...files]).forEach(file => {
+			        if (debug) console.log ({ m: 'dropFile', file });
+				if (file.type == 'application/json') {
+				    const reader = new FileReader();
+				    reader.onloadend = () => { handleDropData (reader.result); };
+				    reader.readAsText(file);
+				}
+			    });
+			    const txt = dt.getData("Application/json");
+			    if (txt) handleDropData (txt);
+			    dropTarget.classList.remove('visible');
+			} else if (eventName === 'dragenter') {
+			    dropTarget.classList.add('visible');
+			} else if (eventName === 'dragleave') {
+			    dropTarget.classList.remove('visible');
+			}
+		    });
+		});
 		const initialLoc = NgChm.Pane.initializePanes ();
 		if (NgChm.UTIL.showSummaryPane && NgChm.UTIL.showDetailPane) {
 			const s = NgChm.Pane.splitPane (false, initialLoc);
@@ -429,7 +483,7 @@ NgChm.UTIL.showDetailPane = true;
 			NgChm.SUM.switchPaneToSummary (initialLoc);
 		} else if (NgChm.UTIL.showDetailPane) {
 			NgChm.DET.switchPaneToDetail (initialLoc);
-		}
+		} 
 	};
 })();
 
@@ -493,17 +547,20 @@ NgChm.UTIL.convertToArray = function(value) {
 	//Call functions that enable viewing in IE.
 	NgChm.UTIL.iESupport();
 
-	if (NgChm.MMGR.embeddedMapName === null && NgChm.UTIL.getURLParameter('map') !== '') {
-		NgChm.MMGR.createWebTileLoader();
+	if (NgChm.MMGR.embeddedMapName === null && (NgChm.UTIL.mapId !== '' || NgChm.UTIL.mapNameRef !== '')) {
+		NgChm.MMGR.createWebLoader(NgChm.MMGR.WEB_SOURCE);
 	}
 })();
 
+NgChm.UTIL.isBuilderView = false;
 /**********************************************************************************
  * FUNCTION - onLoadCHM: This function performs "on load" processing for the NG_CHM
  * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
  * viewer.  
  **********************************************************************************/
 NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
+	
+	NgChm.UTIL.isBuilderView = sizeBuilderView;
 	NgChm.UTIL.setBrowserMinFontSize();
 	//Run startup checks that enable startup warnings button.
 	NgChm.UTIL.startupChecks();
@@ -512,17 +569,18 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 
 
 	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
-	if ((NgChm.UTIL.getURLParameter('map') === "") && (NgChm.MMGR.embeddedMapName === null)) {
+	if ((NgChm.UTIL.mapId === "") && (NgChm.UTIL.mapNameRef === "") && (NgChm.MMGR.embeddedMapName === null)) {
 		//In local mode, need user to select the zip file with data (required by browser security)
 		var chmFileItem  = document.getElementById('fileButton');
 		document.getElementById('fileOpen_btn').style.display = '';
 		document.getElementById('detail_buttons').style.display = 'none';
 		chmFileItem.style.display = '';
 		chmFileItem.addEventListener('change', NgChm.UTIL.loadFileModeCHM, false);
+		NgChm.UTIL.UI.showSplashExample();
 	} else {
-		document.getElementById('loader').style.display = '';
+		NgChm.UTIL.UI.showLoader("Loading NG-CHM from server...");
 		//Run from a web server.
-		var mapName = NgChm.UTIL.getURLParameter('map');
+		var mapName = NgChm.UTIL.mapId;
 		var dataSource = NgChm.MMGR.WEB_SOURCE;
 		if ((NgChm.MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) { 
 			mapName = NgChm.MMGR.embeddedMapName;
@@ -539,13 +597,10 @@ NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
 				dataSource = NgChm.MMGR.LOCAL_SOURCE;
 			}
 			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
-			NgChm.heatMap = matrixMgr.getHeatMap(mapName, NgChm.SUM.processSummaryMapUpdate);
-			NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+			NgChm.heatMap = matrixMgr.getHeatMap(mapName, [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate]);
 		}
  	} 
-	document.getElementById("detail_canvas").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
-	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.SEL.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
-	document.getElementById("detail_canvas").focus();
+	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
 };
 
 /**********************************************************************************
@@ -558,7 +613,10 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		NgChm.UTIL.loadBlobModeCHM(sizeBuilderView)
 		return;
 	}
-	
+	if (NgChm.UTIL.isValidURL(NgChm.MMGR.embeddedMapName) === true) {
+		NgChm.UTIL.loadCHMFromURL(sizeBuilderView)
+		return;
+	}
 	//Else, fetch the .ngchm file
 	var req = new XMLHttpRequest();
 	req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName);
@@ -567,7 +625,7 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 		if (req.readyState == req.DONE) {
 			if (req.status != 200) {
 				console.log('Failed in call to get NGCHM from server: ' + req.status);
-				document.getElementById('loader').innerHTML = "Failed in call to get NGCHM from server";
+				NgChm.UTIL.UI.showLoader("Failed to get NGCHM from server");
 			} else {
 				var chmBlob  =  new Blob([req.response],{type:'application/zip'});  // req.response;
 				var chmFile  =  new File([chmBlob], NgChm.MMGR.embeddedMapName);
@@ -585,6 +643,25 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 }
 
 /**********************************************************************************
+ * FUNCTION - loadCHMFromURL: Works kind of like local mode but works when javascript
+ * passes in the ngchm as a blob.
+ **********************************************************************************/
+NgChm.UTIL.loadCHMFromURL = function (sizeBuilderView) {
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', NgChm.MMGR.embeddedMapName, true);
+	xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+	xhr.responseType = 'blob';
+	xhr.onload = function(e) {
+	  if (this.status == 200) {
+	    var myBlob = this.response;
+		NgChm.UTIL.resetCHM();
+		NgChm.UTIL.displayFileModeCHM(myBlob,sizeBuilderView);
+	  }
+	};
+	xhr.send();
+}
+
+/**********************************************************************************
  * FUNCTION - loadCHMFromBlob: Works kind of like local mode but works when javascript
  * passes in the ngchm as a blob.
  **********************************************************************************/
@@ -599,7 +676,7 @@ NgChm.UTIL.loadBlobModeCHM = function (sizeBuilderView) {
  * file mode and  user selects the chm data .zip file.
  **********************************************************************************/
 NgChm.UTIL.loadFileModeCHM = function () {
-	document.getElementById('loader').style.display = '';
+	NgChm.UTIL.UI.showLoader("Loading NG-CHM from file...");
 	var chmFile  = document.getElementById('chmFile').files[0];
 	var split = chmFile.name.split("."); 
 	if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
@@ -624,7 +701,6 @@ NgChm.UTIL.loadFileModeCHM = function () {
 //
 NgChm.UTIL.editWidget = function editWidget (options) {
 	options = options || [];
-	//console.log ('NgChm.UTIL.editWidget called');
 	if (options.indexOf('noheader') !== -1) {
 		document.getElementById('mdaServiceHeader').classList.add('hide');
 	}
@@ -646,14 +722,10 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	zip.useWebWorkers = false;
 	NgChm.UTIL.resetCHM();
     NgChm.UTIL.initDisplayVars();
-    NgChm.heatMap = matrixMgr.getHeatMap("",  NgChm.SUM.processSummaryMapUpdate, chmFile);
-    NgChm.heatMap.addEventListener(NgChm.DET.processDetailMapUpdate);
+    NgChm.heatMap = matrixMgr.getHeatMap("",  [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate], chmFile);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
-	console.log ('sizeBuilderView set');
 	NgChm.UTIL.showDetailPane = false;
 	NgChm.Pane.showPaneHeader = false;
-	//NgChm.Pane.ngchmContainerWidth = 40;
-	//document.getElementById('ngChmContainer').style.left = '150px';
         NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
     }
 };
@@ -680,15 +752,15 @@ NgChm.UTIL.builderViewSizing = function (event) {
  * from one file-mode heatmap to another
  **********************************************************************************/
 NgChm.UTIL.resetCHM = function () {
-	NgChm.SEL.mode = 'NORMAL';      
-	NgChm.SEL.currentDl = "dl1"; 
+//	NgChm.SEL.mode = 'NORMAL';      
+	NgChm.SEL.setCurrentDL ("dl1");
 	NgChm.SEL.currentRow=null; 
 	NgChm.SEL.currentCol=null; 
-	NgChm.SEL.dataPerRow=null; 
-	NgChm.SEL.dataPerCol=null; 
-	NgChm.SEL.selectedStart=0; 
-	NgChm.SEL.selectedStop=0; 
-	NgChm.SEL.searchItems={};
+//	NgChm.SEL.dataPerRow=null; 
+//	NgChm.SEL.dataPerCol=null; 
+//	NgChm.SEL.selectedStart=0; 
+//	NgChm.SEL.selectedStop=0; 
+	NgChm.SRCH.clearAllSearchResults ();
 	NgChm.SEL.scrollTime = null; 
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;
@@ -711,42 +783,22 @@ NgChm.UTIL.removeElementsByClass = function(className) {
  * to reset screens when a second, third, etc. map is opened.  
  **********************************************************************************/
 NgChm.UTIL.initDisplayVars = function() {
-	NgChm.UTIL.removeElementsByClass("DynamicLabel");
+	NgChm.DMM.nextMapNumber = 1;
 	NgChm.SUM.summaryHeatMapCache = {};
+	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
+	NgChm.SUM.heightScale = 1;
+	NgChm.SUM.colTopItemsWidth = 0;
+	NgChm.SUM.rowTopItemsHeight = 0;
 	NgChm.DET.detailHeatMapCache = {};      
 	NgChm.DET.detailHeatMapLevel = {};      
 	NgChm.DET.detailHeatMapValidator = {};  
+	NgChm.DET.mouseDown = false;
 	NgChm.UTIL.actualAxisLabels = {};
 	NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
-	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	NgChm.DET.colDendro = null;
-	NgChm.DET.rowDendro = null;
-	NgChm.DET.labelElements = {};
-	NgChm.DET.oldLabelElements = {};
-	NgChm.DET.resetLabelLengths();  
-	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
-	NgChm.SUM.heightScale = 1;
-	NgChm.DET.initialized = false;
-	NgChm.DET.dataViewHeight = 506;
-	NgChm.DET.dataViewWidth = 506;
-	NgChm.SUM.colTopItemsWidth = 0;
-	NgChm.SUM.rowTopItemsHeight = 0;
-	NgChm.DET.oldMousePos = [0, 0];
-	NgChm.DET.offsetX = 0;
-	NgChm.DET.offsetY = 0;
-	NgChm.DET.pageX = 0;
-	NgChm.DET.pageY = 0;
-	NgChm.DET.dendroHeight = 105;
-	NgChm.DET.dendroWidth = 105;
-	NgChm.SRCH.currentSearchItem = {};
-	NgChm.DET.labelLastClicked = {};
-	NgChm.DET.mouseDown = false;
-	NgChm.DET.rowLabelLen = 0;
-	NgChm.DET.colLabelLen = 0;
-	NgChm.DET.rowLabelFont = 0;
-	NgChm.DET.colLabelFont = 0;
-	NgChm.DET.colClassLabelFont = 0;
-	NgChm.DET.rowClassLabelFont = 0;
-}
+	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	
+	NgChm.UTIL.removeElementsByClass("DynamicLabel");
+	NgChm.SRCH.clearCurrentSearchItem ();
+};
 
 /**********************************************************************************
  * FUNCTION - shadeColor: This function darken or lighten a color given a percentage.
@@ -779,7 +831,9 @@ NgChm.UTIL.downloadSummaryMapPng = function () {
 
 NgChm.UTIL.downloadSummaryPng = function (e) { 
 	if (typeof e !== 'undefined') {
-		if (e.classList.contains('disabled')) return;
+		if (e.classList.contains('disabled')) {
+			return;
+		}
 	}
     var mapName = NgChm.heatMap.getMapInformation().name;
     var colDCanvas = document.getElementById("column_dendro_canvas");
@@ -823,16 +877,18 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 		var canvas = document.createElement("canvas");
 		var ctx = canvas.getContext("2d");
 		ctx.imageSmoothingEnabled = false;
+		const rowDConfShow = NgChm.heatMap.getRowDendroConfig().show;
+		const colDConfShow = NgChm.heatMap.getColDendroConfig().show;
+		var cDShow = (colDConfShow === 'NONE') || (colDConfShow === 'NA') ? false : true;
+		var rDShow = (rowDConfShow === 'NONE') || (rowDConfShow === 'NA') ? false : true;
 		var mapWidth = width;
 		var mapHeight = height;
 		var cDWidth = width;
-		var cDHeight = height/4;
-		var rDWidth = width/4;
+		var cDHeight = (cDShow === false) ? 0 : height/4;
+		var rDWidth = (rDShow === false) ? 0 : width/4;
 		var rDHeight = height;
 		canvas.width = width + rDWidth;
 		canvas.height= height + cDHeight;
-		var cDShow = (NgChm.heatMap.getColDendroConfig().show === 'ALL') || (NgChm.heatMap.getColDendroConfig().show === 'SUMMARY') ? true : false;
-		var rDShow = (NgChm.heatMap.getRowDendroConfig().show === 'ALL') || (NgChm.heatMap.getRowDendroConfig().show === 'SUMMARY') ? true : false;
 		var mapStartX = 0;
 		var mapStartY = 0;
 		// draw the img into canvas
@@ -853,6 +909,16 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 		callback(canvas, dl);
 };
 
+
+NgChm.UTIL.imageCanvas = function (canvas) {
+	let inMemCanvas = document.createElement('canvas');
+	const inMemCtx = inMemCanvas.getContext('2d');
+	inMemCanvas.width = canvas.width;
+	inMemCanvas.height = canvas.height;
+	inMemCtx.drawImage(canvas, 0, 0);
+	return inMemCanvas;
+}
+
 /**********************************************************************************
  * FUNCTION - scaleSummaryPng: This function scales the summary PNG file down to 
  * the width and height specified (currently this is set to 200x200 pixels).
@@ -860,6 +926,10 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
 	var img = new Image();
     var url = origCanvas.toDataURL('image/png');
+	if (url.length < 10) {
+		NgChm.UHM.systemMessage("Download Thumbnail Warning", "The Summary Pane must be open and visible in the NG-CHM Viewer in order to download a thumbnail image of the heat map.")
+		return;
+	}
 
 	// When the images is loaded, resize it in canvas.
 	img.onload = function(){
@@ -917,6 +987,20 @@ NgChm.UTIL.isNaN = function (n) {
 		nan = true;
 	}
     return nan;
+}
+
+/**********************************************************************************
+ * FUNCTION - validURL: This function checks to see if a string contains a valid
+ * URL address.
+ **********************************************************************************/
+NgChm.UTIL.isValidURL = function (str) {
+	  let url;
+	  try {
+	    url = new URL(str);
+	  } catch (_) {
+	    return false;  
+	  }
+	  return true;
 }
 
 /**********************************************************************************
@@ -1010,6 +1094,18 @@ NgChm.UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,it
 }
 
 /**********************************************************************************
+ * FUNCTION - mapHasGaps: The purpose of this function indicate true/false whether
+ * a given heat map contains gaps.
+ **********************************************************************************/
+NgChm.UTIL.mapHasGaps = function () {
+	if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0) {
+		return false;
+	} else {
+		return true;
+	}
+}
+
+/**********************************************************************************
  * FUNCTION - clearCheckBoxDropdown: The purpose of this function is to remove all
  * check box rows from within a given checkBox dropdown control.
  **********************************************************************************/
@@ -1094,8 +1190,8 @@ NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
 	//Reset dendros for local/widget load
 	NgChm.SUM.colDendro = null;
 	NgChm.SUM.rowDendro = null;
-	NgChm.DET.colDendro = null;
-	NgChm.DET.rowDendro = null;
+//	NgChm.DET.colDendro = null;
+//	NgChm.DET.rowDendro = null;
 	NgChm.UTIL.onLoadCHM(sizeBuilderView);
 }
 
@@ -1138,17 +1234,53 @@ NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight,customJS) {
 }
 
 /**********************************************************************************
+ * FUNCTION - showEmbed: This function shows the embedded heat map when the
+ * user clicks on the embedded map image.  It is used by NGCHM_Embed.js from 
+ * the minimized file ngchmEmbed-min.js
+ **********************************************************************************/
+NgChm.UTIL.showEmbedded = function (baseDiv,iframeStyle,customJS) {
+	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
+	NgChm.UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	NgChm.UTIL.embedThumbHeight = embeddedWrapper.style.height;
+	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
+	var embeddedMap = document.getElementById('NGCHMEmbed');
+	var iFrame = window.frameElement; // reference to iframe element container
+	iFrame.className='ngchm';
+	iFrame.style = iframeStyle;
+	iFrame.style.display = 'flex';
+	embeddedMap.style.height = '92vh';
+	embeddedMap.style.width = '97vw';
+	embeddedMap.style.display = 'flex';
+	embeddedMap.style.flexDirection = 'column';
+	embeddedWrapper.style.display = 'none';
+	embeddedCollapse.style.display = ''; 
+	if (NgChm.UTIL.embedLoaded === false) {
+		NgChm.UTIL.embedLoaded = true;
+		NgChm.UTIL.loadLocalModeCHM(false);
+		if (customJS !== "") {
+			setTimeout(function(){ NgChm.CUST.addExtraCustomJS(customJS);}, 2000);
+		}
+	}
+}
+
+/**********************************************************************************
  * FUNCTION - hideEmbed: This function hides the embedded map when the user 
  * clicks on the collapse map button.
  **********************************************************************************/
-NgChm.UTIL.hideEmbed = function (baseDiv) {
+NgChm.UTIL.hideEmbed = function (thumbStyle) {
 	var iFrame = window.frameElement; // reference to iframe element container
 	iFrame.className='ngchmThumbnail';
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
-	iFrame.style.height = NgChm.UTIL.embedThumbHeight;
-	embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
 	var embeddedMap = document.getElementById('NGCHMEmbed');
-	embeddedMap.style.height = NgChm.UTIL.embedThumbHeight;
+	if (typeof thumbStyle === 'undefined') {
+		iFrame.style.height = NgChm.UTIL.embedThumbHeight;
+		embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
+		embeddedMap.style.height = NgChm.UTIL.embedThumbHeight;
+	} else {
+		iFrame.style = thumbStyle;
+		embeddedWrapper.style = thumbStyle;
+		embeddedMap.style = thumbStyle;
+	}
 	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	embeddedMap.style.display = 'none';
 	embeddedCollapse.style.display = 'none';
@@ -1204,6 +1336,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	doc.write("<!DOCTYPE html><HTML><BODY style='margin:0px;width:100vw;height: 100vh;display: flex;flex-direction: column;'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><div><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
 	doc.close();
 };
+NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';     
     
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
@@ -1217,30 +1350,9 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 NgChm.UTIL.redrawSearchResults = function () {
 	NgChm.DET.updateDisplayedLabels();
 	NgChm.SUM.redrawSelectionMarks();
-	NgChm.SEL.updateSelection();
+	NgChm.SEL.updateSelections();
 	NgChm.SRCH.showSearchResults();
 };
-
-/**********************************************************************************
- * FUNCTION - b64toBlob: This function reads a .ngchm file from a blob.  It is used
- * in html pages that contain an entire heat map (.ngchm, widget, html, embed)
- **********************************************************************************/
-NgChm.UTIL.b64toBlob = function (b64Data) {
-	  const sliceSize = 512;
-	  let byteCharacters = atob(b64Data);
-	  let byteArrays = [];
-	  for (var offset = 0; offset < byteCharacters.length; offset += sliceSize) {
-	    const slice = byteCharacters.slice(offset, offset + sliceSize);
-	    let byteNumbers = new Array(slice.length);
-	    for (var i = 0; i < slice.length; i++) {
-	      byteNumbers[i] = slice.charCodeAt(i);
-	    }
-	    let byteArray = new Uint8Array(byteNumbers);
-	    byteArrays.push(byteArray);
-	  }
-	  const blob = new Blob(byteArrays);
-	  return blob;
-}
 
 /**********************************************************************************
  * FUNCTION - loadAllTilesTimer: This function checks the dimensions of the heat map
@@ -1267,8 +1379,8 @@ NgChm.UTIL.loadAllTilesTimer = function() {
 }
 
 /**********************************************************************************
- * FUNCTION - b64toBlob: This function loads an .ngchm file from a blob.  It is
- * used in .html heat map files that contain: .ngchm, widget, html, and embedded logic. 
+ * FUNCTION - b64toBlob: This function reads a .ngchm file from a blob.  It is used
+ * in html pages that contain an entire heat map (.ngchm, widget, html, embed)
  **********************************************************************************/
 NgChm.UTIL.b64toBlob = function (b64Data) {
 	  const sliceSize = 512;
@@ -1286,4 +1398,217 @@ NgChm.UTIL.b64toBlob = function (b64Data) {
 	  const blob = new Blob(byteArrays);
 	  return blob;
 }
+
+/*********************************************************************************************
+ * FUNCTION:  getClickType - The purpose of this function returns an integer. 0 for left click; 
+ * 1 for right.  It could be expanded further for wheel clicks, browser back, and browser forward 
+ *********************************************************************************************/
+NgChm.UTIL.getClickType = function (e) {
+	 var clickType = 0;
+	 e = e || window.event;
+	 if ( !e.which && (typeof e.button !== 'undefined') ) {
+	    e.which = ( e.button & 1 ? 1 : ( e.button & 2 ? 3 : ( e.button & 4 ? 2 : 0 ) ) );
+	 }
+	 switch (e.which) {
+	    case 3: clickType = 1;
+	    break; 
+	}
+	 return clickType;
+}
+
+/*********************************************************************************************
+ * FUNCTION:  getCursorPosition - The purpose of this function is to return the cursor 
+ * position over the canvas.  
+ *********************************************************************************************/
+NgChm.UTIL.getCursorPosition = function (e) {
+	var x,y;
+	if (e.touches){
+		if (e.touches.length > 0){
+			var rect = e.target.getBoundingClientRect();
+			x = Math.round(e.targetTouches[0].pageX - rect.left);
+			y = Math.round(e.targetTouches[0].pageY - rect.top);
+		} else {
+			var rect = e.target.getBoundingClientRect();
+			x = Math.round(e.changedTouches[0].pageX - rect.left);
+			y = Math.round(e.changedTouches[0].pageY - rect.top);
+		}
+	} else {
+		x = e.offsetX;
+	    y = e.offsetY;
+	}
+    return {x:x, y:y};
+}
+
+/*********************************************************************************************
+ * FUNCTION:  isOnObject - The purpose of this function is to tell us if the cursor is over 
+ * a given scrreen object.
+ *********************************************************************************************/
+NgChm.UTIL.isOnObject = function (e,type) {
+	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
+    var rowClassWidthPx =  NgChm.DET.getRowClassPixelWidth(mapItem);
+    var colClassHeightPx = NgChm.DET.getColClassPixelHeight(mapItem);
+    var rowDendroWidthPx =  NgChm.DET.getRowDendroPixelWidth(mapItem);
+    var colDendroHeightPx = NgChm.DET.getColDendroPixelHeight(mapItem);
+	var coords = NgChm.UTIL.getCursorPosition(e);
+    if (coords.y > colClassHeightPx) { 
+        if  ((type == "map") && coords.x > rowClassWidthPx) {
+    		return true;
+    	}
+    	if  ((type == "rowClass") && coords.x < rowClassWidthPx + rowDendroWidthPx && coords.x > rowDendroWidthPx) {
+    		return true;
+    	}
+    } else if (coords.y > colDendroHeightPx) {
+    	if  ((type == "colClass") && coords.x > rowClassWidthPx + rowDendroWidthPx) {
+    		return true;
+    	}
+    }
+    return false;
+}	
+
+/*********************************************************************************************
+ * FUNCTION:  hexToComplimentary - The purpose of this function is to convert a hex color value 
+ * to a complimentary hex color value.  It shifts hue by 45 degrees and then converts hex, 
+ * returning complimentary color as a hex value
+ *********************************************************************************************/
+ NgChm.UTIL.hexToComplimentary = function(hex){
+
+    // Convert hex to rgb
+    // Credit to Denis http://stackoverflow.com/a/36253499/4939630
+    var rgb = 'rgb(' + (hex = hex.replace('#', '')).match(new RegExp('(.{' + hex.length/3 + '})', 'g')).map(function(l) { return parseInt(hex.length%2 ? l+l : l, 16); }).join(',') + ')';
+
+    // Get array of RGB values
+    rgb = rgb.replace(/[^\d,]/g, '').split(',');
+
+    var r = rgb[0], g = rgb[1], b = rgb[2];
+
+    // Convert RGB to HSL
+    // Adapted from answer by 0x000f http://stackoverflow.com/a/34946092/4939630
+    r /= 255.0;
+    g /= 255.0;
+    b /= 255.0;
+    var max = Math.max(r, g, b);
+    var min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2.0;
+
+    if(max == min) {
+        h = s = 0;  //achromatic
+    } else {
+        var d = max - min;
+        s = (l > 0.5 ? d / (2.0 - max - min) : d / (max + min));
+
+        if(max == r && g >= b) {
+            h = 1.0472 * (g - b) / d ;
+        } else if(max == r && g < b) {
+            h = 1.0472 * (g - b) / d + 6.2832;
+        } else if(max == g) {
+            h = 1.0472 * (b - r) / d + 2.0944;
+        } else if(max == b) {
+            h = 1.0472 * (r - g) / d + 4.1888;
+        }
+    }
+
+    h = h / 6.2832 * 360.0 + 0;
+
+    // Shift hue to opposite side of wheel and convert to [0-1] value
+    h+= 45;
+    if (h > 360) { h -= 360; }
+    h /= 360;
+
+    // Convert h s and l values into r g and b values
+    // Adapted from answer by Mohsen http://stackoverflow.com/a/9493060/4939630
+    if(s === 0){
+        r = g = b = l; // achromatic
+    } else {
+        var hue2rgb = function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        };
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+
+    r = Math.round(r * 255);
+    g = Math.round(g * 255); 
+    b = Math.round(b * 255);
+
+    // Convert r b and g values to hex
+    rgb = b | (g << 8) | (r << 16); 
+    return "#" + (0x1000000 | rgb).toString(16).substring(1);
+};  
+
+// A table of frequently used images.
+// Used to reduce widget size by having a single data: URL for each image instead of one per use.
+NgChm.UTIL.imageTable = {
+    cancelSmall: 'images/cancelSmall.png',
+    closeButton: 'images/closeButton.png',
+    okButton: 'images/okButton.png',
+    prefCancel: 'images/prefCancel.png',
+    saveNgchm: 'images/saveNgchm.png',
+    openMapHover: 'images/openMapHover.png',
+    goHover: 'images/goHover.png',
+    prevHover: 'images/prevHover.png',
+    nextHover: 'images/nextHover.png',
+    cancelHover: 'images/cancelHover.png',
+    barColorsHover: 'images/barColorsHover.png',
+    barMenuHover: 'images/barMenuHover.png',
+};
+
+(function() {
+    const exports = { showSplashExample, showLoader, hideLoader };
+    Object.assign (NgChm.createNS ("NgChm.UTIL.UI"), exports);
+    var firstLoaderMessage = true;
+    var messages = "";
+
+    // Add event handler for closing splash screen.
+    (function() {
+	const closeBtn = document.getElementById('closeSplash');
+	if (closeBtn) {
+	    closeBtn.addEventListener('click', () => {
+		const splash = document.getElementById('splash');
+		splash.classList.add('hide');
+	    }, { passive: true });
+	}
+    })();
+
+    function showSplashExample () {
+	const splashWaiting = document.getElementById('splashWaiting');
+	// Splash screen removed in widget.
+	if (!splashWaiting) return;
+	const splashExample = document.getElementById('splashExample');
+        splashWaiting.classList.add('hide');
+        splashExample.classList.remove('hide');
+    }
+
+    // Replace splash screen with loader screen.
+    function showLoader (message) {
+	const splash = document.getElementById('splash');
+	const loader = document.getElementById('loader');
+	messages += '<P>' + message;
+	loader.innerHTML = messages;
+	if (firstLoaderMessage) {
+	    loader.classList.replace('faded', 'fadeinslow');
+	    // Splash screen removed in widget.
+	    if (splash) splash.classList.replace('fadeinslow', 'fadeout');
+	    firstLoaderMessage = false;
+	}
+    }
+
+    // Replace loader screen with NgCHM.
+    function hideLoader () {
+	const loader = document.getElementById('loader');
+	loader.classList.replace('fadeinslow', 'fadeout');
+	[...document.querySelectorAll('*[data-hide-on-load]')].forEach(e => e.classList.add('hide'));
+	NgChm.UTIL.containerElement.classList.replace('faded', 'fadein');
+	[...document.querySelectorAll('*[data-show-on-load]')].forEach(e => e.classList.remove('hide'));
+    }
+})();
 

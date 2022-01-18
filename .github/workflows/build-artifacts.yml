@@ -1,0 +1,75 @@
+##
+##  GitHub Action to build artifacts for NGCHMSupportFiles,
+##  triggered by publishing a release
+##
+
+name: Build artifacts for NGCHMSupportFiles
+on:
+  release:
+    types: [published]
+jobs:
+  Build-ShaidyMapGen-and-ngchmWdiget-min:
+    runs-on: macOS-latest
+    env:
+      NGCHMSupportFiles_REPOSITORY: 'MD-Anderson-Bioinformatics/NGCHMSupportFiles'
+      NGCHMSupportFiles_BRANCH: 'main'
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref }}
+      - name: Get version number for use in NGCHMSupportFiles R package
+        ## This collects just the version number, e.g. '2.20.3', for use 
+        ## in DESCRIPTION file of NGCHMSupportFiles R package
+        id: get_version
+        run: echo ::set-output name=version::${GITHUB_REF#refs/*/}
+      - name: Set up JDK for java 8
+        uses: actions/setup-java@v2
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+      - name: Build ShaidyMapGen.jar
+        run: |
+          cd NGCHM
+          ant -f build_shaidyRmapgen.xml
+      - name: Build ngchmWidget-min.js
+        run: |
+          cd NGCHM
+          ant -f build_ngchmApp.xml
+      - name: Check out NGCHMSupportFiles repo
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ env.NGCHMSupportFiles_REPOSITORY }}
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
+          ref: ${{ env.NGCHMSupportFiles_BRANCH }}
+          path: './NGCHMSupportFiles'
+      - name: Copy artifacts to NGCHMSupportFiles and update NGCHMSupportFiles version
+        run: |
+          cd NGCHMSupportFiles
+          cp ../NGCHM/ShaidyMapGen.jar inst/java
+          cp ../NGCHM/ngchmWidget-min.js inst/js
+          sed -i.bak '/Version:/d' DESCRIPTION
+          echo "Version: ${{ steps.get_version.outputs.version }}" >> DESCRIPTION
+          cat DESCRIPTION
+      - name: Verify NGCHMSupportFile R build
+        run: |
+          cd NGCHMSupportFiles
+          R CMD build .
+      - name: Commit and push update to NGCHMSupportFiles repo
+        run: |
+          cd NGCHMSupportFiles
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add inst/java/ShaidyMapGen.jar
+          git add inst/js/ngchmWidget-min.js
+          git add DESCRIPTION
+          git commit -m "Update for NG-CHM Release ${{ steps.get_version.outputs.version }}"
+          git push origin ${{ env.NGCHMSupportFiles_BRANCH }}
+      - name: Create a release in NGCHMSupportFiles repo
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
+          body: "Version ${{ steps.get_version.outputs.version }}"
+          repository: ${{ env.NGCHMSupportFiles_REPOSITORY }}
+
+

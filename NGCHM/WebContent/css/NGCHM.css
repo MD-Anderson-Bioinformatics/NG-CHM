@@ -2,6 +2,25 @@
 /**
  *  */
 
+:root {
+        /* Variables used to specify the colors of selected labels.
+         * Set by javascript based on the current color scheme.
+         */
+	--in-selection-color: rgb(0,0,0);
+	--in-selection-background-color: rgb(0,255,56);
+
+	--load-time: 200ms;
+	--load-delay: 800ms;
+}
+
+/* Extra class added to selected labels.
+ * Used for coloring their text and background colors.
+ */
+.inSelection {
+	color: var(--in-selection-color);
+	background-color: var(--in-selection-background-color);
+}
+
 body.NgChmViewer {
 	margin: 8px;
 	width: calc(100vw - 16px);
@@ -104,11 +123,65 @@ div.pane canvas {
 	position: absolute;
 }
 
-div#ngChmContainer{
-	overflow: hidden;
-	display: flex;
+/* #content contains everything between the page header and footer.
+ * Initially it contains the splash screen.
+ * Once loading commences it's replaced by the loading screen.
+ * After loading completes, the loading screen is replaced by the ngChmContainer.
+ */
+#content {
+        position: relative;
+	width: 100%;
 	flex-grow: 1;
+}
+
+#splash, #loader {
+	position: absolute;
+	top: 4em;
+	left: auto;
+	right: auto;
+	padding: 2em;
+	border: 2px solid rgb(0,0,255);
+	margin: 4em;
+	max-width: 50em;
+	border-radius: 2em;
+	box-shadow: 0.5em 0.5em 1em rgb(127,127,200);
+	z-index: 4;
+}
+
+#closeSplash {
+	position: absolute;
+	top: 1em;
+	right: 2em;
+	font-size: 10pt;
+	padding: 0.1em;
+	border: 2px solid rgb(50,50,50);
+	border-radius: 0.3em;
+}
+
+#closeSplash:hover {
+	color: rgb(225,0,0);
+	border-color: rgb(225,0,0);
+}
+
+#splashWaiting {
+	font-style: italic;
+	font-weight: bolder;
+	font-weight: larger;
+	color: blue;
+}
+
+#ngChmContainer {
+	position: absolute;
+	overflow: hidden;
+	display: block;
+	height: 100%;
+	width: 100%;
 	border-bottom: 1px solid white;
+	opacity: 0;
+}
+
+#loader p {
+	margin-block: 0.5em;
 }
 
 #footer {
@@ -371,7 +444,7 @@ span.button.negative {
 	pointer-events: none;
 }
 
-#detail_box_canvas {
+.detail_box_canvas {
 	position:absolute;
 	pointer-events: none;
 }
@@ -389,7 +462,7 @@ span.button.negative {
 	pointer-events:none;
 }
 
-#detail_chm {
+.detail_chm {
     width: 100%;
     height: 100%;
     min-height: 50px;
@@ -399,7 +472,7 @@ span.button.negative {
     display:inline-block;
 }
 
-#detail_canvas {
+.detail_canvas {
 	position:absolute;
 	height:82%;
 	zIndex:1;
@@ -429,13 +502,6 @@ span.button.negative {
 
 #flicks{
 	display:inline-block;
-}
-
-#pdf_gear{
-	display: inline-block;
-	top: 0px;
-	position: absolute;
-	right: 60px;
 }
 
 #helptext {
@@ -548,21 +614,22 @@ span.button.negative {
 .topItems{
 	position: absolute;
 	display:inline-table;
-	font-size: 8;
+	font-size: 8px;
 	margin: 1px;
+	white-space: nowrap;
 }
 
 .classLegend{
 	position: absolute;
 	display:block;
-	font-size: 6;
+	font-size: 6px;
 	margin: 0px;
 }
 
 .classLabel{
 	position: absolute;
 	display:block;
-	font-size: 10;
+	font-size: 10px;
     font-weight: bold;
 	margin: 0px;
 }
@@ -570,7 +637,7 @@ span.button.negative {
 .classLabelVertical{
 	position: absolute;
 	display:block;
-	font-size: 10;
+	font-size: 10px;
     font-weight: bold;
 	margin: 0px;
 	transform: rotate(90deg);
@@ -717,7 +784,6 @@ th.breakpointContainer {
 
 #linkBoxTxt, #linkBoxAllTxt {
 	font-size: 12px;
-	background-color: #FFFFFF;
 	overflow-y: auto;
 }
 
@@ -847,17 +913,59 @@ table.helpTable th {
   color: black;
 }
 
-#colorMenu_btn {
-	right: 30px;
-	top: 0px;
-    position: absolute;
+table.onlineHelp { 
+  border-collapse: collapse; 
+  width: 90%;
+}
+  
+table.onlineHelp td, 
+table.onlineHelp th { 
+  border: 1px solid black;
+  padding: 5px; 
+  color: black;
 }
 
+/* farRightButtons are the group of controls in the very top-right of the mdaServiceHeader.
+ * All are positioned absolutely at the top of the mdaServiceHeader, near the right.
+ * The number of pixels from the right is specified individually for each.
+ *
+ * Note: droptarget is also positioned at the top-right of the mdaServiceHeader, above the
+ *       topRightButtons, but is invisible unless someone is dropping something on the NG-CHM.
+ */
 .farRightButton {
-	right: 0px;
-	top: 0px;
+    top: 0px;
     position: absolute;
+    z-index: 2;
+    vertical-align: top;
 }
+
+/* Buttons displayed when no map is loaded: */
+#aboutMenu_btn {
+    right: 30px;
+}
+
+#introAboutButton {
+    right: 0px;
+}
+
+/* Buttons displayed when a map is loaded: */
+#pdf_gear {  /* This is actually the layer controller. */
+    display: inline-block;
+    right: 90px;
+}
+
+#colorMenu_btn {
+    right: 60px;
+}
+
+#barMenu_btn {
+    right: 30px;
+}
+
+#introButton {
+    right: 0px;
+}
+/* End of farRightButtons. */
 
 .tdTop {
     vertical-align: text-top;
@@ -1106,3 +1214,95 @@ iframe.nopointer {
 }
 
 
+div#droptarget {
+    position:  absolute;
+    top: 0px;
+    right: 0px;
+    width: fit-content;
+    height: fit-content;
+    text-align: center;
+    vertical-align: middle;
+    padding: 1em 2em;
+    z-index: 1;
+    color: rgba(0,0,0,0);
+    background-color: rgba(1,0,0,0.01);
+    user-select: none;
+}
+
+div#droptarget.visible {
+    z-index: 100;
+    color: rgba(0,0,0,1);
+    background-color: rgba(255,128,128,1);
+}
+
+
+.tour-button {
+    color: #ffffff;
+    background-color: #0000ff;
+    padding: 0.3em;
+    font-weight: 900;
+    border-radius: 1em;
+}
+.tour-button:hover {
+    color: #0000af;
+    background-color: #dfdf6f;
+}
+
+#bubbleHelp {
+    opacity: 0;
+    animation: loading-up var(--load-time);
+    animation-fill-mode: forwards;
+}
+#bubbleHelp span {
+    display: block;
+    font-size: small;
+    color: rgb(8,67,193);
+}
+#bubbleHelp span.title {
+    font-weight: bold;
+    padding-bottom: 3px;
+}
+
+/* Use opacity:0 instead of display:none for elements that will be faded in
+ * to avoid redraw/reflow.
+ */
+.faded {
+    opacity: 0;
+}
+
+/* Start at opacity 0 and transition to opacity 1.
+ */
+.fadein {
+    opacity: 0;
+    animation-name: loading-up;
+    animation-duration: var(--load-time);
+    animation-fill-mode: forwards;
+}
+
+/* Delay so users with fast connections don't so
+ * an annoying flash.
+ */
+.fadeinslow {
+    opacity: 0;
+    animation-name: loading-up;
+    animation-duration: var(--load-time);
+    animation-fill-mode: forwards;
+    animation-delay: var(--load-delay);
+}
+
+/* Transition from current opacity to opacity 0.
+ */
+.fadeout {
+    opacity: 0;
+    transition: opacity 150ms;
+    pointer-events: none;
+}
+
+@keyframes loading-up {
+    0% {
+	opacity: 0;
+    }
+    100% {
+	opacity: 1;
+    }
+}

@@ -91,11 +91,11 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 	this.getColor = function(value){
 		var color;
 	
-		if (value >= NgChm.SUM.maxValues || value == "Missing"){
+		if (value >= NgChm.SUM.maxValues || value == "Missing" || isNaN(value)){
 			color = rgbaMissingColor;
 		}else if(value <= NgChm.SUM.minValues){
 			var layers = NgChm.heatMap.getDataLayers();
-			var dl = layers[NgChm.SEL.currentDl];
+			var dl = layers[NgChm.SEL.getCurrentDL()];
 			if (typeof dl.cuts_color !== 'undefined') {
 				color = this.getHexToRgba(dl.cuts_color);
 			} else {

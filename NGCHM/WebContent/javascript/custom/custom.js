@@ -3,12 +3,20 @@
 //==============================================//
 linkouts.setVersion('2020-04-07');
 
-// Scatter Plot plugin:
+// 2D Scatter Plot plugin:
 linkouts.addPanePlugin ({
-	name: 'ScatterPlot',
+	name: '2D ScatterPlot',
 	helpText: 'Creates a two-dimensional scatter plot',
 	params: {},
 	src: 'https://www.ngchm.net/Plugins/ScatterPlot/index.html'
+});
+
+//3D Scatter Plot plugin:
+linkouts.addPanePlugin ({
+	name: '3D ScatterPlot',
+	helpText: 'Creates a three-dimensional scatter plot',
+	params: {},
+	src: 'https://www.ngchm.net/Plugins/ScatterPlot3D/index.html'
 });
 
 //==============================================//
@@ -28,13 +36,13 @@ linkouts.addPanePlugin ({
 	/*BEGIN SAMPLE Linkouts to the Hamburger Menu
 	//TODO: replace with "real" hamburger linkout(s)
 	//Using default icon
-	linkouts.addHamburgerLinkout({name: "menuLink2", label: "Execute Menu Link 1", action: "linkoutHelp();"});
+	linkouts.addHamburgerLinkout({name: "menuLink2", label: "Execute Menu Link 1", action: linkoutHelp});
 	//Using different icon from server
-	linkouts.addHamburgerLinkout({name: "menuLink3", label: "Execute Menu Link 2", icon: "images/redX.png", action: "linkoutHelp();"}); 
+	linkouts.addHamburgerLinkout({name: "menuLink3", label: "Execute Menu Link 2", icon: "images/redX.png", action: linkoutHelp}); 
 	//Using external icon from the web
-	linkouts.addHamburgerLinkout({name: "menuLink4", label: "Execute Menu Link 3", icon: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png", action: "openWidgetHelp();"});
+	linkouts.addHamburgerLinkout({name: "menuLink4", label: "Execute Menu Link 3", icon: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png", action: openWidgetHelp});
 	//No label provided
-	linkouts.addHamburgerLinkout({name: "menuLink5", action: "openWidgetHelp();"});
+	linkouts.addHamburgerLinkout({name: "menuLink5", action: openWidgetHelp});
 	//No action provided
 	linkouts.addHamburgerLinkout({name: "menuLink6"});
 	//END SAMPLE Linkouts to the Hamburger Menu*/
@@ -513,7 +521,7 @@ linkouts.addPlugin({
 	description: "Adds linkouts for viewing a set of genes and/or mirs on an interactive ideogram.",
 	version: "0.1.0",
 	site: "http://bioinformatics.mdanderson.org/main/IdeogramViewer:Overview",
-        logo: "http://bioinformatics.mdanderson.org/people/Bradley.Broom/IdeogramViewerLogo.png",
+    logo: "https://bioinformatics.mdanderson.org//public-software/ideogramviewer/IdeogramViewerLogo.png",
 	linkouts: [
 	    { menuEntry: "View ideogram", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: viewIdeogramGene },
             { menuEntry: "View ideogram", typeName: "bio.mirna", selectMode: linkouts.MULTI_SELECT, linkoutFn: viewIdeogramMIRNA }
@@ -541,7 +549,7 @@ linkouts.addPlugin({
 	description: "Adds linkout to search MaveDB.",
 	version: "0.1.0",
 	site: "https://www.mavedb.org",
-	logo: "https://www.mavedb.org/static/core/mavedb/dna.png",
+	logo: "https://www.mavedb.org/static/core/mavedb/ve-logo.png",
 	linkouts: [
 	    { menuEntry: "Search MaveDB", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMavedbGene }
 	]
@@ -820,7 +828,7 @@ linkouts.addPlugin({
         description: "Antibody RRID.",
 //        version: "0.1.3",
         site: "http://antibodyregistry.org/",
-//        logo: "https://www.ncbi.nlm.nih.gov/coreutils/img/pubmed256blue.png",
+        logo: "https://scicrunch.org/upload/community-components/resources_66006.png",
         linkouts: [
             { menuEntry: "Search Antibody Registry", typeName: "bio.rrid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchAntibodyRegistry },
             { menuEntry: "Search SCICrunch for ", typeName: "bio.rrid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchSCICrunch },
@@ -870,7 +878,7 @@ linkouts.addPlugin({
     }
     linkouts.addPlugin({
         name: "TCGA",
-        logo: "https://cancergenome.nih.gov/PublishedContent/Images/SharedItems/Images/TCGA_54px%20Logo%20COLOR.__v30030670.svg",
+        logo: "https://www.cancer.gov/sites/g/files/xnrzdm211/files/styles/cgov_social_media/public/cgov_image/media_image/100/000/3/files/TCGA%20topic%20-%20feature%20card.png",
         site: "https://cancergenome.nih.gov/",
         description: "Enhances linkouts to The Cancer Genome Atlas.",
         version: "0.1.0",

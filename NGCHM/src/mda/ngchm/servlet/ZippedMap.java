@@ -1,3 +1,15 @@
+/*******************************************************************
+ * SERVLET CLASS: ZipAppDownload
+ *
+ * This class contains the logic necessary to generate a .ngchm zipped
+ * heat map download and return it to the client.  It is called on the client
+ * side from the MatrixManager JS file.
+ * 
+ * Argument1: response output stream containing JSON data.
+ * 
+ * Author: Mark Stucky
+ * Date: 2016
+ ******************************************************************/
 package mda.ngchm.servlet;
 
 import static mda.ngchm.datagenerator.ImportConstants.EMPTY;
@@ -21,7 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Servlet implementation class GetMatrix
+ * Servlet implementation class ZippedMap
  */
 @WebServlet("/ZippedMap")
 public class ZippedMap extends HttpServlet {

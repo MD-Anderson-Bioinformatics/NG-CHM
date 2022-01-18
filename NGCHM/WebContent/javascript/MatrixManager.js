@@ -46,7 +46,7 @@ NgChm.createNS = function (namespace) {
 NgChm.createNS('NgChm.MMGR');
 
 //For web-based NGCHMs, we will create a Worker process to overlap I/O and computation.
-NgChm.MMGR.tileLoader = null;
+NgChm.MMGR.webLoader = null;
 
 //Supported map data summary levels.
 NgChm.MMGR.THUMBNAIL_LEVEL = 'tn';
@@ -75,17 +75,21 @@ NgChm.MMGR.MatrixManager = function(fileSrc) {
 	
 	//Main function of the matrix manager - retrieve a heat map object.
 	//mapFile parameter is only used for local file based heat maps.
-	this.getHeatMap = function (heatMapName, updateCallback, mapFile) {
-		return  new NgChm.MMGR.HeatMap(heatMapName, updateCallback, fileSrc, mapFile);
+	//This function is called from a number of places:
+	//It is called from NgChm.UTIL.onLoadCHM when displaying a map in the NG-CHM Viewer and for embedded NG-CHM maps
+	//It is called from NgChm.UTIL.displayFileModeCHM when displaying a map in the stand-alone NG-CHM Viewer
+	//It is called in script in the mda_heatmap_viz.mako file when displaying a map in the Galaxy NG-CHM Viewer
+	this.getHeatMap = function (heatMapName, updateCallbacks, mapFile) {
+		return  new NgChm.MMGR.HeatMap(heatMapName, updateCallbacks, fileSrc, mapFile);
 	}	
 };    	
 
 
-//Create a worker thread to request/receive tiles.  Using a separate
-//thread allows the large tile I/O to overlap extended periods of heavy
-//computation.
-NgChm.MMGR.createWebTileLoader = function () {
+//Create a worker thread to request/receive json data and tiles.  Using a separate
+//thread allows the large I/O to overlap extended periods of heavy computation.
+NgChm.MMGR.createWebLoader = function (fileSrc) {
 	const debug = false;
+	const baseURL = getLoaderBaseURL (fileSrc);
 
 	// Define worker script.
 //	let wS = `"use strict";`
@@ -93,6 +97,20 @@ let	wS = `const debug = ${debug};`;
 	wS += `const maxActiveRequests = 2;`; // Maximum number of tile requests that can be in flight concurrently
 	wS += `var active = 0;`;              // Number of tile requests in flight
 	wS += `const pending = [];`;          // Additional tile requests
+	wS += `const baseURL = "${baseURL}";`; // Base URL to prepend to requests.
+	wS += `var mapId = "${NgChm.UTIL.mapId}";`; // Map ID.
+	wS += `const mapNameRef = "${NgChm.UTIL.mapNameRef}";`; // Map name (if specified).
+
+	// Create a function that determines the get tile request.
+	// Body of function depends on the fileSrc of the NG-CHM.
+	wS += 'function tileURL(job){return baseURL+';
+	if (fileSrc === NgChm.MMGR.WEB_SOURCE) {
+		wS += '"GetTile?map=" + mapId + "&datalayer=" + job.layer + "&level=" + job.level + "&tile=" + job.tileName';
+	} else {
+		// [bmb] Is LOCAL_SOURCE ever used?  ".bin" files were obsoleted years ago.
+		wS += 'job.layer+"/"+job.level+"/"+job.tileName+".bin"';
+	}
+	wS += ";}";
 
 	// The following function is stringified and sent to the web loader.
 	function loadTile (job) {
@@ -102,7 +120,7 @@ let	wS = `const debug = ${debug};`;
 		}
 		active++;
 		const req = new XMLHttpRequest();
-		req.open("GET", job.URL, true);
+		req.open("GET", tileURL(job), true);
 		req.responseType = "arraybuffer";
 		req.onreadystatechange = function () {
 			if (req.readyState == req.DONE) {
@@ -122,20 +140,118 @@ let	wS = `const debug = ${debug};`;
 	}
 	wS += loadTile.toString();
 
+	// Create a function that determines the get JSON file request.
+	// Body of function depends on the fileSrc of the NG-CHM.
+	wS += 'function jsonFileURL(name){return baseURL+';
+	if (fileSrc === NgChm.MMGR.WEB_SOURCE) {
+		wS += '"GetDescriptor?map=" + mapId + "&type=" + name';
+	} else {
+		wS += 'name+".json"';
+	}
+	wS += ";}";
+
+	// The following function is stringified and sent to the web loader.
+	function loadJson (name) {
+		const req = new XMLHttpRequest();
+		req.open("GET", jsonFileURL(name), true);
+		req.responseType = "json";
+		req.onreadystatechange = function () {
+			if (req.readyState == req.DONE) {
+				if (req.status != 200) {
+					postMessage({ op: 'jsonLoadFailed', name });
+				} else {
+					// Send json to main thread.
+					postMessage({ op:'jsonLoaded', name, json: req.response });
+				}
+			}
+		};
+		req.send();
+	};
+	wS += loadJson.toString();
+
 	// This function will be stringified and sent to the web loader.
 	function handleMessage(e) {
 		if (debug) console.log({ m: 'Worker: got message', e, t: performance.now() });
 		if (e.data.op === 'loadTile') { loadTile (e.data.job); }
+		else if (e.data.op === 'loadJSON') { loadJson (e.data.name); }
 	}
 	wS += handleMessage.toString();
+
+	// This function will be stringified and sent to the web loader.
+	function getConfigAndData() {
+		// Retrieve all map configuration data.
+		loadJson('mapConfig');
+		// Retrieve all map supporting data (e.g. labels, dendros) from JSON.
+		loadJson('mapData');
+	}
+	wS += getConfigAndData.toString();
+
+	// If the map was specified by name, send the code to find the
+	// map's id by name.  Otherwise just get the map's config
+	// and data.
+	if (NgChm.UTIL.mapId === '' && NgChm.UTIL.mapNameRef !== '') {
+		function getMapId () {
+			fetch (baseURL + "GetMapByName/" + mapNameRef)
+			.then (res => {
+				if (res.status === 200) {
+					res.json().then (mapinfo => {
+						mapId = mapinfo.data.id;
+						getConfigAndData();
+					});
+				} else {
+					postMessage({ op: 'jsonLoadFailed', name: 'GetMapByName' });
+				}
+			});
+		}
+		wS += getMapId.toString();
+		wS += 'getMapId();';
+	} else {
+		wS += 'getConfigAndData();';
+	}
 
 	wS += `onmessage = handleMessage;`;
 	if (debug) wS += `console.log ({ m:'TileLoader loaded', t: performance.now() });`;
 
 	// Create blob and start worker.
 	const blob = new Blob([wS], {type: 'application/javascript'});
-	if (debug) console.log({ m: 'MMGR.createWebTileLoader', blob, wS });
-	NgChm.MMGR.tileLoader = new Worker(URL.createObjectURL(blob));
+	if (debug) console.log({ m: 'MMGR.createWebLoader', blob, wS });
+	NgChm.MMGR.webLoader = new Worker(URL.createObjectURL(blob));
+	// It is possible for the web worker to post a reply to the main thread
+	// before the message handler is defined.  Stash any such messages away
+	// and play them back once it has been.
+	const pendingMessages = [];
+	NgChm.MMGR.webLoader.onmessage = function(e) {
+		pendingMessages.push(e);
+	};
+	NgChm.MMGR.webLoader.setMessageHandler = function (mh) {
+		// Run asychronously so that the heatmap can be defined before processing messages.
+		setTimeout(function() {
+		    while (pendingMessages.length > 0) {
+			    mh (pendingMessages.shift());
+		    }
+		    NgChm.MMGR.webLoader.onmessage = mh;
+		}, 0);
+	};
+
+	// Called locally.
+	function getLoaderBaseURL (fileSrc) {
+		var URL;
+		if (fileSrc == NgChm.MMGR.WEB_SOURCE) {
+			// Because a tile worker thread doesn't share our origin, we have to pass it
+			// an absolute URL, and to substitute in the CFG.api variable, we want to
+			// build the URL using the same logic as a browser for relative vs. absolute
+			// paths.
+			URL = document.location.origin;
+			if (NgChm.CFG.api[0] !== '/') {	// absolute
+				URL += '/' + window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/'));
+			}
+			URL += NgChm.CFG.api;
+		} else {
+			console.log (`getLoaderBaseURL: fileSrc==${fileSrc}`);
+			URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/";
+		}
+		return URL;
+	}
 };
 
 NgChm.MMGR.isRow = function isRow (axis) {
@@ -145,7 +261,7 @@ NgChm.MMGR.isRow = function isRow (axis) {
 //HeatMap Object - holds heat map properties and a tile cache
 //Used to get HeatMapData object.
 //ToDo switch from using heat map name to blob key?
-NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
+NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	//This holds the various zoom levels of data.
 	var mapConfig = null;
 	var mapData = null;
@@ -155,11 +271,12 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	var zipFiles = {};
 	var colorMapMgr;
 	var initialized = 0;
-	var eventListeners = [];
+	const eventListeners = updateCallbacks.slice(0);  // Create a copy.
 	var flickInitialized = false;
 	var unAppliedChanges = false;
 	NgChm.MMGR.source= fileSrc;
-	
+	const jsonSetterFunctions = [];
+
 	const isRow = NgChm.MMGR.isRow;
 
 	this.isMapLoaded = function () {
@@ -262,7 +379,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	// Retrieve color map Manager for this heat map.
 	this.getColorMapManager = function() {
-		if (initialized != 1)
+		if (mapConfig == null)
 			return null;
 		
 		if (colorMapMgr == null ) {
@@ -317,6 +434,14 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	this.getCovariateBarHeights = function (axis) {
 		return Object.entries(this.getAxisCovariateConfig(axis))
 		.map(([key,config]) => config.show === 'Y' ? (config.height|0) : 0)
+	}
+
+	// Return an array of the display types of all covariate bars on an axis.
+	// Hidden bars have a height of zero.  The order of entries is fixed but not
+	// specified.
+	this.getCovariateBarTypes = function (axis) {
+		return Object.entries(this.getAxisCovariateConfig(axis))
+		.map(([key,config]) => config.show === 'Y' ? (config.bar_type) : 0)
 	}
 
 	// Return the total display height of all covariate bars on an axis.
@@ -399,7 +524,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 
 	this.getCurrentDataLayer = function() {
-		return this.getDataLayers()[NgChm.SEL.currentDl];
+		return this.getDataLayers()[NgChm.SEL.getCurrentDL()];
 	};
 
 	this.getDividerPref = function() {
@@ -454,6 +579,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		mapConfig.data_configuration.map_information.data_layer[key].grid_color = gridColorVal;
 		mapConfig.data_configuration.map_information.data_layer[key].cuts_color = gapColorVal;
 		mapConfig.data_configuration.map_information.data_layer[key].selection_color = selectionColorVal;
+		if (key == NgChm.SEL.getCurrentDL()) {
+		    NgChm.SEL.setSelectionColors ();
+		}
 	}
 	
 	//Get Row Organization
@@ -484,6 +612,11 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	//Get map information config data
 	this.getMapInformation = function() {
 		return mapConfig.data_configuration.map_information; 
+	}
+
+	// Get panel configuration from mapConfig.json
+	this.getPanelConfiguration = function() {
+		return mapConfig.panel_configuration;
 	}
 
 	this.getRowDendroConfig = function() {
@@ -556,13 +689,22 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	this.saveHeatMapToNgchm = function () {
+		NgChm.LNK.requestDataFromPlugins();
 		var success = true;
 		NgChm.UHM.initMessageBox();
 		if (fileSrc === NgChm.MMGR.WEB_SOURCE) {
 			success = zipMapProperties(JSON.stringify(mapConfig)); 
 			NgChm.UHM.zipSaveNotification(false);
 		} else {
-			zipSaveMapProperties();
+			let waitForPluginDataCount = 0;
+			let awaitingPluginData = setInterval(function() {
+				waitForPluginDataCount = waitForPluginDataCount + 1; // only wait so long 
+				if (NgChm.LNK.havePluginData() || waitForPluginDataCount > 3) {
+					NgChm.LNK.warnAboutMissingPluginData();
+					zipSaveMapProperties();
+					clearInterval(awaitingPluginData);
+				}
+			}, 1000);
 			NgChm.UHM.zipSaveNotification(false);
 		}
 		NgChm.heatMap.setUnAppliedChanges(false);
@@ -602,9 +744,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (hasDetailTiles() === false) {
 			return true;
 		} else {
+		const currentDl = NgChm.SEL.getCurrentDL();
 	    	for (var i = details.startRowTile; i <= details.endRowTile; i++) {
 	    		for (var j = details.startColTile; j <= details.endColTile; j++) {
-	    			var tileCacheName=NgChm.SEL.currentDl + "." +NgChm.MMGR.DETAIL_LEVEL + "." + i + "." + j;
+				var tileCacheName=currentDl + "." + NgChm.MMGR.DETAIL_LEVEL + "." + i + "." + j;
 	    			if (getTileCacheData(tileCacheName) === null) {
 	     				//Do not yet have tile in cache return false
 	    				return false;
@@ -629,6 +772,26 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		return details;
 	};
 
+	/*
+		Similar to setReadWindow. However this function returns a promise
+		that resolves when the needed tiles are ready in cache.
+	*/
+	this.setReadWindowPromise = function(level, row, column, numRows, numColumns) {
+		return new Promise((resolve, reject) => {
+			if (level != NgChm.MMGR.THUMBNAIL_LEVEL && level != NgChm.MMGR.SUMMARY_LEVEL) {
+				datalevels[level].setReadWindowPromise(row, column, numRows, numColumns)
+					.then((result) => {
+						resolve(result)
+					})
+					.catch((error) => {
+						reject(error)
+					})
+			} else {
+				resolve(null)
+			}
+		})
+	}
+
 	// This function is used to set a read window for high resolution data layers.
 	// Calling getAccessWindow will cause the HeatMap object to retrieve tiles needed
 	// for reading this area if the tiles are not already in the cache.
@@ -646,6 +809,30 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			};
 		}
 	};
+
+	/*
+		Similar to getAccessWindow. However this function returns a promise that resolves
+		when all the tiles of the read window are available in cache.
+	*/
+	this.getAccessWindowPromise = function(win) {
+		return new Promise((resolve,reject) => {
+			this.setReadWindowPromise(win.level, win.firstRow, win.firstCol, win.numRows, win.numCols)
+			.then((result) => {
+				let resultsObject = {
+					getValue: getGetValue(win.level),
+					win: win
+				}
+				function getGetValue(level) {
+					return function(row, column) {
+						return datalevels[level].getValue(row, column)
+					}
+				}
+				resolve(resultsObject)
+			}).catch((error) => {
+				reject (error)
+			});
+		})
+	};
 	
 	//Method used to register another callback function for a user that wants to be notifed
 	//of updates to the status of heat map data.
@@ -655,9 +842,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	//Is the heat map ready for business 
 	this.isInitialized = function() {
-		if (initialized === 1) {
-	 		document.getElementById('loader').style.display = 'none';
-		}
 		return initialized;
 	}
 
@@ -736,7 +920,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 				}
 				flick1.innerHTML=flickOptions;
 				flick2.innerHTML=flickOptions;
-				flick1.value=NgChm.SEL.currentDl;
+				flick1.value=NgChm.SEL.getCurrentDL();
 				flick2.value=orderedKeys[1];
 				flicks.style.display='';
 				flicks.style.right=1;
@@ -744,7 +928,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 					flickViewsOff.style.display='';
 				}
 			} else {
-				NgChm.SEL.currentDl = "dl1";
+				NgChm.SEL.setCurrentDL("dl1");
 				flicks.style.display='none';
 			}
 			flickInitialized = true;
@@ -769,20 +953,17 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	
 	//Initialization - this code is run once when the map is created.
 	
-	//Add the original update call back to the event listeners list.
-	eventListeners.push(updateCallback);
-	
-	if (fileSrc !== NgChm.MMGR.FILE_SOURCE){
-		//fileSrc is web so get JSON files from server
-		//Retrieve  all map configuration data.
-		webFetchJson('mapConfig', addMapConfig);
-		//Retrieve  all map supporting data (e.g. labels, dendros) from JSON.
-		webFetchJson('mapData', addMapData);
-		connectWebTileLoader();
+	if (fileSrc !== NgChm.MMGR.FILE_SOURCE) {
+		if (fileSrc !== NgChm.MMGR.WEB_SOURCE) createWebLoader(fileSrc);
+		connectWebLoader(fileSrc);
 	} else {
 		//Check file mode viewer software version (excepting when using embedded widget)
 		if (typeof embedDiv === 'undefined') {
 			fileModeFetchVersion();
+		}
+		if (chmFile.size === 0) {
+			NgChm.UHM.mapLoadError (chmFile.name, "File is empty (zero bytes)");
+			return;
 		}
 		//fileSrc is file so get the JSON files from the zip file.
 		//First create a dictionary of all the files in the zip.
@@ -794,16 +975,32 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 				//The user may have renamed the zip file OR it was downloaded
 				//as a second+ generation of a file by the same name (e.g. with a " (1)" 
 				//in the name).
-				var entryName = entries[0].filename;
-				heatMapName = entryName.substring(0,entryName.indexOf("/"));
+			        if (entries.length == 0) {
+				    NgChm.UHM.mapLoadError (chmFile.name, "Empty zip file");
+				    return;
+				}
+				const entryName = entries[0].filename;
+				const slashIdx = entryName.indexOf("/");
+				if (slashIdx < 0) {
+				    NgChm.UHM.mapLoadError (chmFile.name, "File format not recognized");
+				    return;
+				}
+				heatMapName = entryName.substring(0,slashIdx);
 				for (var i = 0; i < entries.length; i++) {
 					zipFiles[entries[i].filename] = entries[i];
 				}
-				zipFetchJson(zipFiles[heatMapName + "/mapConfig.json"], addMapConfig);	 
-				zipFetchJson(zipFiles[heatMapName + "/mapData.json"], addMapData);	 
+				const mapConfigName = heatMapName + "/mapConfig.json";
+				const mapDataName = heatMapName + "/mapData.json";
+				if ((mapConfigName in zipFiles) && (mapDataName in zipFiles)) {
+				    zipFetchJson(zipFiles[mapConfigName], addMapConfig);
+				    zipFetchJson(zipFiles[mapDataName], addMapData);
+				} else {
+				    NgChm.UHM.mapLoadError (chmFile.name, "Missing NGCHM content");
+				}
 			});
 		}, function(error) {
 			console.log('Zip file read error ' + error);
+			NgChm.UHM.mapLoadError (chmFile.name, error);
 		});	
 	}
 	
@@ -816,6 +1013,121 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		});
 	}
 	
+	/**
+	* Save the pane layout to mapConfig
+	*/
+	function savePaneLayoutToMapConfig() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { mapConfig['panel_configuration'] = {} }
+		let layoutToSave = document.getElementById('ngChmContainer');
+		let layoutJSON = domJSON.toJSON(layoutToSave,{absolutePaths:false});
+		mapConfig['panel_configuration']['panel_layout'] = layoutJSON;
+	}
+
+	/**
+	* Save enough information from the detail map to reconstruct the zoom/pan state
+	*/
+	function saveDetailMapInfoToMapConfig() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
+		NgChm.DMM.DetailMaps.forEach(dm => {
+			mapConfig.panel_configuration[dm.pane] = {
+				'currentCol': dm.currentCol,
+				'currentRow': dm.currentRow,
+				'dataBoxHeight': dm.dataBoxHeight,
+				'dataBoxWidth': dm.dataBoxWidth,
+				'dataPerCol': dm.dataPerCol,
+				'dataPerRow': dm.dataPerRow,
+				'mode': dm.mode,
+				'type': 'detailMap',
+				'version': dm.version,
+				'versionNumber': dm.chm.id.replace('detail_chm','')
+			}
+		})
+	}
+
+	/**
+	* Save information about the data layers (i.e. 'flick info') to mapConfig
+	*/
+	function saveFlickInfoToMapConfig() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
+		mapConfig.panel_configuration['flickInfo'] = {};
+		try {
+			mapConfig.panel_configuration.flickInfo['flick_btn_state'] = document.getElementById('flick_btn').dataset.state;
+			mapConfig.panel_configuration.flickInfo['flick1'] = document.getElementById('flick1').value;
+			mapConfig.panel_configuration.flickInfo['flick2'] = document.getElementById('flick2').value;
+		} catch(err) {
+			console.error(err);
+		}
+	}
+
+	/**
+	* Save data sent to plugin to mapConfig 
+	*/
+	NgChm.MMGR.saveDataSentToPluginToMapConfig = function(nonce, postedConfig, postedData) {
+		try {
+			var paneId = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement.id
+		} catch(err) {
+			throw "Cannot determine pane for given nonce"
+			return false
+		}
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
+			mapConfig['panel_configuration'] = {} 
+		}
+		if (!mapConfig.panel_configuration.hasOwnProperty(paneId) || mapConfig.panel_configuration[paneId] == null) { 
+			mapConfig.panel_configuration[paneId] = {} 
+		}
+		mapConfig.panel_configuration[paneId].config = postedConfig;
+		mapConfig.panel_configuration[paneId].data = postedData;
+		mapConfig.panel_configuration[paneId].type = 'plugin';
+	}
+
+	NgChm.MMGR.removePaneInfoFromMapConfig = function(paneid) {
+		if (mapConfig.hasOwnProperty('panel_configuration')) {
+			mapConfig.panel_configuration[paneid] = null;
+		}
+	}
+
+	/**
+	* Save linkout pane data to mapConfig
+	*/
+	NgChm.MMGR.saveLinkoutPaneToMapConfig = function(paneid, url, paneTitle) {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
+			mapConfig['panel_configuration'] = {} 
+		}
+		mapConfig.panel_configuration[paneid] = {
+			'type': 'linkout',
+			'url': url,
+			'paneTitle': paneTitle
+		} 
+	}
+
+	/*
+	  Saves data from plugin to mapConfig--this is data that did NOT originally come from the NGCHM.
+	*/
+	NgChm.MMGR.saveDataFromPluginToMapConfig = function(nonce, dataFromPlugin) {
+		try {
+			var paneId = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement.id;
+		} catch(err) {
+			throw "Cannot determine pane for given nonce";
+			return false;
+		}
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
+			mapConfig['panel_configuration'] = {};
+		}
+		if (!mapConfig.panel_configuration.hasOwnProperty(paneId) || mapConfig.panel_configuration[paneId] == null) { 
+			mapConfig.panel_configuration[paneId] = {};
+		}
+		mapConfig.panel_configuration[paneId].dataFromPlugin = dataFromPlugin;
+	}
+
+	NgChm.MMGR.saveSelectionsToMapConfig = function() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
+			mapConfig['panel_configuration'] = {};
+		}
+		mapConfig.panel_configuration['selections'] = {};
+		mapConfig.panel_configuration.selections['row'] = NgChm.SRCH.getAxisSearchResults('row');
+		mapConfig.panel_configuration.selections['col'] = NgChm.SRCH.getAxisSearchResults('col');
+	}
+
 	function zipSaveMapProperties() {
 
 		  function onProgress(a, b) {
@@ -837,6 +1149,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 								// Directly add all text zip entries directly to the new zip file
 								// except for mapConfig.  For this entry, add the modified config data.
 								if (keyVal.indexOf('mapConfig') > -1) {
+									savePaneLayoutToMapConfig();
+									saveDetailMapInfoToMapConfig();
+									saveFlickInfoToMapConfig();
 									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConfig));
 								} else {
 									zipFetchText(entry, fileIndex, addTextContents);
@@ -977,7 +1292,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 									datalayers,
 									lowerLevelId ? datalevels[lowerLevelId] : null,
 									getTileCacheData,
-									getTile);
+									getTile, waitForTileCacheReady);
 				} else if (altLevelId) {
 					datalevels[levelId] = datalevels[altLevelId];
 					// Record all levels for which altLevelId is serving as an immediate alternate.
@@ -1019,13 +1334,14 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 		if (NgChm.UTIL.getURLParameter("column") !== "" && !isNaN(Number(NgChm.UTIL.getURLParameter("column")))){
 			NgChm.SEL.currentCol = Number(NgChm.UTIL.getURLParameter("column"))
 		}
-
+	        NgChm.SEL.setSelectionColors();
 		NgChm.UTIL.configurePanelInterface();
-		NgChm.SUM.initSummaryDisplay();
-		NgChm.DET.initDetailDisplay();
-		document.addEventListener("keydown", NgChm.SEL.keyNavigate);
+		document.addEventListener("keydown", NgChm.DEV.keyNavigate);
 
 		addDataLayers(mc);
+		if (mc.hasOwnProperty('panel_configuration')) {
+			NgChm.RecPanes.reconstructPanelsFromMapConfig()
+		}
 	}
 	
 	function prefetchInitialTiles(datalayers, datalevels, levels) {
@@ -1116,20 +1432,30 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 	}
 	
 	// Handle replies from tileio worker.
-	function connectWebTileLoader () {
+	function connectWebLoader () {
 		const debug = false;
-		NgChm.MMGR.tileLoader.onmessage = function(e) {
-			if (debug) console.log({ m: 'Received message from tileLoader', e });
+		jsonSetterFunctions.mapConfig = addMapConfig;
+		jsonSetterFunctions.mapData = addMapData;
+		NgChm.MMGR.webLoader.setMessageHandler (function(e) {
+			if (debug) console.log({ m: 'Received message from webLoader', e });
 			if (e.data.op === 'tileLoaded') {
 				const tiledata = new Float32Array(e.data.buffer);
 				setTileCacheEntry (e.data.job.tileCacheName, tiledata);
 			} else if (e.data.op === 'tileLoadFailed') {
 				removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
+			} else if (e.data.op === 'jsonLoaded') {
+				if (!jsonSetterFunctions.hasOwnProperty(e.data.name)) {
+					console.log({ m: 'connectWebLoader: unknown JSON request', e });
+					return;
+				}
+				jsonSetterFunctions[e.data.name] (e.data.json);
+			} else if (e.data.op === 'jsonLoadFailed') {
+				console.error(`Failed to get JSON file ${e.data.name} for ${heatMapName} from server`);
+				NgChm.UHM.mapNotFound(heatMapName);
 			} else {
-				console.log({ m: 'connectWebTileLoader: unknown op', e });
+				console.log({ m: 'connectWebLoader: unknown op', e });
 			}
-		};
-
+		});
 	};
 
 	// Create the specified cache entry.
@@ -1160,15 +1486,18 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 			if ((mapData != null) &&
 				(mapConfig != null) &&
 				(Object.keys(datalevels).length > 0) &&
-				(haveTileData(NgChm.SEL.currentDl+"."+NgChm.MMGR.THUMBNAIL_LEVEL+".1.1")) &&
+				(haveTileData(NgChm.SEL.getCurrentDL()+"."+NgChm.MMGR.THUMBNAIL_LEVEL+".1.1")) &&
 				 (initialized == 0)) {
 					initialized = 1;
+					if (!mapConfig.hasOwnProperty('panel_configuration')) {
+					    NgChm.UTIL.UI.hideLoader();
+					}
 					sendAllListeners(NgChm.MMGR.Event_INITIALIZED);
 			}
 			//Unlikely, but possible to get init finished after all the summary tiles.
 			//As a back stop, if we already have the top left summary tile, send a data update event too.
-			if (haveTileData(NgChm.SEL.currentDl+"."+NgChm.MMGR.SUMMARY_LEVEL+".1.1")) {
-				sendAllListeners(NgChm.MMGR.Event_NEWDATA, { layer: NgChm.SEL.currentDl, level: NgChm.MMGR.SUMMARY_LEVEL, row: 1, col: 1});
+			if (haveTileData(NgChm.SEL.getCurrentDL()+"."+NgChm.MMGR.SUMMARY_LEVEL+".1.1")) {
+				sendAllListeners(NgChm.MMGR.Event_NEWDATA, { layer: NgChm.SEL.getCurrentDL(), level: NgChm.MMGR.SUMMARY_LEVEL, row: 1, col: 1});
 			}
 		} else	if ((event === NgChm.MMGR.Event_NEWDATA) && (initialized === 1)) {
 			sendAllListeners(event, tile);
@@ -1216,24 +1545,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
   	//ToDo: need to remove items from the cache if it is maxed out. - don't get rid of thumb nail or summary.
 
 		if ((fileSrc == NgChm.MMGR.WEB_SOURCE) || (fileSrc == NgChm.MMGR.LOCAL_SOURCE)) {
-			let URL;
-			if (fileSrc == NgChm.MMGR.WEB_SOURCE) {
-				let getTileString = "GetTile?map=" + heatMapName + "&datalayer=" + layer + "&level=" + level + "&tile=" + tileName;
-				// Because a tile worker thread doesn't share our origin, we have to pass it
-				// an absolute URL, and to substitute in the CFG.api variable, we want to
-				// build the URL using the same logic as a browser for relative vs. absolute
-				// paths.
-				if (NgChm.CFG.api[0] === '/') {	// absolute
-					URL = document.location.origin + NgChm.CFG.api + getTileString;
-				} else {
-					URL = document.location.origin + '/' +
-						window.location.pathname.substr(1, window.location.pathname.lastIndexOf('/')) +
-						NgChm.CFG.api + getTileString;
-				}
-			} else {
-				URL = NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+layer+"/"+level+"/"+tileName+".bin";
-			}
-			NgChm.MMGR.tileLoader.postMessage({ op: 'loadTile', job: { tileCacheName, URL } });
+			NgChm.MMGR.webLoader.postMessage({ op: 'loadTile', job: { tileCacheName, layer, level, tileName} });
 		} else {
 			//File fileSrc - get tile from zip
 			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.tile'];
@@ -1257,29 +1569,47 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 				});		
 			}
 		}
-	};	
-	
-	//Helper function to fetch a json file from server.  
-	//Specify which file to get and what funciton to call when it arrives.
-	function webFetchJson(jsonFile, setterFunction) {
-		var req = new XMLHttpRequest();
-		if (fileSrc !== NgChm.MMGR.WEB_SOURCE) {
-			req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName+"/"+jsonFile+".json");
-		} else {
-			req.open("GET", NgChm.CFG.api + "GetDescriptor?map=" + heatMapName + "&type=" + jsonFile, true);
-		}
-		req.onreadystatechange = function () {
-			if (req.readyState == req.DONE) {
-		        if (req.status != 200) {
-		            console.log('Failed to get json file ' + jsonFile + ' for ' + heatMapName + ' from server: ' + req.status);
-		            NgChm.UHM.mapNotFound(heatMapName);
-		        } else {
-		        	//Got the result - call appropriate setter.
-		        	setterFunction(JSON.parse(req.response));
-			    }
+	}
+
+	/*
+		Calls getTile, and returns a promise that resolves when the tile is ready in cache
+	*/
+	function waitForTileCacheReady(layer, level, tileRow, tileColumn) {
+		getTile(layer, level, tileRow, tileColumn)
+		let maxWaitsForTile = 30;
+		let tileCacheName=layer + "." +level + "." + tileRow + "." + tileColumn;
+		function isTileReadyInCache() {
+			if (tileCache.hasOwnProperty(tileCacheName) && tileCache[tileCacheName].state == 'ready') {
+				return true;
+			} else { 
+				throw 'Tile not ready in cache';
 			}
-		};
-		req.send();
+		}
+		function waitToCheckAgain(reason) {
+			return new Promise((resolve, reject) => {
+				setTimeout(reject.bind(null,reason), 200)
+			})
+		}
+		let haveTile = Promise.reject();
+		return new Promise((resolve, reject) => {
+			for (let i=0; i<maxWaitsForTile; i++) {
+				haveTile = haveTile.catch(isTileReadyInCache).catch(waitToCheckAgain);
+			}
+			haveTile.then((result) => {
+				resolve('Tile '+tileCacheName+' ready in cache')
+			}).catch((err) => {
+				reject('Exceeded max waiting time for tile '+tileCacheName+' to be in cache.')
+			})
+		})
+	}
+
+
+	//Fetch a JSON file from server.
+	//Specify which file to get and what function to call when it arrives.
+	//Request is passed to the web loader so that it
+	//can be processed concurrently with the main thread.
+	function webFetchJson(jsonFile) {
+		NgChm.MMGR.webLoader.postMessage({ op: 'loadJSON', name: jsonFile });
 	}
 	
 	//Helper function to fetch a json file from server.  
@@ -1317,7 +1647,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallback, fileSrc, chmFile) {
 
 
 //Internal object for traversing the data at a given zoom level.
-NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile) {
+NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile, waitForTileCacheReady) {
 	this.totalRows = jsonData.total_rows;
 	this.totalColumns = jsonData.total_cols;
     var numTileRows = jsonData.tile_rows;
@@ -1335,7 +1665,7 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		//Calculate which tile holds the row / column we are looking for.
 		var tileRow = Math.floor((row-1)/rowsPerTile) + 1;
 		var tileCol = Math.floor((column-1)/colsPerTile) + 1;
-		var arrayData = getTileCacheData(NgChm.SEL.currentDl+"."+level+"."+tileRow+"."+tileCol);
+		var arrayData = getTileCacheData(NgChm.SEL.getCurrentDL()+"."+level+"."+tileRow+"."+tileCol);
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {
@@ -1360,13 +1690,41 @@ NgChm.MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowe
 		var endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
 		var endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
     	
+	const currentDl = NgChm.SEL.getCurrentDL();
     	for (var i = startRowTile; i <= endRowTile; i++) {
     		for (var j = startColTile; j <= endColTile; j++) {
-    			getTile(NgChm.SEL.currentDl, level, i, j);
+			getTile(currentDl, level, i, j);
     		}
     	}
     	return {startRowTile: startRowTile, endRowTile: endRowTile, startColTile: startColTile, endColTile: endColTile}
     }
+
+	/*
+		Similar to setReadWindow. However this function returns a Promise that
+		resolves when all needed tiles are available in cache.
+	*/
+	this.setReadWindowPromise = function(row, column, numRows, numColumns) {
+		let startRowTile = Math.floor(row/rowsPerTile) + 1;
+		let startColTile = Math.floor(column/colsPerTile) + 1;
+		let endRowCalc = (row+(numRows-1))/rowsPerTile;
+		let endColCalc = (column+(numColumns-1))/colsPerTile;
+		let endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
+		let endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
+		const currentDl = NgChm.SEL.getCurrentDL();
+		var ensureTilesInCache = []
+		for (var i = startRowTile; i <= endRowTile; i++) {
+			for (var j = startColTile; j <= endColTile; j++) {
+				ensureTilesInCache.push(waitForTileCacheReady(currentDl, level, i, j));
+			}
+		}
+		return new Promise((resolve, reject) => {
+			Promise.all(ensureTilesInCache).then(tilesInCache => {
+				resolve(tilesInCache)
+			}).catch(error => {
+				reject(error)
+			})
+		})
+	}
 
 	// External user of the matrix data lets us know where they plan to read.
 	// Pull tiles for that area if we don't already have them.

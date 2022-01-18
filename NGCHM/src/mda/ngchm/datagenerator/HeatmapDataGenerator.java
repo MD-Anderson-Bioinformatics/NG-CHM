@@ -294,14 +294,24 @@ public class HeatmapDataGenerator {
 	        configFile.close();
 	    } catch (FileNotFoundException ex) {
 	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: heatmapProperties.JSON file not found." );
+			System.out.println("If you are using Shaidy to generate the map, the file should be located in the Viewer directory."); 
+			System.out.println("If you are using a server to supply the heat map to the data generator, the file should be located in the appropriate map directory in the defined mapLocation for your server."); 
 			ex.printStackTrace();
 	        throw ex;
 	    } catch (IOException ex) {
 	        System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: IO Exception reading heatmapProperties.JSON file.");
+			System.out.println("The HeatmapProperties.json file could not be read and may be corrupted."); 
+			System.out.println("If you are using Shaidy to generate the map, you may retrieve the file from you Viewer directory and run it through an online JSON parser (e.g. jsonlint.com) to diagnose the JSON file."); 
+			System.out.println("If you are using a server to supply the heat map to the data generator, check the appropriate map directory in the defined mapLocation for your server."); 
 			ex.printStackTrace();
 	        throw ex;
 	   } catch (ParseException ex) {
 			System.out.println("Exception in HeatmapDataGenerator.validateConfigJson: Invalid Heatmap Configuration."); 
+			System.out.println("The HeatmapProperties.json file could not be parsed."); 
+			System.out.println("If you are using Shaidy to generate the map, you may retrieve the file from your Viewer directory and run it through an online JSON parser (e.g. jsonlint.com) to diagnose the JSON file."); 
+			System.out.println("If you are using a server to supply the heat map to the data generator, check the appropriate map directory in the defined mapLocation for your server."); 
+			System.out.println("If the stack trace contains a reference to an unexpected character, search for that character in the HeatmapProperties.json file. It may be outside of node or value quotation marks.");
+			System.out.println("You may also have either node parameters or values that contain single quotes instead of double which is invalid.");
 	        ex.printStackTrace();
 	        throw ex;
 	   } finally {

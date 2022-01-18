@@ -1,3 +1,21 @@
+/*******************************************************************
+ * CLASS: GalaxyMapGen
+ *
+ * This class contains the logic included in the GalaxyMapGen JAR 
+ * that is built in the NGCHM project and ported to the NG-CHM Galaxy
+ * project to provide HeatmapDataGenerator functionality to the 
+ * Galaxy implementation of the NG-CHM Viewer. A JSON object 
+ * containing a nearly complete heatmapProperties JSON file is 
+ * passed in from Galaxy. Some modifications (commented below)
+ * are made to the JSON file and the HMDG is called using the 
+ * modified JSON.
+ * 
+ * ALSO: This class is where the version value is set for the 
+ * NG-CHM Galaxy implementation.
+ * 
+ * Author: Mark Stucky
+ * Date: December 14, 2015
+ ******************************************************************/
 package mda.ngchm.datagenerator;
 
 import java.io.PrintWriter;
@@ -24,7 +42,7 @@ import org.json.simple.parser.ParseException;
 public class GalaxyMapGen {
 	
 public static boolean debugOutput = false;
-private static String BUILDER_VERSION = "2.12.2";
+private static String BUILDER_VERSION = "2.14.0";
 
 
 	public static void main(String[] args){

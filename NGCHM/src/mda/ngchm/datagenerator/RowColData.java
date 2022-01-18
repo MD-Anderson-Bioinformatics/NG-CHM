@@ -128,8 +128,7 @@ public class RowColData {
 				warningMsgs = warningMsgs + buildTopItemsArray();
 			}
 		} catch (Exception ex) {
-	    	System.out.println("Exception instantiating RowColData Object: "+ ex.toString());
-                ex.printStackTrace();
+            ex.printStackTrace();
 	        throw ex;
 		}
 	}
@@ -406,10 +405,9 @@ public class RowColData {
 		    	for (int i=0;i<rowHeaders.length;i++) {
 		    		orderArr[i] = rowHeaders[i]+"\t"+posArr[i];  
 		    	}
-		    }        
+		    }  
 		} catch (Exception ex) {
-		    	System.out.println("Exception in RowColData.constructOrderArray: Reading Matrix. "+ ex.toString());
-		        throw ex;
+			throw new Exception("Exception in RowColData.constructOrderArray: Reading Matrix " + orderType + " Headers."+ ex.toString());
 	    }
 	    return orderArr;
 	}

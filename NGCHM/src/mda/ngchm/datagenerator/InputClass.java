@@ -289,6 +289,7 @@ public class InputClass {
 	        }
  
     	} catch (Exception ex) { 
+    		System.out.println("ERROR Building tree cut classification file: " + ex.toString());
     		throw ex;
 	    }
 		return reorg;
@@ -304,24 +305,29 @@ public class InputClass {
 	 * and highest values in the class data provided.
 	 ******************************************************************/
 	private void calcLowHighBounds(boolean lowFound, boolean highFound) throws Exception  {
-		float lowVal = MAX_VALUES;
-	    float highVal = MIN_VALUES;
-	    for (int row = 1; row < orderedClass.length; row++) {
-    		if (MatrixValidator.isNumeric(orderedClass[row])) {
-	        	float floatValue = Float.parseFloat(orderedClass[row]);
-	        	if (floatValue > highVal) {
-	        		highVal = floatValue;
-	        	} else if (floatValue < lowVal) {
-	        		lowVal = floatValue;
-	        	}
-    		}
-    	}
-	    if (!lowFound) {
-			lowBound = String.valueOf(lowVal);
-	    } 
-	    if (!highFound) {
-			highBound = String.valueOf(highVal);
-	    } 
+		try {
+			float lowVal = MAX_VALUES;
+		    float highVal = MIN_VALUES;
+		    for (int row = 1; row < orderedClass.length; row++) {
+	    		if (MatrixValidator.isNumeric(orderedClass[row])) {
+		        	float floatValue = Float.parseFloat(orderedClass[row]);
+		        	if (floatValue > highVal) {
+		        		highVal = floatValue;
+		        	} else if (floatValue < lowVal) {
+		        		lowVal = floatValue;
+		        	}
+	    		}
+	    	}
+		    if (!lowFound) {
+				lowBound = String.valueOf(lowVal);
+		    } 
+		    if (!highFound) {
+				highBound = String.valueOf(highVal);
+		    } 
+		} catch (Exception ex) { 
+			System.out.println("ERROR Calculating low and high boundaries for continuous class bar (" + name + "): " + ex.toString());
+			throw ex;
+	    }
 	}
 	
 	/*******************************************************************
@@ -333,66 +339,71 @@ public class InputClass {
 	 ******************************************************************/
 	public void createClassSummaryImg(int size) throws Exception {
 		BufferedImage image = null;
-		if (!barType.equals(COLOR_PLOT)) {
-			float barHeight = Float.parseFloat(height);
-			generateClassMatrix(size,barHeight);
-	        image = position.equals("row") ? new BufferedImage((int)barHeight, size, BufferedImage.TYPE_INT_RGB) : new BufferedImage(size, (int)barHeight, BufferedImage.TYPE_INT_RGB);
-       		int fgRgb = Color.decode(fgColor).getRGB();
-       		int bgRgb = Color.decode(bgColor).getRGB();
-	    	for (int h = 0; h < classMatrix.length; h++) { 
-	    		int[] row = classMatrix[h];
-	    		for (int k = 0; k < row.length; k++) { 
-	    			int posVal = row[k];
-	    			//Reverse draw for column class bar
-	    			int colAdj = (classMatrix.length-1)-h;
-	    			if (posVal == 1) {
-			        	if (position.equals("row")) {
-			        		image.setRGB(h, k, fgRgb);
-			        	} else {
-			                image.setRGB(k, colAdj, fgRgb);
-			        	}
-	    			} else if (posVal == 2) {
-			        	if (position.equals("row")) {
-			        		image.setRGB(h, k, RGB_WHITE);
-			        	} else {
-			                image.setRGB(k, colAdj, RGB_WHITE);
-			        	}
-	    			} else {
-			        	if (position.equals("row")) {
-			        		image.setRGB(h, k, bgRgb);
-			        	} else {
-			                image.setRGB(k, colAdj, bgRgb);
-			        	}
-	    			}
-	    		}
-	    	}
-		} else {
-	        int sampleFactor = orderedClass.length/size;
-	        image = position.equals("row") ? new BufferedImage(1, size, BufferedImage.TYPE_INT_RGB) : new BufferedImage(size, 1, BufferedImage.TYPE_INT_RGB);
- 	        for (int i = 1; i < size + 1; i++) {
-	        	int valPos = i*sampleFactor > orderedClass.length-1 ? orderedClass.length-1 :  i*sampleFactor;
-	        	String elemValue = orderedClass[valPos];
-	        	int rgb = 0;
-	        	if (elemValue == null) {
-                	Color cut = map.missingColor;
-                	rgb = cut.getRGB();
-	        	} else if (elemValue == CUT_VALUE) {
-                	rgb = RGB_WHITE;
-	        	} else {
-		        	if (map.type.equals("continuous")) {
-		        		rgb = getContinuousColor(elemValue);
+		try {
+			if (!barType.equals(COLOR_PLOT)) {
+				float barHeight = Float.parseFloat(height);
+				generateClassMatrix(size,barHeight);
+		        image = position.equals("row") ? new BufferedImage((int)barHeight, size, BufferedImage.TYPE_INT_RGB) : new BufferedImage(size, (int)barHeight, BufferedImage.TYPE_INT_RGB);
+	       		int fgRgb = Color.decode(fgColor).getRGB();
+	       		int bgRgb = Color.decode(bgColor).getRGB();
+		    	for (int h = 0; h < classMatrix.length; h++) { 
+		    		int[] row = classMatrix[h];
+		    		for (int k = 0; k < row.length; k++) { 
+		    			int posVal = row[k];
+		    			//Reverse draw for column class bar
+		    			int colAdj = (classMatrix.length-1)-h;
+		    			if (posVal == 1) {
+				        	if (position.equals("row")) {
+				        		image.setRGB(h, k, fgRgb);
+				        	} else {
+				                image.setRGB(k, colAdj, fgRgb);
+				        	}
+		    			} else if (posVal == 2) {
+				        	if (position.equals("row")) {
+				        		image.setRGB(h, k, RGB_WHITE);
+				        	} else {
+				                image.setRGB(k, colAdj, RGB_WHITE);
+				        	}
+		    			} else {
+				        	if (position.equals("row")) {
+				        		image.setRGB(h, k, bgRgb);
+				        	} else {
+				                image.setRGB(k, colAdj, bgRgb);
+				        	}
+		    			}
+		    		}
+		    	}
+			} else {
+		        int sampleFactor = orderedClass.length/size;
+		        image = position.equals("row") ? new BufferedImage(1, size, BufferedImage.TYPE_INT_RGB) : new BufferedImage(size, 1, BufferedImage.TYPE_INT_RGB);
+	 	        for (int i = 1; i < size + 1; i++) {
+		        	int valPos = i*sampleFactor > orderedClass.length-1 ? orderedClass.length-1 :  i*sampleFactor;
+		        	String elemValue = orderedClass[valPos];
+		        	int rgb = 0;
+		        	if (elemValue == null) {
+	                	Color cut = map.missingColor;
+	                	rgb = cut.getRGB();
+		        	} else if (elemValue == CUT_VALUE) {
+	                	rgb = RGB_WHITE;
 		        	} else {
-		        		rgb = getDiscreteColor(elemValue);
+			        	if (map.type.equals("continuous")) {
+			        		rgb = getContinuousColor(elemValue);
+			        	} else {
+			        		rgb = getDiscreteColor(elemValue);
+			        	}
 		        	}
-	        	}
-	        	if (position.equals("row")) {
-	        		image.setRGB(0, i - 1, rgb);
-	        	} else {
-	                image.setRGB(i - 1, 0, rgb);
-	        	}
-	        }
-		}
-        classImage = image;
+		        	if (position.equals("row")) {
+		        		image.setRGB(0, i - 1, rgb);
+		        	} else {
+		                image.setRGB(i - 1, 0, rgb);
+		        	}
+		        }
+			}
+	        classImage = image;
+		} catch (Exception ex) { 
+			System.out.println("ERROR Creating class bar (" + name + ") summary image: " + ex.toString());
+			throw ex;
+	    }
 	}
 	
 	/*******************************************************************

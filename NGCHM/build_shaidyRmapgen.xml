@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="create_run_jar" name="Create Runnable Jar for Project NGCHM">
+<project default="create_run_jar" name="Create Runnable Jar for Project NGCHM ShaidyRMapGen. The interface between Shaidy and the NG-CHM HeatmapDataGenerator">
     <!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
     <!--define folder properties-->
@@ -11,15 +11,18 @@
     <property name="dir.jarfile" value="."/>
     <property name="mapgen.path" value="${dir.jarfile}/ShaidyMapGen.jar"/>
 
+	<!-- Clean the NGCHM Project -->
     <target name="clean">
         <delete dir="${build.dir}"/>
     </target>
 
+	<!-- Build all JAVA class files -->
     <target name="compile">
         <mkdir dir="${classes.dir}"/>
         <javac srcdir="${src.dir}" destdir="${classes.dir}" classpath="./WebContent/WEB-INF/lib/json-simple-1.1.1.jar:./WebContent/WEB-INF/lib/pdfbox-2.0.4.jar:./WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar"/>
     </target>
 
+	<!-- Execute the JAVA class to build the ShaidyRMapGen JAR-->
 	<target name="create_run_jar" depends="compile">
         <jar destfile="${mapgen.path}" filesetmanifest="mergewithoutmain">
             <manifest>
