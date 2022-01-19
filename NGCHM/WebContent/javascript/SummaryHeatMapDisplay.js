@@ -487,7 +487,7 @@ NgChm.SUM.renderSummaryHeatmap = function (renderBuffer) {
 
 //WebGL code to draw the Summary Heat Map.
 NgChm.SUM.drawHeatMapRenderBuffer = function(renderBuffer) {
-	if (NgChm.SUM.initHeatMapGl ()) {
+	if (NgChm.SUM.chmElement && NgChm.SUM.initHeatMapGl ()) {
 	    NgChm.SUM.mapGlManager.setTextureFromRenderBuffer (renderBuffer);
 	    NgChm.SUM.mapGlManager.drawTexture ();
 	}
