@@ -3,6 +3,15 @@
 //==============================================//
 linkouts.setVersion('2020-04-07');
 
+// PCA plus plot plugin:
+linkouts.addPanePlugin({
+    name: 'PCAPlot',
+    helpText: 'Creates a PCA plot',
+    params: {},
+    src: 'http://localhost:8088/index.html'
+});
+
+
 // 2D Scatter Plot plugin:
 linkouts.addPanePlugin ({
 	name: '2D ScatterPlot',
