@@ -41,13 +41,16 @@ FROM ant AS standalone
 COPY NGCHM /NGCHM/
 
 ENV STANDALONE=/artifacts/standalone
+ENV SERVERAPP=/artifacts/server.app
 
 RUN mkdir -p ${STANDALONE} &&\
+    mkdir -p ${SERVERAPP} &&\
     cd /NGCHM &&\
     ant -f build_ngchmApp.xml &&\
     cp ngchmWidget-min.js ${STANDALONE} &&\
     cp ngchmEmbed-min.js ${STANDALONE} &&\
-    cp WebContent/ngChmApp.html ${STANDALONE}
+    cp WebContent/ngChmApp.html ${STANDALONE} &&\
+    cp -R WebContent/server.app /artifacts/
 
 # Final stage: copy artifacts from previous stages into a minimal layer
 FROM multiarch/true:x86_64
@@ -58,3 +61,4 @@ COPY --from=viewer /artifacts/viewer  /NGCHM/viewer
 COPY --from=shaidy /artifacts/shaidymapgen /NGCHM/shaidymapgen
 COPY --from=galaxy /artifacts/galaxymapgen /NGCHM/galaxymapgen
 COPY --from=standalone /artifacts/standalone /NGCHM/standalone
+COPY --from=standalone /artifacts/server.app /NGCHM/server.app
