@@ -44,7 +44,6 @@ NgChm.createNS('NgChm.RecPanes');
 		if (NgChm.LNK.getPanePlugins().length>0) { // FIXME: Assumes there are pane plugins
 			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
-			setNextMapNumber();
 			setFlickState();
 			setSelections();  // Set saved results, if any.
 			NgChm.SRCH.doInitialSearch();  // Will override saved results, if requested.
@@ -146,15 +145,28 @@ NgChm.createNS('NgChm.RecPanes');
 	 *	goes smoothly
 	 */
 	function setPanesContent() {
-		let panesArray = Array.from(document.getElementsByClassName("pane"));
+
+		let panesArray = Array.from(document.getElementsByClassName("pane")).map(el => {
+			const info = getPaneInfoFromMapConfig (el.id);
+			let sortval;
+		        if (info.type == 'summaryMap') { sortval = 0; }
+		        else if (info.type == 'detailMap') { sortval = info.version == 'P' ? 1 : 2; }
+			else { sortval = 3; }
+			return { id: el.id, idx: +el.id.replace('pane',''), el: el, info: info, sortval: sortval };
+		});
+		/* Order: summaryMap, primaryDetailMap, otherDetailMaps, other panes.
+		 * Within a category: increasing pane.id.
+		 */
 		panesArray.sort(function(a, b) { // sort to numerical pane order 
-			if (a.id > b.id) return 1;  // e.g.: 'pane3' > 'pane2' = true
-			if (a.id < b.id) return -1;  // e.g.: 'pane3' < 'pane4' = true
+			if (a.sortval > b.sortval) return 1;
+			if (a.sortval < b.sortval) return -1;
+			if (a.idx > b.idx) return 1;  // e.g.: 'pane3' > 'pane2' = true
+			if (a.idx < b.idx) return -1;  // e.g.: 'pane3' < 'pane4' = true
 			return 0;
-		})
+		});
 		panesArray.forEach(pane => {
 			setPaneContent(pane.id);
-		})
+		});
 		NgChm.Pane.resetPaneCounter(getHighestPaneId() + 1);
 	}
 
@@ -216,11 +228,12 @@ NgChm.createNS('NgChm.RecPanes');
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
 		} else if (config.type === "detailMap") {
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
-			paneInfo.versionNumber == "" ? NgChm.DMM.nextMapNumber = 1 : NgChm.DMM.nextMapNumber = parseInt(paneInfo.versionNumber)-1;
-			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
-			if (paneInfo.version == "P") {
-				NgChm.DMM.switchToPrimary(pane.children[1]);
-			}
+			let mapNumber = paneInfo.versionNumber == "" ? 1 : parseInt(paneInfo.versionNumber)-1;
+                        if (mapNumber > NgChm.DMM.nextMapNumber) {
+                            NgChm.DMM.nextMapNumber = mapNumber;
+                        }
+                        NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
+
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
@@ -360,15 +373,5 @@ NgChm.createNS('NgChm.RecPanes');
 			console.error(err)
 		}
 	}
-
-	function setNextMapNumber() {
-		let currentMapNumbers = NgChm.DMM.DetailMaps.map(dm => parseInt(dm.chm.id.replace('detail_chm',''))).filter(n => !Number.isNaN(n));
-		if (currentMapNumbers.length > 0) {
-			NgChm.DMM.nextMapNumber = Math.max(...currentMapNumbers);
-		} else {
-			NgChm.DMM.nextMapNumber = 1;
-		}
-	}
-
 })();
 
