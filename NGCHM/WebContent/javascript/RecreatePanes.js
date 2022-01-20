@@ -7,53 +7,116 @@ NgChm.createNS('NgChm.RecPanes');
 
 (function(){
 	"use strict";
+	const debug = true;
+
 	NgChm.RecPanes.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
 	NgChm.RecPanes.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
 
 	/**
 	 * Reconstruct the panels from data in the mapConfig.json file
 	 *
-	 * This function combines and if/else with setTmeout in order to wait for the general 
-	 * initialization of the NGCHM to complete before attempting to reconstruct the panel layout. 
+	 * This function combines an if/else with setTmeout in order to wait for the plugins to
+	 * complete loading before attempting to reconstruct the panel layout.
 	 * This is a hack.
 	 * TODO: Understand the NGCHM initialization code well enough to not need this hack.
 	 */
-	async function reconstructPanelsFromMapConfig() {
-		if (NgChm.heatMap && NgChm.heatMap.isMapLoaded() && NgChm.LNK.getPanePlugins().length>0) { // map ready
-			NgChm.RecPanes.savedInitialDetailPane = document.getElementById('detail_chm');
-			NgChm.RecPanes.mapConfigPanelConfiguration = Object.assign({},NgChm.heatMap.getPanelConfiguration());
-			reconstructPanelLayoutFromMapConfig();
-			recreateReconstructedPanes();
+	function reconstructPanelsFromMapConfig(initialLoc, savedState) {
+
+	    if (debug) console.log("Reconstructing panes");
+	    NgChm.RecPanes.mapConfigPanelConfiguration = Object.assign({}, savedState);
+	    try {
+		    let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
+		    let reconstructedPanelLayout = createLayout(panel_layoutJSON);
+		    NgChm.UTIL.containerElement.replaceChildren(reconstructedPanelLayout.firstChild);
+	    } catch(err) {
+		    console.error("Cannot reconstruct panel layout: "+err);
+		    throw "Error reconstructing panel layout from mapConfig.";
+		    return;
+	    }
+	    addDividerControlsToResizeHelpers();
+	    addResizeHandlersToContainers();
+
+	    waitForPlugins();
+
+	    // Plugin panes require plugins loaded first.
+	    // FIXME: Modify to populate plugin panels after plugins load.
+	    function waitForPlugins () {
+		if (NgChm.LNK.getPanePlugins().length>0) { // FIXME: Assumes there are pane plugins
+			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
-			setSelections();;
-			addDividerControlsToResizeHelpers();
-			addResizeHandlersToContainers();
-			window.dispatchEvent(new Event('resize'));
-			NgChm.SUM.summaryPaneResizeHandler();
-			NgChm.heatMap.setUnAppliedChanges(false);
 			setFlickState();
-			setNextMapNumber();
+			setSelections();  // Set saved results, if any.
+			NgChm.SRCH.doInitialSearch();  // Will override saved results, if requested.
+			NgChm.Pane.resizeNGCHM();
+			NgChm.heatMap.setUnAppliedChanges(false);
 			setTimeout(() => {
 				NgChm.SEL.updateSelections(true);
+				const expanded = document.querySelector("DIV[data-expanded-panel]");
+				if (expanded) {
+				    delete expanded.dataset.expandedPanel;
+				    NgChm.Pane.toggleScreenMode (expanded.id);
+				}
+				[...document.getElementsByClassName('pane')].forEach(NgChm.Pane.resizePane);
 				NgChm.UTIL.UI.hideLoader();  // Hide loader screen, display NG-CHM.
 			}, 500);
-		} else { // wait for NGCHM to initialize itself
-			setTimeout(reconstructPanelsFromMapConfig, 500);
+		} else { // wait for plugins to load
+			if (debug) console.log("Waiting for plugins to load");
+			setTimeout(waitForPlugins, 500);
 		}
+	    }
 	}
 
 	/**
-	 *	Reconstruct ngChmContainer and pane layout.
-	 */ 
-	function reconstructPanelLayoutFromMapConfig() {
-		try {
-			let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
-			let reconstructedPanelLayout = domJSON.toDOM(panel_layoutJSON);
-			NgChm.UTIL.containerElement.replaceChildren(...reconstructedPanelLayout.firstChild.children);
-		} catch(err) {
-			console.error("Cannot reconstruct panel layout: "+err);
-			throw "Error reconstructing panel layout from mapConfig.";
+	 * Create an NgChm container/pane layout according to the given save state specification.
+	 * Users should pass the saveSpec for the top level ngChmContainer and leave parent undefined.
+	 * The function calls itself recursively.
+	 *
+	 * Panes in the generated layout are empty and need their content set.
+	 * The pane/container sizes are set to those in the specification and have to be adjusted
+	 * for the current window size.
+	 */
+	function createLayout (saveSpec, parent) {
+	    if (saveSpec.type === "pane") {
+		let el = NgChm.Pane.newPane({}, "Empty", saveSpec.id);
+		el.style.width = saveSpec.width;
+		el.style.height = saveSpec.height;
+		if (saveSpec.collapsed) {
+		    // Create a 'fake' pane location.
+		    const loc = {
+			    pane: el,
+			    container: parent,
+			    paneHeader: el.getElementsByClassName('paneHeader')[0],
+			    paneTitle: el.getElementsByClassName('paneTitle')[0],
+		    };
+		    NgChm.Pane.collapsePane (loc);
 		}
+		if (saveSpec.expanded) el.dataset.expandedPanel = true;
+		return el;
+	    } else if (saveSpec.type === "container") {
+		let el = document.createElement ('DIV');
+		el.style.width = saveSpec.width;
+		el.style.height = saveSpec.height;
+		el.id = saveSpec.id;
+		el.classList.add("ngChmContainer");
+		if (saveSpec.vertical) el.classList.add("vertical");
+		saveSpec.children.forEach((child,idx) => {
+		    if (idx > 0) {
+			const divider = document.createElement("DIV");
+			divider.classList.add('resizerHelper');
+			divider.classList.add('resizerHelper' + (saveSpec.vertical ? 'Bottom' : 'Right'));
+			const splitter = document.createElement('DIV');
+			splitter.classList.add('resizerSplitter' + (saveSpec.vertical ? 'Horizontal' : 'Vertical'));
+			divider.appendChild(splitter);
+			el.appendChild (divider);
+		    }
+		    const ch = createLayout (child, el);
+		    el.appendChild (ch);
+		});
+		el.addEventListener('paneresize', NgChm.Pane.resizeHandler);
+		return el;
+	    } else {
+		console.error ("Attemping to restore unknown saveSpec object: " + saveSpec.type);
+	    }
 	}
 
 	/**
@@ -77,36 +140,33 @@ NgChm.createNS('NgChm.RecPanes');
 	}
 
 	/**
-	 *	For each DOM element with className = 'pane' (presumably reconstructed from mapConfig.json),
-	 *	replace the element with a pane created from NgChm.Pane.newPane, so that it has all the 
-	 *	features panes should have.
-	 */
-	function recreateReconstructedPanes() {
-		NgChm.DMM.DetailMaps = [];
-		let panes = document.getElementsByClassName("pane");
-		for (let i=0; i<panes.length; i++) {
-			let displayedPane = document.getElementById(panes[i].id);
-			let newPane = NgChm.Pane.newPane({height: displayedPane.clientHeight+"px", width: displayedPane.clientWidth+"px"}, displayedPane.textContent,
-				displayedPane.id);
-			displayedPane.parentNode.replaceChild(newPane,displayedPane);
-		}
-	}
-
-	/**
 	 *	Iterate over panes and set their content
 	 *	The sort is included so that 'nextMapNumber' (i.e. the number suffix to id = 'detail_chm*')
 	 *	goes smoothly
 	 */
 	function setPanesContent() {
-		let panesArray = Array.from(document.getElementsByClassName("pane"));
+
+		let panesArray = Array.from(document.getElementsByClassName("pane")).map(el => {
+			const info = getPaneInfoFromMapConfig (el.id);
+			let sortval;
+		        if (info.type == 'summaryMap') { sortval = 0; }
+		        else if (info.type == 'detailMap') { sortval = info.version == 'P' ? 1 : 2; }
+			else { sortval = 3; }
+			return { id: el.id, idx: +el.id.replace('pane',''), el: el, info: info, sortval: sortval };
+		});
+		/* Order: summaryMap, primaryDetailMap, otherDetailMaps, other panes.
+		 * Within a category: increasing pane.id.
+		 */
 		panesArray.sort(function(a, b) { // sort to numerical pane order 
-			if (a.id > b.id) return 1;  // e.g.: 'pane3' > 'pane2' = true
-			if (a.id < b.id) return -1;  // e.g.: 'pane3' < 'pane4' = true
+			if (a.sortval > b.sortval) return 1;
+			if (a.sortval < b.sortval) return -1;
+			if (a.idx > b.idx) return 1;  // e.g.: 'pane3' > 'pane2' = true
+			if (a.idx < b.idx) return -1;  // e.g.: 'pane3' < 'pane4' = true
 			return 0;
-		})
+		});
 		panesArray.forEach(pane => {
 			setPaneContent(pane.id);
-		})
+		});
 		NgChm.Pane.resetPaneCounter(getHighestPaneId() + 1);
 	}
 
@@ -145,75 +205,71 @@ NgChm.createNS('NgChm.RecPanes');
 		NgChm.SRCH.setAxisSearchResultsVec('Row', rowSelections);
 		let colSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['col'];
 		NgChm.SRCH.setAxisSearchResultsVec('Column', colSelections);
+
+		let dendroBars = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['selectedRowDendroBars'];
+		if (dendroBars) NgChm.SUM.rowDendro.restoreSelectedBars(dendroBars);
+		dendroBars = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['selectedColDendroBars'];
+		if (dendroBars) NgChm.SUM.colDendro.restoreSelectedBars(dendroBars);
 	}
 
 	/**
-	 *	Set a pane's content based on 'textContent' attribute, unless a primary pane (then just
-	 *	return)
+	 *	Set a pane's content based on 'config.type' attribute.
 	 */
 	function setPaneContent(paneid) {
 		let pane = document.getElementById(paneid);
-		if (pane.textContent.includes("Heat Map Summary")) {
+		const config = NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
+		if (!config) {
+		    // Probably an empty pane.
+		    // console.debug ("Pane has no config", paneid, config);
+		    return;
+		}
+		if (config.type === "summaryMap") {
 			NgChm.SUM.switchPaneToSummary(NgChm.Pane.findPaneLocation(pane));
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
-		} else if (pane.textContent.includes("Heat Map Detail")) {
+		} else if (config.type === "detailMap") {
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
-			paneInfo.versionNumber == "" ? NgChm.DMM.nextMapNumber = 1 : NgChm.DMM.nextMapNumber = parseInt(paneInfo.versionNumber)-1;
-			NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
-			if (paneInfo.version == "P") {
-				NgChm.DMM.switchToPrimary(pane.childNodes[1]);
-			}
+			let mapNumber = paneInfo.versionNumber == "" ? 1 : parseInt(paneInfo.versionNumber);
+                        if (mapNumber > NgChm.DMM.nextMapNumber) {
+                            NgChm.DMM.nextMapNumber = mapNumber;
+                        }
+                        NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane), { mapNumber });
+
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
-			mapItem.currentCol = paneInfo.currentCol;
-			mapItem.currentRow = paneInfo.currentRow;
-			mapItem.dataBoxHeight = paneInfo.dataBoxHeight;
-			mapItem.dataBoxWidth = paneInfo.dataBoxWidth;
-			mapItem.dataPerCol = paneInfo.dataPerCol;
-			mapItem.dataPerRow = paneInfo.dataPerRow;
-			mapItem.mode = paneInfo.mode;
-			let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(paneInfo.dataBoxWidth);
-			switch (paneInfo.mode) {
-				case "NORMAL":
-					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
-					break;
-				case "RIBBONV":
-					NgChm.DEV.detailVRibbon(mapItem);
-					break;
-				case "RIBBONH":
-					NgChm.DEV.detailHRibbon(mapItem);
-					break;
-				case "FULL_MAP":
-					NgChm.DEV.detailFullMap(mapItem);
-					break;
-				default: // just use the 'NORMAL' case for unknown modes
-					NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
-			}
+			NgChm.restoreFromSavedState (mapItem, paneInfo);
 			NgChm.SEL.updateSelection(mapItem);
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
-		} else if (pane.textContent == 'empty') {
-			return;
-		} else {
+		} else if (config.type === 'plugin') {
 			let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
-			let specifiedPlugin = customjsPlugins.filter(pc => pane.textContent.indexOf(pc.name) > -1)[0];
-			if (specifiedPlugin == undefined) { // then assume pane was a linkout pane
-				let loc = NgChm.Pane.findPaneLocation(pane);
-				NgChm.LNK.switchPaneToLinkouts(loc);
-				let linkoutData = getPaneInfoFromMapConfig(paneid);
-				if (linkoutData != null) {
-					NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
-				}
-			} else { // one of the pane plugins
+			let specifiedPlugin = customjsPlugins.filter(pc => config.pluginName == pc.name);
+			if (specifiedPlugin.length > 0) {
 				try {
-					NgChm.LNK.switchPaneToPlugin(NgChm.Pane.findPaneLocation(pane),specifiedPlugin);
+					NgChm.LNK.switchPaneToPlugin(NgChm.Pane.findPaneLocation(pane),specifiedPlugin[0]);
 					NgChm.Pane.initializeGearIconMenu(document.getElementById(paneid+'Icon'));
 				} catch(err) {
 					console.error(err);
-					console.error("Specified plugin: ",pane.textContent);
+					console.error("Specified plugin: ", config.pluginName);
 					throw("Error loading plugin");
 				}
+			} else {
+				// Show brief message about the missing plugin in the panel.
+				const loc = NgChm.Pane.findPaneLocation(pane);
+				loc.pane.dataset.pluginName = config.pluginName;
+				loc.paneTitle.innerText = config.pluginName;
+				const message = document.createElement('DIV');
+				message.innerText = `This restored panel requires the "${config.pluginName}" plugin, which is not available. Adding the plugin will initialize the panel.`;
+				loc.pane.appendChild (message);
 			}
+		} else if (config.type === 'linkout') {
+			let loc = NgChm.Pane.findPaneLocation(pane);
+			NgChm.LNK.switchPaneToLinkouts(loc);
+			let linkoutData = getPaneInfoFromMapConfig(paneid);
+			if (linkoutData != null) {
+				NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
+			}
+		} else {
+			console.error ("Unrecognized pane type - " + config.type);
 		}
 	}
 
@@ -249,6 +305,7 @@ NgChm.createNS('NgChm.RecPanes');
 			let data = paneInfo.data;
 			let selectedLabels = getSelectedLabels(config.axes[0].axisName);
 			data.axes[0].selectedLabels = selectedLabels;
+			pluginInstance.params = config;
 			NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
 			let dataFromPlugin = paneInfo.dataFromPlugin;
 			NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
@@ -316,15 +373,5 @@ NgChm.createNS('NgChm.RecPanes');
 			console.error(err)
 		}
 	}
-
-	function setNextMapNumber() {
-		let currentMapNumbers = NgChm.DMM.DetailMaps.map(dm => parseInt(dm.chm.id.replace('detail_chm',''))).filter(n => !Number.isNaN(n));
-		if (currentMapNumbers.length > 0) {
-			NgChm.DMM.nextMapNumber = Math.max(...currentMapNumbers);
-		} else {
-			NgChm.DMM.nextMapNumber = 1;
-		}
-	}
-
 })();
 

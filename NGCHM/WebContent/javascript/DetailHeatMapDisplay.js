@@ -41,20 +41,10 @@ NgChm.DET.detailHeatMapValidator = {};  // Encoded drawing parameters used to ch
  * This callback draws the summary heat map.
  *********************************************************************************************/
 NgChm.DET.processDetailMapUpdate = function (event, tile) {
-	if (event == NgChm.MMGR.Event_INITIALIZED) {
-		NgChm.DMM.InitDetailMap(document.getElementById('detail_chm'));
-		NgChm.heatMap.configureButtonBar();
-		//If URL search parameter has been specified, execute search upon initialization of the detail panel
-		const searchParam = NgChm.UTIL.getURLParameter('search')
-		if (searchParam !== "") {
-			let searchElement = document.getElementById('search_text');
-			searchElement.value = searchParam;
-			NgChm.SRCH.detailSearch();
-		}
-	} else {
+	if (event !== NgChm.MMGR.Event_INITIALIZED) {
 		NgChm.DET.flushDrawingCache(tile);
 	} 
-}
+};
 
 /*********************************************************************************************
  * FUNCTION:  setDrawDetailsTimeout - The purpose of this function is to call the drawing 
@@ -508,6 +498,60 @@ NgChm.DET.getNearestBoxSize = function (mapItem, sizeToGet) {
 }
 
 /*********************************************************************************************
+ * FUNCTION: getDetailSaveState  -  Return save state required for restoring this detail view.
+ *********************************************************************************************/
+NgChm.DET.getDetailSaveState = function (dm) {
+	// Subtract dataViewBorder from dataViewWidth/Height in case it ever changes.
+	// Such a change may break restoring an identical view.
+	return {
+	    'currentCol': dm.currentCol,
+	    'currentRow': dm.currentRow,
+	    'dataBoxHeight': dm.dataBoxHeight,
+	    'dataBoxWidth': dm.dataBoxWidth,
+	    'dataPerCol': dm.dataPerCol,
+	    'dataPerRow': dm.dataPerRow,
+	    'dataViewWidth': dm.dataViewWidth - NgChm.DET.dataViewBorder,
+	    'dataViewHeight': dm.dataViewHeight - NgChm.DET.dataViewBorder,
+	    'mode': dm.mode,
+	    'type': 'detailMap',
+	    'version': dm.version,
+	    'versionNumber': dm.chm.id.replace('detail_chm',''),
+	};
+};
+
+/*********************************************************************************************
+ * FUNCTION: restoreFromSavedState  -  Restore detail view from saved state.
+ *********************************************************************************************/
+NgChm.restoreFromSavedState = function (mapItem, savedState) {
+	mapItem.currentCol = savedState.currentCol;
+	mapItem.currentRow = savedState.currentRow;
+	mapItem.dataViewWidth = savedState.dataViewWidth + NgChm.DET.dataViewBorder;
+	mapItem.dataViewHeight = savedState.dataViewHeight + NgChm.DET.dataViewBorder;
+	mapItem.dataBoxHeight = savedState.dataBoxHeight;
+	mapItem.dataBoxWidth = savedState.dataBoxWidth;
+	mapItem.dataPerCol = savedState.dataPerCol;
+	mapItem.dataPerRow = savedState.dataPerRow;
+	mapItem.mode = savedState.mode;
+	let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
+	switch (savedState.mode) {
+		case "NORMAL":
+			NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
+			break;
+		case "RIBBONV":
+			NgChm.DEV.detailVRibbon(mapItem);
+			break;
+		case "RIBBONH":
+			NgChm.DEV.detailHRibbon(mapItem);
+			break;
+		case "FULL_MAP":
+			NgChm.DEV.detailFullMap(mapItem);
+			break;
+		default: // just use the 'NORMAL' case for unknown modes
+			NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
+	};
+};
+
+/*********************************************************************************************
  * FUNCTION: getNearestBoxHeight  -  The purpose of this function is to loop zoomBoxSizes to pick the one that 
  * will be large enough to encompass user-selected area.
  *********************************************************************************************/
@@ -941,7 +985,7 @@ NgChm.DET.setViewPort = function (mapItem) {
 	    width: dFullW - (mapItem.rowLabelLen + 10),
 	    height:  heightCalc === 0 ? 11 : heightCalc
     };
-    NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), colLabelVP, true);
+    NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.colLabelDiv), colLabelVP, true);
 };
 
 /************************************************************************************************
@@ -1932,14 +1976,20 @@ NgChm.DET.colDendroResize = function() {
 			dendroCanvas.style.left = (left + mapItem.canvas.clientWidth * (1-mapItem.dataViewWidth/canW)) + 'px';
 			if (mapItem.colDendro.isVisible()){
 				//If summary side is hidden, retain existing dendro height
-				const sumMinimized = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) < 5 ? true : false;
-				const dendroSumPct = (parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(NgChm.SUM.canvas.style.height, 10) + parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(NgChm.SUM.cCCanvas.style.height, 10)));
-				const totalDetHeight = (mapItem.chm.offsetHeight - 50);
-				const height = (totalDetHeight * dendroSumPct); 
-				if (sumMinimized === false) {
-					dendroCanvas.style.height = parseInt(height, 10) + 'px';
-					dendroCanvas.height = Math.round(height);
+				const totalDetHeight = mapItem.chm.offsetHeight - 50;
+			        let height = parseInt (dendroCanvas.style.height, 10) | 0;
+				const sumMinimized = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) < 5;
+				if (!NgChm.SUM.chmElement || sumMinimized) {
+				        const minHeight = totalDetHeight * 0.1;
+					if (height < minHeight) {
+					    height = minHeight;
+					}
+				} else {
+					const dendroSumPct = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(NgChm.SUM.canvas.style.height, 10) + parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(NgChm.SUM.cCCanvas.style.height, 10));
+					height = totalDetHeight * dendroSumPct; 
 				}
+				dendroCanvas.style.height = height + 'px';
+				dendroCanvas.height = Math.round(height);
 				dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/canW)) + 'px';
 				dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
 				mapItem.colDendro.draw();
@@ -1964,15 +2014,21 @@ NgChm.DET.rowDendroResize = function() {
 			dendroCanvas.style.top = (top + mapItem.canvas.clientHeight * (1-mapItem.dataViewHeight/canH)) + 'px';
 			if (mapItem.rowDendro.isVisible()){
 				//If summary side is hidden, retain existing dendro width
+				const totalDetWidth = (mapItem.chm.offsetWidth - 50);
 				const sumMinimized = parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) < 5 ? true : false;
 				const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
-				const dendroSumPct = (parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(NgChm.SUM.canvas.style.width, 10) + parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(NgChm.SUM.rCCanvas.style.width, 10)));
-				const totalDetWidth = (mapItem.chm.offsetWidth - 50);
-				const width = (totalDetWidth * dendroSumPct); 
-				if (sumMinimized === false) {
-					dendroCanvas.style.width = parseInt(width, 10) + 'px';
-					dendroCanvas.width = Math.round(width);
+				let width = parseInt (dendroCanvas.style.width, 10) | 0;
+				if (!NgChm.SUM.chmElement || sumMinimized) {
+				    const minWidth = totalDetWidth * 0.1;
+				    if (width < minWidth) {
+					width = minWidth;
+				    }
+				} else {
+				    const dendroSumPct = (parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(NgChm.SUM.canvas.style.width, 10) + parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(NgChm.SUM.rCCanvas.style.width, 10)));
+				    width = (totalDetWidth * dendroSumPct); 
 				}
+				dendroCanvas.style.width = width + 'px';
+				dendroCanvas.width = Math.round(width);
 				dendroCanvas.style.height = (height-2) + 'px';
 				dendroCanvas.height = Math.round(height);
 				mapItem.rowDendro.draw();
@@ -2367,73 +2423,122 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	let savedChmElements = [];
 	NgChm.DET.initialSwitchPaneToDetail = true
 
-	function switchPaneToDetail (loc) {
+	function switchPaneToDetail (loc, restoreInfo) {
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
 		let isPrimary = false;
-		if (NgChm.RecPanes.savedInitialDetailPane != undefined) {
-			// this if block is executed if the initial detail pane was saved in RecreatePanes
-			NgChm.Pane.emptyPaneLocation (loc);
-			NgChm.SRCH.clearAllSearchResults();
-			loc.pane.appendChild(NgChm.RecPanes.savedInitialDetailPane);
-			let canvas = loc.pane.querySelector('.detail_canvas');
-			let mapItem = NgChm.DMM.getMapItemFromCanvas(canvas);
-			mapItem.pane = paneId;
-			NgChm.DMM.primaryMap = mapItem;
-			NgChm.DMM.DetailMaps.push(mapItem);
-			NgChm.DET.updateDisplayedLabels();
-			isPrimary = true;
-			NgChm.DET.initialSwitchPaneToDetail = false;
-			NgChm.RecPanes.savedInitialDetailPane = undefined;
-		} else if (NgChm.DET.initialSwitchPaneToDetail == true) {
+		let mapNumber;
+		NgChm.SRCH.clearAllSearchResults();
+		NgChm.Pane.clearExistingGearDialog(paneId);
+		if (NgChm.DET.initialSwitchPaneToDetail == true) {
 			// First time detail NGCHM created.
+			NgChm.Pane.emptyPaneLocation (loc);
 			NgChm.DET.constructDetailMapDOMTemplate()
-			NgChm.SRCH.clearAllSearchResults();
-			loc.pane.appendChild (document.getElementById('detail_chm'));
+			const chm = document.getElementById('detail_chm');
+			loc.pane.appendChild (chm);
 			isPrimary = true;
+			mapNumber = restoreInfo ? restoreInfo.mapNumber : ++NgChm.DMM.nextMapNumber;
+			NgChm.DMM.addDetailMap (chm, paneId, mapNumber);
 			NgChm.DET.initialSwitchPaneToDetail = false;
 		} else {
-			NgChm.Pane.clearExistingGearDialog(paneId);
 			if (savedChmElements.length > 0) {
 				// Detail NGCHM not currently showing in a pane.
+				NgChm.Pane.emptyPaneLocation (loc);
 				NgChm.DMM.primaryMap.pane = paneId;
 			  	NgChm.DMM.DetailMaps.push(NgChm.DMM.primaryMap);
-				NgChm.Pane.emptyPaneLocation (loc);
+				mapNumber = NgChm.DMM.primaryMap.panelNbr;
 				isPrimary = true;
 			} else {
 				// Detail NGCHM currently showing in a pane.
-				const oldLoc = NgChm.Pane.findPaneLocation (NgChm.DMM.primaryMap.chm);
-				if (oldLoc.pane === loc.pane) return;
+				const primaryLoc = NgChm.Pane.findPaneLocation (NgChm.DMM.primaryMap.chm);
+				// Switch from primary detail map to primary detail map: NOOP.
+				if (primaryLoc.pane === loc.pane) return;
+				// Switch to cloned detail map.
 				NgChm.Pane.emptyPaneLocation (loc);
-				// Remove from previous location. Will set savedChmElements.
-				savedChmElements = NgChm.Pane.openDetailPaneLocation (oldLoc, paneId);
+				mapNumber = restoreInfo ? restoreInfo.mapNumber : ++NgChm.DMM.nextMapNumber;
+				savedChmElements = clonePrimaryDetailPanel (primaryLoc, paneId, mapNumber);
 			}
 			while (savedChmElements.length > 0) {
 				const el = savedChmElements.shift(); 
 				loc.pane.appendChild (el);
 			}
-			NgChm.DEV.addEvents(paneId);
 			NgChm.SUM.drawLeftCanvasBox();
 		}
+		NgChm.DEV.addEvents(paneId);
 		NgChm.Pane.setPaneClientIcons(loc, [
-		    zoomButton ('primary_btn'+NgChm.DMM.nextMapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
-		    zoomButton ('zoomOut_btn'+NgChm.DMM.nextMapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
-		    zoomButton ('zoomIn_btn'+NgChm.DMM.nextMapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
-		    modeButton (NgChm.DMM.nextMapNumber, paneId, true,  'NORMAL',  'Normal View', 65, NgChm.DEV.detailNormal),
-		    modeButton (NgChm.DMM.nextMapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton),
-		    modeButton (NgChm.DMM.nextMapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton)
+		    zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
+		    zoomButton ('zoomOut_btn'+mapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
+		    zoomButton ('zoomIn_btn'+mapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
+		    modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, NgChm.DEV.detailNormal),
+		    modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton),
+		    modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton)
 		]);
 		if (isPrimary === true) {
-			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = 'none';
+			document.getElementById('primary_btn'+mapNumber).style.display = 'none';
 			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
 		} else {
-			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = '';
-			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+NgChm.DMM.nextMapNumber);
+			document.getElementById('primary_btn'+mapNumber).style.display = '';
+			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+mapNumber);
 		}
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
 	}
+
+	function clonePrimaryDetailPanel (primaryLoc, newPane, mapNumber) {
+		// clone all client elements (except header) in primary detail panel.
+		const clientElements = [];
+		// Expect two children: paneHeader and detail chm.
+		primaryLoc.pane.childNodes.forEach (p => {
+			if (p !== primaryLoc.paneHeader) {
+				const pClone = p.cloneNode(true);
+				if (pClone.className === 'detail_chm') {
+				    pClone.id = 'detail_chm' + mapNumber;
+				    // If primary is collapsed set chm detail of clone to visible
+				    if (pClone.style.display === 'none') {
+					    pClone.style.display = '';
+				    }
+				    renameElements(pClone);
+				    NgChm.DMM.addDetailMap(pClone, newPane, mapNumber);
+				}
+				clientElements.push (pClone);
+			}
+		});
+		// Return cloned client elements.
+		return clientElements;
+	}
+
+	function renameElements (pClone) {
+		// Rename all client elements on the pane.
+		for (let idx = 0; idx < pClone.children.length; idx++) {
+			const p = pClone.children[idx];
+			p.id = p.id + NgChm.DMM.nextMapNumber;
+			if (p.children.length > 0) {
+				let removals = [];
+		        for (let idx2 = 0; idx2 < p.children.length; idx2++) {
+					const q = p.children[idx2];
+					//rename all but label elements and place label elements in a deletion array
+					if ((q.id.includes('rowLabelDiv')) || (q.id.includes('colLabelDiv'))) {
+						q.id = q.id + NgChm.DMM.nextMapNumber;
+					} else {
+						removals.push(q.id);
+					}
+		        }
+		        //strip out all label elements
+		        for (let idx3 = 0; idx3 < removals.length; idx3++) {
+					const rem = removals[idx3];
+			        for (let idx4 = 0; idx4 < p.children.length; idx4++) {
+						const q = p.children[idx4];
+						if (rem === q.id) {
+							q.remove();
+							break;
+						}
+			        }
+		        }
+			}
+		}
+	}
+
 
 	// Table to convert image names to image source names.
 	// A table is required for this otherwise trivial conversion
@@ -2510,10 +2615,11 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 
 	function emptyDetailPane (pane, elements) {
 		//Save chm elements if Primary detail pane is being closed.
-		if ((NgChm.DMM.getMapItemFromPane(pane.pane.id).version === 'P') && (NgChm.DMM.DetailMaps.length === 1)) {
+		if ((NgChm.DMM.DetailMaps.length === 1) && (NgChm.DMM.getMapItemFromPane(pane.pane.id).version === 'P')) {
 			savedChmElements = elements;
 		}
 		NgChm.DMM.RemoveDetailMap(pane.pane.id); 
+		NgChm.SUM.drawLeftCanvasBox ();
 	}
 
 	function resizeDetailPane (loc) {

@@ -35,6 +35,13 @@ NgChm.createNS('NgChm.SRCH');
      * SEARCH FUNCTIONS SECTION
      ***********************************************************/
 
+    NgChm.SRCH.getSearchSaveState = function () {
+	const state = {};
+	state['row'] = NgChm.SRCH.getAxisSearchResults('row');
+	state['col'] = NgChm.SRCH.getAxisSearchResults('col');
+	return state;
+    };
+
     /**********************************************************************************
      * FUNCTION - clearAllSearchResults: This function initializes/resets all
      * search-related state variables.
@@ -167,6 +174,17 @@ NgChm.createNS('NgChm.SRCH');
 		}
 	});
 	return searchLabels;
+    };
+
+    NgChm.SRCH.doInitialSearch = function () {
+	// Perform initial search if search parameter has been specified.
+	// To be called after initialization of the panels.
+	const searchParam = NgChm.UTIL.getURLParameter('search')
+	if (searchParam !== "") {
+		let searchElement = document.getElementById('search_text');
+		searchElement.value = searchParam;
+		NgChm.SRCH.detailSearch();
+	}
     };
 
     /**********************************************************************************
@@ -735,6 +753,7 @@ NgChm.createNS('NgChm.SRCH');
      * If no search item found, returns -1.
      ***********************************************************************************/
     function findPrevAxisSearchItem (axis, index) {
+	if (!axis) return -1;
         const axisItems = searchResults[axis];
 	if (index == -1) {
 	    index = NgChm.heatMap.getAxisLabels(axis).labels.length + 1;
@@ -841,6 +860,8 @@ NgChm.createNS('NgChm.SRCH');
      ***********************************************************************************/
     function goToCurrentSearchItem () {
 	const mapItem = NgChm.DMM.primaryMap;
+	if (!mapItem) return;
+
 	if (currentSearchItem.axis == "Row") {
 		mapItem.currentRow = currentSearchItem.index;
 		if ((mapItem.mode == 'RIBBONV') && mapItem.selectedStart!= 0 && (mapItem.currentRow < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentRow)){

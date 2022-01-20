@@ -390,7 +390,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 	leftOff = 20; // ...reset leftOff...
 	drawColClassLegends();
 
-	NgChm.SUM.summaryInit();
+	NgChm.SUM.redrawSummaryPanel();
 
 	// Reset Summary and Detail Panels on Viewer Screen
 	if (includeDetailMap) {

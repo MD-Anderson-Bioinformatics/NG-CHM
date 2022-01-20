@@ -431,7 +431,7 @@ NgChm.UPM.prefsSuccess = function() {
 	//Remove the backup color map (used to reinstate colors if user cancels)
 	//and formally apply all changes to the heat map, re-draw, and exit preferences.
 	NgChm.UPM.bkpColorMaps = null;
-	NgChm.SUM.summaryInit();  
+	NgChm.SUM.redrawSummaryPanel();
 	NgChm.DMM.resizeDetailMapCanvases ();
 	NgChm.SEL.updateSelections(true);
 	NgChm.UPM.applyDone = true;

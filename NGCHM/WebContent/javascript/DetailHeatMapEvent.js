@@ -133,6 +133,7 @@ NgChm.DEV.handleScroll = function(evt) {
 	evt.preventDefault();
 	let parentElement = evt.target.parentElement;
 	if (!parentElement.id.includes('detail_chm')) { 
+	        if (!NgChm.DMM.primaryMap) return;
 		parentElement = NgChm.DMM.primaryMap.chm;
 	}
 	if (NgChm.SEL.scrollTime == null || evt.timeStamp - NgChm.SEL.scrollTime > 150){
@@ -845,6 +846,7 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
  **********************************************************************************/
 NgChm.DEV.callDetailDrawFunction = function(modeVal, target) { 
 	let mapItem = (typeof target !== 'undefined') ? target : NgChm.DMM.primaryMap;
+	if (!mapItem) return;
 	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
 		NgChm.DEV.detailHRibbon(mapItem);
 	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')

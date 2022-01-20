@@ -25,45 +25,32 @@ NgChm.DMM.mapTemplate = {
 } 
 
 /*********************************************************************************************
- * FUNCTION:  getMapTemplate - The purpose of this function is to clone and return a copy
- * of the map template for a new primary detail map.
+ * FUNCTION:  addDetailMap - Add a new detail heat map object to the DetailMaps object array.
+ *
+ * If there is no primary map, it will be populated based on an initial values template.
+ * Otherwise, it will be populated from Primary heat map object and marked as a 'Secondary'
+ * heat map.
  *********************************************************************************************/
-NgChm.DMM.getMapTemplate = function () {
-	return Object.assign({}, NgChm.DMM.mapTemplate);
-}
-
-/*********************************************************************************************
- * FUNCTION:  InitDetailMap - The purpose of this function is to add the Primary heat map
- * object to the DetailMaps object array. It is called when a new map is opened. This object will 
- * be populated based upon an initial values map template.
- *********************************************************************************************/
-NgChm.DMM.InitDetailMap = function (chm){
-	let newMapObj = NgChm.DMM.getMapTemplate();
-	NgChm.DMM.primaryMap = newMapObj;
-	newMapObj.pane = chm.parentElement.id;
-	NgChm.DMM.completeMapItemConfig(chm,newMapObj);
-	NgChm.DEV.addEvents(newMapObj.pane); 
-}
-
-/*********************************************************************************************
- * FUNCTION:  AddDetailMap - The purpose of this function is to add a new detail heat map
- * object to the DetailMaps object array. This object will be based upon the settings of the
- * Primary heat map object and will be marked as a 'Secondary' heat map object.
- *********************************************************************************************/
-NgChm.DMM.AddDetailMap = function (chm,pane){
-	let newMapObj = Object.assign({}, NgChm.DMM.primaryMap, { glManager: null });
+NgChm.DMM.addDetailMap = function (chm, pane, mapNumber) {
+	let newMapObj;
+	if (NgChm.DMM.primaryMap) {
+	    newMapObj = Object.assign({}, NgChm.DMM.primaryMap, { glManager: null, version: 'S' });
+	} else {
+	    newMapObj = Object.assign({}, NgChm.DMM.mapTemplate);
+	}
 	newMapObj.pane = pane;
-	newMapObj.version = 'S';
-	NgChm.DMM.completeMapItemConfig(chm,newMapObj);
-	NgChm.DET.rowDendroResize();
-	NgChm.DET.colDendroResize();
-}
+	NgChm.DMM.completeMapItemConfig(newMapObj, chm, mapNumber);
+	if (newMapObj !== NgChm.DMM.primaryMap) {
+	    NgChm.DET.rowDendroResize();
+	    NgChm.DET.colDendroResize();
+	}
+};
 
 /*********************************************************************************************
  * FUNCTION:  completeMapItemConfig - The purpose of this function is to flesh out the mapItem
  * (either intial or copy) being created.
  *********************************************************************************************/
-NgChm.DMM.completeMapItemConfig = function (chm,mapItem) {
+NgChm.DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
 	mapItem.chm = chm;
 	mapItem.version = NgChm.DMM.DetailMaps.length === 0 ? 'P' : 'S';
 	mapItem.colDendroCanvas = chm.children[0];
@@ -73,8 +60,8 @@ NgChm.DMM.completeMapItemConfig = function (chm,mapItem) {
 	mapItem.labelElement = chm.children[4];
 	mapItem.rowDendro = new NgChm.DDR.DetailRowDendrogram(chm.children[1]); 
 	mapItem.colDendro = new NgChm.DDR.DetailColumnDendrogram(chm.children[0]);
-	mapItem.panelNbr = NgChm.DMM.nextMapNumber;
-	mapItem.labelPostScript = NgChm.DMM.nextMapNumber === 1 ? '' : '_' + NgChm.DMM.nextMapNumber;
+	mapItem.panelNbr = mapNumber;
+	mapItem.labelPostScript = mapNumber === 1 ? '' : '_' + mapNumber;
 	mapItem.rowLabelDiv =  'rowL'+mapItem.labelElement.id.substring(1);
 	mapItem.colLabelDiv =  'colL'+mapItem.labelElement.id.substring(1);
 	NgChm.DET.setDetailMapDisplay(mapItem);	

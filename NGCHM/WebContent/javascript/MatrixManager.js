@@ -845,19 +845,6 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return initialized;
 	}
 
-	//If collectionHome param exists on URL, add "back" button to screen.
-	this.configureButtonBar = function(){
-		var splitButton = document.getElementById("split_btn");
-		if ((splitButton != null) && (fileSrc === NgChm.MMGR.FILE_SOURCE)) {
-			splitButton.style.display = 'none';
-		}
-		var backButton = document.getElementById("back_btn");
-		var url = NgChm.UTIL.getURLParameter("collectionHome");
-		if (url !== "") {
-			backButton.style.display = '';
-		}
-	}
-	
 	this.configSearchCovars = function () {  //TODO Get rid of duplicates
 		var searchOn = document.getElementById('search_on');
 		var classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
@@ -889,7 +876,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			opt.value = "row|" + key; 
 			searchOn.appendChild(opt); 
 		}
-	}	
+	};
+
 	this.configureFlick = function(){
 		if (!flickInitialized) {
 			var flicks = document.getElementById("flicks");
@@ -1019,8 +1007,22 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	function savePaneLayoutToMapConfig() {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { mapConfig['panel_configuration'] = {} }
 		let layoutToSave = document.getElementById('ngChmContainer');
-		let layoutJSON = domJSON.toJSON(layoutToSave,{absolutePaths:false});
+		let layoutJSON = NgChm.Pane.paneLayout(layoutToSave);
 		mapConfig['panel_configuration']['panel_layout'] = layoutJSON;
+	}
+
+	/**
+	 * Save the summary pane details to mapConfig.
+	 * (This just saves which pane, if any, is the summary pane.)
+	 */
+	function saveSummaryMapInfoToMapConfig() {
+		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
+		const pane = NgChm.SUM.chmElement && NgChm.SUM.chmElement.parentElement;
+		if (pane && pane.classList.contains("pane")) {
+			mapConfig.panel_configuration[pane.id] = {
+			    type: 'summaryMap'
+			};
+		}
 	}
 
 	/**
@@ -1029,18 +1031,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	function saveDetailMapInfoToMapConfig() {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) {mapConfig['panel_configuration'] = {} }
 		NgChm.DMM.DetailMaps.forEach(dm => {
-			mapConfig.panel_configuration[dm.pane] = {
-				'currentCol': dm.currentCol,
-				'currentRow': dm.currentRow,
-				'dataBoxHeight': dm.dataBoxHeight,
-				'dataBoxWidth': dm.dataBoxWidth,
-				'dataPerCol': dm.dataPerCol,
-				'dataPerRow': dm.dataPerRow,
-				'mode': dm.mode,
-				'type': 'detailMap',
-				'version': dm.version,
-				'versionNumber': dm.chm.id.replace('detail_chm','')
-			}
+			mapConfig.panel_configuration[dm.pane] = NgChm.DET.getDetailSaveState (dm);
 		})
 	}
 
@@ -1064,11 +1055,12 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	*/
 	NgChm.MMGR.saveDataSentToPluginToMapConfig = function(nonce, postedConfig, postedData) {
 		try {
-			var paneId = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement.id
+			var pane = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement
 		} catch(err) {
 			throw "Cannot determine pane for given nonce"
 			return false
 		}
+		const paneId = pane.id;
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
 			mapConfig['panel_configuration'] = {} 
 		}
@@ -1078,6 +1070,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig.panel_configuration[paneId].config = postedConfig;
 		mapConfig.panel_configuration[paneId].data = postedData;
 		mapConfig.panel_configuration[paneId].type = 'plugin';
+		mapConfig.panel_configuration[paneId].pluginName = pane.dataset.pluginName;
 	}
 
 	NgChm.MMGR.removePaneInfoFromMapConfig = function(paneid) {
@@ -1119,13 +1112,23 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig.panel_configuration[paneId].dataFromPlugin = dataFromPlugin;
 	}
 
-	NgChm.MMGR.saveSelectionsToMapConfig = function() {
+	function saveSelectionsToMapConfig () {
 		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
 			mapConfig['panel_configuration'] = {};
 		}
-		mapConfig.panel_configuration['selections'] = {};
-		mapConfig.panel_configuration.selections['row'] = NgChm.SRCH.getAxisSearchResults('row');
-		mapConfig.panel_configuration.selections['col'] = NgChm.SRCH.getAxisSearchResults('col');
+		mapConfig.panel_configuration['selections'] = NgChm.SRCH.getSearchSaveState();
+		if (NgChm.SUM.rowDendro) {
+		    const bars = NgChm.SUM.rowDendro.saveSelectedBars();
+		    if (bars.length > 0) {
+			mapConfig.panel_configuration['selections']['selectedRowDendroBars'] = bars;
+		    }
+		}
+		if (NgChm.SUM.colDendro) {
+		    const bars = NgChm.SUM.colDendro.saveSelectedBars();
+		    if (bars.length > 0) {
+			mapConfig.panel_configuration['selections']['selectedColDendroBars'] = bars;
+		    }
+		}
 	}
 
 	function zipSaveMapProperties() {
@@ -1150,8 +1153,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 								// except for mapConfig.  For this entry, add the modified config data.
 								if (keyVal.indexOf('mapConfig') > -1) {
 									savePaneLayoutToMapConfig();
+									saveSummaryMapInfoToMapConfig();
 									saveDetailMapInfoToMapConfig();
 									saveFlickInfoToMapConfig();
+									saveSelectionsToMapConfig();
 									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConfig));
 								} else {
 									zipFetchText(entry, fileIndex, addTextContents);
@@ -1335,13 +1340,9 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			NgChm.SEL.currentCol = Number(NgChm.UTIL.getURLParameter("column"))
 		}
 	        NgChm.SEL.setSelectionColors();
-		NgChm.UTIL.configurePanelInterface();
 		document.addEventListener("keydown", NgChm.DEV.keyNavigate);
 
 		addDataLayers(mc);
-		if (mc.hasOwnProperty('panel_configuration')) {
-			NgChm.RecPanes.reconstructPanelsFromMapConfig()
-		}
 	}
 	
 	function prefetchInitialTiles(datalayers, datalevels, levels) {
@@ -1489,6 +1490,10 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				(haveTileData(NgChm.SEL.getCurrentDL()+"."+NgChm.MMGR.THUMBNAIL_LEVEL+".1.1")) &&
 				 (initialized == 0)) {
 					initialized = 1;
+					configurePageHeader();
+					NgChm.heatMap.configureFlick();
+					NgChm.heatMap.configSearchCovars();
+					NgChm.UTIL.configurePanelInterface(mapConfig);
 					if (!mapConfig.hasOwnProperty('panel_configuration')) {
 					    NgChm.UTIL.UI.hideLoader();
 					}
@@ -1503,7 +1508,31 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			sendAllListeners(event, tile);
 		}
 	}	
-	
+
+	// Configure elements of the page header and top bar that depend on the
+	// loaded NGCHM.
+	function configurePageHeader() {
+		// Show back button if collectionHome specified.
+		const backButton = document.getElementById("back_btn");
+		const url = NgChm.UTIL.getURLParameter("collectionHome");
+		if (url !== "") {
+			backButton.style.display = '';
+		}
+
+		// Set document title if not a local file.
+		if (NgChm.MMGR.source !== NgChm.MMGR.LOCAL_SOURCE) {
+			document.title = NgChm.heatMap.getMapInformation().name;
+		}
+
+		// Populate the header's nameDiv.
+		const nameDiv = document.getElementById("mapName");  
+		let mapName = NgChm.heatMap.getMapInformation().name;
+		if (mapName.length > 30){
+			mapName = mapName.substring(0,27) + "...";
+		}
+		nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
+	}
+
 	//send to all event listeners
 	function sendAllListeners(event, tile){
 		sendAll (event, tile);
