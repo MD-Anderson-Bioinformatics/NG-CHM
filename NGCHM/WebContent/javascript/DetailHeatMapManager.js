@@ -31,7 +31,7 @@ NgChm.DMM.mapTemplate = {
  * Otherwise, it will be populated from Primary heat map object and marked as a 'Secondary'
  * heat map.
  *********************************************************************************************/
-NgChm.DMM.addDetailMap = function (chm, pane) {
+NgChm.DMM.addDetailMap = function (chm, pane, mapNumber) {
 	let newMapObj;
 	if (NgChm.DMM.primaryMap) {
 	    newMapObj = Object.assign({}, NgChm.DMM.primaryMap, { glManager: null, version: 'S' });
@@ -39,7 +39,7 @@ NgChm.DMM.addDetailMap = function (chm, pane) {
 	    newMapObj = Object.assign({}, NgChm.DMM.mapTemplate);
 	}
 	newMapObj.pane = pane;
-	NgChm.DMM.completeMapItemConfig(newMapObj, chm);
+	NgChm.DMM.completeMapItemConfig(newMapObj, chm, mapNumber);
 	if (newMapObj !== NgChm.DMM.primaryMap) {
 	    NgChm.DET.rowDendroResize();
 	    NgChm.DET.colDendroResize();
@@ -50,7 +50,7 @@ NgChm.DMM.addDetailMap = function (chm, pane) {
  * FUNCTION:  completeMapItemConfig - The purpose of this function is to flesh out the mapItem
  * (either intial or copy) being created.
  *********************************************************************************************/
-NgChm.DMM.completeMapItemConfig = function (mapItem, chm) {
+NgChm.DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
 	mapItem.chm = chm;
 	mapItem.version = NgChm.DMM.DetailMaps.length === 0 ? 'P' : 'S';
 	mapItem.colDendroCanvas = chm.children[0];
@@ -60,8 +60,8 @@ NgChm.DMM.completeMapItemConfig = function (mapItem, chm) {
 	mapItem.labelElement = chm.children[4];
 	mapItem.rowDendro = new NgChm.DDR.DetailRowDendrogram(chm.children[1]); 
 	mapItem.colDendro = new NgChm.DDR.DetailColumnDendrogram(chm.children[0]);
-	mapItem.panelNbr = NgChm.DMM.nextMapNumber;
-	mapItem.labelPostScript = NgChm.DMM.nextMapNumber === 1 ? '' : '_' + NgChm.DMM.nextMapNumber;
+	mapItem.panelNbr = mapNumber;
+	mapItem.labelPostScript = mapNumber === 1 ? '' : '_' + mapNumber;
 	mapItem.rowLabelDiv =  'rowL'+mapItem.labelElement.id.substring(1);
 	mapItem.colLabelDiv =  'colL'+mapItem.labelElement.id.substring(1);
 	NgChm.DET.setDetailMapDisplay(mapItem);	

@@ -2423,11 +2423,12 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	let savedChmElements = [];
 	NgChm.DET.initialSwitchPaneToDetail = true
 
-	function switchPaneToDetail (loc) {
+	function switchPaneToDetail (loc, restoreInfo) {
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
 		let isPrimary = false;
+		let mapNumber;
 		NgChm.SRCH.clearAllSearchResults();
 		NgChm.Pane.clearExistingGearDialog(paneId);
 		if (NgChm.DET.initialSwitchPaneToDetail == true) {
@@ -2437,7 +2438,8 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 			const chm = document.getElementById('detail_chm');
 			loc.pane.appendChild (chm);
 			isPrimary = true;
-			NgChm.DMM.addDetailMap (chm, paneId);
+			mapNumber = restoreInfo ? restoreInfo.mapNumber : ++NgChm.DMM.nextMapNumber;
+			NgChm.DMM.addDetailMap (chm, paneId, mapNumber);
 			NgChm.DET.initialSwitchPaneToDetail = false;
 		} else {
 			if (savedChmElements.length > 0) {
@@ -2445,6 +2447,7 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 				NgChm.Pane.emptyPaneLocation (loc);
 				NgChm.DMM.primaryMap.pane = paneId;
 			  	NgChm.DMM.DetailMaps.push(NgChm.DMM.primaryMap);
+				mapNumber = NgChm.DMM.primaryMap.panelNbr;
 				isPrimary = true;
 			} else {
 				// Detail NGCHM currently showing in a pane.
@@ -2453,7 +2456,8 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 				if (primaryLoc.pane === loc.pane) return;
 				// Switch to cloned detail map.
 				NgChm.Pane.emptyPaneLocation (loc);
-				savedChmElements = clonePrimaryDetailPanel (primaryLoc, paneId);
+				mapNumber = restoreInfo ? restoreInfo.mapNumber : ++NgChm.DMM.nextMapNumber;
+				savedChmElements = clonePrimaryDetailPanel (primaryLoc, paneId, mapNumber);
 			}
 			while (savedChmElements.length > 0) {
 				const el = savedChmElements.shift(); 
@@ -2463,25 +2467,25 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		}
 		NgChm.DEV.addEvents(paneId);
 		NgChm.Pane.setPaneClientIcons(loc, [
-		    zoomButton ('primary_btn'+NgChm.DMM.nextMapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
-		    zoomButton ('zoomOut_btn'+NgChm.DMM.nextMapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
-		    zoomButton ('zoomIn_btn'+NgChm.DMM.nextMapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
-		    modeButton (NgChm.DMM.nextMapNumber, paneId, true,  'NORMAL',  'Normal View', 65, NgChm.DEV.detailNormal),
-		    modeButton (NgChm.DMM.nextMapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton),
-		    modeButton (NgChm.DMM.nextMapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton)
+		    zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
+		    zoomButton ('zoomOut_btn'+mapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
+		    zoomButton ('zoomIn_btn'+mapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
+		    modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, NgChm.DEV.detailNormal),
+		    modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton),
+		    modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton)
 		]);
 		if (isPrimary === true) {
-			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = 'none';
+			document.getElementById('primary_btn'+mapNumber).style.display = 'none';
 			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
 		} else {
-			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = '';
-			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+NgChm.DMM.nextMapNumber);
+			document.getElementById('primary_btn'+mapNumber).style.display = '';
+			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+mapNumber);
 		}
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
 	}
 
-	function clonePrimaryDetailPanel (primaryLoc, newPane) {
+	function clonePrimaryDetailPanel (primaryLoc, newPane, mapNumber) {
 		// clone all client elements (except header) in primary detail panel.
 		const clientElements = [];
 		// Expect two children: paneHeader and detail chm.
@@ -2489,14 +2493,13 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 			if (p !== primaryLoc.paneHeader) {
 				const pClone = p.cloneNode(true);
 				if (pClone.className === 'detail_chm') {
-				    NgChm.DMM.nextMapNumber++;
-				    pClone.id = 'detail_chm' + NgChm.DMM.nextMapNumber;
+				    pClone.id = 'detail_chm' + mapNumber;
 				    // If primary is collapsed set chm detail of clone to visible
 				    if (pClone.style.display === 'none') {
 					    pClone.style.display = '';
 				    }
 				    renameElements(pClone);
-				    NgChm.DMM.addDetailMap(pClone, newPane);
+				    NgChm.DMM.addDetailMap(pClone, newPane, mapNumber);
 				}
 				clientElements.push (pClone);
 			}

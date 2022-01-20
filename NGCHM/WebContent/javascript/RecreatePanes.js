@@ -228,11 +228,11 @@ NgChm.createNS('NgChm.RecPanes');
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
 		} else if (config.type === "detailMap") {
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
-			let mapNumber = paneInfo.versionNumber == "" ? 1 : parseInt(paneInfo.versionNumber)-1;
+			let mapNumber = paneInfo.versionNumber == "" ? 1 : parseInt(paneInfo.versionNumber);
                         if (mapNumber > NgChm.DMM.nextMapNumber) {
                             NgChm.DMM.nextMapNumber = mapNumber;
                         }
-                        NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane));
+                        NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane), { mapNumber });
 
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
