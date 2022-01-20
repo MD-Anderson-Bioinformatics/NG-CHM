@@ -485,7 +485,7 @@ NgChm.DET.getNearestBoxSize = function (mapItem, sizeToGet) {
 	let boxSize = 0;
 	for (let i=NgChm.DET.zoomBoxSizes.length-1; i>=0;i--) {
 		boxSize = NgChm.DET.zoomBoxSizes[i];
-		boxCalcVal = (mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/boxSize;
+		const boxCalcVal = (mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/boxSize;
 		if (boxCalcVal >= sizeToGet) {
 			//Down size box if greater than map dimensions.
 			if (boxCalcVal > Math.min(NgChm.heatMap.getTotalRows(),NgChm.heatMap.getTotalCols())) {
