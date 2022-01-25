@@ -2403,6 +2403,8 @@ NgChm.createNS('NgChm.LNK');
 
 			if (config.axes[axisId].coco == null) config.axes[axisId].coco = [];
 			const pa = params.axes && axisId < params.axes.length ? params.axes[axisId] : { cocos:[], groups: [] };
+			pa.cocos = pa.cocos || {};
+			pa.groups = pa.groups || {};
 			// create UI for choosing coordiantes / covariates 
 			for (let cocoidx = 0; cocoidx < config.axes[axisId].coco.length; cocoidx++) {
 				const coco = config.axes[axisId].coco[cocoidx];
@@ -2826,7 +2828,7 @@ NgChm.createNS('NgChm.LNK');
 		if (Object.entries(instance.params).length === 0) {
 		        NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'none' }); // Let plugin know we heard it.
 			NgChm.Pane.switchToPlugin (loc, instance.plugin.name);
-			NgChm.MMGR.saveDataSentToPluginToMapConfig(msg.nonce, instance.plugin.config, null);
+			NgChm.MMGR.saveDataSentToPluginToMapConfig(msg.nonce, null, null);
 		} else {
 			loc.paneTitle.innerText = instance.plugin.name;
 			NgChm.LNK.initializePanePlugin (msg.nonce, instance.params);

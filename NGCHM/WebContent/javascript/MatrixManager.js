@@ -1067,8 +1067,8 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (!mapConfig.panel_configuration.hasOwnProperty(paneId) || mapConfig.panel_configuration[paneId] == null) { 
 			mapConfig.panel_configuration[paneId] = {} 
 		}
-		mapConfig.panel_configuration[paneId].config = postedConfig;
-		mapConfig.panel_configuration[paneId].data = postedData;
+		if (postedConfig) mapConfig.panel_configuration[paneId].config = postedConfig;
+		if (postedData) mapConfig.panel_configuration[paneId].data = postedData;
 		mapConfig.panel_configuration[paneId].type = 'plugin';
 		mapConfig.panel_configuration[paneId].pluginName = pane.dataset.pluginName;
 	}
