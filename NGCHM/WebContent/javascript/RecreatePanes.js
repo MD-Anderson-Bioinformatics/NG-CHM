@@ -335,13 +335,16 @@ NgChm.createNS('NgChm.RecPanes');
 			let nonce = pluginInstance.nonce;
 			let config = paneInfo.config;
 			let data = paneInfo.data;
-			let selectedLabels = getSelectedLabels(config.axes[0].axisName);
-			data.axes[0].selectedLabels = selectedLabels;
+			config.axes.forEach (ax => {
+			    if (ax.axisName) {
+				ax.selectedLabels = getSelectedLabels(ax.axisName);
+			    }
+			});
 			pluginInstance.params = config;
-			NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
+			if (data) NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
 			let dataFromPlugin = paneInfo.dataFromPlugin;
-			NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
-			NgChm.Pane.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'));
+			if (dataFromPlugin) NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
+			if (data) NgChm.Pane.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'));
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneId];
 		} else {
 			return false;
@@ -371,6 +374,10 @@ NgChm.createNS('NgChm.RecPanes');
 	function getPaneInfoFromMapConfig(paneId) {
 		try {
 			let paneInfo = NgChm.RecPanes.mapConfigPanelConfiguration[paneId];
+			if (!paneInfo) {
+			    console.warn ('Panel ' + paneId + ' has nosaved configuration');
+			    paneInfo = {};
+			}
 			return paneInfo;
 		} catch (error) {
 			if (error instanceof TypeError) {
