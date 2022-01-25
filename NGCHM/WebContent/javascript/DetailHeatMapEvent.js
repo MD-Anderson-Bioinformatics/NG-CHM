@@ -871,35 +871,37 @@ NgChm.DEV.clearModeHistory = function (mapItem) {
  * the processing necessary to return a heat map panel to normal mode.
  * mapItem is the detail view map item.
  **********************************************************************************/
-NgChm.DEV.detailNormal = function (mapItem) {
+NgChm.DEV.detailNormal = function (mapItem, restoreInfo) {
 	NgChm.UHM.hlpC();	
 	const previousMode = mapItem.mode;
 	NgChm.SEL.setMode(mapItem,'NORMAL');
 	NgChm.DET.setButtons(mapItem);
-	mapItem.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
-	mapItem.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
-	if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
+	if (!restoreInfo) {
+	    mapItem.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
+	    mapItem.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
+	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
 		NgChm.DET.setDetailDataSize(mapItem, mapItem.dataBoxWidth);
-	} else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
+	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
 		NgChm.DET.setDetailDataSize(mapItem,mapItem.dataBoxHeight);
-	} else if (previousMode=='FULL_MAP') {
+	    } else if (previousMode=='FULL_MAP') {
 		NgChm.DET.setDetailDataSize(mapItem,NgChm.DET.zoomBoxSizes[0]);
-	}	
+	    }
 
-	//On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	while ((Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)) ||
-           (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))) {
+	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
+	    while ((Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)) ||
+	       (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))) {
 		NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
-	}	
+	    }
 	
-	if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
+	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
 		mapItem.currentRow = mapItem.saveRow;
-	} else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
+	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
 		mapItem.currentCol = mapItem.saveCol;
-	} else if (previousMode=='FULL_MAP') {
+	    } else if (previousMode=='FULL_MAP') {
 		mapItem.currentRow = mapItem.saveRow;
 		mapItem.currentCol = mapItem.saveCol;		
-	}	
+	    }
+	}
 	
 	NgChm.SEL.checkRow(mapItem);
 	NgChm.SEL.checkCol(mapItem);
@@ -910,7 +912,7 @@ NgChm.DEV.detailNormal = function (mapItem) {
 	NgChm.DDR.clearDendroSelection();
 	NgChm.SEL.updateSelection(mapItem);
 	document.getElementById("viewport").setAttribute("content", "height=device-height");
-    document.getElementById("viewport").setAttribute("content", "");
+	document.getElementById("viewport").setAttribute("content", "");
 }
 
 /**********************************************************************************
@@ -957,19 +959,21 @@ NgChm.DEV.detailHRibbonButton = function (mapItem) {
  * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.  
  * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
  **********************************************************************************/
-NgChm.DEV.detailHRibbon = function (mapItem) {
+NgChm.DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	NgChm.UHM.hlpC();	
 	const previousMode = mapItem.mode;
 	const prevWidth = mapItem.dataBoxWidth;
 	mapItem.saveCol = mapItem.currentCol;
 	NgChm.SEL.setMode(mapItem,'RIBBONH');
 	NgChm.DET.setButtons(mapItem);
-	if (previousMode=='FULL_MAP') {
+
+	if (!restoreInfo) {
+	    if (previousMode=='FULL_MAP') {
 		NgChm.DET.setDetailDataHeight(mapItem, NgChm.DET.zoomBoxSizes[0]);
-	}
-	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
-	// and data size to 1.
-	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
+	    }
+	    // If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
+	    // and data size to 1.
+	    if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
 		mapItem.dataViewWidth = NgChm.heatMap.getNumColumns(NgChm.MMGR.RIBBON_HOR_LEVEL) + NgChm.DET.dataViewBorder;
 		let ddw = 1;
 		while(2*mapItem.dataViewWidth < 500){ // make the width wider to prevent blurry/big dendros for smaller maps
@@ -978,7 +982,7 @@ NgChm.DEV.detailHRibbon = function (mapItem) {
 		}
 		NgChm.DET.setDetailDataWidth(mapItem,ddw);
 		mapItem.currentCol = 1;
-	} else {
+	    } else {
 		mapItem.saveCol = mapItem.selectedStart;
 		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
 		NgChm.DEV.clearModeHistory (mapItem);
@@ -987,23 +991,24 @@ NgChm.DEV.detailHRibbon = function (mapItem) {
 		mapItem.dataViewWidth = (selectionSize * width) + NgChm.DET.dataViewBorder;
 		NgChm.DET.setDetailDataWidth(mapItem,width);	
 		mapItem.currentCol = mapItem.selectedStart;
-	}
+	    }
 	
-	mapItem.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
-	if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
-		if (previousMode != 'FULL_MAP') {
-			NgChm.DET.setDetailDataHeight(mapItem,prevWidth);
+	    mapItem.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
+	    if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
+		if (previousMode == 'FULL_MAP') {
+		    NgChm.DET.setDetailDataHeight(mapItem,NgChm.DET.zoomBoxSizes[0]);
 		} else {
-            NgChm.DET.setDetailDataHeight(mapItem,NgChm.DET.zoomBoxSizes[0]);
-        }	
+		    NgChm.DET.setDetailDataHeight(mapItem,prevWidth);
+		}
 		mapItem.currentRow = mapItem.saveRow;
-	}	
+	    }
 
-	//On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	while (Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)) {
+	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
+	    while (Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)) {
 		NgChm.DET.setDetailDataHeight(mapItem,NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
-	}	
-	
+	    }
+	}
+
 	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
 	NgChm.DET.detInitGl(mapItem);
@@ -1025,7 +1030,7 @@ NgChm.DEV.detailVRibbonButton = function (mapItem) {
  * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.  
  * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
  **********************************************************************************/
-NgChm.DEV.detailVRibbon = function (mapItem) {
+NgChm.DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	NgChm.UHM.hlpC();	
 	const previousMode = mapItem.mode;
 	const prevHeight = mapItem.dataBoxHeight;
@@ -1061,27 +1066,29 @@ NgChm.DEV.detailVRibbon = function (mapItem) {
 		mapItem.currentRow = mapItem.selectedStart;
 	}
 	
-	mapItem.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
-	if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
-		if (previousMode != 'FULL_MAP') {
-			NgChm.DET.setDetailDataWidth(mapItem,prevHeight);
+	if (!restoreInfo) {
+	    mapItem.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
+	    if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
+		if (previousMode == 'FULL_MAP') {
+			NgChm.DET.setDetailDataWidth(mapItem, NgChm.DET.zoomBoxSizes[0]);
 		} else {
- 		    NgChm.DET.setDetailDataWidth(mapItem,NgChm.DET.zoomBoxSizes[0]);
-        }
+			NgChm.DET.setDetailDataWidth(mapItem, prevHeight);
+		}
 		mapItem.currentCol = mapItem.saveCol;
-	}
+	    }
 	
-	//On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	while (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) {
+	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
+	    while (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) {
 		NgChm.DET.setDetailDataWidth(mapItem,NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
-	}	
-		
+	    }
+	}
+
 	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
 	NgChm.DET.detInitGl(mapItem);
 	NgChm.SEL.updateSelection(mapItem);
 	document.getElementById("viewport").setAttribute("content", "height=device-height");
-    document.getElementById("viewport").setAttribute("content", "");
+	document.getElementById("viewport").setAttribute("content", "");
 }
 
 /**********************************************************************************

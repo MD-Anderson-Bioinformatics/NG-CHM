@@ -814,10 +814,18 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 
 	// Current zoom level.
 	this.zoomLevel = 1;
+	this.zoomInitialized = false;
 
 	// Bars that are at least partially within the window.
 	this.bars = [];
 	this.barsMaxHeight = -1;
+
+	this.setZoomLevel = function (zoomLevel) {
+	    if (zoomLevel != undefined) {
+		this.zoomLevel = +zoomLevel;
+		this.zoomInitialized = true;
+	    }
+	};
 
 	this.buildView = function () {
 		// Step 1: select bars between the left and right edges of the window.
@@ -852,10 +860,12 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 				});
 				this.barsMaxHeight = maxHeight;
 				this.scaledView = null;		// Force scaled view recalculation.
+			} else {
+				visBars = this.bars.length;
 			}
 	        // Done if initialized or if at least 75% of the
 	        // bars spanning the view are visible.
-	        if (NgChm.DET.initialized || (visBars/this.windowBars.length) > 0.75) {
+	        if (this.zoomInitialized || (visBars/this.windowBars.length) > 0.75) {
 	        	break;
 	        }
 			// Guaranteed stop. Really expect to stop before this becomes true.
@@ -866,6 +876,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 	        this.zoomLevel *= 0.75;
 		}
 		this.dendroViewHeight = maxHeight;
+		this.zoomInitialized = true;
 	};
 
 	// Create a scaled view of the detail window as bars within the unit square [0..1) x [0..1).

@@ -2,11 +2,9 @@
 NgChm.createNS('NgChm.DET');
 
 
-NgChm.DET.initialized = false;
 NgChm.DET.labelLastClicked = {};
 NgChm.DET.mouseDown = false;
 NgChm.DET.minLabelSize = 5;
-NgChm.DET.resizeOnNextDraw = false;
 NgChm.DET.paddingHeight = 2;          // space between classification bars
 NgChm.DET.SIZE_NORMAL_MODE = 506;
 NgChm.DET.dataViewBorder = 2;
@@ -65,23 +63,18 @@ NgChm.DET.setDrawDetailsTimeout = function (ms, noResize) {
  *********************************************************************************************/
 NgChm.DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
 	if (!NgChm.DMM.isDetailMapDisplayed()) { return false }
-	if (NgChm.DET.drawEventTimer) {
-		clearTimeout (NgChm.DET.drawEventTimer);
+	if (mapItem.drawEventTimer) {
+		clearTimeout (mapItem.drawEventTimer);
 	}
 	const drawWin = NgChm.SEL.getDetailWindow(mapItem);
 
-	if (noResize) {
-		NgChm.DET.resizeOnNextDraw = true;
-		NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
-	} else {
-		NgChm.DET.resizeOnNextDraw = true;
-		NgChm.DET.drawEventTimer = setTimeout(function drawDetailTimeout () {
-			if (mapItem.chm) {
-				NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
-			}
-		}, ms);
-	}
-}
+	if (!noResize) mapItem.resizeOnNextDraw = true;
+	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
+		if (mapItem.chm) {
+			NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
+		}
+	}, ms);
+};
 
 /*********************************************************************************************
  * FUNCTION:  flushDrawingCache - The purpose of this function is to process the receipt of
@@ -102,9 +95,9 @@ NgChm.DET.flushDrawingCache = function (tile) {
 	if (NgChm.DET.detailHeatMapCache.hasOwnProperty (tile.layer) &&
 	    NgChm.DET.detailHeatMapLevel[tile.layer] === tile.level) {
 		NgChm.DET.detailHeatMapValidator[tile.layer] = '';
-		if (tile.layer === NgChm.DMM.primaryMap.currentDl) {
+		if (tile.layer === NgChm.SEL.getCurrentDL()) {
 			// Redraw 'now' if the tile is for the currently displayed layer.
-			NgChm.DET.setDrawDetailTimeout(NgChm.DMM.primaryMap,NgChm.DET.redrawUpdateTimeout);
+			NgChm.DET.setDrawDetailsTimeout (NgChm.DET.redrawUpdateTimeout, false);
 		}
 	}
 }
@@ -113,10 +106,10 @@ NgChm.DET.flushDrawingCache = function (tile) {
  * FUNCTION:  setDetailMapDisplay - The purpose of this function is to complete the construction
  * of a detail heat map object and add it to the DetailMaps object array.
  *********************************************************************************************/
-NgChm.DET.setDetailMapDisplay = function (mapItem) {
+NgChm.DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	NgChm.DET.setDendroShow(mapItem);
 	//If we are opening the first detail "copy" of this map set the data sizing for initial display
-	if (NgChm.DMM.DetailMaps.length === 0) {
+	if (NgChm.DMM.DetailMaps.length === 0 && !restoreInfo) {
 		NgChm.DET.setInitialDetailDisplaySize(mapItem);
 	}
 	NgChm.LNK.createLabelMenus();
@@ -144,6 +137,14 @@ NgChm.DET.setDetailMapDisplay = function (mapItem) {
   	if (mapItem.version === 'P') {
   		NgChm.DMM.primaryMap = mapItem;
   	}
+	if (restoreInfo) {
+	    if (mapItem.rowDendro !== null) {
+		mapItem.rowDendro.setZoomLevel(restoreInfo.rowZoomLevel || 1);
+	    }
+	    if (mapItem.colDendro !== null) {
+		mapItem.colDendro.setZoomLevel(restoreInfo.colZoomLevel || 1);
+	    }
+	}
 }
 
 /*********************************************************************************************
@@ -164,65 +165,15 @@ NgChm.DET.setInitialDetailDisplaySize = function (mapItem) {
 	}
 }
 
-/*
-	Construct DOM template for Detail Heat Map and append to div with id = 'template' 
-*/
-NgChm.DET.constructDetailMapDOMTemplate = function() {
-	let detailTemplate = document.createElement('div')
-	detailTemplate.setAttribute('id','detail_chm')
-	detailTemplate.setAttribute('class','detail_chm')
-	detailTemplate.setAttribute('style','position: absolute;')
-	let columnDendro = document.createElement('canvas')
-	columnDendro.setAttribute('id','detail_column_dendro_canvas')
-	columnDendro.setAttribute('width','1200')
-	columnDendro.setAttribute('height','500')
-	columnDendro.setAttribute('style','position: absolute;')
-	detailTemplate.appendChild(columnDendro)
-	let rowDendro = document.createElement('canvas')
-	rowDendro.setAttribute('id','detail_row_dendro_canvas')
-	rowDendro.setAttribute('width','1200')
-	rowDendro.setAttribute('height','500')
-	rowDendro.setAttribute('style','position: absolute;')
-	detailTemplate.appendChild(rowDendro)
-	let detailCanvas = document.createElement('canvas')
-	detailCanvas.setAttribute('id','detail_canvas')
-	detailCanvas.setAttribute('class','detail_canvas')
-	detailCanvas.setAttribute('tabindex','1')
-	detailTemplate.appendChild(detailCanvas)
-	let detailBoxCanvas = document.createElement('canvas')
-	detailBoxCanvas.setAttribute('id','detail_box_canvas')
-	detailBoxCanvas.setAttribute('class','detail_box_canvas')
-	detailTemplate.appendChild(detailBoxCanvas)
-	// labels div has children colLabels and rowLabels
-	let labels = document.createElement('div')
-	labels.setAttribute('id','labelDiv')
-	labels.setAttribute('style','display: inline-block;')
-	let colLabels = document.createElement('div')
-	colLabels.setAttribute('id','colLabelDiv')
-	colLabels.setAttribute('data-axis','Column')
-	colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
-	colLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
-	labels.appendChild(colLabels)
-	let rowLabels = document.createElement('div')
-	rowLabels.setAttribute('id','rowLabelDiv')
-	rowLabels.setAttribute('data-axis','Row')
-	rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
-	rowLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
-	labels.appendChild(rowLabels)
-	detailTemplate.appendChild(labels)
-	let templates = document.getElementById('templates')
-	templates.appendChild(detailTemplate)
-}
-
 /*********************************************************************************************
  * FUNCTION:  drawDetailHeatMap - The purpose of this function is to draw the region of the 
  * NGCHM specified by drawWin to a detail heat map pane.
  *********************************************************************************************/
 NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 	NgChm.DET.setDendroShow(mapItem);
-	if (NgChm.DET.resizeOnNextDraw) {
+	if (mapItem.resizeOnNextDraw) {
 		NgChm.DMM.detailResize();
-		NgChm.DET.resizeOnNextDraw = false;
+		mapItem.resizeOnNextDraw = false;
 	}
 	NgChm.DET.setViewPort(mapItem);
 	NgChm.DET.setDetBoxCanvasSize(mapItem);
@@ -284,7 +235,6 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 
 	//Draw any selection boxes defined by SearchRows/SearchCols
 	NgChm.DET.drawSelections();
-	NgChm.DET.initialized = true;
 };
 
 /*********************************************************************************************
@@ -503,9 +453,12 @@ NgChm.DET.getNearestBoxSize = function (mapItem, sizeToGet) {
 NgChm.DET.getDetailSaveState = function (dm) {
 	// Subtract dataViewBorder from dataViewWidth/Height in case it ever changes.
 	// Such a change may break restoring an identical view.
+
 	return {
 	    'currentCol': dm.currentCol,
 	    'currentRow': dm.currentRow,
+	    'colZoomLevel': dm.colDendro ? dm.colDendro.zoomLevel : 0,
+	    'rowZoomLevel': dm.rowDendro ? dm.rowDendro.zoomLevel : 0,
 	    'dataBoxHeight': dm.dataBoxHeight,
 	    'dataBoxWidth': dm.dataBoxWidth,
 	    'dataPerCol': dm.dataPerCol,
@@ -515,14 +468,14 @@ NgChm.DET.getDetailSaveState = function (dm) {
 	    'mode': dm.mode,
 	    'type': 'detailMap',
 	    'version': dm.version,
-	    'versionNumber': dm.chm.id.replace('detail_chm',''),
+	    'versionNumber': dm.panelNbr,
 	};
 };
 
 /*********************************************************************************************
  * FUNCTION: restoreFromSavedState  -  Restore detail view from saved state.
  *********************************************************************************************/
-NgChm.restoreFromSavedState = function (mapItem, savedState) {
+NgChm.DET.restoreFromSavedState = function (mapItem, savedState) {
 	mapItem.currentCol = savedState.currentCol;
 	mapItem.currentRow = savedState.currentRow;
 	mapItem.dataViewWidth = savedState.dataViewWidth + NgChm.DET.dataViewBorder;
@@ -532,22 +485,22 @@ NgChm.restoreFromSavedState = function (mapItem, savedState) {
 	mapItem.dataPerCol = savedState.dataPerCol;
 	mapItem.dataPerRow = savedState.dataPerRow;
 	mapItem.mode = savedState.mode;
+	// RESTORE CANVAS SIZE
 	let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
 	switch (savedState.mode) {
-		case "NORMAL":
-			NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
-			break;
 		case "RIBBONV":
-			NgChm.DEV.detailVRibbon(mapItem);
+			NgChm.DEV.detailVRibbon(mapItem, {});
 			break;
 		case "RIBBONH":
-			NgChm.DEV.detailHRibbon(mapItem);
+			NgChm.DEV.detailHRibbon(mapItem, {});
 			break;
 		case "FULL_MAP":
 			NgChm.DEV.detailFullMap(mapItem);
 			break;
-		default: // just use the 'NORMAL' case for unknown modes
+		case "NORMAL":
+		default: // Fall through. Use the 'NORMAL' case for unknown modes.
 			NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
+			NgChm.DEV.detailNormal (mapItem, {});
 	};
 };
 
@@ -1963,78 +1916,72 @@ NgChm.DET.setDendroShow = function (mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - colDendroResize: This function resizes the column dendrogram on all open detail
- * heat map panel instances.
+ * FUNCTION - colDendroResize: This function resizes the column dendrogram of the specified detail
+ * heat map panel instance.
  ************************************************************************************************/
-NgChm.DET.colDendroResize = function() {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		if (mapItem.colDendroCanvas !== null) {
-			const dendroCanvas = mapItem.colDendroCanvas;
-			const left = mapItem.canvas.offsetLeft;
-			const canW = mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
-			dendroCanvas.style.left = (left + mapItem.canvas.clientWidth * (1-mapItem.dataViewWidth/canW)) + 'px';
-			if (mapItem.colDendro.isVisible()){
-				//If summary side is hidden, retain existing dendro height
-				const totalDetHeight = mapItem.chm.offsetHeight - 50;
-			        let height = parseInt (dendroCanvas.style.height, 10) | 0;
-				const sumMinimized = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) < 5;
-				if (!NgChm.SUM.chmElement || sumMinimized) {
-				        const minHeight = totalDetHeight * 0.1;
-					if (height < minHeight) {
-					    height = minHeight;
-					}
-				} else {
-					const dendroSumPct = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(NgChm.SUM.canvas.style.height, 10) + parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(NgChm.SUM.cCCanvas.style.height, 10));
-					height = totalDetHeight * dendroSumPct; 
+NgChm.DET.colDendroResize = function(mapItem) {
+	if (mapItem.colDendroCanvas !== null) {
+		const dendroCanvas = mapItem.colDendroCanvas;
+		const left = mapItem.canvas.offsetLeft;
+		const canW = mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
+		dendroCanvas.style.left = (left + mapItem.canvas.clientWidth * (1-mapItem.dataViewWidth/canW)) + 'px';
+		if (mapItem.colDendro.isVisible()){
+			//If summary side is hidden, retain existing dendro height
+			const totalDetHeight = mapItem.chm.offsetHeight - 50;
+			let height = parseInt (dendroCanvas.style.height, 10) | 0;
+			const sumMinimized = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) < 5;
+			if (!NgChm.SUM.chmElement || sumMinimized) {
+				const minHeight = totalDetHeight * 0.1;
+				if (height < minHeight) {
+				    height = minHeight;
 				}
-				dendroCanvas.style.height = height + 'px';
-				dendroCanvas.height = Math.round(height);
-				dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/canW)) + 'px';
-				dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
-				mapItem.colDendro.draw();
 			} else {
-				dendroCanvas.style.height = '0px';
+				const dendroSumPct = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(NgChm.SUM.canvas.style.height, 10) + parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(NgChm.SUM.cCCanvas.style.height, 10));
+				height = totalDetHeight * dendroSumPct; 
 			}
+			dendroCanvas.style.height = height + 'px';
+			dendroCanvas.height = Math.round(height);
+			dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/canW)) + 'px';
+			dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
+			mapItem.colDendro.draw();
+		} else {
+			dendroCanvas.style.height = '0px';
 		}
 	}
 }
 
 /************************************************************************************************
- * FUNCTION - rowDendroResize: This function resizes the row dendrogram on all open detail
- * heat map panel instances.
+ * FUNCTION - rowDendroResize: This function resizes the row dendrogram of the specified detail
+ * heat map panel instance.
  ************************************************************************************************/
-NgChm.DET.rowDendroResize = function() {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		if (mapItem.rowDendroCanvas !== null) {
-			const dendroCanvas = mapItem.rowDendroCanvas;
-			const top = mapItem.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
-			const canH = mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column")
-			dendroCanvas.style.top = (top + mapItem.canvas.clientHeight * (1-mapItem.dataViewHeight/canH)) + 'px';
-			if (mapItem.rowDendro.isVisible()){
-				//If summary side is hidden, retain existing dendro width
-				const totalDetWidth = (mapItem.chm.offsetWidth - 50);
-				const sumMinimized = parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) < 5 ? true : false;
-				const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
-				let width = parseInt (dendroCanvas.style.width, 10) | 0;
-				if (!NgChm.SUM.chmElement || sumMinimized) {
-				    const minWidth = totalDetWidth * 0.1;
-				    if (width < minWidth) {
-					width = minWidth;
-				    }
-				} else {
-				    const dendroSumPct = (parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(NgChm.SUM.canvas.style.width, 10) + parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(NgChm.SUM.rCCanvas.style.width, 10)));
-				    width = (totalDetWidth * dendroSumPct); 
-				}
-				dendroCanvas.style.width = width + 'px';
-				dendroCanvas.width = Math.round(width);
-				dendroCanvas.style.height = (height-2) + 'px';
-				dendroCanvas.height = Math.round(height);
-				mapItem.rowDendro.draw();
+NgChm.DET.rowDendroResize = function(mapItem) {
+	if (mapItem.rowDendroCanvas !== null) {
+		const dendroCanvas = mapItem.rowDendroCanvas;
+		const top = mapItem.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
+		const canH = mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column")
+		dendroCanvas.style.top = (top + mapItem.canvas.clientHeight * (1-mapItem.dataViewHeight/canH)) + 'px';
+		if (mapItem.rowDendro.isVisible()){
+			//If summary side is hidden, retain existing dendro width
+			const totalDetWidth = (mapItem.chm.offsetWidth - 50);
+			const sumMinimized = parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) < 5 ? true : false;
+			const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
+			let width = parseInt (dendroCanvas.style.width, 10) | 0;
+			if (!NgChm.SUM.chmElement || sumMinimized) {
+			    const minWidth = totalDetWidth * 0.1;
+			    if (width < minWidth) {
+				width = minWidth;
+			    }
 			} else {
-				dendroCanvas.style.width = '0px';
+			    const dendroSumPct = (parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(NgChm.SUM.canvas.style.width, 10) + parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(NgChm.SUM.rCCanvas.style.width, 10)));
+			    width = (totalDetWidth * dendroSumPct); 
 			}
+			dendroCanvas.style.width = width + 'px';
+			dendroCanvas.width = Math.round(width);
+			dendroCanvas.style.height = (height-2) + 'px';
+			dendroCanvas.height = Math.round(height);
+			mapItem.rowDendro.draw();
+		} else {
+			dendroCanvas.style.width = '0px';
 		}
 	}
 }
@@ -2420,52 +2367,44 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	NgChm.Pane.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
 	NgChm.DET.setButtons = setButtons;
 
-	let savedChmElements = [];
-	NgChm.DET.initialSwitchPaneToDetail = true
+	var initialSwitchPaneToDetail = true
 
 	function switchPaneToDetail (loc, restoreInfo) {
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
-		let isPrimary = false;
-		let mapNumber;
+		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (NgChm.DMM.primaryMap === null);
+		const mapNumber = restoreInfo ? restoreInfo.mapNumber : NgChm.DMM.nextMapNumber;
+
 		NgChm.SRCH.clearAllSearchResults();
 		NgChm.Pane.clearExistingGearDialog(paneId);
-		if (NgChm.DET.initialSwitchPaneToDetail == true) {
+		if (initialSwitchPaneToDetail) {
 			// First time detail NGCHM created.
-			NgChm.Pane.emptyPaneLocation (loc);
-			NgChm.DET.constructDetailMapDOMTemplate()
-			const chm = document.getElementById('detail_chm');
-			loc.pane.appendChild (chm);
-			isPrimary = true;
-			mapNumber = restoreInfo ? restoreInfo.mapNumber : ++NgChm.DMM.nextMapNumber;
-			NgChm.DMM.addDetailMap (chm, paneId, mapNumber);
-			NgChm.DET.initialSwitchPaneToDetail = false;
-		} else {
-			if (savedChmElements.length > 0) {
-				// Detail NGCHM not currently showing in a pane.
-				NgChm.Pane.emptyPaneLocation (loc);
-				NgChm.DMM.primaryMap.pane = paneId;
-			  	NgChm.DMM.DetailMaps.push(NgChm.DMM.primaryMap);
-				mapNumber = NgChm.DMM.primaryMap.panelNbr;
-				isPrimary = true;
-			} else {
-				// Detail NGCHM currently showing in a pane.
-				const primaryLoc = NgChm.Pane.findPaneLocation (NgChm.DMM.primaryMap.chm);
-				// Switch from primary detail map to primary detail map: NOOP.
-				if (primaryLoc.pane === loc.pane) return;
-				// Switch to cloned detail map.
-				NgChm.Pane.emptyPaneLocation (loc);
-				mapNumber = restoreInfo ? restoreInfo.mapNumber : ++NgChm.DMM.nextMapNumber;
-				savedChmElements = clonePrimaryDetailPanel (primaryLoc, paneId, mapNumber);
-			}
-			while (savedChmElements.length > 0) {
-				const el = savedChmElements.shift(); 
-				loc.pane.appendChild (el);
-			}
-			NgChm.SUM.drawLeftCanvasBox();
+			constructDetailMapDOMTemplate()
+			initialSwitchPaneToDetail = false;
 		}
-		NgChm.DEV.addEvents(paneId);
+
+		if (loc.pane.querySelector('.detail_chm') !== null) {
+			// Cannot switch if already a detail_chm in this panel.
+			return;
+		}
+		NgChm.Pane.emptyPaneLocation (loc);
+		if (!restoreInfo) { NgChm.DMM.nextMapNumber++; }
+
+		/* Get DIV#detail_chm from DIV#templates. */
+		let chm;
+		if (mapNumber == 1) {
+		    chm = document.querySelector('#templates #detail_chm');
+		    /* Uses DIV#detail_chm, which should be in DIV#templates. */
+		    /* Because if not, mapNumber 1 would already be displayed. */
+		    if (!chm) {
+			console.error ("Cannot find #detail_chm in #templates");
+			return;
+		    }
+		} else {
+		    chm = cloneDetailChm (mapNumber);
+		}
+		loc.pane.appendChild (chm);
 		NgChm.Pane.setPaneClientIcons(loc, [
 		    zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
 		    zoomButton ('zoomOut_btn'+mapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
@@ -2474,52 +2413,101 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		    modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton),
 		    modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton)
 		]);
-		if (isPrimary === true) {
+		const mapItem = NgChm.DMM.addDetailMap (chm, paneId, mapNumber, isPrimary, restoreInfo ? restoreInfo.paneInfo : null);
+		// If primary is collapsed set chm detail of clone to visible
+		if (!restoreInfo && chm.style.display === 'none') {
+			chm.style.display = '';
+		}
+		NgChm.SUM.drawLeftCanvasBox();
+		NgChm.DEV.addEvents(paneId);
+		if (isPrimary) {
 			document.getElementById('primary_btn'+mapNumber).style.display = 'none';
 			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
 		} else {
 			document.getElementById('primary_btn'+mapNumber).style.display = '';
-			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+mapNumber);
+			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver ' + mapNumber);
 		}
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
+		NgChm.DET.setDrawDetailTimeout (mapItem, 0, true);
 	}
 
-	function clonePrimaryDetailPanel (primaryLoc, newPane, mapNumber) {
-		// clone all client elements (except header) in primary detail panel.
-		const clientElements = [];
-		// Expect two children: paneHeader and detail chm.
-		primaryLoc.pane.childNodes.forEach (p => {
-			if (p !== primaryLoc.paneHeader) {
-				const pClone = p.cloneNode(true);
-				if (pClone.className === 'detail_chm') {
-				    pClone.id = 'detail_chm' + mapNumber;
-				    // If primary is collapsed set chm detail of clone to visible
-				    if (pClone.style.display === 'none') {
-					    pClone.style.display = '';
-				    }
-				    renameElements(pClone);
-				    NgChm.DMM.addDetailMap(pClone, newPane, mapNumber);
-				}
-				clientElements.push (pClone);
-			}
-		});
-		// Return cloned client elements.
-		return clientElements;
+	/*
+		Construct DOM template for Detail Heat Map and append to div with id = 'template' 
+	*/
+	function constructDetailMapDOMTemplate () {
+		let detailTemplate = document.createElement('div')
+		detailTemplate.setAttribute('id', 'detail_chm');
+		detailTemplate.setAttribute('class','detail_chm')
+		detailTemplate.setAttribute('style','position: absolute;')
+		let columnDendro = document.createElement('canvas')
+		columnDendro.setAttribute('id','detail_column_dendro_canvas')
+		columnDendro.setAttribute('width','1200')
+		columnDendro.setAttribute('height','500')
+		columnDendro.setAttribute('style','position: absolute;')
+		detailTemplate.appendChild(columnDendro)
+		let rowDendro = document.createElement('canvas')
+		rowDendro.setAttribute('id','detail_row_dendro_canvas')
+		rowDendro.setAttribute('width','1200')
+		rowDendro.setAttribute('height','500')
+		rowDendro.setAttribute('style','position: absolute;')
+		detailTemplate.appendChild(rowDendro)
+		let detailCanvas = document.createElement('canvas')
+		detailCanvas.setAttribute('id','detail_canvas')
+		detailCanvas.setAttribute('class','detail_canvas')
+		detailCanvas.setAttribute('tabindex','1')
+		detailTemplate.appendChild(detailCanvas)
+		let detailBoxCanvas = document.createElement('canvas')
+		detailBoxCanvas.setAttribute('id','detail_box_canvas')
+		detailBoxCanvas.setAttribute('class','detail_box_canvas')
+		detailTemplate.appendChild(detailBoxCanvas)
+		// labels div has children colLabels and rowLabels
+		let labels = document.createElement('div')
+		labels.setAttribute('id','labelDiv')
+		labels.setAttribute('style','display: inline-block;')
+		let colLabels = document.createElement('div')
+		colLabels.setAttribute('id','colLabelDiv')
+		colLabels.setAttribute('data-axis','Column')
+		colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
+		colLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
+		labels.appendChild(colLabels)
+		let rowLabels = document.createElement('div')
+		rowLabels.setAttribute('id','rowLabelDiv')
+		rowLabels.setAttribute('data-axis','Row')
+		rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
+		rowLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
+		labels.appendChild(rowLabels)
+		detailTemplate.appendChild(labels)
+		let templates = document.getElementById('templates')
+		templates.appendChild(detailTemplate)
 	}
 
-	function renameElements (pClone) {
+
+	function cloneDetailChm (mapNumber) {
+		if (mapNumber == 1) {
+		    console.error ('Cannot assign clone id #1');
+		    return null;
+		}
+		const tmp = document.querySelector('#detail_chm');
+		const pClone = tmp.cloneNode(true);
+		pClone.id = 'detail_chm' + mapNumber;
+		renameElements(pClone, mapNumber);
+		// Return cloned client element.
+		return pClone;
+	}
+
+	function renameElements (pClone, mapNumber) {
 		// Rename all client elements on the pane.
 		for (let idx = 0; idx < pClone.children.length; idx++) {
 			const p = pClone.children[idx];
-			p.id = p.id + NgChm.DMM.nextMapNumber;
+			p.id = p.id + mapNumber;
 			if (p.children.length > 0) {
 				let removals = [];
 		        for (let idx2 = 0; idx2 < p.children.length; idx2++) {
 					const q = p.children[idx2];
 					//rename all but label elements and place label elements in a deletion array
 					if ((q.id.includes('rowLabelDiv')) || (q.id.includes('colLabelDiv'))) {
-						q.id = q.id + NgChm.DMM.nextMapNumber;
+						q.id = q.id + mapNumber;
 					} else {
 						removals.push(q.id);
 					}
@@ -2613,12 +2601,15 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		}
 	}
 
-	function emptyDetailPane (pane, elements) {
-		//Save chm elements if Primary detail pane is being closed.
-		if ((NgChm.DMM.DetailMaps.length === 1) && (NgChm.DMM.getMapItemFromPane(pane.pane.id).version === 'P')) {
-			savedChmElements = elements;
-		}
-		NgChm.DMM.RemoveDetailMap(pane.pane.id); 
+	function emptyDetailPane (loc, elements) {
+		const templates = document.getElementById('templates');
+		[...elements].forEach(el => {
+		    if (el.id === 'detail_chm') {
+			// If the 'template' detail chm, put it back into DIV#templates
+			templates.appendChild(el);
+		    }
+		});
+		NgChm.DMM.RemoveDetailMap(loc.pane.id); 
 		NgChm.SUM.drawLeftCanvasBox ();
 	}
 
