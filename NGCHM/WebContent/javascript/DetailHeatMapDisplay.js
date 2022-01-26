@@ -62,13 +62,13 @@ NgChm.DET.setDrawDetailsTimeout = function (ms, noResize) {
  * the resize routine will be skipped on the next redraw.
  *********************************************************************************************/
 NgChm.DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
-	if (!NgChm.DMM.isDetailMapDisplayed()) { return false }
 	if (mapItem.drawEventTimer) {
 		clearTimeout (mapItem.drawEventTimer);
 	}
-	const drawWin = NgChm.SEL.getDetailWindow(mapItem);
-
 	if (!noResize) mapItem.resizeOnNextDraw = true;
+	if (!NgChm.DMM.isVisible(mapItem)) { return false }
+
+	const drawWin = NgChm.SEL.getDetailWindow(mapItem);
 	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
 		if (mapItem.chm) {
 			NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
@@ -1245,6 +1245,9 @@ NgChm.DET.getColLabelFontSize = function (mapItem) {
 NgChm.DET.updateDisplayedLabels = function () {
 	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
 		const mapItem = NgChm.DMM.DetailMaps[i];
+		if (!NgChm.DMM.isVisible(mapItem)) {
+		    continue;
+		}
 		const debug = false;
 	
 		const prevNumLabels = Object.keys(mapItem.labelElements).length;

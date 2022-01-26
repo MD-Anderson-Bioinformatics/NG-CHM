@@ -756,7 +756,11 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 	const PPL = this.summaryDendrogram.getPointsPerLeaf(); 
 	
 	this.isVisible = function() {
-		return this.dendroConfig.show === "ALL";
+		if (this.dendroConfig.show !== "ALL" || !this.dendroCanvas) {
+		    return false;
+		}
+		const loc = NgChm.Pane.findPaneLocation (this.dendroCanvas);
+		return !loc.pane.classList.contains('collapsed');
 	};
 
 	// Return the local index of the bar with index globalIdx.

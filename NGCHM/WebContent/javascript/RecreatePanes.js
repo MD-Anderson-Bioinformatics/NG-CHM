@@ -217,7 +217,8 @@ NgChm.createNS('NgChm.RecPanes');
 	 *	Set a pane's content based on 'config.type' attribute.
 	 */
 	function setPaneContent(paneid) {
-		let pane = document.getElementById(paneid);
+		const pane = document.getElementById(paneid);
+		const paneLoc = NgChm.Pane.findPaneLocation(pane);
 		const config = NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
 		if (!config) {
 		    // Probably an empty pane.
@@ -272,6 +273,10 @@ NgChm.createNS('NgChm.RecPanes');
 			}
 		} else {
 			console.error ("Unrecognized pane type - " + config.type);
+		}
+		if (NgChm.Pane.isCollapsedPane (paneLoc)) {
+		    // Ensures that any added/modified pane components are collapsed properly.
+		    NgChm.Pane.collapsePane (paneLoc);
 		}
 	}
 

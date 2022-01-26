@@ -237,20 +237,24 @@ NgChm.DMM.getMapItemFromDendro = function (dendro) {
 }
 
 /*********************************************************************************************
- * FUNCTION:  isVisible - The purpose of this function is to return true if the Detail View 
- * is visible (i.e. contained in a visible pane).
+ * FUNCTION:  isVisible - Return true if mapItem is visible (i.e. contained in a visible pane).
  *********************************************************************************************/
-NgChm.DMM.isVisible = function isVisible () {
-	let isViz = false
+NgChm.DMM.isVisible = function isVisible (mapItem) {
+	const loc = NgChm.Pane.findPaneLocation (mapItem.chm);
+	return (!loc.pane.classList.contains('collapsed')) && (loc.pane.style.display !== 'none');
+};
+
+/*********************************************************************************************
+ * FUNCTION:  anyVisible - Return true if any Detail View is visible.
+ *********************************************************************************************/
+NgChm.DMM.anyVisible = function anyVisible () {
 	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		const loc = NgChm.Pane.findPaneLocation (mapItem.chm);
-		if ((!loc.pane.classList.contains('collapsed')) && (loc.pane.style.display !== 'none')){
-			isViz = true;
-		}
+		if (isVisible(NgChm.DMM.DetailMaps[i])) {
+		    return true;
+		};
 	}
-	return isViz;
-}
+	return false;
+};
 
 /************************************************************************************************
  * FUNCTION - detailResize: This function calls all of the functions necessary to resize all 
@@ -273,13 +277,3 @@ NgChm.DMM.detailResize = function () {
 	    NgChm.DET.colDendroResize(mapItem);
 	});
 }
-
-NgChm.DMM.isDetailMapDisplayed = function() {
-	if (NgChm.DMM.DetailMaps.length > 0) {
-		return true;
-	} else {
-		return false;
-	}
-}
-
-
