@@ -145,6 +145,7 @@ NgChm.DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		mapItem.colDendro.setZoomLevel(restoreInfo.colZoomLevel || 1);
 	    }
 	}
+	NgChm.DET.setButtons(mapItem);
 }
 
 /*********************************************************************************************
