@@ -2392,19 +2392,8 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		NgChm.Pane.emptyPaneLocation (loc);
 		if (!restoreInfo) { NgChm.DMM.nextMapNumber++; }
 
-		/* Get DIV#detail_chm from DIV#templates. */
-		let chm;
-		if (mapNumber == 1) {
-		    chm = document.querySelector('#templates #detail_chm');
-		    /* Uses DIV#detail_chm, which should be in DIV#templates. */
-		    /* Because if not, mapNumber 1 would already be displayed. */
-		    if (!chm) {
-			console.error ("Cannot find #detail_chm in #templates");
-			return;
-		    }
-		} else {
-		    chm = cloneDetailChm (mapNumber);
-		}
+		/* Clone DIV#detail_chm from DIV#templates. */
+		let chm = cloneDetailChm (mapNumber);
 		loc.pane.appendChild (chm);
 		NgChm.Pane.setPaneClientIcons(loc, [
 		    zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
@@ -2485,10 +2474,6 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 
 
 	function cloneDetailChm (mapNumber) {
-		if (mapNumber == 1) {
-		    console.error ('Cannot assign clone id #1');
-		    return null;
-		}
 		const tmp = document.querySelector('#detail_chm');
 		const pClone = tmp.cloneNode(true);
 		pClone.id = 'detail_chm' + mapNumber;
@@ -2603,13 +2588,6 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	}
 
 	function emptyDetailPane (loc, elements) {
-		const templates = document.getElementById('templates');
-		[...elements].forEach(el => {
-		    if (el.id === 'detail_chm') {
-			// If the 'template' detail chm, put it back into DIV#templates
-			templates.appendChild(el);
-		    }
-		});
 		NgChm.DMM.RemoveDetailMap(loc.pane.id); 
 		NgChm.SUM.drawLeftCanvasBox ();
 	}

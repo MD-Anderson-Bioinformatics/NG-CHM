@@ -231,8 +231,8 @@ NgChm.createNS('NgChm.RecPanes');
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
 			const isPrimary = paneInfo.version == 'P';
 			let mapNumber = paneInfo.versionNumber == "" ? getUnusedVersionNumber() : parseInt(paneInfo.versionNumber);
-                        if (mapNumber > NgChm.DMM.nextMapNumber) {
-                            NgChm.DMM.nextMapNumber = mapNumber;
+                        if (mapNumber >= NgChm.DMM.nextMapNumber) {
+                            NgChm.DMM.nextMapNumber = mapNumber+1;
                         }
                         NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane), { isPrimary, mapNumber, paneInfo });
 

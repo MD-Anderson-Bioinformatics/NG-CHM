@@ -132,7 +132,7 @@ NgChm.DEV.addEvents = function (paneId) {
 NgChm.DEV.handleScroll = function(evt) {
 	evt.preventDefault();
 	let parentElement = evt.target.parentElement;
-	if (!parentElement.id.includes('detail_chm')) { 
+	if (!parentElement.classList.contains('detail_chm')) {
 	        if (!NgChm.DMM.primaryMap) return;
 		parentElement = NgChm.DMM.primaryMap.chm;
 	}
