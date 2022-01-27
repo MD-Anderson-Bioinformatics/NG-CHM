@@ -520,7 +520,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				if (debug) console.log ('container resize');
 				const verticalContainer = e.target.classList.contains('vertical');
 				const verticalChange = e.detail.what === 'height';
-				const children = [...e.target.children].filter(ch => !ch.classList.contains('resizerHelper'));
+				const children = [...e.target.children].filter(ch => !ch.classList.contains('resizerHelper') && !ch.classList.contains('collapsed'));
 				if (verticalContainer !== verticalChange) {
 					children.forEach(ch => {
 						const newEv = new CustomEvent('paneresize', { detail: e.detail });

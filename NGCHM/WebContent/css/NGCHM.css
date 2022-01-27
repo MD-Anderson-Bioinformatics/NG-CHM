@@ -104,6 +104,10 @@ div.collapsed div.icon_group.client_icons {
 	display: none;
 }
 
+div.pane.collapsed {
+    overflow: visible;
+}
+
 div.ngChmContainer {
 	position: relative;
 	display: flex;
