@@ -33,29 +33,6 @@ import java.util.Date;
 public class NGCHM_Minimizer {
 
 	/*******************************************************************
-	 * METHOD: encodeFileToBase64Binary
-	 *
-	 * This method reads in an image file and writes it out in base64 
-	 * binary representation.
-	 ******************************************************************/
-   private static String encodeFileToBase64Binary(String image) throws Exception {
-          String encodedfile = null;
-          try {
-        	  File file = new File(image);
-              FileInputStream fileInputStreamReader = new FileInputStream(file);
-              byte[] bytes = new byte[(int)file.length()];
-              fileInputStreamReader.read(bytes);
-              encodedfile = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
-              fileInputStreamReader.close();
-          } catch (Exception e) {
-              // TODO Auto-generated catch block
-              e.printStackTrace();
-          } 
-
-          return encodedfile;
-    }
-     
-	/*******************************************************************
 	 * METHOD: writeJSFile
 	 *
 	 * This method reads the contents of a javascript file and write its 
@@ -72,7 +49,7 @@ public class NGCHM_Minimizer {
 						int start = tok.indexOf("images/");
 						int stop = tok.indexOf(".png") + 4;
 						combinedWidget.write(tok.substring(0,start));
-						combinedWidget.write(encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
+						combinedWidget.write(CompilerUtilities.encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
 						combinedWidget.write(tok.substring(stop) + " ");
 					} else {
 						combinedWidget.write(tok + " ");
@@ -128,35 +105,35 @@ public class NGCHM_Minimizer {
 	 * in the chm.html file and writes out the contents of all JS files
 	 * included therein into the output file (ngchm.js)
 	 ******************************************************************/
-    public static void main(String[] args) {
-		System.out.println("BEGIN NGCHM Minimizer  " + new Date());
-        try {
+	public static void main(String[] args) {
+		System.out.println("BEGIN NGCHM_Minimizer  " + new Date());
    		if (args.length < 2) {
     			System.out.println("Usage: NGCHM_Minimizer <web directory> <output file>");
     			System.exit(1);
     		}
-    		BufferedReader br = new BufferedReader(new FileReader(args[0] + "/chm.html" ));
-    		BufferedWriter  bw = new BufferedWriter(new FileWriter(args[0] + "/javascript/" + args[1]));
-     		
-    		String line = br.readLine();
-     		while (line != null) {
-    			if (line.contains("src=\"javascript")){
-					String jsFile = line.substring(line.indexOf("src=\"")+5,line.indexOf("?"));
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(args[0] + "/chm.html" ));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(args[0] + "/javascript/" + args[1]));
+
+			String line = br.readLine();
+			while (line != null) {
+				if (line.contains("src=\"javascript")) {
+					String jsFile = CompilerUtilities.getJavascriptFileName (line);
 					if (!jsFile.equals("javascript/lib/jspdf.min.js")) {
-			       		bw.write("/* BEGIN Javascript file: " + jsFile + " */ \n");
-		   				writeJSFile(args[0], jsFile, bw);
-		   	       		bw.write("/* END Javascript file: " + jsFile + " */ \n\n");
+						bw.write("/* BEGIN Javascript file: " + jsFile + " */ \n");
+						writeJSFile(args[0], jsFile, bw);
+						bw.write("/* END Javascript file: " + jsFile + " */ \n\n");
 					}
-    			}
-    			line = br.readLine();
-    		} 	
-    		bw.close();
-    		br.close();
-    		System.out.println("END NGCHM Minimizer  " + new Date());
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } 
+				}
+				line = br.readLine();
+			}
+			bw.close();
+			br.close();
+			System.out.println("END NGCHM_Minimizer  " + new Date());
+		} catch (Exception e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
 	}
 
 }

@@ -3,49 +3,49 @@
 
 	<!-- Set variables for execution -->
 	<property name="src.dir" value="mda.ngchm.util."/>
-    <property name="web.dir" value="./WebContent/"/>
-    <property name="server.app.dir" value="${web.dir}server.app/"/>
-    <property name="js.dir" value="${web.dir}javascript/"/>
-    <property name="dir.jarfile" value="./WebContent/WEB-INF/lib"/>
-    <property name="java.dir" value="./src/mda/ngchm/util/"/>
-    <property name="closure.jar" value="${dir.jarfile}/closure-compiler-v20200204.jar"/>
+	<property name="web.dir" value="./WebContent/"/>
+	<property name="server.app.dir" value="${web.dir}server.app/"/>
+	<property name="js.dir" value="${web.dir}javascript/"/>
+	<property name="dir.jarfile" value="./WebContent/WEB-INF/lib"/>
+	<property name="java.dir" value="./src/mda/ngchm/util/"/>
+	<property name="closure.jar" value="${dir.jarfile}/closure-compiler-v20200204.jar"/>
 
 	<!-- Execute a Javascript miminizer to generate a minified custom-min.js file -->
-    <target name="minimize_custom_js">
-	<apply executable="java" parallel="false">
+	<target name="minimize_custom_js">
+	<apply executable="java" parallel="false" failonerror="true">
 	    <fileset dir="${js.dir}" includes="custom/custom.js"/>
 	    <arg line="-jar"/>
-	    <arg path="${dir.jarfile}/closure-compiler-v20200204.jar"/>
+	    <arg value="${closure.jar}"/>
 	    <srcfile/>
 		<arg line="--js_output_file"/>
 	    <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
 	    <targetfile/>
 	</apply>
-    </target>  
+	</target>  
 		
 	<!-- Build all JAVA class files -->
-    <target name="classfiles">
-        <mkdir dir="build/classes"/>
-        <javac srcdir="${java.dir}" destdir="build/classes" />
-    </target>
+	<target name="classfiles">
+	    <mkdir dir="build/classes"/>
+	    <javac srcdir="${java.dir}" destdir="build/classes" debug="true" debuglevel="lines,vars,source" failonerror="true"/>
+	</target>
 
 	<!-- Execute the JAVA NGCHM_Minimizer to combine all JS files into a single ngchm.js file -->
-    <target name="create_combined_js" depends="classfiles,minimize_custom_js">
-	<java classname="${src.dir}NGCHM_Minimizer">
+	<target name="create_combined_js" depends="classfiles,minimize_custom_js">
+	<java classname="${src.dir}NGCHM_Minimizer" failonerror="true">
 	    <arg value="${web.dir}"/>
 	    <arg value="ngchm.js"/>
 	    <classpath>
 	        <pathelement path="build/classes"/>
 	    </classpath>
 	</java>
-    </target>
+	</target>
 	
 	<!-- Execute a Javascript miminizer to generate a minified ngchm-min.js file -->
-    <target name="minify_js" depends="create_combined_js">
-        <apply executable="java" parallel="false">
+	<target name="minify_js" depends="create_combined_js">
+        <apply executable="java" parallel="false" failonerror="true">
             <fileset dir="${js.dir}" includes="ngchm.js"/>
             <arg line="-jar"/>
-            <arg path="${dir.jarfile}/closure-compiler-v20200204.jar"/>
+            <arg value="${closure.jar}"/>
             <srcfile/>
             <arg line="--compilation_level"/>
             <arg line="SIMPLE_OPTIMIZATIONS"/>
@@ -55,35 +55,35 @@
             <mapper type="glob" from="*.js" to="${js.dir}*-min.js"/>
             <targetfile/>
         </apply>
-    </target>  
+	</target>  
 	
 	<!-- Execute a Javascript miminizer to generate a minified ngchmEmbed-min.js file -->
-    <target name="minify_embedder_js">
-	<apply executable="java" parallel="false">
+	<target name="minify_embedder_js">
+	<apply executable="java" parallel="false" failonerror="true">
 	    <fileset dir="${js.dir}" includes="NGCHM_Embed.js"/>
 	    <arg line="-jar"/>
-	    <arg path="${dir.jarfile}/closure-compiler-v20200204.jar"/>
+	    <arg value="${closure.jar}"/>
 	    <srcfile/>
-		<arg line="--js_output_file"/>
+	    <arg line="--js_output_file"/>
 	    <mapper type="glob" from="*.js" to="ngchmEmbed-min.js"/>
 	    <targetfile/>
 	</apply>
-    </target>  
+	</target>  
 
 	<!-- Execute the JAVA NGCHM_AppGenerator to create the stand-alone viewer ngChmApp.html file -->
 	<target name="create_app_html" depends="classfiles,minify_js"> 
-	<java classname="${src.dir}NGCHM_AppGenerator">
+	<java classname="${src.dir}NGCHM_AppGenerator" failonerror="true">
 	    <arg value="${web.dir}"/>
 	    <arg value="ngChmApp.html"/>
 	    <classpath>
 	        <pathelement path="build/classes"/>
 	    </classpath>
 	</java>
-    </target>
+	</target>
 	
 	<!-- Execute the JAVA NGCHM_ServerAppGenerator to create the server viewer ngChmServer directory -->
 	<target name="create_server_app_dir" depends="classfiles,minify_js">
-	<java classname="${src.dir}NGCHM_ServerAppGenerator">
+	<java classname="${src.dir}NGCHM_ServerAppGenerator" failonerror="true">
 	    <arg value="${web.dir}"/>
 	    <arg value="${server.app.dir}"/>
 	    <arg value="${closure.jar}"/>
@@ -93,19 +93,9 @@
 	</java>
 	</target>
 
-	<!-- Execute the JAVA NGCHM_AppVersioner to update the version on all JS includes in chm.html -->
-	<target name="version_app_html" depends="classfiles,minify_js"> 
-	<java classname="${src.dir}NGCHM_AppVersioner">
-	    <arg value="${web.dir}"/>
-	    <classpath>
-	        <pathelement path="build/classes"/>
-	    </classpath>
-	</java>
-    </target>
-	
 	<!-- Execute the JAVA NGCHM_Widgetizer to create the ngchmWidget-min.js NG-CHM Widget file -->
-    <target name="create_widget_js" depends="classfiles,minify_js,minify_embedder_js">
-	<java classname="${src.dir}NGCHM_Widgetizer">
+	<target name="create_widget_js" depends="classfiles,minify_js,minify_embedder_js">
+	<java classname="${src.dir}NGCHM_Widgetizer" failonerror="true">
 	    <arg value="${web.dir}"/>
 	    <arg value="ngchmWidget-min.js"/>
 	    <arg value="file"/>
@@ -113,37 +103,36 @@
 	        <pathelement path="build/classes"/>
 	    </classpath>
 	</java>
-    </target>
-	
+	</target>
+
 	<!-- Target to call the steps to build just the ngChmApp.html stand-alone viewer file -->
 	<!-- It will delete any by-product JS files that are no longer needed -->
-    <target name="build_ngchm_app" depends="create_app_html,create_server_app_dir,version_app_html">
+	<target name="build_ngchm_app" depends="create_app_html,create_server_app_dir">
 	<delete>
 	    <fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>
-    </target>
+	</target>
 	
 	<!-- Target to call the steps to build just the ngchmWidget-min.js NG-CHM Widget file -->
 	<!-- It will delete any by-product JS files that are no longer needed -->
-    <target name="build_ngchm_widget" depends="create_widget_js,version_app_html">
+	<target name="build_ngchm_widget" depends="create_widget_js">
 	<delete>
 	    <fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>
-    </target>
+	</target>
 
 	<!-- Target to call the steps to build all NG-CHM components generated by this ANT script -->
 	<!-- It will delete any by-product JS files that are no longer needed -->
-    <target name="build_ngchm_all" depends="create_server_app_dir,create_app_html,create_widget_js,version_app_html">
+	<target name="build_ngchm_all" depends="create_server_app_dir,create_app_html,create_widget_js">
 	<delete>
 	    <fileset dir="${js.dir}" includes="ngchm.js"/>
             <fileset dir="${js.dir}" includes="ngchm-min.js"/>
             <fileset dir="${js.dir}" includes="custom/custom-min.js"/>
 	</delete>
-	<move file="${web.dir}chmTemp.html" tofile="${web.dir}chm.html"/>
-    </target>
+	</target>
 
 </project>
