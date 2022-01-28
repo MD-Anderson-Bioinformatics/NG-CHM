@@ -82,227 +82,10 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import mda.ngchm.util.CompilerUtilities;
+
 public class NGCHM_ServerAppGenerator {
 
-	/*******************************************************************
-	 * METHOD: getFileBytes
-	 *
-	 * This method reads in a file as a byte array.
-	 ******************************************************************/
-	private static byte[] getFileBytes (String fileName) throws Exception {
-		byte[] bytes = new byte[0];
-		try {
-			File file = new File(fileName);
-			FileInputStream fileInputStreamReader = new FileInputStream(file);
-			bytes = new byte[(int)file.length()];
-			fileInputStreamReader.read(bytes);
-			fileInputStreamReader.close();
-		} catch (Exception e) {
-			System.out.println("ServerAppGenerator: Error reading file bytes " + fileName);
-			e.printStackTrace();
-			System.exit(1);
-		}
-		return bytes;
-	}
-
-	/*******************************************************************
-	 * METHOD: encodeFileToBase64Binary
-	 *
-	 * This method reads in an image file and converts it to a base64-encoded
-	 * string representation.  It is not currently used.  It is kept in case
-	 * we ever need it again.
-	 ******************************************************************/
-	private static String encodeFileToBase64Binary(String image) {
-		String encodedfile = null;
-		try {
-			byte[] bytes = getFileBytes (image);
-			encodedfile = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
-		} catch (Exception e) {
-			System.out.println("ServerAppGenerator: Error encoding image " + image);
-			e.printStackTrace();
-			System.exit(1);
-		}
-		return encodedfile;
-	}
-
-	/*******************************************************************
-	 * METHOD: getFileDigest
-	 *
-	 * This method returns the SHA-1 digest of the contents of the file
-	 * with name fileName.
-	 ******************************************************************/
-	public static String getFileDigest (String fileName)
-	{
-		String hashtext = "";
-		try {
-			MessageDigest md = MessageDigest.getInstance("SHA-1");
-			byte[] messageDigest = md.digest(getFileBytes(fileName));
-
-			BigInteger no = new BigInteger(1, messageDigest);
-			hashtext = no.toString(16);
-			while (hashtext.length() < 32) {
-				hashtext = "0" + hashtext;
-			}
-		} catch (Exception e) {
-			System.out.println("ServerAppGenerator: Error digesting file " + fileName);
-			e.printStackTrace();
-			System.exit(1);
-		}
-		return hashtext;
-	}
-
-	/*******************************************************************
-	 * METHOD: copyFile
-	 *
-	 * This method copies the file with name inputFile to the file with
-	 * name outputFile.
-	 ******************************************************************/
-	private static void copyFile (String inputFile, String outputFile) {
-		final int BUFFER_SIZE = 4096; // 4KB
-
-		try (
-			FileInputStream inputStream = new FileInputStream(inputFile);
-			FileOutputStream outputStream = new FileOutputStream(outputFile);
-		) {
-			byte[] buffer = new byte[BUFFER_SIZE];
-			int bytesRead = -1;
-
-			while ((bytesRead = inputStream.read(buffer)) != -1) {
-				outputStream.write(buffer, 0, bytesRead);
-			}
-		} catch (Exception e) {
-			System.out.println("ServerAppGenerator: Error copying file " + inputFile + " to " + outputFile);
-			e.printStackTrace();
-			System.exit(1);
-		}
-	}
-
-	/*******************************************************************
-	 * Static members imageFiles and imageCounts.
-	 *
-	 * These two lists are used to count the number of distinct times each
-	 * image is referenced in the source files.  imageCounts[idx] is the
-	 * number of times imageFiles[idx] has been referenced.
-	 ******************************************************************/
-	private static List<String> imageFiles = new ArrayList<String>(100);
-	private static List<Integer> imageCounts = new ArrayList<Integer>(100);
-
-	/*******************************************************************
-	 * METHOD: copyLineAndImages
-	 *
-	 * This method copies any image referenced on line from the inputDir
-	 * to the outDir and its reference count is incremented.
-	 ******************************************************************/
-	private static void copyLineAndImages (String line, String inputDir, String outputDir)
-		throws Exception
-	{
-		if (line.contains("images/")) {
-			// Copy any images on line to output directory.
-			String toks[] = line.split(" ");
-			for (String tok : toks) {
-				if (tok.contains("images/")) {
-					int start = tok.indexOf("images/");
-					int stop = tok.indexOf(".png");
-					String fileName;
-					if (start < 0 || stop < 0) {
-						System.out.println ("Bad image string: '" + tok + "' on line " + line);
-					}
-					stop = stop + 4;  // Stop at end of .png
-					fileName = tok.substring(start,stop);
-					if (!imageFiles.contains(fileName)) {
-						System.out.println("Copying image file " + fileName);
-						copyFile (inputDir + "/" + fileName, outputDir + "/" + fileName);
-						imageFiles.add (fileName);
-						imageCounts.add (0);
-					}
-					int idx = imageFiles.indexOf(fileName);
-					imageCounts.set (idx, imageCounts.get (idx) + 1);
-				}
-			}
-		}
-	}
-
-	/*******************************************************************
-	 * METHOD: outputImageCounts
-	 *
-	 * This method outputs a table of image reference counts to the console.
-	 ******************************************************************/
-	private static void outputImageCounts () {
-		int N = imageFiles.size();
-		System.out.println("\nCount  Image file name\n");
-		for (int i = 0; i < N; i++) {
-			System.out.println (String.format("%5d", imageCounts.get(i)) + ": " + imageFiles.get(i));
-		}
-	}
-
-	/*******************************************************************
-	 * METHOD: minifyFile
-	 *
-	 * This method minimizes the Javascript source file srcFile using the
-	 * closure compiler at the SIMPLE_OPTIMIZATIONS level.
-	 *
-	 * The minimized output is returned.
-	 *
-	 * Error/warning messages written by the closure compiler to its
-	 * standard error are output to the console.
-	 *
-	 ******************************************************************/
-	public static String minifyFile (String srcFile, String outDir, String closure)
-		throws FileNotFoundException, IOException
-	{
-		String tmpFile = outDir + "/tmp.min.js";
-		String[] cmd = { "java", "-jar", closure,
-		                 srcFile,
-			         "--compilation_level", "SIMPLE_OPTIMIZATIONS",
-				 "--jscomp_off", "uselessCode",
-				 "--language_out", "ECMASCRIPT_2018",
-				 "--js_output_file", tmpFile
-			       };
-
-		/* Minimize srcFile */
-		Process process = Runtime.getRuntime().exec(cmd);
-		BufferedReader errorReader = new BufferedReader (new InputStreamReader (process.getErrorStream()));
-		String line;
-		while ((line = errorReader.readLine()) != null) {
-		    System.out.println (line);
-		}
-		errorReader.close();
-
-		StringBuffer strBuff = new StringBuffer();
-
-		BufferedReader br = new BufferedReader(new FileReader(tmpFile));
-		line = br.readLine();
-		while (line != null) {
-			strBuff.append(line+"\n");
-			line = br.readLine();
-		}
-		br.close();
-		return strBuff.toString();
-	}
-
-	/*******************************************************************
-	 * METHOD: minifyString
-	 *
-	 * This method minimizes the Javascript in string src using the
-	 * closure compiler at the SIMPLE_OPTIMIZATIONS level.
-	 *
-	 * The minimized output is returned as a string.
-	 *
-	 ******************************************************************/
-	public static String minifyString (String src, String outDir, String closure)
-		throws FileNotFoundException, IOException
-	{
-		String tmpFile = outDir + "/minify-tmp.js";
-		BufferedWriter cw = new BufferedWriter(new FileWriter(tmpFile));
-		cw.write(src);
-		cw.close();
-		String minjs = minifyFile (tmpFile, outDir, closure);
-
-		File tmp = new File(tmpFile);
-		tmp.delete();
-
-		return minjs;
-	}
 
 	/*******************************************************************
 	 * METHOD: createChunk
@@ -331,7 +114,7 @@ public class NGCHM_ServerAppGenerator {
 		pieces.clear();
 
 		/* Rename chunk file to include its digest in name. */
-		String digest = getFileDigest(tmpFile);
+		String digest = CompilerUtilities.getFileDigest(tmpFile);
 		String chunkFile = prefix + digest + suffix;
 		File tmp = new File(tmpFile);
 		File chunk = new File(outDir + "/" + chunkFile);
@@ -344,52 +127,6 @@ public class NGCHM_ServerAppGenerator {
 
 		return chunkFile;
 	}
-
-	/*******************************************************************
-	 * METHOD: readStyleAsString
-	 *
-	 * This method returns the contents of cssFile as a String.  Any double
-	 * quotes in the file are escaped.
-	 *
-	 * Any images referenced in the file are copied to the output directory.
-	 *
-	 ******************************************************************/
-	public static String readStyleAsString(String srcDir, String outputDir, String cssFile) throws Exception {
-		StringBuffer strBuff = new StringBuffer();
-
-		BufferedReader br = new BufferedReader(new FileReader(srcDir + "/" + cssFile));
-		String line = br.readLine();
-		while (line != null) {
-		        copyLineAndImages (line, srcDir, outputDir);
-			strBuff.append(line.replaceAll("\"", "\\\""));
-			line = br.readLine();
-		}
-
-		br.close();
-		return strBuff.toString();
-	}
-
-	/*******************************************************************
-	 * METHOD: readFileAsString
-	 *
-	 * This method returns the contents of fileName as a String.
-	 *
-	 * Any images referenced in the file are copied to the output directory.
-	 *
-	 ******************************************************************/
-        public static String readFileAsString(String srcDir, String outputDir, String fileName) throws Exception {
-		StringBuffer strBuff = new StringBuffer();
-
-		BufferedReader br = new BufferedReader(new FileReader(srcDir + "/" + fileName));
-		String line = br.readLine();
-		while (line != null) {
-		        copyLineAndImages (line, srcDir, outputDir);
-			strBuff.append(line+"\n");
-			line = br.readLine();
-		}
-		br.close();
-		return strBuff.toString();
-        }
 
 	/*******************************************************************
 	 * METHOD: injectInlineCSS
@@ -410,13 +147,13 @@ public class NGCHM_ServerAppGenerator {
 			BufferedReader br = new BufferedReader(new FileReader(srcFile));
 			String line = br.readLine();
 			while (line != null) {
-				copyLineAndImages (line, srcDir, serverDir);
+				CompilerUtilities.copyLineAndImages (line, srcDir, serverDir);
 				line = br.readLine();
 			}
 			br.close();
-			String digest = getFileDigest(srcFile);
+			String digest = CompilerUtilities.getFileDigest(srcFile);
 			String digestFile = "css/ngchm-" + digest + ".css";
-			copyFile (srcFile, serverDir + "/" + digestFile);
+			CompilerUtilities.copyFile (srcFile, serverDir + "/" + digestFile);
 
 			bw.write("<link rel='stylesheet' type='text/css' href='" +  digestFile + "'>\n");
 		} catch (Exception e) {
@@ -424,27 +161,6 @@ public class NGCHM_ServerAppGenerator {
 			e.printStackTrace();
 			System.exit(1);
 		}
-	}
-
-	/*******************************************************************
-	 * METHOD: minifyDeferredCSS
-	 *
-	 * This method creates a minified Javascript module for injecting
-	 * deferred CSS into the document's head element.
-	 *
-	 * The generated Javascript is returned.
-	 *
-	 ******************************************************************/
-	public static String minifyDeferredCSS (StringBuffer css, String serverDir, String closure)
-		throws FileNotFoundException, IOException
-	{
-		String js = "(function() {\n"
-		          + "var css = document.createElement('style');\n"
-		          + "css.type='text/css';\n"
-		          + "css.textContent='" + css.toString() + "';\n"
-		          + "document.head.appendChild(css);\n"
-		          + "})()\n";
-		return minifyString (js, serverDir, closure);
 	}
 
 	/*******************************************************************
@@ -462,26 +178,6 @@ public class NGCHM_ServerAppGenerator {
 	{
 		String chunkFile = createChunk (pieces, outputDir, "javascript/ngchm-", ".js");
 		bw.write("<script defer src='" + chunkFile + "'></script>\n");
-	}
-
-	/*******************************************************************
-	 * METHOD: testDirectory
-	 *
-	 * Create directory at path if it doesn't already exist.
-	 *
-	 ******************************************************************/
-	private static void testDirectory (String path)
-	{
-		File directory = new File (path);
-		if (directory.exists()) {
-			return;
-		}
-		if (directory.mkdir()) {
-			return;
-		}
-
-		System.out.println("Error: required output directory " + path + " does not exist and cannot be made.");
-		System.exit(1);
 	}
 
 	/*******************************************************************
@@ -508,10 +204,10 @@ public class NGCHM_ServerAppGenerator {
 		}
 
 		// Check that the output directories exist and maken them if not.
-		testDirectory (outputDir);
-		testDirectory (outputDir + "/images");
-		testDirectory (outputDir + "/css");
-		testDirectory (outputDir + "/javascript");
+		CompilerUtilities.testDirectory (outputDir);
+		CompilerUtilities.testDirectory (outputDir + "/images");
+		CompilerUtilities.testDirectory (outputDir + "/css");
+		CompilerUtilities.testDirectory (outputDir + "/javascript");
 
 		List<String> chunkPieces = new ArrayList<String>(100);
 
@@ -521,7 +217,7 @@ public class NGCHM_ServerAppGenerator {
 		String customFile = "";
 		try {
 			String srcFile = sourceDir + "/javascript/custom/custom.js";
-			chunkPieces.add (minifyFile (srcFile, outputDir, closureJar));
+			chunkPieces.add (CompilerUtilities.minifyFile (srcFile, outputDir, closureJar));
 			customFile = createChunk (chunkPieces, outputDir, "javascript/custom-", ".js");
 		} catch (Exception e) {
 			System.out.println("NGCHM_ServerAppGenerator failed when processing javascript/custom/custom.js");
@@ -548,25 +244,25 @@ public class NGCHM_ServerAppGenerator {
 					//End of embedded Javascript in chm.html
 					scriptedLines.append("/* END chm.html Javascript: */\n\n");
 					isScript = false;
-					chunkPieces.add (minifyString (scriptedLines.toString(), outputDir, closureJar));
+					chunkPieces.add (CompilerUtilities.minifyString (scriptedLines.toString(), outputDir, closureJar));
 				} else if (isScript) {
 					scriptedLines.append(line + "\n");
 				} else if (line.contains("NEW CHUNK") && (chunkPieces.size() > 0)) {
 					outputChunk (chunkPieces, outputDir, bw);
 				} else if (line.contains("src=\"javascript")){
 					// Add to current chunk.
-					String jsFile = line.substring(line.indexOf("src=\"")+5,line.indexOf("?"));
-					String content = readFileAsString (sourceDir, outputDir, jsFile);
+					String jsFile = CompilerUtilities.getJavascriptFileName (line);
+					String content = CompilerUtilities.readFileAsString (sourceDir, outputDir, jsFile);
 					if (line.contains("PRESERVE")) {
 						chunkPieces.add (content);
 					} else {
-						chunkPieces.add (minifyString(content, outputDir, closureJar));
+						chunkPieces.add (CompilerUtilities.minifyString(content, outputDir, closureJar));
 					}
 				}  else if (line.contains("<link rel=\"stylesheet")) {
-					String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
+					String cssFile = CompilerUtilities.getCSSFileName (line);
 					if (line.contains("DEFER")) {
 						// Save css to be added into html file later.
-						cssLines.append (readStyleAsString(sourceDir, outputDir, cssFile));
+						cssLines.append (CompilerUtilities.readStyleAsString(sourceDir, outputDir, cssFile));
 					} else {
 						injectInlineCSS (cssFile, sourceDir, outputDir, bw);
 					}
@@ -583,14 +279,14 @@ public class NGCHM_ServerAppGenerator {
 					}
 					// Inject any deferred CSS.
 					if (cssLines.length() > 0) {
-						chunkPieces.add(minifyDeferredCSS (cssLines, outputDir, closureJar));
+						chunkPieces.add(CompilerUtilities.minifyDeferredCSS (cssLines, outputDir, closureJar));
 						outputChunk (chunkPieces, outputDir, bw);
 					}
 					// Close the body.
 					bw.write(line+"\n");
 				} else {
 					//This is standard HTML, write out to html string
-					copyLineAndImages (line, sourceDir, outputDir);
+					CompilerUtilities.copyLineAndImages (line, sourceDir, outputDir);
 					bw.write(line+"\n");
 				}
 				line = br.readLine();
@@ -604,7 +300,7 @@ public class NGCHM_ServerAppGenerator {
 		}
 
 		System.out.println("END NGCHM_ServerAppGenerator " + new Date());
-		outputImageCounts ();
+		CompilerUtilities.outputImageCounts ();
 
 		System.exit(0);
 

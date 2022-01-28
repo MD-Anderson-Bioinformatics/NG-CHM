@@ -34,29 +34,6 @@ import java.util.Date;
 public class NGCHM_Widgetizer {
 
 	/*******************************************************************
-	 * METHOD: encodeFileToBase64Binary
-	 *
-	 * This method reads in an image file and writes it out in base64 
-	 * binary representation.
-	 ******************************************************************/
-   private static String encodeFileToBase64Binary(String image) throws Exception {
-          String encodedfile = null;
-          try {
-        	  File file = new File(image);
-              FileInputStream fileInputStreamReader = new FileInputStream(file);
-              byte[] bytes = new byte[(int)file.length()];
-              fileInputStreamReader.read(bytes);
-              encodedfile = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
-              fileInputStreamReader.close();
-          } catch (Exception e) {
-              // TODO Auto-generated catch block
-              e.printStackTrace();
-          } 
-
-          return encodedfile;
-    }
-     
-	/*******************************************************************
 	 * METHOD: styleToString
 	 *
 	 * This method reads in CSS file line and writes it out to the 
@@ -83,7 +60,7 @@ public class NGCHM_Widgetizer {
 					// BMB: I think it's because the stylefile wraps it in url( ) and
 					// BMB: we don't want to copy that.
 					strBuff.append(tok.substring(0,start-4));
-					strBuff.append(encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
+					strBuff.append(CompilerUtilities.encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
 					strBuff.append(tok.substring(stop+1) + " ");
 				} else {
 					strBuff.append(tok.replace("\"", "\\\"") + " ");
@@ -163,12 +140,7 @@ public class NGCHM_Widgetizer {
         			//For css file - convert it into a string and use javascript to add it to the html document 
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
-				int href = line.indexOf("href=\"");
-				int queryStr = line.indexOf("?");
-				if (href < 0 || queryStr < 0) {
-					System.out.println ("Bad stylesheet reference: '" + line + "' in " + args[0] + "/chm.html, line " + lineNumber);
-				}
-				String cssFile = line.substring(href+6, queryStr);
+				String cssFile = CompilerUtilities.getCSSFileName (line);
 				cssLines.append("(function() { var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
 				cssLines.append("css.innerText = \"" + styleToString(args[0], cssFile) + "\";\ndocument.head.appendChild(css);\n");
 				cssLines.append("})();\n");
@@ -190,7 +162,7 @@ public class NGCHM_Widgetizer {
 							}
 							stop = stop + 4;  // Stop at end of .png
 							htmlString += tok.substring(0,start);
-							htmlString += encodeFileToBase64Binary(args[0] + "/" + tok.substring(start,stop));
+							htmlString += CompilerUtilities.encodeFileToBase64Binary(args[0] + "/" + tok.substring(start,stop));
 							htmlString += tok.substring(stop) + " ";
 						} else {
 							htmlString += tok + " ";

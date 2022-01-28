@@ -30,31 +30,10 @@ import java.io.FileNotFoundException;
 import java.util.Base64;
 import java.util.Date;
 
+import mda.ngchm.util.CompilerUtilities;
+
 public class NGCHM_AppGenerator {
 
-	/*******************************************************************
-	 * METHOD: encodeFileToBase64Binary
-	 *
-	 * This method reads in an image file and writes it out in base64 
-	 * binary representation.
-	 ******************************************************************/
-   private static String encodeFileToBase64Binary(String image) throws Exception {
-          String encodedfile = null;
-          try {
-        	  File file = new File(image);
-              FileInputStream fileInputStreamReader = new FileInputStream(file);
-              byte[] bytes = new byte[(int)file.length()];
-              fileInputStreamReader.read(bytes);
-              encodedfile = "data:image/png;base64," + Base64.getEncoder().encodeToString(bytes);
-              fileInputStreamReader.close();
-          } catch (Exception e) {
-              // TODO Auto-generated catch block
-              e.printStackTrace();
-          } 
-
-          return encodedfile;
-    }
-     
 	/*******************************************************************
 	 * METHOD: styleToString
 	 *
@@ -74,7 +53,7 @@ public class NGCHM_AppGenerator {
 					int start = tok.indexOf("images/");
 					int stop = tok.indexOf(".png") + 4;
 					strBuff.append(tok.substring(0,start-4));
-					strBuff.append(encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
+					strBuff.append(CompilerUtilities.encodeFileToBase64Binary(webDir + "/" + tok.substring(start,stop)));
 					strBuff.append(tok.substring(stop+1) + " ");
 				} else {
 					strBuff.append(tok.replace("\"", "\\\"") + " ");
@@ -137,7 +116,7 @@ public class NGCHM_AppGenerator {
     				//Ignore
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
-    				String cssFile = line.substring(line.indexOf("href=\"")+6,line.indexOf("?"));
+				String cssFile = CompilerUtilities.getCSSFileName (line);
     				bw.write("<style type='text/css'>");
      				bw.write(styleToString(args[0], cssFile));
      				bw.write("</style>\n");
@@ -149,7 +128,7 @@ public class NGCHM_AppGenerator {
     						int start = tok.indexOf("images/");
     						int stop = tok.indexOf(".png") + 4;
     						htmlString += tok.substring(0,start);
-    						htmlString += encodeFileToBase64Binary(args[0] + "/" + tok.substring(start,stop));
+						htmlString += CompilerUtilities.encodeFileToBase64Binary(args[0] + "/" + tok.substring(start,stop));
     						htmlString += tok.substring(stop) + " ";
     					} else {
     						htmlString += tok + " ";
