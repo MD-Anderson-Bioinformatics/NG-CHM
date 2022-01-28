@@ -629,7 +629,7 @@ NgChm.UTIL.loadANACHM = function (sizeBuilderView) {
 	if (!blobUri || !unescapedBlobUri.includes(delim)) {
 		return;
 	}
-
+	document.getElementById('loader').style.display = '';
 	// This URI was taken from a query param, but also contains query params of its own.
 	// As such, it is URL-encoded. So, we first unescape to get the full URI.
 	// However, a part of this URI is the SAS for AzureBlob which needs to be encoded, so re-encode that part.
@@ -674,6 +674,7 @@ NgChm.UTIL.loadCHMFromURL = function (sizeBuilderView) {
  * passes in the ngchm as a blob.
  **********************************************************************************/
 NgChm.UTIL.loadBlobModeCHM = function (sizeBuilderView) {
+	document.getElementById('loader').style.display = '';
 	var chmFile  =  new File([NgChm.MMGR.embeddedMapName], "ngchm");
 	NgChm.UTIL.resetCHM();
 	NgChm.UTIL.displayFileModeCHM(chmFile,sizeBuilderView);

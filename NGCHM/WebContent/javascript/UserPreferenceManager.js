@@ -20,7 +20,7 @@ NgChm.UPM.hasClasses = false;
  *  
  *  The following functions are utilized to present the entire heat map preferences
  *  dialog and, therefore, sit above those functions designed specifically for processing
- *  individual data layer and covariate classification bar preferences:
+ *  individual data layer and Annotation classification bar preferences:
  *  	- editPreferences
  *  	- setPrefsDivSizing
  *  	- showLayerPrefs
@@ -103,8 +103,8 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	NgChm.UPM.prefsResize();
 
 	//If errors exist and they are NOT on the currently visible DIV (dataLayer1),
-	//hide the dataLayers DIV, set the tab to "Covariates", and open the appropriate
-	//covariate bar DIV.
+	//hide the dataLayers DIV, set the tab to "Annotations", and open the appropriate
+	//Annotation bar DIV.
 	if (errorMsg === null) {
 		NgChm.UPM.addClassPrefOptions();
 	}
@@ -113,7 +113,8 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 	NgChm.UPM.setShowAll();
 	if ((errorMsg != null) && (errorMsg[1] === "classPrefs")) {
 		NgChm.UPM.showClassBreak(errorMsg[0]);
-		NgChm.UPM.showClassPrefs();
+		// TODO: Uncomment below line when we want to implement covariate / annotation feature again
+		// NgChm.UPM.showClassPrefs();
 	} else if ((errorMsg != null) && (errorMsg[1] === "layerPrefs")){ 
 		NgChm.UPM.showLayerBreak(errorMsg[0]);
 		NgChm.UPM.showLayerPrefs();
@@ -121,7 +122,8 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		NgChm.UPM.showRowsColsPrefs();
 	} else if (NgChm.UPM.searchPerformed){ 
 		NgChm.UPM.searchPerformed = false;
-		NgChm.UPM.showClassPrefs();
+		// TODO: Uncomment below line when we want to implement covariate / annotation feature again
+		// NgChm.UPM.showClassPrefs();
 	} else {
 		NgChm.UPM.showLayerBreak(NgChm.SEL.getCurrentDL());
 		NgChm.UPM.showLayerPrefs();
@@ -213,14 +215,15 @@ NgChm.UPM.showLayerPrefs = function() {
 
 /**********************************************************************************
  * FUNCTION - showClassPrefs: The purpose of this function is to perform the 
- * processing for the preferences tab when the user selects the "Covariates" tab.
+ * processing for the preferences tab when the user selects the "Annotations" tab.
  **********************************************************************************/
 NgChm.UPM.showClassPrefs = function() {
 	//Turn off all tabs
 	NgChm.UPM.hideAllPrefs();
 	//Turn on classification prefs tab
-	var classBtn = document.getElementById("prefClass_btn");
-	classBtn.setAttribute('src', 'images/covariateBarsOn.png');
+	// TODO: Uncomment below lines when we want to implement covariate / annotation feature again
+	// var classBtn = document.getElementById("prefClass_btn");
+	// classBtn.setAttribute('src', 'images/covariateBarsOn.png');
 	var classDiv = document.getElementById("classPrefs");
 	classDiv.style.display="block";
 }
@@ -231,8 +234,9 @@ NgChm.UPM.showClassPrefs = function() {
  * image set to the "off" image.
  **********************************************************************************/
 NgChm.UPM.hideAllPrefs = function() {
-	var classBtn = document.getElementById("prefClass_btn");
-	classBtn.setAttribute('src', 'images/covariateBarsOff.png');
+	// TODO: Uncomment below lines when we want to implement covariate / annotation feature again
+	// var classBtn = document.getElementById("prefClass_btn");
+	// classBtn.setAttribute('src', 'images/covariateBarsOff.png');
 	var classDiv = document.getElementById("classPrefs");
 	classDiv.style.display="none";
 	var layerBtn = document.getElementById("prefLayer_btn");
@@ -318,7 +322,7 @@ NgChm.UPM.removeSettingsPanels = function() {
  * First validations are performed.  If errors are found, preference 
  * changes are NOT applied and the user is re-presented with the preferences dialog
  * and the error found.  If no errors are found, all changes are applied to the heatmap 
- * and the summary panel, detail panel, and covariate bars are redrawn.  However, 
+ * and the summary panel, detail panel, and Annotation bars are redrawn.  However, 
  * these changes are not yet permanently  saved to the JSON files that are used to 
  * configure heat map presentation.
  **********************************************************************************/
@@ -332,7 +336,7 @@ NgChm.UPM.prefsApplyButton = function(isReset) {
 NgChm.UPM.doApply = function(isReset){
 	//Normal processing when not reset
 	if (typeof isReset === 'undefined') {
-		//Perform validations of all user-entered data layer and covariate bar
+		//Perform validations of all user-entered data layer and Annotation bar
 		//preference changes.
 		var errorMsg = NgChm.UPM.prefsValidate();
 		if (errorMsg !== null) {
@@ -447,7 +451,7 @@ NgChm.UPM.prefsApply = function() {
 			NgChm.heatMap.getColConfig().top_items.push(colTopItems[i]);
 		}
 	}
-	// Apply Covariate Bar Preferences
+	// Apply Annotation Bar Preferences
 	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
 	for (var key in rowClassBars){
 		var currentClassBar = rowClassBars[key];
@@ -559,12 +563,12 @@ NgChm.UPM.prefsValidateForNumeric = function() {
 		if ((rowBarType !== null) && (rowBarType.value !== 'color_plot')) {
 			var lowBoundElement = document.getElementById(keyrow+"_lowBoundPref");
 			if (isNaN(lowBoundElement.value)) {
-				errorMsg =  [keyrow, "classPrefs", "ERROR: Covariate bar low bound must be numeric"];
+				errorMsg =  [keyrow, "classPrefs", "ERROR: Annotation bar low bound must be numeric"];
 			    return errorMsg;
 			}
 			var highBoundElement = document.getElementById(keyrow+"_highBoundPref");
 			if (isNaN(highBoundElement.value)) {
-				errorMsg =  [keyrow, "classPrefs", "ERROR: Covariate bar high bound must be numeric"];
+				errorMsg =  [keyrow, "classPrefs", "ERROR: Annotation bar high bound must be numeric"];
 			    return errorMsg;
 			}
 			var bgColorElement = document.getElementById(keyrow+"_bgColorPref");
@@ -590,12 +594,12 @@ NgChm.UPM.prefsValidateForNumeric = function() {
 			if ((colBarType !== null) && (colBarType.value !== 'color_plot')) {
 				var lowBoundElement = document.getElementById(keycol+"_lowBoundPref");
 				if (isNaN(lowBoundElement.value)) {
-					errorMsg =  [keycol, "classPrefs", "ERROR: Covariate bar low bound must be numeric"];
+					errorMsg =  [keycol, "classPrefs", "ERROR: Annotation bar low bound must be numeric"];
 				    return errorMsg;
 				}
 				var highBoundElement = document.getElementById(keycol+"_highBoundPref");
 				if (isNaN(highBoundElement.value)) {
-					errorMsg =  [keycol, "classPrefs", "ERROR: Covariate bar high bound must be numeric"];
+					errorMsg =  [keycol, "classPrefs", "ERROR: Annotation bar high bound must be numeric"];
 				    return errorMsg;
 				}
 				var bgColorElement = document.getElementById(keycol+"_bgColorPref");
@@ -1126,7 +1130,7 @@ NgChm.UPM.setupLayerBreaksToPreset = function(e, mapName, preset, missingColor,a
 			document.getElementById(colorId+"_colorPref").value = csTemp.getRgbToHex(csTemp.getColor(breakpoint)); 
 		} 
 		document.getElementById(mapName+"_missing_colorPref").value = csTemp.getRgbToHex(csTemp.getColor("Missing")); 
-	} else { // if the breakpoints are not changeable (covariate bar)...
+	} else { // if the breakpoints are not changeable (Annotation bar)...
 		if (type == "Discrete"){ // if colors can be mapped directly
 			for (var j = 0; j < i; j++) {
 				var colorId = elemName+"_color"+j;
@@ -1233,9 +1237,9 @@ NgChm.UPM.reloadLayerBreaksColorMap = function(colorMapName, colorMap) {
 }
 
 /*===================================================================================
- *  COVARIATE CLASSIFICATION PREFERENCE PROCESSING FUNCTIONS
+ *  ANNOTATION CLASSIFICATION PREFERENCE PROCESSING FUNCTIONS
  *  
- *  The following functions are utilized to present heat map covariate classfication
+ *  The following functions are utilized to present heat map Annotation classfication
  *  bar configuration options:
  *  	- setupClassPrefs
  *  	- setupClassBreaks
@@ -1246,8 +1250,8 @@ NgChm.UPM.reloadLayerBreaksColorMap = function(colorMapName, colorMap) {
 
 /**********************************************************************************
  * FUNCTION - setupClassPrefs: The purpose of this function is to construct a DIV 
- * panel containing all covariate bar preferences.  A dropdown list containing all 
- * covariate classification bars is presented and individual DIVs for each data layer, 
+ * panel containing all Annotation bar preferences.  A dropdown list containing all 
+ * Annotation classification bars is presented and individual DIVs for each data layer, 
  * containing  breakpoints/colors, are added. Additionally, a "front panel" DIV is
  * created for "ALL" classification bars that contains preferences that are global
  * to all of the individual bars.
@@ -1262,12 +1266,12 @@ NgChm.UPM.setupClassPrefs = function(e, prefprefs) {
 	NgChm.UHM.addBlankRow(prefContents);
 	if (NgChm.UPM.hasClasses) {
 		var filterInput = "<input name='all_searchPref' id='all_searchPref'>";
-		var filterButton = "<img id='all_searchPref_btn' src='images/filterClassButton.png' alt='Filter Covariates' onclick='NgChm.UPM.filterClassPrefs(true);' align='top'/>";
+		var filterButton = "<img id='all_searchPref_btn' src='images/filterClassButton.png' alt='Filter Annotations' onclick='NgChm.UPM.filterClassPrefs(true);' align='top'/>";
 		var searchClasses = filterInput+"&nbsp;&nbsp;"+filterButton+"&emsp;&emsp;";
 		NgChm.UHM.setTableRow(prefContents,[searchClasses], 4, 'right');
 		NgChm.UHM.addBlankRow(prefContents,2);
 		var classSelect = "<select name='classPref_list' id='classPref_list' onchange='NgChm.UPM.showClassBreak();'></select>"
-		NgChm.UHM.setTableRow(prefContents,["&nbsp;Covariate Bar: ", classSelect]);
+		NgChm.UHM.setTableRow(prefContents,["&nbsp;Annotation Bar: ", classSelect]);
 		NgChm.UHM.addBlankRow(prefContents);
 		classprefs.appendChild(prefContents);
 		var i = 0;
@@ -1291,12 +1295,12 @@ NgChm.UPM.setupClassPrefs = function(e, prefprefs) {
 				classprefs.appendChild(breakprefs);
 			}
 		}
-		// Append a DIV panel for all of the covariate class bars 
+		// Append a DIV panel for all of the Annotation class bars 
 		var allPrefs = NgChm.UPM.setupAllClassesPrefs(); 
 		allPrefs.style.display="block";
 		classprefs.appendChild(allPrefs);
 	} else {
-		NgChm.UHM.setTableRow(prefContents,["This Heat Map contains no covariate bars"]);
+		NgChm.UHM.setTableRow(prefContents,["This Heat Map contains no annotation bars"]);
 		classprefs.appendChild(prefContents);
 	}
 	
@@ -1305,7 +1309,7 @@ NgChm.UPM.setupClassPrefs = function(e, prefprefs) {
 
 /**********************************************************************************
  * FUNCTION - setupAllClassesPrefs: The purpose of this function is to construct a DIV 
- * containing a list of all covariate bars with informational data and user preferences 
+ * containing a list of all Annotation bars with informational data and user preferences 
  * that are common to all bars (show/hide and size).  
  **********************************************************************************/
 NgChm.UPM.setupAllClassesPrefs = function() {
@@ -1320,7 +1324,7 @@ NgChm.UPM.setupAllClassesPrefs = function() {
 	var colClassBarsOrder = NgChm.heatMap.getColClassificationOrder();
 	var colShowAll = "<input name='all_showPref' id='all_showPref' type='checkbox' onchange='NgChm.UPM.showAllBars();'> ";    
 	NgChm.UHM.setTableRow(prefContents, ["&nbsp;&nbsp;&nbsp;","&nbsp;&nbsp;&nbsp;","<b>Adjust All Heights: </b>","<button type='button' onclick='NgChm.UPM.decrementAllHeights()'><b>-</b></button><button type='button' onclick='NgChm.UPM.incrementAllHeights()'><b>+</b></button>"]);
-	NgChm.UHM.setTableRow(prefContents,["&nbsp;<u>"+"Covariate"+"</u>", "<b><u>"+"Position"+"</u></b>", colShowAll+"<b><u>"+"Show"+"</u></b>", "<b><u>"+"Height"+"</u></b>"]);
+	NgChm.UHM.setTableRow(prefContents,["&nbsp;<u>"+"Annotation"+"</u>", "<b><u>"+"Position"+"</u></b>", colShowAll+"<b><u>"+"Show"+"</u></b>", "<b><u>"+"Height"+"</u></b>"]);
 	var checkState = true;
 	for (var i = 0;  i < rowClassBarsOrder.length; i++){
 		var key = rowClassBarsOrder[i];
@@ -1366,7 +1370,7 @@ NgChm.UPM.setupAllClassesPrefs = function() {
 /**********************************************************************************
  * FUNCTION - setupClassBreaks: The purpose of this function is to construct a DIV 
  * containing a set informational data and a list of categories/colors for a given
- * covariate classfication bar.  
+ * Annotation classfication bar.  
  **********************************************************************************/
 NgChm.UPM.setupClassBreaks = function(e, key, barType, classBar) {
 	//must add barType to key when adding objects to DOM
@@ -1467,9 +1471,9 @@ NgChm.UPM.showPlotTypeProperties = function(keyRC) {
 
 /**********************************************************************************
  * FUNCTION - showAllBars: The purpose of this function is to set the condition of
- * the "show" checkbox for all covariate bars on the covariate bars tab of the user 
+ * the "show" checkbox for all Annotation bars on the Annotation bars tab of the user 
  * preferences dialog. These checkboxes are located on the DIV that is visible when 
- * the ALL entry of the covariate dropdown is selected. Whenever a  user checks the 
+ * the ALL entry of the Annotation dropdown is selected. Whenever a  user checks the 
  * show all box, all other boxes are checked.  
  **********************************************************************************/
 NgChm.UPM.showAllBars = function() {
@@ -1537,10 +1541,10 @@ NgChm.UPM.decrementAllHeights = function() {
 
 /**********************************************************************************
  * FUNCTION - setShowAll: The purpose of this function is to set the condition of
- * the "show all" checkbox on the covariate bars tab of the user preferences dialog.
+ * the "show all" checkbox on the Annotation bars tab of the user preferences dialog.
  * This checkbox is located on the DIV that is visible when the ALL entry of the 
- * covariate dropdown is selected. If a user un-checks a single box in the list of 
- * covariate bars, the show all box is un-checked. Conversely, if a user checks a box 
+ * Annotation dropdown is selected. If a user un-checks a single box in the list of 
+ * Annotation bars, the show all box is un-checked. Conversely, if a user checks a box 
  * resulting in all of the boxes being selected, the show all box will be checked.
  **********************************************************************************/
 NgChm.UPM.setShowAll = function() {
@@ -1578,8 +1582,8 @@ NgChm.UPM.setShowAll = function() {
 /**********************************************************************************
  * FUNCTION - showClassBreak: The purpose of this function is to show the 
  * appropriate classification bar panel based upon the user selection of the 
- * covariate dropdown on the covariates tab of the preferences screen.  This 
- * function is also called when an error is trappped, opening the covariate DIV
+ * Annotation dropdown on the Annotations tab of the preferences screen.  This 
+ * function is also called when an error is trappped, opening the Annotation DIV
  * that contains the erroneous data entry.
  **********************************************************************************/
 NgChm.UPM.showClassBreak = function(selClass) {
@@ -1602,7 +1606,7 @@ NgChm.UPM.showClassBreak = function(selClass) {
 /**********************************************************************************
  * FUNCTION - filterClassPrefs: The purpose of this function is to initiate the 
  * process of filtering option choices for classifications. It is fired when either
- * the "Filter Covariates" or "Clear Filters" button is pressed on the covariates 
+ * the "Filter Annotations" or "Clear Filters" button is pressed on the Annotations 
  * preferences dialog.  The global filter value variable is set when filtering and 
  * cleared when clearing and the editPreferences function is called to reload all
  * preferences.
@@ -1633,8 +1637,8 @@ NgChm.UPM.filterClassPrefs = function(filterOn) {
 
 /**********************************************************************************
  * FUNCTION - filterAllClassesTable: The purpose of this function is to assign option
- * values to the Covariates dropdown control on the Covariates preferences tab.  All 
- * covariates will be loaded at startup.  The filter control, however, is used to 
+ * values to the Annotations dropdown control on the Annotations preferences tab.  All 
+ * Annotations will be loaded at startup.  The filter control, however, is used to 
  * limit the visible options in this dropdown.
  **********************************************************************************/
 NgChm.UPM.filterAllClassesTable = function(hiddenItems) {
@@ -1660,11 +1664,11 @@ NgChm.UPM.filterAllClassesTable = function(hiddenItems) {
 
 /**********************************************************************************
  * FUNCTION - addClassPrefOptions: The purpose of this function is to assign option
- * values to the Covariates dropdown control on the Covariates preferences tab.  All 
- * covariates will be loaded at startup.  The filter control, however, is used to 
+ * values to the Annotations dropdown control on the Annotations preferences tab.  All 
+ * Annotations will be loaded at startup.  The filter control, however, is used to 
  * limit the visible options in this dropdown.  This function returns a string 
  * array containing a list of all options that are NOT being displayed.  This list
- * is used to hide rows on the ALL covariates panel.
+ * is used to hide rows on the ALL Annotations panel.
  **********************************************************************************/
 NgChm.UPM.addClassPrefOptions = function() {
 	var rowClassBars = NgChm.heatMap.getRowClassificationConfig();
@@ -1719,7 +1723,7 @@ NgChm.UPM.addClassPrefOptions = function() {
 
 /**********************************************************************************
  * FUNCTION - filterShow: The purpose of this function is to determine whether a 
- * given covariates bar is to be shown given the state of the covariates filter
+ * given Annotations bar is to be shown given the state of the Annotations filter
  * search text box.
  **********************************************************************************/
 NgChm.UPM.filterShow = function(key) {
@@ -1739,7 +1743,7 @@ NgChm.UPM.filterShow = function(key) {
 /*===================================================================================
  *  ROW COLUMN PREFERENCE PROCESSING FUNCTIONS
  *  
- *  The following functions are utilized to present heat map covariate classification
+ *  The following functions are utilized to present heat map Annotation classification
  *  bar configuration options:
  *  	- setupRowColPrefs
  *  	- showDendroSelections
@@ -2033,7 +2037,7 @@ NgChm.UPM.prefsResetButton = function(){
 		NgChm.UHM.loadColorPreviewDiv(dl);
 	}
 	
-	// Reset the Covariate bar panel items
+	// Reset the Annotation bar panel items
 	for (var name in resetVal.colClassification){
 		var bar = resetVal.colClassification[name];
 		var show = document.getElementById(name + "_col_showPref");

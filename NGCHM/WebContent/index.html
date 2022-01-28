@@ -64,9 +64,6 @@
 				</div>
 				<div class="divTable" id="detail_buttons" style='display:none;'>
 				  <div class="divRow">
-				    <div class="divLeft" id="mapName" onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Map Name: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().name : "Not yet available") + "<br><br>Description: " + (NgChm.heatMap !== null ? NgChm.heatMap.getMapInformation().description : "N/A"),350);'></div>
-				  </div>
-				  <div class="divRow">
 		  		    <div class="divLeft">  
 						<img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM' onmouseout='this.setAttribute("src", "images/openMap.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/openMapHover.png");NgChm.UHM.hlp(this,"Open .NG-CHM Heat Map",130);' onclick='NgChm.SEL.openFileToggle();'/>
 						<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen" /> 
@@ -84,16 +81,21 @@
 						        </div>
 							</div>
 						</div>
-						<select name="search_target" id="search_target" class='srchSelect'>
+						<!-- Changed visibility to hide dropdown from UI -->
+						<select name="search_target" id="search_target" class='srchSelect' style="display: none;">
 							<option value="Both">Both</option>
 							<option value="Column">Column</option>
 							<option value="Row">Row</option>
 						</select>
 						<span class="dblSpace"/>
-					    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go' onmouseout='this.setAttribute("src", "images/go.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/goHover.png");NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'/>
-					    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous' onmouseout='this.setAttribute("src", "images/prev.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/prevHover.png");NgChm.UHM.hlp(this,"Previous Search Result",115);' style="display:none;"/>
-					    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next' onmouseout='this.setAttribute("src", "images/next.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/nextHover.png");NgChm.UHM.hlp(this,"Next Search Result",100)' style="display:none;"/>
-					    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel' onmouseout='this.setAttribute("src", "images/cancel.png");NgChm.UHM.hlpC();' onmouseover='this.setAttribute("src", "images/cancelHover.png");NgChm.UHM.hlp(this,"Clear Search Results",105)' style="display:none;"/>
+						<input id='go_btn' type="button" value="Search" style="vertical-align: middle;" onmouseover='NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'/>
+						<input id='prev_btn' type="button" style="background: url('images/prev.png') no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;"
+							onmouseout='this.setAttribute("style", "background: url(\"images/prev.png\") no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;");NgChm.UHM.hlpC();'
+							onmouseover='this.setAttribute("style", "background: url(\"images/prevHover.png\") no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;");NgChm.UHM.hlp(this,"Previous Search Result",115);' />
+						<input id='next_btn' type="button" style="background: url('images/next.png') no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;"
+							onmouseout='this.setAttribute("style", "background: url(\"images/next.png\") no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;");NgChm.UHM.hlpC();'
+							onmouseover='this.setAttribute("style", "background: url(\"images/nextHover.png\") no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;");NgChm.UHM.hlp(this,"Next Search Result",115);' />
+						<input id='cancel_btn' type="button" value="Clear" style="vertical-align: middle;" onmouseover='NgChm.UHM.hlp(this,"Clear Search Results",105)'/>
 		  			 </div> 
 				  </div>
 				  <div class="divRow">
@@ -121,7 +123,7 @@
 			    </div>
 		        <img id='aboutMenu_btn' class='farRightButton' src='images/aboutNgchm.png' alt='About NG-CHM' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM About",140,0)' onclick='NgChm.UHM.widgetHelp();' style="vertical-align: top;"/>
 		    </div>
-			<div id='loader' style='display: none;'>Loading...</div>
+			<div id='loader' style='display: none;text-align: center;margin-top: 5%;'><img src='images/loader.gif' height="24" width="24" alt="loader" /> Loading...</div>
 			<div id="ngChmContainer" class="ngChmContainer" style="position: relative"></div>
 			<div id="footer"></div>
 			<div style="display:none">
@@ -262,7 +264,7 @@
 			<div id="prefs" style="display: none;">
 				<div id="prefsHdr"><img id='prefsMove_btn' data-state='moveLeft' src='images/prefsLeft.png' alt='Move preferences' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Move Preferences",80)' onclick='NgChm.UPM.prefsMoveButton();' style='float: left;'>Heat Map Display Properties<img id="redX_btn" src="images/redX.png" alt="Cancel changes" onclick="NgChm.UPM.prefsCancelButton();" style="float: right;"></div>
 				<div style="height: 20px;"></div>
-				<div id="prefTabButtons"><img id="prefLayer_btn" src="images/heatMapColorsOff.png" alt="Edit Data Layers" onclick="NgChm.UPM.showLayerPrefs();"><img id="prefRowsCols_btn" src="images/rowsColsOn.png" alt="Edit Rows &amp; Columns" onclick="NgChm.UPM.showRowsColsPrefs();"><img id="prefClass_btn" src="images/covariateBarsOff.png" alt="Edit Classifications" onclick="NgChm.UPM.showClassPrefs();"></div>
+				<div id="prefTabButtons"><img id="prefLayer_btn" src="images/heatMapColorsOff.png" alt="Edit Data Layers" onclick="NgChm.UPM.showLayerPrefs();"><img id="prefRowsCols_btn" src="images/rowsColsOn.png" alt="Edit Rows &amp; Columns" onclick="NgChm.UPM.showRowsColsPrefs();"><!-- <img id="prefClass_btn" src="images/covariateBarsOff.png" alt="Edit Classifications" onclick="NgChm.UPM.showClassPrefs();"> --></div>
 				<div id="prefPrefs" class="prefSubPanel" style="display: block; height: 70px"></div>
 			</div>
 			<div id="burgerMenuPanel" style="display: none;">
@@ -270,7 +272,6 @@
 				<div id="menuPdf" class="menuItem" onclick='NgChm.PDF.openPdfPrefs(this,null);'><img id='menuPdf_btn' src='images/pdf.png' alt='save as PDF icon'>Save Heat Map As PDF...</div>
 				<div id="menuPng" class="menuItem" onclick='NgChm.UTIL.downloadSummaryPng(this);'><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
 				<div id="menuSave" class="menuItem" onclick='NgChm.UHM.saveHeatMapChanges();'><img id='menuSave_btn' src='images/saveButton.png' alt='save heat map changes icon'>Save Heat Map Changes...</div>
-				<div id="menuGear" class="menuItem" onclick='NgChm.UPM.editPreferences(this,null);'><img id='menuGear_btn' src='images/gear.png' alt='open modify map preferences icon'>Modify Map Preferences...</div>
 				<div class="menuItemBorder"></div>
 				<div id="menuLink" class="menuItem" onclick='NgChm.UHM.openLinkoutHelp();'><img id='linkHelp_btn' src='images/plugin.png' alt='open plugin help icon'>Plug-in Help...</div>
 				<div id="menuHelp" class="menuItem" onclick='NgChm.UHM.openHelp(this);'><img id='help_btn' src='images/questionMark.png' alt='open help icon'>NgChm Help...</div>

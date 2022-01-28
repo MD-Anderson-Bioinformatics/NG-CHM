@@ -357,7 +357,7 @@ NgChm.UHM.userHelpOpen = function(mapItem) {
  **********************************************************************************/
 function pasteHelpContents() {
     var el = document.getElementById('helpTable')
-    window.open("","",'width=500,height=330,resizable=1').document.write(el.innerText.replace(/(\r\n|\n|\r)/gm, "<br>"));
+	navigator.clipboard.writeText(el.innerText);
 }
 
 /**********************************************************************************
