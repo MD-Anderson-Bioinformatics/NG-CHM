@@ -788,44 +788,43 @@ NgChm.createNS('NgChm.LNK');
 	//===================//
 
 	NgChm.LNK.copyToClipBoard = function(labels,axis){
-		window.open("","",'width=335,height=330,resizable=1').document.write(labels.join("<br>"));
+		navigator.clipboard.writeText(labels.join('\n'));
 	}
 
 	NgChm.LNK.copyEntireClassBarToClipBoard = function(labels,covarAxis){
-		const newWindow = window.open("","",'width=335,height=330,resizable=1');
-		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const axisLabels = NgChm.heatMap.getAxisLabels(axis)["labels"];
 		const classBars = NgChm.heatMap.getAxisCovariateData(axis);
-		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
+		let strToCopy = "Sample " + labels.join(" ") + ": \n";
 		for (let i = 0; i < axisLabels.length; i++){
-			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
+			strToCopy += axisLabels[i].split("|")[0] + " ";
 			for (let j = 0; j < labels.length; j++){
-				newDoc.write(classBars[labels[j]].values[i] + "&emsp;");
+				strToCopy += classBars[labels[j]].values[i] + " \n";
 			}
-			newDoc.write("<br>");
+			strToCopy += "\n";
 		}
+		navigator.clipboard.writeText(strToCopy);
 	};
 
 	NgChm.LNK.copyPartialClassBarToClipBoard = function(labels, covarAxis){
-		const newWindow = window.open("","",'width=335,height=330,resizable=1');
-		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const axisLabels = NgChm.SRCH.getSearchLabelsByAxis(axis);
 		const labelIndex = NgChm.SRCH.getAxisSearchResults(axis);
 		const classBars = NgChm.heatMap.getAxisCovariateData(axis);
-		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
+		let strToCopy = "Sample " + labels.join(" ") + ": \n";
 		for (let i = 0; i < axisLabels.length; i++){
-			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
+			strToCop += axisLabels[i].split("|")[0] + " ";
 			for (let j = 0; j < labels.length; j++){
-				newDoc.write(classBars[labels[j]].values[labelIndex[i]-1] + "&emsp;");
+				strToCop += classBars[labels[j]].values[labelIndex[i]-1] + " ";
 			}
-			newDoc.write("<br>");
+			strToCop += "\n";
 		}
+		navigator.clipboard.writeText(strToCopy);
 	};
 
 	NgChm.LNK.copySelectionToClipboard = function(labels,axis){
-		window.open("","",'width=335,height=330,resizable=1').document.write("<b>Rows:</b><br>" + labels["Row"].join("<br>") + "<br><br><b>Columns:</b><br>" + labels["Column"].join("<br>"));
+		const strToCopy = "Rows: \n" + labels["Row"].join("\n") + "\n\n\nColumns:\n" + labels["Column"].join("\n");
+		navigator.clipboard.writeText(strToCopy);
 	}
 
 	NgChm.LNK.copySelectedDataToClipboard = function(matrixData,axis){

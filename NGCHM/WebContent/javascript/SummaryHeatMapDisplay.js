@@ -156,13 +156,6 @@ NgChm.SUM.summaryInit = function() {
 	NgChm.SUM.cCCanvas.width =  NgChm.SUM.totalWidth;
 	NgChm.SUM.cCCanvas.height = NgChm.SUM.colClassBarHeight;
 	
-	var nameDiv = document.getElementById("mapName");  
-	var mapName = NgChm.heatMap.getMapInformation().name;
-	if (mapName.length > 50){
-		mapName = mapName.substring(0,50) + "...";
-	}
-
-	nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
 	setTimeout (function() {
 		NgChm.SUM.setupHeatMapGl();
 		NgChm.SUM.initHeatMapGl();
@@ -2266,7 +2259,7 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 			}
 		}
 		NgChm.SUM.chmElement.style.display = '';
-		NgChm.Pane.setPaneTitle (loc, 'Heat Map Summary');
+		NgChm.Pane.setPaneTitle (loc, 'Summary');
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptySummaryPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeSummaryPane);
 	}
