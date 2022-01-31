@@ -2418,7 +2418,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		]);
 		if (isPrimary === true) {
 			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = 'none';
-			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
+			NgChm.Pane.setPaneTitle (loc, 'Primary');
 		} else {
 			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = '';
 			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+NgChm.DMM.nextMapNumber);

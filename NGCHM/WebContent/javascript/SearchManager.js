@@ -65,6 +65,11 @@ NgChm.createNS('NgChm.SRCH');
 	if (e) e.onchange = () => searchOnSel();
     };
 
+	// Add keyup event listener to search on Enter key press
+	window.addEventListener("keyup", function(event){
+		if(event.keyCode === 13) {NgChm.SRCH.detailSearch(); return false;}
+	});
+
     // Private function getGaps returns a dictionary object
     // for the specified axis that contains a true entry for the
     // indices of any gap elements.
