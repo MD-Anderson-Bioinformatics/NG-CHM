@@ -1,9 +1,9 @@
 /*************************************************************
- * Linkouts will be added to the Row/Column Menus according to 
- * the label_type attributes (found in the mapData.json file). 
- * These attributes will drive the input paramaters for the 
+ * Linkouts will be added to the Row/Column Menus according to
+ * the label_type attributes (found in the mapData.json file).
+ * These attributes will drive the input paramaters for the
  * linkout functions. (Provided by getLabelsByType)
- * 
+ *
  * TODO: Need to find a way to pass in whole label for some linkout functions.
  **************************************************************/
 
@@ -163,13 +163,13 @@ NgChm.createNS('NgChm.LNK');
 	//this function is used to add standard linkouts to the row/col, covariate, and matrix menu
 	// labelType will decide which menu to place the linkout in.
 	// selectType decides when the linkout is executable. (passing in null or undefined, or false will allow the function to be executable for all selection types)
-	NgChm.LNK.addLinkout = function(name, labelType, selectType, callback, reqAttributes, index){ 
+	NgChm.LNK.addLinkout = function(name, labelType, selectType, callback, reqAttributes, index){
 		var linkout = new NgChm.LNK.linkout(name, labelType, selectType,reqAttributes, callback);
 		if (!linkouts[labelType]){
 			linkouts[labelType] = [linkout];
 		} else {
 			if (index !== undefined){
-				linkouts[labelType].splice(index, 0, linkout); 
+				linkouts[labelType].splice(index, 0, linkout);
 			}else {
 				NgChm.LNK.dupeLinkout(linkouts[labelType], linkout);
 				linkouts[labelType].push(linkout);
@@ -206,8 +206,8 @@ NgChm.createNS('NgChm.LNK');
 	NgChm.LNK.getLabelsByType = function(axis, linkout){
 		var searchLabels;
 		var labelDataMatrix;
-		var labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] : 
-			axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : 
+		var labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] :
+			axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() :
 				[NgChm.heatMap.getRowLabels()["labels"], NgChm.heatMap.getColLabels()['labels'] ];
 
 		var types;
@@ -217,7 +217,7 @@ NgChm.createNS('NgChm.LNK');
 			if (!Array.isArray(types)){ // make sure it's an array!
 				types = [types];
 			}
-			
+
 			// matrix and class bar linkouts can only access the visible labeltype right now. TODO: find a way to let matrix and class bar linkouts access specific labeltypes.
 			var formatIndex = [];
 			for (var i = 0; i < types.length; i++){
@@ -232,7 +232,7 @@ NgChm.createNS('NgChm.LNK');
 				} else {
 				//ELSE the linkout is multi select, load all selected items to searchLabels (not necessarily the item that was clicked on)
 					NgChm.SRCH.getAxisSearchResults(axis).forEach(i => {
-						if (axis.includes("Covar")){ // Covariate linkouts have not been tested very extensively. May need revision in future. 
+						if (axis.includes("Covar")){ // Covariate linkouts have not been tested very extensively. May need revision in future.
 							searchLabels.push( generateSearchLabel(labels[i],formatIndex)) ;
 						} else {
 							searchLabels.push( generateSearchLabel(labels[i-1],formatIndex));
@@ -284,7 +284,7 @@ NgChm.createNS('NgChm.LNK');
 			NgChm.SRCH.getAxisSearchResults("Column").forEach( i => {
 				searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],formatIndex.col) );
 			});
-			
+
 		}
 		return searchLabels;
 
@@ -313,7 +313,7 @@ NgChm.createNS('NgChm.LNK');
 		    tilesReady = NgChm.heatMap.allTilesAvailable();
 		} else {
 			return NgChm.LNK.createMatrixDataTsv(searchLabels);
-		} 
+		}
 		if (tilesReady === true) {
 			NgChm.LNK.createMatrixDataTsv(searchLabels);
 		} else {
@@ -330,14 +330,14 @@ NgChm.createNS('NgChm.LNK');
 	        NgChm.LNK.createMatrixDataTsv(searchLabels);
 	    }
 	}
-	
+
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
 	NgChm.LNK.createMatrixDataTsv = function(searchLabels) {
 		var matrix = new Array();
 
 		let rowSearchItems = NgChm.SRCH.getAxisSearchResults("Row");
-		//Check to see if we need new searchItems because entire axis is selected by 
+		//Check to see if we need new searchItems because entire axis is selected by
 		//default of no items being selected on opposing axis, Otherwise, use
 		//searchItems selected.
 		if (rowSearchItems.length === 0) {
@@ -347,7 +347,7 @@ NgChm.createNS('NgChm.LNK');
 		if (colSearchItems.length === 0) {
 			colSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Column");
 		}
-		
+
 		//Load up initial array with column headers
 		let matrixCtr = 0;
 		for (var j = 0; j < searchLabels["Row"].length+1; j++) {
@@ -365,7 +365,7 @@ NgChm.createNS('NgChm.LNK');
 				matrixCtr++;
 			}
 		}
-		
+
 		//Load up an array containing data values for the selected data matrix
 		var dataMatrix = new Array();
 		rowSearchItems.forEach( x => {
@@ -478,7 +478,7 @@ NgChm.createNS('NgChm.LNK');
 			row.innerHTML = "Please select a " + axis.replace("Covar"," Classification");
 			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
 	    }
-	    
+
 	    if (labelMenu){
 		labelMenu.classList.remove('hide');
 		var pageX = e.changedTouches ? e.changedTouches[0].pageX : e.pageX;
@@ -523,7 +523,7 @@ NgChm.createNS('NgChm.LNK');
 
 	// Check to see if the item that the user clicked on is part of selected labels group
 	NgChm.LNK.itemInSelection = function (axis) {
-		const labels = axis == "Row" ? NgChm.heatMap.getRowLabels() : axis == "Column" ? NgChm.heatMap.getColLabels() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : []; 
+		const labels = axis == "Row" ? NgChm.heatMap.getRowLabels() : axis == "Column" ? NgChm.heatMap.getColLabels() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : [];
 		NgChm.SRCH.getAxisSearchResults(axis).forEach( key => {
 			let selItem;
 			if (axis.includes("Covar")){
@@ -547,7 +547,7 @@ NgChm.createNS('NgChm.LNK');
 	//adds the row linkouts and the column linkouts to the menus
 	NgChm.LNK.populateLabelMenu = function(axis, axisLabelsLength){
 		var table = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenuTable') : document.getElementById("MatrixMenuTable");
-		var labelType = axis == "Row" ? NgChm.heatMap.getRowLabels()["label_type"] : 
+		var labelType = axis == "Row" ? NgChm.heatMap.getRowLabels()["label_type"] :
 						axis == "Column" ? NgChm.heatMap.getColLabels()["label_type"] : axis == "ColumnCovar" ? ["ColumnCovar"] : axis == "RowCovar"  ? ["RowCovar"] : ["Matrix"];
 		var linkoutsKeys = Object.keys(linkouts);
 		//Arrays here are used to store linkouts by type (e.g. individual OR group)
@@ -561,7 +561,7 @@ NgChm.createNS('NgChm.LNK');
 					var linkout = linkouts[type][j];
 					if (linkout.rowType &&  linkout.colType && type == "Matrix"){// if this is a MatrixLinkout...
 						handleMatrixLinkout(axis,table, linkout,grpLinkouts);
-					} else { 
+					} else {
 						if (linkout.selectType == linkouts.SINGLE_SELECT) {
 							indLinkouts.push({"linkout":linkout});
 						} else {
@@ -573,11 +573,11 @@ NgChm.createNS('NgChm.LNK');
 			// add combined labels to the linkout menu
 			var combinedLinkouts = []; // list of all  combined linkouts starting with this given type
 			for (var j = 0; j < linkoutsKeys.length; j++){
-				if (linkoutsKeys[j].includes(type+"|")){ // if the linkout contains a 
+				if (linkoutsKeys[j].includes(type+"|")){ // if the linkout contains a
 					combinedLinkouts.push(linkoutsKeys[j]);
 				}
 			}
-			
+
 			for (var j = 0; j < combinedLinkouts.length; j++){
 				var type=combinedLinkouts[j];
 				var typelist = type.split("|");
@@ -662,7 +662,7 @@ NgChm.createNS('NgChm.LNK');
 		if (type === "multi") {
 			cell.innerHTML = ("<b>Linkouts for entire selection:</b>");
 		} else {
-			var labelVal = NgChm.LNK.selection.indexOf("|") > 0 ? NgChm.LNK.selection.substring(0,NgChm.LNK.selection.indexOf("|")) : NgChm.LNK.selection; 
+			var labelVal = NgChm.LNK.selection.indexOf("|") > 0 ? NgChm.LNK.selection.substring(0,NgChm.LNK.selection.indexOf("|")) : NgChm.LNK.selection;
 			labelVal = NgChm.UTIL.getLabelText(labelVal,axis);
 			cell.innerHTML = ("<b>Linkouts for: " + labelVal +"</b>");
 		}
@@ -958,74 +958,9 @@ NgChm.createNS('NgChm.LNK');
 		const nonce = iframe.dataset.nonce;
 		instances[nonce].params = options;
 		loc.paneTitle.innerText = instances[nonce].plugin.name + '. ' + options.plotTitle;
-		if (instances[nonce].plugin.config.axes[0].hasOwnProperty('extra_covariates')) {
-			NgChm.LNK.initializePanePlugin_extraCovariates(nonce, options);
-		} else {
-			NgChm.LNK.initializePanePlugin(nonce, options);
-		}
+		NgChm.LNK.initializePanePlugin(nonce, options);
+
 	    };
-
-			// Add extra covariates info to the message
-			NgChm.LNK.initializePanePlugin_extraCovariates = function (nonce, config) {
-				const data = {
-					axes: []
-				};
-
-				for (let ai = 0; ai < config.axes.length; ai++) {
-					let covariates = Object.keys(NgChm.heatMap.getAxisCovariateData(config.axes[ai].axisName))
-					let extraCovariates = []
-					extraCovariates = covariates.filter((cov) => cov.includes(config.axes[0].coords))
-					let axis = config.axes[ai];
-					const fullLabels = NgChm.heatMap.getAxisLabels(axis.axisName).labels;
-					let selectedCoords = config.axes[ai].coordinates.map((coord) => coord.covName)
-					let selectedIndex = selectedCoords.map((selectedCoord) => extraCovariates.indexOf(selectedCoord))
-					axis = JSON.parse(JSON.stringify(config.axes[ai]));
-					axis.coordinates = []
-					extraCovariates.forEach((cov) => {
-						if (selectedCoords.includes(cov)) {
-							axis.coordinates.push({
-								type: 'covariate',
-								covName: cov,
-								label: config.axes[ai]["coordinates"].filter((cod) => cod.covName === cov)[0]["label"]
-							})
-						} else {
-							axis.coordinates.push({
-								type: 'covariate',
-								covName: cov
-							})
-						}
-					})
-					const gapIndices = [];
-					fullLabels.forEach((value, index) => {
-						if (value === "") gapIndices.push(index);
-					});
-					data.axes.push({
-						fullLabels: filterGaps(fullLabels, gapIndices),
-						actualLabels: filterGaps(NgChm.UTIL.getActualLabels(axis.axisName), gapIndices),
-						selectedIndex: selectedIndex
-					});
-
-					for (let idx = 0; idx < axis.cocos.length; idx++) {
-						setAxisCoCoData(data.axes[ai], axis, axis.cocos[idx], gapIndices);
-					}
-					for (let idx = 0; idx < axis.groups.length; idx++) {
-						setAxisGroupData(data.axes[ai], axis, axis.groups[idx], gapIndices);
-					}
-					if (axis.coordinates.length == 0) {
-						alert("Something wrong in getting extra covariats from " + axis.axisName)
-					} else {
-						config.axes[ai] = axis
-					}
-				}
-				NgChm.heatMap.setUnAppliedChanges(true);
-				NgChm.LNK.sendMessageToPlugin({
-					nonce,
-					op: 'plot',
-					config,
-					data
-				});
-				NgChm.MMGR.saveDataSentToPluginToMapConfig(nonce, config, data);
-			};
 
 	    // Create a new, unique nonce.
 	    NgChm.LNK.getNewNonce = function getNewNonce () {
@@ -1367,7 +1302,7 @@ NgChm.createNS('NgChm.LNK');
 				reject(error)
 			})
 		})
-	} // end function getSummaryStatistics 
+	} // end function getSummaryStatistics
 
 	function getDiscMapFromContMap (colorThresholds, colorVec) {
 		colorVec = colorVec.map(NgChm.CMM.darkenHexColorIfNeeded);
@@ -1472,7 +1407,7 @@ NgChm.createNS('NgChm.LNK');
 			data.axes.push({
 				fullLabels: filterGaps (fullLabels, gapIndices),
 				actualLabels: filterGaps (NgChm.UTIL.getActualLabels(axis.axisName), gapIndices),
-				selectedLabels: selectedLabels 
+				selectedLabels: selectedLabels
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
 				await setAxisCoCoData (data.axes[ai], axis, axis.cocos[idx], gapIndices);
@@ -1511,7 +1446,7 @@ NgChm.createNS('NgChm.LNK');
 							'values': array of numerical results of the test
 						}
 	*/
-		// Keys in msg: 
+		// Keys in msg:
 		// axisName: 'row',
 		// axisLabels: labels of nodes from plugin (e.g. gene symbols from PathwayMapper)
 		// testToRun: name of test to run
@@ -1519,7 +1454,7 @@ NgChm.createNS('NgChm.LNK');
 		// group2: labels of other axis elements in group 2 (optional)
 	async function getAxisTestData (msg) {
 		if (msg.axisLabels.length < 1) {
-			NgChm.UHM.systemMessage("NG-CHM PathwayMapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again."); 
+			NgChm.UHM.systemMessage("NG-CHM PathwayMapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again.");
 			return false;
 		}
 		var otherAxisName = NgChm.MMGR.isRow(msg.axisName) ? 'column' : 'row';
@@ -1645,7 +1580,7 @@ NgChm.createNS('NgChm.LNK');
 		cocodata[valueField] = [];
 		cocodata[colorField] = [];
 		cocodata[colorMapField] = [];
-		for (let ci = 0; ci < axis[valueField].length; ci++) { 
+		for (let ci = 0; ci < axis[valueField].length; ci++) {
 			const ctype = axis[valueField][ci].type; // one of 'covariate' (i.e. from covariate bar) or 'data' (i.e. from map values)
 			const label = axis[valueField][ci].covName;
 			if (ctype === 'covariate') { // i.e. from one of the covariate bars
@@ -1667,7 +1602,7 @@ NgChm.createNS('NgChm.LNK');
 					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values
-				const idx = axis[valueField][ci].labelIdx; 
+				const idx = axis[valueField][ci].labelIdx;
 				let unfilteredValues = await getDataValues(isRow ? 'column' : 'row', idx)
 				const values = filterGaps (unfilteredValues, gapIndices);
 				cocodata[valueField].push(values);
@@ -1694,7 +1629,7 @@ NgChm.createNS('NgChm.LNK');
 				[
 					{
 						'grouplabels': Array of strings to label each of the groups. length = 2. E.g. ['my group 1', 'my group 2']
-						'labels': Array of arrays of strings. Each array will have the NGCHM labels of the items in 
+						'labels': Array of arrays of strings. Each array will have the NGCHM labels of the items in
 						        each group. E.g. [['sample1', 'sample2'], ['sample5', 'sample9']]
 					}
 				]
@@ -1710,16 +1645,16 @@ NgChm.createNS('NgChm.LNK');
 		@option {Array<>} [covariates] Present only if 'covariate' is an element of axisName.cocos
 		@option {Array<>} data
 		@option {Array<String>} groups Array of string that are names for groups. Similar to axis.cocos, for each item in this array,an additional key will be present in axis, with and 's' added to the name. For example, if axis.groups = ['ugroup'] then there will be an additional key to axis: 'ugroups'
-		@option {Array<>} [ugroups] Present only if the 'ugroup' is an element of axisName.groups. Describes the groups for 
+		@option {Array<>} [ugroups] Present only if the 'ugroup' is an element of axisName.groups. Describes the groups for
 		                            the statistical tests. Below is a brief description of the elements in the object
 
-			[ 
+			[
 				{
 					'covName': if present, name of covariate choosen
 					'labelIdx': Array of length two (one for each group). Each array has the label index from the NGCHM of the items in the groups
 					'labels': User-specified labels for each group
 					'selectValue': covariate selected. How this is different from covName, I am not sure
-					'type': 'covariate' or 'data'. 'covariate' seems to be for when a covariate is choosen from the selector dropdown, 
+					'type': 'covariate' or 'data'. 'covariate' seems to be for when a covariate is choosen from the selector dropdown,
 					      'data' seems to be for when the GRAB/SHOW buttons are being used.
 				}
 			]
@@ -1734,26 +1669,26 @@ NgChm.createNS('NgChm.LNK');
 		const axisCovCfg = NgChm.heatMap.getAxisCovariateConfig (axis.axisName);
 		const valueField = group + 's';
 		cocodata[valueField] = [];
-		for (let ci = 0; ci < axis[valueField].length; ci++) { 
+		for (let ci = 0; ci < axis[valueField].length; ci++) {
 			const ctype = axis[valueField][ci].type; // one of 'covariate' (i.e. from covariate bar) or 'data' (i.e. from map values)
 			const label = axis[valueField][ci].covName;
 			if (ctype === 'covariate') { // i.e. from one of the covariate bars
 				if (axisCovCfg.hasOwnProperty (label)) {
 					const cfg = axisCovCfg[label];
 					if (cfg.color_map.type === 'continuous') { // i.e. from covariate bar w/ continuous values
-						const idx = axis[valueField][ci].labelIdx; 
-						const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)])); 
+						const idx = axis[valueField][ci].labelIdx;
+						const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)]));
 						cocodata[valueField].push({ grouplabels: axis[valueField][ci].labels, labels });
 					} else { // i.e. from covariate bar w/ discrete values
-						const idx = axis[valueField][ci].labelIdx; 
-						const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)])); 
+						const idx = axis[valueField][ci].labelIdx;
+						const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)]));
 						cocodata[valueField].push({ grouplabels: axis[valueField][ci].labels, labels });
 					}
 				} else {
 					console.log ('heatmap ' + axis.axisName + ' axis: no such covariate: ' + label);
 				}
 			} else if (ctype === 'data') { // i.e. from selections on the map values (GRAB/SHOW buttons)
-				const idx = axis[valueField][ci].labelIdx; 
+				const idx = axis[valueField][ci].labelIdx;
 				const labels = idx.map(y => y.map(x => cocodata.fullLabels[parseInt(x)-1]));
 				cocodata[valueField].push({ grouplabels: axis[valueField][ci].labels, labels });
 			} else {
@@ -1791,12 +1726,12 @@ NgChm.createNS('NgChm.LNK');
 
 		function removeOpenGearPanels () {
 			const gears = document.getElementsByClassName('gearPanel');
-			for (item of gears) { 
+			for (item of gears) {
 				const paneId = item.id.substring(0,item.id.indexOf("Gear"));
-				NgChm.Pane.clearExistingGearDialog(paneId); 
-	        } 
+				NgChm.Pane.clearExistingGearDialog(paneId);
+	        }
 		}
-		
+
 		function optionNode (type, value) {
 			const optNode = NgChm.UTIL.newElement('OPTION');
 			optNode.appendChild(NgChm.UTIL.newTxt(value));
@@ -1836,6 +1771,7 @@ NgChm.createNS('NgChm.LNK');
 			const selOpt = optionNode ('data', selectedElementsOption);
 			if (defaultOpt === selectedElementsOption) defaultIndex = selectElement.children.length;
 			selectElement.add (selOpt);
+			
 
 			return selOpt;
 		}
@@ -1875,14 +1811,14 @@ NgChm.createNS('NgChm.LNK');
 				if (debug) console.log ({ m: 'setAxis', axis, params });
 				axis1Config = NgChm.heatMap.getAxisCovariateConfig (axis);
 				axis1cvOrder = NgChm.heatMap.getAxisCovariateOrder (axis);
-				if (axis1cvOrder.length === 0 && plugin.config.axes[0].hasOwnProperty('extra_covariates')) {
-					alert("No coordinate to select on this axis.")
-				}
 				otherAxis = NgChm.MMGR.isRow (axis) ? 'Column' : 'Row';
-				if (plugin.config.axes[0].hasOwnProperty('extra_covariates')) {
+				if (plugin.config.axes[0].hasOwnProperty('pcaplus')) {
 					getCoordinates(plugin)
 					defaultCoord = axis1cvOrder.filter(x => /^PC/.test(x));
 					defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, '');
+					if (defaultCoord == null ){
+						alert("No coordinate to select on this axis.")
+					}
 				} else {
 					defaultCoord = axis1cvOrder.filter(x => /\.coordinate\.1/.test(x));
 					defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, '');
@@ -1901,7 +1837,7 @@ NgChm.createNS('NgChm.LNK');
 					coordsSelect.length = 0
 					coords.forEach((coord) => {
 						coordsSelect.add(optionNode('coord', coord))
-						if (coord.includes("PC")) {
+						if (coord.startsWith("PC")) {
 							coordsSelect.selectedIndex = selectedIndex
 						}
 						selectedIndex += 1
@@ -1932,14 +1868,14 @@ NgChm.createNS('NgChm.LNK');
 
 			let selectedAxis;
 			if (lastApplied[0].hasOwnProperty('axis')) {
-				selectedAxis = lastApplied[0].axis 
+				selectedAxis = lastApplied[0].axis
 			} else {
 				selectedAxis = NgChm.MMGR.isRow(axisParams[axisId].axisName) ? 'row' : 'column';
 			}
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
-			
-			if (plugin.config.axes[0].hasOwnProperty('extra_covariates')) {
+
+			if (plugin.config.axes[0].hasOwnProperty('pcaplus')) {
 				optionsBox.appendChild(NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt("Select coordinate")]));
 				optionsBox.appendChild(coordsSelect);
 			}
@@ -1955,7 +1891,7 @@ NgChm.createNS('NgChm.LNK');
 							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, numSelectors)),
 						])
 					);
-					if (helpText != undefined) { 
+					if (helpText != undefined) {
 						optionsBox.appendChild (
 							NgChm.UTIL.newElement('a.helpQuestionMark',{},[], e=> {
 								e.onmouseover = function() {NgChm.UHM.hlp(this, helpText, 200, true, 0)};
@@ -1989,15 +1925,15 @@ NgChm.createNS('NgChm.LNK');
 							defaultOpt = defaultCovar;
 						}
 						let onlyContinuous = selectorName === 'Coordinate'
-						if (plugin.config.axes[0].hasOwnProperty('extra_covariates') && selectorName === 'Coordinate') {
+						if (plugin.config.axes[0].hasOwnProperty('pcaplus') && selectorName === 'Coordinate') {
 							let filteredConfig = Object.keys(axis1Config)
-								.filter(key => key.includes("PC"))
+								.filter(key => key.startsWith("PC"))
 								.reduce((obj, key) => {
 									obj[key] = axis1Config[key];
 									return obj;
 								}, {});
 							sss[cid].selOpt = addCovariateOptions(defaultOpt, filteredConfig, selectEl, null, onlyContinuous);
-						} else if (plugin.config.axes[0].hasOwnProperty('extra_covariates') && selectorName !== 'Coordinate') {
+						} else if (plugin.config.axes[0].hasOwnProperty('pcaplus') && selectorName !== 'Coordinate') {
 							let filteredConfig = Object.keys(axis1Config)
 								.filter(key => !key.includes(".coordinate."))
 								.reduce((obj, key) => {
@@ -2201,7 +2137,7 @@ NgChm.createNS('NgChm.LNK');
 						@param {String} axisName
 						@param {Object} userLabel
 						@param {int} idx group index (starts at 0)
-						@return {Object} 
+						@return {Object}
 						@option {element} infoEl DIV element
 						@option {function} clearData is actually defined outside this function
 						@option {function} setSummary maybe sets the value? I'm not 100% sure
@@ -2278,17 +2214,17 @@ NgChm.createNS('NgChm.LNK');
 							Function to create the div for choosing groups from cont covariates.
 
 							This function creates the DIV.rangeSelector, which has the DOM elemnts that
-							allow the user to choose ranges (e.g. '>=1.3<3') for making groups 
+							allow the user to choose ranges (e.g. '>=1.3<3') for making groups
 							from continuous covariates.
 
 							@function createRangeSelector
 							@param {int} nth group number
 							@param {int} nmax max number of groups
-							@return {Object} 
+							@return {Object}
 							@option {element} element reange selector DIV element
 							@option {function} setRange function to set value of the range element
 							@option {function} getRange function to get value of the range element
-							@option {function} setSummary function for showing/hiding the element 
+							@option {function} setSummary function for showing/hiding the element
 							@option {function} showMinMax function to show the min/max covariates to help user
 					*/
 					function createRangeSelector(nth, nmax) {
@@ -2334,15 +2270,15 @@ NgChm.createNS('NgChm.LNK');
 							}
 						}
 						/** Function to show the min & max values as text to help user in making ranges */
-						function showMinMax(v) {  
+						function showMinMax(v) {
 							rangeSelectorEl.children[4].innerHTML = v;
 						}
 						/** Function to set value of range */
-						function setRange(v) { 
+						function setRange(v) {
 							rangeSelectorEl.lastChild.value = v;
 						}
 						/** Function to get value of range */
-						function getRange() { 
+						function getRange() {
 							return rangeSelectorEl.lastChild.value;
 						}
 						/* Function to parse range string and get indexes for covariates that fall within the range string.
@@ -2369,16 +2305,16 @@ NgChm.createNS('NgChm.LNK');
 							Function to create the div for choosing groups from discrete covariates.
 
 							This function creates the DIV.discreteSelector, which has the DOM elemnts that
-							allow the user to check checkboxes of discrete covariates for making groups 
+							allow the user to check checkboxes of discrete covariates for making groups
 							from discrete covariates.
 
 							@function createDiscreteSelector
 							@param {int} nth group number
 							@param {int} nmax max number of groups
-							@return {Object} 
+							@return {Object}
 							@option {element} element reange selector DIV element
 							@option {function} setRange function to set value of the range element
-							@option {function} setSummary function for showing/hiding the element 
+							@option {function} setSummary function for showing/hiding the element
 							@option {function} showMinMax function to show the min/max covariates to help user
 					*/
 					function createDiscreteSelector(nth, nmax) {
@@ -2457,11 +2393,11 @@ NgChm.createNS('NgChm.LNK');
 
 						/** Function to get indexes for covariates for the checked boxes for each group
 						   This is the onchange function for each of the checkboxes (checkboxElem.onchange above).
-						   This is because of the exclusivity requirement between the groups. 
+						   This is because of the exclusivity requirement between the groups.
 						   Somewhat differently from the range selectors, here the sss[cid].data is updated for all
 						   groups when any of the checkboxes are changed. This is also somewhat inefficient.
 						*/
-						function getIndexes(e) { 
+						function getIndexes(e) {
 							document.querySelectorAll('[value="'+e.target.value+'"]').forEach(cb => { // ensure mutually exclusive groups
 								if (cb !== e.target) {cb.checked = false;}
 							})
@@ -2486,7 +2422,7 @@ NgChm.createNS('NgChm.LNK');
 							Function to set sub-options for the group selector after the user has chosen
 							something from the dropdown for this group selector. For example, if the
 							user has chosen 'Selected columns for Groups(s)', the SHOW & GRAB buttons are displayed.
-						
+
 						This is the main setSummary for choosing groups.
 						This will fill in the last applied values if they exist.
 					*/
@@ -2518,7 +2454,7 @@ NgChm.createNS('NgChm.LNK');
 							} else if (typeContOrDisc === 'discrete') {
 								sss[cid].rangeSelectors.forEach((s) => s.setSummary(false)); // hide the range selectors
 								sss[cid].discreteSelectors.forEach((s) => s.setSummary(true)); // show the discrete selectors
-								if (lastApplied[cid].hasOwnProperty('discreteCheckboxes') && lastApplied[cid].covariate == selectedValue) { 
+								if (lastApplied[cid].hasOwnProperty('discreteCheckboxes') && lastApplied[cid].covariate == selectedValue) {
 									sss[cid].discreteSelectors.forEach((s,sidx) => s.setCheckBoxes(lastApplied[cid].discreteCheckboxes[sidx])) // set last applied values
 									sss[cid].discreteSelectors.forEach((s) => {let e = new Event('change'); s.element.lastChild.lastChild.dispatchEvent(e)}); // trigger onchange
 								}
@@ -2527,7 +2463,7 @@ NgChm.createNS('NgChm.LNK');
 							if (debug) console.log ({ m: 'selector setSummary', cid, selectedIndex, item, isGrabber: item === sss[cid].selOpt });
 							for (let idx = 0; idx < numSelectors; idx++) {
 								sss[cid].grabbers[idx].setSummary(false);
-								if (labels) {  
+								if (labels) {
 									sss[cid].userLabels[idx].setLabel ( labels[idx]);
 								} else {
 									let groupNumber = idx + 1
@@ -2546,15 +2482,15 @@ NgChm.createNS('NgChm.LNK');
 
 			if (config.axes[axisId].coco == null) config.axes[axisId].coco = [];
 			const pa = params.axes && axisId < params.axes.length ? params.axes[axisId] : { cocos:[], groups: [] };
-			// create UI for choosing coordiantes / covariates 
+			// create UI for choosing coordiantes / covariates
 			for (let cocoidx = 0; cocoidx < config.axes[axisId].coco.length; cocoidx++) {
 				const coco = config.axes[axisId].coco[cocoidx];
 				axis1Coco[coco.baseid] = [];
 				let helpText = coco.helpText;
-				createLinearSelectors (axis1Coco[coco.baseid], coco.max, coco.name, pa[pa.cocos[cocoidx]+'s'], helpText); 
+				createLinearSelectors (axis1Coco[coco.baseid], coco.max, coco.name, pa[pa.cocos[cocoidx]+'s'], helpText);
 			}
 			if (config.axes[axisId].group == null) config.axes[axisId].group = [];
-			// create UI for choosing groups 
+			// create UI for choosing groups
 			for (let groupidx = 0; groupidx < config.axes[axisId].group.length; groupidx++) {
 				const group = config.axes[axisId].group[groupidx];
 				axis1Coco[group.baseid] = [];
@@ -2565,8 +2501,7 @@ NgChm.createNS('NgChm.LNK');
 				data: axis1Data,
 				dataTypeName: 'group',
 				groups: [],
-				cocos: [],
-				coords: coordsSelect
+				cocos: []
 			};
 			// add coordiante/covariate information to theseOpts
 			for (let cocoidx = 0; cocoidx < config.axes[axisId].coco.length; cocoidx++) {
@@ -2739,7 +2674,7 @@ NgChm.createNS('NgChm.LNK');
 
 		/**
 			Function to convert the user selections from DOM elements in the Gear Dialog into data to send to the plugins.
-			
+
 			The aEls object has additional key/value pairs depending on the arrays 'cocos' and 'groups'. For example,
 			if cocos = ['coordinate', 'covariate'] and groups = ['ugroup'], there will be three additional keys
 			in aEls: 'coordinates', 'covariates', and 'ugroups'. Note the additional 's' on the name.
@@ -2747,9 +2682,9 @@ NgChm.createNS('NgChm.LNK');
 			- coordaintes: Array of objects relating to DOM elements for user selection of 'coordinates',
 			- covariates: Array of objects relating to DOM elements for user selection of 'covariates',
 			- ugroups: Array of objects relating to DOM elements for user selection of 'ugroups'.
-			
+
 			The return value of this function will become the 'axes' key to the plotParams object. This is part
-			of the data sent to the plugins. This return object has the same general structure as the aEls input 
+			of the data sent to the plugins. This return object has the same general structure as the aEls input
 			object. Below is some description of the structure of this 'ops' return object:
 
 			- cocos: Same as input
@@ -2764,7 +2699,7 @@ NgChm.createNS('NgChm.LNK');
 						{
 							type: 'data' // for data obtained from GRAB/SHOW
 							label: <user-specified label> // from the text box in Gear Menu
-							labelIdx: Array of indexes of NGCHM rows or columns 
+							labelIdx: Array of indexes of NGCHM rows or columns
 						}
 					]
 
@@ -2785,15 +2720,15 @@ NgChm.createNS('NgChm.LNK');
 
 				@param {object} aEls Object of selection-element stuff
 				@option {Array<String>} cocos Array of names of coordinate/covariate data to send to plugin. E.g.: ['coordiante', 'covariate'].
-					       There will be an additional key in the aEls object for each item in this list, with and added 's'. 
+					       There will be an additional key in the aEls object for each item in this list, with and added 's'.
 					       In this example, that means there are two additional keys: 'coordinates' and 'covariates'
 				@option {Array<String>} groups Similar to 'cocos'. Array of names of group data to send to plugin. E.g.: ['ugroup']
 					        There will be an additional key in the aEls object for each item in this list, with and added 's'.
 					        In this example, that means there is an additional key: 'ugroups'.
 				@option {String} dataTypeName ??
-				@option {Array<>} data 
+				@option {Array<>} data
 				@option {Element} select DOM element for selecting between 'row' and 'column'
-				@return {object} The value for the 'axes' key to the plotParams object. This is part of the data sent to the plugins. The 
+				@return {object} The value for the 'axes' key to the plotParams object. This is part of the data sent to the plugins. The
 				       same general structure as for the 'aEls' input object. See the more detailed description below.
 		*/
 		function axesElementsToOps (aEls) {
@@ -2801,8 +2736,7 @@ NgChm.createNS('NgChm.LNK');
 				axisName: aEls.select.value,
 				data: aEls.data.map(axisC => selectToCoordinate (axisC)),
 				cocos: aEls.cocos,
-				groups: aEls.groups,
-				coords: aEls.coords.value
+				groups: aEls.groups
 			};
 			for (let idx = 0; idx < aEls.cocos.length; idx++) {
 				const f = aEls.cocos[idx] + 's';
@@ -2847,33 +2781,33 @@ NgChm.createNS('NgChm.LNK');
 
 			This function verifies that the labelIdx entries are non-empty, alerts the user, and returns 'false'.
 			Otherwise this function returns 'true'.
-			
+
 			The config object is used to determine which plotParams to validate.
-			
-			For cocos: since user is choosing from a dropdown, we only need to test the type = 'data' (because 
+
+			For cocos: since user is choosing from a dropdown, we only need to test the type = 'data' (because
 			otherwise the values are comming from a covariate bar).
-			
+
 			@function validateParams
 			@param {Object} plotParams Parameters sent to plugin
 		*/
 		function validateParams(plotParams) {
 			var minNumberRequired, thingToCheck
 			for (var a=0; a<config.axes.length; a++) {
-				for (var c=0; c<config.axes[a].coco.length; c++) { 
-					minNumberRequired = config.axes[a].coco[c].min 
+				for (var c=0; c<config.axes[a].coco.length; c++) {
+					minNumberRequired = config.axes[a].coco[c].min
 					for (var i=0; i<minNumberRequired; i++) {
 						thingToCheck = config.axes[a].coco[c].baseid + 's'
 						var cocoToCheck = plotParams.axes[a][thingToCheck]
-						for (var j=0; j<minNumberRequired; j++) { 
-							if (cocoToCheck[j].type == 'data' && cocoToCheck[j].labelIdx.length == 0) { 
-								var entryNumber = j+1         
+						for (var j=0; j<minNumberRequired; j++) {
+							if (cocoToCheck[j].type == 'data' && cocoToCheck[j].labelIdx.length == 0) {
+								var entryNumber = j+1
 								NgChm.UHM.systemMessage('Missing Selection',
 								   "Missing selection for " + config.axes[a].coco[c].name + " "+entryNumber+ " in Gear Dialog.")
 								return false
 							}
 						}
 					}
-				} // end loop over config.axes.coco 
+				} // end loop over config.axes.coco
 				for (var g=0; g<config.axes[a].group.length; g++) {
 					minNumberRequired = config.axes[a].group[g].min
 					for (var i=0; i<minNumberRequired; i++) {
@@ -2893,7 +2827,7 @@ NgChm.createNS('NgChm.LNK');
 		}
 
 		/**
-				Invoked when user clicks 'APPLY' button on gear menu. 
+				Invoked when user clicks 'APPLY' button on gear menu.
 
 			This function constructs the plotParams object with:
 
@@ -2916,7 +2850,7 @@ NgChm.createNS('NgChm.LNK');
 				options: getPluginOptionValues (config.options, pluginOptions),
 				lastApplied: axesOptions.map(ao => saveLastApplied(ao))
 			};
-			var paramsOK = validateParams(plotParams); 
+			var paramsOK = validateParams(plotParams);
 			if (paramsOK) {
 				NgChm.LNK.setPanePluginOptions (icon, plotParams);
 			}
@@ -2996,13 +2930,13 @@ NgChm.createNS('NgChm.LNK');
 
 	/*
 		Send an NGCHM property to plugin.
-		
-		Post message to plugin with value of given property, typically in response to a 
-		'getProperty' message from a plugin. 
+
+		Post message to plugin with value of given property, typically in response to a
+		'getProperty' message from a plugin.
 		Example incoming message: {vanodi: {op: 'getProperty', propertyName: 'ndexUUIDs', nonce: <nonce>}}.
 		These are properties added to the NGCHM at build time, for example by using
-		the R function 'chmAddProperty()'. 
-		
+		the R function 'chmAddProperty()'.
+
 		Inputs:
 			loc: location of plugin.
 			msg: message from plugin. Should have attribute 'propertyName',
@@ -3017,7 +2951,7 @@ NgChm.createNS('NgChm.LNK');
 			nonce: msg.nonce,
 			op: 'property',
 			propertyName: msg.propertyName,
-			propertyValue: linkouts.getAttribute(msg.propertyName) 
+			propertyValue: linkouts.getAttribute(msg.propertyName)
 		});
 	});
 
@@ -3107,7 +3041,7 @@ NgChm.createNS('NgChm.LNK');
 		var indexes = []
 		for (var i=0; i<heatMapAxisLabels.length; i++) { // loop over all labels
 			if (setSelected.has(heatMapAxisLabels[i])) {  // if set of selected points has label, add index to array of indexes
-				indexes.push(i+1);  
+				indexes.push(i+1);
 			}
 		}
 		if (indexes.length > 0) {
