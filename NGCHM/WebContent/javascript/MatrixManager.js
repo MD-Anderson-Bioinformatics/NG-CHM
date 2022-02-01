@@ -528,7 +528,7 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	};
 
 	this.getDividerPref = function() {
-		return mapConfig.data_configuration.map_information.summary_width;
+		return 25;
 	}
 
 	this.setDividerPref = function(sumSize) {
