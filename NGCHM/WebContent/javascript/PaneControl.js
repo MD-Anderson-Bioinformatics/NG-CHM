@@ -25,6 +25,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	NgChm.Pane.resetPaneCounter = resetPaneCounter;
 	NgChm.Pane.toggleScreenMode = toggleScreenMode;
 	NgChm.Pane.collapsePane = collapsePane;
+	NgChm.Pane.isCollapsedPane = isCollapsedPane;
 
 	// function findPaneLocation(el) - return PaneLocation containing element el
 	NgChm.Pane.findPaneLocation = findPaneLocation;
@@ -519,7 +520,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				if (debug) console.log ('container resize');
 				const verticalContainer = e.target.classList.contains('vertical');
 				const verticalChange = e.detail.what === 'height';
-				const children = [...e.target.children].filter(ch => !ch.classList.contains('resizerHelper'));
+				const children = [...e.target.children].filter(ch => !ch.classList.contains('resizerHelper') && !ch.classList.contains('collapsed'));
 				if (verticalContainer !== verticalChange) {
 					children.forEach(ch => {
 						const newEv = new CustomEvent('paneresize', { detail: e.detail });
@@ -738,10 +739,21 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	const collapsedPanes = [];
 
+	function isCollapsedPane (paneLoc) {
+		return collapsedPanes.indexOf(paneLoc.pane) != -1;
+	}
+
+	/* Called to collapse a pane or to re-collapse an already collapsed pane.
+	 * The re-collapse case is used when reloading from saved state:
+	 * once after recreating the pane structure and once after filling the
+	 * pane's contents.
+	 */
 	function collapsePane (paneLoc) {
-		if (debug) console.log ('collapsePane');
+		if (debug) console.log ('collapsePane', paneLoc);
 		paneLoc.pane.classList.add('collapsed');
-		collapsedPanes.push (paneLoc.pane);
+		if (collapsedPanes.indexOf(paneLoc.pane) === -1) {
+		    collapsedPanes.push (paneLoc.pane);
+		}
 		let p = paneLoc.pane.firstElementChild;
 		while (p) {
 			if (p !== paneLoc.paneHeader) p.style.display = 'none';
@@ -756,9 +768,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 	}
 
-	function expandPane (loc) {
-		if (debug) console.log ('expandPane');
-		loc.pane.classList.remove('collapsed');
+	function expandPane (paneLoc) {
+		if (debug) console.log ('expandPane', paneLoc);
+		paneLoc.pane.classList.remove('collapsed');
 	}
 
 	const paneContentOptions = [];

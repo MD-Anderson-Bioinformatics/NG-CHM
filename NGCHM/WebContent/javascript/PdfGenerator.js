@@ -15,7 +15,7 @@ NgChm.PDF.isGenerating = false;
  * button on the menu bar.  The PDF preferences panel is then launched
  **********************************************************************************/
 NgChm.PDF.canGeneratePdf = function() {
-	return NgChm.SUM.isVisible() || NgChm.DMM.isVisible();
+	return NgChm.SUM.isVisible() || NgChm.DMM.anyVisible();
 };
 
 NgChm.PDF.openPdfPrefs = function(e) {
@@ -31,17 +31,17 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	const sumButton = document.getElementById ('pdfInputSummaryMap');
 	const detButton = document.getElementById ('pdfInputDetailMap');
 	const bothButton = document.getElementById ('pdfInputBothMaps');
-	if (NgChm.SUM.isVisible() && !NgChm.DMM.isVisible()) {
+	if (NgChm.SUM.isVisible() && !NgChm.DMM.anyVisible()) {
 		sumButton.checked = true;
 		sumButton.disabled = false;
 		detButton.disabled = true;
 		bothButton.disabled = true;
-	} else if (NgChm.DMM.isVisible() && !NgChm.SUM.isVisible()) {
+	} else if (NgChm.DMM.anyVisible() && !NgChm.SUM.isVisible()) {
 		detButton.checked = true;
 		sumButton.disabled = true;
 		detButton.disabled = false;
 		bothButton.disabled = true;
-	} else if (NgChm.SUM.isVisible() && NgChm.DMM.isVisible()) {
+	} else if (NgChm.SUM.isVisible() && NgChm.DMM.anyVisible()) {
 		bothButton.checked = true;
 		sumButton.disabled = false;
 		detButton.disabled = false;

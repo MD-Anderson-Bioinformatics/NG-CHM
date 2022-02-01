@@ -31,19 +31,22 @@ NgChm.DMM.mapTemplate = {
  * Otherwise, it will be populated from Primary heat map object and marked as a 'Secondary'
  * heat map.
  *********************************************************************************************/
-NgChm.DMM.addDetailMap = function (chm, pane, mapNumber) {
-	let newMapObj;
-	if (NgChm.DMM.primaryMap) {
-	    newMapObj = Object.assign({}, NgChm.DMM.primaryMap, { glManager: null, version: 'S' });
-	} else {
-	    newMapObj = Object.assign({}, NgChm.DMM.mapTemplate);
-	}
+NgChm.DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
+	const template = NgChm.DMM.primaryMap || NgChm.DMM.mapTemplate;
+	const newMapObj = Object.assign({}, template, { glManager: null, version: 'S', });
 	newMapObj.pane = pane;
 	NgChm.DMM.completeMapItemConfig(newMapObj, chm, mapNumber);
-	if (newMapObj !== NgChm.DMM.primaryMap) {
-	    NgChm.DET.rowDendroResize();
-	    NgChm.DET.colDendroResize();
+	if (restoreInfo) {
+	    NgChm.DET.restoreFromSavedState (newMapObj, restoreInfo);
 	}
+	NgChm.DET.setDetailMapDisplay(newMapObj, restoreInfo);
+	if (isPrimary) {
+	    NgChm.DMM.setPrimaryDetailMap (newMapObj);
+	} else {
+	    NgChm.DET.rowDendroResize(newMapObj);
+	    NgChm.DET.colDendroResize(newMapObj);
+	}
+	return newMapObj;
 };
 
 /*********************************************************************************************
@@ -64,7 +67,6 @@ NgChm.DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
 	mapItem.labelPostScript = mapNumber === 1 ? '' : '_' + mapNumber;
 	mapItem.rowLabelDiv =  'rowL'+mapItem.labelElement.id.substring(1);
 	mapItem.colLabelDiv =  'colL'+mapItem.labelElement.id.substring(1);
-	NgChm.DET.setDetailMapDisplay(mapItem);	
 }
 
 /*********************************************************************************************
@@ -83,8 +85,12 @@ NgChm.DMM.RemoveDetailMap = function (pane) {
 			break;
 		}
 	}
-	if ((wasPrime === true) && (NgChm.DMM.DetailMaps.length > 0)) {
+	if (wasPrime) {
+	   if (NgChm.DMM.DetailMaps.length > 0) {
 		NgChm.DMM.switchToPrimary(NgChm.DMM.DetailMaps[0].chm); 
+	   } else {
+	       NgChm.DMM.primaryMap = null;
+	   }
 	}
 }
 
@@ -231,45 +237,43 @@ NgChm.DMM.getMapItemFromDendro = function (dendro) {
 }
 
 /*********************************************************************************************
- * FUNCTION:  isVisible - The purpose of this function is to return true if the Detail View 
- * is visible (i.e. contained in a visible pane).
+ * FUNCTION:  isVisible - Return true if mapItem is visible (i.e. contained in a visible pane).
  *********************************************************************************************/
-NgChm.DMM.isVisible = function isVisible () {
-	let isViz = false
+NgChm.DMM.isVisible = function isVisible (mapItem) {
+	const loc = NgChm.Pane.findPaneLocation (mapItem.chm);
+	return (!loc.pane.classList.contains('collapsed')) && (loc.pane.style.display !== 'none');
+};
+
+/*********************************************************************************************
+ * FUNCTION:  anyVisible - Return true if any Detail View is visible.
+ *********************************************************************************************/
+NgChm.DMM.anyVisible = function anyVisible () {
 	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		const loc = NgChm.Pane.findPaneLocation (mapItem.chm);
-		if ((!loc.pane.classList.contains('collapsed')) && (loc.pane.style.display !== 'none')){
-			isViz = true;
-		}
+		if (isVisible(NgChm.DMM.DetailMaps[i])) {
+		    return true;
+		};
 	}
-	return isViz;
-}
+	return false;
+};
 
 /************************************************************************************************
  * FUNCTION - detailResize: This function calls all of the functions necessary to resize all 
  * of the open detail panel instances.
  ************************************************************************************************/
 NgChm.DMM.detailResize = function () {
-	 if (NgChm.DMM.DetailMaps.length > 0) {
-		 NgChm.DET.rowDendroResize();
-		 NgChm.DET.colDendroResize();
+	NgChm.DMM.DetailMaps.forEach(mapItem => {
+	    NgChm.DET.rowDendroResize(mapItem);
+	    NgChm.DET.colDendroResize(mapItem);
+	});
+	if (NgChm.DMM.DetailMaps.length > 0) {
 		 NgChm.DET.sizeCanvasForLabels();
 		 //Done twice because changing canvas size affects fonts selected for drawing labels
 		 NgChm.DET.sizeCanvasForLabels();
 		 NgChm.DET.updateDisplayedLabels();
 		 NgChm.DET.drawSelections();  
-		 NgChm.DET.rowDendroResize();
-		 NgChm.DET.colDendroResize();
-	 }
-}
-
-NgChm.DMM.isDetailMapDisplayed = function() {
-	if (NgChm.DMM.DetailMaps.length > 0) {
-		return true;
-	} else {
-		return false;
 	}
+	NgChm.DMM.DetailMaps.forEach(mapItem => {
+	    NgChm.DET.rowDendroResize(mapItem);
+	    NgChm.DET.colDendroResize(mapItem);
+	});
 }
-
-

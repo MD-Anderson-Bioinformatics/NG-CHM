@@ -164,6 +164,7 @@ NgChm.createNS('NgChm.RecPanes');
 			if (a.idx < b.idx) return -1;  // e.g.: 'pane3' < 'pane4' = true
 			return 0;
 		});
+		setUsedVersionNumbers();
 		panesArray.forEach(pane => {
 			setPaneContent(pane.id);
 		});
@@ -216,7 +217,8 @@ NgChm.createNS('NgChm.RecPanes');
 	 *	Set a pane's content based on 'config.type' attribute.
 	 */
 	function setPaneContent(paneid) {
-		let pane = document.getElementById(paneid);
+		const pane = document.getElementById(paneid);
+		const paneLoc = NgChm.Pane.findPaneLocation(pane);
 		const config = NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
 		if (!config) {
 		    // Probably an empty pane.
@@ -228,18 +230,19 @@ NgChm.createNS('NgChm.RecPanes');
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
 		} else if (config.type === "detailMap") {
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
-			let mapNumber = paneInfo.versionNumber == "" ? 1 : parseInt(paneInfo.versionNumber);
-                        if (mapNumber > NgChm.DMM.nextMapNumber) {
-                            NgChm.DMM.nextMapNumber = mapNumber;
+			const isPrimary = paneInfo.version == 'P';
+			let mapNumber = paneInfo.versionNumber == "" ? getUnusedVersionNumber() : parseInt(paneInfo.versionNumber);
+                        if (mapNumber >= NgChm.DMM.nextMapNumber) {
+                            NgChm.DMM.nextMapNumber = mapNumber+1;
                         }
-                        NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane), { mapNumber });
+                        NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane), { isPrimary, mapNumber, paneInfo });
 
 			NgChm.DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
-			NgChm.restoreFromSavedState (mapItem, paneInfo);
 			NgChm.SEL.updateSelection(mapItem);
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
+			NgChm.Pane.resizePane (mapItem.canvas);
 		} else if (config.type === 'plugin') {
 			let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
 			let specifiedPlugin = customjsPlugins.filter(pc => config.pluginName == pc.name);
@@ -271,6 +274,40 @@ NgChm.createNS('NgChm.RecPanes');
 		} else {
 			console.error ("Unrecognized pane type - " + config.type);
 		}
+		if (NgChm.Pane.isCollapsedPane (paneLoc)) {
+		    // Ensures that any added/modified pane components are collapsed properly.
+		    NgChm.Pane.collapsePane (paneLoc);
+		}
+	}
+
+	/**
+	 * Track what detail map version numbers are used by the saved panel
+	 * configuration, so that a new unused number can be safely assigned to
+	 * any saved map that doesn't have a version number.
+	 */
+	var usedVersionNumbers;
+
+	/**
+	 * Save what version numbers are used in the panel configuration. Must be
+	 * called before panels are restored, since restoring a panel removes its
+	 * information from the saved panel configuration.
+	 */
+	function setUsedVersionNumbers() {
+	    usedVersionNumbers = Object.entries(NgChm.RecPanes.mapConfigPanelConfiguration)
+		.filter(([k,v]) => v && v.versionNumber && (v.versionNumber != ''))
+		.map(([k,v]) => +v.versionNumber);
+	}
+
+	/**
+	 * Get the first unused version number and note that it is now used.
+	 */
+	function getUnusedVersionNumber() {
+	    let i = 1;
+	    while (usedVersionNumbers.indexOf(i) != -1) {
+		i++;
+	    }
+	    usedVersionNumbers.push(i);
+	    return i;
 	}
 
 	/**
@@ -303,13 +340,20 @@ NgChm.createNS('NgChm.RecPanes');
 			let nonce = pluginInstance.nonce;
 			let config = paneInfo.config;
 			let data = paneInfo.data;
-			let selectedLabels = getSelectedLabels(config.axes[0].axisName);
-			data.axes[0].selectedLabels = selectedLabels;
-			pluginInstance.params = config;
-			NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
-			let dataFromPlugin = paneInfo.dataFromPlugin;
-			NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
-			NgChm.Pane.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'));
+			if (config) {
+			    config.axes.forEach (ax => {
+				if (ax.axisName) {
+				    ax.selectedLabels = getSelectedLabels(ax.axisName);
+				}
+			    });
+			    pluginInstance.params = config;
+			    if (data) {
+				NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
+				let dataFromPlugin = paneInfo.dataFromPlugin;
+				if (dataFromPlugin) NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
+				NgChm.Pane.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'));
+			    }
+			}
 			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneId];
 		} else {
 			return false;
@@ -339,6 +383,10 @@ NgChm.createNS('NgChm.RecPanes');
 	function getPaneInfoFromMapConfig(paneId) {
 		try {
 			let paneInfo = NgChm.RecPanes.mapConfigPanelConfiguration[paneId];
+			if (!paneInfo) {
+			    console.warn ('Panel ' + paneId + ' has nosaved configuration');
+			    paneInfo = {};
+			}
 			return paneInfo;
 		} catch (error) {
 			if (error instanceof TypeError) {
