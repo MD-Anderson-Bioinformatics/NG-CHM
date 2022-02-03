@@ -843,7 +843,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				menuItem (opt.menuEntry, () => {
 					const loc = findPaneLocation (icon);
 					opt.callback (loc);
-					getPaneEventHandler (loc.pane, 'resize') (loc);
+					resizePane (loc.pane);
 				});
 			});
 			// Add plugin options.
