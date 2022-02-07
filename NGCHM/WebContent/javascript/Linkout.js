@@ -1812,6 +1812,7 @@ NgChm.createNS('NgChm.LNK');
 				axis1Config = NgChm.heatMap.getAxisCovariateConfig (axis);
 				axis1cvOrder = NgChm.heatMap.getAxisCovariateOrder (axis);
 				otherAxis = NgChm.MMGR.isRow (axis) ? 'Column' : 'Row';
+				//Set default coordinates for PCA Plug plugin
 				if (plugin.config.axes[0].hasOwnProperty('pcaplus')) {
 					getCoordinates(plugin)
 					defaultCoord = axis1cvOrder.filter(x => /^PC/.test(x));
@@ -1829,6 +1830,7 @@ NgChm.createNS('NgChm.LNK');
 
 			const coordsSelect = NgChm.UTIL.newElement('SELECT');
 
+			//set coordinate for PCA Plus Plugin based on selections (PCA,TSNE,UMAP)
 			function getCoordinates(plugin) {
 				let coords = axis1cvOrder.filter(x => /\.coordinate\./.test(x))
 				coords = new Set(coords.map((coord) => coord.split(".coordinate.")[0]))
