@@ -239,10 +239,12 @@ NgChm.DMM.getMapItemFromDendro = function (dendro) {
 /*********************************************************************************************
  * FUNCTION:  isVisible - Return true if mapItem is visible (i.e. contained in a visible pane).
  *********************************************************************************************/
-NgChm.DMM.isVisible = function isVisible (mapItem) {
+NgChm.DMM.isVisible = isVisible;
+
+function isVisible (mapItem) {
 	const loc = NgChm.Pane.findPaneLocation (mapItem.chm);
 	return (!loc.pane.classList.contains('collapsed')) && (loc.pane.style.display !== 'none');
-};
+}
 
 /*********************************************************************************************
  * FUNCTION:  anyVisible - Return true if any Detail View is visible.
