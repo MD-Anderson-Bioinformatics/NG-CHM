@@ -741,7 +741,7 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 			let zoomBoxSize = NgChm.DET.zoomBoxSizes[current+1];
 			NgChm.DET.setDetailDataSize (mapItem, zoomBoxSize);
 		}
-		NgChm.SEL.updateSelection(mapItem,true);
+		NgChm.SEL.updateSelection(mapItem, false);
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
 	        let mode = mapItem.mode, col;
 		if (mapItem.modeHistory.length > 0) {
