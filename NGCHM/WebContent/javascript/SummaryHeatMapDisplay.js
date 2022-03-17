@@ -138,6 +138,7 @@ NgChm.SUM.initSummaryData = function() {
 NgChm.SUM.redrawSummaryPanel = function() {
 	// Nothing to redraw if never initialized.
 	if (!NgChm.SUM.chmElement) return;
+	NgChm.SUM.initSummaryData();
 
 	//Classificaton bars get stretched on small maps, scale down the bars and padding.
 	NgChm.SUM.rowClassBarWidth = NgChm.SUM.calculateSummaryTotalClassBarHeight("row");
