@@ -1083,7 +1083,14 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 		  zipper.addTexts(function addTextsCallback() {
 		    zipper.getBlob(function getBlobCallback(blob) {
-		      saveAs(blob, heatMapName+".ngchm");   
+				if(window.location.search.indexOf('bloburi') > -1){
+					// Upload file to Azure blob storage
+					window.updatedHeatmap = blob;
+					var link = window.parent.document.getElementById("lnkSaveNGCHM");
+					link.click();
+				} else {
+					saveAs(blob, heatMapName+".ngchm");
+				}
 		    });
 		  });  
 		}
