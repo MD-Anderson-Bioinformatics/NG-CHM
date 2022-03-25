@@ -995,12 +995,12 @@ NgChm.DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	
 	    mapItem.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
 	    if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
-		mapItem.currentRow = mapItem.saveRow;
 		if (previousMode == 'FULL_MAP') {
 		    NgChm.DET.setDetailDataHeight(mapItem,NgChm.DET.zoomBoxSizes[0]);
 		} else {
 		    NgChm.DET.setDetailDataHeight(mapItem,prevWidth);
 		}
+		mapItem.currentRow = mapItem.saveRow;
 	    }
 
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
@@ -1069,12 +1069,12 @@ NgChm.DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	if (!restoreInfo) {
 	    mapItem.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
 	    if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
-		mapItem.currentCol = mapItem.saveCol;
 		if (previousMode == 'FULL_MAP') {
 			NgChm.DET.setDetailDataWidth(mapItem, NgChm.DET.zoomBoxSizes[0]);
 		} else {
 			NgChm.DET.setDetailDataWidth(mapItem, prevHeight);
 		}
+		mapItem.currentCol = mapItem.saveCol;
 	    }
 	
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
