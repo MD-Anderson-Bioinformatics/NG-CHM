@@ -56,6 +56,7 @@ NgChm.PDF.openPdfPrefs = function(e) {
 	//Add prefspanel table to the main preferences DIV and set position and display
 	prefspanel.style.top = (headerpanel.offsetTop + 15) + 'px';
 	prefspanel.classList.remove ('hide');
+	prefspanel.style.left = ((window.innerWidth - prefspanel.offsetWidth) / 2) + 'px';
 	let labels = document.getElementsByClassName("DynamicLabel");
 	if (labels.length > 0) {
 		document.getElementById("pdfInputFont").value = parseInt(labels[0].style["font-size"]);
