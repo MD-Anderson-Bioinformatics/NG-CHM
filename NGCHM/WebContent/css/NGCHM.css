@@ -838,7 +838,6 @@ th.breakpointContainer {
     z-index: 10000;
     text-align: center;
     box-shadow: 5px 5px 5px #777777;
-    white-space: nowrap;
     box-sizing: border-box;
     text-align: left;
 }
