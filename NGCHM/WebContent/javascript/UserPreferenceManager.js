@@ -140,7 +140,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		prefspanel.appendChild(prefBtnsDiv);
 		NgChm.UPM.setMessage("");
 	}
-	NgChm.UPM.prefsResize();
+	NgChm.UPM.setSizePrefPrefs();
 
 	//If errors exist and they are NOT on the currently visible DIV (dataLayer1),
 	//hide the dataLayers DIV, set the tab to "Covariates", and open the appropriate
@@ -205,10 +205,9 @@ NgChm.UPM.setMessage = function(errorMsgTxt) {
 }
 
 /**********************************************************************************
- * FUNCTION - prefsResize: The purpose of this function is to handle the resizing
- * of the preferences panel when the window is resized.
+ * FUNCTION - setSizePrefPrefs: Sets initial size of #prefPrefs
  **********************************************************************************/
-NgChm.UPM.prefsResize = function() {
+NgChm.UPM.setSizePrefPrefs = function() {
 	var prefprefs = document.getElementById('prefPrefs');
 	if (prefprefs !== null) {
 		if (window.innerHeight > 730) {
