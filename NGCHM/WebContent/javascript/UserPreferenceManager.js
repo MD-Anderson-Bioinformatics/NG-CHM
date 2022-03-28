@@ -220,6 +220,28 @@ NgChm.UPM.setSizePrefPrefs = function() {
 	}
 }
 
+
+/*
+  Keeps the #prefs panel from moving off the viewport as the user resizes the window.
+*/
+NgChm.UPM.keepPrefsInViewport= function() {
+	let prefspanel = document.getElementById('prefs');
+	if (prefspanel !== null) {
+		if (prefspanel.getBoundingClientRect().bottom > window.innerHeight) {
+			prefspanel.style.height = (window.innerHeight - prefspanel.getBoundingClientRect().top) + 'px';
+		}
+		if (prefspanel.getBoundingClientRect().right > window.innerWidth) {
+			prefspanel.style.left = (window.innerWidth - prefspanel.getBoundingClientRect().width) + 'px';
+		}
+		if (prefspanel.getBoundingClientRect().top < 0) {
+			prefspanel.style.top = '0px';
+		}
+		if (prefspanel.getBoundingClientRect().left < 0) {
+			prefspanel.style.left = '0px';
+		}
+	}
+}
+
 /**********************************************************************************
  * FUNCTION - showRowsColsPrefs: The purpose of this function is to perform the 
  * processing for the preferences tab when the user selects the "Rows & Cols" tab.
