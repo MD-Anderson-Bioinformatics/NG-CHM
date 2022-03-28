@@ -770,6 +770,10 @@ th.breakpointContainer {
 	border-bottom-style: solid;
 }
 
+#rowsColsPrefs, #classPrefs, #layerPrefs {
+	padding-bottom: 220px;
+}
+
 #prefs {
 	width: 420px;
 	overflow: hidden;
