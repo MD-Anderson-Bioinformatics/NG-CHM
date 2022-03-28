@@ -187,9 +187,9 @@ NgChm.UPM.locatePrefsPanel = function() {
 	if (screenNotes !== null) {
 		notesBB = screenNotes.getBoundingClientRect();
 		prefspanel.style.top = (iconBB.top - notesBB.height) + 'px';
-	}
+	} 
 	
-	prefspanel.style.height = (contBB.height + iconBB.height) + 'px';
+	prefspanel.style.height = (window.innerHeight - prefspanel.getBoundingClientRect().top) + 'px';
 	document.getElementById("prefsMove_btn").dataset.state = 'moveLeft';
 	prefspanel.style.left = (NgChm.UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
 }

@@ -806,13 +806,15 @@ th.breakpointContainer {
 
 #prefActions {
 	position: absolute;
-	bottom: 1em;
+	bottom: 0em; /* fix to bottom of #prefs */
 	width: 100%;
 	background-color: #CBDBF6; 
     font-family: Arial;
     font-weight: bold;
     text-align: center;
-    color: red;
+    border-top: 2px solid #0843c1; /* match border-bottom of #prefTabButtons */
+    padding-top: 20px; /* seemed aesthetically pleasing */
+    padding-bottom: 20px; /* seemed aesthetically pleasing */
 }
 
 #pdfPrefs, #msgBox, #linkBox {
