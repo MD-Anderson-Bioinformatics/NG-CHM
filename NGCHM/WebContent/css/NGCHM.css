@@ -777,6 +777,8 @@ th.breakpointContainer {
 	background-color: #CBDBF6; 
 	border: 1px solid black; 
 	z-index: 10000;
+	resize: vertical;
+	min-height: 200px;
 }
 
 #linkBoxTxt, #linkBoxAllTxt {
