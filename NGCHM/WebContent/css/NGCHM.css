@@ -779,13 +779,6 @@ th.breakpointContainer {
 	z-index: 10000;
 }
 
-#prefTabButtons {
-	vertical-align: top;
-	border-bottom-width: 2px;
-	border-bottom-color: #0843c1;
-	border-bottom-style: solid;
-}
-
 #linkBoxTxt, #linkBoxAllTxt {
 	font-size: 12px;
 	overflow-y: auto;
