@@ -58,8 +58,6 @@ NgChm.SUM.clickStartCol=null;   // Left column of the current selected position
 NgChm.SUM.mouseEventActive = false;
 
 NgChm.SUM.summaryHeatMapCache = {};
-NgChm.SUM.widthScale = 1;
-NgChm.SUM.heightScale = 1;
 NgChm.SUM.colTopItemsWidth = 0;
 NgChm.SUM.rowTopItemsHeight = 0;
 
