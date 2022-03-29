@@ -1065,9 +1065,7 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 			//If first plugin being written to table, write header row.
 			if (validPluginCtr === 0) {
 				tr.className = "chmHdrRow";
-				var td = tr.insertCell(0);
-				td.innerHTML = "<b>Version</b>";
-				td = tr.insertCell(0);
+				let td = tr.insertCell(0);
 				td.innerHTML = "<b>Plugin Axes</b>";
 				td = tr.insertCell(0);
 				td.innerHTML = "<b>Description</b>";
@@ -1098,9 +1096,6 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 			var tdAxes = tr.insertCell(3);
 			tdAxes.className = "chmTblCell";
 			tdAxes.innerHTML = axesFound;
-			var tdVersion = tr.insertCell(4);
-			tdVersion.className = "chmTblCell";
-			tdVersion.innerHTML = plugin.version;
 		} 
 	}
 	if (validPluginCtr === 0) {
@@ -1132,9 +1127,7 @@ NgChm.UHM.openAllLinkoutsHelp = function() {
 			//If first plugin being written to table, write header row.
 			if (validPluginCtr === 0) {
 				tr.className = "chmHdrRow";
-				var td = tr.insertCell(0);
-				td.innerHTML = "<b>Version</b>";
-				td = tr.insertCell(0);
+				let td = tr.insertCell(0);
 				td.innerHTML = "<b>Description</b>";
 				td = tr.insertCell(0);
 				td.innerHTML = "<b>Name</b>";
@@ -1160,9 +1153,6 @@ NgChm.UHM.openAllLinkoutsHelp = function() {
 			var tdDesc = tr.insertCell(2);
 			tdDesc.className = "chmTblCell";
 			tdDesc.innerHTML = plugin.description;
-			var tdVersion = tr.insertCell(3);
-			tdVersion.className = "chmTblCell";
-			tdVersion.innerHTML = plugin.version;
 	}
 	return pluginTbl;
 }

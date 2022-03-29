@@ -215,7 +215,7 @@ function linkoutHelp () {
     linkouts.addPlugin({
         name: "cBioPortal",
         description: "Adds linkouts to the cBioPortal for Cancer Genomics.",
-        version: "0.1.0",
+        version: "0.2.0",
         logo: "https://www.cbioportal.org/images/cbioportal_logo.png",
         site: "https://www.cbioportal.org/",
         attributes: [
@@ -260,7 +260,7 @@ function linkoutHelp () {
     linkouts.addPlugin({
         name: "COSMIC",
         description: "Adds linkouts to the Catalogue of somatic mutations in cancer (COSMIC).",
-        version: "0.1.0",
+        version: "0.1.1",
         site: "https://cancer.sanger.ac.uk/cosmic",
         logo: "https://cancer.sanger.ac.uk/cancergenome/gfx/logo_cosmic.png",
         linkouts: [
@@ -330,7 +330,7 @@ function linkoutHelp () {
     linkouts.addPlugin({
         name: "Ensembl",
 	description: "Adds linkouts to Ensembl genome browser.",
-	version: "0.1.0",
+	version: "0.1.1",
 	site: "https://www.ensembl.org/index.html",
 	logo: "https://www.sanger.ac.uk/sites/default/files/ensembl_1.gif",
 	linkouts: [
@@ -520,7 +520,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "Ideogram Viewer",
 	description: "Adds linkouts for viewing a set of genes and/or mirs on an interactive ideogram.",
-	version: "0.1.0",
+	version: "0.1.1",
 	site: "https://bioinformatics.mdanderson.org/public-software/ideogramviewer/",
     logo: "https://bioinformatics.mdanderson.org//public-software/ideogramviewer/IdeogramViewerLogo.png",
 	linkouts: [
@@ -607,7 +607,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "miRBase",
 	description: "Adds links to miRBase.",
-	version: "0.1.0",
+	version: "0.1.1",
 	site: "https://www.mirbase.org/",
 	logo: "https://www.mirbase.org/images/mirbase-logo-blue-web.png",
 	linkouts: [
@@ -628,7 +628,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "MSigDB",
         description: "Adds linkouts to MSigDB pathways database",
-	version: "0.1.0",
+	version: "0.1.1",
 	site: "https://software.broadinstitute.org/gsea/index.jsp",
 	logo: "https://software.broadinstitute.org/gsea/images/GSEA-logo.gif",
 	linkouts: [
@@ -750,7 +750,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "PeptideAtlas",
 	description: "Adds linkouts to PeptideAtlas.",
-	version: "0.1.0",
+	version: "0.1.1",
 	site: "http://www.peptideatlas.org/",
 	logo: "https://db.systemsbiology.net/sbeams/images/PeptideAtlas_Logo.png",
 	linkouts: [
@@ -779,7 +779,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "PubMed",
         description: "Adds linkouts to the PubMed portal.",
-        version: "0.1.3",
+        version: "0.1.4",
         site: "https://www.ncbi.nlm.nih.gov/pubmed/",
         logo: "https://www.ncbi.nlm.nih.gov/coreutils/img/pubmed256blue.png",
         linkouts: [
@@ -828,7 +828,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "RRID",
         description: "Antibody RRID.",
-//        version: "0.1.3",
+        version: "0.1.4",
         site: "https://antibodyregistry.org/",
         logo: "https://scicrunch.org/upload/community-components/resources_66006.png",
         linkouts: [
@@ -923,7 +923,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "UniProt",
 	description: "Adds linkouts to UniProt protein database.",
-	version: "0.1.0",
+	version: "0.1.1",
 	site: "https://www.uniprot.org/",
 	logo: "https://www.uniprot.org/images/logos/uniprot-rgb-optimized.svg",
 	linkouts: [
@@ -946,7 +946,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "Vega",
 	description: "Adds linkouts to Vega.",
-	version: "0.1.0",
+	version: "0.1.1",
 	site: "http://vega.sanger.ac.uk/",
 	logo: "https://vega.archive.ensembl.org/i/vega.gif",
 	linkouts: [
@@ -975,7 +975,7 @@ linkouts.addPlugin({
     linkouts.addPlugin({
         name: "NDEx IQuery",
         description: "Adds linkouts to NDEx IQuery.",
-        version: "0.1.0",
+        version: "0.1.1",
         site: "https://iquery.ndexbio.org/",
         logo: "https://iquery.ndexbio.org/static/media/ndex-logo.04d7bf44.svg",
         linkouts: [
