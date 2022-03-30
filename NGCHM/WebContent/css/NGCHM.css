@@ -819,8 +819,8 @@ th.breakpointContainer {
     font-weight: bold;
     text-align: center;
     border-top: 2px solid #0843c1; /* match border-bottom of #prefTabButtons */
-    padding-top: 20px; /* seemed aesthetically pleasing */
-    padding-bottom: 20px; /* seemed aesthetically pleasing */
+    padding-top: 12px; /* seemed aesthetically pleasing */
+    padding-bottom: 12px; /* seemed aesthetically pleasing */
 }
 
 #pdfPrefs, #msgBox, #linkBox {
