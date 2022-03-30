@@ -28,8 +28,10 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 public class NGCHM_Widgetizer {
 
@@ -112,6 +114,7 @@ public class NGCHM_Widgetizer {
     		String line = br.readLine();
     		boolean isScript = false;
 		boolean copyingToWidget = false;
+		List<String> keepIfTag = Arrays.asList("<!DOCTYPE", "<html", "</html", "<head", "</head", "<meta", "</meta");
 		int lineNumber = 1;
     		while (line != null) {
 			if (line.contains("text/Javascript")) {
@@ -144,6 +147,8 @@ public class NGCHM_Widgetizer {
 				cssLines.append("(function() { var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
 				cssLines.append("css.innerText = \"" + styleToString(args[0], cssFile) + "\";\ndocument.head.appendChild(css);\n");
 				cssLines.append("})();\n");
+			} else if (keepIfTag.stream().anyMatch(line::contains)) {
+				htmlString += line;
 			} else if (line.contains("<body") || line.contains("WIDGET INCLUDE")){
 				copyingToWidget = true;
 			} else if (line.contains("</body") || line.contains("WIDGET EXCLUDE")){
