@@ -108,7 +108,10 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 			this._OK = false;
 		    }
 		} else {
-		    // Not lost since last use.
+		    // Not lost since last use
+		    // Resizing the viewport, which is needed if the canvas was resized.
+		    const ctx = this._state.context;
+		    ctx.viewport(0, 0, ctx.drawingBufferWidth*NgChm.SUM.widthScale, ctx.drawingBufferHeight*NgChm.SUM.heightScale);
 		    this._OK = true;
 		    initialized = true;
 		}
