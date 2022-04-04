@@ -454,7 +454,7 @@ NgChm.UPM.prefsSuccess = function() {
 	NgChm.UPM.bkpColorMaps = null;
 	NgChm.SUM.redrawSummaryPanel();
 	NgChm.DMM.resizeDetailMapCanvases ();
-	NgChm.SEL.updateSelections(true);
+	NgChm.SEL.updateSelections(false); // Do not skip resize: covariate bar changes may require resize
 	NgChm.UPM.applyDone = true;
 	NgChm.UPM.setMessage("");
 }
