@@ -1048,7 +1048,7 @@ NgChm.createNS('NgChm.LNK');
 		NgChm.UHM.setMessageBoxHeader("Warning: Unable to save some plugin data");
 		NgChm.UHM.setMessageBoxText(warningText);
 		NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.okButton, 'OK Button');
-		dialog.style.display = '';
+		NgChm.UHM.displayMessageBox();
 		let okButton = dialog.querySelector('#msgBoxBtnImg_1');
 		okButton.addEventListener('click', function handleOkClick(e) {
 			okButton.removeEventListener('click', handleOkClick);

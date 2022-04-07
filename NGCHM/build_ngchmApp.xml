@@ -68,6 +68,8 @@
 	    <mapper type="glob" from="*.js" to="ngchmEmbed-min.js"/>
 	    <targetfile/>
 	</apply>
+	<exec executable="git" outputproperty="commithash"><arg value="rev-parse"/><arg value="--short"/><arg value="HEAD"/></exec>
+	<echo file="ngchmEmbed-min.js" append="true">/* latest commit hash: ${commithash}*/${line.separator}</echo>
 	</target>  
 
 	<!-- Execute the JAVA NGCHM_AppGenerator to create the stand-alone viewer ngChmApp.html file -->
@@ -103,6 +105,8 @@
 	        <pathelement path="build/classes"/>
 	    </classpath>
 	</java>
+	<exec executable="git" outputproperty="commithash"><arg value="rev-parse"/><arg value="--short"/><arg value="HEAD"/></exec>
+	<echo file="ngchmWidget-min.js" append="true">/* latest commit hash: ${commithash}*/${line.separator}</echo>
 	</target>
 
 	<!-- Target to call the steps to build just the ngChmApp.html stand-alone viewer file -->

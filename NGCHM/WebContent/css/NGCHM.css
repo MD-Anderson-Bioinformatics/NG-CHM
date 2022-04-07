@@ -770,6 +770,10 @@ th.breakpointContainer {
 	border-bottom-style: solid;
 }
 
+#rowsColsPrefs, #classPrefs, #layerPrefs {
+	padding-bottom: 220px;
+}
+
 #prefs {
 	width: 420px;
 	overflow: hidden;
@@ -777,13 +781,8 @@ th.breakpointContainer {
 	background-color: #CBDBF6; 
 	border: 1px solid black; 
 	z-index: 10000;
-}
-
-#prefTabButtons {
-	vertical-align: top;
-	border-bottom-width: 2px;
-	border-bottom-color: #0843c1;
-	border-bottom-style: solid;
+	resize: vertical;
+	min-height: 200px;
 }
 
 #linkBoxTxt, #linkBoxAllTxt {
@@ -813,13 +812,15 @@ th.breakpointContainer {
 
 #prefActions {
 	position: absolute;
-	bottom: 1em;
+	bottom: 0em; /* fix to bottom of #prefs */
 	width: 100%;
 	background-color: #CBDBF6; 
     font-family: Arial;
     font-weight: bold;
     text-align: center;
-    color: red;
+    border-top: 2px solid #0843c1; /* match border-bottom of #prefTabButtons */
+    padding-top: 12px; /* seemed aesthetically pleasing */
+    padding-bottom: 12px; /* seemed aesthetically pleasing */
 }
 
 #pdfPrefs, #msgBox, #linkBox {
@@ -838,7 +839,6 @@ th.breakpointContainer {
     z-index: 10000;
     text-align: center;
     box-shadow: 5px 5px 5px #777777;
-    white-space: nowrap;
     box-sizing: border-box;
     text-align: left;
 }

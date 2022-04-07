@@ -58,8 +58,6 @@ NgChm.SUM.clickStartCol=null;   // Left column of the current selected position
 NgChm.SUM.mouseEventActive = false;
 
 NgChm.SUM.summaryHeatMapCache = {};
-NgChm.SUM.widthScale = 1;
-NgChm.SUM.heightScale = 1;
 NgChm.SUM.colTopItemsWidth = 0;
 NgChm.SUM.rowTopItemsHeight = 0;
 
@@ -138,6 +136,7 @@ NgChm.SUM.initSummaryData = function() {
 NgChm.SUM.redrawSummaryPanel = function() {
 	// Nothing to redraw if never initialized.
 	if (!NgChm.SUM.chmElement) return;
+	NgChm.SUM.initSummaryData();
 
 	//Classificaton bars get stretched on small maps, scale down the bars and padding.
 	NgChm.SUM.rowClassBarWidth = NgChm.SUM.calculateSummaryTotalClassBarHeight("row");

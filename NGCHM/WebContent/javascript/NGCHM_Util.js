@@ -1019,7 +1019,8 @@ NgChm.UTIL.isValidURL = function (str) {
  * passed in.
  **********************************************************************************/
 NgChm.UTIL.dragElement = function (elmnt) {
-	  var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+	  let deltaMouseElementX = 0;
+	  let deltaMouseElementY = 0;
 	  if (document.getElementById(elmnt.id + "Hdr")) {
 	    /* if present, the header is where you move the DIV from:*/
 	    document.getElementById(elmnt.id + "Hdr").onmousedown = dragMouseDown;
@@ -1028,9 +1029,8 @@ NgChm.UTIL.dragElement = function (elmnt) {
 	  function dragMouseDown(e) {
 	    e = e || window.event;
 	    e.preventDefault();
-	    // get the mouse cursor position at startup:
-	    pos3 = e.clientX;
-	    pos4 = e.clientY;
+	    deltaMouseElementX = e.clientX - elmnt.getBoundingClientRect().x;
+	    deltaMouseElementY = e.clientY - elmnt.getBoundingClientRect().y;
 	    document.onmouseup = closeDragElement;
 	    // call a function whenever the cursor moves:
 	    document.onmousemove = elementDrag;
@@ -1040,8 +1040,8 @@ NgChm.UTIL.dragElement = function (elmnt) {
 	    e = e || window.event;
 	    e.preventDefault();
 	    // calculate the new cursor position:
-	    elmnt.style.top = e.clientY + 'px';
-	    elmnt.style.left = e.clientX + 'px';
+	    elmnt.style.left = (e.clientX - deltaMouseElementX) + 'px';
+	    elmnt.style.top = (e.clientY - deltaMouseElementY) + 'px';
 	  }
 
 	  function closeDragElement() {

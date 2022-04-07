@@ -272,6 +272,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					}}));
 				}
 				updatePopupPositions ();
+				NgChm.UPM.keepPrefsInViewport();
 			}
 		}
 	}
@@ -988,6 +989,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 							// Change the 'container' into a pane
 							paneLoc.container.classList.replace ('ngChmContainer', 'pane');
 							paneLoc.container.id = ch.id;
+							if (ch.hasAttribute('data-plugin-name')) {
+								paneLoc.container.setAttribute('data-plugin-name', ch.getAttribute('data-plugin-name'));
+							}
 							resizePane (paneLoc.container, false);
 						} else {
 							// The old remaining child is a container.

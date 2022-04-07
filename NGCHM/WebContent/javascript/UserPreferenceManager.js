@@ -140,7 +140,7 @@ NgChm.UPM.editPreferences = function(e,errorMsg) {
 		prefspanel.appendChild(prefBtnsDiv);
 		NgChm.UPM.setMessage("");
 	}
-	NgChm.UPM.prefsResize();
+	NgChm.UPM.setSizePrefPrefs();
 
 	//If errors exist and they are NOT on the currently visible DIV (dataLayer1),
 	//hide the dataLayers DIV, set the tab to "Covariates", and open the appropriate
@@ -187,9 +187,9 @@ NgChm.UPM.locatePrefsPanel = function() {
 	if (screenNotes !== null) {
 		notesBB = screenNotes.getBoundingClientRect();
 		prefspanel.style.top = (iconBB.top - notesBB.height) + 'px';
-	}
+	} 
 	
-	prefspanel.style.height = (contBB.height + iconBB.height) + 'px';
+	prefspanel.style.height = (window.innerHeight - prefspanel.getBoundingClientRect().top) + 'px';
 	document.getElementById("prefsMove_btn").dataset.state = 'moveLeft';
 	prefspanel.style.left = (NgChm.UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
 }
@@ -205,10 +205,9 @@ NgChm.UPM.setMessage = function(errorMsgTxt) {
 }
 
 /**********************************************************************************
- * FUNCTION - prefsResize: The purpose of this function is to handle the resizing
- * of the preferences panel when the window is resized.
+ * FUNCTION - setSizePrefPrefs: Sets initial size of #prefPrefs
  **********************************************************************************/
-NgChm.UPM.prefsResize = function() {
+NgChm.UPM.setSizePrefPrefs = function() {
 	var prefprefs = document.getElementById('prefPrefs');
 	if (prefprefs !== null) {
 		if (window.innerHeight > 730) {
@@ -217,6 +216,28 @@ NgChm.UPM.prefsResize = function() {
 			prefprefs.style.height = "80%";
 		} else {
 			prefprefs.style.height = "70%";
+		}
+	}
+}
+
+
+/*
+  Keeps the #prefs panel from moving off the viewport as the user resizes the window.
+*/
+NgChm.UPM.keepPrefsInViewport= function() {
+	let prefspanel = document.getElementById('prefs');
+	if (prefspanel !== null) {
+		if (prefspanel.getBoundingClientRect().bottom > window.innerHeight) {
+			prefspanel.style.height = (window.innerHeight - prefspanel.getBoundingClientRect().top) + 'px';
+		}
+		if (prefspanel.getBoundingClientRect().right > window.innerWidth) {
+			prefspanel.style.left = (window.innerWidth - prefspanel.getBoundingClientRect().width) + 'px';
+		}
+		if (prefspanel.getBoundingClientRect().top < 0) {
+			prefspanel.style.top = '0px';
+		}
+		if (prefspanel.getBoundingClientRect().left < 0) {
+			prefspanel.style.left = '0px';
 		}
 	}
 }
@@ -433,7 +454,7 @@ NgChm.UPM.prefsSuccess = function() {
 	NgChm.UPM.bkpColorMaps = null;
 	NgChm.SUM.redrawSummaryPanel();
 	NgChm.DMM.resizeDetailMapCanvases ();
-	NgChm.SEL.updateSelections(true);
+	NgChm.SEL.updateSelections(false); // Do not skip resize: covariate bar changes may require resize
 	NgChm.UPM.applyDone = true;
 	NgChm.UPM.setMessage("");
 }
