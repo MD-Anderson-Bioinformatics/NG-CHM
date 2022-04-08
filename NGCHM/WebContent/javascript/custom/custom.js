@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion('2020-04-07');
+linkouts.setVersion('2022-04-07');
 
 // 2D Scatter Plot plugin:
 linkouts.addPanePlugin ({
@@ -199,12 +199,12 @@ function linkoutHelp () {
     function openCBIOGenes ( genes) {
 	var studyid = linkouts.getAttribute("cbioportal.study");
 	// Note: we assume case_set_id should be studyid + _all.  It works for now.
-	linkouts.openUrl("https://www.cbioportal.org/results?case_set_id=" + studyid + "_all&cancer_study_list=" + studyid + "&gene_list=" + genes.join(","), "cbio");
+	linkouts.openUrl("https://www.cbioportal.org/results?case_set_id=" + studyid + "_all&cancer_study_list=" + studyid + "&gene_list=" + genes.join(","), "cbio", { noframe: true });
     }
 
     function openCBIOSamp (ids) {
         var studyid = linkouts.getAttribute("cbioportal.study");
-        linkouts.openUrl("https://www.cbioportal.org/case.do?cancer_study_id=" + studyid + "&case_id=" + ids[0], "cbio");
+        linkouts.openUrl("https://www.cbioportal.org/case.do?cancer_study_id=" + studyid + "&case_id=" + ids[0], "cbio", { noframe: true });
     }
 
     function openCBIOSampTCGA (ids) {
