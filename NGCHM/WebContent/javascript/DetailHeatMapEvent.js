@@ -757,7 +757,7 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 			if (current < NgChm.DET.zoomBoxSizes.length - 1) {
 				NgChm.DET.setDetailDataHeight (mapItem,NgChm.DET.zoomBoxSizes[current+1]);
 			}
-			NgChm.SEL.updateSelection(mapItem, true);
+			NgChm.SEL.updateSelection(mapItem, false);
 		}
 		mapItem.modeHistory.pop();
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
@@ -775,7 +775,7 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 			if (current < NgChm.DET.zoomBoxSizes.length - 1) {
 				NgChm.DET.setDetailDataWidth(mapItem,NgChm.DET.zoomBoxSizes[current+1]);
 			}
-			NgChm.SEL.updateSelection(mapItem, true);
+			NgChm.SEL.updateSelection(mapItem, false);
 		}
 		mapItem.modeHistory.pop();
 	}
