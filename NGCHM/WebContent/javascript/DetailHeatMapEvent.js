@@ -911,8 +911,12 @@ NgChm.DEV.detailNormal = function (mapItem, restoreInfo) {
 	NgChm.DET.detInitGl(mapItem);
 	NgChm.DDR.clearDendroSelection();
 	NgChm.SEL.updateSelection(mapItem);
-	document.getElementById("viewport").setAttribute("content", "height=device-height");
-	document.getElementById("viewport").setAttribute("content", "");
+	try {
+		document.getElementById("viewport").setAttribute("content", "height=device-height");
+		document.getElementById("viewport").setAttribute("content", "");
+	} catch(err) {
+		console.error("Unable to adjust viewport content attribute");
+	}
 }
 
 /**********************************************************************************
@@ -1087,8 +1091,12 @@ NgChm.DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
 	NgChm.DET.detInitGl(mapItem);
 	NgChm.SEL.updateSelection(mapItem);
-	document.getElementById("viewport").setAttribute("content", "height=device-height");
-	document.getElementById("viewport").setAttribute("content", "");
+	try {
+		document.getElementById("viewport").setAttribute("content", "height=device-height");
+		document.getElementById("viewport").setAttribute("content", "");
+	} catch(err) {
+		console.error("Unable to adjust viewport content attribute");
+	}
 }
 
 /**********************************************************************************
