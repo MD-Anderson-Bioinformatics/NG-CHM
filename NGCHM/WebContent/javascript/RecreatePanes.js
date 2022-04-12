@@ -341,9 +341,9 @@ NgChm.createNS('NgChm.RecPanes');
 			let config = paneInfo.config;
 			let data = paneInfo.data;
 			if (config) {
-			    config.axes.forEach (ax => {
-				if (ax.axisName) {
-				    ax.selectedLabels = getSelectedLabels(ax.axisName);
+			    data.axes.forEach ((ax, idx) => {
+				if (config.axes[idx].axisName) {
+				    ax.selectedLabels = getSelectedLabels(config.axes[idx].axisName);
 				}
 			    });
 			    pluginInstance.params = config;
