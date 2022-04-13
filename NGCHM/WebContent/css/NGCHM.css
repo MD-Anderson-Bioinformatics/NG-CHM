@@ -788,11 +788,16 @@ th.breakpointContainer {
 #linkBoxTxt, #linkBoxAllTxt {
 	font-size: 12px;
 	overflow-y: auto;
+	min-height: 200px;
 }
 
 #linkBoxFoot {
 	padding: 1em 0em 1em 1em;
 	text-align: left;
+	/* top border to match bottom border of #linkTabButtons */
+	border-top-width: 2px;
+	border-top-color: #0843c1;
+	border-top-style: solid;
 }
 
 #linkBoxButton img,
