@@ -1255,6 +1255,7 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	NgChm.UHM.hideAllLinks();
 	NgChm.UHM.showMapPlugins();
 	linkBox.classList.remove ('hide');
+	linkBox.style.left = ((window.innerWidth - linkBox.offsetWidth) / 2) + 'px';
 //	NgChm.UTIL.dragElement(document.getElementById("linkBox"));
 }
 
