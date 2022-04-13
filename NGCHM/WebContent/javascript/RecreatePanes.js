@@ -7,7 +7,7 @@ NgChm.createNS('NgChm.RecPanes');
 
 (function(){
 	"use strict";
-	const debug = true;
+	const debug = false;
 
 	NgChm.RecPanes.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
 	NgChm.RecPanes.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
