@@ -1254,6 +1254,17 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 //	NgChm.UTIL.dragElement(document.getElementById("linkBox"));
 }
 
+/*
+  Returns a span with 'X' that can be used to close a dialog.
+*/
+NgChm.UHM.createCloseX = function(closeFunction) {
+	let closeX = document.createElement("span");
+	closeX.setAttribute("class", "closeX");
+	closeX.innerHTML = "&#x2715;"; // multiplication x 
+	closeX.onclick = closeFunction;
+	return closeX
+}
+
 /**********************************************************************************
  * FUNCTION - linkBoxCancel: The purpose of this function is to hide the linkout
  * help popup window.

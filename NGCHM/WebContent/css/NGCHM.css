@@ -807,6 +807,16 @@ th.breakpointContainer {
 	margin-left: 0.25em;
 }
 
+.closeX {
+	float: right;
+	padding-right: 10px;
+}
+
+.closeX:hover {
+	cursor: pointer;
+	color: black;
+}
+
 #prefPrefs {
 	position: relative;
     display: inline-block;
