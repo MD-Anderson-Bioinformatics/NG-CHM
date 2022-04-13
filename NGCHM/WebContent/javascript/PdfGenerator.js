@@ -51,6 +51,9 @@ NgChm.PDF.openPdfPrefs = function(e) {
 		NgChm.UHM.systemMessage("NG-CHM PDF", "Cannot generate PDF when the Summary or Detail heat map panels are closed.");
 		return;
 	}
+	let pdfPrefsHdr = document.getElementById("pdfPrefsHdr");
+	if (pdfPrefsHdr.querySelector(".closeX")) { pdfPrefsHdr.querySelector(".closeX").remove(); }
+	pdfPrefsHdr.appendChild(NgChm.UHM.createCloseX(NgChm.PDF.pdfCancelButton));
 	var prefspanel = document.getElementById('pdfPrefs');
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	//Add prefspanel table to the main preferences DIV and set position and display

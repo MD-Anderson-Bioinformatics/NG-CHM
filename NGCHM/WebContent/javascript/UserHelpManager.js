@@ -886,6 +886,8 @@ NgChm.UHM.initMessageBox = function() {
 NgChm.UHM.setMessageBoxHeader = function(headerText) {
 	var msgBoxHdr = document.getElementById('msgBoxHdr');
 	msgBoxHdr.innerHTML = headerText;
+	if (msgBoxHdr.querySelector(".closeX")) { msgBoxHdr.querySelector(".closeX").remove(); }
+	msgBoxHdr.appendChild(NgChm.UHM.createCloseX(NgChm.UHM.messageBoxCancel));
 }
 
 NgChm.UHM.setMessageBoxText = function(text) {
@@ -1241,6 +1243,8 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	linkBox.style.right = "5%";
 	linkBoxHdr.innerHTML = "NG-CHM Plug-in Information";
+	if (linkBoxHdr.querySelector(".closeX")) { linkBoxHdr.querySelector(".closeX").remove();}
+	linkBoxHdr.appendChild(NgChm.UHM.createCloseX(NgChm.UHM.linkBoxCancel));
 	linkBoxTxt.innerHTML = "";
 	linkBoxTxt.appendChild(mapLinksTbl);
 	mapLinksTbl.style.width = '100%';
