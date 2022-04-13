@@ -222,22 +222,22 @@ NgChm.UPM.setSizePrefPrefs = function() {
 
 
 /*
-  Keeps the #prefs panel from moving off the viewport as the user resizes the window.
+  Keeps element from moving off the viewport as the user resizes the window.
 */
-NgChm.UPM.keepPrefsInViewport= function() {
-	let prefspanel = document.getElementById('prefs');
-	if (prefspanel !== null) {
-		if (prefspanel.getBoundingClientRect().bottom > window.innerHeight) {
-			prefspanel.style.height = (window.innerHeight - prefspanel.getBoundingClientRect().top) + 'px';
+NgChm.UPM.keepElementInViewport= function(elementId) {
+	let element = document.getElementById(elementId);
+	if (element !== null) {
+		if (element.getBoundingClientRect().bottom > window.innerHeight) {
+			element.style.height = (window.innerHeight - element.getBoundingClientRect().top) + 'px';
 		}
-		if (prefspanel.getBoundingClientRect().right > window.innerWidth) {
-			prefspanel.style.left = (window.innerWidth - prefspanel.getBoundingClientRect().width) + 'px';
+		if (element.getBoundingClientRect().right > window.innerWidth) {
+			element.style.left = (window.innerWidth - element.getBoundingClientRect().width) + 'px';
 		}
-		if (prefspanel.getBoundingClientRect().top < 0) {
-			prefspanel.style.top = '0px';
+		if (element.getBoundingClientRect().top < 0) {
+			element.style.top = '0px';
 		}
-		if (prefspanel.getBoundingClientRect().left < 0) {
-			prefspanel.style.left = '0px';
+		if (element.getBoundingClientRect().left < 0) {
+			element.style.left = '0px';
 		}
 	}
 }
