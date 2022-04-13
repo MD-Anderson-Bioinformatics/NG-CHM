@@ -886,6 +886,8 @@ NgChm.UHM.initMessageBox = function() {
 NgChm.UHM.setMessageBoxHeader = function(headerText) {
 	var msgBoxHdr = document.getElementById('msgBoxHdr');
 	msgBoxHdr.innerHTML = headerText;
+	if (msgBoxHdr.querySelector(".closeX")) { msgBoxHdr.querySelector(".closeX").remove(); }
+	msgBoxHdr.appendChild(NgChm.UHM.createCloseX(NgChm.UHM.messageBoxCancel));
 }
 
 NgChm.UHM.setMessageBoxText = function(text) {
@@ -1082,7 +1084,6 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 				td.innerHTML = "Website";
 			}
 			validPluginCtr++;
-			var plugLogo;
 			//If there is no plugin logo, replace it with hyperlink using plugin name
 			var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' width='100px'>" : "<b>" + plugin.name + "</b>";
 			var hrefSite = typeof plugin.site !== 'undefined' ? "<a href='"+plugin.site+"' target='_blank'> " : "<a>";
@@ -1142,9 +1143,8 @@ NgChm.UHM.openAllLinkoutsHelp = function() {
 				td.innerHTML = "Website";
 			}
 			validPluginCtr++;
-			var plugLogo;
 			//If there is no plugin logo, replace it with hyperlink using plugin name
-			var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' width='100px'>" : "<b>" + plugin.name + "</b>";
+			var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' onerror='this.onerror=null; this.remove();' width='100px'>" : "<b>" + plugin.name + "</b>";
 			var hrefSite = typeof plugin.site !== 'undefined' ? "<a href='"+plugin.site+"' target='_blank'> " : "<a>";
 			var logo = hrefSite + logoImage + "</a>";
 			var tr = pluginTbl.insertRow();
@@ -1243,6 +1243,8 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	linkBox.style.right = "5%";
 	linkBoxHdr.innerHTML = "NG-CHM Plug-in Information";
+	if (linkBoxHdr.querySelector(".closeX")) { linkBoxHdr.querySelector(".closeX").remove();}
+	linkBoxHdr.appendChild(NgChm.UHM.createCloseX(NgChm.UHM.linkBoxCancel));
 	linkBoxTxt.innerHTML = "";
 	linkBoxTxt.appendChild(mapLinksTbl);
 	mapLinksTbl.style.width = '100%';
@@ -1253,7 +1255,19 @@ NgChm.UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	NgChm.UHM.hideAllLinks();
 	NgChm.UHM.showMapPlugins();
 	linkBox.classList.remove ('hide');
+	linkBox.style.left = ((window.innerWidth - linkBox.offsetWidth) / 2) + 'px';
 //	NgChm.UTIL.dragElement(document.getElementById("linkBox"));
+}
+
+/*
+  Returns a span with 'X' that can be used to close a dialog.
+*/
+NgChm.UHM.createCloseX = function(closeFunction) {
+	let closeX = document.createElement("span");
+	closeX.setAttribute("class", "closeX");
+	closeX.innerHTML = "&#x2715;"; // multiplication x 
+	closeX.onclick = closeFunction;
+	return closeX
 }
 
 /**********************************************************************************

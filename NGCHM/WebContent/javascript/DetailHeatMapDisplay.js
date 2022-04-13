@@ -2385,7 +2385,6 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 			// First time detail NGCHM created.
 			constructDetailMapDOMTemplate()
 			initialSwitchPaneToDetail = false;
-			NgChm.SRCH.clearAllSearchResults();
 		}
 
 		if (loc.pane.querySelector('.detail_chm') !== null) {

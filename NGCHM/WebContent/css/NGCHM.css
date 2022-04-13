@@ -788,11 +788,25 @@ th.breakpointContainer {
 #linkBoxTxt, #linkBoxAllTxt {
 	font-size: 12px;
 	overflow-y: auto;
+	min-height: 100px;
+	max-height: calc(100vh - 16px);
+	margin-bottom: 50px; /* to account for linkBoxFoot */
 }
 
 #linkBoxFoot {
 	padding: 1em 0em 1em 1em;
 	text-align: left;
+	/* top border to match bottom border of #linkTabButtons */
+	border-top-width: 2px;
+	border-top-color: #0843c1;
+	border-top-style: solid;
+	position: absolute; /* pin to bottom of #linkBox */
+	bottom: 0; /* pin to bottom of #linkBox */
+	width: 100%; /* so that top border goes all the way accross #linkBox */
+}
+
+#linkBoxHdr {
+	position: absolute; /* keep fixed to top of parent */
 }
 
 #linkBoxButton img,
@@ -800,6 +814,16 @@ th.breakpointContainer {
 #prefTabButtons img {
 	vertical-align: top;
 	margin-left: 0.25em;
+}
+
+.closeX {
+	float: right;
+	padding-right: 10px;
+}
+
+.closeX:hover {
+	cursor: pointer;
+	color: black;
 }
 
 #prefPrefs {
@@ -855,7 +879,11 @@ th.breakpointContainer {
 	display: flex;
 	flex-direction: column;
 	width: 800px !important;
-	max-height: calc(100vh - 16px);
+	max-height: calc(100vh - 32px);
+	min-height: 300px;
+	resize: vertical;
+	overflow-y: auto; 
+	overflow-x: hidden; /* prevent horizontal scroll bar */
 }
 
 #msgBox p {
@@ -1071,7 +1099,7 @@ table.onlineHelp th {
 p.boxCaption {
 	font-weight: bold;
 	padding: 0.5em;
-	margin: 0em;
+	margin: 30px 0em 0em 0em; /* 30px to account for #linkBoxHdr height */
 	color: #0843c1;
 	width: calc(100% - 1em);
 	white-space: normal;

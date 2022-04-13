@@ -272,7 +272,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					}}));
 				}
 				updatePopupPositions ();
-				NgChm.UPM.keepPrefsInViewport();
+				NgChm.UPM.keepElementInViewport("prefs");
+				NgChm.UPM.keepElementInViewport("pdfPrefs");
+				NgChm.UPM.keepElementInViewport("msgBox");
+				NgChm.UPM.keepElementInViewport("linkBox");
 			}
 		}
 	}
