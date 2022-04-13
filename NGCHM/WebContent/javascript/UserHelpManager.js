@@ -1082,7 +1082,6 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 				td.innerHTML = "Website";
 			}
 			validPluginCtr++;
-			var plugLogo;
 			//If there is no plugin logo, replace it with hyperlink using plugin name
 			var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' width='100px'>" : "<b>" + plugin.name + "</b>";
 			var hrefSite = typeof plugin.site !== 'undefined' ? "<a href='"+plugin.site+"' target='_blank'> " : "<a>";
@@ -1142,9 +1141,8 @@ NgChm.UHM.openAllLinkoutsHelp = function() {
 				td.innerHTML = "Website";
 			}
 			validPluginCtr++;
-			var plugLogo;
 			//If there is no plugin logo, replace it with hyperlink using plugin name
-			var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' width='100px'>" : "<b>" + plugin.name + "</b>";
+			var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' onerror='this.onerror=null; this.remove();' width='100px'>" : "<b>" + plugin.name + "</b>";
 			var hrefSite = typeof plugin.site !== 'undefined' ? "<a href='"+plugin.site+"' target='_blank'> " : "<a>";
 			var logo = hrefSite + logoImage + "</a>";
 			var tr = pluginTbl.insertRow();
