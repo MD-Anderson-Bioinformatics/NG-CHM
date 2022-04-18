@@ -15,7 +15,7 @@ NgChm.CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\
 // CURRENT VERSION NUMBER
 NgChm.CM.version = "2.21.3";
 NgChm.CM.versionCheckUrl = "https://bioinformatics.mdanderson.org/versioncheck/NGCHM/";
-NgChm.CM.viewerAppUrl = "https://www.ngchm.net/Downloads/ngChmApp.html";
+NgChm.CM.viewerAppUrl = "https://bioinformatics.mdanderson.org/ngchm/ZipAppDownload";
 NgChm.CM.classOrderStr = ".classifications_order";
 
 /**********************************************************************************

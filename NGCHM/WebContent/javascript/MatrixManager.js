@@ -1244,12 +1244,13 @@ NgChm.MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 	function zipAppFileMode() {
 		var name = "";
-		if (fileSrc === NgChm.MMGR.FILE_SOURCE){
-			name += NgChm.CM.viewerAppUrl;
+		if (fileSrc === NgChm.MMGR.FILE_SOURCE){	// data is a disk file, not from server
+			// (This does not mean the viewer is not from a server, so this could be
+			// refined further for that case i.e. the "api" condition might be more appropriate)
+			name += NgChm.CM.viewerAppUrl;		// use full URL, which must be complete!
 		} else {
-			name = NgChm.CFG.api;
-		}		
-		name += "ZipAppDownload"; 
+			name = NgChm.CFG.api + "ZipAppDownload"; // use server "api" + special endpoint name
+		}
 		callServlet("POST", name, false);
 		return true;
 	}
