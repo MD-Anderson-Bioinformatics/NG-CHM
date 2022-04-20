@@ -56,7 +56,7 @@ NgChm.UHM.myNonce = 'N';			// Shared secret for vetting message sender
 	NgChm.UHM.showAllPlugins();
     };
 
-    uiElement = document.getElementById('linkBoxFoot');
+    uiElement = document.getElementById('linkBoxFootCloseButton');
     uiElement.onclick = () => {
 	NgChm.UHM.linkBoxCancel();
     };
@@ -1074,14 +1074,12 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 			if (validPluginCtr === 0) {
 				tr.className = "chmHdrRow";
 				let td = tr.insertCell(0);
-				td.innerHTML = "<b>Plugin Axes</b>";
+				td.innerHTML = "<b>Plug-in Axes</b>";
 				td = tr.insertCell(0);
 				td.innerHTML = "<b>Description</b>";
 				td = tr.insertCell(0);
-				td.innerHTML = "<b>Name</b>";
-				td = tr.insertCell(0);
-				td.className = "chmHdrRow";
-				td.innerHTML = "Website";
+				td.innerHTML = "<b>Plug-in Name and Website</b>";
+				td.setAttribute("colspan", 2);
 			}
 			validPluginCtr++;
 			//If there is no plugin logo, replace it with hyperlink using plugin name
@@ -1096,7 +1094,7 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 			var tdName = tr.insertCell(1);
 			tdName.className = "chmTblCell";
 			tdName.style.fontWeight="bold";
-			tdName.innerHTML = plugin.name;
+			tdName.innerHTML = typeof plugin.site !== 'undefined' ? "<a href='" + plugin.site + "' target='_blank'>" + plugin.name + "</a>" : plugin.name;
 			var tdDesc = tr.insertCell(2);
 			tdDesc.className = "chmTblCell";
 			tdDesc.innerHTML = plugin.description;
@@ -1137,10 +1135,8 @@ NgChm.UHM.openAllLinkoutsHelp = function() {
 				let td = tr.insertCell(0);
 				td.innerHTML = "<b>Description</b>";
 				td = tr.insertCell(0);
-				td.innerHTML = "<b>Name</b>";
-				td = tr.insertCell(0);
-				td.className = "chmHdrRow";
-				td.innerHTML = "Website";
+				td.innerHTML = "<b>Plug-in Name and Website</b>";
+				td.setAttribute('colspan', 2);
 			}
 			validPluginCtr++;
 			//If there is no plugin logo, replace it with hyperlink using plugin name
@@ -1155,7 +1151,7 @@ NgChm.UHM.openAllLinkoutsHelp = function() {
 			var tdName = tr.insertCell(1);
 			tdName.className = "chmTblCell";
 			tdName.style.fontWeight="bold";
-			tdName.innerHTML = plugin.name;
+			tdName.innerHTML = typeof plugin.site !== 'undefined' ? "<a href='" + plugin.site + "' target='_blank'>" + plugin.name + "</a>" : plugin.name;
 			var tdDesc = tr.insertCell(2);
 			tdDesc.className = "chmTblCell";
 			tdDesc.innerHTML = plugin.description;

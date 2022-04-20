@@ -571,6 +571,16 @@ span.button.negative {
     text-align: left;
 }
 
+/* Style plugin help table links same color/font as table text.
+   Links will still be underlined.
+*/
+.chmTblCell>a {
+	color: #0843c1; /* blue */
+}
+.chmTblCell>a:visited {
+	color: #7525c1; /* purple */
+}
+
 .chmHdrRow tr {
 	display: none;
     height: 0px;
@@ -803,6 +813,10 @@ th.breakpointContainer {
 	position: absolute; /* pin to bottom of #linkBox */
 	bottom: 0; /* pin to bottom of #linkBox */
 	width: 100%; /* so that top border goes all the way accross #linkBox */
+}
+
+.clickableItem:hover {
+	cursor: pointer;
 }
 
 #linkBoxHdr {
