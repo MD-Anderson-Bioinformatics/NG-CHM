@@ -56,7 +56,7 @@ NgChm.UHM.myNonce = 'N';			// Shared secret for vetting message sender
 	NgChm.UHM.showAllPlugins();
     };
 
-    uiElement = document.getElementById('linkBoxFoot');
+    uiElement = document.getElementById('linkBoxFootCloseButton');
     uiElement.onclick = () => {
 	NgChm.UHM.linkBoxCancel();
     };
