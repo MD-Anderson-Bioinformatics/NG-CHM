@@ -239,8 +239,8 @@ function linkoutHelp () {
         name: "CIViC",
         description: "Adds linkouts to the CIViC Mutation Database",
         version: "0.1.0",
-        site: "https://civic.genome.wustl.edu/home",
-        logo: "https://civic.genome.wustl.edu/assets/images/CIViC_logo.png",
+        site: "https://civic.genome.wustl.edu/welcome",
+        logo: "https://civicdb.org/assets/images/civic-logo_sidebar-expanded.png",
         linkouts: [
             { menuEntry: "View CIViC", typeName: "bio.gene.entrezid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openCivicDB }
 	]
