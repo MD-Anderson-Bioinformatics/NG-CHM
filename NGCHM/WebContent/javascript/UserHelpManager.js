@@ -1096,7 +1096,7 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 			var tdName = tr.insertCell(1);
 			tdName.className = "chmTblCell";
 			tdName.style.fontWeight="bold";
-			tdName.innerHTML = plugin.name;
+			tdName.innerHTML = typeof plugin.site !== 'undefined' ? "<a href='" + plugin.site + "' target='_blank'>" + plugin.name + "</a>" : plugin.name;
 			var tdDesc = tr.insertCell(2);
 			tdDesc.className = "chmTblCell";
 			tdDesc.innerHTML = plugin.description;
@@ -1155,7 +1155,7 @@ NgChm.UHM.openAllLinkoutsHelp = function() {
 			var tdName = tr.insertCell(1);
 			tdName.className = "chmTblCell";
 			tdName.style.fontWeight="bold";
-			tdName.innerHTML = plugin.name;
+			tdName.innerHTML = typeof plugin.site !== 'undefined' ? "<a href='" + plugin.site + "' target='_blank'>" + plugin.name + "</a>" : plugin.name;
 			var tdDesc = tr.insertCell(2);
 			tdDesc.className = "chmTblCell";
 			tdDesc.innerHTML = plugin.description;

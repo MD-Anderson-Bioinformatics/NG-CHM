@@ -571,6 +571,16 @@ span.button.negative {
     text-align: left;
 }
 
+/* Style plugin help table links same color/font as table text.
+   Links will still be underlined.
+*/
+.chmTblCell>a {
+	color: #0843c1; /* blue */
+}
+.chmTblCell>a:visited {
+	color: #7525c1; /* purple */
+}
+
 .chmHdrRow tr {
 	display: none;
     height: 0px;
