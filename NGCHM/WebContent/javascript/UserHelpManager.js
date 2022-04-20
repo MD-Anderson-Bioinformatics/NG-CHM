@@ -1078,10 +1078,8 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 				td = tr.insertCell(0);
 				td.innerHTML = "<b>Description</b>";
 				td = tr.insertCell(0);
-				td.innerHTML = "<b>Name</b>";
-				td = tr.insertCell(0);
-				td.className = "chmHdrRow";
-				td.innerHTML = "Website";
+				td.innerHTML = "<b>Plug-in Name and Website</b>";
+				td.setAttribute("colspan", 2);
 			}
 			validPluginCtr++;
 			//If there is no plugin logo, replace it with hyperlink using plugin name
@@ -1137,10 +1135,8 @@ NgChm.UHM.openAllLinkoutsHelp = function() {
 				let td = tr.insertCell(0);
 				td.innerHTML = "<b>Description</b>";
 				td = tr.insertCell(0);
-				td.innerHTML = "<b>Name</b>";
-				td = tr.insertCell(0);
-				td.className = "chmHdrRow";
-				td.innerHTML = "Website";
+				td.innerHTML = "<b>Plug-in Name and Website</b>";
+				td.setAttribute('colspan', 2);
 			}
 			validPluginCtr++;
 			//If there is no plugin logo, replace it with hyperlink using plugin name
