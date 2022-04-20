@@ -815,6 +815,10 @@ th.breakpointContainer {
 	width: 100%; /* so that top border goes all the way accross #linkBox */
 }
 
+.clickableItem:hover {
+	cursor: pointer;
+}
+
 #linkBoxHdr {
 	position: absolute; /* keep fixed to top of parent */
 }
