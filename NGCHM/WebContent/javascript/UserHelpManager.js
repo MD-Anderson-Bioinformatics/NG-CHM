@@ -1074,7 +1074,7 @@ NgChm.UHM.openMapLinkoutsHelp = function() {
 			if (validPluginCtr === 0) {
 				tr.className = "chmHdrRow";
 				let td = tr.insertCell(0);
-				td.innerHTML = "<b>Plugin Axes</b>";
+				td.innerHTML = "<b>Plug-in Axes</b>";
 				td = tr.insertCell(0);
 				td.innerHTML = "<b>Description</b>";
 				td = tr.insertCell(0);
