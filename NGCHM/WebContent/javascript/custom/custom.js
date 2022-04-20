@@ -558,42 +558,6 @@ linkouts.addPlugin({
 }) (linkouts);
 
 //==============================================//
-// MD Anderson Pathway Database plugin          //
-//==============================================//
-(function(linkouts) {
-
-    linkouts.describeTypes([
-        { typeName: "bio.mdacc.pathwayid",
-          displayName: "PathwaysWeb pathway identifier",
-          description: "A Pathway Id as defined by the MD Anderson PathwaysWeb System"
-        }
-    ]);
-
-    function openMDACCPathwayID (names) {
-	var gname = names[0];
-	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/pathway/latest/mdaPathwayId/" + gname, "Pathways");
-    };
-
-    function openPathwaysBrowserGO (names) {
-	var goid = names[0];
-	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/goTerm/latest/goId/" + goid, "Geneontology");
-    };
-
-    linkouts.addPlugin({
-        name: "Pathways Browser",
-	description: "Adds linkouts to the MD Anderson Pathways Browser.",
-	version: "0.1.0",
-	site: "https://bioinformatics.mdanderson.org/PathwaysBrowser/",
-	logo: "https://bioinformatics.mdanderson.org//PathwaysBrowser/mda_logo.png",
-	linkouts: [
-	    { menuEntry: "View PathwaysBrowser", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPathwaysBrowserGO },
-	    // linkouts for pathways
-	    { menuEntry: "View Pathway", typeName: "bio.mdacc.pathwayid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMDACCPathwayID }
-	]
-    });
-}) (linkouts);
-
-//==============================================//
 // miRBase plugin                               //
 //==============================================//
 (function(linkouts) {
@@ -662,6 +626,141 @@ linkouts.addPlugin({
 }) (linkouts);
 
 //==============================================//
+// Metabolomic plugins                          //
+//==============================================//
+(function() {
+
+    linkouts.describeTypes([{
+            typeName: "bio.metabolite.MW.name",
+            displayName: "Metabolomics Workbench Metabolite name",
+            description: "Latin letters and Arabic numerals"
+        },
+        {
+            typeName: "bio.metabolite.MW.regno",
+            displayName: "Metabolomics Workbench Regno id",
+            description: "Numeric Id"
+
+        },
+        {
+            typeName: "bio.metabolite.refmet",
+            displayName: "refmet name",
+            description: "Latin letters and Arabic numerals"
+
+        },
+        {
+            typeName: "bio.metabolite.hmdb",
+            displayName: "HMDB Metabolite Id",
+            description: "An ID starting with HMDB"
+
+        },
+        {
+            typeName: "bio.compound.pubchem",
+            displayName: "Pubchem id",
+            description: "Numeric Id"
+
+        },
+        {
+            typeName: "bio.compound.kegg",
+            displayName: "KEGG Compound Id",
+            description: "An ID"
+
+        },
+        {
+            typeName: "bio.compound.chebi",
+            displayName: "ChEBI Compound Id",
+            description: "Numeric ID"
+
+        },
+        {
+            typeName: "bio.compound.metacyc",
+            displayName: "MetaCyc Compound Id",
+            description: "Latin letters, Arabic numerals, hyphens (e.g. CPD-6989)"
+
+        },
+    ]);
+
+    function openMW(names) {
+        var mname = names[0];
+        linkouts.openUrl("https://www.metabolomicsworkbench.org/search/sitesearch.php?Name=" + mname, "Metabolomics Workbench");
+    }
+
+    function openRegno(names) {
+        var regno = names[0];
+        if (regno == '') {
+             alert('No RegNo available for this metabolite')
+        } else {
+             linkouts.openUrl("https://www.metabolomicsworkbench.org/data/StructureData.php?RegNo=" + regno, "Regno");
+        }
+    }
+
+    function openPubchem(names) {
+        var pubchemid = names[0];
+        if (pubchemid == '') {
+            alert("No pubchemID available for this metabolite.")
+        } else {
+            linkouts.openUrl("https://pubchem.ncbi.nlm.nih.gov/compound/" + pubchemid, "PubChem");
+        }
+    }
+
+    function openRefmet(names) {
+        var refmetname = names[0];
+        linkouts.openUrl("https://www.metabolomicsworkbench.org/search/sitesearch.php?Name=" + refmetname, "Refmet");
+    }
+
+    function openHMDB(names) {
+        var hmdbName = names[0];
+        if (hmdbName == '') {
+            alert('No HMDB ID available for this metabolite')
+        } else {
+            linkouts.openUrl("https://hmdb.ca/metabolites/" + hmdbName, "HMDB");
+        }
+    }
+
+    function openKEGG(names) {
+        var keggName = names[0];
+        if (keggName == '') {
+            alert("No KEGG ID available for this metabolite.")
+        } else {
+            linkouts.openUrl("https://www.genome.jp/dbget-bin/www_bget?compound+" + keggName, "KEGG");
+        }
+    }
+
+    function openChebi(names) {
+        var chebiName = names[0];
+        if (chebiName == '') {
+            alert("No ChEBI name available for this metabolite.")
+        } else {
+            linkouts.openUrl("https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:" + chebiName, "CheBI");
+        }
+    }
+
+    function openMetacyc(names) {
+        var metaCycName = names[0];
+        if (metaCycName == '') {
+            alert("No MetaCyc name available for this metabolite.")
+        } else {
+            linkouts.openUrl("https://metacyc.org/compound?orgid=META&id=" + metaCycName, "Metacyc");
+        }
+    }
+
+    linkouts.addPlugin({
+        name: "MWannotation",
+        description: "Adds linkouts to Metabolomics name",
+        version: "0.1.0",
+        logo: null, /* set to null so that name doesn't show up in logo column on table */
+        linkouts: [{ menuEntry: "View Metabolomics workbench", typeName: "bio.metabolite.MW.name", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMW },
+            { menuEntry: "View PubChem", typeName: "bio.compound.pubchem", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPubchem },
+            { menuEntry: "View RefMet", typeName: "bio.metabolite.refmet", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openRefmet },
+            { menuEntry: "View Regno", typeName: "bio.metabolite.MW.regno", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openRegno },
+            { menuEntry: "View HMDB", typeName: "bio.metabolite.hmdb", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openHMDB },
+            { menuEntry: "View KEGG", typeName: "bio.compound.kegg", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openKEGG },
+            { menuEntry: "View ChEBI", typeName: "bio.compound.chebi", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openChebi },
+            { menuEntry: "View MetaCyc", typeName: "bio.compound.metacyc", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMetacyc }
+        ]
+    });
+})(linkouts);
+
+//==============================================//
 // NCBI plugin                                  //
 //==============================================//
 (function(linkouts) {
@@ -715,6 +814,39 @@ linkouts.addPlugin({
 }) (linkouts);
 
 //==============================================//
+// NDEx IQuery plugin                                //
+//==============================================//
+(function(linkouts) {
+
+    const iQueryBaseURL = "https://iquery.ndexbio.org?genes=";
+
+    function iQuery (names) {
+        linkouts.openUrl(iQueryBaseURL + names.join(','), "NDEx IQuery");
+    }
+
+    function iQuery2 (labels){
+	// Concatenate rows and column labels and uniqueify.
+        iQuery (labels.Row.concat(labels.Column).filter((v,i,a) => a.indexOf(v) === i));
+    }
+
+    linkouts.addPlugin({
+        name: "NDEx IQuery",
+        description: "Adds linkouts to NDEx IQuery.",
+        version: "0.1.1",
+        site: "https://iquery.ndexbio.org/",
+        logo: "https://iquery.ndexbio.org/static/media/ndex-logo.04d7bf44.svg",
+        linkouts: [
+            { menuEntry: "NDEx IQuery Single", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: iQuery },
+            { menuEntry: "NDEx IQuery", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: iQuery }
+        ],
+        matrixLinkouts: [
+            { menuEntry: "NDEx IQuery", typeName1: ["bio.gene.hugo"], typeName2: ["bio.gene.hugo"], selectMode: linkouts.MULTI_SELECT, linkoutFn: iQuery2 },
+        ]
+    });
+}) (linkouts);
+
+
+//==============================================//
 // OLSVis plugin                                //
 //==============================================//
 (function(linkouts) {
@@ -732,6 +864,42 @@ linkouts.addPlugin({
 	logo: "http://ols.wordvis.com/images/olsvis_logo.png",
 	linkouts: [
 	    { menuEntry: "View OLSVis", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openOLSVis }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// MD Anderson Pathway Database plugin          //
+//==============================================//
+(function(linkouts) {
+
+    linkouts.describeTypes([
+        { typeName: "bio.mdacc.pathwayid",
+          displayName: "PathwaysWeb pathway identifier",
+          description: "A Pathway Id as defined by the MD Anderson PathwaysWeb System"
+        }
+    ]);
+
+    function openMDACCPathwayID (names) {
+	var gname = names[0];
+	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/pathway/latest/mdaPathwayId/" + gname, "Pathways");
+    };
+
+    function openPathwaysBrowserGO (names) {
+	var goid = names[0];
+	linkouts.openUrl("https://bioinformatics.mdanderson.org/PathwaysBrowser/goTerm/latest/goId/" + goid, "Geneontology");
+    };
+
+    linkouts.addPlugin({
+        name: "Pathways Browser",
+	description: "Adds linkouts to the MD Anderson Pathways Browser.",
+	version: "0.1.0",
+	site: "https://bioinformatics.mdanderson.org/PathwaysBrowser/",
+	logo: "https://bioinformatics.mdanderson.org//PathwaysBrowser/mda_logo.png",
+	linkouts: [
+	    { menuEntry: "View PathwaysBrowser", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPathwaysBrowserGO },
+	    // linkouts for pathways
+	    { menuEntry: "View Pathway", typeName: "bio.mdacc.pathwayid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMDACCPathwayID }
 	]
     });
 }) (linkouts);
@@ -956,37 +1124,6 @@ linkouts.addPlugin({
 }) (linkouts);
 
 
-//==============================================//
-// NDEx IQuery plugin                                //
-//==============================================//
-(function(linkouts) {
-
-    const iQueryBaseURL = "https://iquery.ndexbio.org?genes=";
-
-    function iQuery (names) {
-        linkouts.openUrl(iQueryBaseURL + names.join(','), "NDEx IQuery");
-    }
-
-    function iQuery2 (labels){
-	// Concatenate rows and column labels and uniqueify.
-        iQuery (labels.Row.concat(labels.Column).filter((v,i,a) => a.indexOf(v) === i));
-    }
-
-    linkouts.addPlugin({
-        name: "NDEx IQuery",
-        description: "Adds linkouts to NDEx IQuery.",
-        version: "0.1.1",
-        site: "https://iquery.ndexbio.org/",
-        logo: "https://iquery.ndexbio.org/static/media/ndex-logo.04d7bf44.svg",
-        linkouts: [
-            { menuEntry: "NDEx IQuery Single", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: iQuery },
-            { menuEntry: "NDEx IQuery", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: iQuery }
-        ],
-        matrixLinkouts: [
-            { menuEntry: "NDEx IQuery", typeName1: ["bio.gene.hugo"], typeName2: ["bio.gene.hugo"], selectMode: linkouts.MULTI_SELECT, linkoutFn: iQuery2 },
-        ]
-    });
-}) (linkouts);
 
 //==============================================//
 // Zodiac plugin                                //
@@ -1013,138 +1150,4 @@ linkouts.addPlugin({
 
     });
 }) (linkouts);
-
-//==============================================//
-// Metabolomic plugins                          //
-//==============================================//
-(function() {
-
-    linkouts.describeTypes([{
-            typeName: "bio.metabolite.MW.name",
-            displayName: "Metabolomics Workbench Metabolite name",
-            description: "Latin letters and Arabic numerals"
-        },
-        {
-            typeName: "bio.metabolite.MW.regno",
-            displayName: "Metabolomics Workbench Regno id",
-            description: "Numeric Id"
-
-        },
-        {
-            typeName: "bio.metabolite.refmet",
-            displayName: "refmet name",
-            description: "Latin letters and Arabic numerals"
-
-        },
-        {
-            typeName: "bio.metabolite.hmdb",
-            displayName: "HMDB Metabolite Id",
-            description: "An ID starting with HMDB"
-
-        },
-        {
-            typeName: "bio.compound.pubchem",
-            displayName: "Pubchem id",
-            description: "Numeric Id"
-
-        },
-        {
-            typeName: "bio.compound.kegg",
-            displayName: "KEGG Compound Id",
-            description: "An ID"
-
-        },
-        {
-            typeName: "bio.compound.chebi",
-            displayName: "ChEBI Compound Id",
-            description: "Numeric ID"
-
-        },
-        {
-            typeName: "bio.compound.metacyc",
-            displayName: "MetaCyc Compound Id",
-            description: "Latin letters, Arabic numerals, hyphens (e.g. CPD-6989)"
-
-        },
-    ]);
-
-    function openMW(names) {
-        var mname = names[0];
-        linkouts.openUrl("https://www.metabolomicsworkbench.org/search/sitesearch.php?Name=" + mname, "Metabolomics Workbench");
-    }
-
-    function openRegno(names) {
-        var regno = names[0];
-        if (regno == '') {
-             alert('No RegNo available for this metabolite')
-        } else {
-             linkouts.openUrl("https://www.metabolomicsworkbench.org/data/StructureData.php?RegNo=" + regno, "Regno");
-        }
-    }
-
-    function openPubchem(names) {
-        var pubchemid = names[0];
-        if (pubchemid == '') {
-            alert("No pubchemID available for this metabolite.")
-        } else {
-            linkouts.openUrl("https://pubchem.ncbi.nlm.nih.gov/compound/" + pubchemid, "PubChem");
-        }
-    }
-
-    function openRefmet(names) {
-        var refmetname = names[0];
-        linkouts.openUrl("https://www.metabolomicsworkbench.org/search/sitesearch.php?Name=" + refmetname, "Refmet");
-    }
-
-    function openHMDB(names) {
-        var hmdbName = names[0];
-        if (hmdbName == '') {
-            alert('No HMDB ID available for this metabolite')
-        } else {
-            linkouts.openUrl("https://hmdb.ca/metabolites/" + hmdbName, "HMDB");
-        }
-    }
-
-    function openKEGG(names) {
-        var keggName = names[0];
-        if (keggName == '') {
-            alert("No KEGG ID available for this metabolite.")
-        } else {
-            linkouts.openUrl("https://www.genome.jp/dbget-bin/www_bget?compound+" + keggName, "KEGG");
-        }
-    }
-
-    function openChebi(names) {
-        var chebiName = names[0];
-        if (chebiName == '') {
-            alert("No ChEBI name available for this metabolite.")
-        } else {
-            linkouts.openUrl("https://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:" + chebiName, "CheBI");
-        }
-    }
-
-    function openMetacyc(names) {
-        var metaCycName = names[0];
-        if (metaCycName == '') {
-            alert("No MetaCyc name available for this metabolite.")
-        } else {
-            linkouts.openUrl("https://metacyc.org/compound?orgid=META&id=" + metaCycName, "Metacyc");
-        }
-    }
-
-    linkouts.addPlugin({
-        name: "MWannotation",
-        description: "Adds linkouts to Metabolomics name",
-        version: "0.1.0",
-        linkouts: [{ menuEntry: "View Metabolomics workbench", typeName: "bio.metabolite.MW.name", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMW },
-            { menuEntry: "View PubChem", typeName: "bio.compound.pubchem", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPubchem },
-            { menuEntry: "View RefMet", typeName: "bio.metabolite.refmet", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openRefmet },
-            { menuEntry: "View Regno", typeName: "bio.metabolite.MW.regno", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openRegno },
-            { menuEntry: "View HMDB", typeName: "bio.metabolite.hmdb", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openHMDB },
-            { menuEntry: "View KEGG", typeName: "bio.compound.kegg", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openKEGG },
-            { menuEntry: "View ChEBI", typeName: "bio.compound.chebi", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openChebi },
-            { menuEntry: "View MetaCyc", typeName: "bio.compound.metacyc", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMetacyc }
-        ]
-    });
-})(linkouts);
 
