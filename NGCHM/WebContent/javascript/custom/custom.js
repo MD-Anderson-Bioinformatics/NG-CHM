@@ -747,7 +747,8 @@ linkouts.addPlugin({
         name: "MWannotation",
         description: "Adds linkouts to Metabolomics name",
         version: "0.1.0",
-        logo: null, /* set to null so that name doesn't show up in logo column on table */
+        site: "https://www.metabolomicsworkbench.org/",
+        logo: null, /* set to null to prevent name from appearing in logo column */
         linkouts: [{ menuEntry: "View Metabolomics workbench", typeName: "bio.metabolite.MW.name", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMW },
             { menuEntry: "View PubChem", typeName: "bio.compound.pubchem", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPubchem },
             { menuEntry: "View RefMet", typeName: "bio.metabolite.refmet", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openRefmet },
