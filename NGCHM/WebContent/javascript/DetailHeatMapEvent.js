@@ -1,47 +1,61 @@
-//"use strict";
+(function() {
+    "use strict";
+    NgChm.markFile();
 
-//Define Namespace for NgChm Events
-NgChm.createNS('NgChm.DEV');
+    //Define Namespace for NgChm Events
+    const DEV = NgChm.createNS('NgChm.DEV');
 
-NgChm.DEV.targetCanvas = null;
+    const DMM = NgChm.importNS('NgChm.DMM');
+    const DET = NgChm.importNS('NgChm.DET');
+    const UTIL = NgChm.importNS('NgChm.UTIL');
+    const UHM = NgChm.importNS('NgChm.UHM');
+    const SEL = NgChm.importNS('NgChm.SEL');
+    const DDR = NgChm.importNS('NgChm.DDR');
+    const SRCH = NgChm.importNS('NgChm.SRCH');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const LNK = NgChm.importNS('NgChm.LNK');
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const DRAW = NgChm.importNS('NgChm.DRAW');
+
+    DEV.targetCanvas = null;
 
 /**********************************************************************************
  * FUNCTION - addEvents: These function adds event listeners to canvases on a
  * given heat map panel.  
  **********************************************************************************/
-NgChm.DEV.addEvents = function (paneId) {
-	const mapItem = NgChm.DMM.getMapItemFromPane(paneId);
-	mapItem.canvas.oncontextmenu = NgChm.DEV.matrixRightClick;
-	mapItem.canvas.onmouseup = NgChm.DEV.clickEnd;
-	mapItem.canvas.onmousemove = NgChm.DEV.handleMouseMove;
-	mapItem.canvas.onmouseout = NgChm.DEV.handleMouseOut;
+DEV.addEvents = function (paneId) {
+	const mapItem = DMM.getMapItemFromPane(paneId);
+	mapItem.canvas.oncontextmenu = DEV.matrixRightClick;
+	mapItem.canvas.onmouseup = DEV.clickEnd;
+	mapItem.canvas.onmousemove = DEV.handleMouseMove;
+	mapItem.canvas.onmouseout = DEV.handleMouseOut;
 	
-	mapItem.canvas.onmousedown = NgChm.DEV.clickStart;
-	mapItem.canvas.ondblclick = NgChm.DEV.dblClick;
+	mapItem.canvas.onmousedown = DEV.clickStart;
+	mapItem.canvas.ondblclick = DEV.dblClick;
 	
-	mapItem.canvas.addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
+	mapItem.canvas.addEventListener('wheel', DEV.handleScroll, UTIL.passiveCompat({capture: false, passive: false}));
 
 	
 	mapItem.canvas.addEventListener("touchstart", function(e){
-		NgChm.UHM.hlpC();
+		UHM.hlpC();
 		const now = new Date().getTime();
 		const timesince = now - mapItem.latestTap;
 		if((timesince < 600) && (timesince > 0) && e.touches.length == 1){ // double tap
 		}else if (e.touches.length == 2){ // two finger tap
 		} else if (e.touches.length == 1) { // single finger tap
-			mapItem.latestTapLocation = NgChm.UTIL.getCursorPosition(e);
-			NgChm.DET.clickStart(e);
+			mapItem.latestTapLocation = UTIL.getCursorPosition(e);
+			DET.clickStart(e);
 		}
 		mapItem.latestTap = now;
-	}, NgChm.UTIL.passiveCompat({ passive: false }));
+	}, UTIL.passiveCompat({ passive: false }));
 	
 	mapItem.canvas.addEventListener("touchmove", function(e){
 		if (e.touches){
 	    	if (e.touches.length > 2){
-	    		clearTimeout(NgChm.DET.eventTimer);
+			clearTimeout(DET.eventTimer);
 	    		return false;
 	    	} else if (e.touches.length == 2){
-	    		clearTimeout(NgChm.DET.eventTimer);
+			clearTimeout(DET.eventTimer);
 	    		e.preventDefault();
 	    		mapItem.latestTap = null;
 	    		const distance = Math.hypot(
@@ -52,76 +66,76 @@ NgChm.DEV.addEvents = function (paneId) {
 	    		if (!mapItem.latestPinchDistance){
 	    			mapItem.latestPinchDistance = distance;
 	    		} else if (distance > mapItem.latestPinchDistance){ // pinch inward
-	    			NgChm.DEV.detailDataZoomIn(mapItem);
+				DEV.detailDataZoomIn(mapItem);
 	    		} else if (mapItem.latestPinchDistance > distance){ // pinch outward
-	    			NgChm.DEV.detailDataZoomOut(e);
+				DEV.detailDataZoomOut(e);
 	    		}
 	    		mapItem.latestPinchDistance = distance;
 	    	} else if (e.touches.length == 1){
-	    		clearTimeout(NgChm.DET.eventTimer);
-	    		NgChm.DET.mouseDown = true;
-	    		NgChm.DET.handleMoveDrag(e);
+			clearTimeout(DET.eventTimer);
+			DET.mouseDown = true;
+			DET.handleMoveDrag(e);
 	    	}
 	    }
-	}, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
+	}, UTIL.passiveCompat({ capture: false, passive: false }));
 	
 	mapItem.canvas.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
-			NgChm.DET.mouseDown = false;
+			DET.mouseDown = false;
 			mapItem.latestPinchDistance = null;
 			const now = new Date().getTime();
 			if (mapItem.latestTap){
 				const timesince = now - mapItem.latestTap;
-				const coords = NgChm.UTIL.getCursorPosition(e);
+				const coords = UTIL.getCursorPosition(e);
 				const diffX = Math.abs(coords.x - mapItem.latestTapLocation.x); 
 				const diffY = Math.abs(coords.y - mapItem.latestTapLocation.y);
 				const diffMax = Math.max(diffX,diffY);
 				if (timesince > 500 && diffMax < 20){
-					clearTimeout(NgChm.DET.eventTimer);
-					NgChm.UHM.hlpC();
-					NgChm.DEV.matrixRightClick(e);
+					clearTimeout(DET.eventTimer);
+					UHM.hlpC();
+					DEV.matrixRightClick(e);
 				} else if (timesince < 500 && diffMax < 20){
-					NgChm.UHM.userHelpOpen();
+					UHM.userHelpOpen();
 				}
 			}
 	    }
-	}, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
+	}, UTIL.passiveCompat({ capture: false, passive: false }));
 		
 	// set up touch events for row and column labels
 	const rowLabelDiv = document.getElementById(mapItem.rowLabelDiv);
 	const colLabelDiv = document.getElementById(mapItem.colLabelDiv);
 	
 	rowLabelDiv.addEventListener("touchstart", function(e){
-		NgChm.UHM.hlpC();
+		UHM.hlpC();
 		const now = new Date().getTime();
 		mapItem.latestLabelTap = now;
-	}, NgChm.UTIL.passiveCompat({ passive: true }));
+	}, UTIL.passiveCompat({ passive: true }));
 		
 	rowLabelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
 			const now = new Date().getTime();
 			const timesince = now - mapItem.latestLabelTap;
 			if (timesince > 500){
-				NgChm.DEV.labelRightClick(e);
+				DEV.labelRightClick(e);
 			}
 		}
-	}, NgChm.UTIL.passiveCompat({ passive: false }));
+	}, UTIL.passiveCompat({ passive: false }));
 	
 	colLabelDiv.addEventListener("touchstart", function(e){
-		NgChm.UHM.hlpC();
+		UHM.hlpC();
 		const now = new Date().getTime();
 		mapItem.latestLabelTap = now;
-	}, NgChm.UTIL.passiveCompat({ passive: true }));
+	}, UTIL.passiveCompat({ passive: true }));
 	
 	colLabelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
 			const now = new Date().getTime();
 			const timesince = now - mapItem.latestLabelTap;
 			if (timesince > 500){
-				NgChm.DEV.labelRightClick(e);
+				DEV.labelRightClick(e);
 			}
 		}
-	}, NgChm.UTIL.passiveCompat({ passive: false }));	
+	}, UTIL.passiveCompat({ passive: false }));
 	
 }
 
@@ -129,19 +143,19 @@ NgChm.DEV.addEvents = function (paneId) {
  * FUNCTION:  handleScroll - The purpose of this function is to handle mouse scroll wheel 
  * events to zoom in / out.
  *********************************************************************************************/
-NgChm.DEV.handleScroll = function(evt) {
+DEV.handleScroll = function(evt) {
 	evt.preventDefault();
 	let parentElement = evt.target.parentElement;
 	if (!parentElement.classList.contains('detail_chm')) {
-	        if (!NgChm.DMM.primaryMap) return;
-		parentElement = NgChm.DMM.primaryMap.chm;
+	        if (!DMM.primaryMap) return;
+		parentElement = DMM.primaryMap.chm;
 	}
-	if (NgChm.SEL.scrollTime == null || evt.timeStamp - NgChm.SEL.scrollTime > 150){
-		NgChm.SEL.scrollTime = evt.timeStamp;
+	if (SEL.scrollTime == null || evt.timeStamp - SEL.scrollTime > 150){
+		SEL.scrollTime = evt.timeStamp;
 		if (evt.wheelDelta < -30 || evt.deltaY > 0 || evt.scale < 1) { //Zoom out
-            NgChm.DEV.detailDataZoomOut(parentElement);
+            DEV.detailDataZoomOut(parentElement);
 		} else if ((evt.wheelDelta > 30 || evt.deltaY < 0 || evt.scale > 1)){ // Zoom in
-            NgChm.DEV.zoomAnimation(parentElement);
+            DEV.zoomAnimation(parentElement);
 		}	
 	}
 	return false;
@@ -153,17 +167,17 @@ NgChm.DEV.handleScroll = function(evt) {
  * As key presses are received at the document level, their detail processing will be routed to
  * the primary detail panel. 
  *********************************************************************************************/
-NgChm.DEV.keyNavigate = function(e) {
-	const mapItem = NgChm.DMM.primaryMap;
-	NgChm.UHM.hlpC();
-    clearTimeout(NgChm.DET.detailPoint);
+DEV.keyNavigate = function(e) {
+	const mapItem = DMM.primaryMap;
+	UHM.hlpC();
+    clearTimeout(DET.detailPoint);
     if (e.target.type != "text" && e.target.type != "textarea"){
 		switch(e.keyCode){ // prevent default added redundantly to each case so that other key inputs won't get ignored
 			case 37: // left key 
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
 					if (e.shiftKey){mapItem.currentCol -= mapItem.dataPerRow;} 
-					else if (e.ctrlKey){mapItem.currentCol -= 1;mapItem.selectedStart -= 1;mapItem.selectedStop -= 1; NgChm.DEV.callDetailDrawFunction(mapItem.mode);} 
+					else if (e.ctrlKey){mapItem.currentCol -= 1;mapItem.selectedStart -= 1;mapItem.selectedStop -= 1; DEV.callDetailDrawFunction(mapItem.mode);}
 					else {mapItem.currentCol--;}
 				}
 				break;
@@ -171,7 +185,7 @@ NgChm.DEV.keyNavigate = function(e) {
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
 					if (e.shiftKey){mapItem.currentRow -= mapItem.dataPerCol;} 
-					else if (e.ctrlKey){mapItem.selectedStop += 1; NgChm.DEV.callDetailDrawFunction(mapItem.mode);} 
+					else if (e.ctrlKey){mapItem.selectedStop += 1; DEV.callDetailDrawFunction(mapItem.mode);}
 					else {mapItem.currentRow--;}
 				}
 				break;
@@ -179,7 +193,7 @@ NgChm.DEV.keyNavigate = function(e) {
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
 					if (e.shiftKey){mapItem.currentCol += mapItem.dataPerRow;} 
-					else if (e.ctrlKey){mapItem.currentCol += 1;mapItem.selectedStart += 1;mapItem.selectedStop += 1; NgChm.DEV.callDetailDrawFunction(mapItem.mode);} 
+					else if (e.ctrlKey){mapItem.currentCol += 1;mapItem.selectedStart += 1;mapItem.selectedStop += 1; DEV.callDetailDrawFunction(mapItem.mode);} 
 					else {mapItem.currentCol++;}
 				}
 				break;
@@ -187,7 +201,7 @@ NgChm.DEV.keyNavigate = function(e) {
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
 					if (e.shiftKey){mapItem.currentRow += mapItem.dataPerCol;} 
-					else if (e.ctrlKey){mapItem.selectedStop -= 1; NgChm.DEV.callDetailDrawFunction(mapItem.mode);} 
+					else if (e.ctrlKey){mapItem.selectedStop -= 1; DEV.callDetailDrawFunction(mapItem.mode);} 
 					else {mapItem.currentRow++;}
 				}
 				break;
@@ -195,51 +209,51 @@ NgChm.DEV.keyNavigate = function(e) {
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
-					NgChm.DDR.clearDendroSelection();
+					DDR.clearDendroSelection();
 					switch(mapItem.mode){
 						case "RIBBONV": newMode = 'RIBBONH'; break;
 						case "RIBBONH": newMode = 'NORMAL'; break;
 						default: newMode = mapItem.mode;break;
 					}
-					NgChm.DEV.callDetailDrawFunction(newMode);
+					DEV.callDetailDrawFunction(newMode);
 				} else {
-					NgChm.DEV.zoomAnimation(mapItem.chm);
+					DEV.zoomAnimation(mapItem.chm);
 				}
 				break;
 			case 34: // page down 
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
-					NgChm.DDR.clearDendroSelection();
+					DDR.clearDendroSelection();
 					switch(mapItem.mode){
 						case "NORMAL": newMode = 'RIBBONH'; break;
 						case "RIBBONH": newMode = 'RIBBONV'; break;
 						default: newMode = mapItem.mode;break;
 					}
-					NgChm.DEV.callDetailDrawFunction(newMode);
+					DEV.callDetailDrawFunction(newMode);
 				} else {
-					NgChm.DEV.detailDataZoomOut(mapItem.chm);
+					DEV.detailDataZoomOut(mapItem.chm);
 				}
 				break;
 			case 113: // F2 key 
-				if (NgChm.SEL.flickIsOn()) {
+				if (SEL.flickIsOn()) {
 					let flickBtn = document.getElementById("flick_btn");
 					if (flickBtn.dataset.state === 'flickUp') {
-						NgChm.SEL.flickChange("toggle2");
+						SEL.flickChange("toggle2");
 					} else {
-						NgChm.SEL.flickChange("toggle1");
+						SEL.flickChange("toggle1");
 					}
 				}
 				break;
 			default:
 				return;
 		}
-		NgChm.SEL.checkRow(mapItem);
-		NgChm.SEL.checkCol(mapItem);
-	    NgChm.SEL.updateSelection(mapItem);
+		SEL.checkRow(mapItem);
+		SEL.checkCol(mapItem);
+	    SEL.updateSelection(mapItem);
     } else {
     	if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
-    		NgChm.SRCH.detailSearch();    		
+		SRCH.detailSearch();
     	}
     }
 	
@@ -248,28 +262,28 @@ NgChm.DEV.keyNavigate = function(e) {
 /*********************************************************************************************
  * FUNCTION:  clickStart - The purpose of this function is to handle a user mouse down event.  
  *********************************************************************************************/
-NgChm.DEV.clickStart = function (e) {
+DEV.clickStart = function (e) {
 	e.preventDefault();
-	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
-	NgChm.SUM.mouseEventActive = true;
-	const clickType = NgChm.UTIL.getClickType(e);
-	NgChm.UHM.hlpC();
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+	SUM.mouseEventActive = true;
+	const clickType = UTIL.getClickType(e);
+	UHM.hlpC();
 	if (clickType === 0) { 
-		const coords = NgChm.UTIL.getCursorPosition(e);
+		const coords = UTIL.getCursorPosition(e);
 		mapItem.dragOffsetX = coords.x;  //canvas X coordinate 
 		mapItem.dragOffsetY = coords.y;
-		NgChm.DET.mouseDown = true;
+		DET.mouseDown = true;
 		// client space
 		const divW = e.target.clientWidth;
 		const divH = e.target.clientHeight;
 		// texture space
-		const rowTotalW = mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
-		const colTotalH = mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column");
+		const rowTotalW = mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row");
+		const colTotalH = mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column");
 		// proportion space
 		const rowDendroW = mapItem.dendroWidth/rowTotalW;
 		const colDendroH = mapItem.dendroHeight/colTotalH;
-		const rowClassW = NgChm.DET.calculateTotalClassBarHeight("row")/rowTotalW;
-		const colClassH = NgChm.DET.calculateTotalClassBarHeight("column")/colTotalH;
+		const rowClassW = DET.calculateTotalClassBarHeight("row")/rowTotalW;
+		const colClassH = DET.calculateTotalClassBarHeight("column")/colTotalH;
 		const mapW = mapItem.dataViewWidth/rowTotalW;
 		const mapH = mapItem.dataViewHeight/colTotalH;
 		const clickX = coords.x/divW;
@@ -278,10 +292,10 @@ NgChm.DEV.clickStart = function (e) {
 		mapItem.offsetY = coords.y;
 		mapItem.pageX = e.targetTouches ? e.targetTouches[0].pageX : e.pageX;
 		mapItem.pageY = e.targetTouches ? e.targetTouches[0].pageY : e.pageY;
-		if (NgChm.DET.eventTimer != 0) {
-			clearTimeout(NgChm.DET.eventTimer);
+		if (DET.eventTimer != 0) {
+			clearTimeout(DET.eventTimer);
 		}
-		NgChm.DET.eventTimer = setTimeout(NgChm.UHM.userHelpOpen.bind('mapItem', mapItem), 500);
+		DET.eventTimer = setTimeout(UHM.userHelpOpen.bind('mapItem', mapItem), 500);
 	}
 }
 
@@ -290,18 +304,18 @@ NgChm.DEV.clickStart = function (e) {
  * If the mouse has not moved out of a given detail row/col between clickStart and clickEnd, 
  * user help is opened for that cell.
  *********************************************************************************************/
-NgChm.DEV.clickEnd = function (e) {
-	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
-	if (NgChm.SUM.mouseEventActive) {
-		const clickType = NgChm.UTIL.getClickType(e);
+DEV.clickEnd = function (e) {
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+	if (SUM.mouseEventActive) {
+		const clickType = UTIL.getClickType(e);
 		if (clickType === 0) {
 			//Reset mouse event indicators
-			NgChm.DET.mouseDown = false;
+			DET.mouseDown = false;
 			//Set cursor back to default
 			mapItem.canvas.style.cursor="default";
 		}
 	}
-	NgChm.SUM.mouseEventActive = false;
+	SUM.mouseEventActive = false;
 }
 
 /*********************************************************************************************
@@ -309,26 +323,26 @@ NgChm.DEV.clickEnd = function (e) {
  * user double-clicks on the detail heat map canvas.  In this case a zoom action is performed.  
  * Zoom in if the shift key is not held down and zoom out if the key is held down.
  *********************************************************************************************/
-NgChm.DEV.dblClick = function(e) {
-	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
+DEV.dblClick = function(e) {
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
 	//turn off single click help if double click
-	clearTimeout(NgChm.DET.eventTimer);
-	NgChm.UHM.hlpC();
+	clearTimeout(DET.eventTimer);
+	UHM.hlpC();
 	//Get cursor position and convert to matrix row / column
 	const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; 
 	const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
-	const coords = NgChm.UTIL.getCursorPosition(e);
-	const mapLocY = coords.y - NgChm.DET.getColClassPixelHeight(mapItem);
-	const mapLocX = coords.x - NgChm.DET.getRowClassPixelWidth(mapItem);
+	const coords = UTIL.getCursorPosition(e);
+	const mapLocY = coords.y - DET.getColClassPixelHeight(mapItem);
+	const mapLocX = coords.x - DET.getRowClassPixelWidth(mapItem);
 
-	const clickRow = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*NgChm.SEL.getSamplingRatio('row'));
-	const clickCol = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*NgChm.SEL.getSamplingRatio('col'));
-	const destRow = clickRow + 1 - Math.floor(NgChm.SEL.getCurrentDetDataPerCol(mapItem)/2);
-	const destCol = clickCol + 1 - Math.floor(NgChm.SEL.getCurrentDetDataPerRow(mapItem)/2);
+	const clickRow = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
+	const clickCol = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
+	const destRow = clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2);
+	const destCol = clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerRow(mapItem)/2);
 	
 	// set up panning animation 
-	const diffRow =  clickRow + 1 - Math.floor(NgChm.SEL.getCurrentDetDataPerCol(mapItem)/2) - mapItem.currentRow;
-	const diffCol =  clickCol + 1 - Math.floor(NgChm.SEL.getCurrentDetDataPerRow(mapItem)/2) - mapItem.currentCol;
+	const diffRow =  clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2) - mapItem.currentRow;
+	const diffCol =  clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerRow(mapItem)/2) - mapItem.currentCol;
 	const diffMax = Math.max(diffRow,diffCol);
 	const numSteps = 7;
 	const rowStep = diffRow/numSteps;
@@ -342,25 +356,25 @@ NgChm.DEV.dblClick = function(e) {
 	function drawScene(now){
 		steps++;
 		if (steps < numSteps && !(mapItem.currentRow == destRow && mapItem.currentCol == destCol)){ // if we have not finished the animation, continue redrawing
-			mapItem.currentRow = clickRow + 1 - Math.floor(NgChm.SEL.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*rowStep);
-			mapItem.currentCol = clickCol + 1 - Math.floor(NgChm.SEL.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*colStep);
-			NgChm.SEL.checkRow(mapItem);
-			NgChm.SEL.checkCol(mapItem);
-			NgChm.SEL.updateSelection(mapItem);
+			mapItem.currentRow = clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*rowStep);
+			mapItem.currentCol = clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*colStep);
+			SEL.checkRow(mapItem);
+			SEL.checkCol(mapItem);
+			SEL.updateSelection(mapItem);
 			requestAnimationFrame(drawScene); // requestAnimationFrame is a native JS function that calls drawScene after a short time delay
 		} else { // if we are done animating, zoom in
 			mapItem.currentRow = destRow;
 			mapItem.currentCol = destCol;
 			
 			if (e.shiftKey) {
-				NgChm.DEV.detailDataZoomOut(e);
+				DEV.detailDataZoomOut(e);
 			} else {
-				NgChm.DEV.zoomAnimation(mapItem.chm, clickRow, clickCol);
+				DEV.zoomAnimation(mapItem.chm, clickRow, clickCol);
 			}
 			//Center the map on the cursor position
-			NgChm.SEL.checkRow(mapItem);
-			NgChm.SEL.checkCol(mapItem);
-			NgChm.SEL.updateSelection(mapItem);
+			SEL.checkRow(mapItem);
+			SEL.checkCol(mapItem);
+			SEL.updateSelection(mapItem);
 		}
 	}
 }
@@ -369,9 +383,9 @@ NgChm.DEV.dblClick = function(e) {
  * FUNCTION:  labelClick -  The purpose of this function is to handle a label click on a given
  * detail panel.
  *********************************************************************************************/
-NgChm.DEV.labelClick = function (e) {
-	const mapItem = NgChm.DMM.getMapItemFromChm(e.target.parentElement.parentElement);
-	NgChm.SRCH.showSearchResults();	
+DEV.labelClick = function (e) {
+	const mapItem = DMM.getMapItemFromChm(e.target.parentElement.parentElement);
+	SRCH.showSearchResults();
 	//These were changed from vars defined multiple times below
 	let searchIndex = null;
 	let axis = this.dataset.axis;
@@ -382,55 +396,55 @@ NgChm.DEV.labelClick = function (e) {
 		const focusNode = e.type == "touchmove" ? e.target : this;
 		const focusIndex = Number(focusNode.dataset.index);
 		axis = focusNode.dataset.axis;
-		if (NgChm.DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
-			const anchorIndex = Number(NgChm.DET.labelLastClicked[axis]);
+		if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
+			const anchorIndex = Number(DET.labelLastClicked[axis]);
 			const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-			NgChm.SRCH.setAxisSearchResults (axis, startIndex, endIndex);
+			SRCH.setAxisSearchResults (axis, startIndex, endIndex);
 		} else { // otherwise, treat as normal click
-			NgChm.SRCH.clearSearchItems(focusNode.dataset.axis);
-			searchIndex = NgChm.SRCH.labelIndexInSearch(axis,focusIndex);
+			SRCH.clearSearchItems(focusNode.dataset.axis);
+			searchIndex = SRCH.labelIndexInSearch(axis,focusIndex);
 			if (searchIndex ){
-				NgChm.SRCH.clearAxisSearchItems (axis, index, index);
+				SRCH.clearAxisSearchItems (axis, index, index);
 			} else {
-				NgChm.SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
+				SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 			}
 		}
-		NgChm.DET.labelLastClicked[axis] = focusIndex;
+		DET.labelLastClicked[axis] = focusIndex;
 	} else if (e.ctrlKey || e.metaKey){ // ctrl or Mac key + click
-		searchIndex = NgChm.SRCH.labelIndexInSearch(axis, index);
+		searchIndex = SRCH.labelIndexInSearch(axis, index);
 		if (searchIndex){ // if already searched, remove from search items
-			NgChm.SRCH.clearAxisSearchItems (axis, index, index);
+			SRCH.clearAxisSearchItems (axis, index, index);
 		} else {
-			NgChm.SRCH.setAxisSearchResults (axis, index, index);
+			SRCH.setAxisSearchResults (axis, index, index);
 		}
-		NgChm.DET.labelLastClicked[axis] = index;
+		DET.labelLastClicked[axis] = index;
 	} else { // standard click
-		NgChm.SRCH.clearSearchItems(axis);
-		NgChm.SRCH.setAxisSearchResults (axis, index, index);
-		NgChm.DET.labelLastClicked[axis] = index;
+		SRCH.clearSearchItems(axis);
+		SRCH.setAxisSearchResults (axis, index, index);
+		DET.labelLastClicked[axis] = index;
 	}
 	const clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
 	const lastClickedIndex = (typeof index == 'undefined') ? focusIndex : index;
-	NgChm.LNK.postSelectionToLinkouts(this.dataset.axis, clickType, index, null);
+	LNK.postSelectionToLinkouts(this.dataset.axis, clickType, index, null);
 	const searchElement = document.getElementById('search_text');
 	searchElement.value = "";
 	document.getElementById('prev_btn').style.display='';
 	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
-	NgChm.SUM.clearSelectionMarks();
-	NgChm.DET.updateDisplayedLabels();
-	NgChm.SEL.updateSelections();
-	NgChm.SUM.drawSelectionMarks();
-	NgChm.SUM.drawTopItems();
-	NgChm.SRCH.showSearchResults();	
+	SUM.clearSelectionMarks();
+	DET.updateDisplayedLabels();
+	SEL.updateSelections();
+	SUM.drawSelectionMarks();
+	SUM.drawTopItems();
+	SRCH.showSearchResults();
 }
 
 /*********************************************************************************************
  * FUNCTION:  labelDrag -  The purpose of this function is to handle a label drag on a given
  * detail panel.
  *********************************************************************************************/
-NgChm.DEV.labelDrag = function(e){
-	const mapItem = NgChm.DMM.getMapItemFromChm(e.target.parentElement.parentElement);
+DEV.labelDrag = function(e){
+	const mapItem = DMM.getMapItemFromChm(e.target.parentElement.parentElement);
 	e.preventDefault();
 	mapItem.latestLabelTap = null;
 	const selection = window.getSelection();
@@ -438,31 +452,31 @@ NgChm.DEV.labelDrag = function(e){
 	const focusNode = e.type == "touchmove" ? document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY) : this;
 	const focusIndex = Number(focusNode.dataset.index);
 	const axis = focusNode.dataset.axis;
-	if (NgChm.DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
-		const anchorIndex = Number(NgChm.DET.labelLastClicked[axis]);
+	if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
+		const anchorIndex = Number(DET.labelLastClicked[axis]);
 		const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-		NgChm.SRCH.setAxisSearchResults (axis, startIndex, endIndex);
+		SRCH.setAxisSearchResults (axis, startIndex, endIndex);
 	} else { // otherwise, treat as normal click
-		NgChm.SRCH.clearSearchItems(focusNode.dataset.axis);
-		const searchIndex = NgChm.SRCH.labelIndexInSearch(axis,focusIndex);
+		SRCH.clearSearchItems(focusNode.dataset.axis);
+		const searchIndex = SRCH.labelIndexInSearch(axis,focusIndex);
 		if (searchIndex ){
-			NgChm.SRCH.clearAxisSearchItems (axis, index, index);
+			SRCH.clearAxisSearchItems (axis, index, index);
 		} else {
-			NgChm.SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
+			SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 		}
 	}
-	NgChm.DET.labelLastClicked[axis] = focusIndex;
+	DET.labelLastClicked[axis] = focusIndex;
 	let searchElement = document.getElementById('search_text');
 	searchElement.value = "";
 	document.getElementById('prev_btn').style.display='';
 	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
-	NgChm.DET.updateDisplayedLabels();
-	NgChm.SRCH.showSearchResults();	
-	NgChm.SEL.updateSelections();
-	NgChm.SUM.drawSelectionMarks();
-	NgChm.SUM.drawTopItems();
-	NgChm.SRCH.showSearchResults();	
+	DET.updateDisplayedLabels();
+	SRCH.showSearchResults();
+	SEL.updateSelections();
+	SUM.drawSelectionMarks();
+	SUM.drawTopItems();
+	SRCH.showSearchResults();
 	return;
 }
 
@@ -470,11 +484,11 @@ NgChm.DEV.labelDrag = function(e){
  * FUNCTION:  labelRightClick -  The purpose of this function is to handle a label right click on a given
  * detail panel.
  *********************************************************************************************/
-NgChm.DEV.labelRightClick = function (e) {
+DEV.labelRightClick = function (e) {
     e.preventDefault();
     const axis = e.target.dataset.axis;
-    NgChm.LNK.labelHelpClose(axis);
-    NgChm.LNK.labelHelpOpen(axis,e);
+    LNK.labelHelpClose(axis);
+    LNK.labelHelpOpen(axis,e);
     let selection = window.getSelection();
     selection.removeAllRanges();
     return false;
@@ -484,10 +498,10 @@ NgChm.DEV.labelRightClick = function (e) {
  * FUNCTION:  matrixRightClick -  The purpose of this function is to handle a matrix right 
  * click on a given detail panel.
  *********************************************************************************************/
-NgChm.DEV.matrixRightClick = function (e) {
+DEV.matrixRightClick = function (e) {
 	e.preventDefault();
-	NgChm.LNK.labelHelpClose("Matrix");
-    NgChm.LNK.labelHelpOpen("Matrix",e);
+	LNK.labelHelpClose("Matrix");
+    LNK.labelHelpOpen("Matrix",e);
     let selection = window.getSelection();
     selection.removeAllRanges();
     return false;
@@ -508,8 +522,8 @@ NgChm.DEV.matrixRightClick = function (e) {
 	flickUp: 'images/toggleUp.png',
 	flickDown: 'images/toggleDown.png'
     };
-    NgChm.DEV.flickChange = function(fromList) {
-	const mapItem = NgChm.DMM.primaryMap;
+    DEV.flickChange = function(fromList) {
+	const mapItem = DMM.primaryMap;
 	const flickBtn = document.getElementById("flick_btn");
 	const flickDrop1 = document.getElementById("flick1");
 	const flickDrop2 = document.getElementById("flick2");
@@ -548,14 +562,14 @@ NgChm.DEV.matrixRightClick = function (e) {
 			return;
 		}
 	} 
-	NgChm.SEL.setCurrentDL (mapItem.currentDl);
-	NgChm.SEL.flickInit();
-    NgChm.SUM.buildSummaryTexture();
-	NgChm.DMM.DetailMaps.forEach(dm => {
+	SEL.setCurrentDL (mapItem.currentDl);
+	SEL.flickInit();
+	SUM.buildSummaryTexture();
+	DMM.DetailMaps.forEach(dm => {
 		dm.currentDl = mapItem.currentDl;
 	})
-	NgChm.DET.setDrawDetailsTimeout(NgChm.DET.redrawSelectionTimeout,true);
-	NgChm.SEL.updateSelections(true);
+	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout,true);
+	SEL.updateSelections(true);
     };
 })();
 
@@ -565,11 +579,11 @@ NgChm.DEV.matrixRightClick = function (e) {
  * In these cases, we cancel the mouse event that we are tracking, reset mouseDown, and 
  * reset the cursor to default.
  *********************************************************************************************/
-NgChm.DEV.handleMouseOut = function (e) {
-	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
+DEV.handleMouseOut = function (e) {
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
 	mapItem.canvas.style.cursor="default";
-	NgChm.DET.mouseDown = false;
-	NgChm.SUM.mouseEventActive = false;
+	DET.mouseDown = false;
+	SUM.mouseEventActive = false;
 }
 
 /*********************************************************************************************
@@ -577,8 +591,8 @@ NgChm.DEV.handleMouseOut = function (e) {
  * The type of move (drag-move or drag-select is determined, based upon keys pressed and the 
  * appropriate function is called to perform the function.
  *********************************************************************************************/
-NgChm.DEV.handleMouseMove = function (e) {
-	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
+DEV.handleMouseMove = function (e) {
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
     // Do not clear help if the mouse position did not change. Repeated firing of the mousemove event can happen on random 
     // machines in all browsers but FireFox. There are varying reasons for this so we check and exit if need be.
 	const eX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -586,19 +600,19 @@ NgChm.DEV.handleMouseMove = function (e) {
 	if(mapItem.oldMousePos[0] != eX ||mapItem.oldMousePos[1] != eY) {
 		mapItem.oldMousePos = [eX, eY];
 	} 
-	if (NgChm.DET.mouseDown && NgChm.SUM.mouseEventActive){
-		clearTimeout(NgChm.DET.eventTimer);
+	if (DET.mouseDown && SUM.mouseEventActive){
+		clearTimeout(DET.eventTimer);
 		//If mouse is down and shift key is pressed, perform a drag selection
 		//Else perform a drag move
 		if (e.shiftKey) {
 	        //process select drag only if the mouse is down AND the cursor is on the heat map.
-            if((NgChm.DET.mouseDown) && (NgChm.UTIL.isOnObject(e,"map"))) {
-			    NgChm.SRCH.clearSearch(e);
-			    NgChm.DEV.handleSelectDrag(e);
+            if((DET.mouseDown) && (UTIL.isOnObject(e,"map"))) {
+			    SRCH.clearSearch(e);
+			    DEV.handleSelectDrag(e);
             }
 	    }
 	    else {
-    		NgChm.DEV.handleMoveDrag(e);
+		DEV.handleMoveDrag(e);
 	    }
 	} 
  }
@@ -609,9 +623,9 @@ NgChm.DEV.handleMouseMove = function (e) {
  * this happens, the current position of the heatmap viewport is changed and the detail heat 
  * map is redrawn 
  *********************************************************************************************/
-NgChm.DEV.handleMoveDrag = function (e) {
-	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
-    if(!NgChm.DET.mouseDown) return;
+DEV.handleMoveDrag = function (e) {
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+    if(!DET.mouseDown) return;
     mapItem.canvas.style.cursor="move"; 
     const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width;
     const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
@@ -620,22 +634,22 @@ NgChm.DEV.handleMoveDrag = function (e) {
     		return false;
     	}
     } 
-    const coords = NgChm.UTIL.getCursorPosition(e);
+    const coords = UTIL.getCursorPosition(e);
     const xDrag = coords.x - mapItem.dragOffsetX;
     const yDrag = coords.y - mapItem.dragOffsetY;
     if ((Math.abs(xDrag/rowElementSize) > 1) || (Math.abs(yDrag/colElementSize) > 1)) {
     	//Disregard vertical movement if the cursor is not on the heat map.
-		if (!NgChm.UTIL.isOnObject(e,"colClass")) {
+		if (!UTIL.isOnObject(e,"colClass")) {
 			mapItem.currentRow = Math.round(mapItem.currentRow - (yDrag/colElementSize));
 			mapItem.dragOffsetY = coords.y;
 		}
-		if (!NgChm.UTIL.isOnObject(e,"rowClass")) {
+		if (!UTIL.isOnObject(e,"rowClass")) {
 			mapItem.currentCol = Math.round(mapItem.currentCol - (xDrag/rowElementSize));
 			mapItem.dragOffsetX = coords.x;  //canvas X coordinate 
 		}
-	    NgChm.SEL.checkRow(mapItem);
-	    NgChm.SEL.checkCol(mapItem);
-	    NgChm.SEL.updateSelection(mapItem);
+	    SEL.checkRow(mapItem);
+	    SEL.checkCol(mapItem);
+	    SEL.updateSelection(mapItem);
     } 
 }	
 
@@ -647,8 +661,8 @@ NgChm.DEV.handleMoveDrag = function (e) {
  * axis).  Finally, selection markson the Summary heatmap are drawn and the detail heat map is 
  * re-drawn 
  *********************************************************************************************/
-NgChm.DEV.handleSelectDrag = function (e) {
-	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
+DEV.handleSelectDrag = function (e) {
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
 	mapItem.canvas.style.cursor="crosshair";
 	const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width;
 	const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
@@ -657,26 +671,26 @@ NgChm.DEV.handleSelectDrag = function (e) {
     		return false;
     	}
     }
-    const coords = NgChm.UTIL.getCursorPosition(e);
+    const coords = UTIL.getCursorPosition(e);
     const xDrag = e.touches ? e.touches[0].layerX - mapItem.dragOffsetX : coords.x - mapItem.dragOffsetX;
     const yDrag = e.touches ? e.touches[0].layerY - mapItem.dragOffsetY : coords.y - mapItem.dragOffsetY;
    
     if ((Math.abs(xDrag/rowElementSize) > 1) || (Math.abs(yDrag/colElementSize) > 1)) {
     	//Retrieve drag corners but set to max/min values in case user is dragging
     	//bottom->up or left->right.
-    	const endRow = Math.max(NgChm.DEV.getRowFromLayerY(mapItem, coords.y),NgChm.DEV.getRowFromLayerY(mapItem, mapItem.dragOffsetY));
-    	const endCol = Math.max(NgChm.DEV.getColFromLayerX(mapItem, coords.x),NgChm.DEV.getColFromLayerX(mapItem, mapItem.dragOffsetX));
-    	const startRow = Math.min(NgChm.DEV.getRowFromLayerY(mapItem, coords.y),NgChm.DEV.getRowFromLayerY(mapItem, mapItem.dragOffsetY));
-    	const startCol = Math.min(NgChm.DEV.getColFromLayerX(mapItem, coords.x),NgChm.DEV.getColFromLayerX(mapItem, mapItem.dragOffsetX));
-	NgChm.SRCH.clearSearch(e);
-	NgChm.SRCH.setAxisSearchResults ("Row", startRow, endRow);
-	NgChm.SRCH.setAxisSearchResults ("Column", startCol, endCol);
-        NgChm.SUM.drawSelectionMarks();
-        NgChm.SUM.drawTopItems();
-        NgChm.DET.updateDisplayedLabels();
-        NgChm.DET.drawSelections();
-        NgChm.SRCH.updateLinkoutSelections();
-        NgChm.UTIL.redrawCanvases();
+	const endRow = Math.max(DEV.getRowFromLayerY(mapItem, coords.y),DEV.getRowFromLayerY(mapItem, mapItem.dragOffsetY));
+	const endCol = Math.max(DEV.getColFromLayerX(mapItem, coords.x),DEV.getColFromLayerX(mapItem, mapItem.dragOffsetX));
+	const startRow = Math.min(DEV.getRowFromLayerY(mapItem, coords.y),DEV.getRowFromLayerY(mapItem, mapItem.dragOffsetY));
+	const startCol = Math.min(DEV.getColFromLayerX(mapItem, coords.x),DEV.getColFromLayerX(mapItem, mapItem.dragOffsetX));
+	SRCH.clearSearch(e);
+	SRCH.setAxisSearchResults ("Row", startRow, endRow);
+	SRCH.setAxisSearchResults ("Column", startCol, endCol);
+        SUM.drawSelectionMarks();
+        SUM.drawTopItems();
+        DET.updateDisplayedLabels();
+        DET.drawSelections();
+        SRCH.updateLinkoutSelections();
+        UTIL.redrawCanvases();
     }
 }	
 
@@ -685,18 +699,18 @@ NgChm.DEV.handleSelectDrag = function (e) {
  * retrieve the row/col in the data matrix that matched a given mouse location.  They utilize 
  * event.layerY/X for the mouse position.
  *********************************************************************************************/
-NgChm.DEV.getRowFromLayerY = function (mapItem,layerY) {
+DEV.getRowFromLayerY = function (mapItem,layerY) {
 	const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
-	const colClassHeightPx = NgChm.DET.getColClassPixelHeight(mapItem);
+	const colClassHeightPx = DET.getColClassPixelHeight(mapItem);
 	const mapLocY = layerY - colClassHeightPx;
-	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*NgChm.SEL.getSamplingRatio(mapItem.mode,'row'));
+	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio(mapItem.mode,'row'));
 }
 
-NgChm.DEV.getColFromLayerX = function (mapItem,layerX) {
+DEV.getColFromLayerX = function (mapItem,layerX) {
 	const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
-	const rowClassWidthPx = NgChm.DET.getRowClassPixelWidth(mapItem);
+	const rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
 	const mapLocX = layerX - rowClassWidthPx;
-	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*NgChm.SEL.getSamplingRatio(mapItem.mode,'col'));
+	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio(mapItem.mode,'col'));
 }
 
 
@@ -711,9 +725,9 @@ NgChm.DEV.getColFromLayerX = function (mapItem,layerX) {
  * determine if we should undo the automatic changes in zoom mode.  Explicit user
  * changes to the zoom mode will clear the mode history.
  **********************************************************************************/
-NgChm.DEV.detailDataZoomIn = function (mapItem) {
-	NgChm.UHM.hlpC();	
-	NgChm.LNK.labelHelpCloseAll();
+DEV.detailDataZoomIn = function (mapItem) {
+	UHM.hlpC();
+	LNK.labelHelpCloseAll();
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	if (mapItem.mode == 'FULL_MAP') {
 	        let mode = mapItem.mode, row=1, col=1;
@@ -722,26 +736,26 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 		}
 		if ((mode == 'RIBBONH') || (mode == 'RIBBONH_DETAIL')) {
 			mapItem.currentRow = row;
-			NgChm.DEV.detailHRibbonButton(mapItem);
+			DEV.detailHRibbonButton(mapItem);
 		} else if  ((mode == 'RIBBONV') || (mode == 'RIBBONV_DETAIL')) {
 			mapItem.currentCol = col;
-			NgChm.DEV.detailVRibbonButton(mapItem);
+			DEV.detailVRibbonButton(mapItem);
 		} else {
 			mapItem.saveRow = row;
 			mapItem.saveCol = col;
-			NgChm.DEV.detailNormal(mapItem);
+			DEV.detailNormal(mapItem);
 		}
 		mapItem.modeHistory.pop();
 	} else if (mapItem.mode == 'NORMAL') {
 		if (mapItem.modeHistory.length > 0) {
 		        mapItem.modeHistory = [];
 		}
-		let current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
-		if (current < NgChm.DET.zoomBoxSizes.length - 1) {
-			let zoomBoxSize = NgChm.DET.zoomBoxSizes[current+1];
-			NgChm.DET.setDetailDataSize (mapItem, zoomBoxSize);
+		let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
+		if (current < DET.zoomBoxSizes.length - 1) {
+			let zoomBoxSize = DET.zoomBoxSizes[current+1];
+			DET.setDetailDataSize (mapItem, zoomBoxSize);
 		}
-		NgChm.SEL.updateSelection(mapItem, false);
+		SEL.updateSelection(mapItem, false);
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
 	        let mode = mapItem.mode, col;
 		if (mapItem.modeHistory.length > 0) {
@@ -751,13 +765,13 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 		    }
 		}
 		if (mode == 'NORMAL') {
-			NgChm.DEV.detailNormal (mapItem);
+			DEV.detailNormal (mapItem);
 		} else {
-			let current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
-			if (current < NgChm.DET.zoomBoxSizes.length - 1) {
-				NgChm.DET.setDetailDataHeight (mapItem,NgChm.DET.zoomBoxSizes[current+1]);
+			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
+			if (current < DET.zoomBoxSizes.length - 1) {
+				DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current+1]);
 			}
-			NgChm.SEL.updateSelection(mapItem, false);
+			SEL.updateSelection(mapItem, false);
 		}
 		mapItem.modeHistory.pop();
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
@@ -769,13 +783,13 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
 		    }
 		}
 		if (mode == 'NORMAL') {
-			NgChm.DEV.detailNormal (mapItem);
+			DEV.detailNormal (mapItem);
 		} else {
-			let current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
-			if (current < NgChm.DET.zoomBoxSizes.length - 1) {
-				NgChm.DET.setDetailDataWidth(mapItem,NgChm.DET.zoomBoxSizes[current+1]);
+			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
+			if (current < DET.zoomBoxSizes.length - 1) {
+				DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[current+1]);
 			}
-			NgChm.SEL.updateSelection(mapItem, false);
+			SEL.updateSelection(mapItem, false);
 		}
 		mapItem.modeHistory.pop();
 	}
@@ -785,54 +799,55 @@ NgChm.DEV.detailDataZoomIn = function (mapItem) {
  * FUNCTION - detailDataZoomOut: The purpose of this function is to handle all of
  * the processing necessary to zoom outwards on a given heat map panel.
  **********************************************************************************/
-NgChm.DEV.detailDataZoomOut = function (chm) {
-	const mapItem = NgChm.DMM.getMapItemFromChm(chm);
+DEV.detailDataZoomOut = function (chm) {
+	const heatMap = MMGR.getHeatMap();
+	const mapItem = DMM.getMapItemFromChm(chm);
 	if (mapItem.mode == 'FULL_MAP') {
 	    // Already in full map view. We actually can't zoom out any further.
 	    return;
 	}
-	NgChm.UHM.hlpC();	
-	NgChm.LNK.labelHelpCloseAll();
+	UHM.hlpC();
+	LNK.labelHelpCloseAll();
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	mapItem.modeHistory.push ({ mode: mapItem.mode, row: mapItem.currentRow, col: mapItem.currentCol });
 	if (mapItem.mode == 'NORMAL') {
-		const current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
+		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)) &&
-		    (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))){
-			NgChm.DET.setDetailDataSize (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
-			NgChm.SEL.updateSelection(mapItem);
+		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MMGR.DETAIL_LEVEL)) &&
+		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL))){
+			DET.setDetailDataSize (mapItem,DET.zoomBoxSizes[current-1]);
+			SEL.updateSelection(mapItem);
 		} else {
 			//If we can't zoom out anymore see if ribbon mode would show more of the map or , switch to full map view.
-			if ((current > 0) && (NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) ) {
-				NgChm.DEV.detailVRibbonButton(mapItem);
-			} else if ((current > 0) && (NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) ) {
-				NgChm.DEV.detailHRibbonButton(mapItem);
+			if ((current > 0) && (heatMap.getNumRows(MMGR.DETAIL_LEVEL) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) ) {
+				DEV.detailVRibbonButton(mapItem);
+			} else if ((current > 0) && (heatMap.getNumRows(MMGR.DETAIL_LEVEL) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) ) {
+				DEV.detailHRibbonButton(mapItem);
 			} else {
-				NgChm.DEV.detailFullMap(mapItem);
+				DEV.detailFullMap(mapItem);
 			}	
 		}	
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
-		const current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
+		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL))) {
+		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MMGR.DETAIL_LEVEL))) {
 			// Additional zoom out in ribbon mode.
-			NgChm.DET.setDetailDataHeight (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
-			NgChm.SEL.updateSelection(mapItem);
+			DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current-1]);
+			SEL.updateSelection(mapItem);
 		} else {
 			// Switch to full map view.
-			NgChm.DEV.detailFullMap(mapItem);
+			DEV.detailFullMap(mapItem);
 		}	
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
-		const current = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
+		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[current-1]) <= NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))){
+		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL))){
 			// Additional zoom out in ribbon mode.
-			NgChm.DET.setDetailDataWidth (mapItem,NgChm.DET.zoomBoxSizes[current-1]);
-			NgChm.SEL.updateSelection(mapItem);
+			DET.setDetailDataWidth (mapItem,DET.zoomBoxSizes[current-1]);
+			SEL.updateSelection(mapItem);
 		} else {
 			// Switch to full map view.
-			NgChm.DEV.detailFullMap(mapItem);
+			DEV.detailFullMap(mapItem);
 		}	
         } else {
 	    console.error ('Unknown zoom mode ', mapItem.mode);
@@ -844,17 +859,17 @@ NgChm.DEV.detailDataZoomOut = function (chm) {
  * mode changes on the Summary Panel by calling the appropriate detail drawing
  * function. It acts only on the Primary heat map pane.
  **********************************************************************************/
-NgChm.DEV.callDetailDrawFunction = function(modeVal, target) { 
-	let mapItem = (typeof target !== 'undefined') ? target : NgChm.DMM.primaryMap;
+DEV.callDetailDrawFunction = function(modeVal, target) {
+	let mapItem = (typeof target !== 'undefined') ? target : DMM.primaryMap;
 	if (!mapItem) return;
 	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
-		NgChm.DEV.detailHRibbon(mapItem);
+		DEV.detailHRibbon(mapItem);
 	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
-		NgChm.DEV.detailVRibbon(mapItem);
+		DEV.detailVRibbon(mapItem);
 	if (modeVal == 'FULL_MAP')
-		NgChm.DEV.detailFullMap(mapItem);
+		DEV.detailFullMap(mapItem);
 	if (modeVal == 'NORMAL') {
-		NgChm.DEV.detailNormal(mapItem);	
+		DEV.detailNormal(mapItem);
 	}
 }
 
@@ -862,7 +877,7 @@ NgChm.DEV.callDetailDrawFunction = function(modeVal, target) {
  * FUNCTION - clearModeHistory: Clears mode history.  Should be done every time the
  * user explicitly changes the zoom mode.
  ***********************************************************************************/
-NgChm.DEV.clearModeHistory = function (mapItem) {
+DEV.clearModeHistory = function (mapItem) {
 	mapItem.modeHistory = [];
 };
 
@@ -871,26 +886,27 @@ NgChm.DEV.clearModeHistory = function (mapItem) {
  * the processing necessary to return a heat map panel to normal mode.
  * mapItem is the detail view map item.
  **********************************************************************************/
-NgChm.DEV.detailNormal = function (mapItem, restoreInfo) {
-	NgChm.UHM.hlpC();	
+DEV.detailNormal = function (mapItem, restoreInfo) {
+	UHM.hlpC();
 	const previousMode = mapItem.mode;
-	NgChm.SEL.setMode(mapItem,'NORMAL');
-	NgChm.DET.setButtons(mapItem);
+	SEL.setMode(mapItem,'NORMAL');
+	DET.setButtons(mapItem);
 	if (!restoreInfo) {
-	    mapItem.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
-	    mapItem.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
+	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
+	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
 	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
-		NgChm.DET.setDetailDataSize(mapItem, mapItem.dataBoxWidth);
+		DET.setDetailDataSize(mapItem, mapItem.dataBoxWidth);
 	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
-		NgChm.DET.setDetailDataSize(mapItem,mapItem.dataBoxHeight);
+		DET.setDetailDataSize(mapItem,mapItem.dataBoxHeight);
 	    } else if (previousMode=='FULL_MAP') {
-		NgChm.DET.setDetailDataSize(mapItem,NgChm.DET.zoomBoxSizes[0]);
+		DET.setDetailDataSize(mapItem,DET.zoomBoxSizes[0]);
 	    }
 
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while ((Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)) ||
-	       (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL))) {
-		NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
+	    const heatMap = MMGR.getHeatMap();
+	    while ((Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MMGR.DETAIL_LEVEL)) ||
+	       (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL))) {
+		DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 	    }
 	
 	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
@@ -903,14 +919,14 @@ NgChm.DEV.detailNormal = function (mapItem, restoreInfo) {
 	    }
 	}
 	
-	NgChm.SEL.checkRow(mapItem);
-	NgChm.SEL.checkCol(mapItem);
-	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
+	SEL.checkRow(mapItem);
+	SEL.checkCol(mapItem);
+	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	 
-	NgChm.DET.detInitGl(mapItem);
-	NgChm.DDR.clearDendroSelection();
-	NgChm.SEL.updateSelection(mapItem);
+	DET.detInitGl(mapItem);
+	DDR.clearDendroSelection();
+	SEL.updateSelection(mapItem);
 	try {
 		document.getElementById("viewport").setAttribute("content", "height=device-height");
 		document.getElementById("viewport").setAttribute("content", "");
@@ -924,37 +940,37 @@ NgChm.DEV.detailNormal = function (mapItem, restoreInfo) {
  * in the detail pane. Processes ribbon h/v differently. In these cases, one axis 
  * is kept static so that the "full view" stays within the selected sub-dendro.
  **********************************************************************************/
-NgChm.DEV.detailFullMap = function (mapItem) {
-	NgChm.UHM.hlpC();	
+DEV.detailFullMap = function (mapItem) {
+	UHM.hlpC();
 	mapItem.saveRow = mapItem.currentRow;
 	mapItem.saveCol = mapItem.currentCol;
 	
 	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more 
 	//than 1 pixel, scale calculates the appropriate height/width.
-	if (NgChm.DDR.subDendroView === 'column') {
-	    NgChm.DET.scaleViewHeight(mapItem);
-	} else if (NgChm.DDR.subDendroView === 'row') {
-	    NgChm.DET.scaleViewWidth(mapItem);
+	if (DDR.subDendroView === 'column') {
+	    DET.scaleViewHeight(mapItem);
+	} else if (DDR.subDendroView === 'row') {
+	    DET.scaleViewWidth(mapItem);
 	} else {
-	    NgChm.SEL.setMode(mapItem, 'FULL_MAP');
-	    NgChm.DET.scaleViewHeight(mapItem);
-	    NgChm.DET.scaleViewWidth(mapItem);
+	    SEL.setMode(mapItem, 'FULL_MAP');
+	    DET.scaleViewHeight(mapItem);
+	    DET.scaleViewWidth(mapItem);
 	}
 
 	//Canvas is adjusted to fit the number of rows/columns and matrix height/width of each element.
-  	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
-  	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
-	NgChm.DET.detInitGl(mapItem);
-	NgChm.SEL.updateSelection(mapItem);	
+	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+	DET.detInitGl(mapItem);
+	SEL.updateSelection(mapItem);
 }
 
 /**********************************************************************************
  * FUNCTION - detailHRibbonButton: The purpose of this function is to clear dendro
  * selections and call processing to change to Horizontal Ribbon Mode.
  **********************************************************************************/
-NgChm.DEV.detailHRibbonButton = function (mapItem) {
-	NgChm.DDR.clearDendroSelection(mapItem);
-	NgChm.DEV.detailHRibbon(mapItem);
+DEV.detailHRibbonButton = function (mapItem) {
+	DDR.clearDendroSelection(mapItem);
+	DEV.detailHRibbon(mapItem);
 }
 
 /**********************************************************************************
@@ -963,69 +979,70 @@ NgChm.DEV.detailHRibbonButton = function (mapItem) {
  * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.  
  * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
  **********************************************************************************/
-NgChm.DEV.detailHRibbon = function (mapItem, restoreInfo) {
-	NgChm.UHM.hlpC();	
+DEV.detailHRibbon = function (mapItem, restoreInfo) {
+	UHM.hlpC();
+	const heatMap = MMGR.getHeatMap();
 	const previousMode = mapItem.mode;
 	const prevWidth = mapItem.dataBoxWidth;
 	mapItem.saveCol = mapItem.currentCol;
-	NgChm.SEL.setMode(mapItem,'RIBBONH');
-	NgChm.DET.setButtons(mapItem);
+	SEL.setMode(mapItem,'RIBBONH');
+	DET.setButtons(mapItem);
 
 	if (!restoreInfo) {
 	    if (previousMode=='FULL_MAP') {
-		NgChm.DET.setDetailDataHeight(mapItem, NgChm.DET.zoomBoxSizes[0]);
+		DET.setDetailDataHeight(mapItem, DET.zoomBoxSizes[0]);
 	    }
 	    // If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	    // and data size to 1.
 	    if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewWidth = NgChm.heatMap.getNumColumns(NgChm.MMGR.RIBBON_HOR_LEVEL) + NgChm.DET.dataViewBorder;
+		mapItem.dataViewWidth = heatMap.getNumColumns(MMGR.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
 		let ddw = 1;
 		while(2*mapItem.dataViewWidth < 500){ // make the width wider to prevent blurry/big dendros for smaller maps
 			ddw *=2;
-			mapItem.dataViewWidth = ddw*NgChm.heatMap.getNumColumns(NgChm.MMGR.RIBBON_HOR_LEVEL) + NgChm.DET.dataViewBorder;
+			mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MMGR.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
 		}
-		NgChm.DET.setDetailDataWidth(mapItem,ddw);
+		DET.setDetailDataWidth(mapItem,ddw);
 		mapItem.currentCol = 1;
 	    } else {
 		mapItem.saveCol = mapItem.selectedStart;
 		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
-		NgChm.DEV.clearModeHistory (mapItem);
+		DEV.clearModeHistory (mapItem);
 		mapItem.mode='RIBBONH_DETAIL'
 		const width = Math.max(1, Math.floor(500/selectionSize));
-		mapItem.dataViewWidth = (selectionSize * width) + NgChm.DET.dataViewBorder;
-		NgChm.DET.setDetailDataWidth(mapItem,width);	
+		mapItem.dataViewWidth = (selectionSize * width) + DET.dataViewBorder;
+		DET.setDetailDataWidth(mapItem,width);
 		mapItem.currentCol = mapItem.selectedStart;
 	    }
 	
-	    mapItem.dataViewHeight = NgChm.DET.SIZE_NORMAL_MODE;
+	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
 	    if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
 		if (previousMode == 'FULL_MAP') {
-		    NgChm.DET.setDetailDataHeight(mapItem,NgChm.DET.zoomBoxSizes[0]);
+		    DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[0]);
 		} else {
-		    NgChm.DET.setDetailDataHeight(mapItem,prevWidth);
+		    DET.setDetailDataHeight(mapItem,prevWidth);
 		}
 		mapItem.currentRow = mapItem.saveRow;
 	    }
 
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL)) {
-		NgChm.DET.setDetailDataHeight(mapItem,NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
+	    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MMGR.DETAIL_LEVEL)) {
+		DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 	    }
 	}
 
-	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
-	NgChm.DET.detInitGl(mapItem);
-	NgChm.SEL.updateSelection(mapItem);
+	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+	DET.detInitGl(mapItem);
+	SEL.updateSelection(mapItem);
 }
 
 /**********************************************************************************
  * FUNCTION - detailVRibbonButton: The purpose of this function is to clear dendro
  * selections and call processing to change to Vertical Ribbon Mode.
  **********************************************************************************/
-NgChm.DEV.detailVRibbonButton = function (mapItem) {
-	NgChm.DDR.clearDendroSelection(mapItem);
-	NgChm.DEV.detailVRibbon(mapItem);
+DEV.detailVRibbonButton = function (mapItem) {
+	DDR.clearDendroSelection(mapItem);
+	DEV.detailVRibbon(mapItem);
 }
 
 /**********************************************************************************
@@ -1034,63 +1051,64 @@ NgChm.DEV.detailVRibbonButton = function (mapItem) {
  * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.  
  * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
  **********************************************************************************/
-NgChm.DEV.detailVRibbon = function (mapItem, restoreInfo) {
-	NgChm.UHM.hlpC();	
+DEV.detailVRibbon = function (mapItem, restoreInfo) {
+	UHM.hlpC();
+	const heatMap = MMGR.getHeatMap();
 	const previousMode = mapItem.mode;
 	const prevHeight = mapItem.dataBoxHeight;
 	mapItem.saveRow = mapItem.currentRow;
 	
-	NgChm.SEL.setMode(mapItem, 'RIBBONV');
-	NgChm.DET.setButtons(mapItem);
+	SEL.setMode(mapItem, 'RIBBONV');
+	DET.setButtons(mapItem);
 
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
 	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewHeight = NgChm.heatMap.getNumRows(NgChm.MMGR.RIBBON_VERT_LEVEL) + NgChm.DET.dataViewBorder;
+		mapItem.dataViewHeight = heatMap.getNumRows(MMGR.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
 		let ddh = 1;
 		while(2*mapItem.dataViewHeight < 500){ // make the height taller to prevent blurry/big dendros for smaller maps
 			ddh *=2;
-			mapItem.dataViewHeight = ddh*NgChm.heatMap.getNumRows(NgChm.MMGR.RIBBON_VERT_LEVEL) + NgChm.DET.dataViewBorder;
+			mapItem.dataViewHeight = ddh*heatMap.getNumRows(MMGR.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
 		}
-		NgChm.DET.setDetailDataHeight(mapItem,ddh);
+		DET.setDetailDataHeight(mapItem,ddh);
 		mapItem.currentRow = 1;
 	} else {
 		mapItem.saveRow = mapItem.selectedStart;
 		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
 		if (selectionSize < 500) {
-			NgChm.DEV.clearModeHistory (mapItem);
-			NgChm.SEL.setMode(mapItem, 'RIBBONV_DETAIL');
+			DEV.clearModeHistory (mapItem);
+			SEL.setMode(mapItem, 'RIBBONV_DETAIL');
 		} else {
-			const rvRate = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
+			const rvRate = heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
 			selectionSize = Math.floor(selectionSize / rvRate);			
 		}
 		const height = Math.max(1, Math.floor(500/selectionSize));
-		mapItem.dataViewHeight = (selectionSize * height) + NgChm.DET.dataViewBorder;
-		NgChm.DET.setDetailDataHeight(mapItem, height);
+		mapItem.dataViewHeight = (selectionSize * height) + DET.dataViewBorder;
+		DET.setDetailDataHeight(mapItem, height);
 		mapItem.currentRow = mapItem.selectedStart;
 	}
 	
 	if (!restoreInfo) {
-	    mapItem.dataViewWidth = NgChm.DET.SIZE_NORMAL_MODE;
+	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
 	    if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
 		if (previousMode == 'FULL_MAP') {
-			NgChm.DET.setDetailDataWidth(mapItem, NgChm.DET.zoomBoxSizes[0]);
+			DET.setDetailDataWidth(mapItem, DET.zoomBoxSizes[0]);
 		} else {
-			NgChm.DET.setDetailDataWidth(mapItem, prevHeight);
+			DET.setDetailDataWidth(mapItem, prevHeight);
 		}
 		mapItem.currentCol = mapItem.saveCol;
 	    }
 	
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL)) {
-		NgChm.DET.setDetailDataWidth(mapItem,NgChm.DET.zoomBoxSizes[NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
+	    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) {
+		DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 	    }
 	}
 
-	mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
-	NgChm.DET.detInitGl(mapItem);
-	NgChm.SEL.updateSelection(mapItem);
+	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+	DET.detInitGl(mapItem);
+	SEL.updateSelection(mapItem);
 	try {
 		document.getElementById("viewport").setAttribute("content", "height=device-height");
 		document.getElementById("viewport").setAttribute("content", "");
@@ -1103,13 +1121,13 @@ NgChm.DEV.detailVRibbon = function (mapItem, restoreInfo) {
  * FUNCTION - zoomAnimation: The purpose of this function is to perform a zoom 
  * animation when users are zooming out on a given heat map canvas.
  **********************************************************************************/
-NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
-	const mapItem = NgChm.DMM.getMapItemFromChm(chm);
+DEV.zoomAnimation = function (chm,destRow,destCol) {
+	const mapItem = DMM.getMapItemFromChm(chm);
 	// set proportion variables for heatmap canvas
 	const detViewW = mapItem.dataViewWidth;
 	const detViewH = mapItem.dataViewHeight;
-	const classBarW = NgChm.DET.calculateTotalClassBarHeight("row");
-	const classBarH = NgChm.DET.calculateTotalClassBarHeight("column");
+	const classBarW = DET.calculateTotalClassBarHeight("row");
+	const classBarH = DET.calculateTotalClassBarHeight("column");
 	const dendroW = mapItem.dendroWidth;
 	const dendroH = mapItem.dendroHeight;
 	const rowTotalW = detViewW + classBarW;
@@ -1119,12 +1137,12 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 	const dendroClassWRatio = 1 - mapWRatio;
 	const dendroClassHRatio = 1 - mapHRatio;
 	
-	const currentWIndex = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
-	const currentHIndex = NgChm.DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
+	const currentWIndex = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
+	const currentHIndex = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 	const currentW = mapItem.dataBoxWidth;
 	const currentH = mapItem.dataBoxHeight;
-	const nextW = NgChm.DET.zoomBoxSizes[currentWIndex+1];
-	const nextH = NgChm.DET.zoomBoxSizes[currentHIndex+1];
+	const nextW = DET.zoomBoxSizes[currentWIndex+1];
+	const nextH = DET.zoomBoxSizes[currentHIndex+1];
 	const currentNumCols = (detViewW-2)/currentW;
 	const currentNumRows = (detViewH-2)/currentH;
 	
@@ -1142,7 +1160,7 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 	
 	
 	// if we can't go in any further, don't proceed
-	if ((mapItem.mode !== "RIBBONH" && nextW == undefined) || (mapItem.mode !== "RIBBONV" && nextH == undefined) || NgChm.DET.animating == true){
+	if ((mapItem.mode !== "RIBBONH" && nextW == undefined) || (mapItem.mode !== "RIBBONV" && nextH == undefined) || DET.animating == true){
 		return;
 	}
 	boxCtx.clearRect(0, 0, boxCtx.canvas.width, boxCtx.canvas.height);
@@ -1156,9 +1174,10 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 		animate(mapItem,destRow,destCol);
 	}
 	function animate(mapItem,destRow,destCol){
-		NgChm.DET.animating = true;
+		const heatMap = MMGR.getHeatMap();
+		DET.animating = true;
 
-		NgChm.DET.detInitGl (mapItem);
+		DET.detInitGl (mapItem);
 		// create new buffer to draw over the current map
 
 		if (animateCount < animateCountMax) { // do we keep animating?
@@ -1174,24 +1193,24 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 				let saveRow = mapItem.saveRow;
 				let saveCol = mapItem.saveCol;
 				if (destRow && destCol){
-					saveRow = destRow*NgChm.heatMap.getRowSummaryRatio("s");
-					saveCol = destCol*NgChm.heatMap.getColSummaryRatio("s");
+					saveRow = destRow*heatMap.getRowSummaryRatio("s");
+					saveCol = destCol*heatMap.getColSummaryRatio("s");
 				}
-				let detWidth = NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.paddingHeight;
-				let detHeight = NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.paddingHeight;
-				if ((NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.paddingHeight) > NgChm.heatMap.getNumRows("d")){
-					for (let i = 0; i<NgChm.DET.zoomBoxSizes.length; i++){
-						if ((NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.paddingHeight)/NgChm.DET.zoomBoxSizes[i] < NgChm.heatMap.getNumRows("d")){
-							detHeight = (NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.paddingHeight)/NgChm.DET.zoomBoxSizes[i];
+				let detWidth = DET.SIZE_NORMAL_MODE-DET.paddingHeight;
+				let detHeight = DET.SIZE_NORMAL_MODE-DET.paddingHeight;
+				if ((DET.SIZE_NORMAL_MODE-DET.paddingHeight) > heatMap.getNumRows("d")){
+					for (let i = 0; i<DET.zoomBoxSizes.length; i++){
+						if ((DET.SIZE_NORMAL_MODE-DET.paddingHeight)/DET.zoomBoxSizes[i] < heatMap.getNumRows("d")){
+							detHeight = (DET.SIZE_NORMAL_MODE-DET.paddingHeight)/DET.zoomBoxSizes[i];
 							break;
 						}
 					}
 				}
 				
-				if ((NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.paddingHeight) > NgChm.heatMap.getNumColumns("d")){
-					for (let i = 0;i< NgChm.DET.zoomBoxSizes.length; i++){
-						if ((NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.paddingHeight)/NgChm.DET.zoomBoxSizes[i] < NgChm.heatMap.getNumColumns("d")){
-							detWidth = (NgChm.DET.SIZE_NORMAL_MODE-NgChm.DET.paddingHeight)/NgChm.DET.zoomBoxSizes[i];
+				if ((DET.SIZE_NORMAL_MODE-DET.paddingHeight) > heatMap.getNumColumns("d")){
+					for (let i = 0;i< DET.zoomBoxSizes.length; i++){
+						if ((DET.SIZE_NORMAL_MODE-DET.paddingHeight)/DET.zoomBoxSizes[i] < heatMap.getNumColumns("d")){
+							detWidth = (DET.SIZE_NORMAL_MODE-DET.paddingHeight)/DET.zoomBoxSizes[i];
 							break;
 						}
 					}
@@ -1206,10 +1225,10 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 				}
 								
 				//TODO: do we need to account for summary ratio???
-				const leftRatio=(saveCol-1)*mapWRatio /mapItem.dataPerRow /animateCountMax/NgChm.heatMap.getColSummaryRatio("d");
-				const rightRatio=Math.max(0,(NgChm.SEL.getCurrentDetDataPerRow(mapItem)*NgChm.heatMap.getColSummaryRatio("d")-saveCol-1-detNum)*mapWRatio /NgChm.SEL.getCurrentDetDataPerRow(mapItem) /animateCountMax/NgChm.heatMap.getColSummaryRatio("d")); // this one works for maps that are not too big!!
-				const topRatio = (saveRow-1)*mapHRatio /mapItem.dataPerCol /animateCountMax/NgChm.heatMap.getRowSummaryRatio("d");
-				const bottomRatio = Math.max(0,(NgChm.SEL.getCurrentDetDataPerCol(mapItem)*NgChm.heatMap.getRowSummaryRatio("d")-saveRow-1-detNum)*mapHRatio   /NgChm.SEL.getCurrentDetDataPerCol(mapItem) /animateCountMax/NgChm.heatMap.getRowSummaryRatio("d")); // this one works for maps that are not too big!
+				const leftRatio=(saveCol-1)*mapWRatio /mapItem.dataPerRow /animateCountMax/heatMap.getColSummaryRatio("d");
+				const rightRatio=Math.max(0,(SEL.getCurrentDetDataPerRow(mapItem)*heatMap.getColSummaryRatio("d")-saveCol-1-detNum)*mapWRatio /SEL.getCurrentDetDataPerRow(mapItem) /animateCountMax/heatMap.getColSummaryRatio("d")); // this one works for maps that are not too big!!
+				const topRatio = (saveRow-1)*mapHRatio /mapItem.dataPerCol /animateCountMax/heatMap.getRowSummaryRatio("d");
+				const bottomRatio = Math.max(0,(SEL.getCurrentDetDataPerCol(mapItem)*heatMap.getRowSummaryRatio("d")-saveRow-1-detNum)*mapHRatio   /SEL.getCurrentDetDataPerCol(mapItem) /animateCountMax/heatMap.getRowSummaryRatio("d")); // this one works for maps that are not too big!
 				
 				texLeft = dendroClassWRatio+animateCount*leftRatio;
 			        texBottom = animateCount*bottomRatio;
@@ -1245,8 +1264,8 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 				const bottom = -1;
 			        const left = -1 + 2 * dendroClassWRatio;
 			        const top = 1 - 2 * dendroClassHRatio;
-				mapItem.glManager.setClipRegion (NgChm.DRAW.GL.rectToTriangles(bottom,left,top,right));
-				mapItem.glManager.setTextureRegion (NgChm.DRAW.GL.rectToTriangles(texBottom,texLeft,texTop,texRight));
+				mapItem.glManager.setClipRegion (DRAW.GL.rectToTriangles(bottom,left,top,right));
+				mapItem.glManager.setTextureRegion (DRAW.GL.rectToTriangles(texBottom,texLeft,texTop,texRight));
 				mapItem.glManager.drawTexture ();
 			}
 		} else { // animation stops and actual zoom occurs
@@ -1255,16 +1274,15 @@ NgChm.DEV.zoomAnimation = function (chm,destRow,destCol) {
 			if (mapItem.glManager.OK) {
 			    const ctx = mapItem.glManager.context;
 			    ctx.clear(ctx.COLOR_BUFFER_BIT);
-			    mapItem.glManager.setClipRegion (NgChm.DRAW.GL.fullClipSpace);
-			    mapItem.glManager.setTextureRegion (NgChm.DRAW.GL.fullTextureSpace);
+			    mapItem.glManager.setClipRegion (DRAW.GL.fullClipSpace);
+			    mapItem.glManager.setTextureRegion (DRAW.GL.fullTextureSpace);
 			}
-			NgChm.DEV.detailDataZoomIn(mapItem);
-			NgChm.DET.animating = false;
+			DEV.detailDataZoomIn(mapItem);
+			DET.animating = false;
 
 		}	
 	}
 
 }
 
-
-
+})();

@@ -1,19 +1,25 @@
-//"use strict";
+(function() {
+    "use strict";
+    NgChm.markFile();
 
-//Define Namespace for NgChm Drawing
-NgChm.createNS('NgChm.DMM');
+    //Define Namespace for NgChm Drawing
+    const DMM = NgChm.createNS('NgChm.DMM');
+
+    const DET = NgChm.importNS('NgChm.DET');
+    const DDR = NgChm.importNS('NgChm.DDR');
+    const PANE = NgChm.importNS('NgChm.Pane');
 
 //Array to contain all active detail heat map objects
-NgChm.DMM.DetailMaps = [];
+DMM.DetailMaps = [];
 
 //Array to contain all active detail heat map objects
-NgChm.DMM.primaryMap = null;
+DMM.primaryMap = null;
 
 //Next available heatmap object iterator (used for subscripting new map DOM elements) 
-NgChm.DMM.nextMapNumber = 1;
+DMM.nextMapNumber = 1;
 
 //Template for a Detail Heat Map object containing initialization values for all pertinent variables.
-NgChm.DMM.mapTemplate = { 
+DMM.mapTemplate = {
 	  pane: null, chm: null, version: 'P', panelNbr: 1, mode: 'NORMAL', prevMode: 'NORMAL', currentDl: 'dl1', currentRow: 1, currentCol: 1, dataPerRow: null, dataPerCol: null,
 	  selectedStart: 0, selectedStop: 0, colDendroCanvas: null, rowDendroCanvas: null, canvas: null, boxCanvas: null, labelElement: null, labelPostScript: null,
 	  rowLabelDiv: null, colLabelDiv: null, gl: null, uScale: null, uTranslate: null, canvasScaleArray: new Float32Array([1.0, 1.0]), canvasTranslateArray: new Float32Array([0, 0]),
@@ -31,20 +37,20 @@ NgChm.DMM.mapTemplate = {
  * Otherwise, it will be populated from Primary heat map object and marked as a 'Secondary'
  * heat map.
  *********************************************************************************************/
-NgChm.DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
-	const template = NgChm.DMM.primaryMap || NgChm.DMM.mapTemplate;
+DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
+	const template = DMM.primaryMap || DMM.mapTemplate;
 	const newMapObj = Object.assign({}, template, { glManager: null, version: 'S', });
 	newMapObj.pane = pane;
-	NgChm.DMM.completeMapItemConfig(newMapObj, chm, mapNumber);
+	DMM.completeMapItemConfig(newMapObj, chm, mapNumber);
 	if (restoreInfo) {
-	    NgChm.DET.restoreFromSavedState (newMapObj, restoreInfo);
+	    DET.restoreFromSavedState (newMapObj, restoreInfo);
 	}
-	NgChm.DET.setDetailMapDisplay(newMapObj, restoreInfo);
+	DET.setDetailMapDisplay(newMapObj, restoreInfo);
 	if (isPrimary) {
-	    NgChm.DMM.setPrimaryDetailMap (newMapObj);
+	    DMM.setPrimaryDetailMap (newMapObj);
 	} else {
-	    NgChm.DET.rowDendroResize(newMapObj);
-	    NgChm.DET.colDendroResize(newMapObj);
+	    DET.rowDendroResize(newMapObj);
+	    DET.colDendroResize(newMapObj);
 	}
 	return newMapObj;
 };
@@ -53,16 +59,16 @@ NgChm.DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo)
  * FUNCTION:  completeMapItemConfig - The purpose of this function is to flesh out the mapItem
  * (either intial or copy) being created.
  *********************************************************************************************/
-NgChm.DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
+DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
 	mapItem.chm = chm;
-	mapItem.version = NgChm.DMM.DetailMaps.length === 0 ? 'P' : 'S';
+	mapItem.version = DMM.DetailMaps.length === 0 ? 'P' : 'S';
 	mapItem.colDendroCanvas = chm.children[0];
 	mapItem.rowDendroCanvas = chm.children[1];
 	mapItem.canvas = chm.children[2];
 	mapItem.boxCanvas = chm.children[3];
 	mapItem.labelElement = chm.children[4];
-	mapItem.rowDendro = new NgChm.DDR.DetailRowDendrogram(chm.children[1]); 
-	mapItem.colDendro = new NgChm.DDR.DetailColumnDendrogram(chm.children[0]);
+	mapItem.rowDendro = new DDR.DetailRowDendrogram(chm.children[1]);
+	mapItem.colDendro = new DDR.DetailColumnDendrogram(chm.children[0]);
 	mapItem.panelNbr = mapNumber;
 	mapItem.labelPostScript = mapNumber === 1 ? '' : '_' + mapNumber;
 	mapItem.rowLabelDiv =  'rowL'+mapItem.labelElement.id.substring(1);
@@ -73,23 +79,23 @@ NgChm.DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
  * FUNCTION:  RemoveDetailMap - The purpose of this function is to remove a detail heat map 
  * object from the DetailMaps array.
  *********************************************************************************************/
-NgChm.DMM.RemoveDetailMap = function (pane) {
+DMM.RemoveDetailMap = function (pane) {
 	let wasPrime = false;
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		const mapItem = DMM.DetailMaps[i];
 		if (mapItem.pane === pane) {
 			if (mapItem.version === 'P') {
 				wasPrime = true;
 			}
-			NgChm.DMM.DetailMaps.splice(i, 1);
+			DMM.DetailMaps.splice(i, 1);
 			break;
 		}
 	}
 	if (wasPrime) {
-	   if (NgChm.DMM.DetailMaps.length > 0) {
-		NgChm.DMM.switchToPrimary(NgChm.DMM.DetailMaps[0].chm); 
+	   if (DMM.DetailMaps.length > 0) {
+		DMM.switchToPrimary(DMM.DetailMaps[0].chm);
 	   } else {
-	       NgChm.DMM.primaryMap = null;
+	       DMM.primaryMap = null;
 	   }
 	}
 }
@@ -98,9 +104,9 @@ NgChm.DMM.RemoveDetailMap = function (pane) {
  * FUNCTION:  getPrimaryDetailMap - The purpose of this function is to retrieve the Primary
  * detail heat map object from the DetailMaps array.
  *********************************************************************************************/
-NgChm.DMM.getPrimaryDetailMap = function () {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
+DMM.getPrimaryDetailMap = function () {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		const mapItem = DMM.DetailMaps[i];
 		if (mapItem.version === 'P') {
 			return mapItem;
 		}
@@ -111,20 +117,20 @@ NgChm.DMM.getPrimaryDetailMap = function () {
  * FUNCTION:  switchToPrimary - The purpose of this function is to switch one map item from
  * Secondary to Primary and set all others to Secondary.
  *********************************************************************************************/
-NgChm.DMM.switchToPrimary = function (chm) {
-	const newPrimaryLoc = NgChm.Pane.findPaneLocation(chm);
-	const mapItem = NgChm.DMM.getMapItemFromChm(chm);
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		if (NgChm.DMM.DetailMaps[i].chm === chm) {
-			NgChm.DMM.setPrimaryDetailMap(mapItem);
-			NgChm.Pane.setPaneTitle(newPrimaryLoc, 'Heat Map Detail - Primary');
+DMM.switchToPrimary = function (chm) {
+	const newPrimaryLoc = PANE.findPaneLocation(chm);
+	const mapItem = DMM.getMapItemFromChm(chm);
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		if (DMM.DetailMaps[i].chm === chm) {
+			DMM.setPrimaryDetailMap(mapItem);
+			PANE.setPaneTitle(newPrimaryLoc, 'Heat Map Detail - Primary');
 		} else {
-			const item = NgChm.DMM.DetailMaps[i];
+			const item = DMM.DetailMaps[i];
 			if (item.version === 'P') {
-				const oldPrimaryLoc = NgChm.Pane.findPaneLocation(item.chm);
+				const oldPrimaryLoc = PANE.findPaneLocation(item.chm);
 				item.version = 'S';
-				NgChm.Pane.setPaneTitle(oldPrimaryLoc, 'Heat Map Detail - Ver '+item.panelNbr);
-				document.getElementById('primary_btn'+NgChm.DMM.DetailMaps[i].panelNbr).style.display = '';
+				PANE.setPaneTitle(oldPrimaryLoc, 'Heat Map Detail - Ver '+item.panelNbr);
+				document.getElementById('primary_btn'+DMM.DetailMaps[i].panelNbr).style.display = '';
 			}
 		}
 	}
@@ -135,9 +141,9 @@ NgChm.DMM.switchToPrimary = function (chm) {
  * item to the Primary map item. This will happen when either the primary map is closed and a
  * secondary map is open OR when assigned by the user.
  *********************************************************************************************/
-NgChm.DMM.setPrimaryDetailMap = function (mapItem) {
+DMM.setPrimaryDetailMap = function (mapItem) {
 	mapItem.version = 'P';
-	NgChm.DMM.primaryMap = mapItem;
+	DMM.primaryMap = mapItem;
 	document.getElementById('primary_btn'+mapItem.panelNbr).style.display = 'none';
 }
 
@@ -145,12 +151,12 @@ NgChm.DMM.setPrimaryDetailMap = function (mapItem) {
  * FUNCTION:  getMapItemFromEvent - The purpose of this function is to retrieve a detail heat map 
  * object using the event. 
  *********************************************************************************************/
-NgChm.DMM.getMapItemFromEvent = function (e) {
+DMM.getMapItemFromEvent = function (e) {
 	let mapItem = null;
 	if (e.pane !== null) {
-		mapItem = NgChm.DMM.getMapItemFromPane(e.pane);
+		mapItem = DMM.getMapItemFromPane(e.pane);
 	} else if (e.currentTarget !== null) {
-		mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
+		mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
 	}
 	return mapItem;
 }
@@ -159,11 +165,11 @@ NgChm.DMM.getMapItemFromEvent = function (e) {
  * FUNCTION:  resizeDetailMapCanvases - Set the size of all detail canvases following a
  * potential size in change (such as changes to the covariate bars).
  *********************************************************************************************/
-NgChm.DMM.resizeDetailMapCanvases = function resizeDetailMapCanvases () {
-	const rowBarsWidth = NgChm.DET.calculateTotalClassBarHeight("row");
-	const colBarsHeight = NgChm.DET.calculateTotalClassBarHeight("column");
-	for (let i=0; i<NgChm.DMM.DetailMaps.length; i++) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
+DMM.resizeDetailMapCanvases = function resizeDetailMapCanvases () {
+	const rowBarsWidth = DET.calculateTotalClassBarHeight("row");
+	const colBarsHeight = DET.calculateTotalClassBarHeight("column");
+	for (let i=0; i<DMM.DetailMaps.length; i++) {
+		const mapItem = DMM.DetailMaps[i];
 		mapItem.canvas.width =  mapItem.dataViewWidth + rowBarsWidth;
 		mapItem.canvas.height = mapItem.dataViewHeight + colBarsHeight;
 	}
@@ -173,12 +179,12 @@ NgChm.DMM.resizeDetailMapCanvases = function resizeDetailMapCanvases () {
  * FUNCTION:  getMapItemFromChm - The purpose of this function is to retrieve a detail heat map 
  * object using the chm. 
  *********************************************************************************************/
-NgChm.DMM.getMapItemFromChm = function (chm) {
-	if (NgChm.DMM.DetailMaps.length === 0) {
-		return NgChm.DMM.primaryMap;
+DMM.getMapItemFromChm = function (chm) {
+	if (DMM.DetailMaps.length === 0) {
+		return DMM.primaryMap;
 	} else {
-		for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-			const mapItem = NgChm.DMM.DetailMaps[i];
+		for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+			const mapItem = DMM.DetailMaps[i];
 			if (mapItem.chm === chm) {
 				return mapItem;
 			}
@@ -190,12 +196,12 @@ NgChm.DMM.getMapItemFromChm = function (chm) {
  * FUNCTION:  getMapItemFromPane - The purpose of this function is to retrieve a detail heat map 
  * object using the panel id associated with that map object. 
  *********************************************************************************************/
-NgChm.DMM.getMapItemFromPane = function (paneId) {
-	if (NgChm.DMM.DetailMaps.length === 0) {
-		return NgChm.DMM.primaryMap;
+DMM.getMapItemFromPane = function (paneId) {
+	if (DMM.DetailMaps.length === 0) {
+		return DMM.primaryMap;
 	} else {
-		for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-			const mapItem = NgChm.DMM.DetailMaps[i];
+		for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+			const mapItem = DMM.DetailMaps[i];
 			if (mapItem.pane === paneId) {
 				return mapItem;
 			}
@@ -207,12 +213,12 @@ NgChm.DMM.getMapItemFromPane = function (paneId) {
  * FUNCTION:  getMapItemFromPane - The purpose of this function is to retrieve a detail heat map 
  * object using the canvas associated with that map object. 
  *********************************************************************************************/
-NgChm.DMM.getMapItemFromCanvas = function (canvas) {
-	if (NgChm.DMM.DetailMaps.length === 0) {
-		return NgChm.DMM.primaryMap;
+DMM.getMapItemFromCanvas = function (canvas) {
+	if (DMM.DetailMaps.length === 0) {
+		return DMM.primaryMap;
 	} else {
-		for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-			const mapItem = NgChm.DMM.DetailMaps[i];
+		for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+			const mapItem = DMM.DetailMaps[i];
 			if (mapItem.canvas === canvas) {
 				return mapItem;
 			}
@@ -224,9 +230,9 @@ NgChm.DMM.getMapItemFromCanvas = function (canvas) {
  * FUNCTION:  getMapItemFromDendro - The purpose of this function is to retrieve a detail heat map 
  * object using the dendrogram associated with that map object. 
  *********************************************************************************************/
-NgChm.DMM.getMapItemFromDendro = function (dendro) {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
+DMM.getMapItemFromDendro = function (dendro) {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		const mapItem = DMM.DetailMaps[i];
 		if (mapItem.rowDendro === dendro) {
 			return mapItem;
 		}
@@ -239,19 +245,19 @@ NgChm.DMM.getMapItemFromDendro = function (dendro) {
 /*********************************************************************************************
  * FUNCTION:  isVisible - Return true if mapItem is visible (i.e. contained in a visible pane).
  *********************************************************************************************/
-NgChm.DMM.isVisible = isVisible;
+DMM.isVisible = isVisible;
 
 function isVisible (mapItem) {
-	const loc = NgChm.Pane.findPaneLocation (mapItem.chm);
+	const loc = PANE.findPaneLocation (mapItem.chm);
 	return (!loc.pane.classList.contains('collapsed')) && (loc.pane.style.display !== 'none');
 }
 
 /*********************************************************************************************
  * FUNCTION:  anyVisible - Return true if any Detail View is visible.
  *********************************************************************************************/
-NgChm.DMM.anyVisible = function anyVisible () {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		if (isVisible(NgChm.DMM.DetailMaps[i])) {
+DMM.anyVisible = function anyVisible () {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		if (isVisible(DMM.DetailMaps[i])) {
 		    return true;
 		};
 	}
@@ -262,20 +268,22 @@ NgChm.DMM.anyVisible = function anyVisible () {
  * FUNCTION - detailResize: This function calls all of the functions necessary to resize all 
  * of the open detail panel instances.
  ************************************************************************************************/
-NgChm.DMM.detailResize = function () {
-	NgChm.DMM.DetailMaps.forEach(mapItem => {
-	    NgChm.DET.rowDendroResize(mapItem);
-	    NgChm.DET.colDendroResize(mapItem);
+DMM.detailResize = function () {
+	DMM.DetailMaps.forEach(mapItem => {
+	    DET.rowDendroResize(mapItem);
+	    DET.colDendroResize(mapItem);
 	});
-	if (NgChm.DMM.DetailMaps.length > 0) {
-		 NgChm.DET.sizeCanvasForLabels();
+	if (DMM.DetailMaps.length > 0) {
+		 DET.sizeCanvasForLabels();
 		 //Done twice because changing canvas size affects fonts selected for drawing labels
-		 NgChm.DET.sizeCanvasForLabels();
-		 NgChm.DET.updateDisplayedLabels();
-		 NgChm.DET.drawSelections();  
+		 DET.sizeCanvasForLabels();
+		 DET.updateDisplayedLabels();
+		 DET.drawSelections();
 	}
-	NgChm.DMM.DetailMaps.forEach(mapItem => {
-	    NgChm.DET.rowDendroResize(mapItem);
-	    NgChm.DET.colDendroResize(mapItem);
+	DMM.DetailMaps.forEach(mapItem => {
+	    DET.rowDendroResize(mapItem);
+	    DET.colDendroResize(mapItem);
 	});
 }
+
+})();

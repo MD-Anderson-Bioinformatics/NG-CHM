@@ -1,21 +1,36 @@
-//Define Namespace for NgChm DetailHeatMapDisplay
-NgChm.createNS('NgChm.DET');
+(function() {
+    'use strict';
+    NgChm.markFile();
 
+    //Define Namespace for NgChm DetailHeatMapDisplay
+    const DET = NgChm.createNS('NgChm.DET');
 
-NgChm.DET.labelLastClicked = {};
-NgChm.DET.mouseDown = false;
-NgChm.DET.minLabelSize = 5;
-NgChm.DET.paddingHeight = 2;          // space between classification bars
-NgChm.DET.SIZE_NORMAL_MODE = 506;
-NgChm.DET.dataViewBorder = 2;
-NgChm.DET.zoomBoxSizes = [1,2,3,4,6,7,8,9,12,14,18,21,24,28,36,42,56,63,72,84,126,168,252];
-NgChm.DET.eventTimer = 0; // Used to delay draw updates
-NgChm.DET.maxLabelSize = 11;
-NgChm.DET.redrawSelectionTimeout = 0;   // Drawing delay in ms after the view has changed.
-NgChm.DET.redrawUpdateTimeout = 10;	// Drawing delay in ms after a tile update (if needed).
-NgChm.DET.minPixelsForGrid = 20;	// minimum element size for grid lines to display
-NgChm.DET.detailPoint = null;
-NgChm.DET.animating = false; 
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const DMM = NgChm.importNS('NgChm.DMM');
+    const SEL = NgChm.importNS('NgChm.SEL');
+    const LNK = NgChm.importNS('NgChm.LNK');
+    const UTIL = NgChm.importNS('NgChm.UTIL');
+    const SRCH = NgChm.importNS('NgChm.SRCH');
+    const DRAW = NgChm.importNS('NgChm.DRAW');
+    const DEV = NgChm.importNS('NgChm.DEV');
+    const UHM = NgChm.importNS('NgChm.UHM');
+    const PANE = NgChm.importNS('NgChm.Pane');
+
+DET.labelLastClicked = {};
+DET.mouseDown = false;
+DET.minLabelSize = 5;
+DET.paddingHeight = 2;          // space between classification bars
+DET.SIZE_NORMAL_MODE = 506;
+DET.dataViewBorder = 2;
+DET.zoomBoxSizes = [1,2,3,4,6,7,8,9,12,14,18,21,24,28,36,42,56,63,72,84,126,168,252];
+DET.eventTimer = 0; // Used to delay draw updates
+DET.maxLabelSize = 11;
+DET.redrawSelectionTimeout = 0;   // Drawing delay in ms after the view has changed.
+DET.redrawUpdateTimeout = 10;	// Drawing delay in ms after a tile update (if needed).
+DET.minPixelsForGrid = 20;	// minimum element size for grid lines to display
+DET.detailPoint = null;
+DET.animating = false;
 
 //We keep a copy of the last rendered detail heat map for each layer.
 //This enables quickly redrawing the heatmap when flicking between layers, which
@@ -23,9 +38,9 @@ NgChm.DET.animating = false;
 //The copy will be invalidated and require drawing if any parameter affecting
 //drawing of that heat map is changed or if a new tile that could affect it
 //is received.
-NgChm.DET.detailHeatMapCache = {};      // Last rendered detail heat map for each layer
-NgChm.DET.detailHeatMapLevel = {};      // Level of last rendered heat map for each layer
-NgChm.DET.detailHeatMapValidator = {};  // Encoded drawing parameters used to check heat map is current
+DET.detailHeatMapCache = {};      // Last rendered detail heat map for each layer
+DET.detailHeatMapLevel = {};      // Level of last rendered heat map for each layer
+DET.detailHeatMapValidator = {};  // Encoded drawing parameters used to check heat map is current
 
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
@@ -38,9 +53,9 @@ NgChm.DET.detailHeatMapValidator = {};  // Encoded drawing parameters used to ch
  * that is notified every time there is an update to the heat map initialize, new data, etc.  
  * This callback draws the summary heat map.
  *********************************************************************************************/
-NgChm.DET.processDetailMapUpdate = function (event, tile) {
-	if (event !== NgChm.MMGR.Event_INITIALIZED) {
-		NgChm.DET.flushDrawingCache(tile);
+DET.processDetailMapUpdate = function (event, tile) {
+	if (event !== MMGR.Event_INITIALIZED) {
+		DET.flushDrawingCache(tile);
 	} 
 };
 
@@ -48,10 +63,10 @@ NgChm.DET.processDetailMapUpdate = function (event, tile) {
  * FUNCTION:  setDrawDetailsTimeout - The purpose of this function is to call the drawing 
  * routine timer for all existing heat map panels.
  *********************************************************************************************/
-NgChm.DET.setDrawDetailsTimeout = function (ms, noResize) {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		NgChm.DET.setDrawDetailTimeout(mapItem,ms,noResize);
+DET.setDrawDetailsTimeout = function (ms, noResize) {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		const mapItem = DMM.DetailMaps[i];
+		DET.setDrawDetailTimeout(mapItem,ms,noResize);
 	}
 }
 
@@ -61,17 +76,17 @@ NgChm.DET.setDrawDetailsTimeout = function (ms, noResize) {
  * up the drawing routine for some cases. If noResize is true for every call to setDrawDetailTimeout, 
  * the resize routine will be skipped on the next redraw.
  *********************************************************************************************/
-NgChm.DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
+DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
 	if (mapItem.drawEventTimer) {
 		clearTimeout (mapItem.drawEventTimer);
 	}
 	if (!noResize) mapItem.resizeOnNextDraw = true;
-	if (!NgChm.DMM.isVisible(mapItem)) { return false }
+	if (!DMM.isVisible(mapItem)) { return false }
 
-	const drawWin = NgChm.SEL.getDetailWindow(mapItem);
+	const drawWin = SEL.getDetailWindow(mapItem);
 	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
 		if (mapItem.chm) {
-			NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
+			DET.drawDetailHeatMap(mapItem, drawWin);
 		}
 	}, ms);
 };
@@ -82,7 +97,7 @@ NgChm.DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
  * the new tile to be redrawn the next time it is displayed.  The currently displayed primary
  * heat map will be redrawn after a short delay if it might be affected by the tile.
  *********************************************************************************************/
-NgChm.DET.flushDrawingCache = function (tile) {
+DET.flushDrawingCache = function (tile) {
 	// The cached heat map for the tile's layer will be
 	// invalidated if the tile's level matches the level
 	// of the cached heat map.
@@ -92,12 +107,12 @@ NgChm.DET.flushDrawingCache = function (tile) {
 	// and summary) are fully prefetched at initialization.
 	// In any case, data for the drawing window's level should also arrive soon
 	// and the heat map would be redrawn then.
-	if (NgChm.DET.detailHeatMapCache.hasOwnProperty (tile.layer) &&
-	    NgChm.DET.detailHeatMapLevel[tile.layer] === tile.level) {
-		NgChm.DET.detailHeatMapValidator[tile.layer] = '';
-		if (tile.layer === NgChm.SEL.getCurrentDL()) {
+	if (DET.detailHeatMapCache.hasOwnProperty (tile.layer) &&
+	    DET.detailHeatMapLevel[tile.layer] === tile.level) {
+		DET.detailHeatMapValidator[tile.layer] = '';
+		if (tile.layer === SEL.getCurrentDL()) {
 			// Redraw 'now' if the tile is for the currently displayed layer.
-			NgChm.DET.setDrawDetailsTimeout (NgChm.DET.redrawUpdateTimeout, false);
+			DET.setDrawDetailsTimeout (DET.redrawUpdateTimeout, false);
 		}
 	}
 }
@@ -106,36 +121,36 @@ NgChm.DET.flushDrawingCache = function (tile) {
  * FUNCTION:  setDetailMapDisplay - The purpose of this function is to complete the construction
  * of a detail heat map object and add it to the DetailMaps object array.
  *********************************************************************************************/
-NgChm.DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
-	NgChm.DET.setDendroShow(mapItem);
+DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
+	DET.setDendroShow(mapItem);
 	//If we are opening the first detail "copy" of this map set the data sizing for initial display
-	if (NgChm.DMM.DetailMaps.length === 0 && !restoreInfo) {
-		NgChm.DET.setInitialDetailDisplaySize(mapItem);
+	if (DMM.DetailMaps.length === 0 && !restoreInfo) {
+		DET.setInitialDetailDisplaySize(mapItem);
 	}
-	NgChm.LNK.createLabelMenus();
-	NgChm.DET.setDendroShow(mapItem);
+	LNK.createLabelMenus();
+	DET.setDendroShow(mapItem);
 	if (mapItem.canvas) {
-		mapItem.canvas.width =  (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
-		mapItem.canvas.height = (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
+		mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+		mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	}
 	
 	setTimeout (function() {
-		NgChm.DET.detInitGl(mapItem);
-		NgChm.SEL.updateSelection(mapItem);
-		if (NgChm.UTIL.getURLParameter("selected") !== ""){
-			const selected = NgChm.UTIL.getURLParameter("selected").replace(","," ");
+		DET.detInitGl(mapItem);
+		SEL.updateSelection(mapItem);
+		if (UTIL.getURLParameter("selected") !== ""){
+			const selected = UTIL.getURLParameter("selected").replace(","," ");
 			document.getElementById("search_text").value = selected;
 			if (mapItem.version === 'P') {  
-				NgChm.SRCH.detailSearch();
-				NgChm.SUM.drawSelectionMarks();
-				NgChm.SUM.drawTopItems();
+				SRCH.detailSearch();
+				SUM.drawSelectionMarks();
+				SUM.drawTopItems();
 			}
 		}
 	}, 1);
   	
-  	NgChm.DMM.DetailMaps.push(mapItem);
+	DMM.DetailMaps.push(mapItem);
   	if (mapItem.version === 'P') {
-  		NgChm.DMM.primaryMap = mapItem;
+		DMM.primaryMap = mapItem;
   	}
 	if (restoreInfo) {
 	    if (mapItem.rowDendro !== null) {
@@ -145,24 +160,25 @@ NgChm.DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		mapItem.colDendro.setZoomLevel(restoreInfo.colZoomLevel || 1);
 	    }
 	}
-	NgChm.DET.setButtons(mapItem);
+	DET.setButtons(mapItem);
 }
 
 /*********************************************************************************************
  * FUNCTION:  setInitialDetailDisplaySize - The purpose of this function is to set the initial
  * detail display sizing (dataPerRow/Col, dataViewHeight/Width) for the heat map.
  *********************************************************************************************/
-NgChm.DET.setInitialDetailDisplaySize = function (mapItem) {
+DET.setInitialDetailDisplaySize = function (mapItem) {
 	// Small Maps - Set detail data size.  If there are less than 42 rows or columns
 	// set the to show the box size closest to the lower value ELSE
 	// set it to show 42 rows/cols.
-	const rows = NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL);
-	const cols = NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL);
+	const heatMap = MMGR.getHeatMap();
+	const rows = heatMap.getNumRows(MMGR.DETAIL_LEVEL);
+	const cols = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
 	if ((rows < 42) || (cols < 42)) {
-		const boxSize = NgChm.DET.getNearestBoxSize(mapItem, Math.min(rows,cols));
-		NgChm.DET.setDetailDataSize(mapItem,boxSize); 
+		const boxSize = DET.getNearestBoxSize(mapItem, Math.min(rows,cols));
+		DET.setDetailDataSize(mapItem,boxSize);
 	} else {
-		NgChm.DET.setDetailDataSize(mapItem,12);
+		DET.setDetailDataSize(mapItem,12);
 	}
 }
 
@@ -170,17 +186,18 @@ NgChm.DET.setInitialDetailDisplaySize = function (mapItem) {
  * FUNCTION:  drawDetailHeatMap - The purpose of this function is to draw the region of the 
  * NGCHM specified by drawWin to a detail heat map pane.
  *********************************************************************************************/
-NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
-	NgChm.DET.setDendroShow(mapItem);
+DET.drawDetailHeatMap = function (mapItem, drawWin) {
+	const heatMap = MMGR.getHeatMap();
+	DET.setDendroShow(mapItem);
 	if (mapItem.resizeOnNextDraw) {
-		NgChm.DMM.detailResize();
+		DMM.detailResize();
 		mapItem.resizeOnNextDraw = false;
 	}
-	NgChm.DET.setViewPort(mapItem);
-	NgChm.DET.setDetBoxCanvasSize(mapItem);
+	DET.setViewPort(mapItem);
+	DET.setDetBoxCanvasSize(mapItem);
 
 	// Together with the data, these parameters determine the color of a matrix value.
-	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", drawWin.layer);
+	const colorMap = heatMap.getColorMapManager().getColorMap("data", drawWin.layer);
 	const pixelColorScheme = {
 		colors: colorMap.getColors(),
 		thresholds: colorMap.getThresholds(),
@@ -194,35 +211,35 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 		mapHeight: mapItem.dataViewHeight,
 		dataBoxWidth: mapItem.dataBoxWidth,
 		dataBoxHeight: mapItem.dataBoxHeight,
-		rowBarWidths: NgChm.heatMap.getCovariateBarHeights("row"),
-		colBarHeights: NgChm.heatMap.getCovariateBarHeights("column"),
-		rowBarTypes: NgChm.heatMap.getCovariateBarTypes("row"),
-		colBarTypes: NgChm.heatMap.getCovariateBarTypes("column"),
-		rowDendroHeight: NgChm.heatMap.getRowDendroConfig().height,
-		colDendroHeight: NgChm.heatMap.getColDendroConfig().height,
-		searchRows: NgChm.SRCH.getAxisSearchResults("Row"),
-		searchCols: NgChm.SRCH.getAxisSearchResults("Column"),
+		rowBarWidths: heatMap.getCovariateBarHeights("row"),
+		colBarHeights: heatMap.getCovariateBarHeights("column"),
+		rowBarTypes: heatMap.getCovariateBarTypes("row"),
+		colBarTypes: heatMap.getCovariateBarTypes("column"),
+		rowDendroHeight: heatMap.getRowDendroConfig().height,
+		colDendroHeight: heatMap.getColDendroConfig().height,
+		searchRows: SRCH.getAxisSearchResults("Row"),
+		searchCols: SRCH.getAxisSearchResults("Column"),
 		searchGridColor: [0,0,0]
 	};
 
 	// Set parameters that depend on the data layer properties.
 	{
-		const dataLayers = NgChm.heatMap.getDataLayers();
+		const dataLayers = heatMap.getDataLayers();
 		const dataLayer = dataLayers[drawWin.layer];
 		const showGrid = dataLayer.grid_show === 'Y';
 		const detWidth = + mapItem.boxCanvas.style.width.replace("px","");
 		const detHeight = + mapItem.boxCanvas.style.height.replace("px","");
-		params.showVerticalGrid = showGrid && params.dataBoxWidth > mapItem.minLabelSize && NgChm.DET.minPixelsForGrid*drawWin.numCols <= detWidth;
-		params.showHorizontalGrid = showGrid && params.dataBoxHeight > mapItem.minLabelSize && NgChm.DET.minPixelsForGrid*drawWin.numRows <= detHeight;
+		params.showVerticalGrid = showGrid && params.dataBoxWidth > mapItem.minLabelSize && DET.minPixelsForGrid*drawWin.numCols <= detWidth;
+		params.showHorizontalGrid = showGrid && params.dataBoxHeight > mapItem.minLabelSize && DET.minPixelsForGrid*drawWin.numRows <= detHeight;
 		params.grid_color = dataLayer.grid_color;
 		params.selection_color = dataLayer.selection_color;
 		params.cuts_color = dataLayer.cuts_color;
 	}
 
-	const renderBuffer = NgChm.DET.getDetailHeatMap (mapItem, drawWin, params);
+	const renderBuffer = DET.getDetailHeatMap (mapItem, drawWin, params);
 
 	//WebGL code to draw the renderBuffer.
-	if (NgChm.DET.detInitGl (mapItem)) {
+	if (DET.detInitGl (mapItem)) {
 	    const ctx = mapItem.glManager.context;
 	    mapItem.glManager.setTextureFromRenderBuffer(renderBuffer);
 	    ctx.uniform2fv(mapItem.uScale, mapItem.canvasScaleArray);
@@ -235,7 +252,7 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
 	mapItem.rowDendro.draw();
 
 	//Draw any selection boxes defined by SearchRows/SearchCols
-	NgChm.DET.drawSelections();
+	DET.drawSelections();
 };
 
 /*********************************************************************************************
@@ -243,13 +260,13 @@ NgChm.DET.drawDetailHeatMap = function (mapItem, drawWin) {
  * containing an image of the region of the NGCHM specified by drawWin rendered using the 
  * parameters in params.handle a user mouse down event.  
  *********************************************************************************************/
-NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
+DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
 	const layer = drawWin.layer;
 	const paramCheck = JSON.stringify({ drawWin, params });
-	if (NgChm.DET.detailHeatMapValidator[layer] === paramCheck) {
+	if (DET.detailHeatMapValidator[layer] === paramCheck) {
 		//Cached image exactly matches what we need.
-		return NgChm.DET.detailHeatMapCache[layer];
+		return DET.detailHeatMapCache[layer];
 	}
 
 	// Determine size of required image.
@@ -258,16 +275,16 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	const texWidth = params.mapWidth + rowClassBarWidth;
 	const texHeight = params.mapHeight + colClassBarHeight;
 
-	if (NgChm.DET.detailHeatMapCache.hasOwnProperty(layer)) {
+	if (DET.detailHeatMapCache.hasOwnProperty(layer)) {
 		// Resize the existing renderBuffer if needed.
-		NgChm.DET.detailHeatMapCache[layer].resize (texWidth, texHeight);
+		DET.detailHeatMapCache[layer].resize (texWidth, texHeight);
 	} else {
 		// Or create a new one if needed.
-		NgChm.DET.detailHeatMapCache[layer] = NgChm.DRAW.createRenderBuffer (texWidth, texHeight, 1.0);
+		DET.detailHeatMapCache[layer] = DRAW.createRenderBuffer (texWidth, texHeight, 1.0);
 	}
 	// Save data needed for determining if the heat map image will match the next request.
-	NgChm.DET.detailHeatMapValidator[layer] = paramCheck;
-	NgChm.DET.detailHeatMapLevel[layer] = drawWin.level;
+	DET.detailHeatMapValidator[layer] = paramCheck;
+	DET.detailHeatMapLevel[layer] = drawWin.level;
 
 	// create these variables now to prevent having to call them in the for-loop
 	const currDetRow = drawWin.firstRow;
@@ -277,13 +294,13 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
 	// Define a function for outputting reps copy of line
 	// to the renderBuffer for this layer.
-	const renderBuffer = NgChm.DET.detailHeatMapCache[layer];
+	const renderBuffer = DET.detailHeatMapCache[layer];
 	const emitLines = (function() {
 		// Start outputting data to the renderBuffer after one line
 		// of blank space.
 		// Line must be renderBuffer.width pixels wide.
 		// Using |0 ensures values are converted to integers.
-		const lineBytes = (renderBuffer.width * NgChm.SUM.BYTE_PER_RGBA)|0;
+		const lineBytes = (renderBuffer.width * SUM.BYTE_PER_RGBA)|0;
 		let pos = lineBytes; // Start with one line of blank space.
 		return function emitLines (line, reps) {
 			reps = reps | 0;
@@ -298,7 +315,8 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 		};
 	})();
 
-	const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",layer);
+	const heatMap = MMGR.getHeatMap();
+	const colorMap = heatMap.getColorMapManager().getColorMap("data",layer);
 
 	const dataGridColor = colorMap.getHexToRgba(params.grid_color);
 	const dataSelectionColorRGB = colorMap.getHexToRgba(params.selection_color);
@@ -308,7 +326,7 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
 
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
-	const linelen = texWidth * NgChm.SUM.BYTE_PER_RGBA;
+	const linelen = texWidth * SUM.BYTE_PER_RGBA;
 	const gridLine = new Uint8Array(new ArrayBuffer(linelen));
 	//Build a horizontal cuts line using the cut color defined for the data layer.
 	const cutsLine = new Uint8Array(new ArrayBuffer(linelen));
@@ -321,17 +339,17 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 		}
 	}
 	if (params.showHorizontalGrid) {
-		let linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
-		linePos+=NgChm.SUM.BYTE_PER_RGBA;
+		let linePos = (rowClassBarWidth)*SUM.BYTE_PER_RGBA;
+		linePos+=SUM.BYTE_PER_RGBA;
 		for (let j = 0; j < detDataPerRow; j++) {
 			//When building grid line check for vertical cuts by grabbing value of currentRow (any row really) and column being iterated to
-			const val = NgChm.heatMap.getValue(drawWin.level, currDetRow, currDetCol+j);
-			const nextVal = NgChm.heatMap.getValue(drawWin.level, currDetRow, currDetCol+j+1);
+			const val = heatMap.getValue(drawWin.level, currDetRow, currDetCol+j);
+			const nextVal = heatMap.getValue(drawWin.level, currDetRow, currDetCol+j+1);
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
-				if (val <= NgChm.SUM.minValues) {
-					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > NgChm.SUM.minValues)) {
+				if (val <= SUM.minValues) {
+					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > SUM.minValues)) {
 						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
 					} else {
 						gridLine[linePos] = cutsColor.r; gridLine[linePos+1] = cutsColor.g; gridLine[linePos+2] = cutsColor.b;	gridLine[linePos+3] = cutsColor.a;
@@ -343,24 +361,24 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 						gridLine[linePos]=regularGridColor[0]; gridLine[linePos + 1]=regularGridColor[1]; gridLine[linePos + 2]=regularGridColor[2]; gridLine[linePos + 3]=255;
 					}
 				}
-				linePos += NgChm.SUM.BYTE_PER_RGBA;
+				linePos += SUM.BYTE_PER_RGBA;
 			}
 		}
-		linePos+=NgChm.SUM.BYTE_PER_RGBA;
+		linePos+=SUM.BYTE_PER_RGBA;
 	}
 	
-	let line = new Uint8Array(new ArrayBuffer((rowClassBarWidth + mapItem.dataViewWidth) * NgChm.SUM.BYTE_PER_RGBA));
+	let line = new Uint8Array(new ArrayBuffer((rowClassBarWidth + mapItem.dataViewWidth) * SUM.BYTE_PER_RGBA));
 
 	//Needs to go backward because WebGL draws bottom up.
 	for (let i = detDataPerCol-1; i >= 0; i--) {
-		let linePos = (rowClassBarWidth)*NgChm.SUM.BYTE_PER_RGBA;
+		let linePos = (rowClassBarWidth)*SUM.BYTE_PER_RGBA;
 		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the 
 		// preceding line are "cut values" mark the current line as as a horizontal cut
-		const isHorizCut = NgChm.DET.isLineACut(mapItem,i) && NgChm.DET.isLineACut(mapItem,i-1);
-		linePos+=NgChm.SUM.BYTE_PER_RGBA;
+		const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
+		linePos+=SUM.BYTE_PER_RGBA;
 		for (let j = 0; j < detDataPerRow; j++) { // for every data point...
-			let val = NgChm.heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j);
-	        let nextVal = NgChm.heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1);
+			let val = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j);
+	        let nextVal = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1);
 	        if (val !== undefined) {
 	            const color = colorMap.getColor(val);
 	            
@@ -369,7 +387,7 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 					if (params.showVerticalGrid && k===mapItem.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
 						if (j < detDataPerRow-1) {
 							//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
-							if ((val <= NgChm.SUM.minValues) && (nextVal <= NgChm.SUM.minValues)) {
+							if ((val <= SUM.minValues) && (nextVal <= SUM.minValues)) {
 								line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
 							} else {
 								line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
@@ -378,11 +396,11 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 					} else {
 						line[linePos] = color['r'];	line[linePos + 1] = color['g'];	line[linePos + 2] = color['b'];	line[linePos + 3] = color['a'];
 					}
-					linePos += NgChm.SUM.BYTE_PER_RGBA;
+					linePos += SUM.BYTE_PER_RGBA;
 				}
 	        }
 		}
-		linePos+=NgChm.SUM.BYTE_PER_RGBA;
+		linePos+=SUM.BYTE_PER_RGBA;
 		
 		//Write each line several times to get correct data point height.
 		const numGridLines = params.showHorizontalGrid && i > 0 ? 1 : 0;
@@ -391,8 +409,8 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	}
 
 	//Draw covariate bars.
-	NgChm.DET.detailDrawColClassBars(mapItem, renderBuffer.pixels);
-	NgChm.DET.detailDrawRowClassBars(mapItem, renderBuffer.pixels);
+	DET.detailDrawColClassBars(mapItem, renderBuffer.pixels);
+	DET.detailDrawRowClassBars(mapItem, renderBuffer.pixels);
 
 	return renderBuffer;
 }
@@ -401,16 +419,17 @@ NgChm.DET.getDetailHeatMap = function (mapItem, drawWin, params) {
  * FUNCTION - isLineACut: The purpose of this function is to determine if a given
  * row line is a cut (or gap) line and return a true/false boolean.
  **********************************************************************************/
-NgChm.DET.isLineACut = function (mapItem, row) {
+DET.isLineACut = function (mapItem, row) {
 	let lineIsCut = true;
-	const level = NgChm.SEL.getLevelFromMode(mapItem, NgChm.MMGR.DETAIL_LEVEL);
-	const currDetRow = NgChm.SEL.getCurrentDetRow(mapItem);
-	const currDetCol = NgChm.SEL.getCurrentDetCol(mapItem);
-	const detDataPerRow = NgChm.SEL.getCurrentDetDataPerRow(mapItem);
+	const heatMap = MMGR.getHeatMap();
+	const level = SEL.getLevelFromMode(mapItem, MMGR.DETAIL_LEVEL);
+	const currDetRow = SEL.getCurrentDetRow(mapItem);
+	const currDetCol = SEL.getCurrentDetCol(mapItem);
+	const detDataPerRow = SEL.getCurrentDetDataPerRow(mapItem);
 	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
-		const val = NgChm.heatMap.getValue(level, currDetRow+row, currDetCol+x);
+		const val = heatMap.getValue(level, currDetRow+row, currDetCol+x);
 		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
-		if (val > NgChm.SUM.minValues) {
+		if (val > SUM.minValues) {
 			return false;
 		}
 	}
@@ -421,7 +440,7 @@ NgChm.DET.isLineACut = function (mapItem, row) {
  * FUNCTION:  setDetBoxCanvasSize - The purpose of this function is to set the size of the 
  * detail box canvas to match that of the heat map canvas.  
  *********************************************************************************************/
-NgChm.DET.setDetBoxCanvasSize = function (mapItem) {
+DET.setDetBoxCanvasSize = function (mapItem) {
 	mapItem.boxCanvas.width =  mapItem.canvas.clientWidth;
 	mapItem.boxCanvas.height = mapItem.canvas.clientHeight;
 	mapItem.boxCanvas.style.left=mapItem.canvas.style.left;
@@ -432,15 +451,16 @@ NgChm.DET.setDetBoxCanvasSize = function (mapItem) {
  * FUNCTION: getNearestBoxSize  -  The purpose of this function is to loop zoomBoxSizes to 
  * pick the one that will be large enough to encompass user-selected area
  *********************************************************************************************/
-NgChm.DET.getNearestBoxSize = function (mapItem, sizeToGet) {
+DET.getNearestBoxSize = function (mapItem, sizeToGet) {
+	const heatMap = MMGR.getHeatMap();
 	let boxSize = 0;
-	for (let i=NgChm.DET.zoomBoxSizes.length-1; i>=0;i--) {
-		boxSize = NgChm.DET.zoomBoxSizes[i];
-		const boxCalcVal = (mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/boxSize;
+	for (let i=DET.zoomBoxSizes.length-1; i>=0;i--) {
+		boxSize = DET.zoomBoxSizes[i];
+		const boxCalcVal = (mapItem.dataViewWidth-DET.dataViewBorder)/boxSize;
 		if (boxCalcVal >= sizeToGet) {
 			//Down size box if greater than map dimensions.
-			if (boxCalcVal > Math.min(NgChm.heatMap.getTotalRows(),NgChm.heatMap.getTotalCols())) {
-				boxSize = NgChm.DET.zoomBoxSizes[i+1];
+			if (boxCalcVal > Math.min(heatMap.getTotalRows(),heatMap.getTotalCols())) {
+				boxSize = DET.zoomBoxSizes[i+1];
 			}
 			break;
 		}
@@ -451,7 +471,7 @@ NgChm.DET.getNearestBoxSize = function (mapItem, sizeToGet) {
 /*********************************************************************************************
  * FUNCTION: getDetailSaveState  -  Return save state required for restoring this detail view.
  *********************************************************************************************/
-NgChm.DET.getDetailSaveState = function (dm) {
+DET.getDetailSaveState = function (dm) {
 	// Subtract dataViewBorder from dataViewWidth/Height in case it ever changes.
 	// Such a change may break restoring an identical view.
 
@@ -464,8 +484,8 @@ NgChm.DET.getDetailSaveState = function (dm) {
 	    'dataBoxWidth': dm.dataBoxWidth,
 	    'dataPerCol': dm.dataPerCol,
 	    'dataPerRow': dm.dataPerRow,
-	    'dataViewWidth': dm.dataViewWidth - NgChm.DET.dataViewBorder,
-	    'dataViewHeight': dm.dataViewHeight - NgChm.DET.dataViewBorder,
+	    'dataViewWidth': dm.dataViewWidth - DET.dataViewBorder,
+	    'dataViewHeight': dm.dataViewHeight - DET.dataViewBorder,
 	    'mode': dm.mode,
 	    'type': 'detailMap',
 	    'version': dm.version,
@@ -476,32 +496,32 @@ NgChm.DET.getDetailSaveState = function (dm) {
 /*********************************************************************************************
  * FUNCTION: restoreFromSavedState  -  Restore detail view from saved state.
  *********************************************************************************************/
-NgChm.DET.restoreFromSavedState = function (mapItem, savedState) {
+DET.restoreFromSavedState = function (mapItem, savedState) {
 	mapItem.currentCol = savedState.currentCol;
 	mapItem.currentRow = savedState.currentRow;
-	mapItem.dataViewWidth = savedState.dataViewWidth + NgChm.DET.dataViewBorder;
-	mapItem.dataViewHeight = savedState.dataViewHeight + NgChm.DET.dataViewBorder;
+	mapItem.dataViewWidth = savedState.dataViewWidth + DET.dataViewBorder;
+	mapItem.dataViewHeight = savedState.dataViewHeight + DET.dataViewBorder;
 	mapItem.dataBoxHeight = savedState.dataBoxHeight;
 	mapItem.dataBoxWidth = savedState.dataBoxWidth;
 	mapItem.dataPerCol = savedState.dataPerCol;
 	mapItem.dataPerRow = savedState.dataPerRow;
 	mapItem.mode = savedState.mode;
 	// RESTORE CANVAS SIZE
-	let zoomBoxSizeIdx = NgChm.DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
+	let zoomBoxSizeIdx = DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
 	switch (savedState.mode) {
 		case "RIBBONV":
-			NgChm.DEV.detailVRibbon(mapItem, {});
+			DEV.detailVRibbon(mapItem, {});
 			break;
 		case "RIBBONH":
-			NgChm.DEV.detailHRibbon(mapItem, {});
+			DEV.detailHRibbon(mapItem, {});
 			break;
 		case "FULL_MAP":
-			NgChm.DEV.detailFullMap(mapItem);
+			DEV.detailFullMap(mapItem);
 			break;
 		case "NORMAL":
 		default: // Fall through. Use the 'NORMAL' case for unknown modes.
-			NgChm.DET.setDetailDataSize(mapItem, NgChm.DET.zoomBoxSizes[zoomBoxSizeIdx]);
-			NgChm.DEV.detailNormal (mapItem, {});
+			DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[zoomBoxSizeIdx]);
+			DEV.detailNormal (mapItem, {});
 	};
 };
 
@@ -509,15 +529,16 @@ NgChm.DET.restoreFromSavedState = function (mapItem, savedState) {
  * FUNCTION: getNearestBoxHeight  -  The purpose of this function is to loop zoomBoxSizes to pick the one that 
  * will be large enough to encompass user-selected area.
  *********************************************************************************************/
-NgChm.DET.getNearestBoxHeight = function (mapItem, sizeToGet) {
+DET.getNearestBoxHeight = function (mapItem, sizeToGet) {
+	const heatMap = MMGR.getHeatMap();
 	let boxSize = 0;
-	for (let i=NgChm.DET.zoomBoxSizes.length-1; i>=0;i--) {
-		boxSize = NgChm.DET.zoomBoxSizes[i];
-		const boxCalcVal = (mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/boxSize;
+	for (let i=DET.zoomBoxSizes.length-1; i>=0;i--) {
+		boxSize = DET.zoomBoxSizes[i];
+		const boxCalcVal = (mapItem.dataViewHeight-DET.dataViewBorder)/boxSize;
 		if (boxCalcVal >= sizeToGet) {
 			//Down size box if greater than map dimensions.
-			if (boxCalcVal > Math.min(NgChm.heatMap.getTotalRows(),NgChm.heatMap.getTotalCols())) {
-				boxSize = NgChm.DET.zoomBoxSizes[i+1];
+			if (boxCalcVal > Math.min(heatMap.getTotalRows(),heatMap.getTotalCols())) {
+				boxSize = DET.zoomBoxSizes[i+1];
 			}
 			break;
 		}
@@ -530,10 +551,11 @@ NgChm.DET.getNearestBoxHeight = function (mapItem, sizeToGet) {
  * of the detail panel, matrix elements get  width more  than 1 pixel, scale calculates 
  * the appropriate height/width.
  **********************************************************************************/
-NgChm.DET.scaleViewWidth = function (mapItem) {
-  scale = Math.max(Math.floor(500/NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL)), 1)
-  mapItem.dataViewWidth=(NgChm.heatMap.getNumColumns(NgChm.MMGR.SUMMARY_LEVEL) * scale) + NgChm.DET.dataViewBorder;
-  NgChm.DET.setDetailDataWidth(mapItem, scale);
+DET.scaleViewWidth = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	scale = Math.max(Math.floor(500/heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)), 1)
+	mapItem.dataViewWidth=(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
+	DET.setDetailDataWidth(mapItem, scale);
 }
 
 /**********************************************************************************
@@ -541,30 +563,30 @@ NgChm.DET.scaleViewWidth = function (mapItem) {
  * of the detail panel, matrix elements get height more than 1 pixel, scale calculates 
  * the appropriate height/width.
  **********************************************************************************/
-NgChm.DET.scaleViewHeight = function (mapItem) {
-  scale = Math.max(Math.floor(500/NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL)), 1)
-  mapItem.dataViewHeight= (NgChm.heatMap.getNumRows(NgChm.MMGR.SUMMARY_LEVEL) * scale) + NgChm.DET.dataViewBorder;
-  NgChm.DET.setDetailDataHeight(mapItem, scale);
-  
+DET.scaleViewHeight = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	scale = Math.max(Math.floor(500/heatMap.getNumRows(MMGR.SUMMARY_LEVEL)), 1)
+	mapItem.dataViewHeight= (heatMap.getNumRows(MMGR.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
+	DET.setDetailDataHeight(mapItem, scale);
 }
 
 /**********************************************************************************
  * FUNCTION - setDetailDataSize: The purpose of this function is to determine and
  * set how big each data point should be in a given detail pane.
  **********************************************************************************/
-NgChm.DET.setDetailDataSize = function (mapItem, size) {
-	NgChm.DET.setDetailDataWidth (mapItem, size);
-	NgChm.DET.setDetailDataHeight(mapItem, size);
+DET.setDetailDataSize = function (mapItem, size) {
+	DET.setDetailDataWidth (mapItem, size);
+	DET.setDetailDataHeight(mapItem, size);
 }
  
 /**********************************************************************************
  * FUNCTION - setDetailDataWidth: The purpose of this function is to determine and
  * set how big the detail data width should be for a given detail pane.
  **********************************************************************************/
-NgChm.DET.setDetailDataWidth = function (mapItem, size) {
+DET.setDetailDataWidth = function (mapItem, size) {
 	const prevDataPerRow = mapItem.dataPerRow;
 	mapItem.dataBoxWidth = size;
-	NgChm.SEL.setDataPerRowFromDet(Math.floor((mapItem.dataViewWidth-NgChm.DET.dataViewBorder)/mapItem.dataBoxWidth), mapItem);
+	SEL.setDataPerRowFromDet(Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/mapItem.dataBoxWidth), mapItem);
 
 	//Adjust the current column based on zoom but don't go outside or the heat map matrix dimensions.
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
@@ -575,17 +597,17 @@ NgChm.DET.setDetailDataWidth = function (mapItem, size) {
 			mapItem.currentCol -= Math.floor((mapItem.dataPerRow - prevDataPerRow) / 2);
 		}
 	}
-	NgChm.SEL.checkCol(mapItem);
+	SEL.checkCol(mapItem);
 }
 
 /**********************************************************************************
  * FUNCTION - setDetailDataHeight: The purpose of this function is to determine and
  * set how big the detail data height should be for a given detail pane.
  **********************************************************************************/
-NgChm.DET.setDetailDataHeight = function (mapItem, size) {
+DET.setDetailDataHeight = function (mapItem, size) {
 	const prevDataPerCol = mapItem.dataPerCol;
 	mapItem.dataBoxHeight = size;
-	NgChm.SEL.setDataPerColFromDet(Math.floor((mapItem.dataViewHeight-NgChm.DET.dataViewBorder)/mapItem.dataBoxHeight), mapItem);
+	SEL.setDataPerColFromDet(Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/mapItem.dataBoxHeight), mapItem);
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	
 	//Adjust the current row but don't go outside of the current heat map dimensions
@@ -595,7 +617,7 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 		else
 			mapItem.currentRow -= Math.floor((mapItem.dataPerCol - prevDataPerCol) / 2);
 	}
-	NgChm.SEL.checkRow(mapItem);
+	SEL.checkRow(mapItem);
 };
 
 //----------------------------------------------------------------------------------------------//
@@ -620,27 +642,28 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
     var totalColBarHeight;  /* Total height of all column covariate bars. */
     var totalRowBarHeight;  /* Total width of all row covariate bars. */
 
-    NgChm.DET.drawSelections = function drawSelections () {
+    DET.drawSelections = function drawSelections () {
 
 	// Determine values that are constant across all detail panes.
 	//
-        const dataLayers = NgChm.heatMap.getDataLayers();
-	const mapNumRows = NgChm.heatMap.getNumRows('d');
-	const mapNumCols = NgChm.heatMap.getNumColumns('d');
+	const heatMap = MMGR.getHeatMap();
+        const dataLayers = heatMap.getDataLayers();
+	const mapNumRows = heatMap.getNumRows('d');
+	const mapNumCols = heatMap.getNumColumns('d');
 
 	// Retrieve contiguous row and column search arrays
-	const searchRows = NgChm.SRCH.getAxisSearchResults("Row");
-	const rowRanges = NgChm.DET.getContigSearchRanges(searchRows);
-	const searchCols = NgChm.SRCH.getAxisSearchResults("Column");
-	const colRanges = NgChm.DET.getContigSearchRanges(searchCols);
+	const searchRows = SRCH.getAxisSearchResults("Row");
+	const rowRanges = DET.getContigSearchRanges(searchRows);
+	const searchCols = SRCH.getAxisSearchResults("Column");
+	const colRanges = DET.getContigSearchRanges(searchCols);
 
 	// Get total row and column bar "heights".
-	totalColBarHeight = NgChm.DET.calculateTotalClassBarHeight("column");
-	totalRowBarHeight = NgChm.DET.calculateTotalClassBarHeight("row");
+	totalColBarHeight = DET.calculateTotalClassBarHeight("column");
+	totalRowBarHeight = DET.calculateTotalClassBarHeight("row");
 
-	for (let k=0; k<NgChm.DMM.DetailMaps.length;k++ ) {
+	for (let k=0; k<DMM.DetailMaps.length;k++ ) {
 	        // Get context for this detail map.
-		const mapItem = NgChm.DMM.DetailMaps[k];
+		const mapItem = DMM.DetailMaps[k];
 		mapItemVars.ctx = mapItem.boxCanvas.getContext("2d");
 		calcMapItemVariables (mapItem);
 
@@ -648,7 +671,7 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 		mapItemVars.ctx.clearRect(0, 0, mapItem.boxCanvas.width, mapItem.boxCanvas.height);
 	
 		//Draw the border
-		if (NgChm.UTIL.mapHasGaps() === false) {
+		if (UTIL.mapHasGaps() === false) {
 			const canH = mapItem.dataViewHeight + totalColBarHeight;
 			const canW = mapItem.dataViewWidth + totalRowBarHeight;
 			const boxX = (totalRowBarHeight / canW) * mapItem.boxCanvas.width;
@@ -716,13 +739,13 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
 
 	// width of a data cell in pixels
 	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONV') {
-		mapItemVars.cellWidth = mapItemVars.mapXWidth/NgChm.SEL.getCurrentDetDataPerRow(mapItem);
+		mapItemVars.cellWidth = mapItemVars.mapXWidth/SEL.getCurrentDetDataPerRow(mapItem);
 	} else {
 		mapItemVars.cellWidth = mapItemVars.mapXWidth/mapItem.dataPerRow;
 	}
 	// height of a data cell in pixels
 	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONH') {
-		mapItemVars.cellHeight = mapItemVars.mapYHeight/NgChm.SEL.getCurrentDetDataPerCol(mapItem);
+		mapItemVars.cellHeight = mapItemVars.mapYHeight/SEL.getCurrentDetDataPerCol(mapItem);
 	} else {
 		mapItemVars.cellHeight = mapItemVars.mapYHeight/mapItem.dataPerCol;
 	}
@@ -881,14 +904,14 @@ NgChm.DET.setDetailDataHeight = function (mapItem, size) {
  * row/col lavel DIVs. It calculates and adjusts the size of the detail canvas and box canvas
  * in order to best accommodate the maximum label sizes for each axis.
  ************************************************************************************************/
-NgChm.DET.sizeCanvasForLabels = function() {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		NgChm.DET.resetLabelLengths(mapItem);
+DET.sizeCanvasForLabels = function() {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		const mapItem = DMM.DetailMaps[i];
+		DET.resetLabelLengths(mapItem);
 		if (mapItem.pane !== "") {  //Used by builder which does not contain the detail pane necessary, nor the use, for this logic
-			NgChm.DET.calcRowAndColLabels(mapItem);
-			NgChm.DET.calcClassRowAndColLabels(mapItem);
-			NgChm.DET.setViewPort(mapItem);
+			DET.calcRowAndColLabels(mapItem);
+			DET.calcClassRowAndColLabels(mapItem);
+			DET.setViewPort(mapItem);
 		}
 	}
 };
@@ -898,8 +921,8 @@ NgChm.DET.sizeCanvasForLabels = function() {
  * canvases for mapItem (an open detail heat map panel).
  * It sets the sizes of the main canvas, the box canvas, and the row/col label DIVs.
  ************************************************************************************************/
-NgChm.DET.setViewPort = function (mapItem) {
-    const detPane = NgChm.Pane.findPaneLocation (mapItem.chm);
+DET.setViewPort = function (mapItem) {
+    const detPane = PANE.findPaneLocation (mapItem.chm);
 
     //Get available width/height
     const dFullW = detPane.pane.clientWidth;
@@ -920,8 +943,8 @@ NgChm.DET.setViewPort = function (mapItem) {
 	    width: dFullW - (mapItem.rowLabelLen + 10) - left,
 	    height: dFullH - (mapItem.colLabelLen + 10) - top
     };
-    NgChm.UTIL.setElementPositionSize (mapItem.canvas, heatmapVP, true);
-    NgChm.UTIL.setElementPositionSize (mapItem.boxCanvas, heatmapVP, true);
+    UTIL.setElementPositionSize (mapItem.canvas, heatmapVP, true);
+    UTIL.setElementPositionSize (mapItem.boxCanvas, heatmapVP, true);
 
     // Set sizes for the label divs
     const rowLabelVP = {
@@ -930,7 +953,7 @@ NgChm.DET.setViewPort = function (mapItem) {
 	    width: dFullW - mapItem.canvas.offsetLeft - mapItem.canvas.offsetWidth,
 	    height: dFullH - (mapItem.colLabelLen + 15)
     };
-    NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), rowLabelVP, true);
+    UTIL.setElementPositionSize (document.getElementById(mapItem.rowLabelDiv), rowLabelVP, true);
 
     const heightCalc = dFullH - mapItem.canvas.offsetTop - mapItem.canvas.offsetHeight;
     const colLabelVP = {
@@ -939,25 +962,25 @@ NgChm.DET.setViewPort = function (mapItem) {
 	    width: dFullW - (mapItem.rowLabelLen + 10),
 	    height:  heightCalc === 0 ? 11 : heightCalc
     };
-    NgChm.UTIL.setElementPositionSize (document.getElementById(mapItem.colLabelDiv), colLabelVP, true);
+    UTIL.setElementPositionSize (document.getElementById(mapItem.colLabelDiv), colLabelVP, true);
 };
 
 /************************************************************************************************
  * FUNCTION - calcRowAndColLabels: This function determines if labels are to be drawn on each 
  * axis and calls the appropriate function to calculate the maximum label size for each axis.
  ************************************************************************************************/
-NgChm.DET.calcRowAndColLabels = function (mapItem) {
-	mapItem.rowLabelFont = NgChm.DET.getRowLabelFontSize(mapItem);
-	mapItem.colLabelFont = NgChm.DET.getColLabelFontSize(mapItem);
+DET.calcRowAndColLabels = function (mapItem) {
+	mapItem.rowLabelFont = DET.getRowLabelFontSize(mapItem);
+	mapItem.colLabelFont = DET.getColLabelFontSize(mapItem);
 	let fontSize;
 	if (mapItem.rowLabelFont >= mapItem.minLabelSize && mapItem.colLabelFont >= mapItem.minLabelSize){
 		fontSize = Math.min(mapItem.colLabelFont,mapItem.rowLabelFont);
-		NgChm.DET.calcColLabels(mapItem, fontSize);
-		NgChm.DET.calcRowLabels(mapItem, fontSize);
+		DET.calcColLabels(mapItem, fontSize);
+		DET.calcRowLabels(mapItem, fontSize);
 	} else if (mapItem.rowLabelFont >= mapItem.minLabelSize){
-		NgChm.DET.calcRowLabels(mapItem, mapItem.rowLabelFont);
+		DET.calcRowLabels(mapItem, mapItem.rowLabelFont);
 	} else if (mapItem.colLabelFont >= mapItem.minLabelSize){
-		NgChm.DET.calcColLabels(mapItem, mapItem.colLabelFont);
+		DET.calcColLabels(mapItem, mapItem.colLabelFont);
 	}
 }
 
@@ -965,9 +988,9 @@ NgChm.DET.calcRowAndColLabels = function (mapItem) {
  * FUNCTION - calcClassRowAndColLabels: This function calls the functions necessary to calculate 
  * the maximum row/col class bar label sizes and update maximum label size variables (if necessary)
  ************************************************************************************************/
-NgChm.DET.calcClassRowAndColLabels = function (mapItem) {
-	NgChm.DET.calcRowClassBarLabels(mapItem);
-	NgChm.DET.calcColClassBarLabels(mapItem);
+DET.calcClassRowAndColLabels = function (mapItem) {
+	DET.calcRowClassBarLabels(mapItem);
+	DET.calcColClassBarLabels(mapItem);
 }
 
 /************************************************************************************************
@@ -975,28 +998,29 @@ NgChm.DET.calcClassRowAndColLabels = function (mapItem) {
  * bar labels and update the map item's rowLabelLen if the value of any label exceeds the existing 
  * maximum stored in that variable
  ************************************************************************************************/
-NgChm.DET.calcRowClassBarLabels = function (mapItem) {
-	const rowClassBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
-	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row") + mapItem.dendroWidth);
-	const rowClassBarConfig = NgChm.heatMap.getRowClassificationConfig();
+DET.calcRowClassBarLabels = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	const rowClassBarConfigOrder = heatMap.getRowClassificationOrder();
+	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row") + mapItem.dendroWidth);
+	const rowClassBarConfig = heatMap.getRowClassificationConfig();
 	const rowClassLength = Object.keys(rowClassBarConfig).length;
-	const containsLegend = NgChm.DET.classLabelsContainLegend("row");
+	const containsLegend = DET.classLabelsContainLegend("row");
 	if (rowClassBarConfig != null && rowClassLength > 0) {
-		mapItem.rowClassLabelFont = NgChm.DET.rowClassBarLabelFont(mapItem);
-		if ((mapItem.rowClassLabelFont > mapItem.minLabelSize)  && (mapItem.colClassLabelFont < NgChm.DET.maxLabelSize)) {
+		mapItem.rowClassLabelFont = DET.rowClassBarLabelFont(mapItem);
+		if ((mapItem.rowClassLabelFont > mapItem.minLabelSize)  && (mapItem.colClassLabelFont < DET.maxLabelSize)) {
 			for (let i=0;i< rowClassBarConfigOrder.length;i++) {
 				const key = rowClassBarConfigOrder[i];
 				const currentClassBar = rowClassBarConfig[rowClassBarConfigOrder[i]];
 				if (currentClassBar.show === 'Y') {
-					const currFont = Math.min((currentClassBar.height - NgChm.DET.paddingHeight) * scale, NgChm.DET.maxLabelSize);
-					let labelText = NgChm.UTIL.getLabelText(key,'COL');
+					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
+					let labelText = UTIL.getLabelText(key,'COL');
 					if (containsLegend) {
 						labelText = "XXX"+labelText; //calculate spacing for bar legend
 					}
-					NgChm.DET.addTmpLabelForSizeCalc(mapItem, labelText, mapItem.rowClassLabelFont);
+					DET.addTmpLabelForSizeCalc(mapItem, labelText, mapItem.rowClassLabelFont);
 				} 
 			} 
-			NgChm.DET.calcLabelDiv(mapItem, 'COL');
+			DET.calcLabelDiv(mapItem, 'COL');
 		}	
 	}
 }
@@ -1006,28 +1030,29 @@ NgChm.DET.calcRowClassBarLabels = function (mapItem) {
  * class bar labels and update the mapItem's colLabelLen if the value of any label exceeds the 
  * existing maximum stored in that variable
  ************************************************************************************************/
-NgChm.DET.calcColClassBarLabels = function (mapItem) {
-	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column") + mapItem.dendroHeight);
-	const colClassBarConfig = NgChm.heatMap.getColClassificationConfig();
-	const colClassBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
+DET.calcColClassBarLabels = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column") + mapItem.dendroHeight);
+	const colClassBarConfig = heatMap.getColClassificationConfig();
+	const colClassBarConfigOrder = heatMap.getColClassificationOrder();
 	const colClassLength = Object.keys(colClassBarConfig).length;
-	const containsLegend = NgChm.DET.classLabelsContainLegend("col");
+	const containsLegend = DET.classLabelsContainLegend("col");
 	if (colClassBarConfig != null && colClassLength > 0) {
-		mapItem.colClassLabelFont = NgChm.DET.colClassBarLabelFont(mapItem);
-		if ((mapItem.colClassLabelFont > mapItem.minLabelSize) && (mapItem.colClassLabelFont < NgChm.DET.maxLabelSize)){
+		mapItem.colClassLabelFont = DET.colClassBarLabelFont(mapItem);
+		if ((mapItem.colClassLabelFont > mapItem.minLabelSize) && (mapItem.colClassLabelFont < DET.maxLabelSize)){
 			for (let i=0;i< colClassBarConfigOrder.length;i++) {
 				const key = colClassBarConfigOrder[i];
 				const currentClassBar = colClassBarConfig[key];
 				if (currentClassBar.show === 'Y') {
-					const currFont = Math.min((currentClassBar.height - NgChm.DET.paddingHeight) * scale, NgChm.DET.maxLabelSize);
-					let labelText = NgChm.UTIL.getLabelText(key,'ROW');
+					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
+					let labelText = UTIL.getLabelText(key,'ROW');
 					if (containsLegend) {
 						labelText = "XXXX"+labelText; //calculate spacing for bar legend
 					}
-					NgChm.DET.addTmpLabelForSizeCalc(mapItem, labelText, mapItem.colClassLabelFont);
+					DET.addTmpLabelForSizeCalc(mapItem, labelText, mapItem.colClassLabelFont);
 				} 
 			}	
-			NgChm.DET.calcLabelDiv(mapItem, 'ROW');
+			DET.calcLabelDiv(mapItem, 'ROW');
 		}
 	}
 }
@@ -1036,10 +1061,11 @@ NgChm.DET.calcColClassBarLabels = function (mapItem) {
  * FUNCTION - rowClassBarLabelFont: This function calculates the appropriate font size for row 
  * class bar labels
  ************************************************************************************************/
-NgChm.DET.rowClassBarLabelFont = function(mapItem) {
-	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row")+mapItem.dendroWidth);
-	const rowClassBarConfig = NgChm.heatMap.getRowClassificationConfig();
-	const fontSize = NgChm.DET.getClassBarLabelFontSize(mapItem, rowClassBarConfig,scale);
+DET.rowClassBarLabelFont = function(mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row")+mapItem.dendroWidth);
+	const rowClassBarConfig = heatMap.getRowClassificationConfig();
+	const fontSize = DET.getClassBarLabelFontSize(mapItem, rowClassBarConfig,scale);
 	return fontSize;
 }
 
@@ -1047,10 +1073,11 @@ NgChm.DET.rowClassBarLabelFont = function(mapItem) {
  * FUNCTION - colClassBarLabelFont: This function calculates the appropriate font size for 
  * column class bar labels
  ************************************************************************************************/
-NgChm.DET.colClassBarLabelFont = function(mapItem) {
-	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column")+mapItem.dendroHeight);
-	const colClassBarConfig = NgChm.heatMap.getColClassificationConfig();
-	const fontSize = NgChm.DET.getClassBarLabelFontSize(mapItem, colClassBarConfig,scale);
+DET.colClassBarLabelFont = function(mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column")+mapItem.dendroHeight);
+	const colClassBarConfig = heatMap.getColClassificationConfig();
+	const fontSize = DET.getClassBarLabelFontSize(mapItem, colClassBarConfig,scale);
 	return fontSize;
 }
 
@@ -1058,13 +1085,14 @@ NgChm.DET.colClassBarLabelFont = function(mapItem) {
  * FUNCTION - classLabelsContainLegend: This function returns a boolean indicating if the 
  * provided class bar axis contains a label with a bar or scatter plot legend.
  ************************************************************************************************/
-NgChm.DET.classLabelsContainLegend = function (type) {
+DET.classLabelsContainLegend = function (type) {
+	const heatMap = MMGR.getHeatMap();
 	let containsLegend = false;
-	let classBarOrder = NgChm.heatMap.getColClassificationOrder();
-	let classBarConfig = NgChm.heatMap.getColClassificationConfig();
+	let classBarOrder = heatMap.getColClassificationOrder();
+	let classBarConfig = heatMap.getColClassificationConfig();
 	if (type === "row") {
-		classBarOrder = NgChm.heatMap.getRowClassificationOrder();
-		classBarConfig = NgChm.heatMap.getRowClassificationConfig();
+		classBarOrder = heatMap.getRowClassificationOrder();
+		classBarConfig = heatMap.getRowClassificationConfig();
 	}
 	for (let i=0;i< classBarOrder.length;i++) {
 		const key = classBarOrder[i];
@@ -1081,14 +1109,14 @@ NgChm.DET.classLabelsContainLegend = function (type) {
  * specified text and fontSize.  If the combination of text and fontSize has not been seen before, 
  * a pool label element for performing the width calculation is also created.
  ************************************************************************************************/
-NgChm.DET.addTmpLabelForSizeCalc = function (mapItem, text, fontSize) {
+DET.addTmpLabelForSizeCalc = function (mapItem, text, fontSize) {
      const key = text + fontSize.toString();
      if (mapItem.labelSizeCache.hasOwnProperty(key)) {
     	 mapItem.tmpLabelSizeElements.push({ key, el: null });
 	} else {
              // Haven't seen this combination of font and fontSize before.
              // Set the contents of our label size div and calculate its width.
-		const el = NgChm.DET.getPoolElement(mapItem);
+		const el = DET.getPoolElement(mapItem);
 		el.style.fontSize = fontSize.toString() +'pt';
 		el.innerText = text;
 		mapItem.labelElement.appendChild(el);
@@ -1100,7 +1128,7 @@ NgChm.DET.addTmpLabelForSizeCalc = function (mapItem, text, fontSize) {
  * FUNCTION - getPoolElement: This function gets a labelSizeWidthCalc div from the pool if possible.
  * Otherwise create and return a new pool element.
  ************************************************************************************************/
- NgChm.DET.getPoolElement = function (mapItem) {
+ DET.getPoolElement = function (mapItem) {
 	if (mapItem.labelSizeWidthCalcPool.length > 0) {
 		return mapItem.labelSizeWidthCalcPool.pop();
 	} else {
@@ -1118,11 +1146,11 @@ NgChm.DET.addTmpLabelForSizeCalc = function (mapItem, text, fontSize) {
  * classification bars in a set (row/col) that have a size greater than 7.  Those <= 7 are ignored 
  * as they will have "..." placed next to them as labels.
  ************************************************************************************************/
-NgChm.DET.getClassBarLabelFontSize = function (mapItem, classBarConfig,scale) {
+DET.getClassBarLabelFontSize = function (mapItem, classBarConfig,scale) {
 	let minFont = 999;
 	for (let key in classBarConfig) {
 		const classBar = classBarConfig[key];
-		const fontSize = Math.min(((classBar.height - NgChm.DET.paddingHeight) * scale) - 1, 10);
+		const fontSize = Math.min(((classBar.height - DET.paddingHeight) * scale) - 1, 10);
 		if ((fontSize > mapItem.minLabelSize) && (fontSize < minFont)) {
 			minFont = fontSize;
 		}
@@ -1134,19 +1162,19 @@ NgChm.DET.getClassBarLabelFontSize = function (mapItem, classBarConfig,scale) {
  * FUNCTION - calcRowLabels: This function calculates the maximum label size (in pixels) on the 
  * row axis.
  ************************************************************************************************/
-NgChm.DET.calcRowLabels = function (mapItem, fontSize) {
+DET.calcRowLabels = function (mapItem, fontSize) {
 	let headerSize = 0;
-	const colHeight = NgChm.DET.calculateTotalClassBarHeight("column") + mapItem.dendroHeight;
+	const colHeight = DET.calculateTotalClassBarHeight("column") + mapItem.dendroHeight;
 	if (colHeight > 0) {
 		headerSize = mapItem.canvas.clientHeight * (colHeight / (mapItem.dataViewHeight + colHeight));
 	}
 	const skip = (mapItem.canvas.clientHeight - headerSize) / mapItem.dataPerCol;
 	if (skip > mapItem.minLabelSize) {
-		const shownLabels = NgChm.UTIL.getShownLabels('ROW');
+		const shownLabels = UTIL.getShownLabels('ROW');
 		for (let i = mapItem.currentRow; i < mapItem.currentRow + mapItem.dataPerCol; i++) {
-			NgChm.DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
+			DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
 		}
-		NgChm.DET.calcLabelDiv(mapItem, 'ROW');
+		DET.calcLabelDiv(mapItem, 'ROW');
 	}
 }
 
@@ -1154,19 +1182,19 @@ NgChm.DET.calcRowLabels = function (mapItem, fontSize) {
  * FUNCTION - calcRowLabels: This function calculates the maximum label size (in pixels) on the 
  * column axis.
  ************************************************************************************************/
-NgChm.DET.calcColLabels = function (mapItem, fontSize) {
+DET.calcColLabels = function (mapItem, fontSize) {
 	let headerSize = 0;
-	const rowHeight = NgChm.DET.calculateTotalClassBarHeight("row") + mapItem.dendroWidth;
+	const rowHeight = DET.calculateTotalClassBarHeight("row") + mapItem.dendroWidth;
 	if (rowHeight > 0) {
 		headerSize = mapItem.canvas.clientWidth * (rowHeight / (mapItem.dataViewWidth + rowHeight));
 	}
 	const skip = (mapItem.canvas.clientWidth - headerSize) / mapItem.dataPerRow;
 	if (skip > mapItem.minLabelSize) {
-		const shownLabels = NgChm.UTIL.getShownLabels('COLUMN');
+		const shownLabels = UTIL.getShownLabels('COLUMN');
 		for (let i = mapItem.currentCol; i < mapItem.currentCol + mapItem.dataPerRow; i++) {
-			NgChm.DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
+			DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
 		}
-		NgChm.DET.calcLabelDiv(mapItem, 'COL');
+		DET.calcLabelDiv(mapItem, 'COL');
 	}
 }
 
@@ -1176,7 +1204,7 @@ NgChm.DET.calcColLabels = function (mapItem, fontSize) {
  * than those already processed. rowLabelLen and colLabelLen are used to size the detail screen
  * to accommodate labels on both axes.
  ************************************************************************************************/
-NgChm.DET.calcLabelDiv = function (mapItem, axis) {
+DET.calcLabelDiv = function (mapItem, axis) {
 	let maxLen = axis === 'ROW' ? mapItem.rowLabelLen : mapItem.colLabelLen;
 	let w;
 
@@ -1212,27 +1240,27 @@ NgChm.DET.calcLabelDiv = function (mapItem, axis) {
 /************************************************************************************************
  * FUNCTION - getRowLabelFontSize: This function calculates the font size to be used for row labels.
  ************************************************************************************************/
-NgChm.DET.getRowLabelFontSize = function (mapItem) {
+DET.getRowLabelFontSize = function (mapItem) {
 	let headerSize = 0;
-	const colHeight = NgChm.DET.calculateTotalClassBarHeight("column") + mapItem.dendroHeight;
+	const colHeight = DET.calculateTotalClassBarHeight("column") + mapItem.dendroHeight;
 	if (colHeight > 0) {
 		headerSize = mapItem.canvas.clientHeight * (colHeight / (mapItem.dataViewHeight + colHeight));
 	}
 	const skip = Math.floor((mapItem.canvas.clientHeight - headerSize) / mapItem.dataPerCol) - 2;
-	return Math.min(skip, NgChm.DET.maxLabelSize);	
+	return Math.min(skip, DET.maxLabelSize);
 };
 
 /************************************************************************************************
  * FUNCTION - getRowLabelFontSize: This function calculates the font size to be used for column labels.
  ************************************************************************************************/
-NgChm.DET.getColLabelFontSize = function (mapItem) {
+DET.getColLabelFontSize = function (mapItem) {
 	let headerSize = 0;
-	const rowHeight = NgChm.DET.calculateTotalClassBarHeight("row") + mapItem.dendroWidth;
+	const rowHeight = DET.calculateTotalClassBarHeight("row") + mapItem.dendroWidth;
 	if (rowHeight > 0) {
 		headerSize = mapItem.canvas.clientWidth * (rowHeight / (mapItem.dataViewWidth + rowHeight));
 	}
 	const skip = Math.floor((mapItem.canvas.clientWidth - headerSize) / mapItem.dataPerRow) - 2;
-	return Math.min(skip, NgChm.DET.maxLabelSize);
+	return Math.min(skip, DET.maxLabelSize);
 };
 
 /************************************************************************************************
@@ -1242,10 +1270,10 @@ NgChm.DET.getColLabelFontSize = function (mapItem) {
  * so update it and move it to labelElements. After all elements have been added/updated, any 
  * remaining dynamic labels
  ************************************************************************************************/
-NgChm.DET.updateDisplayedLabels = function () {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		if (!NgChm.DMM.isVisible(mapItem)) {
+DET.updateDisplayedLabels = function () {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		const mapItem = DMM.DetailMaps[i];
+		if (!DMM.isVisible(mapItem)) {
 		    continue;
 		}
 		const debug = false;
@@ -1259,9 +1287,9 @@ NgChm.DET.updateDisplayedLabels = function () {
 		mapItem.labelElement.style.setProperty('display', 'none');
 	
 		// Update existing labels / draw new labels.
-		NgChm.DET.detailDrawRowClassBarLabels(mapItem);
-		NgChm.DET.detailDrawColClassBarLabels(mapItem);
-		NgChm.DET.drawRowAndColLabels(mapItem);
+		DET.detailDrawRowClassBarLabels(mapItem);
+		DET.detailDrawColClassBarLabels(mapItem);
+		DET.drawRowAndColLabels(mapItem);
 	
 		// Remove old dynamic labels that did not get updated.
 		for (let oldEl in mapItem.oldLabelElements) {
@@ -1292,25 +1320,25 @@ NgChm.DET.updateDisplayedLabels = function () {
  * FUNCTION - drawRowAndColLabels: This function determines if labels are to be drawn on each 
  * axis and calls the appropriate function to draw those labels on the screen.
  ************************************************************************************************/
-NgChm.DET.drawRowAndColLabels = function (mapItem) {
+DET.drawRowAndColLabels = function (mapItem) {
 	let fontSize;
 	if (mapItem.rowLabelFont >= mapItem.minLabelSize && mapItem.colLabelFont >= mapItem.minLabelSize){
 		fontSize = Math.min(mapItem.colLabelFont,mapItem.rowLabelFont);
-		NgChm.DET.drawRowLabels(mapItem,fontSize);
-		NgChm.DET.drawColLabels(mapItem,fontSize);
+		DET.drawRowLabels(mapItem,fontSize);
+		DET.drawColLabels(mapItem,fontSize);
 	} else if (mapItem.rowLabelFont >= mapItem.minLabelSize){
-		NgChm.DET.drawRowLabels(mapItem,mapItem.rowLabelFont);
+		DET.drawRowLabels(mapItem,mapItem.rowLabelFont);
 	} else if (mapItem.colLabelFont >= mapItem.minLabelSize){
-		NgChm.DET.drawColLabels(mapItem,mapItem.colLabelFont);
+		DET.drawColLabels(mapItem,mapItem.colLabelFont);
 	}
 }
 
 /************************************************************************************************
  * FUNCTION - drawRowLabels: This function draws all row axis labels on the screen.
  ************************************************************************************************/
-NgChm.DET.drawRowLabels = function (mapItem, fontSize) {
+DET.drawRowLabels = function (mapItem, fontSize) {
 	let headerSize = 0;
-	const colHeight = NgChm.DET.calculateTotalClassBarHeight("column");
+	const colHeight = DET.calculateTotalClassBarHeight("column");
 	if (colHeight > 0) {
 		headerSize = mapItem.canvas.clientHeight * (colHeight / (mapItem.dataViewHeight + colHeight));
 	}
@@ -1318,13 +1346,13 @@ NgChm.DET.drawRowLabels = function (mapItem, fontSize) {
 	const start = Math.max((skip - fontSize)/2, 0) + headerSize-2;
 	
 	if (skip > mapItem.minLabelSize) {
-		const actualLabels = NgChm.UTIL.getActualLabels('ROW');
-		const shownLabels = NgChm.UTIL.getShownLabels('ROW');
+		const actualLabels = UTIL.getActualLabels('ROW');
+		const shownLabels = UTIL.getShownLabels('ROW');
 		const xPos = mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth + 3;
 		for (let i = mapItem.currentRow; i < mapItem.currentRow + mapItem.dataPerCol; i++) {
 			const yPos = mapItem.canvas.offsetTop + start + ((i-mapItem.currentRow) * skip);
 			if (actualLabels[i-1] !== undefined){ // an occasional problem in subdendro view
-				NgChm.DET.addLabelDiv(mapItem,mapItem.labelElement, 'detail_row' + i + mapItem.labelPostScript, 'DynamicLabel', shownLabels[i-1], actualLabels[i-1], xPos, yPos, fontSize, 'F',i,"Row");
+				DET.addLabelDiv(mapItem,mapItem.labelElement, 'detail_row' + i + mapItem.labelPostScript, 'DynamicLabel', shownLabels[i-1], actualLabels[i-1], xPos, yPos, fontSize, 'F',i,"Row");
 			}
 		}
 	}
@@ -1333,9 +1361,9 @@ NgChm.DET.drawRowLabels = function (mapItem, fontSize) {
 /************************************************************************************************
  * FUNCTION - drawColLabels: This function draws all column axis labels on the screen.
  ************************************************************************************************/
-NgChm.DET.drawColLabels = function (mapItem, fontSize) {
+DET.drawColLabels = function (mapItem, fontSize) {
 	let headerSize = 0;
-	const rowHeight = NgChm.DET.calculateTotalClassBarHeight("row");
+	const rowHeight = DET.calculateTotalClassBarHeight("row");
 	if (rowHeight > 0) {
 		headerSize = mapItem.canvas.clientWidth * (rowHeight / (mapItem.dataViewWidth + rowHeight));
 	}
@@ -1343,13 +1371,13 @@ NgChm.DET.drawColLabels = function (mapItem, fontSize) {
 	const start = headerSize + fontSize + Math.max((skip - fontSize)/2, 0) + 3;
 
 	if (skip > mapItem.minLabelSize) {
-		const actualLabels = NgChm.UTIL.getActualLabels('COLUMN');
-		const shownLabels = NgChm.UTIL.getShownLabels('COLUMN');
+		const actualLabels = UTIL.getActualLabels('COLUMN');
+		const shownLabels = UTIL.getShownLabels('COLUMN');
 		const yPos = mapItem.canvas.offsetTop + mapItem.canvas.clientHeight + 3;
 		for (let i = mapItem.currentCol; i < mapItem.currentCol + mapItem.dataPerRow; i++) {
 			const xPos = mapItem.canvas.offsetLeft + start + ((i-mapItem.currentCol) * skip);
 			if (actualLabels[i-1] !== undefined){ // an occasional problem in subdendro view
-				NgChm.DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_col' + i + mapItem.labelPostScript, 'DynamicLabel', shownLabels[i-1], actualLabels[i-1], xPos, yPos, fontSize, 'T',i,"Column");
+				DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_col' + i + mapItem.labelPostScript, 'DynamicLabel', shownLabels[i-1], actualLabels[i-1], xPos, yPos, fontSize, 'T',i,"Column");
 				if (shownLabels[i-1].length > mapItem.colLabelLen) {
 					mapItem.colLabelLen = shownLabels[i-1].length;
 				}
@@ -1362,7 +1390,7 @@ NgChm.DET.drawColLabels = function (mapItem, fontSize) {
  * FUNCTION - resetLabelLengths: This function resets the maximum //label size variables for each 
  * axis in preparation for a screen redraw.
  ************************************************************************************************/
-NgChm.DET.resetLabelLengths = function (mapItem) {
+DET.resetLabelLengths = function (mapItem) {
 	mapItem.rowLabelLen = 0;
 	mapItem.colLabelLen = 0;
 }
@@ -1370,15 +1398,16 @@ NgChm.DET.resetLabelLengths = function (mapItem) {
 /************************************************************************************************
  * FUNCTION - detailDrawRowClassBarLabels: This function draws row class bar labels on the detail panel.
  ************************************************************************************************/
-NgChm.DET.detailDrawRowClassBarLabels = function (mapItem) {
-	const rowClassBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
-	NgChm.DET.removeLabel (mapItem, "missingDetRowClassBars");
-	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row"));
-	const classBarAreaWidth = NgChm.DET.calculateTotalClassBarHeight("row")*scale;
+DET.detailDrawRowClassBarLabels = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	const rowClassBarConfigOrder = heatMap.getRowClassificationOrder();
+	DET.removeLabel (mapItem, "missingDetRowClassBars");
+	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+	const classBarAreaWidth = DET.calculateTotalClassBarHeight("row")*scale;
 	const dataAreaWidth = mapItem.dataViewWidth*scale;
-	const rowClassBarConfig = NgChm.heatMap.getRowClassificationConfig();
+	const rowClassBarConfig = heatMap.getRowClassificationConfig();
 	const rowClassLength = Object.keys(rowClassBarConfig).length;
-	const containsLegend = NgChm.DET.classLabelsContainLegend("row");
+	const containsLegend = DET.classLabelsContainLegend("row");
 	if (rowClassBarConfig != null && rowClassLength > 0) {
 		let startingPoint = mapItem.canvas.offsetLeft + mapItem.rowClassLabelFont + 2;
 		if (mapItem.rowClassLabelFont > mapItem.minLabelSize) {
@@ -1389,16 +1418,16 @@ NgChm.DET.detailDrawRowClassBarLabels = function (mapItem) {
 				const barWidth = (currentClassBar.height*scale);
 				let xPos = startingPoint + (barWidth/2) - (mapItem.rowClassLabelFont/2);
 				let yPos = mapItem.canvas.offsetTop + mapItem.canvas.clientHeight + 4;
-				NgChm.DET.removeClassBarLegendElements(key,mapItem);
+				DET.removeClassBarLegendElements(key,mapItem);
 				if (currentClassBar.show === 'Y') {
-					NgChm.DET.drawRowClassBarLegends(mapItem);
-					const currFont = Math.min((currentClassBar.height - NgChm.DET.paddingHeight) * scale, NgChm.DET.maxLabelSize);
-					const labelText = NgChm.UTIL.getLabelText(key,'COL');
+					DET.drawRowClassBarLegends(mapItem);
+					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
+					const labelText = UTIL.getLabelText(key,'COL');
 					if (containsLegend) {
 						yPos += 12; //add spacing for bar legend
 					}
 					if (currFont >= mapItem.rowClassLabelFont) {
-						NgChm.DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_classrow' + i + mapItem.labelPostScript, 'DynamicLabel ClassBar', labelText, key, xPos, yPos, mapItem.rowClassLabelFont, 'T', i, "RowCovar",key);
+						DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_classrow' + i + mapItem.labelPostScript, 'DynamicLabel ClassBar', labelText, key, xPos, yPos, mapItem.rowClassLabelFont, 'T', i, "RowCovar",key);
 					}
 					yPos += (currentClassBar.height * scale);
 					startingPoint += barWidth;
@@ -1406,14 +1435,14 @@ NgChm.DET.detailDrawRowClassBarLabels = function (mapItem) {
 					if (!document.getElementById("missingDetRowClassBars")){
 						const x = mapItem.canvas.offsetLeft + 10;
 						const y = mapItem.canvas.offsetTop + mapItem.canvas.clientHeight+2;
-						NgChm.DET.addLabelDiv(mapItem, mapItem.labelElement, 'missingDetRowClassBars' + mapItem.labelPostScript, "ClassBar MarkLabel", "...", "...", x, y, 10, 'T', i, "Row");
+						DET.addLabelDiv(mapItem, mapItem.labelElement, 'missingDetRowClassBars' + mapItem.labelPostScript, "ClassBar MarkLabel", "...", "...", x, y, 10, 'T', i, "Row");
 					}
-					if (!document.getElementById("missingSumRowClassBars") && NgChm.SUM.canvas){
-						const x = NgChm.SUM.canvas.offsetLeft;
-						const y = NgChm.SUM.canvas.offsetTop + NgChm.SUM.canvas.clientHeight + 2;
+					if (!document.getElementById("missingSumRowClassBars") && SUM.canvas){
+						const x = SUM.canvas.offsetLeft;
+						const y = SUM.canvas.offsetTop + SUM.canvas.clientHeight + 2;
 						const sumlabelDiv = document.getElementById('sumlabelDiv')
 						if (sumlabelDiv !== null) {
-							NgChm.DET.addLabelDiv(mapItem, document.getElementById('sumlabelDiv'), 'missingSumRowClassBars' + mapItem.labelPostScript, "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
+							DET.addLabelDiv(mapItem, document.getElementById('sumlabelDiv'), 'missingSumRowClassBars' + mapItem.labelPostScript, "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
 						}
 					}
 				}
@@ -1427,13 +1456,14 @@ NgChm.DET.detailDrawRowClassBarLabels = function (mapItem) {
  * FUNCTION - detailDrawRowClassBarLabels: This function draws column class bar labels on the 
  * detail panel.
  ************************************************************************************************/
-NgChm.DET.detailDrawColClassBarLabels = function (mapItem) {
-	NgChm.DET.removeLabel (mapItem, "missingDetColClassBars");
-	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column"));
-	const colClassBarConfig = NgChm.heatMap.getColClassificationConfig();
-	const colClassBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
+DET.detailDrawColClassBarLabels = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	DET.removeLabel (mapItem, "missingDetColClassBars");
+	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+	const colClassBarConfig = heatMap.getColClassificationConfig();
+	const colClassBarConfigOrder = heatMap.getColClassificationOrder();
 	const colClassLength = Object.keys(colClassBarConfig).length;
-	const containsLegend = NgChm.DET.classLabelsContainLegend("col");
+	const containsLegend = DET.classLabelsContainLegend("col");
 	if (colClassBarConfig != null && colClassLength > 0) {
 		if (mapItem.colClassLabelFont > mapItem.minLabelSize) {
 			let yPos = mapItem.canvas.offsetTop;
@@ -1441,34 +1471,34 @@ NgChm.DET.detailDrawColClassBarLabels = function (mapItem) {
 				let xPos = mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth + 3;
 				const key = colClassBarConfigOrder[i];
 				const currentClassBar = colClassBarConfig[key];
-				NgChm.DET.removeClassBarLegendElements(key,mapItem);
+				DET.removeClassBarLegendElements(key,mapItem);
 				if (currentClassBar.show === 'Y') {
-					NgChm.DET.drawColClassBarLegends(mapItem);  
-					const currFont = Math.min((currentClassBar.height - NgChm.DET.paddingHeight) * scale, NgChm.DET.maxLabelSize);
+					DET.drawColClassBarLegends(mapItem);
+					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
 					if (currFont >= mapItem.colClassLabelFont) {
 						let yOffset = yPos - 1;
 						//Reposition label to center of large-height bars
 						if (currentClassBar.height >= 20) {
 							yOffset += ((((currentClassBar.height/2) - (mapItem.colClassLabelFont/2)) - 3) * scale);
 						}
-						const labelText = NgChm.UTIL.getLabelText(key,'ROW');
+						const labelText = UTIL.getLabelText(key,'ROW');
 						if (containsLegend) {
 							xPos += 14; //add spacing for bar legend
 						}
-						NgChm.DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_classcol' + i + mapItem.labelPostScript, 'DynamicLabel ClassBar', labelText, key, xPos, yOffset, mapItem.colClassLabelFont, 'F', i, "ColumnCovar");
+						DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_classcol' + i + mapItem.labelPostScript, 'DynamicLabel ClassBar', labelText, key, xPos, yOffset, mapItem.colClassLabelFont, 'F', i, "ColumnCovar");
 					}
 					yPos += (currentClassBar.height * scale);
 				} else {
 					if (!document.getElementById("missingDetColClassBars")){
 						const x =  mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth+2;
 						const y = mapItem.canvas.offsetTop-15;
-						NgChm.DET.addLabelDiv(mapItem, mapItem.labelElement, 'missingDetColClassBars' + mapItem.labelPostScript, "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
+						DET.addLabelDiv(mapItem, mapItem.labelElement, 'missingDetColClassBars' + mapItem.labelPostScript, "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
 					}
-                    if (!document.getElementById("missingSumColClassBars") && NgChm.SUM.canvas && NgChm.SUM.chmElement){
-                    	const x = NgChm.SUM.canvas.offsetLeft + NgChm.SUM.canvas.offsetWidth + 2;
-                    	const y = NgChm.SUM.canvas.offsetTop + NgChm.SUM.canvas.clientHeight/NgChm.SUM.totalHeight - 10;
-						NgChm.DET.addLabelDiv(mapItem, document.getElementById('sumlabelDiv'), 'missingSumColClassBars' + mapItem.labelPostScript, "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
-                    }	
+					if (!document.getElementById("missingSumColClassBars") && SUM.canvas && SUM.chmElement) {
+					    const x = SUM.canvas.offsetLeft + SUM.canvas.offsetWidth + 2;
+					    const y = SUM.canvas.offsetTop + SUM.canvas.clientHeight/SUM.totalHeight - 10;
+					    DET.addLabelDiv(mapItem, document.getElementById('sumlabelDiv'), 'missingSumColClassBars' + mapItem.labelPostScript, "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
+					}
 				}
 			}	
 		}
@@ -1480,10 +1510,11 @@ NgChm.DET.detailDrawColClassBarLabels = function (mapItem) {
  * detail panel for maps that contain bar/scatter plot covariates.  It calls a second function
  * (drawRowClassBarLegend) to draw each legend.
  ************************************************************************************************/
-NgChm.DET.drawRowClassBarLegends = function (mapItem) {
-	const classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
-	const classBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
-	const classBarsData = NgChm.heatMap.getRowClassificationData(); 
+DET.drawRowClassBarLegends = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	const classBarsConfig = heatMap.getRowClassificationConfig();
+	const classBarConfigOrder = heatMap.getRowClassificationOrder();
+	const classBarsData = heatMap.getRowClassificationData();
 	let totalHeight = 0;
 	for (let i = 0; i < classBarConfigOrder.length; i++) {
 		const key = classBarConfigOrder[i];
@@ -1498,7 +1529,7 @@ NgChm.DET.drawRowClassBarLegends = function (mapItem) {
 		const currentClassBar = classBarsConfig[key];
 		if (currentClassBar.show === 'Y') {
 			if (currentClassBar.bar_type !== 'color_plot') {
-					NgChm.DET.drawRowClassBarLegend(mapItem,key,currentClassBar,prevHeight,totalHeight,i);
+					DET.drawRowClassBarLegend(mapItem,key,currentClassBar,prevHeight,totalHeight,i);
 			}
 			prevHeight += parseInt(currentClassBar.height);
 		}
@@ -1509,8 +1540,8 @@ NgChm.DET.drawRowClassBarLegends = function (mapItem) {
  * FUNCTION - drawRowClassBarLegend: This function draws a specific row class bar legend on the 
  * detail panel for maps that contain bar/scatter plot covariates.  
  ************************************************************************************************/
-NgChm.DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeight,totalHeight,i) {
-	const classHgt = NgChm.DET.calculateTotalClassBarHeight("row");
+DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeight,totalHeight,i) {
+	const classHgt = DET.calculateTotalClassBarHeight("row");
 	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + classHgt);
 	totalHeight *= scale;
 	const prevEndPct = prevHeight/totalHeight;
@@ -1520,7 +1551,7 @@ NgChm.DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
 	const classHeight = (endClasses-beginClasses)*scale;
 	//Don't draw legend if bar is not wide enough
 	if (classHeight < 18) return;
-	const beginPos =  beginClasses+(classHeight*prevEndPct)+(NgChm.DET.paddingHeight*(i+1));
+	const beginPos =  beginClasses+(classHeight*prevEndPct)+(DET.paddingHeight*(i+1));
 	const endPos =  beginClasses+(classHeight*currEndPct);
 	const midPos =  beginPos+((endPos-beginPos)/2);
 	const topPos = mapItem.canvas.offsetTop + mapItem.canvas.offsetHeight + 2;
@@ -1535,11 +1566,11 @@ NgChm.DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
 		midVal = midVal.toFixed(1)
 	}
 	//Create div and place high legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow","-"+lowVal,topPos,beginPos,true);
+	DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow","-"+lowVal,topPos,beginPos,true);
 	//Create div and place middle legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetMid","-"+midVal,topPos,midPos,true);
+	DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetMid","-"+midVal,topPos,midPos,true);
 	//Create div and place middle legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh","-"+highVal,topPos,endPos,true);
+	DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh","-"+highVal,topPos,endPos,true);
 }
 
 /************************************************************************************************
@@ -1547,10 +1578,11 @@ NgChm.DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
  * detail panel for maps that contain bar/scatter plot covariates.  It calls a second function
  * (drawColClassBarLegend) to draw each legend.
  ************************************************************************************************/
-NgChm.DET.drawColClassBarLegends = function (mapItem) {
-	const classBarsConfig = NgChm.heatMap.getColClassificationConfig(); 
-	const classBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
-	const classBarsData = NgChm.heatMap.getColClassificationData(); 
+DET.drawColClassBarLegends = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	const classBarsConfig = heatMap.getColClassificationConfig();
+	const classBarConfigOrder = heatMap.getColClassificationOrder();
+	const classBarsData = heatMap.getColClassificationData();
 	let totalHeight = 0;
 	for (let i = 0; i < classBarConfigOrder.length; i++) {
 		const key = classBarConfigOrder[i];
@@ -1566,7 +1598,7 @@ NgChm.DET.drawColClassBarLegends = function (mapItem) {
 		const currentClassBar = classBarsConfig[key];
 		if (currentClassBar.show === 'Y') {
 			if (currentClassBar.bar_type !== 'color_plot') {
-				NgChm.DET.drawColClassBarLegend(mapItem,key,currentClassBar,prevHeight,totalHeight);
+				DET.drawColClassBarLegend(mapItem,key,currentClassBar,prevHeight,totalHeight);
 			}
 			prevHeight += parseInt(currentClassBar.height);
 		}
@@ -1577,8 +1609,8 @@ NgChm.DET.drawColClassBarLegends = function (mapItem) {
  * FUNCTION - drawColClassBarLegend: This function draws a specific column class bar legend on the 
  * detail panel for maps that contain bar/scatter plot covariates.  
  ************************************************************************************************/
-NgChm.DET.drawColClassBarLegend = function(mapItem,key,currentClassBar,prevHeight,totalHeight) {
-	const classHgt = NgChm.DET.calculateTotalClassBarHeight("column");
+DET.drawColClassBarLegend = function(mapItem,key,currentClassBar,prevHeight,totalHeight) {
+	const classHgt = DET.calculateTotalClassBarHeight("column");
 	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + classHgt);
 
 	//calculate where the previous bar ends and the current one begins.
@@ -1593,7 +1625,7 @@ NgChm.DET.drawColClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
 
 	//find the first, middle, and last vertical positions for the bar legend being drawn
 	const topPos =  beginClasses+(classHeight*prevEndPct);
-	const barHeight = ((currentClassBar.height*scale) - NgChm.DET.paddingHeight);
+	const barHeight = ((currentClassBar.height*scale) - DET.paddingHeight);
 	//Don't draw legend if bar is not tall enough
 	if (barHeight < 18) return;
 	const endPos =  topPos + barHeight;
@@ -1615,20 +1647,20 @@ NgChm.DET.drawColClassBarLegend = function(mapItem,key,currentClassBar,prevHeigh
 	}
 	
 	//Create div and place high legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh-","-",topPos,leftPos,false);
-	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh",highVal,topPos+4,leftPos+3,false);
+	DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh-","-",topPos,leftPos,false);
+	DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetHigh",highVal,topPos+4,leftPos+3,false);
 	//Create div and place mid legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetMid","- "+midVal,midPos,leftPos,false);
+	DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetMid","- "+midVal,midPos,leftPos,false);
 	//Create div and place low legend value
-	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow",lowVal,endPos-3,leftPos+3,false);
-	NgChm.DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow-","-",endPos,leftPos,false);
+	DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow",lowVal,endPos-3,leftPos+3,false);
+	DET.setLegendDivElement(mapItem,key+mapItem.panelNbr+"legendDetLow-","-",endPos,leftPos,false);
 }
 
 /************************************************************************************************
  * FUNCTION - removeColClassBarLegendElements: This function removes any existing legend elements
  * for a bar/scatter plot class bar that is being redrawn.  
  ************************************************************************************************/
-NgChm.DET.removeClassBarLegendElements = function(key,mapItem) {
+DET.removeClassBarLegendElements = function(key,mapItem) {
 	let legItem = document.getElementById(key+mapItem.panelNbr+"legendDetHigh-");
 	if (legItem !== null) legItem.remove();
 	legItem = document.getElementById(key+mapItem.panelNbr+"legendDetHigh");
@@ -1645,7 +1677,7 @@ NgChm.DET.removeClassBarLegendElements = function(key,mapItem) {
  * FUNCTION - setLegendDivElement: This function sets the position for a bar/scatter plot 
  * covariates legend on the detail panel.  
  ************************************************************************************************/
-NgChm.DET.setLegendDivElement = function (mapItem,itemId,boundVal,topVal,leftVal,isRowVal) {
+DET.setLegendDivElement = function (mapItem,itemId,boundVal,topVal,leftVal,isRowVal) {
 	//Create div and place high legend value
 	let itemElem = document.getElementById(itemId);
 	if (itemElem === null) {
@@ -1673,17 +1705,17 @@ NgChm.DET.setLegendDivElement = function (mapItem,itemId,boundVal,topVal,leftVal
 /************************************************************************************************
  * FUNCTION - removeLabels: This function removes a label from all detail map items.  
  ************************************************************************************************/
-NgChm.DET.removeLabels = function (label) {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		NgChm.DET.removeLabel(mapItem, label);
+DET.removeLabels = function (label) {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		const mapItem = DMM.DetailMaps[i];
+		DET.removeLabel(mapItem, label);
 	}
 };
 
 /************************************************************************************************
  * FUNCTION - removeLabel: This function removes a label from a specific detail map item.  
  ************************************************************************************************/
-NgChm.DET.removeLabel = function (mapItem, label) {
+DET.removeLabel = function (mapItem, label) {
 	if (mapItem.oldLabelElements.hasOwnProperty (label)) {
 		const e = mapItem.oldLabelElements[label];
 		e.parent.removeChild(e.div);
@@ -1694,19 +1726,19 @@ NgChm.DET.removeLabel = function (mapItem, label) {
 /************************************************************************************************
  * FUNCTION - addLabelDivs: This function adds a label div to all detail map items.  
  ************************************************************************************************/
-NgChm.DET.addLabelDivs = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-		const mapItem = NgChm.DMM.DetailMaps[i];
-		NgChm.DET.addLabelDiv(mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
+DET.addLabelDivs = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+		const mapItem = DMM.DetailMaps[i];
+		DET.addLabelDiv(mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
 	}
 };
 
 /************************************************************************************************
  * FUNCTION - addLabelDiv: This function adds a label div element to a specific detail map item  
  ************************************************************************************************/
-NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
+DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
 	if (mapItem.oldLabelElements.hasOwnProperty(id)) {
-	    NgChm.DET.updateLabelDiv (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
+	    DET.updateLabelDiv (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
 	    return;
 	}
 	let div = document.getElementById (id);
@@ -1715,7 +1747,7 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
 		console.log ({ m: 'parent mismatch', parent, div });
 	    }
 	    mapItem.oldLabelElements[id] = { div, parent: div.parentElement };
-	    NgChm.DET.updateLabelDiv (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
+	    DET.updateLabelDiv (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
 	    return;
 	}
 	div = document.createElement('div');
@@ -1728,7 +1760,7 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
 	} else {
 		div.dataset.axis = 'Row';
 	}
-	if (NgChm.SRCH.labelIndexInSearch && NgChm.SRCH.labelIndexInSearch(axis,index)) {
+	if (SRCH.labelIndexInSearch && SRCH.labelIndexInSearch(axis,index)) {
 		div.classList.add('inSelection');
 	}
 	if (rotate == 'T') {
@@ -1757,35 +1789,35 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
 	}
 	
 	if (text !== "<" && text !== "..." && text.length > 0){
-		div.addEventListener('click',NgChm.DEV.labelClick , NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
-		div.addEventListener('contextmenu',NgChm.DEV.labelRightClick, NgChm.UTIL.passiveCompat({ capture: false, passive: false }));
-		div.onmouseover = function(){NgChm.UHM.hlp(this,longText,longText.length*9,0);}
-		div.onmouseleave = NgChm.UHM.hlpC;
+		div.addEventListener('click',DEV.labelClick , UTIL.passiveCompat({ capture: false, passive: false }));
+		div.addEventListener('contextmenu',DEV.labelRightClick, UTIL.passiveCompat({ capture: false, passive: false }));
+		div.onmouseover = function(){UHM.hlp(this,longText,longText.length*9,0);}
+		div.onmouseleave = UHM.hlpC;
 		div.addEventListener("touchstart", function(e){
-			NgChm.UHM.hlpC();
+			UHM.hlpC();
 			const now = new Date().getTime();
 			const timesince = now - mapItem.latestTap;
-			NgChm.DET.labelLastClicked[this.dataset.axis] = this.dataset.index;
+			DET.labelLastClicked[this.dataset.axis] = this.dataset.index;
 			mapItem.latestLabelTap = now;
-		}, NgChm.UTIL.passiveCompat({ passive: true }));
+		}, UTIL.passiveCompat({ passive: true }));
 		div.addEventListener("touchend", function(e){
 			if (e.touches.length == 0 && mapItem.latestLabelTap){
 				const now = new Date().getTime();
 				const timesince = now - mapItem.latestLabelTap;
 				if (timesince > 500){
-					NgChm.DEV.labelRightClick(e);
+					DEV.labelRightClick(e);
 				}
 			}
-		}, NgChm.UTIL.passiveCompat({ passive: false }));
-		div.addEventListener("touchmove", NgChm.DEV.labelDrag, NgChm.UTIL.passiveCompat({ passive: false }));
+		}, UTIL.passiveCompat({ passive: false }));
+		div.addEventListener("touchmove", DEV.labelDrag, UTIL.passiveCompat({ passive: false }));
 	}
 	if (text == "..."){
-		const listenOpts = NgChm.UTIL.passiveCompat({ capture: false, passive: false });
+		const listenOpts = UTIL.passiveCompat({ capture: false, passive: false });
 		div.addEventListener('mouseover', (function() {
-		    return function(e) {NgChm.UHM.hlp(this,"Some covariate bars are hidden",160,0); };
+		    return function(e) {UHM.hlp(this,"Some covariate bars are hidden",160,0); };
 		}) (this), listenOpts);
 		div.addEventListener('mouseleave', (function() {
-		    return function(e) {NgChm.UHM.hlpC(); };
+		    return function(e) {UHM.hlpC(); };
 		}) (this), listenOpts);
 	}   
 }
@@ -1794,7 +1826,7 @@ NgChm.DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText
  * FUNCTION - updateLabelDiv: This function updates a label DIV and removes it from the 
  * oldLabelElements array if it is no longer visible on the detail panel.  
  ************************************************************************************************/
-NgChm.DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
+DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
 	if (mapItem.oldLabelElements[id].parent !== parent) {
 		return; // sometimes this if statement is triggered during recreation of panes from a saved state
 	}
@@ -1806,7 +1838,7 @@ NgChm.DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longT
 	mapItem.labelElements[id] = { div, parent };
 	delete mapItem.oldLabelElements[id];
 
-	if (NgChm.SRCH.labelIndexInSearch(axis,index)) {
+	if (SRCH.labelIndexInSearch(axis,index)) {
 		div.classList.add ('inSelection');
 	} else {
 		div.classList.remove ('inSelection');
@@ -1833,7 +1865,7 @@ NgChm.DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longT
  *  in the /searchArray.  This array will contain sub-arrays that have 2 entries (one for 
  *  starting position and the other for ending)
  *********************************************************************************************/
-NgChm.DET.getContigSearchRanges = function (searchArr) {
+DET.getContigSearchRanges = function (searchArr) {
 	let ranges = [];
 	let prevVal=searchArr[0];
 	let startVal = searchArr[0];
@@ -1865,10 +1897,11 @@ NgChm.DET.getContigSearchRanges = function (searchArr) {
  * FUNCTION:  getAllLabelsByAxis - This function retrieves and array of search labels containing
  * every label on a given axis.
  *********************************************************************************************/
-NgChm.DET.getAllLabelsByAxis = function (axis, labelType) {
-	const labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] : 
-		axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getRowClassificationConfig()) : 
-			[NgChm.heatMap.getRowLabels()["labels"], NgChm.heatMap.getColLabels()['labels'] ];
+DET.getAllLabelsByAxis = function (axis, labelType) {
+	const heatMap = MMGR.getHeatMap();
+	const labels = axis == 'Row' ? heatMap.getRowLabels()["labels"] : axis == "Column" ? heatMap.getColLabels()['labels'] :
+		axis == "ColumnCovar" ? Object.keys(heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(heatMap.getRowClassificationConfig()) : 
+			[heatMap.getRowLabels()["labels"], heatMap.getColLabels()['labels'] ];
 	let searchLabels = [];
 	if (axis === "Row") {
 		for (let i in labels){
@@ -1904,18 +1937,19 @@ NgChm.DET.getAllLabelsByAxis = function (axis, labelType) {
  * FUNCTION - setDendroShow: The purpose of this function is to set the display
  * height and width for row and column dendrograms for a given heat map panel.
  **********************************************************************************/
-NgChm.DET.setDendroShow = function (mapItem) {
-	const rowDendroConfig = NgChm.heatMap.getRowDendroConfig();
-	const colDendroConfig = NgChm.heatMap.getColDendroConfig();
-	if (!NgChm.heatMap.showRowDendrogram("DETAIL")) {
+DET.setDendroShow = function (mapItem) {
+	const heatMap = MMGR.getHeatMap();
+	const rowDendroConfig = heatMap.getRowDendroConfig();
+	const colDendroConfig = heatMap.getColDendroConfig();
+	if (!heatMap.showRowDendrogram("DETAIL")) {
 		mapItem.dendroWidth = 15;
 	} else {
-		mapItem.dendroWidth = Math.floor(parseInt(rowDendroConfig.height) * NgChm.heatMap.getRowDendroConfig().height/100+5);
+		mapItem.dendroWidth = Math.floor(parseInt(rowDendroConfig.height) * heatMap.getRowDendroConfig().height/100+5);
 	}
-	if (!NgChm.heatMap.showColDendrogram("DETAIL")) {
+	if (!heatMap.showColDendrogram("DETAIL")) {
 		mapItem.dendroHeight = 15;
 	} else {
-		mapItem.dendroHeight = Math.floor(parseInt(colDendroConfig.height) * NgChm.heatMap.getColDendroConfig().height/100+5);
+		mapItem.dendroHeight = Math.floor(parseInt(colDendroConfig.height) * heatMap.getColDendroConfig().height/100+5);
 	}
 }
 
@@ -1923,24 +1957,24 @@ NgChm.DET.setDendroShow = function (mapItem) {
  * FUNCTION - colDendroResize: This function resizes the column dendrogram of the specified detail
  * heat map panel instance.
  ************************************************************************************************/
-NgChm.DET.colDendroResize = function(mapItem) {
+DET.colDendroResize = function(mapItem) {
 	if (mapItem.colDendroCanvas !== null) {
 		const dendroCanvas = mapItem.colDendroCanvas;
 		const left = mapItem.canvas.offsetLeft;
-		const canW = mapItem.dataViewWidth + NgChm.DET.calculateTotalClassBarHeight("row");
+		const canW = mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row");
 		dendroCanvas.style.left = (left + mapItem.canvas.clientWidth * (1-mapItem.dataViewWidth/canW)) + 'px';
 		if (mapItem.colDendro.isVisible()){
 			//If summary side is hidden, retain existing dendro height
 			const totalDetHeight = mapItem.chm.offsetHeight - 50;
 			let height = parseInt (dendroCanvas.style.height, 10) | 0;
-			const sumMinimized = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) < 5;
-			if (!NgChm.SUM.chmElement || sumMinimized) {
+			const sumMinimized = parseInt(SUM.colDendro.dendroCanvas.style.height, 10) < 5;
+			if (!SUM.chmElement || sumMinimized) {
 				const minHeight = totalDetHeight * 0.1;
 				if (height < minHeight) {
 				    height = minHeight;
 				}
 			} else {
-				const dendroSumPct = parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(NgChm.SUM.canvas.style.height, 10) + parseInt(NgChm.SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(NgChm.SUM.cCCanvas.style.height, 10));
+				const dendroSumPct = parseInt(SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(SUM.canvas.style.height, 10) + parseInt(SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(SUM.cCCanvas.style.height, 10));
 				height = totalDetHeight * dendroSumPct; 
 			}
 			dendroCanvas.style.height = height + 'px';
@@ -1958,25 +1992,25 @@ NgChm.DET.colDendroResize = function(mapItem) {
  * FUNCTION - rowDendroResize: This function resizes the row dendrogram of the specified detail
  * heat map panel instance.
  ************************************************************************************************/
-NgChm.DET.rowDendroResize = function(mapItem) {
+DET.rowDendroResize = function(mapItem) {
 	if (mapItem.rowDendroCanvas !== null) {
 		const dendroCanvas = mapItem.rowDendroCanvas;
-		const top = mapItem.colDendro.getDivHeight() + NgChm.SUM.paddingHeight;
-		const canH = mapItem.dataViewHeight + NgChm.DET.calculateTotalClassBarHeight("column")
+		const top = mapItem.colDendro.getDivHeight() + SUM.paddingHeight;
+		const canH = mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column")
 		dendroCanvas.style.top = (top + mapItem.canvas.clientHeight * (1-mapItem.dataViewHeight/canH)) + 'px';
 		if (mapItem.rowDendro.isVisible()){
 			//If summary side is hidden, retain existing dendro width
 			const totalDetWidth = (mapItem.chm.offsetWidth - 50);
-			const sumMinimized = parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) < 5 ? true : false;
+			const sumMinimized = parseInt(SUM.rowDendro.dendroCanvas.style.width, 10) < 5 ? true : false;
 			const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
 			let width = parseInt (dendroCanvas.style.width, 10) | 0;
-			if (!NgChm.SUM.chmElement || sumMinimized) {
+			if (!SUM.chmElement || sumMinimized) {
 			    const minWidth = totalDetWidth * 0.1;
 			    if (width < minWidth) {
 				width = minWidth;
 			    }
 			} else {
-			    const dendroSumPct = (parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(NgChm.SUM.canvas.style.width, 10) + parseInt(NgChm.SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(NgChm.SUM.rCCanvas.style.width, 10)));
+			    const dendroSumPct = (parseInt(SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(SUM.canvas.style.width, 10) + parseInt(SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(SUM.rCCanvas.style.width, 10)));
 			    width = (totalDetWidth * dendroSumPct); 
 			}
 			dendroCanvas.style.width = width + 'px';
@@ -1994,7 +2028,7 @@ NgChm.DET.rowDendroResize = function(mapItem) {
  * FUNCTION: getColDendroPixelHeight  -  The purpose of this function is to get the pixel height
  * of the column dendrogram.
  *********************************************************************************************/
-NgChm.DET.getColDendroPixelHeight = function (mapItem) {
+DET.getColDendroPixelHeight = function (mapItem) {
 	return mapItem.canvas.clientHeight*(mapItem.dendroHeight/mapItem.canvas.height);
 }
 
@@ -2002,7 +2036,7 @@ NgChm.DET.getColDendroPixelHeight = function (mapItem) {
  * FUNCTION: getRowDendroPixelWidth  -  The purpose of this function is to get the pixel width
  * of the row dendrogram.
  *********************************************************************************************/
-NgChm.DET.getRowDendroPixelWidth = function (mapItem) {
+DET.getRowDendroPixelWidth = function (mapItem) {
 	return mapItem.canvas.clientWidth*(mapItem.dendroWidth/mapItem.canvas.width);
 }
 
@@ -2018,8 +2052,8 @@ NgChm.DET.getRowDendroPixelWidth = function (mapItem) {
  * FUNCTION: getColClassPixelHeight  -  The purpose of this function is to set the pixel height
  * of column covariate bars.
  *********************************************************************************************/
-NgChm.DET.getColClassPixelHeight = function (mapItem) {
-	const classbarHeight = NgChm.DET.calculateTotalClassBarHeight("column");
+DET.getColClassPixelHeight = function (mapItem) {
+	const classbarHeight = DET.calculateTotalClassBarHeight("column");
 	return mapItem.canvas.clientHeight*(classbarHeight/mapItem.canvas.height);
 }
 
@@ -2027,8 +2061,8 @@ NgChm.DET.getColClassPixelHeight = function (mapItem) {
  * FUNCTION: getRowClassPixelWidth  -  The purpose of this function is to set the pixel width
  * of row covariate bars.
  *********************************************************************************************/
-NgChm.DET.getRowClassPixelWidth = function (mapItem) {
-	const classbarWidth = NgChm.DET.calculateTotalClassBarHeight("row");
+DET.getRowClassPixelWidth = function (mapItem) {
+	const classbarWidth = DET.calculateTotalClassBarHeight("row");
 	return mapItem.canvas.clientWidth*(classbarWidth/mapItem.canvas.width);
 }
 
@@ -2037,24 +2071,25 @@ NgChm.DET.getRowClassPixelWidth = function (mapItem) {
  * height for detail covariates on a given axis. Covariate bars in the detail pane are just 
  * their specified height, with no rescaling.
  *********************************************************************************************/
-NgChm.DET.calculateTotalClassBarHeight = function (axis) {
-	return NgChm.heatMap.calculateTotalClassBarHeight (axis);
+DET.calculateTotalClassBarHeight = function (axis) {
+	return MMGR.getHeatMap().calculateTotalClassBarHeight (axis);
 }
 
 /**********************************************************************************
  * FUNCTION - detailDrawColClassBars: The purpose of this function is to column 
  * class bars on a given detail heat map canvas.
  **********************************************************************************/
-NgChm.DET.detailDrawColClassBars = function (mapItem, pixels) {
-	const colClassBarConfig = NgChm.heatMap.getColClassificationConfig();
-	const colClassBarConfigOrder = NgChm.heatMap.getColClassificationOrder();
-	const colClassBarData = NgChm.heatMap.getColClassificationData();
-	const rowClassBarWidth = NgChm.DET.calculateTotalClassBarHeight("row");
+DET.detailDrawColClassBars = function (mapItem, pixels) {
+	const heatMap = MMGR.getHeatMap();
+	const colClassBarConfig = heatMap.getColClassificationConfig();
+	const colClassBarConfigOrder = heatMap.getColClassificationOrder();
+	const colClassBarData = heatMap.getColClassificationData();
+	const rowClassBarWidth = DET.calculateTotalClassBarHeight("row");
 	const fullWidth = mapItem.dataViewWidth + rowClassBarWidth;
 	const mapHeight = mapItem.dataViewHeight;
-	let pos = fullWidth*mapHeight*NgChm.SUM.BYTE_PER_RGBA;
-	pos += fullWidth*NgChm.DET.paddingHeight*NgChm.SUM.BYTE_PER_RGBA;
-	const colorMapMgr = NgChm.heatMap.getColorMapManager();
+	let pos = fullWidth*mapHeight*SUM.BYTE_PER_RGBA;
+	pos += fullWidth*DET.paddingHeight*SUM.BYTE_PER_RGBA;
+	const colorMapMgr = heatMap.getColorMapManager();
 	
 	for (let i=colClassBarConfigOrder.length-1; i>= 0;i--) {
 		const key = colClassBarConfigOrder[i];
@@ -2065,20 +2100,20 @@ NgChm.DET.detailDrawColClassBars = function (mapItem, pixels) {
 		if (currentClassBar.show === 'Y') {
 			const colorMap = colorMapMgr.getColorMap("col",key); // assign the proper color scheme...
 			let classBarValues = colClassBarData[key].values;
-			const classBarLength = NgChm.SEL.getCurrentDetDataPerRow(mapItem) * mapItem.dataBoxWidth;
-			pos += fullWidth*NgChm.DET.paddingHeight*NgChm.SUM.BYTE_PER_RGBA; // draw padding between class bars
+			const classBarLength = SEL.getCurrentDetDataPerRow(mapItem) * mapItem.dataBoxWidth;
+			pos += fullWidth*DET.paddingHeight*SUM.BYTE_PER_RGBA; // draw padding between class bars
 			let start = mapItem.currentCol;
-			const length = NgChm.SEL.getCurrentDetDataPerRow(mapItem);
+			const length = SEL.getCurrentDetDataPerRow(mapItem);
 			if (((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) &&  (typeof colClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps - if we are showing the whole row or a large part of it, use the summary classification values.
 				classBarValues = colClassBarData[key].svalues;
-				const rhRate = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
+				const rhRate = heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
 			    start = Math.ceil(start/rhRate);
 			}
 			if (currentClassBar.bar_type === 'color_plot') {
-				pos = NgChm.DET.drawColorPlotColClassBar(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap);
+				pos = DET.drawColorPlotColClassBar(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap);
 			} else {
-				pos = NgChm.DET.drawScatterBarPlotColClassBar(mapItem, pixels, pos, currentClassBar.height-NgChm.DET.paddingHeight, classBarValues, start, length, currentClassBar, colorMap);
+				pos = DET.drawScatterBarPlotColClassBar(mapItem, pixels, pos, currentClassBar.height-DET.paddingHeight, classBarValues, start, length, currentClassBar, colorMap);
 			}
 		  }
 
@@ -2089,8 +2124,8 @@ NgChm.DET.detailDrawColClassBars = function (mapItem, pixels) {
  * FUNCTION - drawColorPlotColClassBar: The purpose of this function is to column 
  * color plot class bars on a given detail heat map canvas.
  **********************************************************************************/
-NgChm.DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap) {
-	const line = new Uint8Array(new ArrayBuffer(classBarLength * NgChm.SUM.BYTE_PER_RGBA)); // save a copy of the class bar
+DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap) {
+	const line = new Uint8Array(new ArrayBuffer(classBarLength * SUM.BYTE_PER_RGBA)); // save a copy of the class bar
 	let loc = 0;
 	for (let k = start; k <= start + length -1; k++) { 
 		const val = classBarValues[k-1];
@@ -2100,16 +2135,16 @@ NgChm.DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarW
 			line[loc + 1] = color['g'];
 			line[loc + 2] = color['b'];
 			line[loc + 3] = color['a'];
-			loc += NgChm.SUM.BYTE_PER_RGBA;
+			loc += SUM.BYTE_PER_RGBA;
 		}
 	}
-	for (let j = 0; j < currentClassBar.height-NgChm.DET.paddingHeight; j++){ // draw the class bar into the dataBuffer
-		pos += (rowClassBarWidth + 1)*NgChm.SUM.BYTE_PER_RGBA;
+	for (let j = 0; j < currentClassBar.height-DET.paddingHeight; j++){ // draw the class bar into the dataBuffer
+		pos += (rowClassBarWidth + 1)*SUM.BYTE_PER_RGBA;
 		for (let k = 0; k < line.length; k++) { 
 			pixels[pos] = line[k];
 			pos++;
 		}
-		pos+=NgChm.SUM.BYTE_PER_RGBA;
+		pos+=SUM.BYTE_PER_RGBA;
 	}
 	return pos;
 }
@@ -2118,15 +2153,15 @@ NgChm.DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarW
  * FUNCTION - drawScatterBarPlotColClassBar: The purpose of this function is to column 
  * bar and scatter plot class bars on a given detail heat map canvas.
  **********************************************************************************/
-NgChm.DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, classBarValues, start, length, currentClassBar, colorMap) {
+DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, classBarValues, start, length, currentClassBar, colorMap) {
 	const barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
 	const barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
 	const barCutColor = colorMap.getHexToRgba("#FFFFFF");
-	const matrix = NgChm.SUM.buildScatterBarPlotMatrix(height, classBarValues, start-1, length, currentClassBar, 100, false);
-	const rowClassBarWidth = NgChm.DET.calculateTotalClassBarHeight("row");
+	const matrix = SUM.buildScatterBarPlotMatrix(height, classBarValues, start-1, length, currentClassBar, 100, false);
+	const rowClassBarWidth = DET.calculateTotalClassBarHeight("row");
 
 	//offset value for width of row class bars
-	let offset = (rowClassBarWidth + 2)*NgChm.SUM.BYTE_PER_RGBA;
+	let offset = (rowClassBarWidth + 2)*SUM.BYTE_PER_RGBA;
 	for (let h = 0; h < matrix.length; h++) { 
 		pos += offset;
 		let row = matrix[h];
@@ -2151,7 +2186,7 @@ NgChm.DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height,
 						pixels[pos+3] = barBgColor['a'];
 					}
 				}
-				pos+=NgChm.SUM.BYTE_PER_RGBA;
+				pos+=SUM.BYTE_PER_RGBA;
 			}
 		}
 	}
@@ -2162,16 +2197,17 @@ NgChm.DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height,
  * FUNCTION - detailDrawRowClassBars: The purpose of this function is to row 
  * class bars on a given detail heat map canvas.
  **********************************************************************************/
-NgChm.DET.detailDrawRowClassBars = function (mapItem, pixels) {
-	const rowClassBarConfig = NgChm.heatMap.getRowClassificationConfig();
-	const rowClassBarConfigOrder = NgChm.heatMap.getRowClassificationOrder();
-	const rowClassBarData = NgChm.heatMap.getRowClassificationData();
-	const rowClassBarWidth = NgChm.DET.calculateTotalClassBarHeight("row");
-	const detailTotalWidth = NgChm.DET.calculateTotalClassBarHeight("row") + mapItem.dataViewWidth;
-	const mapWidth =  NgChm.DET.calculateTotalClassBarHeight("row") + mapItem.dataViewWidth;
+DET.detailDrawRowClassBars = function (mapItem, pixels) {
+	const heatMap = MMGR.getHeatMap();
+	const rowClassBarConfig = heatMap.getRowClassificationConfig();
+	const rowClassBarConfigOrder = heatMap.getRowClassificationOrder();
+	const rowClassBarData = heatMap.getRowClassificationData();
+	const rowClassBarWidth = DET.calculateTotalClassBarHeight("row");
+	const detailTotalWidth = DET.calculateTotalClassBarHeight("row") + mapItem.dataViewWidth;
+	const mapWidth =  DET.calculateTotalClassBarHeight("row") + mapItem.dataViewWidth;
 	const mapHeight = mapItem.dataViewHeight;
-	const colorMapMgr = NgChm.heatMap.getColorMapManager();
-	let offset = ((detailTotalWidth*NgChm.DET.dataViewBorder/2)) * NgChm.SUM.BYTE_PER_RGBA; // start position of very bottom dendro
+	const colorMapMgr = heatMap.getColorMapManager();
+	let offset = ((detailTotalWidth*DET.dataViewBorder/2)) * SUM.BYTE_PER_RGBA; // start position of very bottom dendro
 	for (let i=0;i< rowClassBarConfigOrder.length;i++) {
 		const key = rowClassBarConfigOrder[i];
 		if (!rowClassBarConfig.hasOwnProperty(key)) {
@@ -2183,20 +2219,20 @@ NgChm.DET.detailDrawRowClassBars = function (mapItem, pixels) {
 			let classBarValues = rowClassBarData[key].values;
 			const classBarLength = classBarValues.length;
 			let start = mapItem.currentRow;
-			const length = NgChm.SEL.getCurrentDetDataPerCol(mapItem);
+			const length = SEL.getCurrentDetDataPerCol(mapItem);
 			if (((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) &&  (typeof rowClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps, if we are showing the whole column, switch to the summary classificaiton values
 				classBarValues = rowClassBarData[key].svalues;
-				const rvRate = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
+				const rvRate = heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
 			    start = Math.ceil(start/rvRate);
 			}
 			let pos = offset; // move past the dendro and the other class bars...
 			if (currentClassBar.bar_type === 'color_plot') {
-				pos = NgChm.DET.drawColorPlotRowClassBar(mapItem, pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap);
+				pos = DET.drawColorPlotRowClassBar(mapItem, pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap);
 			} else {
-				pos = NgChm.DET.drawScatterBarPlotRowClassBar(mapItem, pixels, pos, start, length, currentClassBar.height-NgChm.DET.paddingHeight, classBarValues, mapWidth, colorMap, currentClassBar);
+				pos = DET.drawScatterBarPlotRowClassBar(mapItem, pixels, pos, start, length, currentClassBar.height-DET.paddingHeight, classBarValues, mapWidth, colorMap, currentClassBar);
 			}
-			offset+= currentClassBar.height*NgChm.SUM.BYTE_PER_RGBA;
+			offset+= currentClassBar.height*SUM.BYTE_PER_RGBA;
 		}
 	}	
 }
@@ -2205,21 +2241,21 @@ NgChm.DET.detailDrawRowClassBars = function (mapItem, pixels) {
  * FUNCTION - drawColorPlotRowClassBar: The purpose of this function is to row 
  * color plot class bars on a given detail heat map canvas.
  **********************************************************************************/
-NgChm.DET.drawColorPlotRowClassBar = function(mapItem, pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap) {
+DET.drawColorPlotRowClassBar = function(mapItem, pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap) {
 	for (let j = start + length - 1; j >= start; j--){ // for each row shown in the detail panel
 		const val = classBarValues[j-1];
 		const color = colorMap.getClassificationColor(val);
 		for (let boxRows = 0; boxRows < mapItem.dataBoxHeight; boxRows++) { // draw this color to the proper height
-			for (let k = 0; k < currentClassBar.height-NgChm.DET.paddingHeight; k++){ // draw this however thick it needs to be
+			for (let k = 0; k < currentClassBar.height-DET.paddingHeight; k++){ // draw this however thick it needs to be
 				pixels[pos] = color['r'];
 				pixels[pos + 1] = color['g'];
 				pixels[pos + 2] = color['b'];
 				pixels[pos + 3] = color['a'];
-				pos+=NgChm.SUM.BYTE_PER_RGBA;	// 4 bytes per color
+				pos+=SUM.BYTE_PER_RGBA;	// 4 bytes per color
 			}
 			// padding between class bars
-			pos+=NgChm.DET.paddingHeight*NgChm.SUM.BYTE_PER_RGBA;
-			pos+=(mapWidth - currentClassBar.height)*NgChm.SUM.BYTE_PER_RGBA;
+			pos+=DET.paddingHeight*SUM.BYTE_PER_RGBA;
+			pos+=(mapWidth - currentClassBar.height)*SUM.BYTE_PER_RGBA;
 		}
 	}
 	return pos;
@@ -2229,11 +2265,11 @@ NgChm.DET.drawColorPlotRowClassBar = function(mapItem, pixels, pos, start, lengt
  * FUNCTION - drawScatterBarPlotRowClassBar: The purpose of this function is to row 
  * bar and scatter plot class bars on a given detail heat map canvas.
  **********************************************************************************/
-NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length, height, classBarValues, mapWidth, colorMap, currentClassBar) {
+DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length, height, classBarValues, mapWidth, colorMap, currentClassBar) {
 	const barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
 	const barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
 	const barCutColor = colorMap.getHexToRgba("#FFFFFF");
-	const matrix = NgChm.SUM.buildScatterBarPlotMatrix(height, classBarValues, start-1, length, currentClassBar, NgChm.heatMap.getTotalRows(), false);
+	const matrix = SUM.buildScatterBarPlotMatrix(height, classBarValues, start-1, length, currentClassBar, MMGR.getHeatMap().getTotalRows(), false);
 	for (let h = matrix[0].length-1; h >= 0 ; h--) { 
 		for (let j = 0; j < mapItem.dataBoxHeight; j++) {
 			for (let i = 0; i < height;i++) {
@@ -2257,12 +2293,12 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 						pixels[pos+3] = barBgColor['a'];
 					}
 				}
-				pos+=NgChm.SUM.BYTE_PER_RGBA;
+				pos+=SUM.BYTE_PER_RGBA;
 			}
 			// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row 
 			// padding between class bars
-			pos+=NgChm.DET.paddingHeight*NgChm.SUM.BYTE_PER_RGBA;
-			pos+=(mapWidth - currentClassBar.height)*NgChm.SUM.BYTE_PER_RGBA;
+			pos+=DET.paddingHeight*SUM.BYTE_PER_RGBA;
+			pos+=(mapWidth - currentClassBar.height)*SUM.BYTE_PER_RGBA;
 		}
 	}
 	return pos;
@@ -2285,18 +2321,18 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
      * If we don't have the GL context (glManager.OK is false), do not execute any GL functions.
      *
      *********************************************************************************************/
-    NgChm.DET.detInitGl = function (mapItem) {
+    DET.detInitGl = function (mapItem) {
 	    if (!mapItem.glManager) {
-		mapItem.glManager = NgChm.DRAW.GL.createGlManager (mapItem.canvas, getDetVertexShader, getDetFragmentShader, () => {
-		    const drawWin = NgChm.SEL.getDetailWindow(mapItem);
-		    NgChm.DET.drawDetailHeatMap(mapItem, drawWin);
+		mapItem.glManager = DRAW.GL.createGlManager (mapItem.canvas, getDetVertexShader, getDetFragmentShader, () => {
+		    const drawWin = SEL.getDetailWindow(mapItem);
+		    DET.drawDetailHeatMap(mapItem, drawWin);
 		});
 	    }
 	    const ready = mapItem.glManager.check(initDetailContext);
 	    if (ready) {
 		const ctx = mapItem.glManager.context;
-		ctx.viewportWidth = mapItem.dataViewWidth+NgChm.DET.calculateTotalClassBarHeight("row");
-		ctx.viewportHeight = mapItem.dataViewHeight+NgChm.DET.calculateTotalClassBarHeight("column");
+		ctx.viewportWidth = mapItem.dataViewWidth+DET.calculateTotalClassBarHeight("row");
+		ctx.viewportHeight = mapItem.dataViewHeight+DET.calculateTotalClassBarHeight("column");
 		ctx.viewport(0, 0, ctx.viewportWidth, ctx.viewportHeight);
 	    }
 	    return ready;
@@ -2308,8 +2344,8 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 
 		ctx.clear(ctx.COLOR_BUFFER_BIT);
 
-		manager.setClipRegion (NgChm.DRAW.GL.fullClipSpace);
-		manager.setTextureRegion (NgChm.DRAW.GL.fullTextureSpace);
+		manager.setClipRegion (DRAW.GL.fullClipSpace);
+		manager.setTextureRegion (DRAW.GL.fullTextureSpace);
 
 		mapItem.uScale = ctx.getUniformLocation(program, 'u_scale');
 		mapItem.uTranslate = ctx.getUniformLocation(program, 'u_translate');
@@ -2367,9 +2403,9 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	// Define a function to switch a panel to the detail view.
 	// Similar to the corresponding function for switching a pane to the summary view.
 	// See additional comments in that function.
-	NgChm.DET.switchPaneToDetail = switchPaneToDetail;
-	NgChm.Pane.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
-	NgChm.DET.setButtons = setButtons;
+	DET.switchPaneToDetail = switchPaneToDetail;
+	PANE.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
+	DET.setButtons = setButtons;
 
 	var initialSwitchPaneToDetail = true
 
@@ -2377,10 +2413,10 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
-		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (NgChm.DMM.primaryMap === null);
-		const mapNumber = restoreInfo ? restoreInfo.mapNumber : NgChm.DMM.nextMapNumber;
+		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DMM.primaryMap === null);
+		const mapNumber = restoreInfo ? restoreInfo.mapNumber : DMM.nextMapNumber;
 
-		NgChm.Pane.clearExistingGearDialog(paneId);
+		PANE.clearExistingGearDialog(paneId);
 		if (initialSwitchPaneToDetail) {
 			// First time detail NGCHM created.
 			constructDetailMapDOMTemplate()
@@ -2391,37 +2427,37 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 			// Cannot switch if already a detail_chm in this panel.
 			return;
 		}
-		NgChm.Pane.emptyPaneLocation (loc);
-		if (!restoreInfo) { NgChm.DMM.nextMapNumber++; }
+		PANE.emptyPaneLocation (loc);
+		if (!restoreInfo) { DMM.nextMapNumber++; }
 
 		/* Clone DIV#detail_chm from DIV#templates. */
 		let chm = cloneDetailChm (mapNumber);
 		loc.pane.appendChild (chm);
-		NgChm.Pane.setPaneClientIcons(loc, [
-		    zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, NgChm.DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
-		    zoomButton ('zoomOut_btn'+mapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, NgChm.DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
-		    zoomButton ('zoomIn_btn'+mapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, NgChm.DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
-		    modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, NgChm.DEV.detailNormal),
-		    modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, NgChm.DEV.detailHRibbonButton),
-		    modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, NgChm.DEV.detailVRibbonButton)
+		PANE.setPaneClientIcons(loc, [
+		    zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75, DMM.switchToPrimary.bind('chm', loc.pane.children[1])),
+		    zoomButton ('zoomOut_btn'+mapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50, DEV.detailDataZoomOut.bind('chm', loc.pane.children[1])),
+		    zoomButton ('zoomIn_btn'+mapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40, DEV.zoomAnimation.bind('chm', loc.pane.children[1])),
+		    modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, DEV.detailNormal),
+		    modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, DEV.detailHRibbonButton),
+		    modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, DEV.detailVRibbonButton)
 		]);
-		const mapItem = NgChm.DMM.addDetailMap (chm, paneId, mapNumber, isPrimary, restoreInfo ? restoreInfo.paneInfo : null);
+		const mapItem = DMM.addDetailMap (chm, paneId, mapNumber, isPrimary, restoreInfo ? restoreInfo.paneInfo : null);
 		// If primary is collapsed set chm detail of clone to visible
 		if (!restoreInfo && chm.style.display === 'none') {
 			chm.style.display = '';
 		}
-		NgChm.SUM.drawLeftCanvasBox();
-		NgChm.DEV.addEvents(paneId);
+		SUM.drawLeftCanvasBox();
+		DEV.addEvents(paneId);
 		if (isPrimary) {
 			document.getElementById('primary_btn'+mapNumber).style.display = 'none';
-			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Primary');
+			PANE.setPaneTitle (loc, 'Heat Map Detail - Primary');
 		} else {
 			document.getElementById('primary_btn'+mapNumber).style.display = '';
-			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver ' + mapNumber);
+			PANE.setPaneTitle (loc, 'Heat Map Detail - Ver ' + mapNumber);
 		}
-		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
-		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
-		NgChm.DET.setDrawDetailTimeout (mapItem, 0, true);
+		PANE.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
+		PANE.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
+		DET.setDrawDetailTimeout (mapItem, 0, true);
 	}
 
 	/*
@@ -2461,13 +2497,13 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 		colLabels.setAttribute('id','colLabelDiv')
 		colLabels.setAttribute('data-axis','Column')
 		colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
-		colLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
+		colLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
 		labels.appendChild(colLabels)
 		let rowLabels = document.createElement('div')
 		rowLabels.setAttribute('id','rowLabelDiv')
 		rowLabels.setAttribute('data-axis','Row')
 		rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
-		rowLabels.setAttribute('oncontextmenu','NgChm.DET.labelRightClick(event)')
+		rowLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
 		labels.appendChild(rowLabels)
 		detailTemplate.appendChild(labels)
 		let templates = document.getElementById('templates')
@@ -2577,8 +2613,8 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	// - Otherwise, the base image is used.
 	//
 	function updateButtonImage (btn, hovering) {
-	        const loc = NgChm.Pane.findPaneLocation (btn);
-		const mapItem = NgChm.DMM.getMapItemFromPane (loc.pane.id);
+	        const loc = PANE.findPaneLocation (btn);
+		const mapItem = DMM.getMapItemFromPane (loc.pane.id);
 		const buttonMode = btn.dataset.mode;
 		if (!mapItem.mode.includes(buttonMode)) {
 			let buttonSrc = buttonBaseName (buttonMode);
@@ -2590,29 +2626,29 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	}
 
 	function emptyDetailPane (loc, elements) {
-		NgChm.DMM.RemoveDetailMap(loc.pane.id); 
-		NgChm.SUM.drawLeftCanvasBox ();
+		DMM.RemoveDetailMap(loc.pane.id);
+		SUM.drawLeftCanvasBox ();
 	}
 
 	function resizeDetailPane (loc) {
-		NgChm.DMM.detailResize();    
-		NgChm.DET.setDrawDetailTimeout(NgChm.DMM.getMapItemFromPane(loc.pane.id), NgChm.DET.redrawSelectionTimeout, false);
+		DMM.detailResize();
+		DET.setDrawDetailTimeout(DMM.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
 	}
 
 	function zoomButton (btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
-	    const img = NgChm.UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
+	    const img = UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
 	    img.onmouseout = function (e) {
 			img.setAttribute ('src', btnIcon);
-			NgChm.UHM.hlpC();
+			UHM.hlpC();
 	    };
 	    img.onmouseover = function (e) {
 			img.setAttribute ('src', btnHoverIcon);
-			NgChm.UHM.hlp(img, btnHelp, btnSize);
+			UHM.hlp(img, btnHelp, btnSize);
 	    };
 	    img.onclick = function (e) {
 			clickFn();
 	    };
-	    return NgChm.UTIL.newElement ('SPAN.tdTop', {}, [img]);
+	    return UTIL.newElement ('SPAN.tdTop', {}, [img]);
 	}
 
 	// Create a zoomModeButton when creating a new zoomed view.
@@ -2627,23 +2663,25 @@ NgChm.DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, 
 	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
 		const baseName = buttonBaseName (mode);
 		const selStr = selected ? '_selected' : '';
-		const img = NgChm.UTIL.newElement ('IMG', { src: imageTable[baseName+selStr], alt: btnHelp });
+		const img = UTIL.newElement ('IMG', { src: imageTable[baseName+selStr], alt: btnHelp });
 		img.id = baseName + '_btn' + mapNumber;
 		img.dataset.mode = mode;
 		img.onmouseout = function (e) {
 			updateButtonImage (img, false);
-			NgChm.UHM.hlpC();
+			UHM.hlpC();
 		};
 		img.onmouseover = function (e) {
 			updateButtonImage (img, true);
-			NgChm.UHM.hlp(img, btnHelp, btnSize);
+			UHM.hlp(img, btnHelp, btnSize);
 		};
 		img.onclick = function (e) {
-			const mapItem = NgChm.DMM.getMapItemFromPane(paneId);
-			NgChm.DEV.clearModeHistory (mapItem);
+			const mapItem = DMM.getMapItemFromPane(paneId);
+			DEV.clearModeHistory (mapItem);
 			clickFn(mapItem);
 		};
-		return NgChm.UTIL.newElement ('SPAN.tdTop', {}, [img]);
+		return UTIL.newElement ('SPAN.tdTop', {}, [img]);
 	}
+
+})();
 
 })();
