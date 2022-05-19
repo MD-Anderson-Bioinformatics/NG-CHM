@@ -1,3 +1,7 @@
+(function() {
+    'use strict';
+    NgChm.markFile();
+
 /**
  * This code is responsible for handling changes in position of selected heat map region.
  * It handles mouse, keyboard, and button events that change the position of the selected
@@ -7,28 +11,33 @@
  */
 
 //Define Namespace for NgChm SelectionManager  
-NgChm.createNS('NgChm.SEL');
+    const SEL = NgChm.createNS('NgChm.SEL');
+
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const DET = NgChm.importNS('NgChm.DET');
+    const DMM = NgChm.importNS('NgChm.DMM');
 
 //Globals that provide information about heat map position selection.
-NgChm.SEL.currentRow = null;      // Top row of current selected position
-NgChm.SEL.currentCol = null;      // Left column of the current selected position
-NgChm.SEL.scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
+SEL.currentRow = null;      // Top row of current selected position
+SEL.currentCol = null;      // Left column of the current selected position
+SEL.scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
 
 // Global for the current data layer being displayed.
 // Set in application by user when flick views are toggled.
-// Hide so that it can only be changed using NgChm.SEL.setCurrentDL.
+// Hide so that it can only be changed using SEL.setCurrentDL.
 {
     let currentDl = "dl1"; // Set default to Data Layer 1.
 
-    NgChm.SEL.setCurrentDL = function (dl) {
+    SEL.setCurrentDL = function (dl) {
 	// Update the selection colors when the current data layer changes.
         if (currentDl != dl) {
 	    currentDl = dl;
-	    NgChm.SEL.setSelectionColors();
+	    SEL.setSelectionColors();
 	}
     };
 
-    NgChm.SEL.getCurrentDL = function (dl) {
+    SEL.getCurrentDL = function (dl) {
         return currentDl;
     };
 }
@@ -37,10 +46,11 @@ NgChm.SEL.scrollTime = null;    // timer for scroll events to prevent multiple e
  * FUNCTION:  setSelectionColors - Set the colors for selected labels based on the
  * current layer's color scheme.
  *********************************************************************************************/
-NgChm.SEL.setSelectionColors = function () {
-    const currentDl = NgChm.SEL.getCurrentDL();
-    const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data",currentDl);
-    const dataLayer = NgChm.heatMap.getDataLayers()[currentDl];
+SEL.setSelectionColors = function () {
+    const currentDl = SEL.getCurrentDL();
+    const heatMap = MMGR.getHeatMap();
+    const colorMap = heatMap.getColorMapManager().getColorMap("data",currentDl);
+    const dataLayer = heatMap.getDataLayers()[currentDl];
     const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
     const textColor = colorMap.isColorDark(selColor) ? "#000000" : "#FFFFFF";
     const root = document.documentElement;
@@ -54,26 +64,26 @@ NgChm.SEL.setSelectionColors = function () {
  * It is assumed that the caller modified currentRow, currentCol, dataPerRow, and dataPerCol 
  * as desired. This method does redrawing and notification as necessary.
  *********************************************************************************************/
-NgChm.SEL.updateSelection = function (mapItem,noResize) {   
+SEL.updateSelection = function (mapItem,noResize) {
     //We have the summary heat map so redraw the yellow selection box.
-    NgChm.SUM.drawLeftCanvasBox();
-    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(mapItem, NgChm.MMGR.DETAIL_LEVEL),NgChm.SEL.getCurrentDetRow(mapItem),NgChm.SEL.getCurrentDetCol(mapItem),NgChm.SEL.getCurrentDetDataPerCol(mapItem),NgChm.SEL.getCurrentDetDataPerRow(mapItem));
-    NgChm.DET.setDrawDetailTimeout (mapItem, NgChm.DET.redrawSelectionTimeout,noResize);
+    SUM.drawLeftCanvasBox();
+    MMGR.getHeatMap().setReadWindow(SEL.getLevelFromMode(mapItem, MMGR.DETAIL_LEVEL),SEL.getCurrentDetRow(mapItem),SEL.getCurrentDetCol(mapItem),SEL.getCurrentDetDataPerCol(mapItem),SEL.getCurrentDetDataPerRow(mapItem));
+    DET.setDrawDetailTimeout (mapItem, DET.redrawSelectionTimeout,noResize);
 }
 
 /*********************************************************************************************
  * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection
  * function for each detail map panel.
  *********************************************************************************************/
-NgChm.SEL.updateSelections = function (noResize) {   
-	for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
+SEL.updateSelections = function (noResize) {
+	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
 		if (typeof noResize !== 'undefined') {
-			NgChm.SEL.updateSelection(NgChm.DMM.DetailMaps[i],noResize)
+			SEL.updateSelection(DMM.DetailMaps[i],noResize)
 		} else {
-			NgChm.SEL.updateSelection(NgChm.DMM.DetailMaps[i])
+			SEL.updateSelection(DMM.DetailMaps[i])
 		}
 	}
-	NgChm.heatMap.setUnAppliedChanges(true);
+	MMGR.getHeatMap().setUnAppliedChanges(true);
 }
 
 /**********************************************************************************
@@ -81,13 +91,13 @@ NgChm.SEL.updateSelections = function (noResize) {
  * with a given mode.  A level is passed in from either the summary or detail display
  * as a default value and returned if the mode is not one of the Ribbon modes.
  **********************************************************************************/
-NgChm.SEL.getLevelFromMode = function(mapItem, lvl) {   
+SEL.getLevelFromMode = function(mapItem, lvl) {
 	if (mapItem.mode == 'RIBBONV') {
-		return NgChm.MMGR.RIBBON_VERT_LEVEL;
+		return MMGR.RIBBON_VERT_LEVEL;
 	} else if (mapItem.mode == 'RIBBONH') {
-		return NgChm.MMGR.RIBBON_HOR_LEVEL;
+		return MMGR.RIBBON_HOR_LEVEL;
 	} else if (mapItem.mode == 'FULL_MAP') {
-		return NgChm.MMGR.SUMMARY_LEVEL;
+		return MMGR.SUMMARY_LEVEL;
 	} else {
 		return lvl;
 	} 
@@ -97,7 +107,7 @@ NgChm.SEL.getLevelFromMode = function(mapItem, lvl) {
  * FUNCTION - getLevelFromMode: This function sets the mode for the mapItem passed
  * in.
  **********************************************************************************/
-NgChm.SEL.setMode = function(mapItem, newMode) {
+SEL.setMode = function(mapItem, newMode) {
 	mapItem.prevMode = mapItem.mode;
 	mapItem.mode = newMode;
 }
@@ -106,14 +116,14 @@ NgChm.SEL.setMode = function(mapItem, newMode) {
  * FUNCTION:  getDetailWindow - The purpose of this function is to return an object containing
  * selection information for a given detail heat map window.  
  *********************************************************************************************/
-NgChm.SEL.getDetailWindow = function(mapItem) {  
+SEL.getDetailWindow = function(mapItem) {
 	return {
 		layer: mapItem.currentDl,
-		level: NgChm.SEL.getLevelFromMode(mapItem, NgChm.MMGR.DETAIL_LEVEL),
-		firstRow: NgChm.SEL.getCurrentDetRow(mapItem),
-		firstCol: NgChm.SEL.getCurrentDetCol(mapItem),
-		numRows: NgChm.SEL.getCurrentDetDataPerCol(mapItem),
-		numCols: NgChm.SEL.getCurrentDetDataPerRow(mapItem)
+		level: SEL.getLevelFromMode(mapItem, MMGR.DETAIL_LEVEL),
+		firstRow: SEL.getCurrentDetRow(mapItem),
+		firstCol: SEL.getCurrentDetCol(mapItem),
+		numRows: SEL.getCurrentDetDataPerCol(mapItem),
+		numCols: SEL.getCurrentDetDataPerRow(mapItem)
 	}
 }
 
@@ -131,16 +141,16 @@ NgChm.SEL.getDetailWindow = function(mapItem) {
  * row/col summary ratios (ratio of detail to summary) are used to  calculate the 
  * proper detail coordinates.
  **********************************************************************************/
-NgChm.SEL.getCurrentSumRow = function(mapItem) {
+SEL.getCurrentSumRow = function(mapItem) {
 	const currRow = mapItem.currentRow;
 	// Convert selected current row value to Summary level
-	const rowSummaryRatio = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.SUMMARY_LEVEL);
+	const rowSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MMGR.SUMMARY_LEVEL);
 	return  Math.round(currRow/rowSummaryRatio);
 }
 //Follow similar methodology for Column as is used in above row based function
-NgChm.SEL.getCurrentSumCol = function(mapItem) {
+SEL.getCurrentSumCol = function(mapItem) {
 	const currCol =  mapItem.currentCol;
-	const colSummaryRatio = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.SUMMARY_LEVEL);
+	const colSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MMGR.SUMMARY_LEVEL);
 	return  Math.round(currCol/colSummaryRatio);
 }
 
@@ -150,19 +160,19 @@ NgChm.SEL.getCurrentSumCol = function(mapItem) {
  * position.  This is usually the same but when in ribbon view on a large matrix, 
  * the positions are scaled.
  **********************************************************************************/
-NgChm.SEL.getCurrentDetRow = function(mapItem) { //SEL
+SEL.getCurrentDetRow = function(mapItem) { //SEL
 	let detRow = mapItem.currentRow;
 	if ((mapItem.mode == 'RIBBONV') && (mapItem.selectedStart >= 1)) {
-		const rvRatio = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
+		const rvRatio = MMGR.getHeatMap().getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
 		detRow = Math.round(mapItem.selectedStart/rvRatio);
 	}
 	return  detRow;
 }
 //Follow similar methodology for Column as is used in above row based function
-NgChm.SEL.getCurrentDetCol = function(mapItem) { //SEL
+SEL.getCurrentDetCol = function(mapItem) { //SEL
 	let detCol = mapItem.currentCol;
 	if ((mapItem.mode == 'RIBBONH') && (mapItem.selectedStart >= 1)) {
-		const rhRatio = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
+		const rhRatio = MMGR.getHeatMap().getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
 		detCol = Math.round(mapItem.selectedStart/rhRatio);
 	}
 	return  detCol;
@@ -173,21 +183,21 @@ NgChm.SEL.getCurrentDetCol = function(mapItem) { //SEL
  * and usually the detail view uses this value directly unless we are in ribbon
  * view where the value needs to be scaled in one dimension.
  **********************************************************************************/
-NgChm.SEL.getCurrentDetDataPerRow = function(mapItem) { 
+SEL.getCurrentDetDataPerRow = function(mapItem) {
 	// make sure dataPerCol is the correct value. 
 	let	detDataPerRow = mapItem.dataPerRow;
 	if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
-		const rate = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
+		const rate = MMGR.getHeatMap().getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
 		detDataPerRow = Math.ceil(detDataPerRow/rate);
 	} 
 	return detDataPerRow;
 }
 // Follow similar methodology for Column as is used in above row based function
-NgChm.SEL.getCurrentDetDataPerCol = function(mapItem) { 
+SEL.getCurrentDetDataPerCol = function(mapItem) {
 	// make sure dataPerCol is the correct value.  
 	let	detDataPerCol = mapItem.dataPerCol;
 	if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) {
-		const rate = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
+		const rate = MMGR.getHeatMap().getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
 		detDataPerCol = Math.ceil(detDataPerCol/rate);
 	} 
 	return detDataPerCol;
@@ -199,15 +209,15 @@ NgChm.SEL.getCurrentDetDataPerCol = function(mapItem) {
  * proper view pane can be calculated on the summary heat map when drawing the 
  * leftCanvasBox on that side of the screen.
  **********************************************************************************/
-NgChm.SEL.getCurrentSumDataPerRow = function(mapItem) {  
-	const rowSummaryRatio = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.SUMMARY_LEVEL);
+SEL.getCurrentSumDataPerRow = function(mapItem) {
+	const rowSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MMGR.SUMMARY_LEVEL);
 	// Summary data per row for  using the summary ration for that level
 	const	sumDataPerRow = Math.floor(mapItem.dataPerRow/rowSummaryRatio);
 	return sumDataPerRow;
 }
 // Follow similar methodology for Column as is used in above row based function
-NgChm.SEL.getCurrentSumDataPerCol = function(mapItem) {  
-	const colSummaryRatio = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.SUMMARY_LEVEL);
+SEL.getCurrentSumDataPerCol = function(mapItem) {
+	const colSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MMGR.SUMMARY_LEVEL);
 	const	sumDataPerCol = Math.floor(mapItem.dataPerCol/colSummaryRatio);
 	return sumDataPerCol;
 }
@@ -216,32 +226,34 @@ NgChm.SEL.getCurrentSumDataPerCol = function(mapItem) {
  * FUNCTIONS - setDataPerRowFromDet(): DataPerRow/Col is in full matrix coordinates
  * so sometimes in ribbon view this needs to be translated to full coordinates.
  **********************************************************************************/
-NgChm.SEL.setDataPerRowFromDet = function(detDataPerRow, mapItem) {
+SEL.setDataPerRowFromDet = function(detDataPerRow, mapItem) {
+	const heatMap = MMGR.getHeatMap();
 	const isPrimary = mapItem.version === 'P' ? true : false;
 	mapItem.dataPerRow = detDataPerRow;
 	if (isPrimary === true) mapItem.dataPerRow = detDataPerRow;
 	if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
 		if (mapItem.selectedStart==0) {
-			mapItem.dataPerRow = NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL);
-			if (isPrimary === true) mapItem.dataPerRow = NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL);
+			mapItem.dataPerRow = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
+			if (isPrimary === true) mapItem.dataPerRow = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
 		} else {
-			const rate = NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
+			const rate = heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
 			mapItem.dataPerRow = detDataPerRow * rate;
 			if (isPrimary === true) mapItem.dataPerRow = detDataPerRow * rate;
 		}
 	} 
 }
 // Follow similar methodology for Column as is used in above row based function
-NgChm.SEL.setDataPerColFromDet = function(detDataPerCol, mapItem) {
+SEL.setDataPerColFromDet = function(detDataPerCol, mapItem) {
+	const heatMap = MMGR.getHeatMap();
 	const isPrimary = mapItem.version === 'P' ? true : false;
 	mapItem.dataPerCol = detDataPerCol;
 	if (isPrimary === true) mapItem.dataPerCol = detDataPerCol;
 	if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) {
 		if (mapItem.selectedStart==0) {
-			mapItem.dataPerCol = NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL);
-			if (isPrimary === true) mapItem.dataPerCol = NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL);
+			mapItem.dataPerCol = heatMap.getNumRows(MMGR.DETAIL_LEVEL);
+			if (isPrimary === true) mapItem.dataPerCol = heatMap.getNumRows(MMGR.DETAIL_LEVEL);
 		} else {
-			const rate = NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
+			const rate = heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
 			mapItem.dataPerCol = detDataPerCol * rate;
 			if (isPrimary === true) mapItem.dataPerCol = detDataPerCol * rate;
 		}
@@ -256,14 +268,14 @@ NgChm.SEL.setDataPerColFromDet = function(detDataPerCol, mapItem) {
  * in the summary pane. The heatmap row/col summary ratios (ratio of detail to summary) 
  * are used to calculate the proper detail coordinates.  
  **********************************************************************************/
-NgChm.SEL.setCurrentRowFromSum = function(mapItem,sumRow) {  
+SEL.setCurrentRowFromSum = function(mapItem,sumRow) {
 	// Up scale current summary row to detail equivalent
-	mapItem.currentRow = (sumRow*NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.SUMMARY_LEVEL));
-	NgChm.SEL.checkRow(mapItem);
+	mapItem.currentRow = (sumRow*MMGR.getHeatMap().getRowSummaryRatio(MMGR.SUMMARY_LEVEL));
+	SEL.checkRow(mapItem);
 }
-NgChm.SEL.setCurrentColFromSum = function(mapItem,sumCol) {  
-	mapItem.currentCol = (sumCol*NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.SUMMARY_LEVEL));
-	NgChm.SEL.checkCol(mapItem);
+SEL.setCurrentColFromSum = function(mapItem,sumCol) {
+	mapItem.currentCol = (sumCol*MMGR.getHeatMap().getColSummaryRatio(MMGR.SUMMARY_LEVEL));
+	SEL.checkCol(mapItem);
 }
 
 /**********************************************************************************
@@ -271,7 +283,7 @@ NgChm.SEL.setCurrentColFromSum = function(mapItem,sumCol) {
  * is valid and adjusts that value into the viewing pane if it is not. It is called
  * just prior to calling UpdateSelection().
  **********************************************************************************/
-NgChm.SEL.checkRow = function(mapItem) {
+SEL.checkRow = function(mapItem) {
 	const isPrimary = mapItem.version === 'P' ? true : false;
     //Set column to one if off the row boundary when in ribbon vert view
 	if ((mapItem.currentRow < 1) || ((mapItem.mode == 'RIBBONV') && (mapItem.selectedStart==0))) {
@@ -283,14 +295,14 @@ NgChm.SEL.checkRow = function(mapItem) {
 		if (isPrimary === true) mapItem.currentRow = mapItem.selectedStart;
 	}
 	//Check row against detail boundaries
-	const numRows = NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL);
+	const numRows = MMGR.getHeatMap().getNumRows(MMGR.DETAIL_LEVEL);
 	if (mapItem.currentRow > ((numRows + 1) - mapItem.dataPerCol)) {
 		mapItem.currentRow = (numRows + 1) - mapItem.dataPerCol;
 		if (isPrimary === true) mapItem.currentRow = (numRows + 1) - mapItem.dataPerCol;
 	}
 }
 
-NgChm.SEL.checkCol = function(mapItem) {
+SEL.checkCol = function(mapItem) {
 	const isPrimary = mapItem.version === 'P' ? true : false;
     //Set column to one if off the column boundary when in ribbon horiz view
     if ((mapItem.currentCol < 1) || ((mapItem.mode == 'RIBBONH') && mapItem.selectedStart==0)) {
@@ -302,7 +314,7 @@ NgChm.SEL.checkCol = function(mapItem) {
     	if (isPrimary === true) mapItem.currentCol = mapItem.selectedStart;
     }
     //Check column against detail boundaries
-    const numCols = NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL);
+    const numCols = MMGR.getHeatMap().getNumColumns(MMGR.DETAIL_LEVEL);
     if (mapItem.currentCol > ((numCols + 1) -mapItem.dataPerRow)) {
     	mapItem.currentCol = (numCols + 1) - mapItem.dataPerRow;
     	if (isPrimary === true) mapItem.currentCol = (numCols + 1) - mapItem.dataPerRow;
@@ -313,20 +325,21 @@ NgChm.SEL.checkCol = function(mapItem) {
  * FUNCTION:  getSamplingRatio - This function returns the appropriate row/col sampling ration
  * for the heat map based upon the screen mode.  
  *********************************************************************************************/
-NgChm.SEL.getSamplingRatio = function (mode,axis) {
+SEL.getSamplingRatio = function (mode,axis) {
+	const heatMap = MMGR.getHeatMap();
 	if (axis == 'row'){
 		switch (mode){
-			case 'RIBBONH': return NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
-			case 'RIBBONV': return NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
-			case 'FULL_MAP': return NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
-			default:        return NgChm.heatMap.getRowSummaryRatio(NgChm.MMGR.DETAIL_LEVEL);
+			case 'RIBBONH': return heatMap.getRowSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
+			case 'RIBBONV': return heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+			case 'FULL_MAP': return heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+			default:        return heatMap.getRowSummaryRatio(MMGR.DETAIL_LEVEL);
 		}
 	} else {
 		switch (mode){
-			case 'RIBBONH': return NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
-			case 'RIBBONV': return NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_VERT_LEVEL);
-			case 'FULL_MAP': return NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.RIBBON_HOR_LEVEL);
-			default:        return  NgChm.heatMap.getColSummaryRatio(NgChm.MMGR.DETAIL_LEVEL);
+			case 'RIBBONH': return heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
+			case 'RIBBONV': return heatMap.getColSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+			case 'FULL_MAP': return heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
+			default:        return  heatMap.getColSummaryRatio(MMGR.DETAIL_LEVEL);
 		}
 	}
 }
@@ -343,7 +356,7 @@ NgChm.SEL.getSamplingRatio = function (mode,axis) {
  * FUNCTION: flickExists - Returns true if the heatmap contains multiple data layers by checking
  * to see if the "FLICK" button is present on the screen.
  ***********************************************************************************************/ 
-NgChm.SEL.flickExists = function() {
+SEL.flickExists = function() {
 	var flicks = document.getElementById("flicks");
 	if ((flicks != null) && (flicks.style.display === '')) {
 		return true;
@@ -355,7 +368,7 @@ NgChm.SEL.flickExists = function() {
  * FUNCTION: flickIsOn - Returns true if the user has opened the flick control by checking to 
  * see if the flickViews DIV is visible.
  ***********************************************************************************************/ 
-NgChm.SEL.flickIsOn = function() {
+SEL.flickIsOn = function() {
 	var flickViews = document.getElementById("flickViews");
 	if (flickViews.style.display === '') {
 		return true;
@@ -366,7 +379,7 @@ NgChm.SEL.flickIsOn = function() {
 /************************************************************************************************
  * FUNCTION: flickToggleOn - Opens the flick control.
  ***********************************************************************************************/ 
-NgChm.SEL.flickToggleOn = function() {
+SEL.flickToggleOn = function() {
 	var flickDrop1 = document.getElementById("flick1");
 	var flickDrop2 = document.getElementById("flick2");
 	//Make sure that dropdowns contain different
@@ -378,7 +391,7 @@ NgChm.SEL.flickToggleOn = function() {
 			flickDrop2.selectedIndex = 0;
 		}
 	}
-	NgChm.SEL.flickInit();
+	SEL.flickInit();
 	var flicks = document.getElementById("flicks");
 	var flickViewsOff = document.getElementById("noFlickViews");
 	var flickViewsOn = document.getElementById("flickViews");
@@ -386,7 +399,7 @@ NgChm.SEL.flickToggleOn = function() {
 	flickViewsOn.style.display='';
 }
 
-NgChm.SEL.openFileToggle = function() {
+SEL.openFileToggle = function() {
 	var fileButton = document.getElementById('fileButton');
 	var detailButtons = document.getElementById('detail_buttons');
 	if (fileButton.style.display === 'none') {
@@ -400,7 +413,7 @@ NgChm.SEL.openFileToggle = function() {
 /************************************************************************************************
  * FUNCTION: flickToggleOff - Closes (hides) the flick control.
  ***********************************************************************************************/ 
-NgChm.SEL.flickToggleOff = function() {
+SEL.flickToggleOff = function() {
 	var flicks = document.getElementById("flicks");
 	var flickViewsOff = document.getElementById("noFlickViews");
 	var flickViewsOn = document.getElementById("flickViews");
@@ -408,7 +421,7 @@ NgChm.SEL.flickToggleOff = function() {
 	flickViewsOff.style.display='';
 }
 
-NgChm.SEL.flickInit = function() {
+SEL.flickInit = function() {
 	var flickBtn = document.getElementById("flick_btn");
 	var flickDrop1 = document.getElementById("flick1");
 	var flickDrop2 = document.getElementById("flick2");
@@ -421,8 +434,4 @@ NgChm.SEL.flickInit = function() {
 	}
 }
 
-
-
-
-
-
+})();

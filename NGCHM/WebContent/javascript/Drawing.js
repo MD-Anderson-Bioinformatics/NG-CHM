@@ -1,9 +1,14 @@
-//"use strict";
+(function() {
+    "use strict";
+    NgChm.markFile();
 
-//Define Namespace for NgChm Drawing
-NgChm.createNS('NgChm.DRAW');
+    //Define Namespace for NgChm Drawing
+    const DRAW = NgChm.createNS('NgChm.DRAW');
 
-NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const UHM = NgChm.importNS('NgChm.UHM');
+
+    DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 
 	function resize (width, height) {
 		width = width|0;
@@ -11,27 +16,26 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 		if (width !== this.width || height !== this.height) {
 			this.width = width;
 			this.height = height;
-			this.pixels = new Uint8Array(new ArrayBuffer((width * NgChm.SUM.BYTE_PER_RGBA) * height));
+			this.pixels = new Uint8Array(new ArrayBuffer((width * SUM.BYTE_PER_RGBA) * height));
 		}
 	}
 
 	const renderBuffer = {
 		width: width|0,
 		height: height|0,
-		pixels: new Uint8Array(new ArrayBuffer((width * NgChm.SUM.BYTE_PER_RGBA) * height)),
+		pixels: new Uint8Array(new ArrayBuffer((width * SUM.BYTE_PER_RGBA) * height)),
 		pixelScaleFactor: +pixelScaleFactor
 	};
 
 	renderBuffer.resize = resize.bind(renderBuffer);
 	return renderBuffer;
-};
+    };
 
-/***************************
- * WebGL stuff
- **************************/
-(function() {
+    /***************************
+     * WebGL stuff
+     **************************/
 
-    NgChm.DRAW.GL = {};
+    DRAW.GL = {};
 
     // We use WebGL to display heat map and covariate bar contents.  The
     // overall process is:
@@ -46,7 +50,7 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
     // fullClipSpace is two triangles that cover the entire canvas:
     // #1. bottom left, bottom right, top right.
     // #2. bottom left, top left, top right.
-    NgChm.DRAW.GL.fullClipSpace = rectToTriangles (-1, -1, 1, 1);
+    DRAW.GL.fullClipSpace = rectToTriangles (-1, -1, 1, 1);
 
     // TextureSpace specifies the region of the texture from which the texture will be drawn.
     // TextureSpace coordinates range from 0,0 at the left bottom to 1,1 at the right top.
@@ -55,7 +59,7 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
     // fullTextureSpace is two triangles that cover the entire texture:
     // #1. bottom left, bottom right, top right.
     // #2. bottom left, top left, top right.
-    NgChm.DRAW.GL.fullTextureSpace = rectToTriangles (0, 0, 1, 1);
+    DRAW.GL.fullTextureSpace = rectToTriangles (0, 0, 1, 1);
 
     // To use WebGL for rendering, we need a WebGL context. But, the browser can remove
     // the current window's access to a context between *any* two event callbacks.
@@ -111,7 +115,7 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 		    // Not lost since last use
 		    // Resizing the viewport, which is needed if the canvas was resized.
 		    const ctx = this._state.context;
-		    ctx.viewport(0, 0, ctx.drawingBufferWidth*NgChm.SUM.widthScale, ctx.drawingBufferHeight*NgChm.SUM.heightScale);
+		    ctx.viewport(0, 0, ctx.drawingBufferWidth*SUM.widthScale, ctx.drawingBufferHeight*SUM.heightScale);
 		    this._OK = true;
 		    initialized = true;
 		}
@@ -250,7 +254,7 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 
     }
 
-    NgChm.DRAW.GL.createGlManager = function (canvas, getVertexShader, getFragmentShader, onRestore) {
+    DRAW.GL.createGlManager = function (canvas, getVertexShader, getFragmentShader, onRestore) {
 	    return new GlManager (canvas, getVertexShader, getFragmentShader, onRestore);
     };
 
@@ -310,17 +314,17 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 		} catch(e) {}
 	    }
 	    // WebGL is supported, but disabled
-	    NgChm.UHM.noWebGlContext(true);
+	    UHM.noWebGlContext(true);
 	    return null;
 	}
 	// WebGL not supported
-	NgChm.UHM.noWebGlContext(false);
+	UHM.noWebGlContext(false);
 	return null;
     }
 
     // Convert the sides of rectangle into an array of
     // triangle vertices.
-    NgChm.DRAW.GL.rectToTriangles = rectToTriangles;
+    DRAW.GL.rectToTriangles = rectToTriangles;
     function rectToTriangles (bottom, left, top, right) {
 	return [ left, bottom, right, bottom, right, top,
 		 left, bottom, left, top, right, top ];
@@ -328,7 +332,7 @@ NgChm.DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 
     // Helper function for debugging WebGL context issues.
     // Intended for use by developers.
-    NgChm.DRAW.GL.getContextSimulator = function (id) {
+    DRAW.GL.getContextSimulator = function (id) {
 	if (!id) {
 	    console.log ("Usage: var ext = NgChm.DRAW.GL.getContextSimulator(id);");
 	    console.log ("       ext.loseContext();");
