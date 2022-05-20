@@ -1,7 +1,18 @@
-//Define Namespace for NgChm SearchManager
-NgChm.createNS('NgChm.SRCH');
-
 (function() {
+    'use strict';
+    NgChm.markFile();
+
+    //Define Namespace for NgChm SearchManager
+    const SRCH = NgChm.createNS('NgChm.SRCH');
+
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const UTIL = NgChm.importNS('NgChm.UTIL');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const LNK = NgChm.importNS('NgChm.LNK');
+    const SEL = NgChm.importNS('NgChm.SEL');
+    const DMM = NgChm.importNS('NgChm.DMM');
+    const DET = NgChm.importNS('NgChm.DET');
+    const UHM = NgChm.importNS('NgChm.UHM');
 
     /***********************************************************
      * STATE VARIABLES SECTION
@@ -35,10 +46,10 @@ NgChm.createNS('NgChm.SRCH');
      * SEARCH FUNCTIONS SECTION
      ***********************************************************/
 
-    NgChm.SRCH.getSearchSaveState = function () {
+    SRCH.getSearchSaveState = function () {
 	const state = {};
-	state['row'] = NgChm.SRCH.getAxisSearchResults('row');
-	state['col'] = NgChm.SRCH.getAxisSearchResults('col');
+	state['row'] = SRCH.getAxisSearchResults('row');
+	state['col'] = SRCH.getAxisSearchResults('col');
 	return state;
     };
 
@@ -46,7 +57,7 @@ NgChm.createNS('NgChm.SRCH');
      * FUNCTION - clearAllSearchResults: This function initializes/resets all
      * search-related state variables.
      **********************************************************************************/
-    NgChm.SRCH.clearAllSearchResults = function() {
+    SRCH.clearAllSearchResults = function() {
 	searchResults["Row"]= {};
 	searchResults["Column"]= {};
 	searchResults["RowCovar"] = {};
@@ -63,9 +74,9 @@ NgChm.createNS('NgChm.SRCH');
 	e = document.getElementById('prev_btn');
 	if (e) e.onclick = () => searchPrev(false);
 	e = document.getElementById('cancel_btn');
-	if (e) e.onclick = () => NgChm.SRCH.clearSearch();
+	if (e) e.onclick = () => SRCH.clearSearch();
 	e = document.getElementById('go_btn');
-	if (e) e.onclick = () => NgChm.SRCH.detailSearch();
+	if (e) e.onclick = () => SRCH.detailSearch();
 
 	// Connect UI elements to onchange handlers.
 	e = document.getElementById('search_on');
@@ -79,7 +90,7 @@ NgChm.createNS('NgChm.SRCH');
 	// Get and cache which labels are gap items the first
 	// time we access the specified axis.
 	if (!(axis in gapItems)) {
-	    let labels = NgChm.heatMap.getAxisLabels(axis).labels;
+	    let labels = MMGR.getHeatMap().getAxisLabels(axis).labels;
 	    gapItems[axis] = {};
             // Note: indices for row and column labels are 1-origin.
 	    labels.forEach((label, index) => {
@@ -93,9 +104,9 @@ NgChm.createNS('NgChm.SRCH');
      * FUNCTION - getAxisSearchResults: get indices of all search results on the
      * specified axis.
      ***********************************************************************************/
-    NgChm.SRCH.getAxisSearchResults = function (axis) {
+    SRCH.getAxisSearchResults = function (axis) {
 	// axis is capitalized in so many ways :-(.
-	axis = NgChm.MMGR.isRow (axis) ? 'Row' : 'Column';
+	axis = MMGR.isRow (axis) ? 'Row' : 'Column';
 	// Convert keys to integers so that callers don't have to.
 	return Object.keys(searchResults[axis]).map (val => +val);
     };
@@ -104,7 +115,7 @@ NgChm.createNS('NgChm.SRCH');
      * FUNCTION - setAxisSearchResults: set all search items from left to right (inclusive)
      * on the specified axis.
      ***********************************************************************************/
-    NgChm.SRCH.setAxisSearchResults = function (axis, left, right) {
+    SRCH.setAxisSearchResults = function (axis, left, right) {
         const axisResults = searchResults[axis];
 	const gaps = getGaps(axis);
 	for (let i = left; i <= right; i++) {
@@ -116,7 +127,7 @@ NgChm.createNS('NgChm.SRCH');
      * FUNCTION - setAxisSearchResultsVec: set all label indices in vec as search results
      * on the specified axis.
      ***********************************************************************************/
-    NgChm.SRCH.setAxisSearchResultsVec = function (axis, vec) {
+    SRCH.setAxisSearchResultsVec = function (axis, vec) {
         const axisResults = searchResults[axis];
 	const gaps = getGaps(axis);
 	vec.forEach (i => {
@@ -128,20 +139,20 @@ NgChm.createNS('NgChm.SRCH');
      * FUNCTION - clearAxisSearchItems: clear all search items from left to right (inclusive)
      * on the specified axis.
      ***********************************************************************************/
-    NgChm.SRCH.clearAxisSearchItems = function (axis, left, right) {
+    SRCH.clearAxisSearchItems = function (axis, left, right) {
 	for (let j = +left; j < +right+1; j++) {
 	    delete searchResults[axis][j];
 	}
     };
 
-    NgChm.SRCH.clearAllAxisSearchItems = function (axis) {
+    SRCH.clearAllAxisSearchItems = function (axis) {
         searchResults[axis] = {};
     };
 
     /*********************************************************************************************
      * FUNCTION:  labelIndexInSearch - Returns true iff index is included in axis search results.
      *********************************************************************************************/
-    NgChm.SRCH.labelIndexInSearch = function (axis, index) {
+    SRCH.labelIndexInSearch = function (axis, index) {
 	return index != null && axis != null && searchResults[axis][index] == 1;
     };
 
@@ -149,12 +160,13 @@ NgChm.createNS('NgChm.SRCH');
      * FUNCTION:  labelIndexInSearch - This function retrieves and array of search labels based
      * upon type an axis.
      *********************************************************************************************/
-    NgChm.SRCH.getSearchLabelsByAxis = function (axis, labelType) {
+    SRCH.getSearchLabelsByAxis = function (axis, labelType) {
 	let searchLabels = [];
-	const labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] :
-		axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(NgChm.heatMap.getRowClassificationConfig()) : 
-			[NgChm.heatMap.getRowLabels()["labels"], NgChm.heatMap.getColLabels()['labels'] ];
-	NgChm.SRCH.getAxisSearchResults(axis).forEach(i => {
+	const heatMap = MMGR.getHeatMap();
+	const labels = axis == 'Row' ? heatMap.getRowLabels()["labels"] : axis == "Column" ? heatMap.getColLabels()['labels'] :
+		axis == "ColumnCovar" ? Object.keys(heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(heatMap.getRowClassificationConfig()) : 
+			[heatMap.getRowLabels()["labels"], heatMap.getColLabels()['labels'] ];
+	SRCH.getAxisSearchResults(axis).forEach(i => {
 		if (axis.includes("Covar")){
 			if (labelType == linkouts.VISIBLE_LABELS){
 				searchLabels.push(labels[i].split("|")[0]);
@@ -176,14 +188,14 @@ NgChm.createNS('NgChm.SRCH');
 	return searchLabels;
     };
 
-    NgChm.SRCH.doInitialSearch = function () {
+    SRCH.doInitialSearch = function () {
 	// Perform initial search if search parameter has been specified.
 	// To be called after initialization of the panels.
-	const searchParam = NgChm.UTIL.getURLParameter('search')
+	const searchParam = UTIL.getURLParameter('search')
 	if (searchParam !== "") {
 		let searchElement = document.getElementById('search_text');
 		searchElement.value = searchParam;
-		NgChm.SRCH.detailSearch();
+		SRCH.detailSearch();
 	}
     };
 
@@ -193,10 +205,10 @@ NgChm.createNS('NgChm.SRCH');
      * the search_on target (label or covar) and perform any functions that are common
      * to both.  It is called when search string is entered.
      ***********************************************************************************/
-    NgChm.SRCH.detailSearch = function () {
-	NgChm.UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
+    SRCH.detailSearch = function () {
+	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	clearSearchRequest();
-	NgChm.SRCH.showSearchResults();
+	SRCH.showSearchResults();
 	let validSearch = true;
 	const searchOn = document.getElementById('search_on');
 	if (searchOn.value === 'labels') {
@@ -204,10 +216,10 @@ NgChm.createNS('NgChm.SRCH');
 	} else {
 		validSearch = covarSearch();
 	}
-	NgChm.SUM.redrawSelectionMarks();
-	NgChm.SUM.drawTopItems();
-	NgChm.SRCH.showSearchResults(validSearch);	
-	NgChm.SRCH.updateLinkoutSelections();
+	SUM.redrawSelectionMarks();
+	SUM.drawTopItems();
+	SRCH.showSearchResults(validSearch);
+	SRCH.updateLinkoutSelections();
 	let dc = document.getElementById("detail_canvas");
 	if (dc != null) dc.focus();
     };
@@ -216,9 +228,9 @@ NgChm.createNS('NgChm.SRCH');
      * FUNCTION - updateLinkoutSelections: The purpose of this function to post
      * all selections (both row and column) to linkouts.
      ***********************************************************************************/
-    NgChm.SRCH.updateLinkoutSelections = function () {
-	NgChm.LNK.postSelectionToLinkouts("column", "standardClick");
-	NgChm.LNK.postSelectionToLinkouts("row", "standardClick");
+    SRCH.updateLinkoutSelections = function () {
+	LNK.postSelectionToLinkouts("column", "standardClick");
+	LNK.postSelectionToLinkouts("row", "standardClick");
     };
 
     /**********************************************************************************
@@ -228,7 +240,7 @@ NgChm.createNS('NgChm.SRCH');
      * selects in the search on dropdown control.
       **********************************************************************************/
     function searchOnSel () {
-	NgChm.UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
+	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const searchOn = document.getElementById('search_on');
 	var searchTarget = document.getElementById('search_target');
 	const covType = searchOn.value.split("|")[0];
@@ -236,13 +248,14 @@ NgChm.createNS('NgChm.SRCH');
 	const searchCovDisc = document.getElementById('search_cov_disc');
 	const searchCovCont = document.getElementById('search_cov_cont');
 	const searchTxt = document.getElementById('search_text');
+	const heatMap = MMGR.getHeatMap();
 	let classBarsConfig;
 	if (searchOn.value !== 'labels') {
 		if (covType === "row") {
-			classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
+			classBarsConfig = heatMap.getRowClassificationConfig();
 			searchTarget.value = "Row"; 
 		} else if (covType === "col") {
-			classBarsConfig = NgChm.heatMap.getColClassificationConfig();
+			classBarsConfig = heatMap.getColClassificationConfig();
 			searchTarget.value = "Column"; 
 		} 
 		searchTarget.disabled = true; 
@@ -277,12 +290,13 @@ NgChm.createNS('NgChm.SRCH');
 	const selectBox = document.getElementById('srchCovSelectBox');
 	const covType = searchOn.value.split("|")[0];
 	const covVal = searchOn.value.split("|")[1];
-	let classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
+	const heatMap = MMGR.getHeatMap();
+	let classBarsConfig = heatMap.getRowClassificationConfig();
 	if (covType !== "row") {
-		classBarsConfig = NgChm.heatMap.getColClassificationConfig();
+		classBarsConfig = heatMap.getColClassificationConfig();
 	}
 	const currentClassBar = classBarsConfig[covVal];
-	NgChm.UTIL.createCheckBoxDropDown('srchCovSelectBox','srchCovCheckBoxes',"Select Category(s)", currentClassBar.color_map.thresholds,"300px");
+	UTIL.createCheckBoxDropDown('srchCovSelectBox','srchCovCheckBoxes',"Select Category(s)", currentClassBar.color_map.thresholds,"300px");
 	loadSavedCovarState(covType,covVal);
     }
 
@@ -355,9 +369,10 @@ NgChm.createNS('NgChm.SRCH');
 	const searchOn = document.getElementById("search_on");
 	const [covType, covVal] = searchOn.value.split("|");
 
-	const axis = NgChm.MMGR.isRow (covType) ? 'Row' : 'Column';
-	const classDataValues = NgChm.heatMap.getAxisCovariateData(axis)[covVal].values;
-	const currentClassBar = NgChm.heatMap.getAxisCovariateConfig(axis)[covVal];
+	const axis = MMGR.isRow (covType) ? 'Row' : 'Column';
+	const heatMap = MMGR.getHeatMap();
+	const classDataValues = heatMap.getAxisCovariateData(axis)[covVal].values;
+	const currentClassBar = heatMap.getAxisCovariateConfig(axis)[covVal];
 	let validSearch = true;
 	let searchElement;
 	let results = [];
@@ -383,10 +398,10 @@ NgChm.createNS('NgChm.SRCH');
 	}
 	if (results.length === 0) {
 	    //Clear previous matches when search is empty.
-	    NgChm.SEL.updateSelections();
+	    SEL.updateSelections();
 	    searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 	} else {
-	    NgChm.SRCH.setAxisSearchResultsVec(axis, results);
+	    SRCH.setAxisSearchResultsVec(axis, results);
 	    searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
 	}
 	searchNext(true);
@@ -397,9 +412,10 @@ NgChm.createNS('NgChm.SRCH');
      * FUNCTION - continuousCovarSearch returns the indices of elements that match
      * searchString on the specified axis for a continuous covariate covar.
      ***********************************************************************************/
-    NgChm.SRCH.continuousCovarSearch = function (axis, covar, searchString) {
-	axis = NgChm.MMGR.isRow (axis) ? 'Row' : 'Column';
-	const classDataValues = NgChm.heatMap.getAxisCovariateData(axis)[covar].values;
+    SRCH.continuousCovarSearch = function (axis, covar, searchString) {
+	axis = MMGR.isRow (axis) ? 'Row' : 'Column';
+	const heatMap = MMGR.getHeatMap();
+	const classDataValues = heatMap.getAxisCovariateData(axis)[covar].values;
 
 	const searchExprs = parseContinuousSearchString (searchString.trim().replace(/ /g,''));
 	const validSearch = validateContinuousSearch(searchExprs);
@@ -535,7 +551,7 @@ NgChm.createNS('NgChm.SRCH');
 			// The first pass found an operator in position 0.
 			// The firstOper is set AND the rest of the string needs a second pass
 			firstOper = firstPass.oper;
-			if (NgChm.UTIL.isNaN(firstPass.remainder) === false) {
+			if (UTIL.isNaN(firstPass.remainder) === false) {
 			    // The first pass remainder is a numeric value so we have identified the first value
 			    // and there is no second operator.
 			    firstValue = firstPass.remainder;
@@ -578,7 +594,7 @@ NgChm.createNS('NgChm.SRCH');
 		return { oper: ops[i], position: idx, remainder: expr.substring(idx+ops[i].length,expr.length) };
 	    }
 	}
-	const oper = NgChm.UTIL.isNaN(expr) ? "txt" : "===";
+	const oper = UTIL.isNaN(expr) ? "txt" : "===";
 	return { oper: oper, position: 0, remainder: expr }; // Position included for type compatibility.
     }
 
@@ -591,7 +607,7 @@ NgChm.createNS('NgChm.SRCH');
 	if ((firstOper !== '>') && (firstOper !== '<') && (firstOper !== '>=') && (firstOper !== '<=')  && (firstOper !== '===')) {
 		return false;
 	}
-	if (NgChm.UTIL.isNaN(firstValue)) {
+	if (UTIL.isNaN(firstValue)) {
 	    if (firstOper !== "===") return false;
 	    if (!firstValue.includes("miss")) return false;
 	}
@@ -599,7 +615,7 @@ NgChm.createNS('NgChm.SRCH');
 		if ((secondOper !== '>') && (secondOper !== '<') && (secondOper !== '>=') && (secondOper !== '<=')) {
 			return false;
 		}
-		if (NgChm.UTIL.isNaN(secondValue) === true) {
+		if (UTIL.isNaN(secondValue) === true) {
 			return false;
 		}
 		if (firstOper === '===') {
@@ -657,7 +673,7 @@ NgChm.createNS('NgChm.SRCH');
 			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 		}	
 		//Clear previous matches when search is empty.
-		NgChm.SEL.updateSelections();
+		SEL.updateSelections();
 	}
     }
 
@@ -666,7 +682,8 @@ NgChm.createNS('NgChm.SRCH');
      * labels collections for matches.
      ***********************************************************************************/
     function searchLabels (axis,tmpSearchItems,itemsFound) {
-	const labels = NgChm.heatMap.getAxisLabels(axis)["labels"]
+	const heatMap = MMGR.getHeatMap();
+	const labels = heatMap.getAxisLabels(axis)["labels"]
 	    .map (label => {
 		label = label.toUpperCase();
 		if (label.indexOf('|') > -1) {
@@ -688,7 +705,7 @@ NgChm.createNS('NgChm.SRCH');
 		let matches = [];
 		labels.forEach((label,index) => { if (reg.test(label)) matches.push (index+1); });
 		if (matches.length > 0) {
-		    NgChm.SRCH.setAxisSearchResultsVec(axis, matches);
+		    SRCH.setAxisSearchResultsVec(axis, matches);
 		    if (itemsFound.indexOf(searchItem) == -1)
 			    itemsFound.push(searchItem);
 		}	
@@ -700,14 +717,14 @@ NgChm.createNS('NgChm.SRCH');
     /**********************************************************************************
      * FUNCTION - getCurrentSearchItem: This function returns the current search item.
      **********************************************************************************/
-    NgChm.SRCH.getCurrentSearchItem = function() {
+    SRCH.getCurrentSearchItem = function() {
 	    return currentSearchItem;
     };
 
     /**********************************************************************************
      * FUNCTION - clearCurrentSearchItem: This function clears the current search item.
      **********************************************************************************/
-    NgChm.SRCH.clearCurrentSearchItem = function() {
+    SRCH.clearCurrentSearchItem = function() {
 	    currentSearchItem = {};
     };
 
@@ -718,7 +735,7 @@ NgChm.createNS('NgChm.SRCH');
      ***********************************************************************************/
     function searchNext (firstTime) {
 	const searchAxis = document.getElementById('search_target').value;
-	NgChm.UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
+	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	if (firstTime || !currentSearchItem["index"] || !currentSearchItem["axis"]) {
 	    // Start new search.  If searchAxis == "Both", start on the columns.
 	    findNextSearchItem(-1, searchAxis === "Column" ? "Column" : "Row");
@@ -738,7 +755,8 @@ NgChm.createNS('NgChm.SRCH');
      * after index on the specified axis.  If no search item found, returns -1.
      ***********************************************************************************/
     function findNextAxisSearchItem (axis, index) {
-	const axisLength = NgChm.heatMap.getAxisLabels(axis).labels.length;
+	const heatMap = MMGR.getHeatMap();
+	const axisLength = heatMap.getAxisLabels(axis).labels.length;
         const axisItems = searchResults[axis];
 	while( ++index <= axisLength) {
 	    if (axisItems[index]) return index;
@@ -755,7 +773,7 @@ NgChm.createNS('NgChm.SRCH');
 	if (!axis) return -1;
         const axisItems = searchResults[axis];
 	if (index == -1) {
-	    index = NgChm.heatMap.getAxisLabels(axis).labels.length + 1;
+	    index = MMGR.getHeatMap().getAxisLabels(axis).labels.length + 1;
 	}
 	while( --index >= 0) {
 	   if (axisItems[index]) return index;
@@ -813,7 +831,7 @@ NgChm.createNS('NgChm.SRCH');
      * the heat map detail panel to that item.
      ***********************************************************************************/
     function searchPrev () {
-	NgChm.UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
+	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const searchAxis = document.getElementById('search_target').value;
 	if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
 	    // Continue on current search axis if permitted.
@@ -831,7 +849,8 @@ NgChm.createNS('NgChm.SRCH');
      * as the current search item.
      ***********************************************************************************/
     function findPrevSearchItem (index, axis) {
-	const axisLength = axis == "Row" ? NgChm.heatMap.getRowLabels().labels.length : NgChm.heatMap.getColLabels().labels.length;
+	const heatMap = MMGR.getHeatMap();
+	const axisLength = axis == "Row" ? heatMap.getRowLabels().labels.length : heatMap.getColLabels().labels.length;
 	let curr = findPrevAxisSearchItem (axis, index);
 	if (curr < 0) { // if no searchResults exist in first axis, move to other axis
 		if (document.getElementById('search_target').value === 'Both') { 
@@ -858,27 +877,27 @@ NgChm.createNS('NgChm.SRCH');
      * focus of the detail heat map panel to the current search item.
      ***********************************************************************************/
     function goToCurrentSearchItem () {
-	const mapItem = NgChm.DMM.primaryMap;
+	const mapItem = DMM.primaryMap;
 	if (!mapItem) return;
 
 	if (currentSearchItem.axis == "Row") {
 		mapItem.currentRow = currentSearchItem.index;
 		if ((mapItem.mode == 'RIBBONV') && mapItem.selectedStart!= 0 && (mapItem.currentRow < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentRow)){
-			NgChm.UHM.showSearchError(1);
+			UHM.showSearchError(1);
 		} else if (mapItem.mode == 'RIBBONV' && mapItem.selectedStart == 0){
-			NgChm.UHM.showSearchError(2);
+			UHM.showSearchError(2);
 		} 
-		NgChm.SEL.checkRow(mapItem);
+		SEL.checkRow(mapItem);
 	} else if (currentSearchItem.axis == "Column"){
 		mapItem.currentCol = currentSearchItem.index;
 		if ((mapItem.mode == 'RIBBONH') && mapItem.selectedStart!= 0 && (mapItem.currentCol < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentCol )){
-			NgChm.UHM.showSearchError(1)
+			UHM.showSearchError(1)
 		} else if (mapItem.mode == 'RIBBONH' && mapItem.selectedStart == 0){
-			NgChm.UHM.showSearchError(2);
+			UHM.showSearchError(2);
 		} 
-		NgChm.SEL.checkCol(mapItem);
+		SEL.checkCol(mapItem);
 	}
-	NgChm.SEL.updateSelections();
+	SEL.updateSelections();
     }
 
     /**********************************************************************************
@@ -888,35 +907,35 @@ NgChm.createNS('NgChm.SRCH');
      * For ROW or COL searches, only the search for that axis will be cleared and the
      * next search item will move to the other axis.
      ***********************************************************************************/
-    NgChm.SRCH.clearSearch = function () {
-	NgChm.UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
+    SRCH.clearSearch = function () {
+	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const searchTarget = document.getElementById('search_target').value;
-	NgChm.SUM.clearSelectionMarks(searchTarget);
+	SUM.clearSelectionMarks(searchTarget);
 	clearSearchRequest(searchTarget);
 	if (searchTarget === "Row") {
 		if (currentSearchItem["axis"] === "Row") {
 			findNextSearchItem(-1,"Column");
 			goToCurrentSearchItem();
 		}
-		NgChm.SUM.rowDendro.clearSelectedBars();
-		NgChm.SRCH.showSearchResults();	
+		SUM.rowDendro.clearSelectedBars();
+		SRCH.showSearchResults();
 	} else if (searchTarget === "Column") {
 		if (currentSearchItem["axis"] === "Column") {
 			findNextSearchItem(-1,"Row");
 			goToCurrentSearchItem();
 		}
-		NgChm.SUM.colDendro.clearSelectedBars();
-		NgChm.SRCH.showSearchResults();	
+		SUM.colDendro.clearSelectedBars();
+		SRCH.showSearchResults();
 	} else {
-		NgChm.SRCH.clearCurrentSearchItem();
-		NgChm.DET.labelLastClicked = {};
-		NgChm.SUM.rowDendro.clearSelectedBars();
-		NgChm.SUM.colDendro.clearSelectedBars();
+		SRCH.clearCurrentSearchItem();
+		DET.labelLastClicked = {};
+		SUM.rowDendro.clearSelectedBars();
+		SUM.colDendro.clearSelectedBars();
 	}
 	clearSearchElement();
-	NgChm.SRCH.showSearchResults();	
-	NgChm.SEL.updateSelections();
-	NgChm.SRCH.updateLinkoutSelections();
+	SRCH.showSearchResults();
+	SEL.updateSelections();
+	SRCH.updateLinkoutSelections();
 	resetSearchBoxColor()
     };
 
@@ -938,28 +957,28 @@ NgChm.createNS('NgChm.SRCH');
     function clearSearchRequest () {
 	const searchTarget = document.getElementById('search_target').value;
 	if (searchTarget === 'Both') {
-		NgChm.SRCH.clearSearchItems("Row");
-		NgChm.SRCH.clearSearchItems("Column");
+		SRCH.clearSearchItems("Row");
+		SRCH.clearSearchItems("Column");
 	} else {
-		NgChm.SRCH.clearSearchItems(searchTarget)
+		SRCH.clearSearchItems(searchTarget)
 	}
-	NgChm.SUM.clearSelectionMarks(searchTarget);
+	SUM.clearSelectionMarks(searchTarget);
     }
 
     /**********************************************************************************
      * FUNCTION - clearSearchItems: The purpose of this function is to clear the search
      * items on a particular axis.
      ***********************************************************************************/
-    NgChm.SRCH.clearSearchItems = function (clickAxis) {
+    SRCH.clearSearchItems = function (clickAxis) {
 	searchResults[clickAxis] = {};
 	if (clickAxis === "Row"){
-		NgChm.SUM.rowDendro.clearSelectedBars();
+		SUM.rowDendro.clearSelectedBars();
 	} else if (clickAxis === "Column"){
-		NgChm.SUM.colDendro.clearSelectedBars();
+		SUM.colDendro.clearSelectedBars();
 	}
 	let markLabels = document.getElementsByClassName('MarkLabel');
 	for (let ii = 0; ii < markLabels.length; ii++){ // clear tick marks
-		NgChm.DET.removeLabels(markLabels[ii].id);
+		DET.removeLabels(markLabels[ii].id);
 	}
     };
 
@@ -975,6 +994,7 @@ NgChm.createNS('NgChm.SRCH');
 	let classBarsConfig; 
 	let classDataValues;
 	const covAxis = covType === 'row' ? 'row' : 'column';
+	const heatMap = MMGR.getHeatMap();
 	if (searchOn === 'labels') {
 		const resultsCnts = getSearchResultsCounts();
 		if ((searchTarget === 'both') && (resultsCnts[2] !== 0)) {
@@ -988,15 +1008,15 @@ NgChm.createNS('NgChm.SRCH');
 	} else {
 		if ((covAxis === searchTarget) || (searchTarget === 'both')) {
 			if (covType === 'row') {
-				classBarsConfig = NgChm.heatMap.getRowClassificationConfig(); 
+				classBarsConfig = heatMap.getRowClassificationConfig();
 			} else if (covType === 'col') {
-				classBarsConfig = NgChm.heatMap.getColClassificationConfig();
+				classBarsConfig = heatMap.getColClassificationConfig();
 			}
 			const currentClassBar = classBarsConfig[covVal];
 			if (currentClassBar.color_map.type === 'continuous') {
 				document.getElementById('search_cov_cont').value = "";
 			} else {
-				NgChm.UTIL.resetCheckBoxDropdown('srchCovCheckBox');		
+				UTIL.resetCheckBoxDropdown('srchCovCheckBox');
 			}
 		}
 	}
@@ -1017,7 +1037,7 @@ NgChm.createNS('NgChm.SRCH');
      * search results text area below the search controls with the row/col count
      * results from the just-executed search IF there are search results to show.
      ***********************************************************************************/
-    NgChm.SRCH.showSearchResults = function (validSearch) {
+    SRCH.showSearchResults = function (validSearch) {
 	const resultsCnts = getSearchResultsCounts();
 	if (resultsCnts[2] > 0) {
 		document.getElementById("search_display_text").innerHTML = "Found: Rows - " + resultsCnts[0] + " Columns - " + resultsCnts[1];
@@ -1042,8 +1062,8 @@ NgChm.createNS('NgChm.SRCH');
      * total row search results, total column results, and total combined results.
      ***********************************************************************************/
     function getSearchResultsCounts () {
-        const rowCount = NgChm.SRCH.getAxisSearchResults("Row").length;
-        const colCount = NgChm.SRCH.getAxisSearchResults("Column").length;
+        const rowCount = SRCH.getAxisSearchResults("Row").length;
+        const colCount = SRCH.getAxisSearchResults("Column").length;
 	return [ rowCount, colCount, rowCount+colCount ];
     }
 

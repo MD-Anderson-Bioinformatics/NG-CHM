@@ -1,16 +1,26 @@
+(function() {
+    'use strict';
+    NgChm.markFile();
 
-/**
- *	NGCHM namespace responsible for reconstructing a saved pane layout.
- */
+	/**
+	 *	NGCHM namespace responsible for reconstructing a saved pane layout.
+	 */
+	const RECPANES = NgChm.createNS('NgChm.RecPanes');
 
-NgChm.createNS('NgChm.RecPanes');
-
-(function(){
-	"use strict";
+	const UTIL = NgChm.importNS('NgChm.UTIL');
+	const LNK = NgChm.importNS('NgChm.LNK');
+	const SRCH = NgChm.importNS('NgChm.SRCH');
+	const PANE = NgChm.importNS('NgChm.Pane');
+	const MMGR = NgChm.importNS('NgChm.MMGR');
+	const DEV = NgChm.importNS('NgChm.DEV');
+	const SEL = NgChm.importNS('NgChm.SEL');
+	const SUM = NgChm.importNS('NgChm.SUM');
+	const DET = NgChm.importNS('NgChm.DET');
+	const DMM = NgChm.importNS('NgChm.DMM');
 	const debug = false;
 
-	NgChm.RecPanes.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
-	NgChm.RecPanes.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
+	RECPANES.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
+	RECPANES.initializePluginWithMapConfigData = initializePluginWithMapConfigData;
 
 	/**
 	 * Reconstruct the panels from data in the mapConfig.json file
@@ -23,11 +33,11 @@ NgChm.createNS('NgChm.RecPanes');
 	function reconstructPanelsFromMapConfig(initialLoc, savedState) {
 
 	    if (debug) console.log("Reconstructing panes");
-	    NgChm.RecPanes.mapConfigPanelConfiguration = Object.assign({}, savedState);
+	    RECPANES.mapConfigPanelConfiguration = Object.assign({}, savedState);
 	    try {
-		    let panel_layoutJSON = NgChm.RecPanes.mapConfigPanelConfiguration.panel_layout;
+		    let panel_layoutJSON = RECPANES.mapConfigPanelConfiguration.panel_layout;
 		    let reconstructedPanelLayout = createLayout(panel_layoutJSON);
-		    NgChm.UTIL.containerElement.replaceChildren(reconstructedPanelLayout.firstChild);
+		    UTIL.containerElement.replaceChildren(reconstructedPanelLayout.firstChild);
 	    } catch(err) {
 		    console.error("Cannot reconstruct panel layout: "+err);
 		    throw "Error reconstructing panel layout from mapConfig.";
@@ -41,23 +51,23 @@ NgChm.createNS('NgChm.RecPanes');
 	    // Plugin panes require plugins loaded first.
 	    // FIXME: Modify to populate plugin panels after plugins load.
 	    function waitForPlugins () {
-		if (NgChm.LNK.getPanePlugins().length>0) { // FIXME: Assumes there are pane plugins
+		if (LNK.getPanePlugins().length>0) { // FIXME: Assumes there are pane plugins
 			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
 			setFlickState();
 			setSelections();  // Set saved results, if any.
-			NgChm.SRCH.doInitialSearch();  // Will override saved results, if requested.
-			NgChm.Pane.resizeNGCHM();
-			NgChm.heatMap.setUnAppliedChanges(false);
+			SRCH.doInitialSearch();  // Will override saved results, if requested.
+			PANE.resizeNGCHM();
+			MMGR.getHeatMap().setUnAppliedChanges(false);
 			setTimeout(() => {
-				NgChm.SEL.updateSelections(true);
+				SEL.updateSelections(true);
 				const expanded = document.querySelector("DIV[data-expanded-panel]");
 				if (expanded) {
 				    delete expanded.dataset.expandedPanel;
-				    NgChm.Pane.toggleScreenMode (expanded.id);
+				    PANE.toggleScreenMode (expanded.id);
 				}
-				[...document.getElementsByClassName('pane')].forEach(NgChm.Pane.resizePane);
-				NgChm.UTIL.UI.hideLoader();  // Hide loader screen, display NG-CHM.
+				[...document.getElementsByClassName('pane')].forEach(PANE.resizePane);
+				UTIL.UI.hideLoader();  // Hide loader screen, display NG-CHM.
 			}, 500);
 		} else { // wait for plugins to load
 			if (debug) console.log("Waiting for plugins to load");
@@ -77,7 +87,7 @@ NgChm.createNS('NgChm.RecPanes');
 	 */
 	function createLayout (saveSpec, parent) {
 	    if (saveSpec.type === "pane") {
-		let el = NgChm.Pane.newPane({}, "Empty", saveSpec.id);
+		let el = PANE.newPane({}, "Empty", saveSpec.id);
 		el.style.width = saveSpec.width;
 		el.style.height = saveSpec.height;
 		if (saveSpec.collapsed) {
@@ -88,7 +98,7 @@ NgChm.createNS('NgChm.RecPanes');
 			    paneHeader: el.getElementsByClassName('paneHeader')[0],
 			    paneTitle: el.getElementsByClassName('paneTitle')[0],
 		    };
-		    NgChm.Pane.collapsePane (loc);
+		    PANE.collapsePane (loc);
 		}
 		if (saveSpec.expanded) el.dataset.expandedPanel = true;
 		return el;
@@ -112,7 +122,7 @@ NgChm.createNS('NgChm.RecPanes');
 		    const ch = createLayout (child, el);
 		    el.appendChild (ch);
 		});
-		el.addEventListener('paneresize', NgChm.Pane.resizeHandler);
+		el.addEventListener('paneresize', PANE.resizeHandler);
 		return el;
 	    } else {
 		console.error ("Attemping to restore unknown saveSpec object: " + saveSpec.type);
@@ -125,7 +135,7 @@ NgChm.createNS('NgChm.RecPanes');
 	function addDividerControlsToResizeHelpers() {
 		let dividers = document.getElementsByClassName("resizerHelper");
 		for (let i=0; i<dividers.length; i++) {
-			dividers[i].dividerController = new NgChm.Pane.DividerControl(dividers[i]);
+			dividers[i].dividerController = new PANE.DividerControl(dividers[i]);
 		}
 	}
 
@@ -135,7 +145,7 @@ NgChm.createNS('NgChm.RecPanes');
 	function addResizeHandlersToContainers() {
 		let containers = document.getElementsByClassName("ngChmContainer");
 		for (let i=0; i<containers.length; i++) {
-			containers[i].addEventListener('paneresize', NgChm.Pane.resizeHandler);
+			containers[i].addEventListener('paneresize', PANE.resizeHandler);
 		}
 	}
 
@@ -168,7 +178,7 @@ NgChm.createNS('NgChm.RecPanes');
 		panesArray.forEach(pane => {
 			setPaneContent(pane.id);
 		});
-		NgChm.Pane.resetPaneCounter(getHighestPaneId() + 1);
+		PANE.resetPaneCounter(getHighestPaneId() + 1);
 	}
 
 	/**
@@ -201,16 +211,16 @@ NgChm.createNS('NgChm.RecPanes');
 	}
 
 	function setSelections() {
-		if (!NgChm.RecPanes.mapConfigPanelConfiguration.hasOwnProperty('selections')) return;
-		let rowSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['row'];
-		NgChm.SRCH.setAxisSearchResultsVec('Row', rowSelections);
-		let colSelections = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['col'];
-		NgChm.SRCH.setAxisSearchResultsVec('Column', colSelections);
+		if (!RECPANES.mapConfigPanelConfiguration.hasOwnProperty('selections')) return;
+		let rowSelections = RECPANES.mapConfigPanelConfiguration['selections']['row'];
+		SRCH.setAxisSearchResultsVec('Row', rowSelections);
+		let colSelections = RECPANES.mapConfigPanelConfiguration['selections']['col'];
+		SRCH.setAxisSearchResultsVec('Column', colSelections);
 
-		let dendroBars = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['selectedRowDendroBars'];
-		if (dendroBars) NgChm.SUM.rowDendro.restoreSelectedBars(dendroBars);
-		dendroBars = NgChm.RecPanes.mapConfigPanelConfiguration['selections']['selectedColDendroBars'];
-		if (dendroBars) NgChm.SUM.colDendro.restoreSelectedBars(dendroBars);
+		let dendroBars = RECPANES.mapConfigPanelConfiguration['selections']['selectedRowDendroBars'];
+		if (dendroBars) SUM.rowDendro.restoreSelectedBars(dendroBars);
+		dendroBars = RECPANES.mapConfigPanelConfiguration['selections']['selectedColDendroBars'];
+		if (dendroBars) SUM.colDendro.restoreSelectedBars(dendroBars);
 	}
 
 	/**
@@ -218,38 +228,38 @@ NgChm.createNS('NgChm.RecPanes');
 	 */
 	function setPaneContent(paneid) {
 		const pane = document.getElementById(paneid);
-		const paneLoc = NgChm.Pane.findPaneLocation(pane);
-		const config = NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
+		const paneLoc = PANE.findPaneLocation(pane);
+		const config = RECPANES.mapConfigPanelConfiguration[paneid];
 		if (!config) {
 		    // Probably an empty pane.
 		    // console.debug ("Pane has no config", paneid, config);
 		    return;
 		}
 		if (config.type === "summaryMap") {
-			NgChm.SUM.switchPaneToSummary(NgChm.Pane.findPaneLocation(pane));
-			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
+			SUM.switchPaneToSummary(PANE.findPaneLocation(pane));
+			delete RECPANES.mapConfigPanelConfiguration[paneid];
 		} else if (config.type === "detailMap") {
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
 			const isPrimary = paneInfo.version == 'P';
 			let mapNumber = paneInfo.versionNumber == "" ? getUnusedVersionNumber() : parseInt(paneInfo.versionNumber);
-                        if (mapNumber >= NgChm.DMM.nextMapNumber) {
-                            NgChm.DMM.nextMapNumber = mapNumber+1;
+                        if (mapNumber >= DMM.nextMapNumber) {
+                            DMM.nextMapNumber = mapNumber+1;
                         }
-                        NgChm.DET.switchPaneToDetail(NgChm.Pane.findPaneLocation(pane), { isPrimary, mapNumber, paneInfo });
+                        DET.switchPaneToDetail(PANE.findPaneLocation(pane), { isPrimary, mapNumber, paneInfo });
 
-			NgChm.DET.updateDisplayedLabels();
+			DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
-			let mapItem = NgChm.DMM.getMapItemFromPane(pane.id);
-			NgChm.SEL.updateSelection(mapItem);
-			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneid];
-			NgChm.Pane.resizePane (mapItem.canvas);
+			let mapItem = DMM.getMapItemFromPane(pane.id);
+			SEL.updateSelection(mapItem);
+			delete RECPANES.mapConfigPanelConfiguration[paneid];
+			PANE.resizePane (mapItem.canvas);
 		} else if (config.type === 'plugin') {
-			let customjsPlugins = NgChm.LNK.getPanePlugins(); // plugins from custom.js
+			let customjsPlugins = LNK.getPanePlugins(); // plugins from custom.js
 			let specifiedPlugin = customjsPlugins.filter(pc => config.pluginName == pc.name);
 			if (specifiedPlugin.length > 0) {
 				try {
-					NgChm.LNK.switchPaneToPlugin(NgChm.Pane.findPaneLocation(pane),specifiedPlugin[0]);
-					NgChm.Pane.initializeGearIconMenu(document.getElementById(paneid+'Icon'));
+					LNK.switchPaneToPlugin(PANE.findPaneLocation(pane),specifiedPlugin[0]);
+					PANE.initializeGearIconMenu(document.getElementById(paneid+'Icon'));
 				} catch(err) {
 					console.error(err);
 					console.error("Specified plugin: ", config.pluginName);
@@ -257,7 +267,7 @@ NgChm.createNS('NgChm.RecPanes');
 				}
 			} else {
 				// Show brief message about the missing plugin in the panel.
-				const loc = NgChm.Pane.findPaneLocation(pane);
+				const loc = PANE.findPaneLocation(pane);
 				loc.pane.dataset.pluginName = config.pluginName;
 				loc.paneTitle.innerText = config.pluginName;
 				const message = document.createElement('DIV');
@@ -265,18 +275,18 @@ NgChm.createNS('NgChm.RecPanes');
 				loc.pane.appendChild (message);
 			}
 		} else if (config.type === 'linkout') {
-			let loc = NgChm.Pane.findPaneLocation(pane);
-			NgChm.LNK.switchPaneToLinkouts(loc);
+			let loc = PANE.findPaneLocation(pane);
+			LNK.switchPaneToLinkouts(loc);
 			let linkoutData = getPaneInfoFromMapConfig(paneid);
 			if (linkoutData != null) {
-				NgChm.LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
+				LNK.openUrl(linkoutData.url, linkoutData.paneTitle);
 			}
 		} else {
 			console.error ("Unrecognized pane type - " + config.type);
 		}
-		if (NgChm.Pane.isCollapsedPane (paneLoc)) {
+		if (PANE.isCollapsedPane (paneLoc)) {
 		    // Ensures that any added/modified pane components are collapsed properly.
-		    NgChm.Pane.collapsePane (paneLoc);
+		    PANE.collapsePane (paneLoc);
 		}
 	}
 
@@ -293,7 +303,7 @@ NgChm.createNS('NgChm.RecPanes');
 	 * information from the saved panel configuration.
 	 */
 	function setUsedVersionNumbers() {
-	    usedVersionNumbers = Object.entries(NgChm.RecPanes.mapConfigPanelConfiguration)
+	    usedVersionNumbers = Object.entries(RECPANES.mapConfigPanelConfiguration)
 		.filter(([k,v]) => v && v.versionNumber && (v.versionNumber != ''))
 		.map(([k,v]) => +v.versionNumber);
 	}
@@ -348,21 +358,21 @@ NgChm.createNS('NgChm.RecPanes');
 			    });
 			    pluginInstance.params = config;
 			    if (data) {
-				NgChm.LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
+				LNK.sendMessageToPlugin({nonce, op: 'plot', config, data});
 				let dataFromPlugin = paneInfo.dataFromPlugin;
-				if (dataFromPlugin) NgChm.LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
-				NgChm.Pane.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'));
+				if (dataFromPlugin) LNK.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
+				PANE.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'));
 			    }
 			}
-			delete NgChm.RecPanes.mapConfigPanelConfiguration[paneId];
+			delete RECPANES.mapConfigPanelConfiguration[paneId];
 		} else {
 			return false;
 		}
 	}
 
 	function getSelectedLabels(axis) {
-		const allLabels = NgChm.heatMap.getAxisLabels(axis).labels;
-		const searchItems = NgChm.SRCH.getAxisSearchResults(axis); // axis == 'Row' or 'Column'
+		const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
+		const searchItems = SRCH.getAxisSearchResults(axis); // axis == 'Row' or 'Column'
 		let selectedLabels = [];
 		searchItems.forEach((si, idx) => {
 			let pointId = allLabels[si - 1];
@@ -382,7 +392,7 @@ NgChm.createNS('NgChm.RecPanes');
 
 	function getPaneInfoFromMapConfig(paneId) {
 		try {
-			let paneInfo = NgChm.RecPanes.mapConfigPanelConfiguration[paneId];
+			let paneInfo = RECPANES.mapConfigPanelConfiguration[paneId];
 			if (!paneInfo) {
 			    console.warn ('Panel ' + paneId + ' has nosaved configuration');
 			    paneInfo = {};
@@ -401,21 +411,21 @@ NgChm.createNS('NgChm.RecPanes');
 	 * Set the 'flick' control and data layer
 	*/
 	function setFlickState() {
-		if (!NgChm.RecPanes.mapConfigPanelConfiguration.hasOwnProperty('flickInfo')) {
+		if (!RECPANES.mapConfigPanelConfiguration.hasOwnProperty('flickInfo')) {
 			return;
 		}
-		if (Object.keys(NgChm.heatMap.getDataLayers()).length == 1) {
+		if (Object.keys(MMGR.getHeatMap().getDataLayers()).length == 1) {
 			return;
 		}
 		try {
-			document.getElementById('flick1').value = NgChm.RecPanes.mapConfigPanelConfiguration.flickInfo.flick1;
-			document.getElementById('flick2').value = NgChm.RecPanes.mapConfigPanelConfiguration.flickInfo.flick2;
-			if (NgChm.RecPanes.mapConfigPanelConfiguration.flickInfo['flick_btn_state'] === 'flickDown') {
+			document.getElementById('flick1').value = RECPANES.mapConfigPanelConfiguration.flickInfo.flick1;
+			document.getElementById('flick2').value = RECPANES.mapConfigPanelConfiguration.flickInfo.flick2;
+			if (RECPANES.mapConfigPanelConfiguration.flickInfo['flick_btn_state'] === 'flickDown') {
 				document.getElementById('flick_btn').dataset.state = 'flickUp'; // <-- set to opposite so flickChange will set to desired
-				NgChm.DEV.flickChange();
+				DEV.flickChange();
 			} else {
 				document.getElementById('flick_btn').dataset.state = 'flickDown'; // <-- set to opposite so flickChange will set to desired
-				NgChm.DEV.flickChange();
+				DEV.flickChange();
 			}
 		} catch(err) {
 			console.error(err)

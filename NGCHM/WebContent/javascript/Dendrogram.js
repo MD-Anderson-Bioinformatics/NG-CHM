@@ -1,5 +1,20 @@
-// Define Namespace for NgChm Dendrogram
-NgChm.createNS('NgChm.DDR');
+(function() {
+    'use strict';
+    NgChm.markFile();
+
+    // Define Namespace for NgChm Dendrogram
+    const DDR = NgChm.createNS('NgChm.DDR');
+
+    const DMM = NgChm.importNS('NgChm.DMM');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const SEL = NgChm.importNS('NgChm.SEL');
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const DEV = NgChm.importNS('NgChm.DEV');
+    const DET = NgChm.importNS('NgChm.DET');
+    const SRCH = NgChm.importNS('NgChm.SRCH');
+    const PANE = NgChm.importNS('NgChm.Pane');
+    const UTIL = NgChm.importNS('NgChm.UTIL');
+    const LNK = NgChm.importNS('NgChm.LNK');
 
 // About Dendrogram Coordinates.
 //
@@ -23,22 +38,23 @@ NgChm.createNS('NgChm.DDR');
 // and then to application level coordinates.
 
 // Size limits (in 3N space):
-NgChm.DDR.maxDendroHeight = 3000;
-NgChm.DDR.minDendroHeight = 500;
-NgChm.DDR.minDendroWidth = 500;
+DDR.maxDendroHeight = 3000;
+DDR.minDendroHeight = 500;
+DDR.minDendroWidth = 500;
 
-NgChm.DDR.clearDendroSelection = function() {
-	if (NgChm.DMM.primaryMap && NgChm.DMM.primaryMap.selectedStart != 0) {
-		NgChm.DMM.primaryMap.selectedStart = 0;
-		NgChm.DMM.primaryMap.selectedStop = 0;
-		NgChm.SUM.rowDendro.clearRibbonMode();
-		NgChm.SUM.colDendro.clearRibbonMode();
-		if (!NgChm.SEL.isSub) {
-			if (NgChm.heatMap.showRowDendrogram("summary")) {
-				NgChm.SUM.rowDendro.draw();
+DDR.clearDendroSelection = function() {
+	if (DMM.primaryMap && DMM.primaryMap.selectedStart != 0) {
+		DMM.primaryMap.selectedStart = 0;
+		DMM.primaryMap.selectedStop = 0;
+		SUM.rowDendro.clearRibbonMode();
+		SUM.colDendro.clearRibbonMode();
+		if (!SEL.isSub) {
+			const heatMap = MMGR.getHeatMap();
+			if (heatMap.showRowDendrogram("summary")) {
+				SUM.rowDendro.draw();
 			}
-			if (NgChm.heatMap.showColDendrogram("summary")) {
-				NgChm.SUM.colDendro.draw();
+			if (heatMap.showColDendrogram("summary")) {
+				SUM.colDendro.draw();
 			}
 		}
 	}
@@ -67,7 +83,7 @@ NgChm.DDR.clearDendroSelection = function() {
 // All dendrograms are displayed on a canvas.  The parameter canvasId is the id of
 // the dendrogram's canvas element.
 //
-NgChm.DDR.Dendrogram = function(canvas) {
+DDR.Dendrogram = function(canvas) {
 	// The bars in this dendrogram:
 	this.bars = [];
 	// The canvas on which the dendrogram will be drawn:
@@ -76,18 +92,18 @@ NgChm.DDR.Dendrogram = function(canvas) {
 
 	// Returns the width of the dendrogram canvas.  Add a bit of padding below the leaves.
 	this.getDivWidth = function() {
-		return this.dendroCanvas.clientWidth + (this.axis === 'Row') * NgChm.SUM.paddingHeight;
+		return this.dendroCanvas.clientWidth + (this.axis === 'Row') * SUM.paddingHeight;
 	};
 
 	// Returns the height of the dendrogram canvas.  Add a bit of padding below the leaves.
 	this.getDivHeight = function() {
-		return this.dendroCanvas.clientHeight + (this.axis === 'Column') * NgChm.SUM.paddingHeight;
+		return this.dendroCanvas.clientHeight + (this.axis === 'Column') * SUM.paddingHeight;
 	};
 
 	// Return the proportion of the heat map element to use for the dendrogram.
 	// 100 corresponds to 20% (determined by minDendroHeight).
 	this.getConfigSize = function() {
-		return this.dendroConfig.height / NgChm.DDR.minDendroHeight;
+		return this.dendroConfig.height / DDR.minDendroHeight;
 	};
 
 	// Determine if (y,x) is close to one of our bars.
@@ -143,7 +159,7 @@ NgChm.DDR.Dendrogram = function(canvas) {
  * height match the orientation of the canvas.
  *
  */
-NgChm.DDR.ColumnDendrogram = function() {
+DDR.ColumnDendrogram = function() {
 	const debug = false;
 
 	this.axis = 'Column';
@@ -275,7 +291,7 @@ NgChm.DDR.ColumnDendrogram = function() {
 // orientation.  So, the 'width' of the dendrogram is the height
 // of the canvas, and their height is the width of the canvas.
 //
-NgChm.DDR.RowDendrogram = function() {
+DDR.RowDendrogram = function() {
 	const debug = false;
 	this.axis = 'Row';
 	
@@ -396,7 +412,7 @@ NgChm.DDR.RowDendrogram = function() {
  * - the chosen bar for ribbon mode selection
  *
  */
-NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
+DDR.SummaryDendrogram = function(config, data, numLeaves) {
 
 	const debug = false;
 
@@ -424,8 +440,8 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 	const pointsPerLeaf = (function() {
 		let PPL = 3;
 		// Increase PPL if necessary so that matrixWidth is wide enough.
-		if (PPL*numLeaves < NgChm.DDR.minDendroWidth) {
-			PPL = Math.round(NgChm.DDR.minDendroWidth/numLeaves);
+		if (PPL*numLeaves < DDR.minDendroWidth) {
+			PPL = Math.round(DDR.minDendroWidth/numLeaves);
 		} 
 		return PPL;
 	})();
@@ -437,7 +453,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 	// Set the size of virtual 3N space in which the bars exist.  Normally there are PPL units of width
 	// for each leaf and one unit of height for each bar.
 	const normDendroWidth = pointsPerLeaf*numLeaves;
-	const normDendroHeight = Math.min(Math.max(NgChm.DDR.minDendroHeight,numBars),NgChm.DDR.maxDendroHeight);
+	const normDendroHeight = Math.min(Math.max(DDR.minDendroHeight,numBars),DDR.maxDendroHeight);
 
 	// Returns the object's position in 3N space.
 	// If objid is negative, return the position of the leaf 0-objid.
@@ -528,9 +544,9 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 	// Clear ribbon mode for this dendrogram.
 	this.clearRibbonMode = function() {
 		this.ribbonModeBar = -1;
-		if (NgChm.DMM.primaryMap) {
-		    NgChm.DMM.primaryMap.selectedStart = 0;
-		    NgChm.DMM.primaryMap.selectedStop = 0;
+		if (DMM.primaryMap) {
+		    DMM.primaryMap.selectedStart = 0;
+		    DMM.primaryMap.selectedStop = 0;
 		}
 	};
 
@@ -542,39 +558,39 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		if (sameBarClicked) {
 			this.clearRibbonMode();
 			this.draw();
-			NgChm.DEV.callDetailDrawFunction('NORMAL');
+			DEV.callDetailDrawFunction('NORMAL');
 		} else {
 			// Clear any previous ribbon mode on either axis.
-			NgChm.SUM.rowDendro.clearRibbonMode();
-			NgChm.SUM.colDendro.clearRibbonMode();
+			SUM.rowDendro.clearRibbonMode();
+			SUM.colDendro.clearRibbonMode();
 
 			this.clearSelectionMarks();
-			NgChm.SRCH.clearSearchItems(this.axis);
+			SRCH.clearSearchItems(this.axis);
 
 			this.ribbonModeBar = barIndex;
 			// Redraw both summary dendrograms:
 			// - to highlight the newly selected bar on this axis
 			// - to clear any highlighted bar on the other axis.
-			NgChm.SUM.rowDendro.draw();
-			NgChm.SUM.colDendro.draw();
+			SUM.rowDendro.draw();
+			SUM.colDendro.draw();
 
 			// Set start and stop coordinates
-			if (NgChm.DMM.primaryMap) {
+			if (DMM.primaryMap) {
 			    const rmBar = this.bars[barIndex];
-			    NgChm.DMM.primaryMap.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
-			    NgChm.DMM.primaryMap.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
-			    if (debug) console.log ({ rmBar, start: NgChm.DMM.primaryMap.selectedStart, stop: NgChm.DMM.primaryMap.selectedStop });
+			    DMM.primaryMap.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
+			    DMM.primaryMap.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
+			    if (debug) console.log ({ rmBar, start: DMM.primaryMap.selectedStart, stop: DMM.primaryMap.selectedStop });
 			}
-			NgChm.SRCH.showSearchResults();	
+			SRCH.showSearchResults();
 
-			NgChm.DEV.callDetailDrawFunction(this.axis === 'Row' ? 'RIBBONV' : 'RIBBONH');
+			DEV.callDetailDrawFunction(this.axis === 'Row' ? 'RIBBONV' : 'RIBBONH');
 		}
 	};
 	this.clearSelectionMarks = function () {
-		NgChm.SUM.clearAxisSelectionMarks(this.axis);
+		SUM.clearAxisSelectionMarks(this.axis);
 	};
 	this.drawSelectionMarks = function () {
-		NgChm.SUM.drawAxisSelectionMarks(this.axis);
+		SUM.drawAxisSelectionMarks(this.axis);
 	};
 
 	// Listen for click events on our canvas.
@@ -628,9 +644,9 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		var addBar = true;
 		// is it a standard click?
 		if (!shift && !ctrl){
-			NgChm.SRCH.clearSearchItems(this.axis);
-			NgChm.SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
-			NgChm.SRCH.showSearchResults();	
+			SRCH.clearSearchItems(this.axis);
+			SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
+			SRCH.showSearchResults();
 			
 			this.selectedBars = [selectedBar];
 			return;
@@ -644,8 +660,8 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			if (bar.left >= left && bar.right <= right && bar.height-1 <= height){ // if the new selected bar is in the bounds of an older one... (-1 added to height since highlighted bars can cause issues without it)
 				deleteBar.push(i);
 				// remove all the search items that were selected by that old bar
-				NgChm.SRCH.clearAxisSearchItems(this.axis, selectLeft, selectRight);
-				NgChm.SUM.redrawSelectionMarks();
+				SRCH.clearAxisSearchItems(this.axis, selectLeft, selectRight);
+				SUM.redrawSelectionMarks();
 				if (bar.right == selectedBar.right && bar.height == selectedBar.height){ // a bar that's already selected has been selected so we remove it
 					addBar = false;
 				}
@@ -660,7 +676,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 		var selectRight = Math.round((right+pointsPerLeaf/2)/pointsPerLeaf);
 		if (addBar){
 			if (shift){
-				NgChm.SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
+				SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
 				var numBars = this.selectedBars.length;
 				var startIndex = 0, endIndex = -1;
 				if (this.selectedBars[numBars-1]){
@@ -671,20 +687,20 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
 						startIndex = selectRight;
 						endIndex = Math.round((this.selectedBars[numBars-1].left+pointsPerLeaf/2)/pointsPerLeaf);
 					}
-				} else if (NgChm.DET.labelLastClicked[this.axis]){
-					if (NgChm.DET.labelLastClicked[this.axis] < left){
-						startIndex = NgChm.DET.labelLastClicked[this.axis];
+				} else if (DET.labelLastClicked[this.axis]){
+					if (DET.labelLastClicked[this.axis] < left){
+						startIndex = DET.labelLastClicked[this.axis];
 						endIndex = selectLeft;
-					} else if (right < NgChm.DET.labelLastClicked[this.axis]){
+					} else if (right < DET.labelLastClicked[this.axis]){
 						startIndex = selectRight;
-						endIndex = NgChm.DET.labelLastClicked[this.axis];
+						endIndex = DET.labelLastClicked[this.axis];
 					}
 				}
 				
-				NgChm.SRCH.setAxisSearchResults(this.axis, startIndex, endIndex-1);
+				SRCH.setAxisSearchResults(this.axis, startIndex, endIndex-1);
 				this.selectedBars.push(selectedBar);
 			} else if (ctrl) {
-				NgChm.SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
+				SRCH.setAxisSearchResults(this.axis, selectLeft, selectRight);
 				this.selectedBars.push(selectedBar);
 			}
 		}
@@ -745,7 +761,7 @@ NgChm.DDR.SummaryDendrogram = function(config, data, numLeaves) {
  *   least partially visible in the view window).
  */
 
-NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
+DDR.DetailDendrogram = function(summaryDendrogram) {
 
 	this.summaryDendrogram = summaryDendrogram;
 	this.dendroConfig = summaryDendrogram.dendroConfig;
@@ -759,7 +775,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 		if (this.dendroConfig.show !== "ALL" || !this.dendroCanvas) {
 		    return false;
 		}
-		const loc = NgChm.Pane.findPaneLocation (this.dendroCanvas);
+		const loc = PANE.findPaneLocation (this.dendroCanvas);
 		return !loc.pane.classList.contains('collapsed');
 	};
 
@@ -922,7 +938,7 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
         };
 
 	// event listeners
-	this.dendroCanvas.addEventListener("wheel", e => this.scroll(e), NgChm.UTIL.passiveCompat({ passive: false }));
+	this.dendroCanvas.addEventListener("wheel", e => this.scroll(e), UTIL.passiveCompat({ passive: false }));
 	this.dendroCanvas.onclick = e => this.click(e);
 	this.dendroCanvas.ontouchmove = e => this.scroll(e);
 	this.dendroCanvas.ontouchend = e => this.touchEnd(e);
@@ -977,16 +993,16 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 		const h3n = canvasPosn.h * this.summaryDendrogram.dendroViewHeight / heightScale;
 		// console.log ({ w3n, h3n });
 
-		NgChm.DET.mouseDown = true;
+		DET.mouseDown = true;
 		this.checkDendroHit (h3n, w3n, barIdx => {
 			const sumIdx = this.bars[barIdx].idx;  // Get index of bar in summary dendrogram.
-			NgChm.SUM.clearSelectionMarks();
+			SUM.clearSelectionMarks();
 			this.summaryDendrogram.addSelectedBar(sumIdx, e.shiftKey,e.metaKey||e.ctrlKey);
-			NgChm.SEL.updateSelection(NgChm.DMM.getMapItemFromDendro(this));
-			NgChm.SUM.drawSelectionMarks();
-			NgChm.SUM.drawTopItems();
+			SEL.updateSelection(DMM.getMapItemFromDendro(this));
+			SUM.drawSelectionMarks();
+			SUM.drawTopItems();
 			let clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
-			NgChm.LNK.postSelectionToLinkouts(this.axis, clickType, 0, null);
+			LNK.postSelectionToLinkouts(this.axis, clickType, 0, null);
 			this.draw();
 		});
 	};
@@ -1007,28 +1023,30 @@ NgChm.DDR.DetailDendrogram = function(summaryDendrogram) {
 /******************************
  *  SUMMARY COLUMN DENDROGRAM *
  ******************************/
-NgChm.DDR.SummaryColumnDendrogram = function() {
+DDR.SummaryColumnDendrogram = function() {
 
-	NgChm.DDR.Dendrogram.call (this, document.getElementById('column_dendro_canvas'));
-        NgChm.DDR.ColumnDendrogram.call (this);
-	NgChm.DDR.SummaryDendrogram.call (this,
-		NgChm.heatMap.getColDendroConfig(),
-		NgChm.heatMap.getColDendroData(),
-		NgChm.heatMap.getNumColumns('d')
+	const heatMap = MMGR.getHeatMap();
+	DDR.Dendrogram.call (this, document.getElementById('column_dendro_canvas'));
+        DDR.ColumnDendrogram.call (this);
+	DDR.SummaryDendrogram.call (this,
+		heatMap.getColDendroConfig(),
+		heatMap.getColDendroData(),
+		heatMap.getNumColumns('d')
 	);
 };
 
 /******************************
  *  SUMMARY ROW DENDROGRAM *
  ******************************/
-NgChm.DDR.SummaryRowDendrogram = function() {
+DDR.SummaryRowDendrogram = function() {
 
-	NgChm.DDR.Dendrogram.call (this, document.getElementById('row_dendro_canvas'));
-        NgChm.DDR.RowDendrogram.call (this);
-	NgChm.DDR.SummaryDendrogram.call (this,
-		NgChm.heatMap.getRowDendroConfig(),
-		NgChm.heatMap.getRowDendroData(),
-		NgChm.heatMap.getNumRows('d')
+	const heatMap = MMGR.getHeatMap();
+	DDR.Dendrogram.call (this, document.getElementById('row_dendro_canvas'));
+        DDR.RowDendrogram.call (this);
+	DDR.SummaryDendrogram.call (this,
+		heatMap.getRowDendroConfig(),
+		heatMap.getRowDendroData(),
+		heatMap.getNumRows('d')
 	);
 };
 
@@ -1042,43 +1060,45 @@ NgChm.DDR.SummaryRowDendrogram = function() {
 /**************************
  *  DETAIL COL DENDROGRAM *
  **************************/
-NgChm.DDR.DetailColumnDendrogram = function(dendroCanvas) {
+DDR.DetailColumnDendrogram = function(dendroCanvas) {
 
 	// Get region of dendrogram currently visible.
 	this.getWindow = function() {
-		const mapItem = NgChm.DMM.getMapItemFromDendro(this);
+		const mapItem = DMM.getMapItemFromDendro(this);
 		if (typeof mapItem === 'undefined') {
 			return {};
 		} else if (mapItem.mode === 'FULL_MAP') {
-			return { startIdx: 1, numElements: NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL) };
+			return { startIdx: 1, numElements: MMGR.getHeatMap().getNumColumns(MMGR.DETAIL_LEVEL) };
 		} else {
 			return { startIdx: mapItem.currentCol, numElements: mapItem.dataPerRow };
 		}
 	};
 
-	NgChm.DDR.Dendrogram.call (this, dendroCanvas);
-	NgChm.DDR.ColumnDendrogram.call (this);
-	NgChm.DDR.DetailDendrogram.call (this, NgChm.SUM.colDendro);
+	DDR.Dendrogram.call (this, dendroCanvas);
+	DDR.ColumnDendrogram.call (this);
+	DDR.DetailDendrogram.call (this, SUM.colDendro);
 };
 
 /**************************
  *  DETAIL ROW DENDROGRAM *
  **************************/
-NgChm.DDR.DetailRowDendrogram = function(dendroCanvas) {
+DDR.DetailRowDendrogram = function(dendroCanvas) {
 
 	// Get region of dendrogram currently visible.
 	this.getWindow = function() {
-		const mapItem = NgChm.DMM.getMapItemFromDendro(this);
+		const mapItem = DMM.getMapItemFromDendro(this);
 		if (typeof mapItem === 'undefined') {
 			return {};
 		} else if (mapItem.mode === 'FULL_MAP') {
-			return { startIdx: 1, numElements: NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) };
+			return { startIdx: 1, numElements: MMGR.getHeatMap().getNumRows(MMGR.DETAIL_LEVEL) };
 		} else {
 			return { startIdx: mapItem.currentRow, numElements: mapItem.dataPerCol };
 		}
 	};
 
-	NgChm.DDR.Dendrogram.call (this, dendroCanvas);
-	NgChm.DDR.RowDendrogram.call (this);
-	NgChm.DDR.DetailDendrogram.call (this, NgChm.SUM.rowDendro);
+	DDR.Dendrogram.call (this, dendroCanvas);
+	DDR.RowDendrogram.call (this);
+	DDR.DetailDendrogram.call (this, SUM.rowDendro);
 };
+
+})();
