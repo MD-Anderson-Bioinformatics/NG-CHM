@@ -170,6 +170,15 @@ UTIL.newElement = function newElement (spec, attrs, content, fn) {
 	return el;
 };
 
+// Create a DOM fragment from an array of DOM nodes.
+UTIL.newFragment = function newFragement (nodes) {
+    const frag = document.createDocumentFragment();
+    nodes.forEach (node => {
+	frag.appendChild (node);
+    });
+    return frag;
+};
+
 // Create a new button element.
 UTIL.newButton = function newButton (buttonName, properties, handlers) {
 	const button = UTIL.newElement('SPAN.button', { }, [ UTIL.newTxt(buttonName) ]);

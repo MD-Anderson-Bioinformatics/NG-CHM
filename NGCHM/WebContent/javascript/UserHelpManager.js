@@ -620,7 +620,11 @@ UHM.setTableRow = function(tableObj, tdArray, colSpan, align) {
 		if (i === 0) {
 			td.style.fontWeight="bold";
 		}
-		td.innerHTML = tdArray[i];
+		if (['string', 'number'].includes(typeof tdArray[i]) || Array.isArray(tdArray[i])) {
+		    td.innerHTML = tdArray[i];
+		} else {
+		    td.appendChild (tdArray[i]);
+		}
 		if (typeof align != 'undefined') {
 			td.align = align;
 		}
