@@ -82,7 +82,7 @@ PDF.openPdfPrefs = function(e) {
 		if (fSize > 0) {
 			document.getElementById("pdfInputFont").value = fSize;
 		} else {
-			document.getElementById("pdfInputFont").value = DET.minLabelSize;
+			document.getElementById("pdfInputFont").value = UTIL.minLabelSize;
 		}
 	}
     UTIL.redrawCanvases();

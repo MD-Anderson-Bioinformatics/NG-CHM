@@ -19,7 +19,6 @@
 
 DET.labelLastClicked = {};
 DET.mouseDown = false;
-DET.minLabelSize = 5;
 DET.paddingHeight = 2;          // space between classification bars
 DET.SIZE_NORMAL_MODE = 506;
 DET.dataViewBorder = 2;

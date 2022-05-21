@@ -1028,13 +1028,13 @@ UHM.displayStartupWarnings = function() {
 		warningText = "<br><b>Unsupported Browser Warning:</b> Your current browser is Internet Explorer. The NG-CHM application is optimized for use with the Google Chrome and Mozilla Firefox browsers.  While you may view maps in IE, the performance of the application cannot be guaranteed.<br><br>You may wish to switch to one of these supported browsers.";
 		msgFound = true;
 	} else {
-		if (DET.minLabelSize > 11) {
+		if (UTIL.minLabelSize > 11) {
 			if (msgFound) { warningText = warningText+"<br>" }
 			warningText = warningText+"<br><b>Minimum Font Warning:</b> Current browser settings include a minimum font size setting that is too large. This will block the display of row, column, and covariate bar labels in the NG-CHM application. You may wish to turn off or adjust this setting in your browser."
 			msgFound = true;
 			warningsFound++;
 		} 
-		if (DET.minLabelSize > 5) {
+		if (UTIL.minLabelSize > 5) {
 			if (msgFound) { warningText = warningText+"<br>" }
 			warningText = warningText+"<br><b>Minimum Font Warning:</b> Current browser settings include a minimum font size setting. This may interfere with the display of row, column, and covariate bar labels in the NG-CHM application. You may wish to turn off or adjust this setting in your browser."
 			msgFound = true;

@@ -1938,34 +1938,6 @@ SUM.drawTopItems = function(){
 	}
 }
 
-SUM.setBrowserMinFontSize = function () {
-	  var minSettingFound = 0;
-	  var el = document.createElement('div');
-	  document.body.appendChild(el);
-	  el.innerHTML = "<div><p>a b c d e f g h i j k l m n o p q r s t u v w x y z</p></div>";
-	  el.style.fontSize = '1px';
-	  el.style.width = '64px';
-	  var minimumHeight = el.offsetHeight;
-	  var least = 0;
-	  var most = 64;
-	  var middle; 
-	  for (var i = 0; i < 32; ++i) {
-	    middle = (least + most)/2;
-	    el.style.fontSize = middle + 'px';
-	    if (el.offsetHeight === minimumHeight) {
-	      least = middle;
-	    } else {
-	      most = middle;
-	    }
-	  }
-	  if (middle > 5) {
-		  minSettingFound = middle;
-		  DET.minLabelSize = Math.floor(middle) - 1;
-	  }
-	  document.body.removeChild(el);
-	  return minSettingFound;
-}
-
 SUM.onMouseUpSelRowCanvas = function(evt) {
 	evt.preventDefault();
 	evt.stopPropagation();	

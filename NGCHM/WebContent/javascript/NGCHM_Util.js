@@ -358,11 +358,12 @@ UTIL.getBrowserType = function () {
 }
 
 /**********************************************************************************
- * FUNCTION - setBrowserMinFontSize: The purpose of this function is to determine if the 
+ * FUNCTION - setMinFontSize: The purpose of this function is to determine if the
  * user has set a minimum font size on their browser and set the detail minimum label
  * size accordingly.
  **********************************************************************************/
-UTIL.setBrowserMinFontSize = function () {
+    UTIL.minLabelSize = 5;
+    function setMinFontSize () {
 	  const minMinLabelSize = 5;
 	  var minSettingFound = 0;
 	  var el = document.createElement('div');
@@ -386,11 +387,11 @@ UTIL.setBrowserMinFontSize = function () {
 	  }
 	  if (middle > minMinLabelSize) {
 		  minSettingFound = middle;
-		  DET.minLabelSize = Math.floor(middle) - 1;
+		  UTIL.minLabelSize = Math.floor(middle) - 1;
 	  }
 	  document.body.removeChild(el);
 	  return minSettingFound;
-}
+    }
 
 /**********************************************************************************
  * FUNCTION - iESupport: The purpose of this function is to allow for the support
@@ -423,7 +424,7 @@ UTIL.startupChecks = function () {
 	if (UTIL.getBrowserType() === 'IE') {
     	warningsRequired = true;
 	}
-    if (DET.minLabelSize > 5) {
+    if (UTIL.minLabelSize > 5) {
     	warningsRequired = true;
     }
     
@@ -600,7 +601,7 @@ UTIL.containerElement = document.getElementById('ngChmContainer');
 UTIL.onLoadCHM = function (sizeBuilderView) {
 	
 	UTIL.isBuilderView = sizeBuilderView;
-	UTIL.setBrowserMinFontSize();
+	setMinFontSize();
 	//Run startup checks that enable startup warnings button.
 	UTIL.startupChecks();
 	UTIL.setDragPanels();
