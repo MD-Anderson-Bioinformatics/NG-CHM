@@ -283,7 +283,6 @@ NgChm.createNS('NgChm.SRCH');
 	}
 	const currentClassBar = classBarsConfig[covVal];
 	NgChm.UTIL.createCheckBoxDropDown('srchCovSelectBox','srchCovCheckBoxes',"Select Category(s)", currentClassBar.color_map.thresholds,"300px");
-	checkBoxes.innerHTML = checkBoxes.innerHTML + "<label for='Missing'><input type='checkBox' class='srchCovCheckBox' value='missing'>Missing</input></label>";
 	loadSavedCovarState(covType,covVal);
     }
 

@@ -1,29 +1,46 @@
-/**
- * General purpose javascript helper funcitons
- */
+(function() {
+    'use strict';
+    NgChm.markFile();
 
-//Define Namespace for NgChm UTIL
-NgChm.createNS('NgChm.UTIL');
+    /**
+     * General purpose javascript helper funcitons
+     */
+
+    //Define Namespace for NgChm UTIL
+    const UTIL = NgChm.createNS('NgChm.UTIL');
+
+    const PANE = NgChm.importNS('NgChm.Pane');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const DET = NgChm.importNS('NgChm.DET');
+    const SRCH = NgChm.importNS('NgChm.SRCH');
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const DMM = NgChm.importNS('NgChm.DMM');
+    const LNK = NgChm.importNS('NgChm.LNK');
+    const RECPANES = NgChm.importNS('NgChm.RecPanes');
+    const DEV = NgChm.importNS('NgChm.DEV');
+    const UHM = NgChm.importNS('NgChm.UHM');
+    const SEL = NgChm.importNS('NgChm.SEL');
+    const CUST = NgChm.importNS('NgChm.CUST');
 
 //Get a value for a parm passed in the URL.
-NgChm.UTIL.getURLParameter = function(name) {
+UTIL.getURLParameter = function(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search)||[,""])[1].replace(/\+/g, '%20'))||'';
 }
 
-NgChm.UTIL.mapId = NgChm.UTIL.getURLParameter('map');
-NgChm.UTIL.mapNameRef = NgChm.UTIL.getURLParameter('name');
+UTIL.mapId = UTIL.getURLParameter('map');
+UTIL.mapNameRef = UTIL.getURLParameter('name');
 
-NgChm.UTIL.capitalize = function capitalize (str) {
+UTIL.capitalize = function capitalize (str) {
 	return str.substr(0,1).toUpperCase() + str.substr(1);
 };
 
-// NgChm.UTIL.passiveCompat is a function that accepts an options
+// UTIL.passiveCompat is a function that accepts an options
 // object for addEventListener and depending on the browser's
 // support for the passive flag returns either:
 // the unmodified object (if the browser supports passive), or
 // the truthiness of object.capture for backwards compatibility.
 (function() {
-	NgChm.UTIL.passiveCompat = supportsPassive() ? f => f : f => !!f.capture;
+	UTIL.passiveCompat = supportsPassive() ? f => f : f => !!f.capture;
 	// Determine if the browser supports the passive flag.
 	function supportsPassive() {
 
@@ -43,9 +60,9 @@ NgChm.UTIL.capitalize = function capitalize (str) {
 })();
 
 // Load the dynamic script file.
-NgChm.UTIL.addScript = function(src, callback) {
+UTIL.addScript = function(src, callback) {
 	const head = document.getElementsByTagName('head')[0];
-	const script = NgChm.UTIL.newEl('script', { type: 'text/javascript', src });
+	const script = UTIL.newEl('script', { type: 'text/javascript', src });
 	head.appendChild(script);
 	// Most browsers:   NOTE: The next 2 lines of code are replaced when building ngchmApp.html and ngchmWidget-min.js (the "file mode" and "widget" versions of the application)
 	script.onload = callback;
@@ -53,12 +70,12 @@ NgChm.UTIL.addScript = function(src, callback) {
 	script.onreadystatechange = function() { if (this.readyState == 'complete') { callback();}};  //Leave this as one line for filemode version app builder
 };
 
-NgChm.UTIL.addScripts = function(srcs, callback) {
-	NgChm.UTIL.addScript(srcs[0], () => {
+UTIL.addScripts = function(srcs, callback) {
+	UTIL.addScript(srcs[0], () => {
 		if (srcs.length === 1) {
 			callback();
 		} else {
-			NgChm.UTIL.addScripts (srcs.slice(1), callback);
+			UTIL.addScripts (srcs.slice(1), callback);
 		}
 	});
 };
@@ -66,7 +83,7 @@ NgChm.UTIL.addScripts = function(srcs, callback) {
 // Set the position and size of the DOM element el to the size in vp.
 // If el is a canvas and styleOnly is not truthy, set the canvas
 // width and height properties to the same width and height as el.
-NgChm.UTIL.setElementPositionSize = function (el, vp, styleOnly) {
+UTIL.setElementPositionSize = function (el, vp, styleOnly) {
 	if (!el || !el.style) {
 	    console.error ("setElemetPositionSize on non-element", el);
 	    let foo = 1;
@@ -82,7 +99,7 @@ NgChm.UTIL.setElementPositionSize = function (el, vp, styleOnly) {
 };
 
 // Create a new text node.
-NgChm.UTIL.newTxt = function newTxt(txt) {
+UTIL.newTxt = function newTxt(txt) {
 	return document.createTextNode(txt);
 };
 
@@ -101,7 +118,7 @@ NgChm.UTIL.newTxt = function newTxt(txt) {
 // Fn, if defined, is a function that is called with the new node as a
 // parameter after it's constructed but before it's returned.
 //
-NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
+UTIL.newElement = function newElement (spec, attrs, content, fn) {
 	const classes = spec.split('.');
 	const names = classes.shift().split('#');
 	content = content || [];
@@ -154,17 +171,17 @@ NgChm.UTIL.newElement = function newElement (spec, attrs, content, fn) {
 };
 
 // Create a new button element.
-NgChm.UTIL.newButton = function newButton (buttonName, properties, handlers) {
-	const button = NgChm.UTIL.newElement('SPAN.button', { }, [ NgChm.UTIL.newTxt(buttonName) ]);
+UTIL.newButton = function newButton (buttonName, properties, handlers) {
+	const button = UTIL.newElement('SPAN.button', { }, [ UTIL.newTxt(buttonName) ]);
 	for (const h of Object.entries(handlers)) {
 		button.addEventListener (h[0], h[1]);
 	}
 	return button;
 };
 
-NgChm.UTIL.chmResize = function() {
-	if (NgChm.Pane && NgChm.Pane.resizeNGCHM) {
-		NgChm.Pane.resizeNGCHM ();
+UTIL.chmResize = function() {
+	if (PANE.resizeNGCHM) {
+		PANE.resizeNGCHM ();
 	}
 };
 
@@ -173,15 +190,15 @@ NgChm.UTIL.chmResize = function() {
  * wegGl canvases in the viewer. It is called to deal with blurring issues occuring
  * on the canvases when modal panels are drawn over the viewer canvases.
  **********************************************************************************/
-NgChm.UTIL.redrawCanvases = function () {
-    if ((NgChm.UTIL.getBrowserType() !== "Firefox") && (NgChm.heatMap !== null)) {
-        NgChm.SUM.drawHeatMap();
-        NgChm.DET.setDrawDetailsTimeout (NgChm.DET.redrawSelectionTimeout);
-        if (NgChm.SUM.rCCanvas && NgChm.SUM.rCCanvas.width > 0) {
-            NgChm.SUM.drawRowClassBars();
+UTIL.redrawCanvases = function () {
+    if ((UTIL.getBrowserType() !== "Firefox") && (MMGR.getHeatMap() !== null)) {
+        SUM.drawHeatMap();
+        DET.setDrawDetailsTimeout (DET.redrawSelectionTimeout);
+        if (SUM.rCCanvas && SUM.rCCanvas.width > 0) {
+            SUM.drawRowClassBars();
         }
-        if (NgChm.SUM.cCCanvas && NgChm.SUM.cCCanvas.height > 0) {
-            NgChm.SUM.drawColClassBars();
+        if (SUM.cCCanvas && SUM.cCCanvas.height > 0) {
+            SUM.drawColClassBars();
         }
     }
 }
@@ -190,7 +207,7 @@ NgChm.UTIL.redrawCanvases = function () {
  * FUNCTION - toTitleCase: The purpose of this function is to change the case of
  * the first letter of the first word in each sentence passed in.
  **********************************************************************************/
-NgChm.UTIL.toTitleCase = function(string) {
+UTIL.toTitleCase = function(string) {
     // \u00C0-\u00ff for a happy Latin-1
     return string.toLowerCase().replace(/_/g, ' ').replace(/\b([a-z\u00C0-\u00ff])/g, function (_, initial) {
         return initial.toUpperCase();
@@ -203,7 +220,7 @@ NgChm.UTIL.toTitleCase = function(string) {
  * FUNCTION - getStyle: The purpose of this function is to return the style 
  * property requested for a given screen object.
  **********************************************************************************/
-NgChm.UTIL.getStyle = function(x,styleProp) {
+UTIL.getStyle = function(x,styleProp) {
     if (x.currentStyle)
         var y = x.currentStyle[styleProp];
     else if (window.getComputedStyle)
@@ -215,8 +232,8 @@ NgChm.UTIL.getStyle = function(x,styleProp) {
  * FUNCTION - returnToHome: The purpose of this function is to open a "home" URL
  * in the same tab as the heatMap (when a link is present).
  **********************************************************************************/
-NgChm.UTIL.returnToHome = function() {
-	var collectionhomeurl = NgChm.UTIL.getURLParameter("collectionHome");
+UTIL.returnToHome = function() {
+	var collectionhomeurl = UTIL.getURLParameter("collectionHome");
 	if (collectionhomeurl !== "") {
 		window.open(collectionhomeurl,"_self");
 	}
@@ -226,7 +243,7 @@ NgChm.UTIL.returnToHome = function() {
  * FUNCTION - ReverseObject: The purpose of this function is to reverse the order
  * of key elements in an object.
  **********************************************************************************/
-NgChm.UTIL.reverseObject = function(Obj) {
+UTIL.reverseObject = function(Obj) {
     var TempArr = [];
     var NewObj = [];
     for (var Key in Obj){
@@ -238,33 +255,33 @@ NgChm.UTIL.reverseObject = function(Obj) {
     return NewObj;
 }
 
-NgChm.UTIL.actualAxisLabels = {};
-NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
-NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
-NgChm.UTIL.getActualLabels = function (axis) {
+UTIL.actualAxisLabels = {};
+UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
+UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
+UTIL.getActualLabels = function (axis) {
 	axis = axis.toUpperCase();
-	if (!NgChm.UTIL.actualAxisLabels.hasOwnProperty(axis)) {
-		const labels = NgChm.heatMap.getAxisLabels(axis)["labels"];
-		NgChm.UTIL.actualAxisLabels[axis] = labels.map(text => {
+	if (!UTIL.actualAxisLabels.hasOwnProperty(axis)) {
+		const labels = MMGR.getHeatMap().getAxisLabels(axis)["labels"];
+		UTIL.actualAxisLabels[axis] = labels.map(text => {
 			return text === undefined ? undefined : text.split("|")[0];
 		});
 	}
-	return NgChm.UTIL.actualAxisLabels[axis];
+	return UTIL.actualAxisLabels[axis];
 };
-NgChm.UTIL.getShownLabels = function (axis) {
+UTIL.getShownLabels = function (axis) {
 	axis = axis.toUpperCase();
-	const config = NgChm.heatMap.getAxisConfig(axis);
+	const config = MMGR.getHeatMap().getAxisConfig(axis);
 	// Recalculate shown labels if parameters affecting them have changed.
-	if (NgChm.UTIL.shownAxisLabelParams[axis].label_display_length !== config.label_display_length ||
-	    NgChm.UTIL.shownAxisLabelParams[axis].label_display_method !== config.label_display_method) {
-		NgChm.UTIL.shownAxisLabelParams[axis].label_display_length = config.label_display_length;
-		NgChm.UTIL.shownAxisLabelParams[axis].label_display_method = config.label_display_method;
-		const labels = NgChm.UTIL.getActualLabels(axis);
-		NgChm.UTIL.shownAxisLabels[axis] = labels.map(text => {
-			return text === undefined ? "" : NgChm.UTIL.getLabelText (text, axis);
+	if (UTIL.shownAxisLabelParams[axis].label_display_length !== config.label_display_length ||
+	    UTIL.shownAxisLabelParams[axis].label_display_method !== config.label_display_method) {
+		UTIL.shownAxisLabelParams[axis].label_display_length = config.label_display_length;
+		UTIL.shownAxisLabelParams[axis].label_display_method = config.label_display_method;
+		const labels = UTIL.getActualLabels(axis);
+		UTIL.shownAxisLabels[axis] = labels.map(text => {
+			return text === undefined ? "" : UTIL.getLabelText (text, axis);
 		});
 	}
-	return NgChm.UTIL.shownAxisLabels[axis];
+	return UTIL.shownAxisLabels[axis];
 };
 
 /**********************************************************************************
@@ -273,12 +290,13 @@ NgChm.UTIL.getShownLabels = function (axis) {
  * label is in excess, the first 9 and last 8 characters will be written out 
  * separated by ellipsis (...);
  **********************************************************************************/
-NgChm.UTIL.getLabelText = function(text,type,builder) { 
-	var size = parseInt(NgChm.heatMap.getColConfig().label_display_length);
-	var elPos = NgChm.heatMap.getColConfig().label_display_method;
+UTIL.getLabelText = function(text,type,builder) {
+    const heatMap = MMGR.getHeatMap();
+	var size = parseInt(heatMap.getColConfig().label_display_length);
+	var elPos = heatMap.getColConfig().label_display_method;
 	if (type.toUpperCase() === "ROW") {
-		size = parseInt(NgChm.heatMap.getRowConfig().label_display_length);
-		elPos = NgChm.heatMap.getRowConfig().label_display_method;
+		size = parseInt(heatMap.getRowConfig().label_display_length);
+		elPos = heatMap.getRowConfig().label_display_method;
 	}
 	//Done for displaying labels on Summary side in builder
 	if (typeof builder !== 'undefined') {
@@ -300,7 +318,7 @@ NgChm.UTIL.getLabelText = function(text,type,builder) {
  * FUNCTION - isScreenZoomed: The purpose of this function is to determine if the 
  * browser zoom level, set by the user, is zoomed (other than 100%)
  **********************************************************************************/
-NgChm.UTIL.isScreenZoomed = function () {
+UTIL.isScreenZoomed = function () {
 	var zoomVal = 0;
 	if (window.devicePixelRatio < .89) {
 		zoomVal = -1;
@@ -314,7 +332,7 @@ NgChm.UTIL.isScreenZoomed = function () {
  * FUNCTION - getBrowserType: The purpose of this function is to determine the type
  * of web browser being utilized and return that value as a string.
  **********************************************************************************/
-NgChm.UTIL.getBrowserType = function () { 
+UTIL.getBrowserType = function () {
 	var type = 'unknown';
     if((navigator.userAgent.indexOf("Opera") || navigator.userAgent.indexOf('OPR')) != -1 ) {
        type = 'Opera';
@@ -335,7 +353,7 @@ NgChm.UTIL.getBrowserType = function () {
  * user has set a minimum font size on their browser and set the detail minimum label
  * size accordingly.
  **********************************************************************************/
-NgChm.UTIL.setBrowserMinFontSize = function () {
+UTIL.setBrowserMinFontSize = function () {
 	  const minMinLabelSize = 5;
 	  var minSettingFound = 0;
 	  var el = document.createElement('div');
@@ -359,7 +377,7 @@ NgChm.UTIL.setBrowserMinFontSize = function () {
 	  }
 	  if (middle > minMinLabelSize) {
 		  minSettingFound = middle;
-		  NgChm.DET.minLabelSize = Math.floor(middle) - 1;
+		  DET.minLabelSize = Math.floor(middle) - 1;
 	  }
 	  document.body.removeChild(el);
 	  return minSettingFound;
@@ -369,7 +387,7 @@ NgChm.UTIL.setBrowserMinFontSize = function () {
  * FUNCTION - iESupport: The purpose of this function is to allow for the support
  * of javascript functions that Internet Explorer does not recognize.
  **********************************************************************************/
-NgChm.UTIL.iESupport = function () {
+UTIL.iESupport = function () {
 	if (!String.prototype.startsWith) {
 	    String.prototype.startsWith = function(searchString, position){
 	      position = position || 0;
@@ -390,13 +408,13 @@ NgChm.UTIL.iESupport = function () {
  * Browser type = IE, zoom level other than 100%, and a minimum font size browser
  * setting greater than 5pt.
  **********************************************************************************/
-NgChm.UTIL.startupChecks = function () {
+UTIL.startupChecks = function () {
 	var warningsRequired = false;
 	var msgButton = document.getElementById('messageOpen_btn');
-	if (NgChm.UTIL.getBrowserType() === 'IE') {
+	if (UTIL.getBrowserType() === 'IE') {
     	warningsRequired = true;
 	}
-    if (NgChm.DET.minLabelSize > 5) {
+    if (DET.minLabelSize > 5) {
     	warningsRequired = true;
     }
     
@@ -409,9 +427,9 @@ NgChm.UTIL.startupChecks = function () {
     }
 }
 
-// Panel interface configuration parameters that can be set by NgChm.UTIL.editWidget:
-NgChm.UTIL.showSummaryPane = true;
-NgChm.UTIL.showDetailPane = true;
+// Panel interface configuration parameters that can be set by UTIL.editWidget:
+UTIL.showSummaryPane = true;
+UTIL.showDetailPane = true;
 
 // Function configurePanelInterface must called once immediately after the HeatMap is loaded.
 // It configures the initial Panel user interface according to the heat map preferences and
@@ -420,15 +438,15 @@ NgChm.UTIL.showDetailPane = true;
 (function() {
 	const debug = false;
 	var firstTime = true;
-	NgChm.UTIL.configurePanelInterface = function configurePanelInterface (mapConfig) {
-		if (NgChm.MMGR.source === NgChm.MMGR.FILE_SOURCE) {
+	UTIL.configurePanelInterface = function configurePanelInterface (mapConfig) {
+		if (MMGR.source === MMGR.FILE_SOURCE) {
 			firstTime = true;
-			if (NgChm.SUM.chmElement) {
-				NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.SUM.chmElement));
+			if (SUM.chmElement) {
+				PANE.emptyPaneLocation (PANE.findPaneLocation (SUM.chmElement));
 			}
-			if (NgChm.DMM.DetailMaps.length > 0) {
-				for (let i=0; i<NgChm.DMM.DetailMaps.length;i++ ) {
-					NgChm.Pane.emptyPaneLocation (NgChm.Pane.findPaneLocation (NgChm.DMM.DetailMaps[i].chm));
+			if (DMM.DetailMaps.length > 0) {
+				for (let i=0; i<DMM.DetailMaps.length;i++ ) {
+					PANE.emptyPaneLocation (PANE.findPaneLocation (DMM.DetailMaps[i].chm));
 				}
 			}
 		}
@@ -439,7 +457,7 @@ NgChm.UTIL.showDetailPane = true;
 		} else {
 			return;
 		}
-		NgChm.UTIL.UI.showLoader("Configuring interface...");
+		UTIL.UI.showLoader("Configuring interface...");
 		//
 		// Define the DROP TARGET and set the drop event handler(s).
 		if (debug) console.log ('Configuring drop event handler');
@@ -448,7 +466,7 @@ NgChm.UTIL.showDetailPane = true;
 		       if (debug) console.log ({ m: 'Got drop data', txt });
 		       const j = JSON.parse (txt);
 		       if (j && j.type === 'linkout.spec' && j.kind && j.spec) {
-			   NgChm.LNK.loadLinkoutSpec (j.kind, j.spec);
+			   LNK.loadLinkoutSpec (j.kind, j.spec);
 		       }
 		}
 		['dragenter','dragover','dragleave','drop'].forEach(eventName => {
@@ -477,22 +495,22 @@ NgChm.UTIL.showDetailPane = true;
 			}
 		    });
 		});
-		NgChm.SUM.initSummaryData();
-		const initialLoc = NgChm.Pane.initializePanes ();
+		SUM.initSummaryData();
+		const initialLoc = PANE.initializePanes ();
 		if (mapConfig.hasOwnProperty('panel_configuration')) {
-			NgChm.RecPanes.reconstructPanelsFromMapConfig(initialLoc, mapConfig['panel_configuration']);
-		} else if (NgChm.UTIL.showSummaryPane && NgChm.UTIL.showDetailPane) {
-			const s = NgChm.Pane.splitPane (false, initialLoc);
-			NgChm.Pane.setPanePropWidths (NgChm.heatMap.getDividerPref(), s.child1, s.child2, s.divider);
-			NgChm.SUM.switchPaneToSummary (NgChm.Pane.findPaneLocation(s.child1));
-			NgChm.DET.switchPaneToDetail (NgChm.Pane.findPaneLocation(s.child2));
-			NgChm.SRCH.doInitialSearch();
-		} else if (NgChm.UTIL.showSummaryPane) {
-			NgChm.SUM.switchPaneToSummary (initialLoc);
-			NgChm.SRCH.doInitialSearch();
-		} else if (NgChm.UTIL.showDetailPane) {
-			NgChm.DET.switchPaneToDetail (initialLoc);
-			NgChm.SRCH.doInitialSearch();
+			RECPANES.reconstructPanelsFromMapConfig(initialLoc, mapConfig['panel_configuration']);
+		} else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
+			const s = PANE.splitPane (false, initialLoc);
+			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
+			SUM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
+			DET.switchPaneToDetail (PANE.findPaneLocation(s.child2));
+			SRCH.doInitialSearch();
+		} else if (UTIL.showSummaryPane) {
+			SUM.switchPaneToSummary (initialLoc);
+			SRCH.doInitialSearch();
+		} else if (UTIL.showDetailPane) {
+			DET.switchPaneToDetail (initialLoc);
+			SRCH.doInitialSearch();
 		} 
 	};
 })();
@@ -501,7 +519,7 @@ NgChm.UTIL.showDetailPane = true;
  * FUNCTION - blendTwoColors: The purpose of this function is to blend two 6-character
  * hex color code values into a single value that is half way between.
  **********************************************************************************/
-NgChm.UTIL.blendTwoColors = function(color1, color2) {
+UTIL.blendTwoColors = function(color1, color2) {
     // check input
     color1 = color1 || '#000000';
     color2 = color2 || '#ffffff';
@@ -520,7 +538,7 @@ NgChm.UTIL.blendTwoColors = function(color1, color2) {
         (1 - percentage) * color1[2] + percentage * color2[2]
     ];
     //Convert to hex
-    color3 = '#' + NgChm.UTIL.intToHex(color3[0]) + NgChm.UTIL.intToHex(color3[1]) + NgChm.UTIL.intToHex(color3[2]);
+    color3 = '#' + UTIL.intToHex(color3[0]) + UTIL.intToHex(color3[1]) + UTIL.intToHex(color3[2]);
     // return hex
     return color3;
 };
@@ -529,7 +547,7 @@ NgChm.UTIL.blendTwoColors = function(color1, color2) {
  * FUNCTION - intToHex: The purpose of this function is to convert integer
  * value into a hex value;
  **********************************************************************************/
-NgChm.UTIL.intToHex = function(num) {
+UTIL.intToHex = function(num) {
     var hex = Math.round(num).toString(16);
     if (hex.length == 1)
         hex = '0' + hex;
@@ -541,7 +559,7 @@ NgChm.UTIL.intToHex = function(num) {
  * var value into an array containing just that value.  It is used for compatibility
  * management.
  **********************************************************************************/
-NgChm.UTIL.convertToArray = function(value) {
+UTIL.convertToArray = function(value) {
 	var valArr = [];
 	valArr.push(value);
 	return valArr;
@@ -555,97 +573,96 @@ NgChm.UTIL.convertToArray = function(value) {
  **********************************************************************************/
 (function () {
 	//Call functions that enable viewing in IE.
-	NgChm.UTIL.iESupport();
+	UTIL.iESupport();
 
-	if (NgChm.MMGR.embeddedMapName === null && (NgChm.UTIL.mapId !== '' || NgChm.UTIL.mapNameRef !== '')) {
-		NgChm.MMGR.createWebLoader(NgChm.MMGR.WEB_SOURCE);
+	if (MMGR.embeddedMapName === null && (UTIL.mapId !== '' || UTIL.mapNameRef !== '')) {
+		MMGR.createWebLoader(MMGR.WEB_SOURCE);
 	}
 })();
 
-NgChm.UTIL.isBuilderView = false;
-NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
+UTIL.isBuilderView = false;
+UTIL.containerElement = document.getElementById('ngChmContainer');
 
 /**********************************************************************************
  * FUNCTION - onLoadCHM: This function performs "on load" processing for the NG_CHM
  * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
  * viewer.  
  **********************************************************************************/
-NgChm.UTIL.onLoadCHM = function (sizeBuilderView) {
+UTIL.onLoadCHM = function (sizeBuilderView) {
 	
-	NgChm.UTIL.isBuilderView = sizeBuilderView;
-	NgChm.UTIL.setBrowserMinFontSize();
+	UTIL.isBuilderView = sizeBuilderView;
+	UTIL.setBrowserMinFontSize();
 	//Run startup checks that enable startup warnings button.
-	NgChm.UTIL.startupChecks();
-	NgChm.UTIL.setDragPanels();
+	UTIL.startupChecks();
+	UTIL.setDragPanels();
 
 
 	// See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
-	if ((NgChm.UTIL.mapId === "") && (NgChm.UTIL.mapNameRef === "") && (NgChm.MMGR.embeddedMapName === null)) {
+	if ((UTIL.mapId === "") && (UTIL.mapNameRef === "") && (MMGR.embeddedMapName === null)) {
 		//In local mode, need user to select the zip file with data (required by browser security)
 		var chmFileItem  = document.getElementById('fileButton');
 		document.getElementById('fileOpen_btn').style.display = '';
 		document.getElementById('detail_buttons').style.display = 'none';
 		chmFileItem.style.display = '';
-		chmFileItem.addEventListener('change', NgChm.UTIL.loadFileModeCHM, false);
-		NgChm.UTIL.UI.showSplashExample();
+		chmFileItem.addEventListener('change', UTIL.loadFileModeCHM, false);
+		UTIL.UI.showSplashExample();
 	} else {
-		NgChm.UTIL.UI.showLoader("Loading NG-CHM from server...");
+		UTIL.UI.showLoader("Loading NG-CHM from server...");
 		//Run from a web server.
-		var mapName = NgChm.UTIL.mapId;
-		var dataSource = NgChm.MMGR.WEB_SOURCE;
-		if ((NgChm.MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) { 
-			mapName = NgChm.MMGR.embeddedMapName;
-			dataSource = NgChm.MMGR.FILE_SOURCE;
+		var mapName = UTIL.mapId;
+		var dataSource = MMGR.WEB_SOURCE;
+		if ((MMGR.embeddedMapName !== null) && (ngChmWidgetMode !== "web")) {
+			mapName = MMGR.embeddedMapName;
+			dataSource = MMGR.FILE_SOURCE;
 			var embedButton = document.getElementById('NGCHMEmbedButton');
 			if (embedButton !== null) {
 				document.getElementById('NGCHMEmbed').style.display = 'none';
 			} else {
-				NgChm.UTIL.loadLocalModeCHM(sizeBuilderView);
+				UTIL.loadLocalModeCHM(sizeBuilderView);
 			}
 		} else {  
-			if (NgChm.MMGR.embeddedMapName !== null) {
-				mapName = NgChm.MMGR.embeddedMapName;
-				dataSource = NgChm.MMGR.LOCAL_SOURCE;
+			if (MMGR.embeddedMapName !== null) {
+				mapName = MMGR.embeddedMapName;
+				dataSource = MMGR.LOCAL_SOURCE;
 			}
-			var matrixMgr = new NgChm.MMGR.MatrixManager(dataSource);
-			NgChm.heatMap = matrixMgr.getHeatMap(mapName, [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate]);
+			MMGR.createHeatMap(dataSource, mapName, [SUM.processSummaryMapUpdate, DET.processDetailMapUpdate]);
 		}
  	} 
-	document.getElementById("summary_canvas").addEventListener('wheel', NgChm.DEV.handleScroll, NgChm.UTIL.passiveCompat({capture: false, passive: false}));
+	document.getElementById("summary_canvas").addEventListener('wheel', DEV.handleScroll, UTIL.passiveCompat({capture: false, passive: false}));
 };
 
 /**********************************************************************************
  * FUNCTION - loadLocalModeCHM: This function is called when running in local file mode and 
  * with the heat map embedded in a "widgetized" web page.
  **********************************************************************************/
-NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
+UTIL.loadLocalModeCHM = function (sizeBuilderView) {
 	//Special case for embedded version where a blob is passed in.
-	if (NgChm.MMGR.embeddedMapName instanceof Blob) {
-		NgChm.UTIL.loadBlobModeCHM(sizeBuilderView)
+	if (MMGR.embeddedMapName instanceof Blob) {
+		UTIL.loadBlobModeCHM(sizeBuilderView)
 		return;
 	}
-	if (NgChm.UTIL.isValidURL(NgChm.MMGR.embeddedMapName) === true) {
-		NgChm.UTIL.loadCHMFromURL(sizeBuilderView)
+	if (UTIL.isValidURL(MMGR.embeddedMapName) === true) {
+		UTIL.loadCHMFromURL(sizeBuilderView)
 		return;
 	}
 	//Else, fetch the .ngchm file
 	var req = new XMLHttpRequest();
-	req.open("GET", NgChm.MMGR.localRepository+"/"+NgChm.MMGR.embeddedMapName);
+	req.open("GET", MMGR.localRepository+"/"+MMGR.embeddedMapName);
 	req.responseType = "blob";
 	req.onreadystatechange = function () {
 		if (req.readyState == req.DONE) {
 			if (req.status != 200) {
 				console.log('Failed in call to get NGCHM from server: ' + req.status);
-				NgChm.UTIL.UI.showLoader("Failed to get NGCHM from server");
+				UTIL.UI.showLoader("Failed to get NGCHM from server");
 			} else {
 				var chmBlob  =  new Blob([req.response],{type:'application/zip'});  // req.response;
-				var chmFile  =  new File([chmBlob], NgChm.MMGR.embeddedMapName);
-				NgChm.UTIL.resetCHM();
+				var chmFile  =  new File([chmBlob], MMGR.embeddedMapName);
+				UTIL.resetCHM();
 				var split = chmFile.name.split("."); 
 				if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
-					NgChm.UHM.invalidFileFormat();
+					UHM.invalidFileFormat();
 				} else {
-					NgChm.UTIL.displayFileModeCHM(chmFile,sizeBuilderView);
+					UTIL.displayFileModeCHM(chmFile,sizeBuilderView);
 				}
 			}
 		}
@@ -657,16 +674,16 @@ NgChm.UTIL.loadLocalModeCHM = function (sizeBuilderView) {
  * FUNCTION - loadCHMFromURL: Works kind of like local mode but works when javascript
  * passes in the ngchm as a blob.
  **********************************************************************************/
-NgChm.UTIL.loadCHMFromURL = function (sizeBuilderView) {
+UTIL.loadCHMFromURL = function (sizeBuilderView) {
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', NgChm.MMGR.embeddedMapName, true);
+	xhr.open('GET', MMGR.embeddedMapName, true);
 	xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
 	xhr.responseType = 'blob';
 	xhr.onload = function(e) {
 	  if (this.status == 200) {
 	    var myBlob = this.response;
-		NgChm.UTIL.resetCHM();
-		NgChm.UTIL.displayFileModeCHM(myBlob,sizeBuilderView);
+		UTIL.resetCHM();
+		UTIL.displayFileModeCHM(myBlob,sizeBuilderView);
 	  }
 	};
 	xhr.send();
@@ -676,25 +693,25 @@ NgChm.UTIL.loadCHMFromURL = function (sizeBuilderView) {
  * FUNCTION - loadCHMFromBlob: Works kind of like local mode but works when javascript
  * passes in the ngchm as a blob.
  **********************************************************************************/
-NgChm.UTIL.loadBlobModeCHM = function (sizeBuilderView) {
-	var chmFile  =  new File([NgChm.MMGR.embeddedMapName], "ngchm");
-	NgChm.UTIL.resetCHM();
-	NgChm.UTIL.displayFileModeCHM(chmFile,sizeBuilderView);
+UTIL.loadBlobModeCHM = function (sizeBuilderView) {
+	var chmFile  =  new File([MMGR.embeddedMapName], "ngchm");
+	UTIL.resetCHM();
+	UTIL.displayFileModeCHM(chmFile,sizeBuilderView);
 }
 
 /**********************************************************************************
  * FUNCTION - loadFileModeCHM: This function is called when running in stand-alone
  * file mode and  user selects the chm data .zip file.
  **********************************************************************************/
-NgChm.UTIL.loadFileModeCHM = function () {
-	NgChm.UTIL.UI.showLoader("Loading NG-CHM from file...");
+UTIL.loadFileModeCHM = function () {
+	UTIL.UI.showLoader("Loading NG-CHM from file...");
 	var chmFile  = document.getElementById('chmFile').files[0];
 	var split = chmFile.name.split("."); 
 	if (split[split.length-1].toLowerCase() !== "ngchm"){ // check if the file is a .ngchm file
-		NgChm.UHM.invalidFileFormat();
+		UHM.invalidFileFormat();
 	} else {
-		NgChm.UTIL.displayFileModeCHM(chmFile);
-		NgChm.SEL.openFileToggle();
+		UTIL.displayFileModeCHM(chmFile);
+		SEL.openFileToggle();
 	}
 };
 
@@ -710,16 +727,16 @@ NgChm.UTIL.loadFileModeCHM = function () {
 // * "nopanelheaders":
 //   - Hides the panel headers.
 //
-NgChm.UTIL.editWidget = function editWidget (options) {
+UTIL.editWidget = function editWidget (options) {
 	options = options || [];
 	if (options.indexOf('noheader') !== -1) {
 		document.getElementById('mdaServiceHeader').classList.add('hide');
 	}
 	if (options.indexOf('nopanelheaders') !== -1) {
-		NgChm.Pane.showPaneHeader = false;
+		PANE.showPaneHeader = false;
 	}
 	if (options.indexOf('nodetailview') !== -1) {
-		NgChm.UTIL.showDetailPane = false;
+		UTIL.showDetailPane = false;
 		document.getElementById('summary_box_canvas').classList.add('hide');
 	}
 };
@@ -728,16 +745,15 @@ NgChm.UTIL.editWidget = function editWidget (options) {
  * FUNCTION - displayFileModeCHM: This function performs functions shared by the
  * stand-alone and widgetized "file" versions of the application.
  **********************************************************************************/
-NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
-	var matrixMgr = new NgChm.MMGR.MatrixManager(NgChm.MMGR.FILE_SOURCE);
+UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
 	zip.useWebWorkers = false;
-	NgChm.UTIL.resetCHM();
-    NgChm.UTIL.initDisplayVars();
-    NgChm.heatMap = matrixMgr.getHeatMap("",  [NgChm.SUM.processSummaryMapUpdate, NgChm.DET.processDetailMapUpdate], chmFile);
+	UTIL.resetCHM();
+    UTIL.initDisplayVars();
+    MMGR.createHeatMap(MMGR.FILE_SOURCE, "",  [SUM.processSummaryMapUpdate, DET.processDetailMapUpdate], chmFile);
     if ((typeof sizeBuilderView !== 'undefined') && (sizeBuilderView)) {
-	NgChm.UTIL.showDetailPane = false;
-	NgChm.Pane.showPaneHeader = false;
-        NgChm.heatMap.addEventListener(NgChm.UTIL.builderViewSizing);
+	UTIL.showDetailPane = false;
+	PANE.showPaneHeader = false;
+        MMGR.getHeatMap().addEventListener(UTIL.builderViewSizing);
     }
 };
 
@@ -745,8 +761,8 @@ NgChm.UTIL.displayFileModeCHM = function (chmFile, sizeBuilderView) {
  * FUNCTION - builderViewSizing: This function handles the resizing of the summary
  * panel for the builder in cases where ONLY the summary panel is being drawn.  
  **********************************************************************************/
-NgChm.UTIL.builderViewSizing = function (event) {
-	if ((typeof event !== 'undefined') && (event !== NgChm.MMGR.Event_INITIALIZED)) {
+UTIL.builderViewSizing = function (event) {
+	if ((typeof event !== 'undefined') && (event !== MMGR.Event_INITIALIZED)) {
 		return;
 	}
 
@@ -762,26 +778,26 @@ NgChm.UTIL.builderViewSizing = function (event) {
  * when loading a file mode heatmap.  Specifically for handling the case where switching 
  * from one file-mode heatmap to another
  **********************************************************************************/
-NgChm.UTIL.resetCHM = function () {
-//	NgChm.SEL.mode = 'NORMAL';      
-	NgChm.SEL.setCurrentDL ("dl1");
-	NgChm.SEL.currentRow=null; 
-	NgChm.SEL.currentCol=null; 
-//	NgChm.SEL.dataPerRow=null; 
-//	NgChm.SEL.dataPerCol=null; 
-//	NgChm.SEL.selectedStart=0; 
-//	NgChm.SEL.selectedStop=0; 
-	NgChm.SRCH.clearAllSearchResults ();
-	NgChm.SEL.scrollTime = null; 
-	NgChm.SUM.colDendro = null;
-	NgChm.SUM.rowDendro = null;
+UTIL.resetCHM = function () {
+//	SEL.mode = 'NORMAL';
+	SEL.setCurrentDL ("dl1");
+	SEL.currentRow=null;
+	SEL.currentCol=null;
+//	SEL.dataPerRow=null;
+//	SEL.dataPerCol=null;
+//	SEL.selectedStart=0;
+//	SEL.selectedStop=0;
+	SRCH.clearAllSearchResults ();
+	SEL.scrollTime = null;
+	SUM.colDendro = null;
+	SUM.rowDendro = null;
 };
 
 /**********************************************************************************
  * FUNCTION - removeElementsByClass: This function removes all DOM elements with
  * a given className.  
  **********************************************************************************/
-NgChm.UTIL.removeElementsByClass = function(className) {
+UTIL.removeElementsByClass = function(className) {
     var elements = document.getElementsByClassName(className);
     while(elements.length > 0){
         elements[0].parentNode.removeChild(elements[0]);
@@ -793,22 +809,22 @@ NgChm.UTIL.removeElementsByClass = function(className) {
  * display values whenever a file-mode map is opened.  This is done primarily
  * to reset screens when a second, third, etc. map is opened.  
  **********************************************************************************/
-NgChm.UTIL.initDisplayVars = function() {
-	NgChm.DMM.nextMapNumber = 1;
-	NgChm.SUM.summaryHeatMapCache = {};
-	NgChm.SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
-	NgChm.SUM.heightScale = 1;
-	NgChm.SUM.colTopItemsWidth = 0;
-	NgChm.SUM.rowTopItemsHeight = 0;
-	NgChm.DET.detailHeatMapCache = {};      
-	NgChm.DET.detailHeatMapLevel = {};      
-	NgChm.DET.detailHeatMapValidator = {};  
-	NgChm.DET.mouseDown = false;
-	NgChm.UTIL.actualAxisLabels = {};
-	NgChm.UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
-	NgChm.UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };	
-	NgChm.UTIL.removeElementsByClass("DynamicLabel");
-	NgChm.SRCH.clearCurrentSearchItem ();
+UTIL.initDisplayVars = function() {
+	DMM.nextMapNumber = 1;
+	SUM.summaryHeatMapCache = {};
+	SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
+	SUM.heightScale = 1;
+	SUM.colTopItemsWidth = 0;
+	SUM.rowTopItemsHeight = 0;
+	DET.detailHeatMapCache = {};
+	DET.detailHeatMapLevel = {};
+	DET.detailHeatMapValidator = {};
+	DET.mouseDown = false;
+	UTIL.actualAxisLabels = {};
+	UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
+	UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
+	UTIL.removeElementsByClass("DynamicLabel");
+	SRCH.clearCurrentSearchItem ();
 };
 
 /**********************************************************************************
@@ -816,7 +832,7 @@ NgChm.UTIL.initDisplayVars = function() {
  * Percentages are represented from 0 to 100.  Positive percentages lighten a color 
  * (100 = white) and negative percentages will darken a color (-100 = black).
  **********************************************************************************/
-NgChm.UTIL.shadeColor = function (color, pct) {   
+UTIL.shadeColor = function (color, pct) {
 	var percent = pct/100;
     var f=parseInt(color.slice(1),16),t=percent<0?0:255,p=percent<0?percent*-1:percent,R=f>>16,G=f>>8&0x00FF,B=f&0x0000FF;
     return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
@@ -826,40 +842,40 @@ NgChm.UTIL.shadeColor = function (color, pct) {
  * FUNCTION - downloadSummaryPng: This function downloads a PNG image of the 
  * summary canvas.
  **********************************************************************************/
-NgChm.UTIL.downloadSummaryMapPng = function () {   
-	var mapName = NgChm.heatMap.getMapInformation().name;
-	var dataURL = NgChm.SUM.canvas.toDataURL('image/png');
+UTIL.downloadSummaryMapPng = function () {
+	var mapName = MMGR.getHeatMap().getMapInformation().name;
+	var dataURL = SUM.canvas.toDataURL('image/png');
 	var dl = document.createElement('a');
-	NgChm.UTIL.scalePngImage(dataURL, 200, 200, dl, function(canvas){
+	UTIL.scalePngImage(dataURL, 200, 200, dl, function(canvas){
 			dl.setAttribute('href', canvas.toDataURL('image/png'));
 			dl.setAttribute('download', mapName+'_tnMap.png');
 			document.body.appendChild(dl);
 			dl.click();
 			dl.remove();
 	});
-	NgChm.UTIL.redrawCanvases();
+	UTIL.redrawCanvases();
 }
 
-NgChm.UTIL.downloadSummaryPng = function (e) { 
+UTIL.downloadSummaryPng = function (e) {
 	if (typeof e !== 'undefined') {
 		if (e.classList.contains('disabled')) {
 			return;
 		}
 	}
-    var mapName = NgChm.heatMap.getMapInformation().name;
+    var mapName = MMGR.getHeatMap().getMapInformation().name;
     var colDCanvas = document.getElementById("column_dendro_canvas");
     var rowDCanvas = document.getElementById("row_dendro_canvas");
     var dl = document.createElement('a');
     var colDCImg = new Image();
     var colDRImg = new Image();
     var mapImg = new Image();
-    NgChm.UTIL.scalePngImage(colDCanvas, 200, 50, dl, function(canvas){
+    UTIL.scalePngImage(colDCanvas, 200, 50, dl, function(canvas){
         colDCImg.onload = function(){
-            NgChm.UTIL.scalePngImage(rowDCanvas, 50, 200, dl, function(canvas){
+            UTIL.scalePngImage(rowDCanvas, 50, 200, dl, function(canvas){
                 colDRImg.onload = function(){
-                    NgChm.UTIL.scalePngImage(NgChm.SUM.canvas, 200, 200, dl, function(canvas){
+                    UTIL.scalePngImage(SUM.canvas, 200, 200, dl, function(canvas){
                         mapImg.onload = function(){
-                            NgChm.UTIL.combinePngImage(colDCImg, colDRImg, mapImg, 200, 200, dl, function(canvas){
+                            UTIL.combinePngImage(colDCImg, colDRImg, mapImg, 200, 200, dl, function(canvas){
                                 dl.setAttribute('href', canvas.toDataURL('image/png'));
                                 dl.setAttribute('download', mapName+'_tn.png');
                                 document.body.appendChild(dl);
@@ -884,12 +900,13 @@ NgChm.UTIL.downloadSummaryPng = function (e) {
  * scaled column dendro image, and heat map image and combines them into one
  * 200x200 image png.
  **********************************************************************************/
-NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callback) {
+UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callback) {
 		var canvas = document.createElement("canvas");
 		var ctx = canvas.getContext("2d");
 		ctx.imageSmoothingEnabled = false;
-		const rowDConfShow = NgChm.heatMap.getRowDendroConfig().show;
-		const colDConfShow = NgChm.heatMap.getColDendroConfig().show;
+		const heatMap = MMGR.getHeatMap();
+		const rowDConfShow = heatMap.getRowDendroConfig().show;
+		const colDConfShow = heatMap.getColDendroConfig().show;
 		var cDShow = (colDConfShow === 'NONE') || (colDConfShow === 'NA') ? false : true;
 		var rDShow = (rowDConfShow === 'NONE') || (rowDConfShow === 'NA') ? false : true;
 		var mapWidth = width;
@@ -921,7 +938,7 @@ NgChm.UTIL.combinePngImage = function (img1, img2,img3, width, height, dl, callb
 };
 
 
-NgChm.UTIL.imageCanvas = function (canvas) {
+UTIL.imageCanvas = function (canvas) {
 	let inMemCanvas = document.createElement('canvas');
 	const inMemCtx = inMemCanvas.getContext('2d');
 	inMemCanvas.width = canvas.width;
@@ -934,11 +951,11 @@ NgChm.UTIL.imageCanvas = function (canvas) {
  * FUNCTION - scaleSummaryPng: This function scales the summary PNG file down to 
  * the width and height specified (currently this is set to 200x200 pixels).
  **********************************************************************************/
-NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
+UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
 	var img = new Image();
     var url = origCanvas.toDataURL('image/png');
 	if (url.length < 10) {
-		NgChm.UHM.systemMessage("Download Thumbnail Warning", "The Summary Pane must be open and visible in the NG-CHM Viewer in order to download a thumbnail image of the heat map.")
+		UHM.systemMessage("Download Thumbnail Warning", "The Summary Pane must be open and visible in the NG-CHM Viewer in order to download a thumbnail image of the heat map.")
 		return;
 	}
 
@@ -977,13 +994,13 @@ NgChm.UTIL.scalePngImage = function (origCanvas, width, height, dl, callback) {
  * FUNCTION - setDragPanels: This function configures selected DIV panels as "drag
  * panels", allowing them to be moved on the screen.
  **********************************************************************************/
-NgChm.UTIL.setDragPanels = function () {
+UTIL.setDragPanels = function () {
 	var panel = document.getElementById("prefs");
 	if (panel !== null) {
-		NgChm.UTIL.dragElement(document.getElementById("prefs"));
-		NgChm.UTIL.dragElement(document.getElementById("pdfPrefs"));
-		NgChm.UTIL.dragElement(document.getElementById("msgBox"));
-		NgChm.UTIL.dragElement(document.getElementById("linkBox"));
+		UTIL.dragElement(document.getElementById("prefs"));
+		UTIL.dragElement(document.getElementById("pdfPrefs"));
+		UTIL.dragElement(document.getElementById("msgBox"));
+		UTIL.dragElement(document.getElementById("linkBox"));
 	}
 }
 
@@ -991,7 +1008,7 @@ NgChm.UTIL.setDragPanels = function () {
  * FUNCTION - isNaN: This function checks for a numeric (float or integer) value
  * and returns true/false.
  **********************************************************************************/
-NgChm.UTIL.isNaN = function (n) {
+UTIL.isNaN = function (n) {
 	let nan = false;
 	nan = isNaN(n);
 	if (n.trim() === '') {
@@ -1004,7 +1021,7 @@ NgChm.UTIL.isNaN = function (n) {
  * FUNCTION - validURL: This function checks to see if a string contains a valid
  * URL address.
  **********************************************************************************/
-NgChm.UTIL.isValidURL = function (str) {
+UTIL.isValidURL = function (str) {
 	  let url;
 	  try {
 	    url = new URL(str);
@@ -1018,7 +1035,7 @@ NgChm.UTIL.isValidURL = function (str) {
  * FUNCTION - dragElement: This function adds drag/move functionality to the DIV
  * passed in.
  **********************************************************************************/
-NgChm.UTIL.dragElement = function (elmnt) {
+UTIL.dragElement = function (elmnt) {
 	  let deltaMouseElementX = 0;
 	  let deltaMouseElementY = 0;
 	  if (document.getElementById(elmnt.id + "Hdr")) {
@@ -1057,7 +1074,7 @@ NgChm.UTIL.dragElement = function (elmnt) {
  * 1 and 5 OR 1 and 10 depending on the limit set.  For example:  16 becomes 15 if
  * limit set to 5 but 20 with a limit of 10).
  **********************************************************************************/
-NgChm.UTIL.roundUpDown = function(inVal, limit) {
+UTIL.roundUpDown = function(inVal, limit) {
 	var roundedVal = inVal;
 	var lastDigit = inVal % 10;
 	if (limit === 5) {
@@ -1080,7 +1097,7 @@ NgChm.UTIL.roundUpDown = function(inVal, limit) {
  * FUNCTION - createCheckBoxDropDown: The purpose of this function is to dynamically
  * populate the html of a discrete check box dropdown with items.
  **********************************************************************************/
-NgChm.UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,items,maxHeight) {
+UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,items,maxHeight) {
 	var checkBoxes = document.getElementById(checkBoxesId);
 	var selectBox = document.getElementById(selectBoxId);
 	//Order categories (in case they are out of order in properties)
@@ -1094,33 +1111,37 @@ NgChm.UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,it
 	//Create html for all check box rows
 	var boxes = "";
 	for (var i = 0; i < orderedItems.length; i++){
-		boxes = boxes + "<label for='" + orderedItems[i] + "' onclick='NgChm.UTIL.toggleCheckBox(event, this);'><input type='checkBox' class='srchCovCheckBox' value='" + orderedItems[i] + "'>" + orderedItems[i] + "</input></label>";
+		boxes = boxes + "<label for='" + orderedItems[i] + "' ><input type='checkBox' class='srchCovCheckBox' value='" + orderedItems[i] + "' name='" + orderedItems[i] + "'>" + orderedItems[i] + "</input></label>";
 	}
 	if (items.length > 20) {
 		checkBoxes.style.height = maxHeight;
 	} else {
 		checkBoxes.style.height = (items.length + 1) * 18 + 'px';
 	}
-	checkBoxes.innerHTML = boxes;
+	checkBoxes.innerHTML = boxes + "<label for='Missing'><input type='checkBox' class='srchCovCheckBox' value='missing' name='missing'>Missing</input></label>";
+	checkBoxes.querySelectorAll('label').forEach (label => {
+	    label.onclick = toggleLabel;
+	});
+
+	function toggleLabel (event) {
+	    UTIL.toggleCheckBox(event, event.target);
+	}
 }
 
 /**********************************************************************************
  * FUNCTION - mapHasGaps: The purpose of this function indicate true/false whether
  * a given heat map contains gaps.
  **********************************************************************************/
-NgChm.UTIL.mapHasGaps = function () {
-	if (NgChm.heatMap.getMapInformation().map_cut_rows+NgChm.heatMap.getMapInformation().map_cut_cols == 0) {
-		return false;
-	} else {
-		return true;
-	}
-}
+UTIL.mapHasGaps = function () {
+	const heatMap = MMGR.getHeatMap();
+	return heatMap.getMapInformation().map_cut_rows+heatMap.getMapInformation().map_cut_cols != 0;
+};
 
 /**********************************************************************************
  * FUNCTION - clearCheckBoxDropdown: The purpose of this function is to remove all
  * check box rows from within a given checkBox dropdown control.
  **********************************************************************************/
-NgChm.UTIL.clearCheckBoxDropdown = function(checkBoxesId) {
+UTIL.clearCheckBoxDropdown = function(checkBoxesId) {
 	document.getElementById(checkBoxesId).innerHTML = "";
 }
 
@@ -1128,7 +1149,7 @@ NgChm.UTIL.clearCheckBoxDropdown = function(checkBoxesId) {
  * FUNCTION - resetCheckBoxDropdown: The purpose of this function is to reset all
  * check boxes in a check box dropdown control to unselected.
  **********************************************************************************/
-NgChm.UTIL.resetCheckBoxDropdown = function(checkBoxClass) {
+UTIL.resetCheckBoxDropdown = function(checkBoxClass) {
 	var checkboxes =  document.getElementsByClassName(checkBoxClass);
 	for (var i = 0; i < checkboxes.length; i++){
         checkboxes[i].checked = false;
@@ -1141,7 +1162,7 @@ NgChm.UTIL.resetCheckBoxDropdown = function(checkBoxClass) {
  * code to enable the toggle when the user clicks on a check box row (highlighted
  * LABEL element) but not directly on the box itself. 
  **********************************************************************************/
-NgChm.UTIL.toggleCheckBox = function(event, item) {
+UTIL.toggleCheckBox = function(event, item) {
 	if (event.target.nodeName === 'LABEL') {
 		item.children[0].checked = !item.children[0].checked;
 	}
@@ -1151,14 +1172,12 @@ NgChm.UTIL.toggleCheckBox = function(event, item) {
  * FUNCTION - showCheckBoxDropDown: The purpose of this function is open up
  * the contents (checkboxes) of a check box dropdown control. 
  **********************************************************************************/
-NgChm.UTIL.showCheckBoxDropDown = function(checkBoxesId) {
+UTIL.showCheckBoxDropDown = function(checkBoxesId) {
 	var checkboxes = document.getElementById(checkBoxesId);
 	if (checkboxes.style.display ===  "none") {
 		checkboxes.style.display = "block";
-		checkBoxOpen = true;
 	} else {
 		checkboxes.style.display = "none";
-		checkBoxOpen = false;
 	}
 }
 
@@ -1168,7 +1187,7 @@ NgChm.UTIL.showCheckBoxDropDown = function(checkBoxesId) {
  * function but can be called from anywhere. The idea being that if the 
  * dropdown has been left open and you click somewhere else, it will be closed. 
  **********************************************************************************/
-NgChm.UTIL.closeCheckBoxDropdown = function(selectBoxId,checkBoxesId) {
+UTIL.closeCheckBoxDropdown = function(selectBoxId,checkBoxesId) {
 	var offP = document.getElementById(checkBoxesId).offsetParent;
 	  if (offP !== null) {
 		 document.getElementById(selectBoxId).click();
@@ -1183,10 +1202,10 @@ NgChm.UTIL.closeCheckBoxDropdown = function(selectBoxId,checkBoxesId) {
  * We only only load once.
  * 
  **********************************************************************************/
-NgChm.UTIL.embedLoaded = false;
-NgChm.UTIL.embedThumbWidth = '150px';
-NgChm.UTIL.embedThumbHeight = '150px';
-NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';     
+UTIL.embedLoaded = false;
+UTIL.embedThumbWidth = '150px';
+UTIL.embedThumbHeight = '150px';
+UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';
 
 /**********************************************************************************
  * FUNCTION - embedCHM: This function is a special pre-processing function for the
@@ -1195,25 +1214,25 @@ NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';
  * on load processing for the viewer.  repository (default .) is the path to the
  * directory containing the specified map.
  **********************************************************************************/
-NgChm.UTIL.embedCHM = function (map, repository, sizeBuilderView) {
-	NgChm.MMGR.embeddedMapName = map;
-	NgChm.MMGR.localRepository = repository || ".";
+UTIL.embedCHM = function (map, repository, sizeBuilderView) {
+	MMGR.embeddedMapName = map;
+	MMGR.localRepository = repository || ".";
 	//Reset dendros for local/widget load
-	NgChm.SUM.colDendro = null;
-	NgChm.SUM.rowDendro = null;
-//	NgChm.DET.colDendro = null;
-//	NgChm.DET.rowDendro = null;
-	NgChm.UTIL.onLoadCHM(sizeBuilderView);
+	SUM.colDendro = null;
+	SUM.rowDendro = null;
+//	DET.colDendro = null;
+//	DET.rowDendro = null;
+	UTIL.onLoadCHM(sizeBuilderView);
 }
 
 /**********************************************************************************
  * FUNCTION - showEmbed: This function shows the embedded heat map when the
  * user clicks on the embedded map image.
  **********************************************************************************/
-NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight,customJS) {
+UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight,customJS) {
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
-	NgChm.UTIL.embedThumbWidth = embeddedWrapper.style.width;
-	NgChm.UTIL.embedThumbHeight = embeddedWrapper.style.height;
+	UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	UTIL.embedThumbHeight = embeddedWrapper.style.height;
 	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	var embeddedMap = document.getElementById('NGCHMEmbed');
 	var iFrame = window.frameElement; // reference to iframe element container
@@ -1235,11 +1254,11 @@ NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight,customJS) {
 	embeddedMap.style.flexDirection = 'column';
 	embeddedWrapper.style.display = 'none';
 	embeddedCollapse.style.display = ''; 
-	if (NgChm.UTIL.embedLoaded === false) {
-		NgChm.UTIL.embedLoaded = true;
-		NgChm.UTIL.loadLocalModeCHM(false);
+	if (UTIL.embedLoaded === false) {
+		UTIL.embedLoaded = true;
+		UTIL.loadLocalModeCHM(false);
 		if (customJS !== "") {
-			setTimeout(function(){ NgChm.CUST.addExtraCustomJS(customJS);}, 2000);
+			setTimeout(function(){ CUST.addExtraCustomJS(customJS);}, 2000);
 		}
 	}
 }
@@ -1249,10 +1268,10 @@ NgChm.UTIL.showEmbed = function (baseDiv,dispWidth,dispHeight,customJS) {
  * user clicks on the embedded map image.  It is used by NGCHM_Embed.js from 
  * the minimized file ngchmEmbed-min.js
  **********************************************************************************/
-NgChm.UTIL.showEmbedded = function (baseDiv,iframeStyle,customJS) {
+UTIL.showEmbedded = function (baseDiv,iframeStyle,customJS) {
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
-	NgChm.UTIL.embedThumbWidth = embeddedWrapper.style.width;
-	NgChm.UTIL.embedThumbHeight = embeddedWrapper.style.height;
+	UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	UTIL.embedThumbHeight = embeddedWrapper.style.height;
 	var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
 	var embeddedMap = document.getElementById('NGCHMEmbed');
 	var iFrame = window.frameElement; // reference to iframe element container
@@ -1265,11 +1284,11 @@ NgChm.UTIL.showEmbedded = function (baseDiv,iframeStyle,customJS) {
 	embeddedMap.style.flexDirection = 'column';
 	embeddedWrapper.style.display = 'none';
 	embeddedCollapse.style.display = ''; 
-	if (NgChm.UTIL.embedLoaded === false) {
-		NgChm.UTIL.embedLoaded = true;
-		NgChm.UTIL.loadLocalModeCHM(false);
+	if (UTIL.embedLoaded === false) {
+		UTIL.embedLoaded = true;
+		UTIL.loadLocalModeCHM(false);
 		if (customJS !== "") {
-			setTimeout(function(){ NgChm.CUST.addExtraCustomJS(customJS);}, 2000);
+			setTimeout(function(){ CUST.addExtraCustomJS(customJS);}, 2000);
 		}
 	}
 }
@@ -1278,15 +1297,15 @@ NgChm.UTIL.showEmbedded = function (baseDiv,iframeStyle,customJS) {
  * FUNCTION - hideEmbed: This function hides the embedded map when the user 
  * clicks on the collapse map button.
  **********************************************************************************/
-NgChm.UTIL.hideEmbed = function (thumbStyle) {
+UTIL.hideEmbed = function (thumbStyle) {
 	var iFrame = window.frameElement; // reference to iframe element container
 	iFrame.className='ngchmThumbnail';
 	var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
 	var embeddedMap = document.getElementById('NGCHMEmbed');
 	if (typeof thumbStyle === 'undefined') {
-		iFrame.style.height = NgChm.UTIL.embedThumbHeight;
-		embeddedWrapper.style.height = NgChm.UTIL.embedThumbHeight;
-		embeddedMap.style.height = NgChm.UTIL.embedThumbHeight;
+		iFrame.style.height = UTIL.embedThumbHeight;
+		embeddedWrapper.style.height = UTIL.embedThumbHeight;
+		embeddedMap.style.height = UTIL.embedThumbHeight;
 	} else {
 		iFrame.style = thumbStyle;
 		embeddedWrapper.style = thumbStyle;
@@ -1303,7 +1322,7 @@ NgChm.UTIL.hideEmbed = function (thumbStyle) {
  * for the nghcmWidget-min.js file to a fully pathed location for that file (which
  * may be under a different name than the file itself)
  **********************************************************************************/
-NgChm.UTIL.setNgchmWidget = function (path) {NgChm.UTIL.defaultNgchmWidget = path};
+UTIL.setNgchmWidget = function (path) {UTIL.defaultNgchmWidget = path};
 
 /**********************************************************************************
  * FUNCTION - embedExpandableMap: This function constructs the html for embedding
@@ -1312,7 +1331,7 @@ NgChm.UTIL.setNgchmWidget = function (path) {NgChm.UTIL.defaultNgchmWidget = pat
  * Optional entries may be provided for the thumbnail, height, width, and widget JS
  * location.
  **********************************************************************************/
-NgChm.UTIL.embedExpandableMap = function (options) {
+UTIL.embedExpandableMap = function (options) {
 	//Exit if no ngchm has been provided
 	if (options.ngchm === undefined) {return;}
 	
@@ -1321,7 +1340,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
     if (options.thumbnail === undefined) options.thumbnail = options.ngchm.replace(/\.ngchm$/, '.png');
     if (options.thumbnailWidth === undefined) options.thumbnailWidth = '150px';
     if (options.thumbnailHeight === undefined) options.thumbnailHeight = options.thumbnailWidth;
-    if (options.ngchmWidget === undefined) options.ngchmWidget = NgChm.UTIL.defaultNgchmWidget;   
+    if (options.ngchmWidget === undefined) options.ngchmWidget = UTIL.defaultNgchmWidget;
     var displayWidth = (options.displayWidth === undefined) ? '100' : options.displayWidth.substring(0,options.displayWidth.length-1);
     var customJS = (options.customJS === undefined) ? "" : options.customJS;
 	var displayHeight = displayWidth;
@@ -1330,8 +1349,8 @@ NgChm.UTIL.embedExpandableMap = function (options) {
     }
     
     //set "memory" variables for width/height for collapse functionality
-    NgChm.UTIL.embedThumbWidth = options.thumbnailWidth;
-    NgChm.UTIL.embedThumbWidth = options.thumbnailHeight;
+    UTIL.embedThumbWidth = options.thumbnailWidth;
+    UTIL.embedThumbWidth = options.thumbnailHeight;
 
     //Construct a fully configured embedded iframe and add it to the html page
 	var embeddedDiv = document.getElementById(options.divId);
@@ -1347,7 +1366,7 @@ NgChm.UTIL.embedExpandableMap = function (options) {
 	doc.write("<!DOCTYPE html><HTML><BODY style='margin:0px;width:100vw;height: 100vh;display: flex;flex-direction: column;'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><div><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.UTIL.hideEmbed();' /></div></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.UTIL.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
 	doc.close();
 };
-NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';     
+UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';
     
 /**********************************************************************************
  * END: EMBEDDED MAP FUNCTIONS AND GLOBALS
@@ -1358,11 +1377,11 @@ NgChm.UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';
 * 
 *  @function redrawSearchResults
 */
-NgChm.UTIL.redrawSearchResults = function () {
-	NgChm.DET.updateDisplayedLabels();
-	NgChm.SUM.redrawSelectionMarks();
-	NgChm.SEL.updateSelections();
-	NgChm.SRCH.showSearchResults();
+UTIL.redrawSearchResults = function () {
+	DET.updateDisplayedLabels();
+	SUM.redrawSelectionMarks();
+	SEL.updateSelections();
+	SRCH.showSearchResults();
 };
 
 /**********************************************************************************
@@ -1370,8 +1389,9 @@ NgChm.UTIL.redrawSearchResults = function () {
  * and returns a delay timer value to be used when setting the read window to the
  * entire map.
  **********************************************************************************/
-NgChm.UTIL.loadAllTilesTimer = function() {
-	const dimensionVal = NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL) + NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL);
+UTIL.loadAllTilesTimer = function() {
+	const heatMap = MMGR.getHeatMap();
+	const dimensionVal = heatMap.getNumRows(MMGR.DETAIL_LEVEL) + heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
 	if (dimensionVal <= 1000) {
 		return 500;
 	} else if (dimensionVal <= 2000) {
@@ -1393,7 +1413,7 @@ NgChm.UTIL.loadAllTilesTimer = function() {
  * FUNCTION - b64toBlob: This function reads a .ngchm file from a blob.  It is used
  * in html pages that contain an entire heat map (.ngchm, widget, html, embed)
  **********************************************************************************/
-NgChm.UTIL.b64toBlob = function (b64Data) {
+UTIL.b64toBlob = function (b64Data) {
 	  const sliceSize = 512;
 	  let byteCharacters = atob(b64Data);
 	  let byteArrays = [];
@@ -1414,7 +1434,7 @@ NgChm.UTIL.b64toBlob = function (b64Data) {
  * FUNCTION:  getClickType - The purpose of this function returns an integer. 0 for left click; 
  * 1 for right.  It could be expanded further for wheel clicks, browser back, and browser forward 
  *********************************************************************************************/
-NgChm.UTIL.getClickType = function (e) {
+UTIL.getClickType = function (e) {
 	 var clickType = 0;
 	 e = e || window.event;
 	 if ( !e.which && (typeof e.button !== 'undefined') ) {
@@ -1431,7 +1451,7 @@ NgChm.UTIL.getClickType = function (e) {
  * FUNCTION:  getCursorPosition - The purpose of this function is to return the cursor 
  * position over the canvas.  
  *********************************************************************************************/
-NgChm.UTIL.getCursorPosition = function (e) {
+UTIL.getCursorPosition = function (e) {
 	var x,y;
 	if (e.touches){
 		if (e.touches.length > 0){
@@ -1454,13 +1474,13 @@ NgChm.UTIL.getCursorPosition = function (e) {
  * FUNCTION:  isOnObject - The purpose of this function is to tell us if the cursor is over 
  * a given scrreen object.
  *********************************************************************************************/
-NgChm.UTIL.isOnObject = function (e,type) {
-	const mapItem = NgChm.DMM.getMapItemFromCanvas(e.currentTarget);
-    var rowClassWidthPx =  NgChm.DET.getRowClassPixelWidth(mapItem);
-    var colClassHeightPx = NgChm.DET.getColClassPixelHeight(mapItem);
-    var rowDendroWidthPx =  NgChm.DET.getRowDendroPixelWidth(mapItem);
-    var colDendroHeightPx = NgChm.DET.getColDendroPixelHeight(mapItem);
-	var coords = NgChm.UTIL.getCursorPosition(e);
+UTIL.isOnObject = function (e,type) {
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+    var rowClassWidthPx =  DET.getRowClassPixelWidth(mapItem);
+    var colClassHeightPx = DET.getColClassPixelHeight(mapItem);
+    var rowDendroWidthPx =  DET.getRowDendroPixelWidth(mapItem);
+    var colDendroHeightPx = DET.getColDendroPixelHeight(mapItem);
+	var coords = UTIL.getCursorPosition(e);
     if (coords.y > colClassHeightPx) { 
         if  ((type == "map") && coords.x > rowClassWidthPx) {
     		return true;
@@ -1481,7 +1501,7 @@ NgChm.UTIL.isOnObject = function (e,type) {
  * to a complimentary hex color value.  It shifts hue by 45 degrees and then converts hex, 
  * returning complimentary color as a hex value
  *********************************************************************************************/
- NgChm.UTIL.hexToComplimentary = function(hex){
+ UTIL.hexToComplimentary = function(hex){
 
     // Convert hex to rgb
     // Credit to Denis http://stackoverflow.com/a/36253499/4939630
@@ -1558,7 +1578,7 @@ NgChm.UTIL.isOnObject = function (e,type) {
 
 // A table of frequently used images.
 // Used to reduce widget size by having a single data: URL for each image instead of one per use.
-NgChm.UTIL.imageTable = {
+UTIL.imageTable = {
     cancelSmall: 'images/cancelSmall.png',
     closeButton: 'images/closeButton.png',
     okButton: 'images/okButton.png',
@@ -1575,7 +1595,7 @@ NgChm.UTIL.imageTable = {
 
 (function() {
     const exports = { showSplashExample, showLoader, hideLoader };
-    Object.assign (NgChm.createNS ("NgChm.UTIL.UI"), exports);
+    NgChm.createNS ("NgChm.UTIL.UI", exports);
     var firstLoaderMessage = true;
     var messages = "";
 
@@ -1618,8 +1638,9 @@ NgChm.UTIL.imageTable = {
 	const loader = document.getElementById('loader');
 	loader.classList.replace('fadeinslow', 'fadeout');
 	[...document.querySelectorAll('*[data-hide-on-load]')].forEach(e => e.classList.add('hide'));
-	NgChm.UTIL.containerElement.classList.replace('faded', 'fadein');
+	UTIL.containerElement.classList.replace('faded', 'fadein');
 	[...document.querySelectorAll('*[data-show-on-load]')].forEach(e => e.classList.remove('hide'));
     }
 })();
 
+})();
