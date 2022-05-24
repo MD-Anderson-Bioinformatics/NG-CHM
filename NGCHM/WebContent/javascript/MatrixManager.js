@@ -1757,4 +1757,97 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 
 };
 
+    /**********************************************************************************
+     * FUNCTION - mapHasGaps: The purpose of this function indicate true/false whether
+     * a given heat map contains gaps.
+     **********************************************************************************/
+    MMGR.mapHasGaps = function () {
+	    const heatMap = MMGR.getHeatMap();
+	    return heatMap.getMapInformation().map_cut_rows+heatMap.getMapInformation().map_cut_cols != 0;
+    };
+
+    /* Submodule for caching Actual/Shown labels.
+     */
+    (function() {
+	var actualAxisLabels;
+	var shownAxisLabels;
+	var shownAxisLabelParams;
+
+	MMGR.initAxisLabels = function () {
+	    actualAxisLabels = {};
+	    shownAxisLabels = { ROW: [], COLUMN: [] };
+	    shownAxisLabelParams = { ROW: {}, COLUMN: {} };
+	};
+	MMGR.initAxisLabels();
+
+	MMGR.getActualLabels = function (axis) {
+		axis = axis.toUpperCase();
+		if (!actualAxisLabels.hasOwnProperty(axis)) {
+			const labels = MMGR.getHeatMap().getAxisLabels(axis)["labels"];
+			actualAxisLabels[axis] = labels.map(text => {
+				return text === undefined ? undefined : text.split("|")[0];
+			});
+		}
+		return actualAxisLabels[axis];
+	};
+	MMGR.getShownLabels = function (axis) {
+		axis = axis.toUpperCase();
+		const config = MMGR.getHeatMap().getAxisConfig(axis);
+		// Recalculate shown labels if parameters affecting them have changed.
+		if (shownAxisLabelParams[axis].label_display_length !== config.label_display_length ||
+		    shownAxisLabelParams[axis].label_display_method !== config.label_display_method) {
+			shownAxisLabelParams[axis].label_display_length = config.label_display_length;
+			shownAxisLabelParams[axis].label_display_method = config.label_display_method;
+			const labels = MMGR.getActualLabels(axis);
+			shownAxisLabels[axis] = labels.map(text => {
+				return text === undefined ? "" : MMGR.getLabelText (text, axis);
+			});
+		}
+		return shownAxisLabels[axis];
+	};
+    })();
+
+    /**********************************************************************************
+     * FUNCTION - getLabelText: The purpose of this function examine label text and
+     * shorten the text if the label exceeds the 20 character allowable length.  If the
+     * label is in excess, the first 9 and last 8 characters will be written out
+     * separated by ellipsis (...);
+     **********************************************************************************/
+    MMGR.getLabelText = function(text,type,builder) {
+	const heatMap = MMGR.getHeatMap();
+	    var size = parseInt(heatMap.getColConfig().label_display_length);
+	    var elPos = heatMap.getColConfig().label_display_method;
+	    if (type.toUpperCase() === "ROW") {
+		    size = parseInt(heatMap.getRowConfig().label_display_length);
+		    elPos = heatMap.getRowConfig().label_display_method;
+	    }
+	    //Done for displaying labels on Summary side in builder
+	    if (typeof builder !== 'undefined') {	/* FIXME: BMB */
+		    size = 16;
+	    }
+	    if (text.length > size) {
+		    if (elPos === 'END') {
+			    text = text.substr(0,size - 3)+"...";
+		    } else if (elPos === 'MIDDLE') {
+			    text = text.substr(0,(size/2 - 1))+"..."+text.substr(text.length-(size/2 - 2),text.length);
+		    } else {
+			    text = "..."+text.substr(text.length - (size - 3), text.length);
+		    }
+	    }
+	    return text;
+    };
+
+/**********************************************************************************
+ * Perform Early Initializations.
+ *
+ * Perform latency sensitive initializations.  Note that the complete sources
+ * have not loaded yet.
+ **********************************************************************************/
+//Call functions that enable viewing in IE.
+UTIL.iESupport();
+
+if (MMGR.embeddedMapName === null && (UTIL.mapId !== '' || UTIL.mapNameRef !== '')) {
+	MMGR.createWebLoader(MMGR.WEB_SOURCE);
+}
+
 })();

@@ -225,7 +225,7 @@ SUM.setTopItemsSize = function (){
 		for (let i = 0; i < SUM.colTopItems.length; i++){
 			let foundLabel = false;
 			let p = document.createElement("p");
-			p.innerText = UTIL.getLabelText(SUM.colTopItems[i].split("|")[0],"col");
+			p.innerText = MMGR.getLabelText(SUM.colTopItems[i].split("|")[0],"col");
 			p.className = "topItems";
 			SUM.chmElement.appendChild(p);
 			for (let j = 0; j < colLabels.length; j++){
@@ -247,7 +247,7 @@ SUM.setTopItemsSize = function (){
 		for (let i = 0; i < SUM.rowTopItems.length; i++){
 			let foundLabel = false;
 			let p = document.createElement("p");
-			p.innerText = UTIL.getLabelText(SUM.rowTopItems[i].split("|")[0],"row");
+			p.innerText = MMGR.getLabelText(SUM.rowTopItems[i].split("|")[0],"row");
 			p.className = "topItems";
 			SUM.chmElement.appendChild(p);
 			for (let j = 0; j < rowLabels.length; j++){
@@ -841,7 +841,7 @@ SUM.resetBoxCanvas = function() {
 	ctx.strokeStyle="#000000";
 	
 	// If no row or column cuts, draw the heat map border in black
-	if (UTIL.mapHasGaps() === false){
+	if (MMGR.mapHasGaps() === false){
 		ctx.strokeRect(0,0,SUM.boxCanvas.width,SUM.boxCanvas.height);
 	}
 	
@@ -1057,7 +1057,7 @@ SUM.drawRowClassBarLabels = function () {
 		var key = classBarConfigOrder[j];
 		var currentClassBar = classBarsConfig[key];
 		if (currentClassBar.show === 'Y') {
-			var covLabel = UTIL.getLabelText(key,'COL', true);
+			var covLabel = MMGR.getLabelText(key,'COL', true);
 			var covPct = parseInt(currentClassBar.height) / totalHeight;
 			//scaled width of current bar
 			var barWidth = (SUM.rowClassBarWidth*covPct);
@@ -1102,7 +1102,7 @@ SUM.drawColClassBarLabel = function(key, currentClassBar, prevHeight) {
 	//find the first, middle, and last vertical positions for the bar legend being drawn
 	var topPos =  beginClasses+prevHeight;
 	var midPos =  topPos+((currentClassBar.height-15)/2)-1;
-	var midVal = UTIL.getLabelText(key,'ROW', true);
+	var midVal = MMGR.getLabelText(key,'ROW', true);
 	//Create div and place mid legend value
 	SUM.setLabelDivElement(key+"ColLabel",midVal,midPos,leftPos,false);
 }
@@ -1923,7 +1923,7 @@ SUM.drawTopItems = function(){
 		item.axis = axis;
 		item.index = topItemIndex[index];
 		item.className = "topItems";
-		item.innerHTML = UTIL.getLabelText(labels[topItemIndex[index]].split("|")[0],axis);
+		item.innerHTML = MMGR.getLabelText(labels[topItemIndex[index]].split("|")[0],axis);
 		if (!isRow){
 			item.style.transform = "rotate(90deg)";
 		}

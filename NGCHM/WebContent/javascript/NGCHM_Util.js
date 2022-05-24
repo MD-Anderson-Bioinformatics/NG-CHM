@@ -264,65 +264,6 @@ UTIL.reverseObject = function(Obj) {
     return NewObj;
 }
 
-UTIL.actualAxisLabels = {};
-UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
-UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
-UTIL.getActualLabels = function (axis) {
-	axis = axis.toUpperCase();
-	if (!UTIL.actualAxisLabels.hasOwnProperty(axis)) {
-		const labels = MMGR.getHeatMap().getAxisLabels(axis)["labels"];
-		UTIL.actualAxisLabels[axis] = labels.map(text => {
-			return text === undefined ? undefined : text.split("|")[0];
-		});
-	}
-	return UTIL.actualAxisLabels[axis];
-};
-UTIL.getShownLabels = function (axis) {
-	axis = axis.toUpperCase();
-	const config = MMGR.getHeatMap().getAxisConfig(axis);
-	// Recalculate shown labels if parameters affecting them have changed.
-	if (UTIL.shownAxisLabelParams[axis].label_display_length !== config.label_display_length ||
-	    UTIL.shownAxisLabelParams[axis].label_display_method !== config.label_display_method) {
-		UTIL.shownAxisLabelParams[axis].label_display_length = config.label_display_length;
-		UTIL.shownAxisLabelParams[axis].label_display_method = config.label_display_method;
-		const labels = UTIL.getActualLabels(axis);
-		UTIL.shownAxisLabels[axis] = labels.map(text => {
-			return text === undefined ? "" : UTIL.getLabelText (text, axis);
-		});
-	}
-	return UTIL.shownAxisLabels[axis];
-};
-
-/**********************************************************************************
- * FUNCTION - getLabelText: The purpose of this function examine label text and 
- * shorten the text if the label exceeds the 20 character allowable length.  If the
- * label is in excess, the first 9 and last 8 characters will be written out 
- * separated by ellipsis (...);
- **********************************************************************************/
-UTIL.getLabelText = function(text,type,builder) {
-    const heatMap = MMGR.getHeatMap();
-	var size = parseInt(heatMap.getColConfig().label_display_length);
-	var elPos = heatMap.getColConfig().label_display_method;
-	if (type.toUpperCase() === "ROW") {
-		size = parseInt(heatMap.getRowConfig().label_display_length);
-		elPos = heatMap.getRowConfig().label_display_method;
-	}
-	//Done for displaying labels on Summary side in builder
-	if (typeof builder !== 'undefined') {
-		size = 16;
-	}
-	if (text.length > size) {
-		if (elPos === 'END') {
-			text = text.substr(0,size - 3)+"...";
-		} else if (elPos === 'MIDDLE') {
-			text = text.substr(0,(size/2 - 1))+"..."+text.substr(text.length-(size/2 - 2),text.length);
-		} else {
-			text = "..."+text.substr(text.length - (size - 3), text.length);
-		}
-	}
-	return text;
-}
-
 /**********************************************************************************
  * FUNCTION - isScreenZoomed: The purpose of this function is to determine if the 
  * browser zoom level, set by the user, is zoomed (other than 100%)
@@ -575,21 +516,6 @@ UTIL.convertToArray = function(value) {
 	return valArr;
 };
 
-/**********************************************************************************
- * Perform Early Initializations.
- *
- * Perform latency sensitive initializations.  Note that the complete sources
- * have not loaded yet.
- **********************************************************************************/
-(function () {
-	//Call functions that enable viewing in IE.
-	UTIL.iESupport();
-
-	if (MMGR.embeddedMapName === null && (UTIL.mapId !== '' || UTIL.mapNameRef !== '')) {
-		MMGR.createWebLoader(MMGR.WEB_SOURCE);
-	}
-})();
-
 UTIL.isBuilderView = false;
 UTIL.containerElement = document.getElementById('ngChmContainer');
 
@@ -830,9 +756,7 @@ UTIL.initDisplayVars = function() {
 	DET.detailHeatMapLevel = {};
 	DET.detailHeatMapValidator = {};
 	DET.mouseDown = false;
-	UTIL.actualAxisLabels = {};
-	UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
-	UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
+	MMGR.initAxisLabels();
 	UTIL.removeElementsByClass("DynamicLabel");
 	SRCH.clearCurrentSearchItem ();
 };
@@ -1137,15 +1061,6 @@ UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,items,ma
 	    UTIL.toggleCheckBox(event, event.target);
 	}
 }
-
-/**********************************************************************************
- * FUNCTION - mapHasGaps: The purpose of this function indicate true/false whether
- * a given heat map contains gaps.
- **********************************************************************************/
-UTIL.mapHasGaps = function () {
-	const heatMap = MMGR.getHeatMap();
-	return heatMap.getMapInformation().map_cut_rows+heatMap.getMapInformation().map_cut_cols != 0;
-};
 
 /**********************************************************************************
  * FUNCTION - clearCheckBoxDropdown: The purpose of this function is to remove all

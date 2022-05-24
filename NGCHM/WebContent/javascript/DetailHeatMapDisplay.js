@@ -670,7 +670,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		mapItemVars.ctx.clearRect(0, 0, mapItem.boxCanvas.width, mapItem.boxCanvas.height);
 	
 		//Draw the border
-		if (UTIL.mapHasGaps() === false) {
+		if (MMGR.mapHasGaps() === false) {
 			const canH = mapItem.dataViewHeight + totalColBarHeight;
 			const canW = mapItem.dataViewWidth + totalRowBarHeight;
 			const boxX = (totalRowBarHeight / canW) * mapItem.boxCanvas.width;
@@ -1012,7 +1012,7 @@ DET.calcRowClassBarLabels = function (mapItem) {
 				const currentClassBar = rowClassBarConfig[rowClassBarConfigOrder[i]];
 				if (currentClassBar.show === 'Y') {
 					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
-					let labelText = UTIL.getLabelText(key,'COL');
+					let labelText = MMGR.getLabelText(key,'COL');
 					if (containsLegend) {
 						labelText = "XXX"+labelText; //calculate spacing for bar legend
 					}
@@ -1044,7 +1044,7 @@ DET.calcColClassBarLabels = function (mapItem) {
 				const currentClassBar = colClassBarConfig[key];
 				if (currentClassBar.show === 'Y') {
 					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
-					let labelText = UTIL.getLabelText(key,'ROW');
+					let labelText = MMGR.getLabelText(key,'ROW');
 					if (containsLegend) {
 						labelText = "XXXX"+labelText; //calculate spacing for bar legend
 					}
@@ -1169,7 +1169,7 @@ DET.calcRowLabels = function (mapItem, fontSize) {
 	}
 	const skip = (mapItem.canvas.clientHeight - headerSize) / mapItem.dataPerCol;
 	if (skip > mapItem.minLabelSize) {
-		const shownLabels = UTIL.getShownLabels('ROW');
+		const shownLabels = MMGR.getShownLabels('ROW');
 		for (let i = mapItem.currentRow; i < mapItem.currentRow + mapItem.dataPerCol; i++) {
 			DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
 		}
@@ -1189,7 +1189,7 @@ DET.calcColLabels = function (mapItem, fontSize) {
 	}
 	const skip = (mapItem.canvas.clientWidth - headerSize) / mapItem.dataPerRow;
 	if (skip > mapItem.minLabelSize) {
-		const shownLabels = UTIL.getShownLabels('COLUMN');
+		const shownLabels = MMGR.getShownLabels('COLUMN');
 		for (let i = mapItem.currentCol; i < mapItem.currentCol + mapItem.dataPerRow; i++) {
 			DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
 		}
@@ -1345,8 +1345,8 @@ DET.drawRowLabels = function (mapItem, fontSize) {
 	const start = Math.max((skip - fontSize)/2, 0) + headerSize-2;
 	
 	if (skip > mapItem.minLabelSize) {
-		const actualLabels = UTIL.getActualLabels('ROW');
-		const shownLabels = UTIL.getShownLabels('ROW');
+		const actualLabels = MMGR.getActualLabels('ROW');
+		const shownLabels = MMGR.getShownLabels('ROW');
 		const xPos = mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth + 3;
 		for (let i = mapItem.currentRow; i < mapItem.currentRow + mapItem.dataPerCol; i++) {
 			const yPos = mapItem.canvas.offsetTop + start + ((i-mapItem.currentRow) * skip);
@@ -1370,8 +1370,8 @@ DET.drawColLabels = function (mapItem, fontSize) {
 	const start = headerSize + fontSize + Math.max((skip - fontSize)/2, 0) + 3;
 
 	if (skip > mapItem.minLabelSize) {
-		const actualLabels = UTIL.getActualLabels('COLUMN');
-		const shownLabels = UTIL.getShownLabels('COLUMN');
+		const actualLabels = MMGR.getActualLabels('COLUMN');
+		const shownLabels = MMGR.getShownLabels('COLUMN');
 		const yPos = mapItem.canvas.offsetTop + mapItem.canvas.clientHeight + 3;
 		for (let i = mapItem.currentCol; i < mapItem.currentCol + mapItem.dataPerRow; i++) {
 			const xPos = mapItem.canvas.offsetLeft + start + ((i-mapItem.currentCol) * skip);
@@ -1421,7 +1421,7 @@ DET.detailDrawRowClassBarLabels = function (mapItem) {
 				if (currentClassBar.show === 'Y') {
 					DET.drawRowClassBarLegends(mapItem);
 					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
-					const labelText = UTIL.getLabelText(key,'COL');
+					const labelText = MMGR.getLabelText(key,'COL');
 					if (containsLegend) {
 						yPos += 12; //add spacing for bar legend
 					}
@@ -1480,7 +1480,7 @@ DET.detailDrawColClassBarLabels = function (mapItem) {
 						if (currentClassBar.height >= 20) {
 							yOffset += ((((currentClassBar.height/2) - (mapItem.colClassLabelFont/2)) - 3) * scale);
 						}
-						const labelText = UTIL.getLabelText(key,'ROW');
+						const labelText = MMGR.getLabelText(key,'ROW');
 						if (containsLegend) {
 							xPos += 14; //add spacing for bar legend
 						}
