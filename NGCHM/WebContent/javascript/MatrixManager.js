@@ -34,6 +34,10 @@
 //For web-based NGCHMs, we will create a Worker process to overlap I/O and computation.
 MMGR.webLoader = null;
 
+// Special values in NG-CHM representation:
+MMGR.maxValues = 2147483647;
+MMGR.minValues = -2147483647;
+
 //Supported map data summary levels.
 MMGR.THUMBNAIL_LEVEL = 'tn';
 MMGR.SUMMARY_LEVEL = 's';

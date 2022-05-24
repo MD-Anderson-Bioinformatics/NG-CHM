@@ -347,8 +347,8 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
-				if (val <= SUM.minValues) {
-					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > SUM.minValues)) {
+				if (val <= MMGR.minValues) {
+					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > MMGR.minValues)) {
 						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
 					} else {
 						gridLine[linePos] = cutsColor.r; gridLine[linePos+1] = cutsColor.g; gridLine[linePos+2] = cutsColor.b;	gridLine[linePos+3] = cutsColor.a;
@@ -386,7 +386,7 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 					if (params.showVerticalGrid && k===mapItem.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
 						if (j < detDataPerRow-1) {
 							//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
-							if ((val <= SUM.minValues) && (nextVal <= SUM.minValues)) {
+							if ((val <= MMGR.minValues) && (nextVal <= MMGR.minValues)) {
 								line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
 							} else {
 								line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
@@ -428,7 +428,7 @@ DET.isLineACut = function (mapItem, row) {
 	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
 		const val = heatMap.getValue(level, currDetRow+row, currDetCol+x);
 		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
-		if (val > SUM.minValues) {
+		if (val > MMGR.minValues) {
 			return false;
 		}
 	}

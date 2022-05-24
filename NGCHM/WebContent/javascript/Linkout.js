@@ -391,7 +391,7 @@ var linkoutsVersion = 'undefined';
 			colSearchItems.forEach( y => {
 				let matrixValue = MMGR.getHeatMap().getValue(MMGR.DETAIL_LEVEL,x,y);
 				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
-				if (matrixValue !== SUM.minValues-1) {
+				if (matrixValue !== MMGR.minValues-1) {
 					dataMatrix.push(matrixValue);
 				}
 			});
@@ -1247,7 +1247,7 @@ var linkoutsVersion = 'undefined';
 						for (let j= 0; j < win.numRows; j++) {
 							for (let i=0;  i< win.numCols; i++) {
 								const val = accessWindow.getValue (j + win.firstRow, i + win.firstCol);
-								if (!isNaN(val) && val > SUM.minValues && val < SUM.maxValues) {
+								if (!isNaN(val) && val > MMGR.minValues && val < MMGR.maxValues) {
 									rawValues[j*win.numCols+i] += val;
 									rawCounts[j*win.numCols+i] ++;
 								}

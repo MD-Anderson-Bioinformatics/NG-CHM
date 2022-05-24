@@ -62,8 +62,6 @@ SUM.minDimensionSize = 100; // minimum size the data matrix canvas can be
 SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
 SUM.heightScale = 1;
 
-SUM.maxValues = 2147483647;
-SUM.minValues = -2147483647;
 SUM.avgValue = {};           // Average value for each layer.
 SUM.eventTimer = 0; // Used to delay draw updates
 SUM.dragSelect=false;	  // Indicates if user has made a drag selection on the summary panel
@@ -482,7 +480,7 @@ SUM.renderSummaryHeatmap = function (renderBuffer) {
 		var linepos = 0;
 		for (var j = 1; j <= heatMap.getNumColumns(MMGR.SUMMARY_LEVEL); j++) { // draw the heatmap
 			var val = heatMap.getValue(MMGR.SUMMARY_LEVEL, i, j);
-			if ((val < SUM.maxValues) && (val > SUM.minValues)) {
+			if ((val < MMGR.maxValues) && (val > MMGR.minValues)) {
 				SUM.avgValue[currentDl] += val;
 			}
 			var color = colorMap.getColor(val);

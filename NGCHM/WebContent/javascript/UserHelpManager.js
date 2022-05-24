@@ -250,9 +250,9 @@ UHM.userHelpOpen = function(mapItem) {
 	if ((row <= heatMap.getNumRows('d')) && (col <= heatMap.getNumColumns('d'))) {
 		// Gather the information about the current pixel.
 		let matrixValue = heatMap.getValue(MMGR.DETAIL_LEVEL,row,col);
-		if (matrixValue >= SUM.maxValues) {
+		if (matrixValue >= MMGR.maxValues) {
 	    		matrixValue = "Missing Value";
-		} else if (matrixValue <= SUM.minValues) {
+		} else if (matrixValue <= MMGR.minValues) {
 			return; // A gap.
 	    	} else {
 	    		matrixValue = matrixValue.toFixed(5);
