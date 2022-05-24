@@ -1119,6 +1119,28 @@ UTIL.closeCheckBoxDropdown = function(selectBoxId,checkBoxesId) {
 	  }
 }
 
+/*
+ * Keep element from moving off the viewport as the user resizes the window.
+ */
+UTIL.keepElementInViewport= function(elementId) {
+	const element = document.getElementById(elementId);
+	if (element !== null) {
+		const rect = element.getBoundingClientRect();
+		if (rect.bottom > window.innerHeight) {
+			element.style.height = (window.innerHeight - rect.top) + 'px';
+		}
+		if (rect.right > window.innerWidth) {
+			element.style.left = (window.innerWidth - rect.width) + 'px';
+		}
+		if (rect.top < 0) {
+			element.style.top = '0px';
+		}
+		if (rect.left < 0) {
+			element.style.left = '0px';
+		}
+	}
+};
+
 
 /**********************************************************************************
  * BEGIN: EMBEDDED MAP FUNCTIONS AND GLOBALS

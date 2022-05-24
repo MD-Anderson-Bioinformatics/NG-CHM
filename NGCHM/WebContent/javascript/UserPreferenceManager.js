@@ -261,27 +261,6 @@ UPM.setSizePrefPrefs = function() {
 }
 
 
-/*
-  Keeps element from moving off the viewport as the user resizes the window.
-*/
-UPM.keepElementInViewport= function(elementId) {
-	let element = document.getElementById(elementId);
-	if (element !== null) {
-		if (element.getBoundingClientRect().bottom > window.innerHeight) {
-			element.style.height = (window.innerHeight - element.getBoundingClientRect().top) + 'px';
-		}
-		if (element.getBoundingClientRect().right > window.innerWidth) {
-			element.style.left = (window.innerWidth - element.getBoundingClientRect().width) + 'px';
-		}
-		if (element.getBoundingClientRect().top < 0) {
-			element.style.top = '0px';
-		}
-		if (element.getBoundingClientRect().left < 0) {
-			element.style.left = '0px';
-		}
-	}
-}
-
 /**********************************************************************************
  * FUNCTION - showRowsColsPrefs: The purpose of this function is to perform the 
  * processing for the preferences tab when the user selects the "Rows & Cols" tab.
