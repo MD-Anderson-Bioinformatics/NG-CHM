@@ -15,8 +15,6 @@
     const PANE = NgChm.importNS('NgChm.Pane');
     const SRCH = NgChm.importNS('NgChm.SRCH');
 
-SUM.BYTE_PER_RGBA = 4;
-
 // Flags.
 SUM.flagDrawClassBarLabels = false; // Labels are only drawn in NGCHM_GUI_Builder
 
@@ -347,7 +345,7 @@ SUM.setSelectionDivSize = function(width, height){ // input params used for PDF 
 
     // Create a GL manager that uses the summary map vertex and fragment shaders.
     function createSummaryGlManager (canvas, onRestore) {
-	    return DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader, onRestore);
+	    return DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader, onRestore, SUM.widthScale, SUM.heightScale);
     }
 
     // Vertex shader for summary heat maps.
@@ -476,7 +474,7 @@ SUM.renderSummaryHeatmap = function (renderBuffer) {
 	//Needs to go backward because WebGL draws bottom up.
 	SUM.avgValue[currentDl] = 0;
 	for (var i = heatMap.getNumRows(MMGR.SUMMARY_LEVEL); i > 0; i--) {
-		var line = new Array(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)*SUM.widthScale*SUM.BYTE_PER_RGBA);
+		var line = new Array(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)*SUM.widthScale*DRAW.BYTE_PER_RGBA);
 		var linepos = 0;
 		for (var j = 1; j <= heatMap.getNumColumns(MMGR.SUMMARY_LEVEL); j++) { // draw the heatmap
 			var val = heatMap.getValue(MMGR.SUMMARY_LEVEL, i, j);
@@ -489,7 +487,7 @@ SUM.renderSummaryHeatmap = function (renderBuffer) {
 				line[linepos + 1] = color['g'];
 				line[linepos + 2] = color['b'];
 				line[linepos + 3] = color['a'];
-				linepos+= SUM.BYTE_PER_RGBA;
+				linepos+= DRAW.BYTE_PER_RGBA;
 			}
 		}
 		for (var j = 0; j < SUM.heightScale*SUM.widthScale; j++) { // why is this heightScale * widthScale? why can't it just be heightScale??
@@ -542,7 +540,7 @@ SUM.buildRowClassTexture = function() {
 			} else {
 				pos = SUM.drawScatterBarPlotRowClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth);
 			}
-			offset+= height*SUM.BYTE_PER_RGBA;
+			offset+= height*DRAW.BYTE_PER_RGBA;
 		} else {
 			if (!document.getElementById("missingSumRowClassBars")){
 				var x = SUM.canvas.offsetLeft;
@@ -587,7 +585,7 @@ SUM.buildColClassTexture = function() {
 				classBarValues = classBarsData[key].svalues;
 				classBarLength = classBarValues.length;
 			}
-			pos += (SUM.totalWidth)*SUM.colClassPadding*SUM.BYTE_PER_RGBA*SUM.widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
+			pos += (SUM.totalWidth)*SUM.colClassPadding*DRAW.BYTE_PER_RGBA*SUM.widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
 			if (currentClassBar.bar_type === 'color_plot') {
 				pos = SUM.drawColorPlotColClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap);
 			} else {
@@ -943,7 +941,7 @@ SUM.getScaledHeight = function(height, axis) {
 }
 
 SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap) {
-	var line = new Uint8Array(new ArrayBuffer(classBarLength * SUM.BYTE_PER_RGBA * SUM.widthScale)); // save a copy of the class bar
+	var line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA * SUM.widthScale)); // save a copy of the class bar
 	var loc = 0;
 	for (var k = 0; k < classBarLength; k++) { 
 		var val = classBarValues[k];
@@ -956,7 +954,7 @@ SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues,
 			line[loc + 1] = color['g'];
 			line[loc + 2] = color['b'];
 			line[loc + 3] = color['a'];
-			loc += SUM.BYTE_PER_RGBA;
+			loc += DRAW.BYTE_PER_RGBA;
 		}
 	}
 	for (var j = 0; j < (height-SUM.colClassPadding)*SUM.widthScale; j++){ // draw the class bar into the dataBuffer  ***not 100% sure why the widthscale is used as a factor here, but it works...
@@ -997,7 +995,7 @@ SUM.drawScatterBarPlotColClassBar = function(dataBuffer, pos, height, classBarVa
 							dataBuffer[pos+3] = barBgColor['a'];
 						}
 					}
-					pos+=SUM.BYTE_PER_RGBA;
+					pos+=DRAW.BYTE_PER_RGBA;
 				}
 		}
 	}
@@ -1214,9 +1212,9 @@ SUM.drawColorPlotRowClassBar = function(dataBuffer, pos, height, classBarValues,
 				dataBuffer[pos + 1] = color['g'];  
 				dataBuffer[pos + 2] = color['b'];
 				dataBuffer[pos + 3] = color['a'];
-				pos+=SUM.BYTE_PER_RGBA;	// 4 bytes per color
+				pos+=DRAW.BYTE_PER_RGBA;	// 4 bytes per color
 			}
-			pos+=SUM.rowClassPadding*SUM.BYTE_PER_RGBA+(remainingWidth*SUM.BYTE_PER_RGBA);
+			pos+=SUM.rowClassPadding*DRAW.BYTE_PER_RGBA+(remainingWidth*DRAW.BYTE_PER_RGBA);
 		}
 	}
 	return pos;
@@ -1251,10 +1249,10 @@ SUM.drawScatterBarPlotRowClassBar = function(dataBuffer, pos, height, classBarVa
 						dataBuffer[pos+3] = barBgColor['a'];
 					}
 				}
-				pos+=SUM.BYTE_PER_RGBA;
+				pos+=DRAW.BYTE_PER_RGBA;
 			}
 			// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row 
-			pos+=SUM.rowClassPadding*SUM.BYTE_PER_RGBA+(remainingWidth*SUM.BYTE_PER_RGBA);
+			pos+=SUM.rowClassPadding*DRAW.BYTE_PER_RGBA+(remainingWidth*DRAW.BYTE_PER_RGBA);
 		}
 	}
 	return pos;

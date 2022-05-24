@@ -5,8 +5,9 @@
     //Define Namespace for NgChm Drawing
     const DRAW = NgChm.createNS('NgChm.DRAW');
 
-    const SUM = NgChm.importNS('NgChm.SUM');
     const UHM = NgChm.importNS('NgChm.UHM');
+
+    DRAW.BYTE_PER_RGBA = 4;
 
     DRAW.createRenderBuffer = function (width, height, pixelScaleFactor) {
 
@@ -16,14 +17,14 @@
 		if (width !== this.width || height !== this.height) {
 			this.width = width;
 			this.height = height;
-			this.pixels = new Uint8Array(new ArrayBuffer((width * SUM.BYTE_PER_RGBA) * height));
+			this.pixels = new Uint8Array(new ArrayBuffer((width * DRAW.BYTE_PER_RGBA) * height));
 		}
 	}
 
 	const renderBuffer = {
 		width: width|0,
 		height: height|0,
-		pixels: new Uint8Array(new ArrayBuffer((width * SUM.BYTE_PER_RGBA) * height)),
+		pixels: new Uint8Array(new ArrayBuffer((width * DRAW.BYTE_PER_RGBA) * height)),
 		pixelScaleFactor: +pixelScaleFactor
 	};
 
@@ -79,13 +80,15 @@
 	// fragment shaders for the GL context given as the only parameter.  They are called by
 	// GlManager when initializing or re-initializing a context.
 	//
-	constructor (canvas, getVertexShader, getFragmentShader, onRestore) {
+	constructor (canvas, getVertexShader, getFragmentShader, onRestore, widthScale, heightScale) {
 	    this._state = getTrackedGlContext (canvas, onRestore);
 	    this._OK = false;
 	    this._getVertexShader = getVertexShader;
 	    this._getFragmentShader = getFragmentShader;
 	    this._program = null;
 	    this._itemsToDraw = 0;
+	    this._widthScale = widthScale || 1;
+	    this._heightScale = heightScale || 1;
 	}
 
 	// Determine if the manager's GL context can be used.
@@ -115,7 +118,7 @@
 		    // Not lost since last use
 		    // Resizing the viewport, which is needed if the canvas was resized.
 		    const ctx = this._state.context;
-		    ctx.viewport(0, 0, ctx.drawingBufferWidth*SUM.widthScale, ctx.drawingBufferHeight*SUM.heightScale);
+		    ctx.viewport(0, 0, ctx.drawingBufferWidth*this._widthScale, ctx.drawingBufferHeight*this._heightScale);
 		    this._OK = true;
 		    initialized = true;
 		}
@@ -254,8 +257,8 @@
 
     }
 
-    DRAW.GL.createGlManager = function (canvas, getVertexShader, getFragmentShader, onRestore) {
-	    return new GlManager (canvas, getVertexShader, getFragmentShader, onRestore);
+    DRAW.GL.createGlManager = function (canvas, getVertexShader, getFragmentShader, onRestore, widthScale, heightScale) {
+	    return new GlManager (canvas, getVertexShader, getFragmentShader, onRestore, widthScale, heightScale);
     };
 
     // Returns a tracked GL context for the specified canvas.
