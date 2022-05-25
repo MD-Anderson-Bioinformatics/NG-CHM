@@ -46,12 +46,17 @@ const NgChm = {};
 	// and extracting the file name from the stack trace.
 	const err = new Error ("Defining namespace " + namespace);
 	const trace = err.stack.split('\n');
-	const nindex = trace[0].indexOf('NgChm.');
-	const jindex = trace[3].indexOf('javascript/');
-	const qindex = trace[3].indexOf('.js:');
+	const nindex = err.message.indexOf('NgChm.');
+	let traceIdx = 2;
+	if (trace[0].includes(err.message)) {
+	    // True on Chrome, false on Firefox.
+	    traceIdx++;
+	}
+	const jindex = trace[traceIdx].indexOf('javascript/');
+	const qindex = trace[traceIdx].indexOf('.js:');
 	if (nindex > 0 && jindex >= 0 && qindex >= 0) {
-	    lastFile = trace[3].substring(jindex+11, qindex+3);
-	    log.push({ op, ns: trace[0].substr(nindex+6), src: lastFile });
+	    lastFile = trace[traceIdx].substring(jindex+11, qindex+3);
+	    log.push({ op, ns: err.message.substr(nindex+6), src: lastFile });
 	}
 	if (debug) {
 	    trace.splice(1,1);
@@ -107,10 +112,15 @@ const NgChm = {};
     function markFile () {
 	const err = new Error ("Source file done");
 	const trace = err.stack.split('\n');
-	const jindex = trace[2].indexOf('javascript/');
-	const qindex = trace[2].indexOf('.js:');
+	let traceIdx = 1;
+	if (trace[0].includes(err.message)) {
+	    // True on Chrome, false on Firefox.
+	    traceIdx++;
+	}
+	const jindex = trace[traceIdx].indexOf('javascript/');
+	const qindex = trace[traceIdx].indexOf('.js:');
 	if (jindex >= 0 && qindex >= 0) {
-	    lastFile = trace[2].substring(jindex+11, qindex+3);
+	    lastFile = trace[traceIdx].substring(jindex+11, qindex+3);
 	    fileColorTable[lastFile] = markedFileColor;
 	}
     }
