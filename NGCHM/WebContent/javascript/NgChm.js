@@ -180,7 +180,21 @@ const NgChm = {};
 	    requestAnimationFrame (animate);
 
 	    var dragging = false;
+	    var enabled = true;
 	    var dragNode;
+
+	    dracula.start = function() {
+		setEnabled (true);
+		requestAnimationFrame (animate);
+	    }
+
+	    dracula.stop = function() {
+		setEnabled (false);
+	    }
+
+	    function setEnabled (value) {
+		enabled = value;
+	    }
 
 	    function mouseDown (ev) {
 		const m = Object.entries(layout.graph.nodes).filter(([key,node]) => {
@@ -204,6 +218,7 @@ const NgChm = {};
 		if (dragging) {
 		    dragNode.layoutPosX += ev.movementX / tt.xs;
 		    dragNode.layoutPosY += ev.movementY / tt.ys;
+		    if (!enabled) requestAnimationFrame (animate);
 		}
 	    }
 
@@ -263,7 +278,7 @@ const NgChm = {};
 		    ctx.stroke();
 		});
 		count++;
-		requestAnimationFrame (animate);
+		if (enabled) requestAnimationFrame (animate);
 	    }
 
 	    function xt (x) {
