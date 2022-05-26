@@ -334,11 +334,11 @@ UTIL.getBrowserType = function () {
 	  return minSettingFound;
     }
 
-/**********************************************************************************
- * FUNCTION - iESupport: The purpose of this function is to allow for the support
- * of javascript functions that Internet Explorer does not recognize.
- **********************************************************************************/
-UTIL.iESupport = function () {
+    /**********************************************************************************
+     * FUNCTION - iESupport: The purpose of this function is to allow for the support
+     * of javascript functions that Internet Explorer does not recognize.
+     **********************************************************************************/
+    function iESupport () {
 	if (!String.prototype.startsWith) {
 	    String.prototype.startsWith = function(searchString, position){
 	      position = position || 0;
@@ -351,32 +351,32 @@ UTIL.iESupport = function () {
  		    this.parentElement.removeChild(this);
  		};
 	}
-}
+    }
 
-/**********************************************************************************
- * FUNCTION - startupChecks: The purpose of this function is to check for warning
- * conditions that will be flagged for a given heat map at startup.  These include:
- * Browser type = IE, zoom level other than 100%, and a minimum font size browser
- * setting greater than 5pt.
- **********************************************************************************/
-UTIL.startupChecks = function () {
-	var warningsRequired = false;
-	var msgButton = document.getElementById('messageOpen_btn');
+    /**********************************************************************************
+     * FUNCTION - startupChecks: The purpose of this function is to check for warning
+     * conditions that will be flagged for a given heat map at startup.  These include:
+     * Browser type = IE, zoom level other than 100%, and a minimum font size browser
+     * setting greater than 5pt.
+     **********************************************************************************/
+    function startupChecks () {
+	let warningsRequired = false;
 	if (UTIL.getBrowserType() === 'IE') {
-    	warningsRequired = true;
+	    warningsRequired = true;
 	}
-    if (UTIL.minLabelSize > 5) {
-    	warningsRequired = true;
-    }
+	if (UTIL.minLabelSize > 5) {
+	    warningsRequired = true;
+	}
     
-    if (msgButton != undefined) {
-        if (warningsRequired) {
-             msgButton.style.display = '';
-         } else {
-             msgButton.style.display = 'none';
-         }
+	const msgButton = document.getElementById('messageOpen_btn');
+	if (msgButton != undefined) {
+	    if (warningsRequired) {
+		 msgButton.style.display = '';
+	     } else {
+		 msgButton.style.display = 'none';
+	     }
+	}
     }
-}
 
 // Panel interface configuration parameters that can be set by UTIL.editWidget:
 UTIL.showSummaryPane = true;
@@ -527,9 +527,7 @@ UTIL.containerElement = document.getElementById('ngChmContainer');
 UTIL.onLoadCHM = function (sizeBuilderView) {
 	
 	UTIL.isBuilderView = sizeBuilderView;
-	setMinFontSize();
 	//Run startup checks that enable startup warnings button.
-	UTIL.startupChecks();
 	UTIL.setDragPanels();
 
 
@@ -1590,4 +1588,7 @@ UTIL.imageTable = {
     }
 })();
 
+iESupport();
+setMinFontSize();
+startupChecks();
 })();

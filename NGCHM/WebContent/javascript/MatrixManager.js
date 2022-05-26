@@ -1843,8 +1843,6 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
  * Perform latency sensitive initializations.  Note that the complete sources
  * have not loaded yet.
  **********************************************************************************/
-//Call functions that enable viewing in IE.
-UTIL.iESupport();
 
 if (MMGR.embeddedMapName === null && (UTIL.mapId !== '' || UTIL.mapNameRef !== '')) {
 	MMGR.createWebLoader(MMGR.WEB_SOURCE);
