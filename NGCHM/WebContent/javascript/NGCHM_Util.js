@@ -1588,7 +1588,15 @@ UTIL.imageTable = {
     }
 })();
 
+// Executed at startup.
 iESupport();
 setMinFontSize();
 startupChecks();
+document.getElementById('srchCovSelectBox').onclick = function (event) {
+    UTIL.showCheckBoxDropDown('srchCovCheckBoxes');
+};
+document.getElementById('menuPng').onclick = function (event) {
+    UTIL.downloadSummaryPng (event.target);
+};
+
 })();

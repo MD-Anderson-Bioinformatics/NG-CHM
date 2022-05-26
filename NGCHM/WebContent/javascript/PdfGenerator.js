@@ -1586,4 +1586,17 @@ PDF.genViewerHeatmapPDF = function() {
 	
 }
 
+document.getElementById('pdfInputFont').onchange = function (event) {
+    PDF.customFont = true;
+};
+document.getElementById('prefCancel_btn').onclick = function (event) {
+    PDF.pdfCancelButton();
+};
+document.getElementById('prefCreate_btn').onlick = function (event) {
+    PDF.callViewerHeatmapPDF();
+};
+document.getElementById('menuPdf').onlick = function (event) {
+    PDF.openPdfPrefs(event.target, null);
+};
+
 })();
