@@ -67,6 +67,7 @@
 		return;
 	    }
 	    CUST.addCustomJS();
+	    document.addEventListener ("keydown", DEV.keyNavigate);
 		if (MMGR.source === MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (SUM.chmElement) {

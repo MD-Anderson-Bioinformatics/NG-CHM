@@ -27,7 +27,6 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
     const DET = NgChm.importNS('NgChm.DET');
-    const DEV = NgChm.importNS('NgChm.DEV');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const COMPAT = NgChm.importNS('NgChm.CM');
 
@@ -1322,7 +1321,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			SEL.currentCol = Number(UTIL.getURLParameter("column"))
 		}
 	        SEL.setSelectionColors();
-		document.addEventListener("keydown", DEV.keyNavigate);
 
 		addDataLayers(mc);
 	}
