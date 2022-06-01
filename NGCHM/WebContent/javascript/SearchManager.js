@@ -26,7 +26,8 @@
     // e.g.  if rows 2, 4, and 6 are selected,
     //     searchResults["Row"] == { "2": 1, "4": 1, "6": 1 }.
     //
-    const searchResults = {};
+    // Initialize this to avoid bug #320 when loading old maps via shaid
+    const searchResults = { Row: {}, Column: {}, RowCovar: {}, ColumnCovar: {} };
 
     // currentSearchItem contains the axis and index of the current
     // search item (used by the forward and backward search arrow buttons).

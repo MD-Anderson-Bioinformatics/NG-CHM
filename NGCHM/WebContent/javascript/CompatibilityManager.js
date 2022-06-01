@@ -20,10 +20,11 @@ CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\": \"Y
 		    "Full length description of this heatmap\",\"summary_width\": \"50\",\"builder_version\": \"NA\",\"summary_height\": \"100\",\"detail_width\": \"50\",\"detail_height\": \"100\",\"read_only\": \"N\",\"version_id\": \"1.0.0\",\"map_cut_rows\": \"0\",\"map_cut_cols\": \"0\"}}}";
 
 // CURRENT VERSION NUMBER
-CM.version = "2.22.0";
+CM.version = "2.22.1";
 CM.versionCheckUrl = "https://bioinformatics.mdanderson.org/versioncheck/NGCHM/";
 CM.viewerAppUrl = "https://bioinformatics.mdanderson.org/ngchm/ZipAppDownload";
 CM.classOrderStr = ".classifications_order";
+
 
 /**********************************************************************************
  * FUNCTION - CompatibilityManager: The purpose of the compatibility manager is to 
