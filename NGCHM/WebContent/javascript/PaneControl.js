@@ -1,13 +1,21 @@
-"use strict";
-
-//Define Namespace for Pane Control
-NgChm.createNS('NgChm.Pane');
-
-NgChm.Pane.showPaneHeader = true;
-NgChm.Pane.ngchmContainerWidth = 100;	// Percent of window width to use for NGCHM
-NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NGCHM
-
 (function(){
+    "use strict";
+    NgChm.markFile();
+
+	//Define Namespace for Pane Control
+	const PANE = NgChm.createNS('NgChm.Pane');
+
+	const UTIL = NgChm.importNS('NgChm.UTIL');
+	const UHM = NgChm.importNS('NgChm.UHM');
+	const UPM = NgChm.importNS('NgChm.UPM');
+	const LNK = NgChm.importNS('NgChm.LNK');
+	const MMGR = NgChm.importNS('NgChm.MMGR');
+	const TOUR = NgChm.importNS('NgChm.TOUR');
+
+	PANE.showPaneHeader = true;
+	PANE.ngchmContainerWidth = 100;	// Percent of window width to use for NGCHM
+	PANE.ngchmContainerHeight = 100;	// Percent of window height to use for NGCHM
+
 
 	/////////////////////////////////////////////////////////////////////
 	//
@@ -15,59 +23,59 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	//
 
 	// function initializePanes() - call to (re-)initialize pane interface
-	NgChm.Pane.paneLayout = layout;
-	NgChm.Pane.initializePanes = initializePanes;
-	NgChm.Pane.newPane = newPane;
-	NgChm.Pane.resizePane = resizePane;
-	NgChm.Pane.initializeGearIconMenu = initializeGearIconMenu;
-	NgChm.Pane.DividerControl = DividerControl;
-	NgChm.Pane.resizeHandler = resizeHandler;
-	NgChm.Pane.resetPaneCounter = resetPaneCounter;
-	NgChm.Pane.toggleScreenMode = toggleScreenMode;
-	NgChm.Pane.collapsePane = collapsePane;
-	NgChm.Pane.isCollapsedPane = isCollapsedPane;
+	PANE.paneLayout = layout;
+	PANE.initializePanes = initializePanes;
+	PANE.newPane = newPane;
+	PANE.resizePane = resizePane;
+	PANE.initializeGearIconMenu = initializeGearIconMenu;
+	PANE.DividerControl = DividerControl;
+	PANE.resizeHandler = resizeHandler;
+	PANE.resetPaneCounter = resetPaneCounter;
+	PANE.toggleScreenMode = toggleScreenMode;
+	PANE.collapsePane = collapsePane;
+	PANE.isCollapsedPane = isCollapsedPane;
 
 	// function findPaneLocation(el) - return PaneLocation containing element el
-	NgChm.Pane.findPaneLocation = findPaneLocation;
+	PANE.findPaneLocation = findPaneLocation;
 
 	// function emptyPaneLocation(loc) - remove and return client elements from pane location
-	NgChm.Pane.emptyPaneLocation = emptyPaneLocation;
+	PANE.emptyPaneLocation = emptyPaneLocation;
 
 	// function splitPaneCheck (vertical, loc) - check if OK to split pane
-	NgChm.Pane.splitPaneCheck = splitPaneCheck;
+	PANE.splitPaneCheck = splitPaneCheck;
 
 	// function splitPane (vertical, loc) - split the pane at PaneLocation loc
-	NgChm.Pane.splitPane = splitPane;
+	PANE.splitPane = splitPane;
 
 	// function registerPaneContentOption (menuEntry, callback) - register pane content option
-	NgChm.Pane.registerPaneContentOption = registerPaneContentOption;
+	PANE.registerPaneContentOption = registerPaneContentOption;
 
 	// function setPanePropWidths (percent, left, right, divider) - set default pane proportions
-	NgChm.Pane.setPanePropWidths = setPanePropWidths;
+	PANE.setPanePropWidths = setPanePropWidths;
 
 	// function registerPaneEventHandler(pane,name,callback) - set callback for Event name on pane
-	NgChm.Pane.registerPaneEventHandler = registerPaneEventHandler;
+	PANE.registerPaneEventHandler = registerPaneEventHandler;
 
 	// function switchToPlugin (loc, name) - switch the pane to the plugin called name.
-	NgChm.Pane.switchToPlugin = switchToPlugin;
+	PANE.switchToPlugin = switchToPlugin;
 	
 	// function clearExistingGearDialog (paneId) - clear any existing gear dialog from pane.
-	NgChm.Pane.clearExistingGearDialog = clearExistingGearDialog
+	PANE.clearExistingGearDialog = clearExistingGearDialog
 
 	// function setDividerPref (percent) - resize panes in standard configuration.
-	NgChm.Pane.setDividerPref = setDividerPref;
+	PANE.setDividerPref = setDividerPref;
 
 	// function setPaneTitle (loc, title) - set the title of the pane at PaneLocation loc
-	NgChm.Pane.setPaneTitle = setPaneTitle;
+	PANE.setPaneTitle = setPaneTitle;
 
 	// function setPaneClientIcons (loc, icons) - Set the icon group containing icons (an array) to the pane header.
-	NgChm.Pane.setPaneClientIcons = setPaneClientIcons;
+	PANE.setPaneClientIcons = setPaneClientIcons;
 
 	// function insertPopupNearIcon (popup, icon) - display a popup near a pane icon
-	NgChm.Pane.insertPopupNearIcon = insertPopupNearIcon;
+	PANE.insertPopupNearIcon = insertPopupNearIcon;
 
 	// function removePopupNearIcon (popup, icon) - remove a popup inserted by insertPopupNearIcon
-	NgChm.Pane.removePopupNearIcon = removePopupNearIcon;
+	PANE.removePopupNearIcon = removePopupNearIcon;
 
 	//
 	/////////////////////////////////////////////////////////////////////
@@ -137,7 +145,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			p = p.parentElement;
 		}
 		if (!res.pane) {
-			if (NgChm.UTIL.isBuilderView !== true) {
+			if (UTIL.isBuilderView !== true) {
 				// Should have found the pane element.
 				console.error ({ m: 'findPaneLocation: could not find pane', element, res });
 			}
@@ -216,7 +224,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 		const topContainer = document.getElementById('ngChmContainer');
 		if (!panesInitialized) {
-			NgChm.Pane.resizeNGCHM = resizeNGCHM;
+			PANE.resizeNGCHM = resizeNGCHM;
 			window.onresize = resizeNGCHM;
 		}
 
@@ -253,8 +261,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					console.error ({ m: 'getBoundingClientRect', ch });
 				}
 				const oldbb = ch.getBoundingClientRect();
-				const newWidth = Math.floor (NgChm.Pane.ngchmContainerWidth * bb.width / 100);
-				const newHeight = Math.floor (NgChm.Pane.ngchmContainerHeight * bb.height / 100) - hdrbb.height;
+				const newWidth = Math.floor (PANE.ngchmContainerWidth * bb.width / 100);
+				const newHeight = Math.floor (PANE.ngchmContainerHeight * bb.height / 100) - hdrbb.height;
 
 				if (debug) console.log ({ m: 'window.onresize: topContainer',
 					oldwidth: oldbb.width, newWidth,
@@ -272,10 +280,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					}}));
 				}
 				updatePopupPositions ();
-				NgChm.UPM.keepElementInViewport("prefs");
-				NgChm.UPM.keepElementInViewport("pdfPrefs");
-				NgChm.UPM.keepElementInViewport("msgBox");
-				NgChm.UPM.keepElementInViewport("linkBox");
+				UPM.keepElementInViewport("prefs");
+				UPM.keepElementInViewport("pdfPrefs");
+				UPM.keepElementInViewport("msgBox");
+				UPM.keepElementInViewport("linkBox");
 			}
 		}
 	}
@@ -285,11 +293,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	function initializePaneIconMenu (icon) {
 		icon.onmouseout = function(e) {
 			icon.src = 'images/paneMenu.png';
-			NgChm.UHM.hlpC();
+			UHM.hlpC();
 		};
 		icon.onmouseover = function(e) {
 			icon.src = 'images/paneMenuHover.png';
-			NgChm.UHM.hlp(icon, 'Open pane menu', 120, 0);
+			UHM.hlp(icon, 'Open pane menu', 120, 0);
 		};
 		icon.addEventListener ('click', function(e) {
 			if (openIconMenu != null) {
@@ -321,10 +329,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	function initializePaneScreenMode (icon, paneId) {
 		icon.id = paneId + "_ScreenMode";
 		icon.onmouseout = function(e) {
-			NgChm.UHM.hlpC();
+			UHM.hlpC();
 		};
 		icon.onmouseover = function(e) {
-			NgChm.UHM.hlp(icon, 'Expand/Contract Panel', 120, 0);
+			UHM.hlp(icon, 'Expand/Contract Panel', 120, 0);
 		};
 		icon.addEventListener ('click', function(ev) {
 			changeScreenMode (ev.currentTarget);
@@ -441,17 +449,17 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		icon.classList.add('hide');
 		icon.onmouseout = function(e) {
 			icon.src = 'images/gear.png';
-			NgChm.UHM.hlpC();
+			UHM.hlpC();
 		};
 		icon.onmouseover = function(e) {
 			icon.src = 'images/gearHover.png';
-			NgChm.UHM.hlp(icon, 'Open gear menu', 120, 0);
+			UHM.hlp(icon, 'Open gear menu', 120, 0);
 		};
 		icon.onclick = function(e) {
 			if (debug) console.log ({ m: 'paneGearIcon click', e });
 			e.stopPropagation();
 			let paneIdx = e.target.id.slice(0,-4) // e.g. 'pane2Gear'
-			NgChm.LNK.newGearDialog (icon, paneIdx);
+			LNK.newGearDialog (icon, paneIdx);
 		};
 	}
 
@@ -467,7 +475,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		const gearIcon = loc.paneHeader.getElementsByClassName('gearIcon')[0];
 		gearIcon.classList.remove('hide');
 		clearExistingGearDialog (loc.pane.id);
-		NgChm.LNK.newGearDialog (gearIcon, loc.pane.id);
+		LNK.newGearDialog (gearIcon, loc.pane.id);
 	}
 	
 	// Exported function.
@@ -548,26 +556,26 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// - paneid is the id to assign the new pane (if null, a unique paneid will be generated)
 	// If a title is given, the pane will be initialized with a paneHeader.
 	function newPane(style, title, paneid) {
-		NgChm.heatMap.setUnAppliedChanges(true);
+		MMGR.getHeatMap().setUnAppliedChanges(true);
 		if (paneid == null) paneid = getUniquePaneId();
-		const pane = NgChm.UTIL.newElement('DIV.pane', { style, id: paneid });
+		const pane = UTIL.newElement('DIV.pane', { style, id: paneid });
 		pane.addEventListener('paneresize', resizeHandler);
 		if (title) {
-			const h = NgChm.UTIL.newElement('DIV.paneHeader.activePane');
-			if (!NgChm.Pane.showPaneHeader) h.classList.add ('hide');
+			const h = UTIL.newElement('DIV.paneHeader.activePane');
+			if (!PANE.showPaneHeader) h.classList.add ('hide');
 			pane.appendChild(h);
 
-			const sc = NgChm.UTIL.newElement('DIV.paneScreenMode');
+			const sc = UTIL.newElement('DIV.paneScreenMode');
 			h.appendChild (sc);
 
-			const t = NgChm.UTIL.newElement('DIV.paneTitle');
+			const t = UTIL.newElement('DIV.paneTitle');
 			t.innerText = title;
 			h.appendChild (t);
 
-			const ig = NgChm.UTIL.newElement('DIV.icon_group');
+			const ig = UTIL.newElement('DIV.icon_group');
 			h.appendChild(ig);
 
-			const img2 = NgChm.UTIL.newElement('IMG.gearIcon', {
+			const img2 = UTIL.newElement('IMG.gearIcon', {
 				src: 'images/gear.png',
 				alt: 'Open gear menu',
 				align: 'top',
@@ -576,13 +584,13 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			initializeGearIconMenu (img2);
 			ig.appendChild(img2);
 
-			const img = NgChm.UTIL.newElement('IMG.paneMenuIcon', {
+			const img = UTIL.newElement('IMG.paneMenuIcon', {
 				src: 'images/paneMenu.png',
 				alt: 'Open pane menu',
 				align: 'top'
 			});
 			initializePaneIconMenu (img);
-			const imgScr = NgChm.UTIL.newElement('IMG.paneScreenModeIcon', {
+			const imgScr = UTIL.newElement('IMG.paneScreenModeIcon', {
 				src: 'images/iconFullScreen.png',
 				alt: 'Expand Pane',
 				align: 'left'
@@ -605,7 +613,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			ig.remove();
 		}
 		if (icons && icons.length > 0) {
-		    ig = NgChm.UTIL.newElement('DIV.icon_group.client_icons');
+		    ig = UTIL.newElement('DIV.icon_group.client_icons');
 		    while (icons.length > 0) {
 			    ig.appendChild (icons.shift());
 		    }
@@ -633,11 +641,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			*/
 			function promisePrompt(vertical, loc) {
 				let dialog = document.getElementById('msgBox')
-				NgChm.UHM.initMessageBox();
-				NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
-				NgChm.UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
-				NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.cancelSmall, 'Cancel Button')
-				NgChm.UHM.setMessageBoxButton(2, NgChm.UTIL.imageTable.okButton, 'OK Button')
+				UHM.initMessageBox();
+				UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
+				UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
+				UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button')
+				UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button')
 				dialog.style.display = '';
 				return new Promise(function(resolve, reject) {
 					let okButton = dialog.querySelector('#msgBoxBtnImg_2')
@@ -655,11 +663,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			}
 			promisePrompt(vertical, loc)
 				.then(function() {  // promise resolved, split pane
-					NgChm.UHM.messageBoxCancel();
+					UHM.messageBoxCancel();
 					splitPane(vertical, loc)
 				})
 				.catch(function() {  // promise rejected, do not split pane
-					NgChm.UHM.messageBoxCancel();
+					UHM.messageBoxCancel();
 					return;
 				})
 		} else { // pane division can proceed w/o any loss of PathwayMapper state
@@ -684,9 +692,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		if (loc.paneHeader) loc.paneHeader.classList.remove('activePane');
 		const style = {};
 		style[vertical ? 'height' : 'width'] = 'calc(50% - 5px)';
-		const divider = NgChm.UTIL.newElement('DIV.resizerHelper');
+		const divider = UTIL.newElement('DIV.resizerHelper');
 			divider.classList.add('resizerHelper' + (vertical ? 'Bottom' : 'Right'));
-		const splitter = NgChm.UTIL.newElement('DIV');
+		const splitter = UTIL.newElement('DIV');
 			splitter.classList.add('resizerSplitter' + (vertical ? 'Horizontal' : 'Vertical'));
 		divider.appendChild(splitter);
 
@@ -802,11 +810,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// Create an Icon Menu for the DOM element icon.
 	function newIconMenu (icon) {
-		const menu = NgChm.UTIL.newElement('DIV.menuPanel');
+		const menu = UTIL.newElement('DIV.menuPanel');
 		const paneLoc = findPaneLocation(icon);
 
 		function menuHeader (text) {
-			const mh = NgChm.UTIL.newElement('DIV.menuHeader');
+			const mh = UTIL.newElement('DIV.menuHeader');
 			mh.onclick = () => {
 			};
 			mh.innerText = text;
@@ -814,7 +822,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 
 		function menuItem (text, callback) {
-			const mi = NgChm.UTIL.newElement('DIV.menuItem');
+			const mi = UTIL.newElement('DIV.menuItem');
 			mi.onclick = () => {
 			    callback (findPaneLocation(icon));
 			};
@@ -823,7 +831,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 
 		function menuItemDisabled (text) {
-			const mi = NgChm.UTIL.newElement('DIV.menuItem.disabled');
+			const mi = UTIL.newElement('DIV.menuItem.disabled');
 			mi.onclick = () => {
 			};
 			mi.innerText = text;
@@ -831,7 +839,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 
 		function menuSeparator() {
-			const mb = NgChm.UTIL.newElement('DIV.menuItemBorder');
+			const mb = UTIL.newElement('DIV.menuItemBorder');
 			menu.appendChild(mb);
 		}
 
@@ -851,13 +859,13 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				});
 			});
 			// Add plugin options.
-			const plugins = NgChm.LNK.getPanePlugins ();
+			const plugins = LNK.getPanePlugins ();
 			plugins.forEach(plugin => {
 				if (plugin.params) {
 					menuItem (plugin.name, () => {
 						const loc = findPaneLocation (icon);
 						emptyPaneLocation (loc);
-						NgChm.LNK.switchPaneToPlugin (loc, plugin);
+						LNK.switchPaneToPlugin (loc, plugin);
 					});
 				}
 			});  
@@ -949,14 +957,14 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 				menuItemDisabled ('Close');
 			} else {
 				menuItem ('Close', () => {
-					NgChm.heatMap.setUnAppliedChanges(true);
+					MMGR.getHeatMap().setUnAppliedChanges(true);
 					emptyPaneLocation (paneLoc);
 					if (debug) console.log({ m: 'closePane', paneLoc, parentC, siblings: paneLoc.container.children });
 					try { // remove Gear dialong if it exists
 						let idIdx = paneLoc.pane.id.slice(4) // id is, e.g., 'pane3'
 						let gearDialog = document.getElementById('pane'+idIdx+'Gear')
 						let gearIcon = document.getElementById('pane'+idIdx+'Icon')
-						NgChm.Pane.removePopupNearIcon(gearDialog, gearIcon)
+						PANE.removePopupNearIcon(gearDialog, gearIcon)
 					} catch (err) {} // if err, then popup wasn't open
 					// Get all children of parent container.
 					const c = [...paneLoc.container.children];
@@ -1050,11 +1058,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					*/
 					function promisePrompt(paneLoc) {
 						let dialog = document.getElementById('msgBox');
-						NgChm.UHM.initMessageBox();
-						NgChm.UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
-						NgChm.UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
-						NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.cancelSmall, 'Cancel Button')
-						NgChm.UHM.setMessageBoxButton(2, NgChm.UTIL.imageTable.okButton, 'OK Button')
+						UHM.initMessageBox();
+						UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
+						UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
+						UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button')
+						UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button')
 						dialog.style.display = '';
 						return new Promise(function(resolve, reject) {
 							let okButton = dialog.querySelector('#msgBoxBtnImg_2')
@@ -1074,7 +1082,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 					if (paneLoc.container.textContent.indexOf('PathwayMapper') > -1 && c.length < 4) {
 						promisePrompt(paneLoc)
 							.then(function() { // promise resolved, continue pane manipulation
-								NgChm.UHM.messageBoxCancel()
+								UHM.messageBoxCancel()
 								removePaneAndAdjacentDivider();
 								if (paneLoc.container.children.length === 1) {
 									replaceContainerWithOnlyChild()
@@ -1084,7 +1092,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 								}
 							})
 		       				.catch(function() { // promise rejected, do NOT continue pane manipulation
-								NgChm.UHM.messageBoxCancel()
+								UHM.messageBoxCancel()
 								return;
 							})
 					} else { // PathwayMapper pane unaffected, OK to close
@@ -1101,7 +1109,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		}
 
 		menuItem ('Tour', function(loc) {
-		    NgChm.TOUR.showTour (loc);
+		    TOUR.showTour (loc);
 		});
 		insertPopupNearIcon (menu, icon);
 
@@ -1120,13 +1128,13 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// Exported function.
 	// Also used internally to reposition the popup after changes to the icon position.
 	function insertPopupNearIcon (popup, icon) {
-		if (popup.parentElement !== NgChm.UTIL.containerElement) {
+		if (popup.parentElement !== UTIL.containerElement) {
 			// Test lets us reuse this function to reposition popup after moving the icon.
-			NgChm.UTIL.containerElement.appendChild(popup);
+			UTIL.containerElement.appendChild(popup);
 			neighborPopups.push (popup);
 			neighborIcons.push (icon);
 		}
-		const contBB = NgChm.UTIL.containerElement.getBoundingClientRect();
+		const contBB = UTIL.containerElement.getBoundingClientRect();
 		const iconBB = icon.getBoundingClientRect();
 		let topPosn = iconBB.bottom - contBB.top;
 		let leftPosn = iconBB.left - contBB.left;
@@ -1164,7 +1172,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// Exported function.
 	function removePopupNearIcon (popup, icon) {
-		NgChm.UTIL.containerElement.removeChild (popup);
+		UTIL.containerElement.removeChild (popup);
 		for (let idx = 0; idx < neighborPopups.length; idx++) {
 			if (popup === neighborPopups[idx] && icon === neighborIcons[idx]) {
 				neighborPopups.splice(idx,1);
@@ -1249,7 +1257,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// - the removed client elements are returned.
 	function emptyPaneLocation (loc) {
 		if (loc.pane === null) return;  //builder logic
-		NgChm.LNK.removePluginInstance(loc.pane.nonce);
+		LNK.removePluginInstance(loc.pane.nonce);
 		// Remove all client elements from the pane.
 		const clientElements = [];
 		for (let idx = 0; idx < loc.pane.childNodes.length; idx++) {
@@ -1266,8 +1274,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		setPaneTitle (loc, 'empty');
 		const gearIcon = loc.paneHeader.getElementsByClassName('gearIcon')[0];
 		gearIcon.classList.add('hide');
-		NgChm.Pane.setPaneClientIcons (loc, []);
-		NgChm.MMGR.removePaneInfoFromMapConfig(loc.pane.id)
+		PANE.setPaneClientIcons (loc, []);
+		MMGR.removePaneInfoFromMapConfig(loc.pane.id)
 		// Return remaining client elements to caller.
 		return clientElements;
 	}
@@ -1334,10 +1342,10 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		const iframes = [...document.getElementsByTagName('IFRAME')];
 		iframes.forEach (iframe => iframe.classList.add('nopointer'));
 
-		NgChm.UHM.hlpC();
+		UHM.hlpC();
 		e.preventDefault();
 
-		if (NgChm.heatMap) NgChm.heatMap.setUnAppliedChanges(true);
+		if (MMGR.getHeatMap()) MMGR.getHeatMap().setUnAppliedChanges(true);
 
 		// Create and register listeners for pointer events while the divider is moving.
 		this.moveListener = (function(dc) {
@@ -1346,11 +1354,11 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		this.endListener = (function(dc) {
 			return ((e) => dc.dividerEnd(e));
 		})(this);
-		document.addEventListener('mousemove', this.moveListener, NgChm.UTIL.passiveCompat({passive: false}));
-		document.addEventListener('touchmove', this.moveListener, NgChm.UTIL.passiveCompat({passive: false}));
+		document.addEventListener('mousemove', this.moveListener, UTIL.passiveCompat({passive: false}));
+		document.addEventListener('touchmove', this.moveListener, UTIL.passiveCompat({passive: false}));
 		document.addEventListener('mouseup', this.endListener);
 		document.addEventListener('touchend', this.endListener);
-		NgChm.UTIL.containerElement.addEventListener('mouseleave', this.endListener);
+		UTIL.containerElement.addEventListener('mouseleave', this.endListener);
 	};
 
 	// This method is called for each pointer movement while moving the divider.
@@ -1366,8 +1374,8 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 			if (e.touches.length > 1) {
 				return false;
 			} else {
-				x = NgChm.UTIL.getCursorPosition(e).x;
-				y = NgChm.UTIL.getCursorPosition(e).y;
+				x = UTIL.getCursorPosition(e).x;
+				y = UTIL.getCursorPosition(e).y;
 			}
 		}
 		// Add this event's change in x and y to the current totals.
@@ -1535,9 +1543,9 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 		// Set the heatmap's DividerPref iff the Pane configuation matches the standard configuration.
 		const { summary, detail } = getStandardConfiguration();
 		if (summary) {
-			const sumPercent = Math.ceil(100 * summary.pane.clientWidth / NgChm.UTIL.containerElement.clientWidth);
+			const sumPercent = Math.ceil(100 * summary.pane.clientWidth / UTIL.containerElement.clientWidth);
 			if (debug) console.log ('Setting DividerPref to ' + sumPercent);
-			NgChm.heatMap.setDividerPref(sumPercent);
+			MMGR.getHeatMap().setDividerPref(sumPercent);
 		}
 	}
 
@@ -1545,7 +1553,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// Set the percent of the display width to use for the summary panel.
 	// Only update the display if the panes are in the standard confirguration.
 	function setDividerPref (percent) {
-		NgChm.heatMap.setDividerPref (percent);
+		MMGR.getHeatMap().setDividerPref (percent);
 		const { summary, detail, divider } = getStandardConfiguration();
 		if (summary) {
 			if (debug) console.log ('Need to resize DividerPref to ' + percent);
@@ -1555,7 +1563,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 
 	// Exported function.
 	function setPanePropWidths (percent, left, right, divider) {
-		const w = NgChm.UTIL.containerElement.clientWidth - divider.offsetWidth - verticalDividerMargins;
+		const w = UTIL.containerElement.clientWidth - divider.offsetWidth - verticalDividerMargins;
 		const w1 = (w * percent) / 100;
 		left.style.width = w1 + 'px';
 		right.style.width = (w - w1) + 'px';
@@ -1580,7 +1588,7 @@ NgChm.Pane.ngchmContainerHeight = 100;	// Percent of window height to use for NG
 	// this function returns an object containing the PaneLocations of the summary and detail NG-CHMs.
 	// Otherwise, it returns an empty object.
 	function getStandardConfiguration() {
-		const c1 = NgChm.UTIL.containerElement.children;
+		const c1 = UTIL.containerElement.children;
 		// Stop if top-level container does not contain exactly one container.
 		if (c1.length !== 1 || !c1[0].classList.contains('ngChmContainer')) return {};
 		// Stop if subcontainer is not horizontal.

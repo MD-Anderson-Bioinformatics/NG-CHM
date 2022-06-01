@@ -1,9 +1,16 @@
-//Define Namespace for NgChm CompatibilityManager
-NgChm.createNS('NgChm.CM');
+(function() {
+    'use strict';
+    NgChm.markFile();
+
+    //Define Namespace for NgChm CompatibilityManager
+    const CM = NgChm.createNS('NgChm.CM');
+
+    const UTIL = NgChm.importNS('NgChm.UTIL');
+    const MMGR = NgChm.importNS('NgChm.MMGR');
  
 // This string contains the entire configuration.json file.  This was previously located in a JSON file stored with the application code
 // but has been placed here at the top of the CompatibilityManager class so that the configuration can be utilized in File Mode.
-NgChm.CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\": \"Y\",\"height\": 15,\"bar_type\": \"color_plot\",\"fg_color\": \"#000000\",\"bg_color\": \"#FFFFFF\",\"low_bound\": \"0\",\"high_bound\": \"100\"},\"classifications_order\": 1,\"organization\": {\"agglomeration_method\": \"unknown\","+
+CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\": \"Y\",\"height\": 15,\"bar_type\": \"color_plot\",\"fg_color\": \"#000000\",\"bg_color\": \"#FFFFFF\",\"low_bound\": \"0\",\"high_bound\": \"100\"},\"classifications_order\": 1,\"organization\": {\"agglomeration_method\": \"unknown\","+
 			"\"order_method\": \"unknown\",\"distance_metric\": \"unknown\"},\"dendrogram\": {\"show\": \"ALL\",\"height\": \"100\"},\"label_display_length\": \"20\",\"label_display_method\": \"END\",\"top_items\": \"[]\"},"+
 			"\"col_configuration\": {\"classifications\": {\"show\": \"Y\",\"height\": 15,\"bar_type\": \"color_plot\",\"fg_color\": \"#000000\",\"bg_color\": \"#FFFFFF\",\"low_bound\": \"0\",\"high_bound\": \"100\"},\"classifications_order\": 1,"+ 
 		    "\"organization\": {\"agglomeration_method\": \"unknown\",\"order_method\": \"unknown\",\"distance_metric\": \"unknown\"},"+
@@ -13,10 +20,11 @@ NgChm.CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\
 		    "Full length description of this heatmap\",\"summary_width\": \"50\",\"builder_version\": \"NA\",\"summary_height\": \"100\",\"detail_width\": \"50\",\"detail_height\": \"100\",\"read_only\": \"N\",\"version_id\": \"1.0.0\",\"map_cut_rows\": \"0\",\"map_cut_cols\": \"0\"}}}";
 
 // CURRENT VERSION NUMBER
-NgChm.CM.version = "2.22.1";
-NgChm.CM.versionCheckUrl = "https://bioinformatics.mdanderson.org/versioncheck/NGCHM/";
-NgChm.CM.viewerAppUrl = "https://bioinformatics.mdanderson.org/ngchm/ZipAppDownload";
-NgChm.CM.classOrderStr = ".classifications_order";
+CM.version = "2.22.1";
+CM.versionCheckUrl = "https://bioinformatics.mdanderson.org/versioncheck/NGCHM/";
+CM.viewerAppUrl = "https://bioinformatics.mdanderson.org/ngchm/ZipAppDownload";
+CM.classOrderStr = ".classifications_order";
+
 
 /**********************************************************************************
  * FUNCTION - CompatibilityManager: The purpose of the compatibility manager is to 
@@ -34,15 +42,15 @@ NgChm.CM.classOrderStr = ".classifications_order";
  * heatmap configuration file.  If an edit was required during the comparison process,
  * the heatmaps mapConfig file is updated to permanently add the new properties.
  **********************************************************************************/
-NgChm.CM.CompatibilityManager = function(mapConfig) {
+CM.CompatibilityManager = function(mapConfig) {
 	var foundUpdate = false;
-	var jsonConfig = JSON.parse(NgChm.CM.jsonConfigStr);
+	var jsonConfig = JSON.parse(CM.jsonConfigStr);
 	//Construct comparison object tree from default configuration
 	var configObj = {}
-	NgChm.CM.buildConfigComparisonObject(jsonConfig, '', configObj, mapConfig);
+	CM.buildConfigComparisonObject(jsonConfig, '', configObj, mapConfig);
 	//Construct comparison object tree from the heatmap's configuration
 	var mapObj = {}
-	NgChm.CM.buildConfigComparisonObject(mapConfig, '', mapObj);
+	CM.buildConfigComparisonObject(mapConfig, '', mapObj);
 	
 	//Loop thru the default configuration object tree searching for matching
 	//config items in the heatmap's config obj tree.
@@ -51,7 +59,7 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 
 		//Check to see if we are processing one of the 2 classifications_order entries
 		var classOrderFound = false;
-		if (searchItem.includes(NgChm.CM.classOrderStr)) {
+		if (searchItem.includes(CM.classOrderStr)) {
     		searchItem += ".0";
 			classOrderFound = true;
 		}
@@ -72,7 +80,7 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 				//Here we search any entries for classification bars to reconstruct bar labels that have been
 				//split apart due to the period character being contained in the label.
 				if (parts[1] === 'classifications') {
-					parts[2] = NgChm.CM.trimClassLabel(parts);
+					parts[2] = CM.trimClassLabel(parts);
 				}
 				var obj = mapConfig;
 				for (let i=0;i<parts.length;i++) {
@@ -87,7 +95,7 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 	    	} else {
 	    		//If we are processing for missing classification order, check to see if there
 	    		//are any classifications defined before requiring an update.
-	    		if (NgChm.CM.hasClasses(mapConfig, searchItem)) {
+			if (CM.hasClasses(mapConfig, searchItem)) {
 	    			foundUpdate = true;
 	    		}
 	    	}
@@ -95,7 +103,7 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
 	}
 	//If any new configs were added to the heatmap's config, save the config file.
 	if (foundUpdate === true && mapConfig.data_configuration.map_information.read_only !== "Y") {
-		var success = NgChm.heatMap.autoSaveHeatMap();
+		var success = MMGR.getHeatMap().autoSaveHeatMap();
 	}
 }
 
@@ -104,7 +112,7 @@ NgChm.CM.CompatibilityManager = function(mapConfig) {
  * classification label contains the period (.) character and combine the pieces, that
  * have been previously split on that character, back into a single string.
  * *******************************************************************************/
-NgChm.CM.trimClassLabel = function(parts) {
+CM.trimClassLabel = function(parts) {
 	var classLabel = "";
 	if (parts.length > 3) {
 		var remItem = "";
@@ -125,7 +133,7 @@ NgChm.CM.trimClassLabel = function(parts) {
  * if classification_order is NOT found, we only need to update the auto save 
  * the heatmap's config if classifications exist.
  * *******************************************************************************/
-NgChm.CM.hasClasses = function(config, item) {
+CM.hasClasses = function(config, item) {
 	if (item.includes(".row_configuration.")) {
 		if (Object.keys(config.row_configuration.classifications).length > 0) {
 			return true;
@@ -152,14 +160,14 @@ NgChm.CM.hasClasses = function(config, item) {
  * current heatmap's list of layers/classes and add a default layer/class config for 
  * each layer/class to the default configuration comparison tree.
  **********************************************************************************/
-NgChm.CM.buildConfigComparisonObject = function(obj, stack, configObj, mapConfig) {
+CM.buildConfigComparisonObject = function(obj, stack, configObj, mapConfig) {
     for (var property in obj) {
         if (obj.hasOwnProperty(property)) {
             if (typeof obj[property] == "object") {
             	if ((typeof mapConfig === 'undefined') && (property === 'top_items')) {
             		configObj[stack+"."+property] = obj[property];
             	} else {
-                	NgChm.CM.buildConfigComparisonObject(obj[property], stack + '.' + property, configObj, mapConfig);
+			CM.buildConfigComparisonObject(obj[property], stack + '.' + property, configObj, mapConfig);
             	}
             } else {
                var jsonPath = stack+"."+property;
@@ -202,15 +210,15 @@ NgChm.CM.buildConfigComparisonObject = function(obj, stack, configObj, mapConfig
 /************************************************
  * mapData compatibility fixes
  ***********************************************/
-NgChm.CM.mapDataCompatibility = function(mapData) {
+CM.mapDataCompatibility = function(mapData) {
 	if (!Array.isArray(mapData.col_data.label.label_type)) {
-		var valArr = NgChm.UTIL.convertToArray(mapData.col_data.label.label_type);
+		var valArr = UTIL.convertToArray(mapData.col_data.label.label_type);
 		mapData.col_data.label.label_type = valArr;
 	}
 	if (!Array.isArray(mapData.row_data.label.label_type)) {
-		var valArr = NgChm.UTIL.convertToArray(mapData.row_data.label.label_type);
+		var valArr = UTIL.convertToArray(mapData.row_data.label.label_type);
 		mapData.row_data.label.label_type = valArr;
 	}
 }
 
-
+})();

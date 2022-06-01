@@ -861,6 +861,22 @@ th.breakpointContainer {
     padding-bottom: 12px; /* seemed aesthetically pleasing */
 }
 
+#prefActions div.errorMessage {
+    margin-bottom: 1em;
+}
+
+#prefActions div.buttonRow {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(4em, 1fr));
+}
+
+#prefActions div.buttonRow img {
+    margin-left: auto;
+    margin-right: auto;
+    align: top;
+}
+
 #pdfPrefs, #msgBox, #linkBox {
 	position: absolute;
 	margin: 5px !important;

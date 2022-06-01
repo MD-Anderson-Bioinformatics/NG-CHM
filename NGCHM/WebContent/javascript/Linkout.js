@@ -14,136 +14,153 @@
 var linkouts = {};
 var linkoutsVersion = 'undefined';
 
-linkouts.VISIBLE_LABELS = "visibleLabels";
-linkouts.HIDDEN_LABELS = "hiddenLabels";
-linkouts.FULL_LABELS = "fullLabels";
-linkouts.POSITION = "position";
-linkouts.SINGLE_SELECT = "singleSelection";
-linkouts.MULTI_SELECT = "multiSelection";
+(function() {
+    'use strict';
+    NgChm.markFile();
 
-linkouts.getAttribute = function (attribute){
-	return NgChm.heatMap.getMapInformation().attributes[attribute];
-}
+    //Define Namespace for NgChm Linkout
+    const LNK = NgChm.createNS('NgChm.LNK');
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const UTIL = NgChm.importNS('NgChm.UTIL');
 
-linkouts.setVersion = function (v) {
+    linkouts.VISIBLE_LABELS = "visibleLabels";
+    linkouts.HIDDEN_LABELS = "hiddenLabels";
+    linkouts.FULL_LABELS = "fullLabels";
+    linkouts.POSITION = "position";
+    linkouts.SINGLE_SELECT = "singleSelection";
+    linkouts.MULTI_SELECT = "multiSelection";
+
+    linkouts.getAttribute = function (attribute){
+	return MMGR.getHeatMap().getMapInformation().attributes[attribute];
+    };
+
+    linkouts.setVersion = function (v) {
 	linkoutsVersion = '' + v;
-};
+    };
 
-linkouts.getVersion = function () {
+    linkouts.getVersion = function () {
 	return linkoutsVersion;
-};
+    };
 
-linkouts.getMapName = function(){
-	return NgChm.heatMap.getMapInformation().name;
-}
+    linkouts.getMapName = function(){
+	return MMGR.getHeatMap().getMapInformation().name;
+    };
 
-linkouts.getMapFileName = function(){
-	return NgChm.UTIL.mapId;
-}
+    linkouts.getMapFileName = function(){
+	return UTIL.mapId;
+    };
 
-// returns type of object we're linking from.
-linkouts.getSourceObjectType = function() {
+    // returns type of object we're linking from.
+    linkouts.getSourceObjectType = function() {
 	return "chm"; // CHM of course.
-};
+    };
 
-// returns a 'unique' identifier for the current source object.
-linkouts.getSourceObjectUniqueId = function() {
-	return NgChm.UTIL.mapId;
-};
+    // returns a 'unique' identifier for the current source object.
+    linkouts.getSourceObjectUniqueId = function() {
+	return UTIL.mapId;
+    };
 
-//adds axis linkout objects to the linkouts global variable
-linkouts.addLinkout = function(name, labelType, selectType, callback, reqAttributes, index){
-	NgChm.LNK.addLinkout(name, labelType, selectType, callback, reqAttributes, index);
-};
+    //adds axis linkout objects to the linkouts global variable
+    linkouts.addLinkout = function(name, labelType, selectType, callback, reqAttributes, index){
+	LNK.addLinkout(name, labelType, selectType, callback, reqAttributes, index);
+    };
 
-//adds matrix linkout objects to the linkouts global variable
-linkouts.addMatrixLinkout = function (name, rowType, colType, selectType, callback, reqAttributes, index) {
-	NgChm.LNK.addMatrixLinkout (name, rowType, colType, selectType, callback, reqAttributes, index);
-};
+    //adds matrix linkout objects to the linkouts global variable
+    linkouts.addMatrixLinkout = function (name, rowType, colType, selectType, callback, reqAttributes, index) {
+	LNK.addMatrixLinkout (name, rowType, colType, selectType, callback, reqAttributes, index);
+    };
 
-linkouts.addPanePlugin = function (p) {
-	NgChm.LNK.registerPanePlugin (p);
-};
+    linkouts.addPanePlugin = function (p) {
+	LNK.registerPanePlugin (p);
+    };
 
-// Linkout to the specified url in a suitable 'window'.
-// name identifies the linkout group (subsequent linkouts in the same group should display in the same window).
-// options fine tunes the window display.
-linkouts.openUrl = function openUrl (url, name, options) {
-	NgChm.LNK.openUrl (url, name, options);
-};
+    // Linkout to the specified url in a suitable 'window'.
+    // name identifies the linkout group (subsequent linkouts in the same group should display in the same window).
+    // options fine tunes the window display.
+    linkouts.openUrl = function openUrl (url, name, options) {
+	LNK.openUrl (url, name, options);
+    };
 
-linkouts.simplifyLabels = function (labels) {
+    linkouts.simplifyLabels = function (labels) {
         if (!Array.isArray(labels)) {
 	        labels = labels.Row.concat(labels.Column);
         }
         // Remove duplicates.
         return labels.sort().filter(function(el,i,a){return i===a.indexOf(el);});
-};
+    };
 
-linkouts.addHamburgerLinkout = function(params){
-	NgChm.LNK.addHamburgerLinkout(params);
-}
+    linkouts.addHamburgerLinkout = function(params){
+	LNK.addHamburgerLinkout(params);
+    };
 
-/*******************************************
- * END EXTERNAL INTERFACE
- *******************************************/
+    /*******************************************
+     * END EXTERNAL INTERFACE
+     *******************************************/
 
-//Define Namespace for NgChm Linkout
-NgChm.createNS('NgChm.LNK');
-
-(function() {
+    /* Additional imports. */
+    const SRCH = NgChm.importNS('NgChm.SRCH');
+    const PANE = NgChm.importNS('NgChm.Pane');
+    const UHM = NgChm.importNS('NgChm.UHM');
+    const DET = NgChm.importNS('NgChm.DET');
+    const DEV = NgChm.importNS('NgChm.DEV');
+    const DMM = NgChm.importNS('NgChm.DMM');
+    const SEL = NgChm.importNS('NgChm.SEL');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const CUST = NgChm.importNS('NgChm.CUST');
+    const CMM = NgChm.importNS('NgChm.CMM');
+    const RECPANES = NgChm.importNS('NgChm.RecPanes');
 
 	//Used to store the label item that the user clicked-on
-	NgChm.LNK.selection = 0;
+	LNK.selection = 0;
 	//Used to place items into the hamburger menu (incremented from starting point of 10 which is just after the gear in the menu.  this value MUST be edited if adding an item before the gear)
-	NgChm.LNK.hamburgerLinkCtr = 10;
+	LNK.hamburgerLinkCtr = 10;
 
-	NgChm.LNK.linkoutElement = null;
+	LNK.linkoutElement = null;
 
-	NgChm.LNK.openUrl = function openUrl (url, name, options) {
+	LNK.openUrl = function openUrl (url, name, options) {
                 options = options || {};
-		const pane = NgChm.LNK.linkoutElement !== null && NgChm.Pane.findPaneLocation (NgChm.LNK.linkoutElement);
+		const pane = LNK.linkoutElement !== null && PANE.findPaneLocation (LNK.linkoutElement);
                 if (!pane.pane || options.noframe) {
                         window.open (url, name);
                 } else {
                         console.log ({ m: 'openUrl', url, name, options });
-                        let ch = NgChm.LNK.linkoutElement.lastChild;
+                        let ch = LNK.linkoutElement.lastChild;
                         while (ch) {
-                                NgChm.LNK.linkoutElement.removeChild (ch);
-                                ch = NgChm.LNK.linkoutElement.lastChild;
+                                LNK.linkoutElement.removeChild (ch);
+                                ch = LNK.linkoutElement.lastChild;
                         }
                         ch = document.createElement('IFRAME');
                         ch.setAttribute('title', name);
                         ch.setAttribute('src', url);
-                        NgChm.LNK.linkoutElement.appendChild(ch);
+                        LNK.linkoutElement.appendChild(ch);
                         if (name) {
-				NgChm.Pane.setPaneTitle (pane, name);
+				PANE.setPaneTitle (pane, name);
                         }
-			NgChm.MMGR.saveLinkoutPaneToMapConfig(pane.pane.id, url, name);
+			MMGR.saveLinkoutPaneToMapConfig(pane.pane.id, url, name);
                 }
 	};
 
 	//Add a linkout to the Hamburger menu
-	NgChm.LNK.addHamburgerLinkout = function(params) {
+	LNK.addHamburgerLinkout = function(params) {
 		var burgerMenu = document.getElementById('burgerMenuPanel');
 		//Verify params and set defaults
 		if (params.name === undefined) {return;}
 		params.name = "plugin-" + params.name;
 		if (params.label === undefined) {params.label = params.name;}
 		if (params.icon === undefined) {params.icon = 'images/link.png';}
-		if (params.action === undefined) {params.action = NgChm.UHM.hamburgerLinkMissing;}
+		if (params.action === undefined) {params.action = UHM.hamburgerLinkMissing;}
 		//Create linkout div using params
 		var wrapper= document.createElement('div');
 		wrapper.innerHTML= "<div id='"+params.name+"' class='menuItem'> <img id='plugin-"+params.name+"_btn' src='"+params.icon+"'>"+params.label+"...</div>";
 		var burgerLinkDiv= wrapper.firstChild;
 		burgerLinkDiv.onclick = params.action;
 		//Add linkout to burger menu
-		burgerMenu.insertBefore(burgerLinkDiv, burgerMenu.children[NgChm.LNK.hamburgerLinkCtr]);
-		NgChm.LNK.hamburgerLinkCtr++;
+		burgerMenu.insertBefore(burgerLinkDiv, burgerMenu.children[LNK.hamburgerLinkCtr]);
+		LNK.hamburgerLinkCtr++;
 	}
 
 	//the linkout object
-	NgChm.LNK.linkout = function(title, labelType, selectType, reqAttributes, callback){
+	LNK.linkout = function(title, labelType, selectType, reqAttributes, callback){
 		this.title = title;
 		this.labelType = labelType; // input type of the callback function
 		this.selectType = selectType;
@@ -151,7 +168,7 @@ NgChm.createNS('NgChm.LNK');
 		this.callback = callback;
 	}
 
-	NgChm.LNK.matrixLinkout = function(title, rowType, colType, selectType, reqAttributes, callback){
+	LNK.matrixLinkout = function(title, rowType, colType, selectType, reqAttributes, callback){
 		this.title = title;
 		this.rowType = rowType;
 		this.colType = colType;
@@ -163,15 +180,15 @@ NgChm.createNS('NgChm.LNK');
 	//this function is used to add standard linkouts to the row/col, covariate, and matrix menu
 	// labelType will decide which menu to place the linkout in.
 	// selectType decides when the linkout is executable. (passing in null or undefined, or false will allow the function to be executable for all selection types)
-	NgChm.LNK.addLinkout = function(name, labelType, selectType, callback, reqAttributes, index){ 
-		var linkout = new NgChm.LNK.linkout(name, labelType, selectType,reqAttributes, callback);
+	LNK.addLinkout = function(name, labelType, selectType, callback, reqAttributes, index){
+		var linkout = new LNK.linkout(name, labelType, selectType,reqAttributes, callback);
 		if (!linkouts[labelType]){
 			linkouts[labelType] = [linkout];
 		} else {
 			if (index !== undefined){
 				linkouts[labelType].splice(index, 0, linkout); 
 			}else {
-				NgChm.LNK.dupeLinkout(linkouts[labelType], linkout);
+				LNK.dupeLinkout(linkouts[labelType], linkout);
 				linkouts[labelType].push(linkout);
 			}
 		}
@@ -179,7 +196,7 @@ NgChm.createNS('NgChm.LNK');
 
 	//Check to see if the linkout being added already exists.  This would be in a case where a secondary custom.js is being used (embedded NG-CHM)
 	//If so, delete the existing linkout and allow the new linkout to be added in its place.
-	NgChm.LNK.dupeLinkout = function(linkouts, linkout) {
+	LNK.dupeLinkout = function(linkouts, linkout) {
 		for (var i=0;i<linkouts.length;i++) {
 			var curLink = linkouts[i];
 			if (curLink.title === linkout.title) {
@@ -188,8 +205,8 @@ NgChm.createNS('NgChm.LNK');
 		}
 	}
 
-	NgChm.LNK.addMatrixLinkout = function(name, rowType, colType, selectType, callback, reqAttributes, index){ // this function is used to add linkouts to the matrix menu when the linkout needs a specific criteria for the row and column (ie: same attribute)
-		var linkout = new NgChm.LNK.matrixLinkout(name, rowType, colType, selectType,reqAttributes, callback);
+	LNK.addMatrixLinkout = function(name, rowType, colType, selectType, callback, reqAttributes, index){ // this function is used to add linkouts to the matrix menu when the linkout needs a specific criteria for the row and column (ie: same attribute)
+		var linkout = new LNK.matrixLinkout(name, rowType, colType, selectType,reqAttributes, callback);
 		if (!linkouts["Matrix"]){
 			linkouts["Matrix"] = [linkout];
 		} else {
@@ -203,12 +220,13 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	//this function goes through searchItems and returns the proper label type for linkout functions to use
-	NgChm.LNK.getLabelsByType = function(axis, linkout){
+	LNK.getLabelsByType = function(axis, linkout){
 		var searchLabels;
 		var labelDataMatrix;
-		var labels = axis == 'Row' ? NgChm.heatMap.getRowLabels()["labels"] : axis == "Column" ? NgChm.heatMap.getColLabels()['labels'] : 
-			axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : 
-				[NgChm.heatMap.getRowLabels()["labels"], NgChm.heatMap.getColLabels()['labels'] ];
+		const heatMap = MMGR.getHeatMap();
+		var labels = axis == 'Row' ? heatMap.getRowLabels()["labels"] : axis == "Column" ? heatMap.getColLabels()['labels'] :
+			axis == "ColumnCovar" ? heatMap.getColClassificationConfigOrder() : axis == "RowCovar" ? heatMap.getRowClassificationConfigOrder() :
+				[heatMap.getRowLabels()["labels"], heatMap.getColLabels()['labels'] ];
 
 		var types;
 
@@ -222,16 +240,16 @@ NgChm.createNS('NgChm.LNK');
 			var formatIndex = [];
 			for (var i = 0; i < types.length; i++){
 				var type = types[i];
-				formatIndex[i] = !type || axis == "Matrix" ? 0 : axis == 'Row' ? NgChm.heatMap.getRowLabels()["label_type"].indexOf(type) : axis == "Column" ? NgChm.heatMap.getColLabels()['label_type'].indexOf(type) : 0;
+				formatIndex[i] = !type || axis == "Matrix" ? 0 : axis == 'Row' ? heatMap.getRowLabels()["label_type"].indexOf(type) : axis == "Column" ? heatMap.getColLabels()['label_type'].indexOf(type) : 0;
 			}
 			if (axis !== "Matrix"){
 				searchLabels = [];
 				//IF the linkout is single select, load ONLY the item that was clicked on to searchLabels.
 				if (linkout.selectType === linkouts.SINGLE_SELECT) {
-					searchLabels.push( generateSearchLabel(NgChm.LNK.selection,formatIndex));
+					searchLabels.push( generateSearchLabel(LNK.selection,formatIndex));
 				} else {
 				//ELSE the linkout is multi select, load all selected items to searchLabels (not necessarily the item that was clicked on)
-					NgChm.SRCH.getAxisSearchResults(axis).forEach(i => {
+					SRCH.getAxisSearchResults(axis).forEach(i => {
 						if (axis.includes("Covar")){ // Covariate linkouts have not been tested very extensively. May need revision in future. 
 							searchLabels.push( generateSearchLabel(labels[i],formatIndex)) ;
 						} else {
@@ -241,25 +259,25 @@ NgChm.createNS('NgChm.LNK');
 				}
 			} else {
 				searchLabels = {"Row" : [], "Column" : []};
-				NgChm.SRCH.getAxisSearchResults("Row").forEach (i => {
+				SRCH.getAxisSearchResults("Row").forEach (i => {
 					searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],[formatIndex[0]]) );
 				});
-				NgChm.SRCH.getAxisSearchResults("Column").forEach (i => {
+				SRCH.getAxisSearchResults("Column").forEach (i => {
 					searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],[formatIndex[0]]) );
 				});
 				if (linkout.title !== 'Copy selected labels to clipboard') {
 					if (searchLabels["Row"].length === 0) {
-						searchLabels["Row"] = NgChm.DET.getAllLabelsByAxis("Row");
+						searchLabels["Row"] = DET.getAllLabelsByAxis("Row");
 					}
 					if (searchLabels["Column"].length === 0) {
-						searchLabels["Column"] = NgChm.DET.getAllLabelsByAxis("Column");
+						searchLabels["Column"] = DET.getAllLabelsByAxis("Column");
 					}
 				}
 				if (linkout.title === 'Download selected matrix data to file') {
-					labelDataMatrix = NgChm.LNK.createMatrixData(searchLabels);
+					labelDataMatrix = LNK.createMatrixData(searchLabels);
 				}
 				if (linkout.title === 'Set selection as detail view') {
-					NgChm.LNK.setDetailView(searchLabels);
+					LNK.setDetailView(searchLabels);
 				}
 			}
 		} else { // if this linkout was added using addMatrixLinkout
@@ -271,17 +289,17 @@ NgChm.createNS('NgChm.LNK');
 			// Build the formatIndex array to help build the labels
 			for (var i = 0; i < types.row.length; i++){
 				var type = types.row[i];
-				formatIndex.row[i] = NgChm.heatMap.getRowLabels()["label_type"].indexOf(type);
+				formatIndex.row[i] = heatMap.getRowLabels()["label_type"].indexOf(type);
 			}
 			for (var i = 0; i < types.col.length; i++){
 				var type = types.col[i];
-				formatIndex.col[i] = NgChm.heatMap.getColLabels()["label_type"].indexOf(type);
+				formatIndex.col[i] = heatMap.getColLabels()["label_type"].indexOf(type);
 			}
 			// Build the searchLabels and put them into the return object
-			NgChm.SRCH.getAxisSearchResults("Row").forEach( i => {
+			SRCH.getAxisSearchResults("Row").forEach( i => {
 				searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],formatIndex.row) );
 			});
-			NgChm.SRCH.getAxisSearchResults("Column").forEach( i => {
+			SRCH.getAxisSearchResults("Column").forEach( i => {
 				searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],formatIndex.col) );
 			});
 			
@@ -303,49 +321,50 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 
-	NgChm.LNK.createMatrixData = function(searchLabels) {
+	LNK.createMatrixData = function(searchLabels) {
 		let tilesReady = false;
-		if (NgChm.SRCH.getAxisSearchResults("Row").length === 0) {
-		    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.DMM.primaryMap, NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
-		    tilesReady = NgChm.heatMap.allTilesAvailable();
-		} else if (NgChm.SRCH.getAxisSearchResults("Column").length === 0) {
-		    NgChm.heatMap.setReadWindow(NgChm.SEL.getLevelFromMode(NgChm.DMM.primaryMap, NgChm.MMGR.DETAIL_LEVEL),1,1,NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL));
-		    tilesReady = NgChm.heatMap.allTilesAvailable();
+		const heatMap = MMGR.getHeatMap();
+		if (SRCH.getAxisSearchResults("Row").length === 0) {
+		    heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MMGR.DETAIL_LEVEL),1,1,heatMap.getNumRows(MMGR.DETAIL_LEVEL),heatMap.getNumColumns(MMGR.DETAIL_LEVEL));
+		    tilesReady = heatMap.allTilesAvailable();
+		} else if (SRCH.getAxisSearchResults("Column").length === 0) {
+		    heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MMGR.DETAIL_LEVEL),1,1,heatMap.getNumRows(MMGR.DETAIL_LEVEL),heatMap.getNumColumns(MMGR.DETAIL_LEVEL));
+		    tilesReady = heatMap.allTilesAvailable();
 		} else {
-			return NgChm.LNK.createMatrixDataTsv(searchLabels);
+			return LNK.createMatrixDataTsv(searchLabels);
 		} 
 		if (tilesReady === true) {
-			NgChm.LNK.createMatrixDataTsv(searchLabels);
+			LNK.createMatrixDataTsv(searchLabels);
 		} else {
-			NgChm.heatMap.addEventListener(NgChm.LNK.matrixDataReady.bind('payload', searchLabels));
+			heatMap.addEventListener(LNK.matrixDataReady.bind('payload', searchLabels));
 		}
-	}
+	};
 
 	//This function gets called asynchronously if tiles need to be loaded in order
 	//to satisfy the matrix data tsv request.
-	NgChm.LNK.matrixDataReady = function(searchLabels, event, tile) {
-	    let tilesReady = NgChm.heatMap.allTilesAvailable();
+	LNK.matrixDataReady = function(searchLabels, event, tile) {
+	    let tilesReady = MMGR.getHeatMap().allTilesAvailable();
 	    if (tilesReady === true) {
-	    	NgChm.MMGR.latestReadWindow= null;
-	        NgChm.LNK.createMatrixDataTsv(searchLabels);
+		MMGR.latestReadWindow= null;
+		LNK.createMatrixDataTsv(searchLabels);
 	    }
 	}
 	
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
-	NgChm.LNK.createMatrixDataTsv = function(searchLabels) {
+	LNK.createMatrixDataTsv = function(searchLabels) {
 		var matrix = new Array();
 
-		let rowSearchItems = NgChm.SRCH.getAxisSearchResults("Row");
+		let rowSearchItems = SRCH.getAxisSearchResults("Row");
 		//Check to see if we need new searchItems because entire axis is selected by 
 		//default of no items being selected on opposing axis, Otherwise, use
 		//searchItems selected.
 		if (rowSearchItems.length === 0) {
-			rowSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Row");
+			rowSearchItems = LNK.getEntireAxisSearchItems(searchLabels,"Row");
 		}
-		let colSearchItems = NgChm.SRCH.getAxisSearchResults("Column");
+		let colSearchItems = SRCH.getAxisSearchResults("Column");
 		if (colSearchItems.length === 0) {
-			colSearchItems = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Column");
+			colSearchItems = LNK.getEntireAxisSearchItems(searchLabels,"Column");
 		}
 		
 		//Load up initial array with column headers
@@ -370,9 +389,9 @@ NgChm.createNS('NgChm.LNK');
 		var dataMatrix = new Array();
 		rowSearchItems.forEach( x => {
 			colSearchItems.forEach( y => {
-				let matrixValue = NgChm.heatMap.getValue(NgChm.MMGR.DETAIL_LEVEL,x,y);
+				let matrixValue = MMGR.getHeatMap().getValue(MMGR.DETAIL_LEVEL,x,y);
 				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
-				if (matrixValue !== NgChm.SUM.minValues-1) {
+				if (matrixValue !== SUM.minValues-1) {
 					dataMatrix.push(matrixValue);
 				}
 			});
@@ -394,14 +413,14 @@ NgChm.createNS('NgChm.LNK');
 				matrixCtr++;
 			}
 		}
-		NgChm.LNK.copySelectedDataToClipboard(matrix,"Matrix");
-	}
+		LNK.copySelectedDataToClipboard(matrix,"Matrix");
+	};
 
 	//This function creates a temporary searchItems object array and
 	//is called when the selection box spans an entire axis
 	//(e.g. the selection is the result of a dendro selection on one
 	//axis with nothing selected on the other)
-	NgChm.LNK.getEntireAxisSearchItems = function(searchLabels,axis) {
+	LNK.getEntireAxisSearchItems = function(searchLabels,axis) {
 		let searchItems = [];
 		for (let i=1;i<=searchLabels[axis].length;i++) {
 			if (searchLabels[axis][i-1] !== '') {
@@ -411,25 +430,25 @@ NgChm.createNS('NgChm.LNK');
 		return searchItems;
 	};
 
-	NgChm.LNK.createLabelMenus = function(){
+	LNK.createLabelMenus = function(){
 		if (!document.getElementById("RowLabelMenu")){
-			NgChm.LNK.createLabelMenu('Column'); // create the menu divs if they don't exist yet
-			NgChm.LNK.createLabelMenu('ColumnCovar');
-			NgChm.LNK.createLabelMenu('Row');
-			NgChm.LNK.createLabelMenu('RowCovar');
-			NgChm.LNK.createLabelMenu('Matrix');
-			NgChm.LNK.getDefaultLinkouts();
+			LNK.createLabelMenu('Column'); // create the menu divs if they don't exist yet
+			LNK.createLabelMenu('ColumnCovar');
+			LNK.createLabelMenu('Row');
+			LNK.createLabelMenu('RowCovar');
+			LNK.createLabelMenu('Matrix');
+			LNK.getDefaultLinkouts();
 		}
 	}
 
-	NgChm.LNK.labelHelpCloseAll = function(){
-		NgChm.LNK.labelHelpClose("Matrix");
-		NgChm.LNK.labelHelpClose("Column");
-		NgChm.LNK.labelHelpClose("Row");
+	LNK.labelHelpCloseAll = function(){
+		LNK.labelHelpClose("Matrix");
+		LNK.labelHelpClose("Column");
+		LNK.labelHelpClose("Row");
 	}
 
 
-	NgChm.LNK.labelHelpClose = function(axis){
+	LNK.labelHelpClose = function(axis){
 		var labelMenu = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenu') : document.getElementById("MatrixMenu");
 	    var tableBody = labelMenu.getElementsByTagName("TBODY")[0];
 	    var tempClass = tableBody.className;
@@ -441,39 +460,40 @@ NgChm.createNS('NgChm.LNK');
 	    }
 	}
 
-	NgChm.LNK.labelHelpOpen = function(axis, e){
-		NgChm.DEV.targetCanvas = e.currentTarget;
-		NgChm.LNK.labelHelpCloseAll();
-		//Get the label item that the user clicked on (by axis) and save that value for use in NgChm.LNK.selection
+	LNK.labelHelpOpen = function(axis, e){
+	    const heatMap = MMGR.getHeatMap();
+		DEV.targetCanvas = e.currentTarget;
+		LNK.labelHelpCloseAll();
+		//Get the label item that the user clicked on (by axis) and save that value for use in LNK.selection
 	    var index = e.target.dataset.index;
-	    NgChm.LNK.selection = '';
+	    LNK.selection = '';
 	    if (axis === "Row") {
-		NgChm.LNK.selection = NgChm.heatMap.getRowLabels().labels[index-1];
+		LNK.selection = heatMap.getRowLabels().labels[index-1];
 	    } else if (axis === "Column") {
-		NgChm.LNK.selection = NgChm.heatMap.getColLabels().labels[index-1];
+		LNK.selection = heatMap.getColLabels().labels[index-1];
 	    } else if (axis === "RowCovar"){
-		NgChm.LNK.selection = NgChm.heatMap.getRowClassificationConfigOrder()[index];
+		LNK.selection = heatMap.getRowClassificationConfigOrder()[index];
 	    } else if (axis === "ColumnCovar"){
-		NgChm.LNK.selection = NgChm.heatMap.getColClassificationConfigOrder()[index];
+		LNK.selection = heatMap.getColClassificationConfigOrder()[index];
 	    }
 
 		var labelMenu =  axis !== "Matrix" ? document.getElementById(axis + 'LabelMenu') : document.getElementById("MatrixMenu");
 		var labelMenuTable = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenuTable') : document.getElementById('MatrixMenuTable');
-	    var axisLabelsLength = axis !== "Matrix" ? NgChm.SRCH.getSearchLabelsByAxis(axis).length : {"Row":NgChm.SRCH.getSearchLabelsByAxis("Row").length ,"Column":  NgChm.SRCH.getSearchLabelsByAxis("Column").length};
+	    var axisLabelsLength = axis !== "Matrix" ? SRCH.getSearchLabelsByAxis(axis).length : {"Row":SRCH.getSearchLabelsByAxis("Row").length ,"Column":  SRCH.getSearchLabelsByAxis("Column").length};
 	    var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
 	    var row = header.getElementsByTagName('TR')[0];
-	    if (((axisLabelsLength > 0) || (NgChm.LNK.selection !== '')) && axis !== "Matrix"){
+	    if (((axisLabelsLength > 0) || (LNK.selection !== '')) && axis !== "Matrix"){
 			row.innerHTML = "Selected " + axis.replace("Covar"," Classification") + "s : " + axisLabelsLength;
 			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
-			NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
+			LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else if ((axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) && axis == "Matrix"){
 	    	if (axisLabelsLength["Row"] === 0) {
-	    		axisLabelsLength["Row"] = NgChm.DET.getAllLabelsByAxis("Row").length;
+			axisLabelsLength["Row"] = DET.getAllLabelsByAxis("Row").length;
 	    	} else if (axisLabelsLength["Column"] === 0) {
-	    		axisLabelsLength["Column"] = NgChm.DET.getAllLabelsByAxis("Column").length;
+			axisLabelsLength["Column"] = DET.getAllLabelsByAxis("Column").length;
 	    	}
 			row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
-			NgChm.LNK.populateLabelMenu(axis,axisLabelsLength);
+			LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else {
 			row.innerHTML = "Please select a " + axis.replace("Covar"," Classification");
 			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
@@ -488,11 +508,11 @@ NgChm.createNS('NgChm.LNK');
 		labelMenu.style.left = left + 'px';
 		labelMenu.style.top = top + 'px';
 	    }
-	}
+	};
 
 	//creates the divs for the label menu
-	NgChm.LNK.createLabelMenu = function(axis){
-		var labelMenu = axis !== "Matrix" ? NgChm.UHM.getDivElement(axis + 'LabelMenu') : NgChm.UHM.getDivElement(axis + 'Menu');
+	LNK.createLabelMenu = function(axis){
+		var labelMenu = axis !== "Matrix" ? UHM.getDivElement(axis + 'LabelMenu') : UHM.getDivElement(axis + 'Menu');
 		document.body.appendChild(labelMenu);
 		labelMenu.style.display = 'block';
 		labelMenu.style.position = 'absolute';
@@ -502,10 +522,10 @@ NgChm.createNS('NgChm.LNK');
 		topDiv.classList.add("labelMenuCaption");
 		topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Classification") + ' Label Menu:' : axis + ' Menu';
 		var closeMenu = document.createElement("IMG");
-		closeMenu.src = NgChm.UTIL.imageTable.closeButton;
+		closeMenu.src = UTIL.imageTable.closeButton;
 		closeMenu.alt = "close menu";
 		closeMenu.classList.add('labelMenuClose')
-		closeMenu.addEventListener('click', function(){NgChm.LNK.labelHelpClose(axis)},false);
+		closeMenu.addEventListener('click', function(){LNK.labelHelpClose(axis)},false);
 		var table = document.createElement("TABLE");
 		table.id = axis !== "Matrix" ? axis + 'LabelMenuTable' : axis+'MenuTable';
 		var tableHead = table.createTHead();
@@ -516,22 +536,23 @@ NgChm.createNS('NgChm.LNK');
 		labelMenu.appendChild(closeMenu);
 		var tableBody = table.createTBody();
 		tableBody.classList.add('labelMenuBody');
-		var labelHelpCloseAxis = function(){ NgChm.LNK.labelHelpClose(axis)};
+		var labelHelpCloseAxis = function(){ LNK.labelHelpClose(axis)};
 	    document.addEventListener('click', labelHelpCloseAxis);
 	    labelMenu.addEventListener("contextmenu",function(e){e.preventDefault()},true);
 	}
 
 	// Check to see if the item that the user clicked on is part of selected labels group
-	NgChm.LNK.itemInSelection = function (axis) {
-		const labels = axis == "Row" ? NgChm.heatMap.getRowLabels() : axis == "Column" ? NgChm.heatMap.getColLabels() : axis == "RowCovar" ? NgChm.heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? NgChm.heatMap.getColClassificationConfigOrder() : []; 
-		NgChm.SRCH.getAxisSearchResults(axis).forEach( key => {
+	LNK.itemInSelection = function (axis) {
+	    const heatMap = MMGR.getHeatMap();
+		const labels = axis == "Row" ? heatMap.getRowLabels() : axis == "Column" ? heatMap.getColLabels() : axis == "RowCovar" ? heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? heatMap.getColClassificationConfigOrder() : []; 
+		SRCH.getAxisSearchResults(axis).forEach( key => {
 			let selItem;
 			if (axis.includes("Covar")){
 				selItem = labels[key];
 			} else {
 				selItem = labels[key-1];
 			}
-			if (selItem === NgChm.LNK.selection) {
+			if (selItem === LNK.selection) {
 				return true;
 			}
 		});
@@ -539,21 +560,22 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	//Check to see if we have selections
-	NgChm.LNK.hasSelection = function (axis) {
+	LNK.hasSelection = function (axis) {
 		// Check to see if clicked item is part of selected labels group
-		return NgChm.SRCH.getAxisSearchResults(axis).length > 0;
+		return SRCH.getAxisSearchResults(axis).length > 0;
 	};
 
 	//adds the row linkouts and the column linkouts to the menus
-	NgChm.LNK.populateLabelMenu = function(axis, axisLabelsLength){
+	LNK.populateLabelMenu = function(axis, axisLabelsLength){
+		const heatMap = MMGR.getHeatMap();
 		var table = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenuTable') : document.getElementById("MatrixMenuTable");
-		var labelType = axis == "Row" ? NgChm.heatMap.getRowLabels()["label_type"] : 
-						axis == "Column" ? NgChm.heatMap.getColLabels()["label_type"] : axis == "ColumnCovar" ? ["ColumnCovar"] : axis == "RowCovar"  ? ["RowCovar"] : ["Matrix"];
+		var labelType = axis == "Row" ? heatMap.getRowLabels()["label_type"] :
+						axis == "Column" ? heatMap.getColLabels()["label_type"] : axis == "ColumnCovar" ? ["ColumnCovar"] : axis == "RowCovar"  ? ["RowCovar"] : ["Matrix"];
 		var linkoutsKeys = Object.keys(linkouts);
 		//Arrays here are used to store linkouts by type (e.g. individual OR group)
 		var indLinkouts = [];
 		var grpLinkouts = [];
-		var itemInSelection = NgChm.LNK.itemInSelection(axis);
+		var itemInSelection = LNK.itemInSelection(axis);
 		for (var i = 0; i < labelType.length; i++){ // for every labeltype that the map has...
 			var type = labelType[i];
 			if (linkouts[type]){ // and for every linkout that the label type has, we add the linkout to the menu
@@ -602,21 +624,21 @@ NgChm.createNS('NgChm.LNK');
 		}
 		if (axis === "Matrix") {
 			for (var l=0; l < grpLinkouts.length;l++ ) {
-				NgChm.LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, true);
+				LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, true);
 			}
 		} else {
 			//Always add clipboard link at top of list
-			NgChm.LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
-			if ((indLinkouts.length > 0) && (NgChm.LNK.selection !== undefined)) {
+			LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
+			if ((indLinkouts.length > 0) && (LNK.selection !== undefined)) {
 				var addedHeader = false;
 				for (var k=0; k < indLinkouts.length;k++ ) {
-					addedHeader = NgChm.LNK.addMenuItemToTable(axis, table, indLinkouts[k].linkout, addedHeader);
+					addedHeader = LNK.addMenuItemToTable(axis, table, indLinkouts[k].linkout, addedHeader);
 				}
 			}
 			if (grpLinkouts.length > 1) {
 				var addedHeader = false;
 				for (var l=1; l < grpLinkouts.length;l++ ) {
-					addedHeader = NgChm.LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, addedHeader);
+					addedHeader = LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, addedHeader);
 				}
 			}
 		}
@@ -626,8 +648,8 @@ NgChm.createNS('NgChm.LNK');
 
 		// Helper functions for populateLabelMenu
 		function handleMatrixLinkout(axis, table, linkout,grpLinkouts){
-			var rowLabelTypes = NgChm.heatMap.getRowLabels().label_type;
-			var colLabelTypes = NgChm.heatMap.getColLabels().label_type;
+			var rowLabelTypes = heatMap.getRowLabels().label_type;
+			var colLabelTypes = heatMap.getColLabels().label_type;
 			if (Array.isArray(linkout.rowType)){ // if there are mutliple rowTypes required
 				for (var i=0;i<linkout.rowType.length;i++){
 					if (rowLabelTypes.indexOf(linkout.rowType[i]) == -1){
@@ -652,27 +674,28 @@ NgChm.createNS('NgChm.LNK');
 			}
 			grpLinkouts.push({"linkout": linkout});
 		}
-	}
+	};
 
 	// Helper functions to add header comment lines to help box
-	NgChm.LNK.addTextRowToTable = function(table, type, axis) {
+	LNK.addTextRowToTable = function(table, type, axis) {
 		var body = table.getElementsByClassName('labelMenuBody')[0];
 		var row = body.insertRow();
 		var cell = row.insertCell();
 		if (type === "multi") {
 			cell.innerHTML = ("<b>Linkouts for entire selection:</b>");
 		} else {
-			var labelVal = NgChm.LNK.selection.indexOf("|") > 0 ? NgChm.LNK.selection.substring(0,NgChm.LNK.selection.indexOf("|")) : NgChm.LNK.selection; 
-			labelVal = NgChm.UTIL.getLabelText(labelVal,axis);
+			var labelVal = LNK.selection.indexOf("|") > 0 ? LNK.selection.substring(0,LNK.selection.indexOf("|")) : LNK.selection; 
+			labelVal = UTIL.getLabelText(labelVal,axis);
 			cell.innerHTML = ("<b>Linkouts for: " + labelVal +"</b>");
 		}
 	}
 
-	NgChm.LNK.addMenuItemToTable = function(axis, table, linkout,addedHeader){
+	LNK.addMenuItemToTable = function(axis, table, linkout,addedHeader){
+		const heatMap = MMGR.getHeatMap();
 		var body = table.getElementsByClassName('labelMenuBody')[0];
 
 		var functionWithParams = function(){ // this is the function that gets called when the linkout is clicked
-			var input = NgChm.LNK.getLabelsByType(axis,linkout)
+			var input = LNK.getLabelsByType(axis,linkout)
 			if (linkout.callback !== null)
 				linkout.callback(input,axis); // linkout functions will have inputs that correspond to the labelType used in the addlinkout function used to make them.
 		};
@@ -683,15 +706,15 @@ NgChm.createNS('NgChm.LNK');
 				//If sub-sectional header has not been added to the popup (before single/multi links) AND a link is being added...put in the header
 				if (linkout.selectType === 'multiSelection') {
 					//Don't add a subsection header for multi links IF only one link has been selected
-					if (NgChm.LNK.hasSelection(axis)) {
-						NgChm.LNK.addTextRowToTable(table, "multi",axis);
+					if (LNK.hasSelection(axis)) {
+						LNK.addTextRowToTable(table, "multi",axis);
 					}
 				} else {
-					NgChm.LNK.addTextRowToTable(table, "ind",axis);
+					LNK.addTextRowToTable(table, "ind",axis);
 				}
 				addedHeader = true;
 			}
-			if ((!NgChm.LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection') && (axis !== 'Matrix')) {
+			if ((!LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection') && (axis !== 'Matrix')) {
 				return addedHeader;
 			} else {
 				var row = body.insertRow();
@@ -706,25 +729,25 @@ NgChm.createNS('NgChm.LNK');
 			var add = false;
 			if ( linkout.labelType == "ColumnCovar"){
 				for (var i=0; i < linkout.reqAttributes.length; i++){
-					NgChm.SRCH.getAxisSearchResults(axis).forEach( j => {
-						var name = NgChm.heatMap.getColClassificationConfigOrder()[j];
-						if (NgChm.heatMap.getColClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
+					SRCH.getAxisSearchResults(axis).forEach( j => {
+						var name = heatMap.getColClassificationConfigOrder()[j];
+						if (heatMap.getColClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
 							add = true;
 						}
 					});
-					if (NgChm.heatMap.getColClassificationConfig()[NgChm.LNK.selection].data_type == linkout.reqAttributes[i]){
+					if (heatMap.getColClassificationConfig()[LNK.selection].data_type == linkout.reqAttributes[i]){
 						add = true;
 					}
 				}
 			} else if (linkout.labelType == "RowCovar"){
 				for (var i=0; i < linkout.reqAttributes.length; i++){
-					NgChm.SRCH.getAxisSearchResults(axis).forEach( j => {
-						var name = NgChm.heatMap.getRowClassificationConfigOrder()[j];
-						if (NgChm.heatMap.getRowClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
+					SRCH.getAxisSearchResults(axis).forEach( j => {
+						var name = heatMap.getRowClassificationConfigOrder()[j];
+						if (heatMap.getRowClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
 							add = true;
 						}
 					});
-					if (NgChm.heatMap.getRowClassificationConfig()[NgChm.LNK.selection].data_type == linkout.reqAttributes[i]){
+					if (heatMap.getRowClassificationConfig()[LNK.selection].data_type == linkout.reqAttributes[i]){
 						add = true;
 					}
 				}
@@ -738,15 +761,15 @@ NgChm.createNS('NgChm.LNK');
 			if (add){
 				if (addedHeader === false) {
 					if (linkout.selectType === 'multiSelection') {
-						if (NgChm.LNK.hasSelection(axis)) {
-							NgChm.LNK.addTextRowToTable(table, "multi",axis);
+						if (LNK.hasSelection(axis)) {
+							LNK.addTextRowToTable(table, "multi",axis);
 						}
 					} else {
-						NgChm.LNK.addTextRowToTable(table, "ind",axis);
+						LNK.addTextRowToTable(table, "ind",axis);
 					}
 					addedHeader = true;
 				}
-				if ((!NgChm.LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection')) {
+				if ((!LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection')) {
 					return addedHeader;
 				} else {
 					var row = body.insertRow();
@@ -759,28 +782,29 @@ NgChm.createNS('NgChm.LNK');
 		return addedHeader;
 	}
 
-	NgChm.LNK.selectionError = function(e){
+	LNK.selectionError = function(e){
 		var message = "<br>Please select only one label in this axis to use the following linkout:<br><br><b>" + e.currentTarget.innerHTML+"</b>";
-		NgChm.UHM.linkoutError(message);
+		UHM.linkoutError(message);
 	}
 
-	NgChm.LNK.getDefaultLinkouts = function(){
-		var colLabelType = NgChm.heatMap.getColLabels().label_type;
-		var rowLabelType = NgChm.heatMap.getRowLabels().label_type;
-	//	NgChm.LNK.addLinkout("Copy " + (colLabelType[0].length < 20 ? colLabelType[0] : "Column Labels") +" to Clipboard", colLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0);
-		NgChm.LNK.addLinkout("Copy selected labels to clipboard", colLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0); // text changed from the full label type to just "Column/Row Label" to prevent misreading of this linkout
+	LNK.getDefaultLinkouts = function(){
+		const heatMap = MMGR.getHeatMap();
+		var colLabelType = heatMap.getColLabels().label_type;
+		var rowLabelType = heatMap.getRowLabels().label_type;
+	//	LNK.addLinkout("Copy " + (colLabelType[0].length < 20 ? colLabelType[0] : "Column Labels") +" to Clipboard", colLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
+		LNK.addLinkout("Copy selected labels to clipboard", colLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0); // text changed from the full label type to just "Column/Row Label" to prevent misreading of this linkout
 		if (rowLabelType[0] !== colLabelType[0]){
-	//		NgChm.LNK.addLinkout("Copy " + (rowLabelType[0].length < 20 ? rowLabelType[0] : "Row Labels") + " to Clipboard", rowLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0);
-			NgChm.LNK.addLinkout("Copy selected labels to clipboard", rowLabelType[0], linkouts.MULTI_SELECT, NgChm.LNK.copyToClipBoard,null,0);
+	//		LNK.addLinkout("Copy " + (rowLabelType[0].length < 20 ? rowLabelType[0] : "Row Labels") + " to Clipboard", rowLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
+			LNK.addLinkout("Copy selected labels to clipboard", rowLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
 		}
 
-		NgChm.LNK.addLinkout("Copy bar data for all labels", "ColumnCovar", null, NgChm.LNK.copyEntireClassBarToClipBoard,null,0);
-		NgChm.LNK.addLinkout("Copy bar data for selected labels", "ColumnCovar", linkouts.MULTI_SELECT,NgChm.LNK.copyPartialClassBarToClipBoard,null,1);
-		NgChm.LNK.addLinkout("Copy bar data for all labels", "RowCovar", null,NgChm.LNK.copyEntireClassBarToClipBoard,null,0);
-		NgChm.LNK.addLinkout("Copy bar data for selected labels", "RowCovar", linkouts.MULTI_SELECT,NgChm.LNK.copyPartialClassBarToClipBoard,null,1);
-		NgChm.LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,NgChm.LNK.copySelectionToClipboard,null,0);
-		NgChm.LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
-		NgChm.LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT,null,null,0);
+		LNK.addLinkout("Copy bar data for all labels", "ColumnCovar", null, LNK.copyEntireClassBarToClipBoard,null,0);
+		LNK.addLinkout("Copy bar data for selected labels", "ColumnCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Copy bar data for all labels", "RowCovar", null,LNK.copyEntireClassBarToClipBoard,null,0);
+		LNK.addLinkout("Copy bar data for selected labels", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
+		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
+		LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
 
 
@@ -788,16 +812,17 @@ NgChm.createNS('NgChm.LNK');
 	// DEFAULT FUNCTIONS //
 	//===================//
 
-	NgChm.LNK.copyToClipBoard = function(labels,axis){
+	LNK.copyToClipBoard = function(labels,axis){
 		window.open("","",'width=335,height=330,resizable=1').document.write(labels.join("<br>"));
 	}
 
-	NgChm.LNK.copyEntireClassBarToClipBoard = function(labels,covarAxis){
+	LNK.copyEntireClassBarToClipBoard = function(labels,covarAxis){
 		const newWindow = window.open("","",'width=335,height=330,resizable=1');
 		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
-		const axisLabels = NgChm.heatMap.getAxisLabels(axis)["labels"];
-		const classBars = NgChm.heatMap.getAxisCovariateData(axis);
+		const heatMap = MMGR.getHeatMap();
+		const axisLabels = heatMap.getAxisLabels(axis)["labels"];
+		const classBars = heatMap.getAxisCovariateData(axis);
 		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
 		for (let i = 0; i < axisLabels.length; i++){
 			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
@@ -808,13 +833,13 @@ NgChm.createNS('NgChm.LNK');
 		}
 	};
 
-	NgChm.LNK.copyPartialClassBarToClipBoard = function(labels, covarAxis){
+	LNK.copyPartialClassBarToClipBoard = function(labels, covarAxis){
 		const newWindow = window.open("","",'width=335,height=330,resizable=1');
 		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
-		const axisLabels = NgChm.SRCH.getSearchLabelsByAxis(axis);
-		const labelIndex = NgChm.SRCH.getAxisSearchResults(axis);
-		const classBars = NgChm.heatMap.getAxisCovariateData(axis);
+		const axisLabels = SRCH.getSearchLabelsByAxis(axis);
+		const labelIndex = SRCH.getAxisSearchResults(axis);
+		const classBars = MMGR.getHeatMap().getAxisCovariateData(axis);
 		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
 		for (let i = 0; i < axisLabels.length; i++){
 			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
@@ -825,17 +850,17 @@ NgChm.createNS('NgChm.LNK');
 		}
 	};
 
-	NgChm.LNK.copySelectionToClipboard = function(labels,axis){
+	LNK.copySelectionToClipboard = function(labels,axis){
 		window.open("","",'width=335,height=330,resizable=1').document.write("<b>Rows:</b><br>" + labels["Row"].join("<br>") + "<br><br><b>Columns:</b><br>" + labels["Column"].join("<br>"));
 	}
 
-	NgChm.LNK.copySelectedDataToClipboard = function(matrixData,axis){
+	LNK.copySelectedDataToClipboard = function(matrixData,axis){
 		var dataStr = "";
 		for (var i = 0; i<matrixData.length;i++) {
 			var rowData = matrixData[i].join('\t');
 			dataStr += rowData+"\n";
 		}
-		var fileName = NgChm.heatMap.getMapInformation().name+" Matrix Data.tsv";
+		var fileName = MMGR.getHeatMap().getMapInformation().name+" Matrix Data.tsv";
 		download(fileName,dataStr);
 		//window.open("","",'width=335,height=330,resizable=1').document.write(dataStr);
 	}
@@ -855,36 +880,36 @@ NgChm.createNS('NgChm.LNK');
 	//the currently selected box in the detail panel.  It just uses the first
 	//row/col selected and last row/col selected so it will work well with a drag
 	//selected box but not with random selections all over the map.
-	NgChm.LNK.setDetailView = function(searchLabels){
-		let selRows = NgChm.SRCH.getAxisSearchResults("Row");
+	LNK.setDetailView = function(searchLabels){
+		let selRows = SRCH.getAxisSearchResults("Row");
 		if (selRows.length === 0) {
-			selRows = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Row");
+			selRows = LNK.getEntireAxisSearchItems(searchLabels,"Row");
 		}
-		let selCols = NgChm.SRCH.getAxisSearchResults("Column");
+		let selCols = SRCH.getAxisSearchResults("Column");
 		if (selCols.length === 0) {
-			selCols = NgChm.LNK.getEntireAxisSearchItems(searchLabels,"Column");
+			selCols = LNK.getEntireAxisSearchItems(searchLabels,"Column");
 		}
 		var startCol = parseInt(selCols[0])
 		var endCol = parseInt(selCols[selCols.length-1])
 		var startRow = parseInt(selRows[0])
 		var endRow = parseInt(selRows[selRows.length-1])
 
-		NgChm.SUM.setSubRibbonView(startRow, endRow, startCol, endCol);
+		SUM.setSubRibbonView(startRow, endRow, startCol, endCol);
 	};
 
-	NgChm.LNK.switchPaneToLinkouts = function switchPaneToLinkouts (loc) {
-		NgChm.Pane.clearExistingGearDialog(loc.pane.id);
-		const oldLinkoutPane = NgChm.LNK.linkoutElement && NgChm.Pane.findPaneLocation (NgChm.LNK.linkoutElement);
+	LNK.switchPaneToLinkouts = function switchPaneToLinkouts (loc) {
+		PANE.clearExistingGearDialog(loc.pane.id);
+		const oldLinkoutPane = LNK.linkoutElement && PANE.findPaneLocation (LNK.linkoutElement);
 		if (oldLinkoutPane && oldLinkoutPane.paneTitle && oldLinkoutPane.paneTitle.innerText === 'Linkouts') {
-			NgChm.Pane.setPaneTitle (oldLinkoutPane, 'Empty');
+			PANE.setPaneTitle (oldLinkoutPane, 'Empty');
 		}
-		NgChm.Pane.emptyPaneLocation (loc);
-		NgChm.LNK.linkoutElement = NgChm.UTIL.newElement ('DIV.linkouts');
-		NgChm.Pane.setPaneTitle (loc, 'Linkouts');
-		loc.pane.appendChild (NgChm.LNK.linkoutElement);
-		NgChm.MMGR.saveLinkoutPaneToMapConfig(loc.pane.id, "", "Linkouts");
+		PANE.emptyPaneLocation (loc);
+		LNK.linkoutElement = UTIL.newElement ('DIV.linkouts');
+		PANE.setPaneTitle (loc, 'Linkouts');
+		loc.pane.appendChild (LNK.linkoutElement);
+		MMGR.saveLinkoutPaneToMapConfig(loc.pane.id, "", "Linkouts");
 	};
-	NgChm.Pane.registerPaneContentOption ('Linkouts', NgChm.LNK.switchPaneToLinkouts);
+	PANE.registerPaneContentOption ('Linkouts', LNK.switchPaneToLinkouts);
 
 	// Maintain a database of installed pane plugins.
 	//
@@ -897,7 +922,7 @@ NgChm.createNS('NgChm.LNK');
 			}
 		}
 
-		NgChm.LNK.registerPanePlugin = function(p) {
+		LNK.registerPanePlugin = function(p) {
 			const pp = new PanePlugin (p);
 			// Replace any existing plugin with the same name.
 			for (let idx = 0; idx < panePlugins.length; idx++) {
@@ -911,7 +936,7 @@ NgChm.createNS('NgChm.LNK');
 			return pp;
 		};
 
-		NgChm.LNK.getPanePlugins = function() {
+		LNK.getPanePlugins = function() {
 			return Array.from(new Set(panePlugins.map(a => a.name))).map(name => { return panePlugins.find(a => a.name === name)})
 		};
 	})();
@@ -931,18 +956,18 @@ NgChm.createNS('NgChm.LNK');
 		}
 	    }
 
-	    NgChm.LNK.getPluginInstance = function getPluginInstance (nonce) {
+	    LNK.getPluginInstance = function getPluginInstance (nonce) {
 	        return instances[nonce];
 	    };
-		NgChm.LNK.getPluginInstances = function getPluginInstances() {
+		LNK.getPluginInstances = function getPluginInstances() {
 			return instances;
 		}
 
-	    NgChm.LNK.removePluginInstance = function removePluginInstance(nonceToRemove) {
+	    LNK.removePluginInstance = function removePluginInstance(nonceToRemove) {
 	    	delete instances[nonceToRemove];
 	    }
 
-	    NgChm.LNK.getPluginInstanceByName = function getPluginInstanceByName (name) {
+	    LNK.getPluginInstanceByName = function getPluginInstanceByName (name) {
 		let p = 0;
 		const k = Object.keys(instances);
 		while (p < k.length && instances[k[p]].plugin.name !== name) p++;
@@ -953,17 +978,17 @@ NgChm.createNS('NgChm.LNK');
 	    // Element is a DOM element within the panel plugin.
 	    // Options contains the parameters to set.
 	    // Also sets the panel's title bar.
-	    NgChm.LNK.setPanePluginOptions = function (element, options) {
-		const loc = NgChm.Pane.findPaneLocation (element);
+	    LNK.setPanePluginOptions = function (element, options) {
+		const loc = PANE.findPaneLocation (element);
 		const iframe = loc.pane.getElementsByTagName('IFRAME')[0];
 		const nonce = iframe.dataset.nonce;
 		instances[nonce].params = options;
 		loc.paneTitle.innerText = instances[nonce].plugin.name + '. ' + options.plotTitle;
-		NgChm.LNK.initializePanePlugin (nonce, options);
+		LNK.initializePanePlugin (nonce, options);
 	    };
 
 	    // Create a new, unique nonce.
-	    NgChm.LNK.getNewNonce = function getNewNonce () {
+	    LNK.getNewNonce = function getNewNonce () {
 		const ta = new Uint8Array(16);
 		window.crypto.getRandomValues(ta);
 		return Array.from(ta).map(x => x.toString(16)).join("");
@@ -973,8 +998,8 @@ NgChm.createNS('NgChm.LNK');
 	    // iframe associated with the new instance.  The caller is
 	    // responsible for inserting the iframe into the correct place
 	    // in the DOM.
-	    NgChm.LNK.createPluginInstance = function createPluginInstance (kind, plugin) {
-		const nonce = NgChm.LNK.getNewNonce();
+	    LNK.createPluginInstance = function createPluginInstance (kind, plugin) {
+		const nonce = LNK.getNewNonce();
 		const isBlob = /^blob:/.test(plugin.src);
 		const url = isBlob ? plugin.src : plugin.src + (plugin.src.indexOf('?') == -1 ? '?' : '&') + 'nonce=' + nonce;
 
@@ -985,7 +1010,7 @@ NgChm.createNS('NgChm.LNK');
 		iframe.setAttribute('title', plugin.name);
 		if (isBlob) {
 		    iframe.onload = function() {
-			NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'nonce' });
+			LNK.sendMessageToPlugin ({ nonce, op: 'nonce' });
 		    };
 		}
 		iframe.setAttribute('src', url);
@@ -994,7 +1019,7 @@ NgChm.createNS('NgChm.LNK');
 	    };
 
 	    // Send a Vanodi message to the plugin instance identified by msg.nonce.
-	    NgChm.LNK.sendMessageToPlugin = function sendMessageToPlugin (msg) {
+	    LNK.sendMessageToPlugin = function sendMessageToPlugin (msg) {
 		const src = instances[msg.nonce].source || instances[msg.nonce].iframe.contentWindow;
 		if (src !== null) {
 			src.postMessage({ vanodi: msg }, '*');
@@ -1006,17 +1031,17 @@ NgChm.createNS('NgChm.LNK');
 	    /* Request data generated by plugin and required to recreate state of plugin
 	       (e.g. the zoom level on a scatter plot)
 	    */
-	    NgChm.LNK.requestDataFromPlugins = function requestDataFromPlugins() {
-		let pluginInstances = NgChm.LNK.getPluginInstances();
+	    LNK.requestDataFromPlugins = function requestDataFromPlugins() {
+		let pluginInstances = LNK.getPluginInstances();
 		for (const nonce of Object.keys(pluginInstances)) {
-			NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'requestForPluginData'});
+			LNK.sendMessageToPlugin ({ nonce, op: 'requestForPluginData'});
 		}
 	    }
 
 	    /* Check if all plugins have reported their data
 	    */
-	    NgChm.LNK.havePluginData = function havePluginData() {
-		let pluginInstances = NgChm.LNK.getPluginInstances();
+	    LNK.havePluginData = function havePluginData() {
+		let pluginInstances = LNK.getPluginInstances();
 		let havePluginDataList = [];
 		Object.keys(pluginInstances).forEach(pi => {
 			if (typeof pluginInstances[pi]['dataFromPlugin'] != 'undefined') {
@@ -1032,46 +1057,46 @@ NgChm.createNS('NgChm.LNK');
 
 	    /* Display warning message if some plugins did not provide their data
 	    */
-	    NgChm.LNK.warnAboutMissingPluginData = function warnAboutMissingPluginData() {
-		if (NgChm.LNK.havePluginData()) {
+	    LNK.warnAboutMissingPluginData = function warnAboutMissingPluginData() {
+		if (LNK.havePluginData()) {
 			return false; // have all plugins' data...no need for warning message
 		}
 		let warningText = "Unable to save some data elements from the following plugins: <br>"
-		let pluginInstances = NgChm.LNK.getPluginInstances();
+		let pluginInstances = LNK.getPluginInstances();
 		Object.keys(pluginInstances).forEach(pi => {
 			if (typeof pluginInstances[pi]['dataFromPlugin'] == 'undefined') {
 				warningText += "<br>&nbsp;&nbsp;" + pluginInstances[pi]['plugin']['name'];
 			}
 		});
 		let dialog = document.getElementById('msgBox');
-		NgChm.UHM.initMessageBox();
-		NgChm.UHM.setMessageBoxHeader("Warning: Unable to save some plugin data");
-		NgChm.UHM.setMessageBoxText(warningText);
-		NgChm.UHM.setMessageBoxButton(1, NgChm.UTIL.imageTable.okButton, 'OK Button');
-		NgChm.UHM.displayMessageBox();
+		UHM.initMessageBox();
+		UHM.setMessageBoxHeader("Warning: Unable to save some plugin data");
+		UHM.setMessageBoxText(warningText);
+		UHM.setMessageBoxButton(1, UTIL.imageTable.okButton, 'OK Button');
+		UHM.displayMessageBox();
 		let okButton = dialog.querySelector('#msgBoxBtnImg_1');
 		okButton.addEventListener('click', function handleOkClick(e) {
 			okButton.removeEventListener('click', handleOkClick);
-			NgChm.UHM.messageBoxCancel();
+			UHM.messageBoxCancel();
 		})
 	    }
 
 	    // Send a Vanodi message to all plugin instances except the one identified by srcNonce.
-	    NgChm.LNK.sendMessageToAllOtherPlugins = function sendMessageToAllOtherPlugins (srcNonce, msg) {
+	    LNK.sendMessageToAllOtherPlugins = function sendMessageToAllOtherPlugins (srcNonce, msg) {
 		const iframes = document.getElementsByTagName('iframe');
 		for (let i = 0; i < iframes.length; i++) {
 		    const nonce = iframes[i].dataset.nonce;
 		    if (nonce && nonce !== srcNonce ) {
-			NgChm.LNK.sendMessageToPlugin (Object.assign ({}, msg, {nonce}));
+			LNK.sendMessageToPlugin (Object.assign ({}, msg, {nonce}));
 		    }
 		}
 	    };
 
 	    // Add a linkout or hamburger plugin.
-	    NgChm.LNK.addLinkoutPlugin = function addLinkoutPlugin (kind, spec) {
+	    LNK.addLinkoutPlugin = function addLinkoutPlugin (kind, spec) {
 	       if ((kind === 'linkout-plugin' || kind === 'hamburger-plugin') && spec.src) {
 		   // Create an instance of the plugin.
-		   const iframe = NgChm.LNK.createPluginInstance (kind, spec);
+		   const iframe = LNK.createPluginInstance (kind, spec);
 		   iframe.classList.add('hide');
 		   document.body.append(iframe);
 
@@ -1079,45 +1104,45 @@ NgChm.createNS('NgChm.LNK');
 		   if (kind === 'linkout-plugin') {
 		       for (let idx = 0; idx < spec.linkouts.length; idx++) {
 			   spec.linkouts[idx].linkoutFn = ((spec, nonce) => function(labels) {
-			       NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'linkout', id: spec.messageId, labels });
+			       LNK.sendMessageToPlugin ({ nonce, op: 'linkout', id: spec.messageId, labels });
 			   })(spec.linkouts[idx], iframe.dataset.nonce);
 		       }
 		       for (let idx = 0; idx < spec.matrixLinkouts.length; idx++) {
 			   spec.matrixLinkouts[idx].linkoutFn = ((spec, nonce) => function(labels) {
-			       NgChm.LNK.sendMessageToPlugin({ nonce, op: 'matrixLinkout', id: spec.messageId, labels });
+			       LNK.sendMessageToPlugin({ nonce, op: 'matrixLinkout', id: spec.messageId, labels });
 			   })(spec.matrixLinkouts[idx], iframe.dataset.nonce);
 		       }
 		       linkouts.addPlugin(spec);
 		   } else {
 		       spec.action = ((spec, nonce) => function() {
-			   NgChm.LNK.sendMessageToPlugin({ nonce, op: 'hamburgerLinkout', id: spec.messageId });
+			   LNK.sendMessageToPlugin({ nonce, op: 'hamburgerLinkout', id: spec.messageId });
 		       })(spec, iframe.dataset.nonce);
 		       linkouts.addHamburgerLinkout(spec);
 		   }
 		   // Regenerate the linkout menus.
-		   NgChm.CUST.definePluginLinkouts();
+		   CUST.definePluginLinkouts();
 	       }
 	    };
 	})();
 
 	// Switch the empty pane identified by PaneLocation loc to a new
 	// instance of the specified panel plugin.
-	NgChm.LNK.switchPaneToPlugin = function (loc, plugin) {
-	    NgChm.heatMap.setUnAppliedChanges(true);
+	LNK.switchPaneToPlugin = function (loc, plugin) {
+	    MMGR.getHeatMap().setUnAppliedChanges(true);
 	    const params = plugin.params;
 	    if (!params) {
-		const help = NgChm.UTIL.newElement('DIV.linkouts');
+		const help = UTIL.newElement('DIV.linkouts');
 		help.innerText = plugin.helpText;
 		loc.pane.appendChild (help);
 		return;
 	    }
 
-	    const linkoutElement = NgChm.UTIL.newElement ('DIV.linkouts');
+	    const linkoutElement = UTIL.newElement ('DIV.linkouts');
 	    loc.pane.dataset.pluginName = plugin.name;
 	    loc.paneTitle.innerText = plugin.name;
 	    loc.pane.appendChild (linkoutElement);
 
-	    let pluginIframe = NgChm.LNK.createPluginInstance('panel-plugin', plugin);
+	    let pluginIframe = LNK.createPluginInstance('panel-plugin', plugin);
 	    loc.pane.nonce = pluginIframe.dataset.nonce;
 	    linkoutElement.appendChild(pluginIframe);
 	};
@@ -1134,13 +1159,13 @@ NgChm.createNS('NgChm.LNK');
 	*/
 	function getDiscCovariateColors (axis, label, values, colorMapMgr) {
 		const colorMap = colorMapMgr.getColorMap (axis, label);
-		const uniqueClassValues = Array.from(new Set(NgChm.heatMap.getAxisCovariateData(axis)[label].values));
+		const uniqueClassValues = Array.from(new Set(MMGR.getHeatMap().getAxisCovariateData(axis)[label].values));
 		const classColors = [];
 		for (let i=0; i<uniqueClassValues.length; i++) {
 		    if (uniqueClassValues[i] !== '!CUT!') {
 			classColors.push({
 				"Class": uniqueClassValues[i],
-				"Color": NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getClassificationColor(uniqueClassValues[i])))
+				"Color": CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getClassificationColor(uniqueClassValues[i])))
 			});
 		    }
 		}
@@ -1188,17 +1213,18 @@ NgChm.createNS('NgChm.LNK');
 
 	// Return an array of values for the rows/columns specified by idx along axis.
 	function getDataValues (axis, idx) {
-		const isRow = NgChm.MMGR.isRow (axis);
-		const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
+		const heatMap = MMGR.getHeatMap();
+		const isRow = MMGR.isRow (axis);
+		const colorMap = heatMap.getColorMapManager().getColorMap("data", SEL.getCurrentDL());
 		const colorThresholds = colorMap.getThresholds();
 		idx = idx === undefined ? [] : Array.isArray(idx) ? idx : [idx];
 		const win = {
-			layer: NgChm.SEL.getCurrentDL(),
-			level: NgChm.MMGR.DETAIL_LEVEL,
+			layer: SEL.getCurrentDL(),
+			level: MMGR.DETAIL_LEVEL,
 			firstRow: 1,
 			firstCol: 1,
-			numRows: isRow ? 1 : NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),
-			numCols: isRow ? NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL) : 1
+			numRows: isRow ? 1 : heatMap.getNumRows(MMGR.DETAIL_LEVEL),
+			numCols: isRow ? heatMap.getNumColumns(MMGR.DETAIL_LEVEL) : 1
 		};
 		const values = [];
 		const rawValues = [];
@@ -1212,7 +1238,7 @@ NgChm.createNS('NgChm.LNK');
 		let getAccessWindowPromises = []
 		for (let dd = 0; dd < idx.length; dd++) {
 			if (isRow) win.firstRow = idx[dd]; else win.firstCol = idx[dd];
-			getAccessWindowPromises.push(NgChm.heatMap.getAccessWindowPromise(win))
+			getAccessWindowPromises.push(heatMap.getAccessWindowPromise(win))
 		}
 		return new Promise((resolve, reject) => {
 			Promise.all(getAccessWindowPromises).then(accessWindows => {
@@ -1221,7 +1247,7 @@ NgChm.createNS('NgChm.LNK');
 						for (let j= 0; j < win.numRows; j++) {
 							for (let i=0;  i< win.numCols; i++) {
 								const val = accessWindow.getValue (j + win.firstRow, i + win.firstCol);
-								if (!isNaN(val) && val > NgChm.SUM.minValues && val < NgChm.SUM.maxValues) {
+								if (!isNaN(val) && val > SUM.minValues && val < SUM.maxValues) {
 									rawValues[j*win.numCols+i] += val;
 									rawCounts[j*win.numCols+i] ++;
 								}
@@ -1260,7 +1286,8 @@ NgChm.createNS('NgChm.LNK');
 	 * Result will a vector with one value for each axisIdx value.
 	 */
 	function getSummaryStatistics(axis, axisIdx, groupIdx) {
-		const isRow = NgChm.MMGR.isRow (axis);
+		const heatMap = MMGR.getHeatMap();
+		const isRow = MMGR.isRow (axis);
 		axisIdx = axisIdx === undefined ? [] : Array.isArray(axisIdx) ? axisIdx : [axisIdx];
 		groupIdx = groupIdx === undefined ? [] : Array.isArray(groupIdx) ? groupIdx : [groupIdx];
 		const values = [];
@@ -1270,14 +1297,14 @@ NgChm.createNS('NgChm.LNK');
 		for (let i=0; i<axisIdx.length; i++) {
 			// Get access window for each axisIdx (one vector per iteration)
 			const win = {
-				layer: NgChm.SEL.getCurrentDL(),
-				level: NgChm.MMGR.DETAIL_LEVEL,
+				layer: SEL.getCurrentDL(),
+				level: MMGR.DETAIL_LEVEL,
 				firstRow: isRow ? 1+axisIdx[i] : 1,
 				firstCol: isRow ? 1 : 1+axisIdx[i],
-				numRows: isRow ? 1 : NgChm.heatMap.getNumRows(NgChm.MMGR.DETAIL_LEVEL),
-				numCols: isRow ? NgChm.heatMap.getNumColumns(NgChm.MMGR.DETAIL_LEVEL) : 1
+				numRows: isRow ? 1 : heatMap.getNumRows(MMGR.DETAIL_LEVEL),
+				numCols: isRow ? heatMap.getNumColumns(MMGR.DETAIL_LEVEL) : 1
 			};
-			getAccessWindowPromises.push(NgChm.heatMap.getAccessWindowPromise(win))
+			getAccessWindowPromises.push(heatMap.getAccessWindowPromise(win))
 		}
 		return new Promise((resolve, reject) => {
 			Promise.all(getAccessWindowPromises).then(accessWindows => {
@@ -1306,7 +1333,7 @@ NgChm.createNS('NgChm.LNK');
 	} // end function getSummaryStatistics 
 
 	function getDiscMapFromContMap (colorThresholds, colorVec) {
-		colorVec = colorVec.map(NgChm.CMM.darkenHexColorIfNeeded);
+		colorVec = colorVec.map(CMM.darkenHexColorIfNeeded);
 		const precision = colorThresholds
 			// Determine length of each threshold, excluding any minus sign, leading zero, period, or exponent.
 			.map(t => (''+t).replace('-','').replace(/^0*/,'').replace('.','').replace(/[eE]\d*/,'').length)
@@ -1315,11 +1342,11 @@ NgChm.createNS('NgChm.LNK');
 		const iColorVec = [colorVec[0]];
 		const iColorThresholds = [+colorThresholds[0]];
 		for (let i = 1; i < colorVec.length; i++) {
-			iColorVec.push (NgChm.CMM.blendHexColors (colorVec[i-1], colorVec[i], 0.75));
+			iColorVec.push (CMM.blendHexColors (colorVec[i-1], colorVec[i], 0.75));
 			iColorThresholds.push ((3*colorThresholds[i-1] + +colorThresholds[i]) / 4.0);
-			iColorVec.push (NgChm.CMM.blendHexColors (colorVec[i-1], colorVec[i], 0.5));
+			iColorVec.push (CMM.blendHexColors (colorVec[i-1], colorVec[i], 0.5));
 			iColorThresholds.push ((+colorThresholds[i-1] + +colorThresholds[i]) / 2.0);
-			iColorVec.push (NgChm.CMM.blendHexColors (colorVec[i-1], colorVec[i], 0.25));
+			iColorVec.push (CMM.blendHexColors (colorVec[i-1], colorVec[i], 0.25));
 			iColorThresholds.push ((+colorThresholds[i-1] + 3*colorThresholds[i]) / 4.0);
 			iColorVec.push (colorVec[i]);
 			iColorThresholds.push (+colorThresholds[i]);
@@ -1381,7 +1408,7 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	function getDataColors (axis, idx) {
-		const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
+		const colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap("data", SEL.getCurrentDL());
 		const { breaks, classColors } = getDiscMapFromContMap (colorMap.getThresholds(), colorMap.getColors());
 		const values = getDataValues (axis, idx);
 		const valClasses = getValueClassesColors (values, breaks, classColors, colorMap.getMissingColor(),'Class');
@@ -1389,14 +1416,15 @@ NgChm.createNS('NgChm.LNK');
 	}
 	// end bunch of helper functions
 
-	NgChm.LNK.initializePanePlugin = async function(nonce, config) {
+	LNK.initializePanePlugin = async function(nonce, config) {
+		const heatMap = MMGR.getHeatMap();
 		const data = {
 			axes: []
 		};
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
-			const fullLabels = NgChm.heatMap.getAxisLabels(axis.axisName).labels;
-		        const searchItemsIdx = NgChm.SRCH.getAxisSearchResults (axis.axisName);
+			const fullLabels = heatMap.getAxisLabels(axis.axisName).labels;
+		        const searchItemsIdx = SRCH.getAxisSearchResults (axis.axisName);
 			let selectedLabels = []
 			for (let i=0; i<searchItemsIdx.length; i++) {
 				let selectedLabel = fullLabels[searchItemsIdx[i] - 1];
@@ -1407,7 +1435,7 @@ NgChm.createNS('NgChm.LNK');
 			fullLabels.forEach((value,index) => { if (value === "") gapIndices.push (index); });
 			data.axes.push({
 				fullLabels: filterGaps (fullLabels, gapIndices),
-				actualLabels: filterGaps (NgChm.UTIL.getActualLabels(axis.axisName), gapIndices),
+				actualLabels: filterGaps (UTIL.getActualLabels(axis.axisName), gapIndices),
 				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
@@ -1417,9 +1445,9 @@ NgChm.createNS('NgChm.LNK');
 				setAxisGroupData (data.axes[ai], axis, axis.groups[idx]);
 			}
 		}
-		NgChm.heatMap.setUnAppliedChanges(true);
-		NgChm.LNK.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
-		NgChm.MMGR.saveDataSentToPluginToMapConfig(nonce, config, data);
+		heatMap.setUnAppliedChanges(true);
+		LNK.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
+		MMGR.saveDataSentToPluginToMapConfig(nonce, config, data);
 	}; // end of initializePanePlugin
 
 	function filterGaps (data, gapIndices) {
@@ -1455,12 +1483,12 @@ NgChm.createNS('NgChm.LNK');
 		// group2: labels of other axis elements in group 2 (optional)
 	async function getAxisTestData (msg) {
 		if (msg.axisLabels.length < 1) {
-			NgChm.UHM.systemMessage("NG-CHM PathwayMapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again."); 
+			UHM.systemMessage("NG-CHM PathwayMapper", "No pathway present in PathwayMapper. Please import or create a pathway and try again."); 
 			return false;
 		}
-		var otherAxisName = NgChm.MMGR.isRow(msg.axisName) ? 'column' : 'row';
-		var otherAxisLabels = NgChm.UTIL.getActualLabels (otherAxisName);
-		var heatMapAxisLabels = NgChm.UTIL.getActualLabels (msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
+		var otherAxisName = MMGR.isRow(msg.axisName) ? 'column' : 'row';
+		var otherAxisLabels = UTIL.getActualLabels (otherAxisName);
+		var heatMapAxisLabels = UTIL.getActualLabels (msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
 		heatMapAxisLabels = heatMapAxisLabels.map (l => l.toUpperCase());
 		var axisIdx = [];
 		const pluginLabels = [];
@@ -1471,7 +1499,7 @@ NgChm.createNS('NgChm.LNK');
 				pluginLabels.push(msg.axisLabels[i]);
 			}
 		}
-		if (axisIdx.length < 1) {NgChm.UHM.systemMessage("NG-CHM PathwayMapper", "Heatmap and pathway have no genes in common."); return;}
+		if (axisIdx.length < 1) {UHM.systemMessage("NG-CHM PathwayMapper", "Heatmap and pathway have no genes in common."); return;}
 		var idx1 = [];
 		var idx2 = [];
 		if (msg.group2 == null || msg.group2.length == 0) {
@@ -1493,10 +1521,10 @@ NgChm.createNS('NgChm.LNK');
 			}
 		}
 		if (idx1.length < 2) {
-			NgChm.UHM.systemMessage('Group too small','Group 1 must have at least 2 members.')
+			UHM.systemMessage('Group too small','Group 1 must have at least 2 members.')
 			return false;
 		} else if (idx2.length < 2) {
-			NgChm.UHM.systemMessage('Group too small','Group 2 must have at least 2 members.')
+			UHM.systemMessage('Group too small','Group 2 must have at least 2 members.')
 			return false;
 		}
 		var summaryStatistics1 = await getSummaryStatistics(msg.axisName, axisIdx, idx1);
@@ -1508,10 +1536,10 @@ NgChm.createNS('NgChm.LNK');
 		};
 
 		if (msg.testToRun === 'Mean') {
-		    const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
+		    const colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap("data", SEL.getCurrentDL());
 		    const vColorMap = {
 		        thresholds: colorMap.getThresholds(),
-			colors: colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded),
+			colors: colorMap.getColors().map(CMM.darkenHexColorIfNeeded),
 		        type: "linear",
 		        missing: '#fefefe'
 		    };
@@ -1569,12 +1597,13 @@ NgChm.createNS('NgChm.LNK');
 	// Add the values and colors to cocodata for the 'coco' attributes of axis.
 	// Currently, 'coco' is either coordinate or covariate.
 	async function setAxisCoCoData (cocodata, axis, coco, gapIndices) {
-		const colorMapMgr = NgChm.heatMap.getColorMapManager();
-		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
-		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
-		const isRow = NgChm.MMGR.isRow (axis.axisName);
+		const heatMap = MMGR.getHeatMap();
+		const colorMapMgr = heatMap.getColorMapManager();
+		const colClassificationData = heatMap.getAxisCovariateData('column');
+		const rowClassificationData = heatMap.getAxisCovariateData('row');
+		const isRow = MMGR.isRow (axis.axisName);
 		const covData = isRow ? rowClassificationData : colClassificationData;
-		const axisCovCfg = NgChm.heatMap.getAxisCovariateConfig (axis.axisName);
+		const axisCovCfg = heatMap.getAxisCovariateConfig (axis.axisName);
 		const valueField = coco + 's';
 		const colorField = coco + 'Colors';
 		const colorMapField = coco + 'ColorMap';
@@ -1607,13 +1636,13 @@ NgChm.createNS('NgChm.LNK');
 				let unfilteredValues = await getDataValues(isRow ? 'column' : 'row', idx)
 				const values = filterGaps (unfilteredValues, gapIndices);
 				cocodata[valueField].push(values);
-				const colorMap = NgChm.heatMap.getColorMapManager().getColorMap("data", NgChm.SEL.getCurrentDL());
+				const colorMap = heatMap.getColorMapManager().getColorMap("data", SEL.getCurrentDL());
 
 				const colorsForThisData = []
 				for (let idv = 0; idv < values.length; idv++) {
-				    colorsForThisData.push(NgChm.CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getColor(values[idv]))));
+				    colorsForThisData.push(CMM.darkenHexColorIfNeeded(colorMap.getRgbToHex(colorMap.getColor(values[idv]))));
 				}
-				cocodata[colorMapField].push(getVanodiColorMap (colorMap.getThresholds(), colorMap.getColors().map(NgChm.CMM.darkenHexColorIfNeeded)));
+				cocodata[colorMapField].push(getVanodiColorMap (colorMap.getThresholds(), colorMap.getColors().map(CMM.darkenHexColorIfNeeded)));
 				cocodata[colorField].push(colorsForThisData);
 			} else {
 				console.log ('Unknown coco data type ' + ctype);
@@ -1663,11 +1692,12 @@ NgChm.createNS('NgChm.LNK');
 		@param {String} group In this example, 'ugroup'
 	*/
 	function setAxisGroupData (cocodata, axis, group) {
-		const colClassificationData = NgChm.heatMap.getAxisCovariateData('column');
-		const rowClassificationData = NgChm.heatMap.getAxisCovariateData('row');
-		const isRow = NgChm.MMGR.isRow (axis.axisName);
+		const heatMap = MMGR.getHeatMap();
+		const colClassificationData = heatMap.getAxisCovariateData('column');
+		const rowClassificationData = heatMap.getAxisCovariateData('row');
+		const isRow = MMGR.isRow (axis.axisName);
 		const covData = isRow ? rowClassificationData : colClassificationData;
-		const axisCovCfg = NgChm.heatMap.getAxisCovariateConfig (axis.axisName);
+		const axisCovCfg = heatMap.getAxisCovariateConfig (axis.axisName);
 		const valueField = group + 's';
 		cocodata[valueField] = [];
 		for (let ci = 0; ci < axis[valueField].length; ci++) { 
@@ -1699,10 +1729,10 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	// Create a gear dialog for the pane identified by the DOM element icon.
-	NgChm.LNK.newGearDialog = newGearDialog;
+	LNK.newGearDialog = newGearDialog;
 	function newGearDialog (icon, paneId) {
 		const debug = false;
-		const loc = NgChm.Pane.findPaneLocation (icon);
+		const loc = PANE.findPaneLocation (icon);
 		if (!loc || !loc.pane || loc.pane.getElementsByTagName('IFRAME').length == 0) {
 			console.log('No options');  //alert
 			return;
@@ -1710,7 +1740,7 @@ NgChm.createNS('NgChm.LNK');
 
 		const iframe = loc.pane.getElementsByTagName('IFRAME')[0];
 		const nonce = iframe.dataset.nonce;
-		const { plugin, params } = NgChm.LNK.getPluginInstance (nonce);
+		const { plugin, params } = LNK.getPluginInstance (nonce);
 		if (debug) console.log ({ m: 'newGearDialog', loc, plugin, params });
 
 		const config = plugin.config;
@@ -1722,27 +1752,27 @@ NgChm.createNS('NgChm.LNK');
 		//Remove any other open gear panels
 		removeOpenGearPanels();
 
-		let panel = NgChm.UTIL.newElement('DIV.gearPanel');
+		let panel = UTIL.newElement('DIV.gearPanel');
 		panel.id = paneId + "Gear";
 
 		function removeOpenGearPanels () {
 			const gears = document.getElementsByClassName('gearPanel');
 			for (item of gears) { 
 				const paneId = item.id.substring(0,item.id.indexOf("Gear"));
-				NgChm.Pane.clearExistingGearDialog(paneId); 
+				PANE.clearExistingGearDialog(paneId);
 	        } 
 		}
 		
 		function optionNode (type, value) {
-			const optNode = NgChm.UTIL.newElement('OPTION');
-			optNode.appendChild(NgChm.UTIL.newTxt(value));
+			const optNode = UTIL.newElement('OPTION');
+			optNode.appendChild(UTIL.newTxt(value));
 			optNode.dataset.type = type;
 			return optNode;
 		}
 
 		/** Creates text for option to use GRAB/SHOW */
 		function selectedElementsOptionName (axis, uname) {
-			return 'Selected ' + (NgChm.MMGR.isRow(axis) ? 'columns' : 'rows') + uname;
+			return 'Selected ' + (MMGR.isRow(axis) ? 'columns' : 'rows') + uname;
 		}
 
 		/** Add covariate options to dropdown
@@ -1772,7 +1802,7 @@ NgChm.createNS('NgChm.LNK');
 			return selOpt;
 		}
 
-		const optionsBox = NgChm.UTIL.newElement('DIV.optionsBox');
+		const optionsBox = UTIL.newElement('DIV.optionsBox');
 		panel.appendChild (optionsBox);
 
 		function textN (base, id, len) {
@@ -1784,9 +1814,9 @@ NgChm.createNS('NgChm.LNK');
 		for (let axisId = 0; axisId < config.axes.length; axisId++) {
 			{
 				const labelText = textN(axisParams[axisId].axisLabel || 'Heat map axis', axisId+1, config.axes.length);
-				optionsBox.appendChild (NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt (labelText)]));
+				optionsBox.appendChild (UTIL.newElement('SPAN.leftLabel', {}, [UTIL.newTxt (labelText)]));
 			}
-			const axis1Select = NgChm.UTIL.newElement('SELECT');
+			const axis1Select = UTIL.newElement('SELECT');
 			axis1Select.add (optionNode ('axis', 'column'));
 			axis1Select.add (optionNode ('axis', 'row'));
 			optionsBox.appendChild (axis1Select);
@@ -1802,11 +1832,12 @@ NgChm.createNS('NgChm.LNK');
 			let defaultCovar;
 
 			function setAxis (axis) {
+				const heatMap = MMGR.getHeatMap();
 				thisAxis = axis;
 				if (debug) console.log ({ m: 'setAxis', axis, params });
-				axis1Config = NgChm.heatMap.getAxisCovariateConfig (axis);
-				const axis1cvOrder = NgChm.heatMap.getAxisCovariateOrder (axis);
-				otherAxis = NgChm.MMGR.isRow (axis) ? 'Column' : 'Row';
+				axis1Config = heatMap.getAxisCovariateConfig (axis);
+				const axis1cvOrder = heatMap.getAxisCovariateOrder (axis);
+				otherAxis = MMGR.isRow (axis) ? 'Column' : 'Row';
 				defaultCoord = axis1cvOrder.filter(x => /\.coordinate\.1/.test(x));
 				defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, '');
 				defaultCovar = axis1cvOrder.filter(x => !/\.coordinate\.\d+$/.test(x));
@@ -1817,7 +1848,7 @@ NgChm.createNS('NgChm.LNK');
 			if (lastApplied[0].hasOwnProperty('axis')) {
 				selectedAxis = lastApplied[0].axis 
 			} else {
-				selectedAxis = NgChm.MMGR.isRow(axisParams[axisId].axisName) ? 'row' : 'column';
+				selectedAxis = MMGR.isRow(axisParams[axisId].axisName) ? 'row' : 'column';
 			}
 			if (selectedAxis === 'row') axis1Select.selectedIndex = 1;
 			setAxis (selectedAxis);
@@ -1826,17 +1857,17 @@ NgChm.createNS('NgChm.LNK');
 				params = params || [];
 				for (let cid = 0; cid < numSelectors; cid++) {
 					const selParams = cid < params.length ? params[cid] : {};
-					const selectEl = NgChm.UTIL.newElement('SELECT')
+					const selectEl = UTIL.newElement('SELECT')
 					optionsBox.appendChild (
-						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
-							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, numSelectors)),
+						UTIL.newElement('SPAN.leftLabel', {}, [
+							UTIL.newTxt(textN(UTIL.capitalize(selectorName), cid+1, numSelectors)),
 						])
 					);
 					if (helpText != undefined) { 
 						optionsBox.appendChild (
-							NgChm.UTIL.newElement('a.helpQuestionMark',{},[], e=> {
-								e.onmouseover = function() {NgChm.UHM.hlp(this, helpText, 200, true, 0)};
-								e.onmouseout = function() {NgChm.UHM.hlpC()};
+							UTIL.newElement('a.helpQuestionMark',{},[], e=> {
+								e.onmouseover = function() {UHM.hlp(this, helpText, 200, true, 0)};
+								e.onmouseout = function() {UHM.hlpC()};
 								return e;
 							})
 						)
@@ -1874,14 +1905,14 @@ NgChm.createNS('NgChm.LNK');
 
 					sss[cid].grabbers = {};
 
-					const countNode = NgChm.UTIL.newTxt ('0 ' + otherAxis + 's');
-					const infoEl = NgChm.UTIL.newElement ('DIV.nodeSelector.hide', {}, [
-						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
-							NgChm.UTIL.newTxt ('Selected')
+					const countNode = UTIL.newTxt ('0 ' + otherAxis + 's');
+					const infoEl = UTIL.newElement ('DIV.nodeSelector.hide', {}, [
+						UTIL.newElement('SPAN.leftLabel', {}, [
+							UTIL.newTxt ('Selected')
 						]),
 						countNode,
-						NgChm.UTIL.newButton('GRAB', {}, {}),
-						NgChm.UTIL.newButton('SHOW', {}, {})
+						UTIL.newButton('GRAB', {}, {}),
+						UTIL.newButton('SHOW', {}, {})
 					]);
 					sss[cid].grabbers.clearData = function() {
 						while (sss[cid].data.length > 0) sss[cid].data.pop();
@@ -1906,7 +1937,7 @@ NgChm.createNS('NgChm.LNK');
 									userLabel.setLabel ( '');
 								}
 							} else if (data.length === 1) {
-								userLabel.setLabel ( NgChm.heatMap.getAxisLabels(otherAxis).labels[data[0]-1]);
+								userLabel.setLabel ( MMGR.getHeatMap().getAxisLabels(otherAxis).labels[data[0]-1]);
 							} else {
 								userLabel.setLabel ( 'Average of ' + countNode.textContent);
 							}
@@ -1926,25 +1957,25 @@ NgChm.createNS('NgChm.LNK');
 
 					infoEl.children[1].onclick = function (e) {
 						if (debug) console.log ('GRAB');
-						const results = NgChm.SRCH.getAxisSearchResults(otherAxis)
+						const results = SRCH.getAxisSearchResults(otherAxis)
 						if (results.length < 1) {
-							NgChm.UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
+							UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 							return;
 						}
 						sss[cid].grabbers.clearData();
-						sss[cid].data = NgChm.SRCH.getAxisSearchResults(otherAxis);
+						sss[cid].data = SRCH.getAxisSearchResults(otherAxis);
 						if (debug) console.log ({ m: 'Grabbed', results: sss[cid].data });
 						sss[cid].grabbers.setSummary();
 					};
 					infoEl.children[2].onclick = function (e) {
 						if (debug) console.log ('SHOW');
 						if (sss[cid].data.length < 1) {
-							NgChm.UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
+							UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 							return;
 						}
-						NgChm.SRCH.clearAllAxisSearchItems (otherAxis);
-						NgChm.SRCH.setAxisSearchResultsVec (otherAxis, sss[cid].data);
-						NgChm.UTIL.redrawSearchResults ();
+						SRCH.clearAllAxisSearchItems (otherAxis);
+						SRCH.setAxisSearchResultsVec (otherAxis, sss[cid].data);
+						UTIL.redrawSearchResults ();
 					};
 					optionsBox.appendChild (infoEl);
 					selectEl.onchange = function (e) {
@@ -1964,25 +1995,25 @@ NgChm.createNS('NgChm.LNK');
 			function createGroupSelectors (sss, numSelectors, selectorName, params, lastApplied) {
 				const debug = false;
 				params = params || [];
-				var thisText = textN(NgChm.UTIL.capitalize(selectorName))
+				var thisText = textN(UTIL.capitalize(selectorName))
 				for (let cid = 0; cid < 1+0*numSelectors; cid++) {
 					optionsBox.appendChild (
-						NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
-							NgChm.UTIL.newTxt(textN(NgChm.UTIL.capitalize(selectorName), cid+1, 1+0*numSelectors))
+						UTIL.newElement('SPAN.leftLabel', {}, [
+							UTIL.newTxt(textN(UTIL.capitalize(selectorName), cid+1, 1+0*numSelectors))
 						])
 					)
 					optionsBox.appendChild(
-						NgChm.UTIL.newElement('a.helpQuestionMark',{},[], e=> {
+						UTIL.newElement('a.helpQuestionMark',{},[], e=> {
 							e.onmouseover = function() {
 								let helpText = 'Specify groups for statistical tests by first selecting a covariate or'
 								helpText += ' \'Selected '+thisAxis+'s for Group(s):\' from this dropdown.';
-								NgChm.UHM.hlp(this, helpText, 400, 0, 0)
+								UHM.hlp(this, helpText, 400, 0, 0)
 							};
-							e.onmouseout = function() { NgChm.UHM.hlpC()};
+							e.onmouseout = function() { UHM.hlpC()};
 							return e;
 						})
 					)
-					const selectEl = NgChm.UTIL.newElement('SELECT#gearDialogCovariateSelect');
+					const selectEl = UTIL.newElement('SELECT#gearDialogCovariateSelect');
 					optionsBox.appendChild (
 						selectEl
 					);
@@ -2065,27 +2096,27 @@ NgChm.createNS('NgChm.LNK');
 						@option {function} updateAxis
 					*/
 					function createLabelGrabber (axisName, userLabel, idx) {
-						const countNode = NgChm.UTIL.newTxt ('0 ' + axisName + 's');
-						const infoEl = NgChm.UTIL.newElement ('DIV.nodeSelector.hide', {}, [
-							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [
-								NgChm.UTIL.newTxt ('Selected')
+						const countNode = UTIL.newTxt ('0 ' + axisName + 's');
+						const infoEl = UTIL.newElement ('DIV.nodeSelector.hide', {}, [
+							UTIL.newElement('SPAN.leftLabel', {}, [
+								UTIL.newTxt ('Selected')
 							]),
 							countNode,
-							NgChm.UTIL.newButton('GRAB', {}, { click: doGrab }),
-							NgChm.UTIL.newButton('SHOW', {}, { click: doShow })
+							UTIL.newButton('GRAB', {}, { click: doGrab }),
+							UTIL.newButton('SHOW', {}, { click: doShow })
 						]);
 						let axisNameU;
 						updateAxis(axisName);
 
 						function doGrab (e) {
 							if (debug) console.log ('GRAB');
-							if (NgChm.SRCH.getAxisSearchResults(axisNameU).length < 1) {
-								NgChm.UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
+							if (SRCH.getAxisSearchResults(axisNameU).length < 1) {
+								UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 								return;
 							}
 							clearData(idx);
 							let count = 0;
-							NgChm.SRCH.getAxisSearchResults(axisNameU).forEach(si => {
+							SRCH.getAxisSearchResults(axisNameU).forEach(si => {
 								if (debug) console.log ({ m: 'Grabbed', si });
 								sss[cid].data[idx].push (si);
 								count++;
@@ -2095,16 +2126,16 @@ NgChm.createNS('NgChm.LNK');
 						function doShow (e) {
 							if (debug) console.log ('SHOW');
 							if (sss[cid].data[idx].length < 1) {
-								NgChm.UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
+								UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 								return;
 							}
-							NgChm.SRCH.clearAllAxisSearchItems (axisNameU);
-							NgChm.SRCH.setAxisSearchResultsVec (axisNameU, sss[cid].data[idx]);
-							NgChm.UTIL.redrawSearchResults ();
+							SRCH.clearAllAxisSearchItems (axisNameU);
+							SRCH.setAxisSearchResultsVec (axisNameU, sss[cid].data[idx]);
+							UTIL.redrawSearchResults ();
 						}
 						function updateAxis (newAxis) {
 							axisName = newAxis;
-							axisNameU = NgChm.MMGR.isRow(axisName) ? "Row" : "Column";
+							axisNameU = MMGR.isRow(axisName) ? "Row" : "Column";
 						}
 						function setSummary (selected, label) {
 							const data = sss[cid].data[idx];
@@ -2120,7 +2151,7 @@ NgChm.createNS('NgChm.LNK');
 										userLabel.setLabel ( 'Undefined');
 									}
 								} else if (data.length === 1) {
-									userLabel.setLabel ( NgChm.heatMap.getAxisLabels(axisName).labels[data[0]-1]);
+									userLabel.setLabel ( MMGR.getHeatMap().getAxisLabels(axisName).labels[data[0]-1]);
 								} else {
 									userLabel.setLabel ( 'Group of ' + countNode.textContent);
 								}
@@ -2154,9 +2185,9 @@ NgChm.createNS('NgChm.LNK');
 						if (nmax && nmax > 1) {
 							label = label + ' ' + nth;
 						}
-						const rangeSelectorEl = NgChm.UTIL.newElement ('DIV.rangeSelector.hide', {}, [
-							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt (label)]),
-							NgChm.UTIL.newElement('a.helpQuestionMark',{},[],e => {
+						const rangeSelectorEl = UTIL.newElement ('DIV.rangeSelector.hide', {}, [
+							UTIL.newElement('SPAN.leftLabel', {}, [UTIL.newTxt (label)]),
+							UTIL.newElement('a.helpQuestionMark',{},[],e => {
 								e.onmouseover = function() {
 									let helpText = 'Use the text boxes to enter a range for selection of groups based on continuous covariate values.'
 									let testElem = document.getElementById('gearDialogTestSelect');
@@ -2167,15 +2198,15 @@ NgChm.createNS('NgChm.LNK');
 									} else if (selectedTest == 'T-test') {
 										helpText += '<br><br><u>T-test:</u><br>If only Group 1 is specified, then Group 2 is automatically all elements NOT in Group 1.';
 									}
-									NgChm.UHM.hlp(this, helpText, 200, undefined, 0)
+									UHM.hlp(this, helpText, 200, undefined, 0)
 								};
-								e.onmouseout = function(){NgChm.UHM.hlpC()};
+								e.onmouseout = function(){UHM.hlpC()};
 								return e;
 							}),
-							NgChm.UTIL.newElement('BR'),NgChm.UTIL.newElement('SPAN.gear-menu-spacing'),
-							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ NgChm.UTIL.newTxt ('')]),
-							NgChm.UTIL.newElement('BR'),NgChm.UTIL.newElement('SPAN.gear-menu-spacing'),
-							NgChm.UTIL.newElement('INPUT',{'data-covariate-group':groupIdx})
+							UTIL.newElement('BR'),UTIL.newElement('SPAN.gear-menu-spacing'),
+							UTIL.newElement('SPAN.leftLabel', {}, [ UTIL.newTxt ('')]),
+							UTIL.newElement('BR'),UTIL.newElement('SPAN.gear-menu-spacing'),
+							UTIL.newElement('INPUT',{'data-covariate-group':groupIdx})
 						]);
 						rangeSelectorEl.lastChild.type = 'text';
 						rangeSelectorEl.lastChild.placeholder = 'e.g.: >=1.1<3.2';
@@ -2207,16 +2238,16 @@ NgChm.createNS('NgChm.LNK');
 						*/
 						function getIndexes(e) { // gets index values from range to add to sss
 							const selectedCov = selectEl.options[selectEl.selectedIndex].value;
-							const [ isValid, searchResults ] = NgChm.SRCH.continuousCovarSearch (thisAxis, selectedCov, e.target.value);
+							const [ isValid, searchResults ] = SRCH.continuousCovarSearch (thisAxis, selectedCov, e.target.value);
 							if (!isValid) {
-								NgChm.UHM.systemMessage('Invalid Range Text','ERROR: Range selection text is not valid. Examples of acceptable ranges: ">2<=5", ">=1<10"');
+								UHM.systemMessage('Invalid Range Text','ERROR: Range selection text is not valid. Examples of acceptable ranges: ">2<=5", ">=1<10"');
 								return;
 							}
 							const groupIndex = e.target.getAttribute('data-covariate-group')
 							sss[cid].data[groupIndex] = searchResults;
 							const common = sss[cid].data[0].filter(value => sss[cid].data[1].includes(value))
 							if (common.length > 0) {
-								NgChm.UHM.systemMessage('Group Selection Warning',
+								UHM.systemMessage('Group Selection Warning',
 									  "WARNING: Groups are not mutually exclusive in Gear Dialog.")
 							}
 						}
@@ -2244,9 +2275,9 @@ NgChm.createNS('NgChm.LNK');
 						if (nmax && nmax > 1) {
 							label = label + ' ' + nth;
 						}
-						const discreteSelectorEl = NgChm.UTIL.newElement ('DIV.discreteSelector.hide', {}, [
-							NgChm.UTIL.newElement('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt (label)]),
-							NgChm.UTIL.newElement('a.helpQuestionMark',{},[],e=>{
+						const discreteSelectorEl = UTIL.newElement ('DIV.discreteSelector.hide', {}, [
+							UTIL.newElement('SPAN.leftLabel', {}, [UTIL.newTxt (label)]),
+							UTIL.newElement('a.helpQuestionMark',{},[],e=>{
 								e.onmouseover = function(){
 									let helpText = 'Use the checkboxes to select groups based on covariate value.'
 									let testElem = document.getElementById('gearDialogTestSelect');
@@ -2257,9 +2288,9 @@ NgChm.createNS('NgChm.LNK');
 									} else if (selectedTest == 'T-test') {
 										helpText += '<br><br><u>T-test:</u><br>If only Group 1 is specified, then Group 2 is automatically all elements NOT in Group 1.';
 									}
-									NgChm.UHM.hlp(this, helpText, 200, undefined, 0)
+									UHM.hlp(this, helpText, 200, undefined, 0)
 								};
-								e.onmouseout = function(){NgChm.UHM.hlpC()};
+								e.onmouseout = function(){UHM.hlpC()};
 								return e;
 							})
 						])
@@ -2293,16 +2324,16 @@ NgChm.createNS('NgChm.LNK');
 									discreteSelectorEl.removeChild(discreteSelectorEl.lastChild);
 								}
 								discreteSelectorEl.classList.remove('hide')
-								let checkboxDivElem = NgChm.UTIL.newElement('DIV.gear-dialog-dropDownCheckBoxes-inline')
+								let checkboxDivElem = UTIL.newElement('DIV.gear-dialog-dropDownCheckBoxes-inline')
 								const selectedCov = selectEl.options[selectEl.selectedIndex].value;
-								const covariateThresholds = NgChm.heatMap.getAxisCovariateConfig(thisAxis)[selectedCov].color_map.thresholds;
+								const covariateThresholds = MMGR.getHeatMap().getAxisCovariateConfig(thisAxis)[selectedCov].color_map.thresholds;
 								document.querySelectorAll('[data-checkbox-label-group="'+groupIdx+'"]').forEach(el => el.parentNode.removeChild(el)); // rm old ones
 								covariateThresholds.forEach((covThresh,ctIdx) => { // create checkbox for each value
-									let checkboxElem = NgChm.UTIL.newElement('LABEL.gear-dialog-checkboxes',{'data-checkbox-label-group': groupIdx}, [
-										NgChm.UTIL.newElement('INPUT',{type:'checkbox',value:covThresh,'data-checkbox-covariate-group': groupIdx}),
-										NgChm.UTIL.newTxt(covThresh)
+									let checkboxElem = UTIL.newElement('LABEL.gear-dialog-checkboxes',{'data-checkbox-label-group': groupIdx}, [
+										UTIL.newElement('INPUT',{type:'checkbox',value:covThresh,'data-checkbox-covariate-group': groupIdx}),
+										UTIL.newTxt(covThresh)
 									]);
-									checkboxElem.appendChild(NgChm.UTIL.newElement('BR'))
+									checkboxElem.appendChild(UTIL.newElement('BR'))
 									checkboxElem.onchange = getIndexes
 									checkboxDivElem.appendChild(checkboxElem);
 								})
@@ -2323,7 +2354,7 @@ NgChm.createNS('NgChm.LNK');
 								if (cb !== e.target) {cb.checked = false;}
 							})
 							const selectedCov = selectEl.options[selectEl.selectedIndex].value;
-							const covariateValues = NgChm.heatMap.getAxisCovariateData(thisAxis)[selectedCov].values;
+							const covariateValues = MMGR.getHeatMap().getAxisCovariateData(thisAxis)[selectedCov].values;
 							for (let groupIndex=0; groupIndex<nmax; groupIndex++) {
 								sss[cid].data[groupIndex] = [] // clear any old values
 								let checkedValues = []
@@ -2357,11 +2388,11 @@ NgChm.createNS('NgChm.LNK');
 						} else {  // covariate bar selected
 							const selectedIndex = sss[cid].select.selectedIndex;
 							const selectedCovariate = sss[cid].select.children[selectedIndex].value;
-							const typeContOrDisc = NgChm.heatMap.getAxisCovariateConfig(thisAxis)[selectedCovariate].color_map.type;
+							const typeContOrDisc = MMGR.getHeatMap().getAxisCovariateConfig(thisAxis)[selectedCovariate].color_map.type;
 							if (typeContOrDisc === 'continuous') {
 								sss[cid].rangeSelectors.forEach((s) => s.setSummary(true)); // show the range selectors
 								sss[cid].discreteSelectors.forEach((s) => s.setSummary(false)); // hide the discrete selectors
-								const covariateValues = NgChm.heatMap.getAxisCovariateData(thisAxis)[selectedCovariate].values
+								const covariateValues = MMGR.getHeatMap().getAxisCovariateData(thisAxis)[selectedCovariate].values
 								                              .filter(x=>{return !isNaN(x)})
 								                              .map(x => parseFloat(x));
 								let minCovValue = Math.min(...covariateValues);
@@ -2471,9 +2502,9 @@ NgChm.createNS('NgChm.LNK');
 			if (nmax && nmax > 1) {
 				label = label + ' ' + nth;
 			}
-			const userLabelEl = NgChm.UTIL.newElement ('DIV.userLabel', {}, [
-				NgChm.UTIL.newElement('SPAN.leftLabel', {}, [ NgChm.UTIL.newTxt (label) ]),
-				NgChm.UTIL.newElement('INPUT',{maxlength: "50"})
+			const userLabelEl = UTIL.newElement ('DIV.userLabel', {}, [
+				UTIL.newElement('SPAN.leftLabel', {}, [ UTIL.newTxt (label) ]),
+				UTIL.newElement('INPUT',{maxlength: "50"})
 			]);
 			userLabelEl.children[1].type = 'text';
 			if (iValue) userLabelEl.children[1].value = iValue;
@@ -2489,15 +2520,15 @@ NgChm.createNS('NgChm.LNK');
 
 		function genPluginOptions (opts, level, params) {
 			level = level || 0;
-			const box = NgChm.UTIL.newElement('DIV.grouper');
+			const box = UTIL.newElement('DIV.grouper');
 			for (let oi = 0; oi < opts.length; oi++) {
-				const opt = NgChm.UTIL.newElement('DIV.grouper', {}, [
-					NgChm.UTIL.newElement ('SPAN.leftLabel', {}, [NgChm.UTIL.newTxt(opts[oi].label)])
+				const opt = UTIL.newElement('DIV.grouper', {}, [
+					UTIL.newElement ('SPAN.leftLabel', {}, [UTIL.newTxt(opts[oi].label)])
 				]);
 				if (opts[oi].helpText) {
-					let helpElem = NgChm.UTIL.newElement('a.helpQuestionMark',{},[], e=> {
-						e.onmouseover = function() {NgChm.UHM.hlp(this, opts[oi].helpText, 200, true, 0)};
-						e.onmouseout = function() {NgChm.UHM.hlpC()};
+					let helpElem = UTIL.newElement('a.helpQuestionMark',{},[], e=> {
+						e.onmouseover = function() {UHM.hlp(this, opts[oi].helpText, 200, true, 0)};
+						e.onmouseout = function() {UHM.hlpC()};
 						return e;
 					})
 					opt.appendChild(helpElem);
@@ -2508,17 +2539,17 @@ NgChm.createNS('NgChm.LNK');
 					opt.children[0].style.marginLeft = (level * 1.25) + 'em';
 				}
 				if (opts[oi].type === 'checkbox') {
-					const input = NgChm.UTIL.newElement('INPUT');
+					const input = UTIL.newElement('INPUT');
 					input.type = opts[oi].type;
 					input.checked = optParam !== null ? optParam : opts[oi].default;
 					opt.append (input);
 				} else if (opts[oi].type === 'text') {
-					const input = NgChm.UTIL.newElement('INPUT');
+					const input = UTIL.newElement('INPUT');
 					input.type = opts[oi].type;
 					input.value = optParam !== null ? optParam : opts[oi].default;
 					opt.append (input);
 				} else if (opts[oi].type === 'dropdown') {
-					const input = NgChm.UTIL.newElement('SELECT');
+					const input = UTIL.newElement('SELECT');
 					let selectedIndex = 0;
 					let choices = opts[oi].choices;
 					if (!Array.isArray(choices)) choices = [ choices ];
@@ -2528,7 +2559,7 @@ NgChm.createNS('NgChm.LNK');
 							if (cc === "STANDARD TESTS") {
 								input.id = 'gearDialogTestSelect';
 								for (const t of vanodiKnownTests) {
-									const choice = NgChm.UTIL.newElement('OPTION');
+									const choice = UTIL.newElement('OPTION');
 									choice.value = t.value;
 									if (t.value === optParam) selectedIndex = idx;
 									choice.innerText = t.label;
@@ -2539,7 +2570,7 @@ NgChm.createNS('NgChm.LNK');
 								console.log ("Unknown choice string: " + cc);
 							}
 						} else {
-							const choice = NgChm.UTIL.newElement('OPTION');
+							const choice = UTIL.newElement('OPTION');
 							choice.value = cc.value;
 							if (cc.value == optParam) selectedIndex = idx;
 							choice.innerText = cc.label;
@@ -2724,7 +2755,7 @@ NgChm.createNS('NgChm.LNK');
 						for (var j=0; j<minNumberRequired; j++) { 
 							if (cocoToCheck[j].type == 'data' && cocoToCheck[j].labelIdx.length == 0) { 
 								var entryNumber = j+1         
-								NgChm.UHM.systemMessage('Missing Selection',
+								UHM.systemMessage('Missing Selection',
 								   "Missing selection for " + config.axes[a].coco[c].name + " "+entryNumber+ " in Gear Dialog.")
 								return false
 							}
@@ -2738,7 +2769,7 @@ NgChm.createNS('NgChm.LNK');
 						var groupToCheck = plotParams.axes[a][thingToCheck][0]
 						for (var j=0; j<minNumberRequired; j++) {
 							if (groupToCheck.labelIdx[j].length == 0) {
-								NgChm.UHM.systemMessage('Missing Selection',
+								UHM.systemMessage('Missing Selection',
 								   "Missing selection for "+config.axes[a].group[g].label+" in Gear Dialog. At least " + minNumberRequired + " is required.")
 								return false;
 							}
@@ -2765,7 +2796,7 @@ NgChm.createNS('NgChm.LNK');
 		function applyPanel() {
 			let plotTitle = 'Heat Map Data';
 			if (axesOptions.length === 1) {
-				plotTitle = "Heat Map " + NgChm.UTIL.capitalize (axesOptions[0].select.value) + 's';
+				plotTitle = "Heat Map " + UTIL.capitalize (axesOptions[0].select.value) + 's';
 			}
 			const plotParams = {
 				plotTitle,
@@ -2775,7 +2806,7 @@ NgChm.createNS('NgChm.LNK');
 			};
 			var paramsOK = validateParams(plotParams); 
 			if (paramsOK) {
-				NgChm.LNK.setPanePluginOptions (icon, plotParams);
+				LNK.setPanePluginOptions (icon, plotParams);
 			}
 		}
 
@@ -2785,16 +2816,16 @@ NgChm.createNS('NgChm.LNK');
 		}
 
 		function closePanel() {
-			NgChm.Pane.removePopupNearIcon (panel, icon);
+			PANE.removePopupNearIcon (panel, icon);
 		}
 
-		panel.appendChild (NgChm.UTIL.newElement('DIV.buttonBox', {}, [
-			NgChm.UTIL.newButton('APPLY', {}, { click: applyPanel }),
-			NgChm.UTIL.newButton('RESET', {}, { click: resetPanel }),
-			NgChm.UTIL.newButton('CLOSE', {}, { click: closePanel })
+		panel.appendChild (UTIL.newElement('DIV.buttonBox', {}, [
+			UTIL.newButton('APPLY', {}, { click: applyPanel }),
+			UTIL.newButton('RESET', {}, { click: resetPanel }),
+			UTIL.newButton('CLOSE', {}, { click: closePanel })
 		]));
 
-		NgChm.Pane.insertPopupNearIcon (panel, icon);
+		PANE.insertPopupNearIcon (panel, icon);
 	}
 
 	/**
@@ -2823,22 +2854,22 @@ NgChm.createNS('NgChm.LNK');
 	}
 
 	defineVanodiMessageHandler ('register', function vanodiRegister (instance, msg) {
-	        const loc = NgChm.Pane.findPaneLocation (instance.iframe);
+	        const loc = PANE.findPaneLocation (instance.iframe);
 		instance.plugin.config = { name: msg.name, axes: msg.axes, options: msg.options };
 		if (Object.entries(instance.params).length === 0) {
-		        NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'none' }); // Let plugin know we heard it.
-			NgChm.Pane.switchToPlugin (loc, instance.plugin.name);
-			NgChm.MMGR.saveDataSentToPluginToMapConfig(msg.nonce, null, null);
+		        LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'none' }); // Let plugin know we heard it.
+			PANE.switchToPlugin (loc, instance.plugin.name);
+			MMGR.saveDataSentToPluginToMapConfig(msg.nonce, null, null);
 		} else {
 			loc.paneTitle.innerText = instance.plugin.name;
-			NgChm.LNK.initializePanePlugin (msg.nonce, instance.params);
+			LNK.initializePanePlugin (msg.nonce, instance.params);
 		}
-		NgChm.RecPanes.initializePluginWithMapConfigData(instance)
+		RECPANES.initializePluginWithMapConfigData(instance)
 	});
 
 	defineVanodiMessageHandler ('getLabels', function vanodiSendLabels (instance, msg) {
 		if (msg.axisName === 'row' || msg.axisName === 'column') {
-			NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'labels', labels: NgChm.UTIL.getActualLabels(msg.axisName) });
+			LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'labels', labels: UTIL.getActualLabels(msg.axisName) });
 		} else {
 			console.log ({ m: 'Malformed getLabels request', msg, detail: 'msg.axisName must equal row or column' });
 		}
@@ -2847,9 +2878,9 @@ NgChm.createNS('NgChm.LNK');
 	/* Message handler for when plugins send their data
 	*/
 	defineVanodiMessageHandler('sendingPluginData', function vanodiSaveData (instance, msg) {
-		let pluginInstances = NgChm.LNK.getPluginInstances();
+		let pluginInstances = LNK.getPluginInstances();
 		pluginInstances[instance.nonce]['dataFromPlugin'] = msg.pluginData;
-		NgChm.MMGR.saveDataFromPluginToMapConfig(instance.nonce, pluginInstances[instance.nonce]['dataFromPlugin']);
+		MMGR.saveDataFromPluginToMapConfig(instance.nonce, pluginInstances[instance.nonce]['dataFromPlugin']);
 	})
 
 	/*
@@ -2871,7 +2902,7 @@ NgChm.createNS('NgChm.LNK');
 			console.error('Incoming message missing attribute "propertyName"')
 			return
 		}
-		NgChm.LNK.sendMessageToPlugin ({
+		LNK.sendMessageToPlugin ({
 			nonce: msg.nonce,
 			op: 'property',
 			propertyName: msg.propertyName,
@@ -2915,7 +2946,7 @@ NgChm.createNS('NgChm.LNK');
 		} else {
 			var testData = await getAxisTestData(msg);
 			if (testData == false) {return;} // return if no data to send
-			NgChm.LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });
+			LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });
 		}
 	});
 
@@ -2929,9 +2960,9 @@ NgChm.createNS('NgChm.LNK');
 		@param {String} srcNonce nonce for plugin
 		TODO: make this work with specific registered linkouts
 	*/
-	NgChm.LNK.postSelectionToLinkouts = function(axis, clickType, lastClickIndex, srcNonce) {
-		const allLabels = NgChm.heatMap.getAxisLabels(axis).labels;
-	        const searchItems = NgChm.SRCH.getAxisSearchResults (axis);
+	LNK.postSelectionToLinkouts = function(axis, clickType, lastClickIndex, srcNonce) {
+		const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
+	        const searchItems = SRCH.getAxisSearchResults (axis);
 		const pointLabelNames = [];
 		for (let i=0; i<searchItems.length; i++) {
 			let pointId = allLabels[searchItems[i] - 1];
@@ -2939,7 +2970,7 @@ NgChm.createNS('NgChm.LNK');
 			pointLabelNames.push(pointId);
 		}
 		const lastClickText = lastClickIndex > 0 ? allLabels[lastClickIndex] : '';
-		NgChm.LNK.sendMessageToAllOtherPlugins (srcNonce, {
+		LNK.sendMessageToAllOtherPlugins (srcNonce, {
 		    op: 'makeHiLite',
 		    data: { axis, pointIds:pointLabelNames, clickType, lastClickText }
 		});
@@ -2949,19 +2980,19 @@ NgChm.createNS('NgChm.LNK');
 		Process message from plugins to highlight points selected in plugin
 	*/
 	defineVanodiMessageHandler ('selectLabels', function vanodiSelectLabels(instance, msg) {
-		const axis = NgChm.MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
+		const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
 		const pluginLabels = msg.selection.pointIds.map(l => l.toUpperCase()) // labels from plugin
 		var heatMapAxisLabels;
 		if (pluginLabels.length > 0 && pluginLabels[0].indexOf('|') !== -1) {
 			// Plugin sent full labels
-			heatMapAxisLabels = NgChm.heatMap.getAxisLabels(axis).labels;
+			heatMapAxisLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
 		} else {
 			// Plugin sent actual labels (or actual and full are identical).
-			heatMapAxisLabels = NgChm.UTIL.getActualLabels(axis);
+			heatMapAxisLabels = UTIL.getActualLabels(axis);
 		}
 		heatMapAxisLabels = heatMapAxisLabels.map(l => l.toUpperCase());
 		var setSelected = new Set(pluginLabels) // make a set for faster access below, and avoiding use of indexOf
-		NgChm.SRCH.clearSearchItems(axis);
+		SRCH.clearSearchItems(axis);
 		var indexes = []
 		for (var i=0; i<heatMapAxisLabels.length; i++) { // loop over all labels
 			if (setSelected.has(heatMapAxisLabels[i])) {  // if set of selected points has label, add index to array of indexes
@@ -2969,30 +3000,30 @@ NgChm.createNS('NgChm.LNK');
 			}
 		}
 		if (indexes.length > 0) {
-		    NgChm.SRCH.setAxisSearchResultsVec (axis, indexes);
-		    NgChm.DET.labelLastClicked[axis] = indexes[indexes.length-1];
+		    SRCH.setAxisSearchResultsVec (axis, indexes);
+		    DET.labelLastClicked[axis] = indexes[indexes.length-1];
 		}
-		NgChm.DET.updateDisplayedLabels();
-		NgChm.SUM.redrawSelectionMarks();
-		NgChm.SEL.updateSelections();
-		NgChm.SRCH.showSearchResults();
-		NgChm.LNK.postSelectionToLinkouts (axis, msg.selection.clickType, 0, msg.nonce);
+		DET.updateDisplayedLabels();
+		SUM.redrawSelectionMarks();
+		SEL.updateSelections();
+		SRCH.showSearchResults();
+		LNK.postSelectionToLinkouts (axis, msg.selection.clickType, 0, msg.nonce);
 	});
 
 	/*
 		Process message from scatter plot to highlight single point under mouse on plot
 	*/
 	defineVanodiMessageHandler('mouseover', function vanodiMouseover(instance, msg) {
-		const axis = NgChm.MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
-		const allLabels = NgChm.UTIL.getActualLabels(axis);
+		const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
+		const allLabels = UTIL.getActualLabels(axis);
 		const pointId = msg.selection.pointId
 		const ptIdx = allLabels.indexOf(pointId) + 1;
-		NgChm.SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
-		NgChm.DET.labelLastClicked[axis] = ptIdx;
-		NgChm.DET.updateDisplayedLabels();
-		NgChm.SEL.updateSelections();
-		NgChm.SRCH.showSearchResults();
-		NgChm.SUM.redrawSelectionMarks();
+		SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
+		DET.labelLastClicked[axis] = ptIdx;
+		DET.updateDisplayedLabels();
+		SEL.updateSelections();
+		SRCH.showSearchResults();
+		SUM.redrawSelectionMarks();
 	});
 
 	// Listen for messages from plugins.
@@ -3008,7 +3039,7 @@ NgChm.createNS('NgChm.LNK');
 				if (msg.nonce == 'prompt' && msg.op == 'register') {
 					// Intercept special case: register message from a plugin instance that can't get a nonce automatically.
 					// Ask user for permission.
-					const instance = NgChm.LNK.getPluginInstanceByName (msg.name);
+					const instance = LNK.getPluginInstanceByName (msg.name);
 					if (!instance) {
 						console.warn ('Vanodi registration message received for unknown plugin: name==' + msg.name);
 						return;
@@ -3023,7 +3054,7 @@ NgChm.createNS('NgChm.LNK');
 						return;
 					}
 				}
-				const instance = NgChm.LNK.getPluginInstance (msg.nonce);
+				const instance = LNK.getPluginInstance (msg.nonce);
 				if (instance) {
 				    processVanodiMessage (instance, msg);
 				}
@@ -3032,25 +3063,25 @@ NgChm.createNS('NgChm.LNK');
 	})();
 
 
-        NgChm.LNK.loadLinkoutSpec = function loadLinkoutSpec (kind, spec) {
+        LNK.loadLinkoutSpec = function loadLinkoutSpec (kind, spec) {
 	   console.log ({ m: 'loadLinkoutSpec', kind, spec });
 	   if (kind === 'panel-plugin') {
 	        // Panel plugin was dropped.  Add plugin to available panel plugins.
-	        const plugin = NgChm.LNK.registerPanePlugin(spec);
+	        const plugin = LNK.registerPanePlugin(spec);
 		let panes = document.querySelectorAll(`[data-plugin-name='${spec.name}']`);
 		[...panes].forEach(pane => {
-		    const loc = NgChm.Pane.findPaneLocation(pane);
+		    const loc = PANE.findPaneLocation(pane);
 		    const iframes = loc.pane.getElementsByTagName('IFRAME');
 		    const oldNonce = iframes.length > 0 ? iframes[0].dataset.nonce : false;
-		    const oldInstance = oldNonce ? NgChm.LNK.getPluginInstance (oldNonce) : null;
-		    NgChm.Pane.emptyPaneLocation (loc);
-		    NgChm.LNK.switchPaneToPlugin (loc, plugin);
-		    if (oldInstance) NgChm.LNK.setPanePluginOptions (pane, oldInstance.params);
+		    const oldInstance = oldNonce ? LNK.getPluginInstance (oldNonce) : null;
+		    PANE.emptyPaneLocation (loc);
+		    LNK.switchPaneToPlugin (loc, plugin);
+		    if (oldInstance) LNK.setPanePluginOptions (pane, oldInstance.params);
 		});
-	        NgChm.UHM.hlp (document.getElementById('barMenu_btn'), 'Added panel plugin ' + spec.name, 150, false, 0);
-	        setTimeout (NgChm.UHM.hlpC, 5000);
+	        UHM.hlp (document.getElementById('barMenu_btn'), 'Added panel plugin ' + spec.name, 150, false, 0);
+	        setTimeout (UHM.hlpC, 5000);
 	   } else {
-	        NgChm.LNK.addLinkoutPlugin(kind, spec);
+	        LNK.addLinkoutPlugin(kind, spec);
 	   }
 	};
 })(); // end of big IIFE

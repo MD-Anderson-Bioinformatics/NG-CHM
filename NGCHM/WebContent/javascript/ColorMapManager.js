@@ -1,7 +1,15 @@
-//Define Namespace for NgChm ColorMapManager
-NgChm.createNS('NgChm.CMM');
+(function() {
+    'use strict';
+    NgChm.markFile();
 
-NgChm.CMM.ColorMap = function(colorMapObj) {
+    //Define Namespace for NgChm ColorMapManager
+    const CMM = NgChm.createNS('NgChm.CMM');
+
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const SEL = NgChm.importNS('NgChm.SEL');
+    const SUM = NgChm.importNS('NgChm.SUM');
+
+CMM.ColorMap = function(colorMapObj) {
 	var type = colorMapObj["type"];
 	var thresholds;
 	if (type == "quantile"){
@@ -91,11 +99,11 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 	this.getColor = function(value){
 		var color;
 	
-		if (value >= NgChm.SUM.maxValues || value == "Missing" || isNaN(value)){
+		if (value >= SUM.maxValues || value == "Missing" || isNaN(value)){
 			color = rgbaMissingColor;
-		}else if(value <= NgChm.SUM.minValues){
-			var layers = NgChm.heatMap.getDataLayers();
-			var dl = layers[NgChm.SEL.getCurrentDL()];
+		}else if(value <= SUM.minValues){
+			var layers = MMGR.getHeatMap().getDataLayers();
+			var dl = layers[SEL.getCurrentDL()];
 			if (typeof dl.cuts_color !== 'undefined') {
 				color = this.getHexToRgba(dl.cuts_color);
 			} else {
@@ -274,7 +282,7 @@ NgChm.CMM.ColorMap = function(colorMapObj) {
 			a: (rgba1.a * ratio + rgba2.a * (1.0 - ratio))|0
 		});
 	}
-NgChm.CMM.blendHexColors = blendHexColors;
+CMM.blendHexColors = blendHexColors;
 
 	function darkenHexColorIfNeeded (hex) {
 		const { r, g, b } = hexToRgba (hex);
@@ -286,22 +294,22 @@ NgChm.CMM.blendHexColors = blendHexColors;
 			return rgbToHex({ r: (r * s)|0, g: (g * s)|0, b: (b * s)|0 });
 		}
 	}
-NgChm.CMM.darkenHexColorIfNeeded = darkenHexColorIfNeeded;
+CMM.darkenHexColorIfNeeded = darkenHexColorIfNeeded;
 
 }
 		
 // All color maps and current color maps are stored here.
-NgChm.CMM.ColorMapManager = function(mapConfig) {
+CMM.ColorMapManager = function(mapConfig) {
 	
 	var colorMapCollection = [mapConfig.data_configuration.map_information.data_layer,mapConfig.row_configuration.classifications,mapConfig.col_configuration.classifications];
 	
 	this.getColorMap = function(type, colorMapName){
 		if (type === "data") {
-			var colorMap = new NgChm.CMM.ColorMap(colorMapCollection[0][colorMapName].color_map);
+			var colorMap = new CMM.ColorMap(colorMapCollection[0][colorMapName].color_map);
 		} else if (type === "row") {
-			var colorMap = new NgChm.CMM.ColorMap(colorMapCollection[1][colorMapName].color_map);
+			var colorMap = new CMM.ColorMap(colorMapCollection[1][colorMapName].color_map);
 		} else {
-			var colorMap = new NgChm.CMM.ColorMap(colorMapCollection[2][colorMapName].color_map);
+			var colorMap = new CMM.ColorMap(colorMapCollection[2][colorMapName].color_map);
 		}
 		return colorMap;
 	};
@@ -319,3 +327,4 @@ NgChm.CMM.ColorMapManager = function(mapConfig) {
 		existingColorMap.missing = colorMap.getMissingColor();
 	};
 }
+})();

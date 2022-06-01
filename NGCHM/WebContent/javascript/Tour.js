@@ -6,8 +6,10 @@
 // elements based on the current display.
 //
 (function() {
-NgChm.TOUR = { showTour };
+    'use strict';
+    NgChm.markFile();
 
+    const TOUR = NgChm.createNS ('NgChm.TOUR', { showTour });
 function showTour (loc) {
 
     if (!introJs) return;  // User clicked before introJs has loaded.
