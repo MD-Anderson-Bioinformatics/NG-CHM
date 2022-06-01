@@ -23,6 +23,7 @@
     const DRAW = NgChm.importNS('NgChm.DRAW');
     const RECPANES = NgChm.importNS('NgChm.RecPanes');
     const CUST = NgChm.importNS('NgChm.CUST');
+    const UHM = NgChm.importNS('NgChm.UHM');
 
     /**********************************************************************************
      * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
@@ -388,6 +389,30 @@
 	    UIMGR.onLoadCHM(sizeBuilderView);
     };
 
+    /**********************************************************************************
+     * FUNCTION - widgetHelp: This function displays a special help popup box for
+     * the widgetized version of the NG-CHM embedded viewer.
+     **********************************************************************************/
+    UIMGR.widgetHelp = function() {
+	    const heatMap = MMGR.getHeatMap();
+	    const logos = document.getElementById('ngchmLogos');
+	    // Logos are not included in the widgetized version.
+	    if (logos) { logos.style.display = ''; }
+	    UHM.initMessageBox();
+	    UHM.setMessageBoxHeader("About NG-CHM Viewer");
+	    var mapVersion = ((heatMap !== null) && heatMap.isMapLoaded()) === true ? heatMap.getMapInformation().version_id : "N/A";
+	    var text = "<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.</p>";
+	    text = text + "<p><a href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>Additional NG-CHM Information and Help</a></p>";
+	    text = text + "<p><b>Software Version: </b>" + COMPAT.version+"</p>";
+	    text = text + "<p><b>Linkouts Version: </b>" + linkouts.getVersion()+"</p>";
+	    text = text + "<p><b>Map Version: </b>" +mapVersion+"</p>";
+	    text = text + "<p><b>Citation:</b> Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a></p>";
+	    text = text + "<p>The NG-CHM Viewer is also available for a variety of other platforms.</p>";
+	    UHM.setMessageBoxText(text);
+	    UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Close button", UHM.messageBoxCancel);
+	    UHM.displayMessageBox();
+    };
+
     function openHamburgerMenu (e) {
 	    var menu = document.getElementById('burgerMenuPanel');
 	    var parent = menu.parentElement;
@@ -418,9 +443,423 @@
 	UIMGR.redrawCanvases();
     }
 
+    /**********************************************************************************
+     * FUNCTION - saveHeatMapChanges: This function handles all of the tasks necessary
+     * display a modal window whenever the user requests to save heat map changes.
+     **********************************************************************************/
+    function saveHeatMapChanges () {
+	    const heatMap = MMGR.getHeatMap();
+	    var text;
+	    UHM.closeMenu();
+	    UHM.initMessageBox();
+	    UHM.setMessageBoxHeader("Save Heat Map");
+	    //Have changes been made?
+	    if (heatMap.getUnAppliedChanges()) {
+		    if ((heatMap.isFileMode()) || (typeof NgChm.galaxy !== "undefined")) {  // FIXME: BMB.  Improve Galaxy detection.
+			    if (typeof NgChm.galaxy !== "undefined") {
+				    text = "<br>Changes to the heatmap cannot be saved in the Galaxy history.  Your modifications to the heatmap may be written to a downloaded NG-CHM file.";
+			    } else {
+				    text = "<br>You have elected to save changes made to this NG-CHM heat map file.<br><br>You may save them to a new NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
+			    }
+			    UHM.setMessageBoxText(text);
+			    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", heatMap.saveHeatMapToNgchm);
+			    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+		    } else {
+			    // If so, is read only?
+			    if (heatMap.isReadOnly()) {
+				    text = "<br>You have elected to save changes made to this READ-ONLY heat map. READ-ONLY heat maps cannot be updated.<br><br>However, you may save these changes to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
+				    UHM.setMessageBoxText(text);
+				    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", heatMap.saveHeatMapToNgchm);
+				    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+			    } else {
+				    text = "<br>You have elected to save changes made to this heat map.<br><br>You have the option to save these changes to the original map OR to save them to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
+				    UHM.setMessageBoxText(text);
+				    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", heatMap.saveHeatMapToNgchm);
+				    UHM.setMessageBoxButton(2, "images/saveOriginal.png", "Save Original Heat Map", heatMap.saveHeatMapToServer);
+				    UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+			    }
+		    }
+	    } else {
+		    text = "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
+		    UHM.setMessageBoxText(text);
+		    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", heatMap.saveHeatMapToNgchm);
+		    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+	    }
+	    UHM.displayMessageBox();
+    }
+
+
     const hamburgerButton = document.getElementById('barMenu_btn');
     hamburgerButton.onclick = (ev) => {
 	openHamburgerMenu(ev.target);
+    };
+
+    (function() {
+	/*===========================================================
+	 *
+	 * LINKOUT HELP MENU ITEM FUNCTIONS
+	 *
+	 *===========================================================*/
+
+	/**********************************************************************************
+	 * FUNCTION - openLinkoutHelp: The purpose of this function is to construct an
+	 * HTML tables for plugins associated with the current heat map AND plugins
+	 * installed for the NG-CHM instance. Then the logic to display the linkout
+	 * help box is called.
+	 **********************************************************************************/
+	function openLinkoutHelp () {
+	    UHM.closeMenu();
+	    const mapLinksTbl = openMapLinkoutsHelp();
+	    const allLinksTbl = openAllLinkoutsHelp();
+	    linkoutHelp(mapLinksTbl,allLinksTbl);
+	    UIMGR.redrawCanvases();
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - openMapLinkoutsHelp: The purpose of this function is to construct an
+	 * HTML table object containing all of the linkout plugins that apply to a
+	 * particular heat map. The table is created and then passed on to a linkout
+	 * popup help window.
+	 **********************************************************************************/
+	function openMapLinkoutsHelp () {
+		const heatMap = MMGR.getHeatMap();
+		var validPluginCtr = 0;
+		var pluginTbl = document.createElement("TABLE");
+		var rowLabels = heatMap.getRowLabels().label_type;
+		var colLabels = heatMap.getColLabels().label_type;
+		pluginTbl.insertRow().innerHTML = UHM.formatBlankRow();
+		var tr = pluginTbl.insertRow();
+		var tr = pluginTbl.insertRow();
+		for (var i=0;i<CUST.customPlugins.length;i++) {
+			var plugin = CUST.customPlugins[i];
+			var rowPluginFound = isPluginFound(plugin, rowLabels);
+			var colPluginFound = isPluginFound(plugin, colLabels);
+			var matrixPluginFound = isPluginMatrix(plugin);
+			var axesFound = matrixPluginFound && rowPluginFound && colPluginFound ? "Row, Column, Matrix" : rowPluginFound && colPluginFound ? "Row, Column" : rowPluginFound ? "Row" : colPluginFound ? "Column" : "None";
+			//If there is at least one available plugin, fill table with plugin rows containing 5 cells
+			if (rowPluginFound || colPluginFound) {
+				//If first plugin being written to table, write header row.
+				if (validPluginCtr === 0) {
+					tr.className = "chmHdrRow";
+					let td = tr.insertCell(0);
+					td.innerHTML = "<b>Plug-in Axes</b>";
+					td = tr.insertCell(0);
+					td.innerHTML = "<b>Description</b>";
+					td = tr.insertCell(0);
+					td.innerHTML = "<b>Plug-in Name and Website</b>";
+					td.setAttribute("colspan", 2);
+				}
+				validPluginCtr++;
+				//If there is no plugin logo, replace it with hyperlink using plugin name
+				var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' onerror='this.onerror=null; this.remove();' width='100px'>" : "<b>" + plugin.name + "</b>";
+				var hrefSite = typeof plugin.site !== 'undefined' ? "<a href='"+plugin.site+"' target='_blank'> " : "<a>";
+				var logo = hrefSite + logoImage + "</a>";
+				var tr = pluginTbl.insertRow();
+				tr.className = "chmTblRow";
+				var tdLogo = tr.insertCell(0);
+				tdLogo.className = "chmTblCell";
+				tdLogo.innerHTML = logo;
+				var tdName = tr.insertCell(1);
+				tdName.className = "chmTblCell";
+				tdName.style.fontWeight="bold";
+				tdName.innerHTML = typeof plugin.site !== 'undefined' ? "<a href='" + plugin.site + "' target='_blank'>" + plugin.name + "</a>" : plugin.name;
+				var tdDesc = tr.insertCell(2);
+				tdDesc.className = "chmTblCell";
+				tdDesc.innerHTML = plugin.description;
+				var tdAxes = tr.insertCell(3);
+				tdAxes.className = "chmTblCell";
+				tdAxes.innerHTML = axesFound;
+			}
+		}
+		if (validPluginCtr === 0) {
+			var tr = pluginTbl.insertRow();
+			tr.className = "chmTblRow";
+			var tdLogo = tr.insertCell(0);
+			tdLogo.className = "chmTblCell";
+			tdLogo.innerHTML = "<B>NO AVAILABLE PLUGINS WERE FOUND FOR THIS HEATMAP</B>";
+
+		}
+		return pluginTbl;
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - openAllLinkoutsHelp: The purpose of this function is to construct an
+	 * HTML table object containing all of the linkout plugins that are installed for
+	 * the NG-CHM instance. The table is created and then passed on to a linkout
+	 * popup help window.
+	 **********************************************************************************/
+	function openAllLinkoutsHelp () {
+		var validPluginCtr = 0;
+		var pluginTbl = document.createElement("TABLE");
+		pluginTbl.id = 'allPlugins';
+		pluginTbl.insertRow().innerHTML = UHM.formatBlankRow();
+		var tr = pluginTbl.insertRow();
+		var tr = pluginTbl.insertRow();
+		for (var i=0;i<CUST.customPlugins.length;i++) {
+			var plugin = CUST.customPlugins[i];
+				//If first plugin being written to table, write header row.
+				if (validPluginCtr === 0) {
+					tr.className = "chmHdrRow";
+					let td = tr.insertCell(0);
+					td.innerHTML = "<b>Description</b>";
+					td = tr.insertCell(0);
+					td.innerHTML = "<b>Plug-in Name and Website</b>";
+					td.setAttribute('colspan', 2);
+				}
+				validPluginCtr++;
+				//If there is no plugin logo, replace it with hyperlink using plugin name
+				var logoImage = typeof plugin.logo !== 'undefined' ? "<img src='"+ plugin.logo+"' onerror='this.onerror=null; this.remove();' width='100px'>" : "<b>" + plugin.name + "</b>";
+				var hrefSite = typeof plugin.site !== 'undefined' ? "<a href='"+plugin.site+"' target='_blank'> " : "<a>";
+				var logo = hrefSite + logoImage + "</a>";
+				var tr = pluginTbl.insertRow();
+				tr.className = "chmTblRow";
+				var tdLogo = tr.insertCell(0);
+				tdLogo.className = "chmTblCell";
+				tdLogo.innerHTML = logo;
+				var tdName = tr.insertCell(1);
+				tdName.className = "chmTblCell";
+				tdName.style.fontWeight="bold";
+				tdName.innerHTML = typeof plugin.site !== 'undefined' ? "<a href='" + plugin.site + "' target='_blank'>" + plugin.name + "</a>" : plugin.name;
+				var tdDesc = tr.insertCell(2);
+				tdDesc.className = "chmTblCell";
+				tdDesc.innerHTML = plugin.description;
+		}
+		return pluginTbl;
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - isPluginFound: The purpose of this function is to check to see if
+	 * a given plugin is applicable for the current map based upon the label types.
+	 * Row or column label types are passed into this function.
+	 **********************************************************************************/
+	function isPluginFound (plugin,labels) {
+		var pluginFound = false;
+		if (plugin.name === "TCGA") {
+			for (var l=0;l<labels.length;l++) {
+				var tcgaBase = "bio.tcga.barcode.sample";
+				if (labels[l] === tcgaBase) {
+					pluginFound = true;
+				}
+				if (typeof CUST.subTypes[tcgaBase] !== 'undefined') {
+					for(var m=0;m<CUST.subTypes[tcgaBase].length;m++) {
+						var subVal = CUST.subTypes[tcgaBase][m];
+						if (labels[l] === subVal) {
+							pluginFound = true;
+						}
+					}
+				}
+			}
+		} else {
+			for (var k=0;k<plugin.linkouts.length;k++) {
+				var typeN = plugin.linkouts[k].typeName;
+				for (var l=0;l<labels.length;l++) {
+					var labelVal = labels[l];
+					if (labelVal === typeN) {
+						pluginFound = true;
+					}
+					if (typeof CUST.superTypes[labelVal] !== 'undefined') {
+						for(var m=0;m<CUST.superTypes[labelVal].length;m++) {
+							var superVal = CUST.superTypes[labelVal][m];
+							if (superVal === typeN) {
+								pluginFound = true;
+							}
+						}
+					}
+				}
+			}
+		}
+		return pluginFound;
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - isPluginMatrix: The purpose of this function is to determine whether
+	 * a given plugin is also a Matrix plugin.
+	 **********************************************************************************/
+	function isPluginMatrix (plugin) {
+		var pluginMatrix = false;
+		if (typeof plugin.linkouts !== 'undefined') {
+		    for (var k=0;k<plugin.linkouts.length;k++) {
+			var pluginName = plugin.linkouts[k].menuEntry;
+			for (var l=0;l<linkouts.Matrix.length;l++) {
+				var matrixName = linkouts.Matrix[l].title;
+				if (pluginName === matrixName) {
+					pluginMatrix = true;
+				}
+			}
+		    }
+		}
+		return pluginMatrix;
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - linkoutHelp: The purpose of this function is to load and make visible
+	 * the linkout help popup window.
+	 **********************************************************************************/
+	function linkoutHelp (mapLinksTbl, allLinksTbl) {
+		var linkBox = document.getElementById('linkBox');
+		var linkBoxHdr = document.getElementById('linkBoxHdr');
+		var linkBoxTxt = document.getElementById('linkBoxTxt');
+		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+		var pluginCtr = allLinksTbl.rows.length;
+		var headerpanel = document.getElementById('mdaServiceHeader');
+		UTIL.hideLoader();
+		linkBox.classList.add ('hide');
+		linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
+		linkBox.style.right = "5%";
+		linkBoxHdr.innerHTML = "NG-CHM Plug-in Information";
+		if (linkBoxHdr.querySelector(".closeX")) { linkBoxHdr.querySelector(".closeX").remove();}
+		linkBoxHdr.appendChild(UHM.createCloseX(linkBoxCancel));
+		linkBoxTxt.innerHTML = "";
+		linkBoxTxt.appendChild(mapLinksTbl);
+		mapLinksTbl.style.width = '100%';
+		linkBoxAllTxt.innerHTML = "";
+		linkBoxAllTxt.appendChild(allLinksTbl);
+		allLinksTbl.style.width = '100%';
+		linkBoxSizing();
+		hideAllLinks();
+		showMapPlugins();
+		linkBox.classList.remove ('hide');
+		linkBox.style.left = ((window.innerWidth - linkBox.offsetWidth) / 2) + 'px';
+	//	UTIL.dragElement(document.getElementById("linkBox"));
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - linkBoxCancel: The purpose of this function is to hide the linkout
+	 * help popup window.
+	 **********************************************************************************/
+	function linkBoxCancel () {
+		var linkBox = document.getElementById('linkBox');
+		linkBox.classList.add ('hide');
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - hideAllLinks: The purpose of this function is to hide the linkout
+	 * help boxes and reset the tabs associated with them.
+	 **********************************************************************************/
+	function hideAllLinks () {
+		var linkBoxTxt = document.getElementById('linkBoxTxt');
+		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+		var mapLinksBtn = document.getElementById("mapLinks_btn");
+		var allLinksBtn = document.getElementById("allLinks_btn");
+		mapLinksBtn.setAttribute('src', 'images/mapLinksOff.png');
+		linkBoxTxt.classList.add ('hide');
+		allLinksBtn.setAttribute('src', 'images/allLinksOff.png');
+		linkBoxAllTxt.classList.add ('hide');
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - linkBoxSizing: The purpose of this function is to size the height
+	 * of the linkout help popup window depending on the number of plugins to be
+	 * listed.
+	 **********************************************************************************/
+	function linkBoxSizing () {
+		var linkBox = document.getElementById('linkBox');
+		var pluginCtr = 0;
+		if (document.getElementById('allPlugins') !== null) {
+			pluginCtr = document.getElementById('allPlugins').rows.length;
+		}
+		var linkBoxTxt = document.getElementById('linkBoxTxt');
+		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+		var container = document.getElementById('ngChmContainer');
+		var contHeight = container.offsetHeight;
+		if (pluginCtr === 0) {
+			var boxHeight = contHeight *.30;
+			var boxTextHeight = boxHeight * .40;
+			if (boxHeight < 150) {
+				boxHeight = contHeight *.35;
+				boxTextHeight = boxHeight * .20;
+			}
+			linkBox.style.height = boxHeight;
+			linkBoxTxt.style.height = boxTextHeight;
+		} else {
+			var boxHeight = contHeight *.92;
+			linkBox.style.height = boxHeight;
+			var boxTextHeight = boxHeight * .80;
+			if (MMGR.embeddedMapName !== null) {
+				boxTextHeight = boxHeight *.60;
+			}
+			if (boxHeight < 400) {
+				if (MMGR.embeddedMapName !== null) {
+					boxTextHeight = boxHeight *.60;
+				} else {
+					boxTextHeight = boxHeight * .70;
+				}
+			}
+			linkBoxTxt.style.height = boxTextHeight;
+			linkBoxAllTxt.style.height = boxTextHeight;
+		}
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - showMapPlugins: The purpose of this function is to show the map specific
+	 * plugins panel within the linkout help screen and toggle the appropriate
+	 * tab button.
+	 **********************************************************************************/
+	function showMapPlugins () {
+		//Turn off all tabs
+		hideAllLinks();
+		//Turn on map links div
+		var linkBoxTxt = document.getElementById('linkBoxTxt');
+		var mapLinksBtn = document.getElementById("mapLinks_btn");
+		mapLinksBtn.setAttribute('src', 'images/mapLinksOn.png');
+		linkBoxTxt.classList.remove('hide');
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - showAllPlugins: The purpose of this function is to show the all
+	 * plugins installed panel within the linkout help screen and toggle the appropriate
+	 * tab button.
+	 **********************************************************************************/
+	function showAllPlugins () {
+		//Turn off all tabs
+		hideAllLinks();
+		//Turn on all links div
+		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
+		var allLinksBtn = document.getElementById("allLinks_btn");
+		allLinksBtn.setAttribute('src', 'images/allLinksOn.png');
+		linkBoxAllTxt.classList.remove ('hide');
+	}
+
+
+	document.getElementById('menuLink').onclick = () => {
+	    openLinkoutHelp();
+	};
+
+	document.getElementById('mapLinks_btn').onclick = () => {
+	    showMapPlugins();
+	};
+
+	document.getElementById('allLinks_btn').onclick = () => {
+	    showAllPlugins();
+	};
+
+	document.getElementById('linkBoxFootCloseButton').onclick = () => {
+	    linkBoxCancel();
+	};
+
+    })();
+
+    document.getElementById('menuHelp').onclick = () => {
+	UHM.closeMenu();
+	if (MMGR.source !== MMGR.WEB_SOURCE) {
+	    UIMGR.widgetHelp();
+	} else {
+	    let url = location.origin+location.pathname;
+	    window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
+	}
+	UIMGR.redrawCanvases();
+    };
+
+    document.getElementById('aboutMenu_btn').onclick = (ev) => {
+	UIMGR.widgetHelp();
+    };
+
+    document.getElementById('menuAbout').onclick = () => {
+	UIMGR.widgetHelp();
+    };
+
+    document.getElementById('menuSave').onclick = () => {
+	saveHeatMapChanges();
     };
 
 })();

@@ -28,7 +28,6 @@ DET.maxLabelSize = 11;
 DET.redrawSelectionTimeout = 0;   // Drawing delay in ms after the view has changed.
 DET.redrawUpdateTimeout = 10;	// Drawing delay in ms after a tile update (if needed).
 DET.minPixelsForGrid = 20;	// minimum element size for grid lines to display
-DET.detailPoint = null;
 DET.animating = false;
 
 //We keep a copy of the last rendered detail heat map for each layer.

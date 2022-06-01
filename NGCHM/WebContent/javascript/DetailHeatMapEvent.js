@@ -96,7 +96,7 @@ DEV.addEvents = function (paneId) {
 					UHM.hlpC();
 					DEV.matrixRightClick(e);
 				} else if (timesince < 500 && diffMax < 20){
-					UHM.userHelpOpen();
+					DEV.userHelpOpen();
 				}
 			}
 	    }
@@ -140,6 +140,282 @@ DEV.addEvents = function (paneId) {
 	
 }
 
+/**********************************************************************************
+ * FUNCTION - userHelpOpen: This function handles all of the tasks necessary to
+ * generate help pop-up panels for the detail heat map and the detail heat map
+ * classification bars.
+ *********************************************************************************/
+DEV.userHelpOpen = function(mapItem) {
+    const heatMap = MMGR.getHeatMap();
+    UHM.hlpC();
+    var helpContents = document.createElement("TABLE");
+    helpContents.id = 'helpTable';
+    var orgW = window.innerWidth+window.pageXOffset;
+    var orgH = window.innerHeight+window.pageYOffset;
+    var helptext = UHM.getDivElement("helptext");
+    helptext.innerHTML=("<a align='left'>Copy To Clipboard</a><img id='redX_btn' src='images/redX.png' alt='Close Help' align='right'>");
+    helptext.children[0].onclick = UHM.pasteHelpContents;  // The <A> element.
+    helptext.onclick = function(event) { UHM.hlpC(); };
+    helptext.style.position = "absolute";
+    document.getElementsByTagName('body')[0].appendChild(helptext);
+    var rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
+    var colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
+
+    // pixels
+    var rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
+    var colClassHeightPx = DET.getColClassPixelHeight(mapItem);
+    var mapLocY = mapItem.offsetY - colClassHeightPx;
+    var mapLocX = mapItem.offsetX - rowClassWidthPx;
+    var objectType = "none";
+    if (mapItem.offsetY > colClassHeightPx) {
+	if  (mapItem.offsetX > rowClassWidthPx) {
+		objectType = "map";
+	}
+	if  (mapItem.offsetX < rowClassWidthPx) {
+		objectType = "rowClass";
+	}
+    } else {
+	if  (mapItem.offsetX > rowClassWidthPx) {
+		objectType = "colClass";
+	}
+    }
+    if (objectType === "map") {
+	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
+	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
+	if ((row <= heatMap.getNumRows('d')) && (col <= heatMap.getNumColumns('d'))) {
+		// Gather the information about the current pixel.
+		let matrixValue = heatMap.getValue(MMGR.DETAIL_LEVEL,row,col);
+		if (matrixValue >= MMGR.maxValues) {
+		    matrixValue = "Missing Value";
+		} else if (matrixValue <= MMGR.minValues) {
+		    return; // A gap.
+		} else {
+		    matrixValue = matrixValue.toFixed(5);
+		}
+		if (DMM.primaryMap.mode === 'FULL_MAP') {
+		    matrixValue = matrixValue + "<br>(summarized)";
+		}
+
+		const rowLabels = heatMap.getRowLabels().labels;
+		const colLabels = heatMap.getColLabels().labels;
+		const pixelInfo = {
+		    value: matrixValue,
+		    rowLabel: rowLabels[row-1],
+		    colLabel: colLabels[col-1]
+		};
+		const rowClassBars = heatMap.getRowClassificationData();
+		const rowClassConfig = heatMap.getRowClassificationConfig();
+		pixelInfo.rowCovariates = heatMap
+			.getRowClassificationOrder()
+			.filter(key => rowClassConfig[key].show === 'Y')
+			.map(key => ({
+				name: key,
+				value: rowClassBars[key].values[row-1]
+			}));
+		const colClassBars = heatMap.getColClassificationData();
+		const colClassConfig = heatMap.getColClassificationConfig();
+		pixelInfo.colCovariates = heatMap
+			.getColClassificationOrder()
+			.filter(key => colClassConfig[key].show === 'Y')
+			.map(key => ({
+				name: key,
+				value: colClassBars[key].values[col-1]
+			}));
+
+		// If the enclosing window wants to display the pixel info, send it to them.
+		// Otherwise, display it ourselves.
+		if (UHM.postMapDetails) {
+			var msg = { nonce: UHM.myNonce, msg: 'ShowMapDetail', data: pixelInfo };
+			//If a unique identifier was provided, return it in the message.
+			if (UHM.postID != null) {
+			    msg["id"] = UHM.postID;
+			}
+
+			window.parent.postMessage (msg, UHM.postMapToWhom);
+		} else {
+			UHM.formatMapDetails (helpContents, pixelInfo);
+			helptext.style.display="inline";
+			helptext.appendChild(helpContents);
+			locateHelpBox(helptext,mapItem);
+		}
+	}
+    } else if ((objectType === "rowClass") || (objectType === "colClass")) {
+	var pos, value, label;
+	var hoveredBar, hoveredBarColorScheme, hoveredBarValues;
+	if (objectType === "colClass") {
+		var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
+		var colLabels = heatMap.getColLabels().labels;
+		label = colLabels[col-1];
+		var coveredHeight = 0;
+		pos = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize));
+		var classBarsConfig = heatMap.getColClassificationConfig();
+		var classBarsConfigOrder = heatMap.getColClassificationOrder();
+			for (var i = 0; i <  classBarsConfigOrder.length; i++) {
+				var key = classBarsConfigOrder[i];
+			var currentBar = classBarsConfig[key];
+			if (currentBar.show === 'Y') {
+				coveredHeight += mapItem.canvas.clientHeight*currentBar.height/mapItem.canvas.height;
+				if (coveredHeight >= mapItem.offsetY) {
+					hoveredBar = key;
+					hoveredBarValues = heatMap.getColClassificationData()[key].values;
+					break;
+				}
+			}
+		}
+		var colorMap = heatMap.getColorMapManager().getColorMap("col",hoveredBar);
+	} else {
+		var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
+		var rowLabels = heatMap.getRowLabels().labels;
+		label = rowLabels[row-1];
+		var coveredWidth = 0;
+		pos = Math.floor(mapItem.currentRow + (mapLocY/colElementSize));
+		var classBarsConfig = heatMap.getRowClassificationConfig();
+		var classBarsConfigOrder = heatMap.getRowClassificationOrder();
+			for (var i = 0; i <  classBarsConfigOrder.length; i++) {
+				var key = classBarsConfigOrder[i];
+				var currentBar = classBarsConfig[key];
+			if (currentBar.show === 'Y') {
+				coveredWidth += mapItem.canvas.clientWidth*currentBar.height/mapItem.canvas.width;
+				if (coveredWidth >= mapItem.offsetX){
+					hoveredBar = key;
+					hoveredBarValues = heatMap.getRowClassificationData()[key].values;
+					break;
+				}
+			}
+		}
+		var colorMap = heatMap.getColorMapManager().getColorMap("row",hoveredBar);
+	}
+	var value = hoveredBarValues[pos-1];
+	//No help popup when clicking on a gap in the class bar
+	if (value === '!CUT!') {
+		return;
+	}
+	var colors = colorMap.getColors();
+	var classType = colorMap.getType();
+	if ((value === 'null') || (value === 'NA')) {
+		value = "Missing Value";
+	}
+	var thresholds = colorMap.getThresholds();
+	var thresholdSize = 0;
+	// For Continuous Classifications:
+	// 1. Retrieve continuous threshold array from colorMapManager
+	// 2. Retrieve threshold range size divided by 2 (1/2 range size)
+	// 3. If remainder of half range > .75 set threshold value up to next value, Else use floor value.
+	if (classType == 'continuous') {
+		thresholds = colorMap.getContinuousThresholdKeys();
+		var threshSize = colorMap.getContinuousThresholdKeySize()/2;
+		if ((threshSize%1) > .5) {
+			// Used to calculate modified threshold size for all but first and last threshold
+			// This modified value will be used for color and display later.
+			thresholdSize = Math.floor(threshSize)+1;
+		} else {
+			thresholdSize = Math.floor(threshSize);
+		}
+	}
+
+	// Build TABLE HTML for contents of help box
+		var displayName = hoveredBar;
+		if (hoveredBar.length > 20){
+			displayName = displayName.substring(0,20) + "...";
+		}
+		UHM.setTableRow(helpContents, ["Label: ", "&nbsp;"+label]);
+		UHM.setTableRow(helpContents, ["Covariate: ", "&nbsp;"+displayName]);
+		UHM.setTableRow(helpContents, ["Value: ", "&nbsp;"+value]);
+		helpContents.insertRow().innerHTML = UHM.formatBlankRow();
+	var rowCtr = 3 + thresholds.length;
+	var prevThresh = currThresh;
+	for (var i = 0; i < thresholds.length; i++){ // generate the color scheme diagram
+		var color = colors[i];
+		var valSelected = 0;
+		var valTotal = hoveredBarValues.length;
+		var currThresh = thresholds[i];
+		var modThresh = currThresh;
+		if (classType == 'continuous') {
+			// IF threshold not first or last, the modified threshold is set to the threshold value
+			// less 1/2 of the threshold range ELSE the modified threshold is set to the threshold value.
+			if ((i != 0) &&  (i != thresholds.length - 1)) {
+				modThresh = currThresh - thresholdSize;
+			}
+				color = colorMap.getRgbToHex(colorMap.getClassificationColor(modThresh));
+		}
+
+		//Count classification value occurrences within each breakpoint.
+		for (var j = 0; j < valTotal; j++) {
+			let classBarVal = hoveredBarValues[j];
+			if (classType == 'continuous') {
+			// Count based upon location in threshold array
+			// 1. For first threshhold, count those values <= threshold.
+			// 2. For second threshold, count those values >= threshold.
+			// 3. For penultimate threshhold, count those values > previous threshold AND values < final threshold.
+			// 3. For all others, count those values > previous threshold AND values <= final threshold.
+				if (i == 0) {
+						if (classBarVal <= currThresh) {
+						valSelected++;
+						}
+				} else if (i == thresholds.length - 1) {
+					if (classBarVal >= currThresh) {
+						valSelected++;
+					}
+				} else if (i == thresholds.length - 2) {
+					if ((classBarVal > prevThresh) && (classBarVal < currThresh)) {
+						valSelected++;
+					}
+				} else {
+					if ((classBarVal > prevThresh) && (classBarVal <= currThresh)) {
+						valSelected++;
+					}
+				}
+			} else {
+			var value = thresholds[i];
+				if (classBarVal == value) {
+					valSelected++;
+				}
+			}
+		}
+		var selPct = Math.round(((valSelected / valTotal) * 100) * 100) / 100;  //new line
+		if (currentBar.bar_type === 'color_plot') {
+		    UHM.setTableRow(helpContents, ["<div class='input-color'><div class='color-box' style='background-color: " + color + ";'></div></div>", modThresh + " (n = " + valSelected + ", " + selPct+ "%)"]);
+		} else {
+		    UHM.setTableRow(helpContents, ["<div> </div></div>", modThresh + " (n = " + valSelected + ", " + selPct+ "%)"]);
+		}
+		prevThresh = currThresh;
+	}
+	var valSelected = 0;
+	var valTotal = hoveredBarValues.length;
+	for (var j = 0; j < valTotal; j++) {
+		if ((hoveredBarValues[j] == "null") || (hoveredBarValues[j] == "NA")) {
+			valSelected++;
+		}
+	}
+	var selPct = Math.round(((valSelected / valTotal) * 100) * 100) / 100;  //new line
+	if (currentBar.bar_type === 'color_plot') {
+			UHM.setTableRow(helpContents, ["<div class='input-color'><div class='color-box' style='background-color: " +  colorMap.getMissingColor() + ";'></div></div>", "Missing Color (n = " + valSelected + ", " + selPct+ "%)"]);
+	} else {
+			UHM.setTableRow(helpContents, ["<div> </div></div>", "Missing Color (n = " + valSelected + ", " + selPct+ "%)"]);
+	}
+
+		// If the enclosing window wants to display the covarate info, send it to them.
+		// Otherwise, display it ourselves.
+	if (UHM.postMapDetails) {
+			var msg = { nonce: UHM.myNonce, msg: 'ShowCovarDetail', data: helpContents.innerHTML };
+			//If a unique identifier was provided, return it in the message.
+			if (UHM.postID != null) {
+				msg["id"] = UHM.postID;
+			}
+
+			window.parent.postMessage (msg, UHM.postMapToWhom);
+	} else {
+		helptext.style.display="inline";
+		helptext.appendChild(helpContents);
+		locateHelpBox(helptext,mapItem);
+	}
+    } else {
+	// on the blank area in the top left corner
+    }
+    UIMGR.redrawCanvases();
+};
+
+
 /*********************************************************************************************
  * FUNCTION:  handleScroll - The purpose of this function is to handle mouse scroll wheel 
  * events to zoom in / out.
@@ -171,7 +447,6 @@ DEV.handleScroll = function(evt) {
 DEV.keyNavigate = function(e) {
 	const mapItem = DMM.primaryMap;
 	UHM.hlpC();
-    clearTimeout(DET.detailPoint);
     if (e.target.type != "text" && e.target.type != "textarea"){
 		switch(e.keyCode){ // prevent default added redundantly to each case so that other key inputs won't get ignored
 			case 37: // left key 
@@ -296,7 +571,7 @@ DEV.clickStart = function (e) {
 		if (DET.eventTimer != 0) {
 			clearTimeout(DET.eventTimer);
 		}
-		DET.eventTimer = setTimeout(UHM.userHelpOpen.bind('mapItem', mapItem), 500);
+		DET.eventTimer = setTimeout(DEV.userHelpOpen.bind('mapItem', mapItem), 500);
 	}
 }
 
@@ -1335,6 +1610,38 @@ DEV.zoomAnimation = function (chm,destRow,destCol) {
 	}
 
 }
+
+    /**********************************************************************************
+     * FUNCTION - locateHelpBox: This function determines and sets the location of a
+     * popup help box.
+     **********************************************************************************/
+    function locateHelpBox (helptext, mapItem) {
+	var rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
+	var colClassHeightPx = DET.getColClassPixelHeight(mapItem);
+	    var mapLocY = mapItem.offsetY - colClassHeightPx;
+	    var mapLocX = mapItem.offsetX - rowClassWidthPx;
+	    var mapH = mapItem.canvas.clientHeight - colClassHeightPx;
+	    var mapW = mapItem.canvas.clientWidth - rowClassWidthPx;
+	    var boxLeft = mapItem.pageX;
+	    if (mapLocX > (mapW / 2)) {
+		    boxLeft = mapItem.pageX - helptext.clientWidth - 10;
+	    }
+	    helptext.style.left = boxLeft + 'px';
+	    var boxTop = mapItem.pageY;
+	    if ((boxTop+helptext.clientHeight) > mapItem.canvas.clientHeight + 90) {
+		    if (helptext.clientHeight > mapItem.pageY) {
+			    boxTop = mapItem.pageY - (helptext.clientHeight/2);
+		    } else {
+			    boxTop = mapItem.pageY - helptext.clientHeight;
+		    }
+	    }
+	    //Keep box from going off top of screen so data values always visible.
+	    if (boxTop < 0) {
+		    boxTop = 0;
+	    }
+	    helptext.style.top = boxTop + 'px';
+    }
+
 
 document.getElementById('flick_btn').onclick = function (event) {
     DEV.flickChange();

@@ -437,4 +437,12 @@ SEL.flickInit = function() {
 	}
 }
 
+    document.getElementById('fileOpen_btn').onclick = () => {
+	SEL.openFileToggle();
+    };
+
+    document.getElementById('flickOff').onclick = () => {
+	SEL.flickToggleOn();
+    };
+
 })();
