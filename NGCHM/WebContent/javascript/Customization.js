@@ -269,20 +269,16 @@
     // Load the user's custom.js file.
     CUST.addCustomJS = function() {
 	const heatMap = MMGR.getHeatMap();
-	if (heatMap.isInitialized()){
 		CUST.beforeLoadCustom(heatMap);
 	    var head = document.getElementsByTagName('head')[0];
 	    var script = document.createElement('script');
-	    head.appendChild(script);
 	    script.type = 'text/javascript';
 	    script.src = CFG.custom_script;
         // Most browsers:   NOTE: The next 2 lines of code are replaced when building ngchmApp.html and ngchmWidget-min.js (the "file mode" and "widget" versions of the application)
         script.onload = CUST.definePluginLinkouts;
         // Internet explorer:
         script.onreadystatechange = function() { if (this.readyState == 'complete') {     	CUST.definePluginLinkouts();   }   };  //Leave this as one line for filemode version app builder
-	} else {
-	    setTimeout(function(){ CUST.addCustomJS();}, 100);
-	}
+	head.appendChild(script);
     };
     
     // Interface accessible to embedded maps that specify a custom js file 

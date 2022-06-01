@@ -22,6 +22,7 @@
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const DRAW = NgChm.importNS('NgChm.DRAW');
     const RECPANES = NgChm.importNS('NgChm.RecPanes');
+    const CUST = NgChm.importNS('NgChm.CUST');
 
     /**********************************************************************************
      * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
@@ -65,6 +66,7 @@
 	    if (event !== MMGR.Event_INITIALIZED) {
 		return;
 	    }
+	    CUST.addCustomJS();
 		if (MMGR.source === MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (SUM.chmElement) {

@@ -30,7 +30,6 @@
     const DEV = NgChm.importNS('NgChm.DEV');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const COMPAT = NgChm.importNS('NgChm.CM');
-    const CUST = NgChm.importNS('NgChm.CUST');
 
 //For web-based NGCHMs, we will create a Worker process to overlap I/O and computation.
 MMGR.webLoader = null;
@@ -1312,8 +1311,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		COMPAT.CompatibilityManager(mc);
 		mapConfig = mc;
 		sendCallBack(MMGR.Event_JSON);
-
-		CUST.addCustomJS();
 
 		// set the position to (1,1) so that the detail pane loads at the top left corner of the summary.
 		SEL.currentRow = 1;
