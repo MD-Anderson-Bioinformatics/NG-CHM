@@ -6,7 +6,6 @@
     const CM = NgChm.createNS('NgChm.CM');
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
-    const MMGR = NgChm.importNS('NgChm.MMGR');
  
 // This string contains the entire configuration.json file.  This was previously located in a JSON file stored with the application code
 // but has been placed here at the top of the CompatibilityManager class so that the configuration can be utilized in File Mode.
@@ -101,11 +100,9 @@ CM.CompatibilityManager = function(mapConfig) {
 	    	}
 		}
 	}
-	//If any new configs were added to the heatmap's config, save the config file.
-	if (foundUpdate === true && mapConfig.data_configuration.map_information.read_only !== "Y") {
-		var success = MMGR.getHeatMap().autoSaveHeatMap();
-	}
-}
+
+	return foundUpdate;
+};
 
 /**********************************************************************************
  * FUNCTION - trimClassLabel: The purpose of this function is to determine if the 
@@ -209,16 +206,21 @@ CM.buildConfigComparisonObject = function(obj, stack, configObj, mapConfig) {
 
 /************************************************
  * mapData compatibility fixes
+ * return true iff the mapData was updated.
  ***********************************************/
 CM.mapDataCompatibility = function(mapData) {
+	let updated = false;
 	if (!Array.isArray(mapData.col_data.label.label_type)) {
 		var valArr = UTIL.convertToArray(mapData.col_data.label.label_type);
 		mapData.col_data.label.label_type = valArr;
+		updated = true;
 	}
 	if (!Array.isArray(mapData.row_data.label.label_type)) {
 		var valArr = UTIL.convertToArray(mapData.row_data.label.label_type);
 		mapData.row_data.label.label_type = valArr;
+		updated = true;
 	}
-}
+	return updated;
+};
 
 })();

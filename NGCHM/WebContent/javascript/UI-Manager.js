@@ -55,6 +55,165 @@
 	    SRCH.showSearchResults();
     };
 
+    /***
+    *  Functions related to saving Ng-Chms.
+    */
+    function saveHeatMapToNgchm () {
+	    const heatMap = MMGR.getHeatMap();
+	    LNK.requestDataFromPlugins();
+	    var success = true;
+	    UHM.initMessageBox();
+	    if (MMGR.source === MMGR.WEB_SOURCE) {
+		    success = MMGR.zipMapProperties(JSON.stringify(mapConfig));
+		    zipSaveNotification(heatMap, false);
+	    } else {
+		    let waitForPluginDataCount = 0;
+		    let awaitingPluginData = setInterval(function() {
+			    waitForPluginDataCount = waitForPluginDataCount + 1; // only wait so long
+			    if (LNK.havePluginData() || waitForPluginDataCount > 3) {
+				    clearInterval(awaitingPluginData);
+				    LNK.warnAboutMissingPluginData();
+				    heatMap.zipSaveMapProperties(addSaveStateToMapConfig());
+			    }
+		    }, 1000);
+		    zipSaveNotification(heatMap, false);
+	    }
+	    heatMap.setUnAppliedChanges(false);
+    }
+
+    function autoSaveHeatMap (heatMap) {
+	    let success = true;
+	    if (MMGR.embeddedMapName === null) {
+		    heatMap.setRowClassificationOrder();
+		    heatMap.setColClassificationOrder();
+		    if (MMGR.source !== MMGR.FILE_SOURCE) {
+			// FIXME: BMB. Verify this does what it's required to do.
+			// This appears to only be saving mapConfig.
+			// What about mapData?
+			success = MMGR.webSaveMapProperties(JSON.stringify(heatMap.getMapConfig()));
+		    } else {
+			zipSaveNotification(heatMap, true);
+		    }
+	    }
+	    return success;
+    }
+
+    function addSaveStateToMapConfig () {
+	const mapConfig = MMGR.getHeatMap().getMapConfig();
+	if (!mapConfig.hasOwnProperty('panel_configuration')) {
+	    mapConfig['panel_configuration'] = {};
+	}
+
+	savePaneLayoutToMapConfig();
+	saveSummaryMapInfoToMapConfig();
+	saveDetailMapInfoToMapConfig();
+	saveFlickInfoToMapConfig();
+	saveSelectionsToMapConfig();
+	return mapConfig;
+
+	/**
+	* Save the pane layout to mapConfig
+	*/
+	function savePaneLayoutToMapConfig() {
+		let layoutToSave = document.getElementById('ngChmContainer');
+		let layoutJSON = PANE.paneLayout(layoutToSave);
+		mapConfig['panel_configuration']['panel_layout'] = layoutJSON;
+	}
+
+	/**
+	 * Save the summary pane details to mapConfig.
+	 * (This just saves which pane, if any, is the summary pane.)
+	 */
+	function saveSummaryMapInfoToMapConfig() {
+		const pane = SUM.chmElement && SUM.chmElement.parentElement;
+		if (pane && pane.classList.contains("pane")) {
+			mapConfig.panel_configuration[pane.id] = {
+			    type: 'summaryMap'
+			};
+		}
+	}
+
+	/**
+	* Save enough information from the detail map to reconstruct the zoom/pan state
+	*/
+	function saveDetailMapInfoToMapConfig() {
+		DMM.DetailMaps.forEach(dm => {
+			mapConfig.panel_configuration[dm.pane] = DET.getDetailSaveState (dm);
+		})
+	}
+
+	/**
+	* Save information about the data layers (i.e. 'flick info') to mapConfig
+	*/
+	function saveFlickInfoToMapConfig() {
+		mapConfig.panel_configuration['flickInfo'] = {};
+		try {
+			mapConfig.panel_configuration.flickInfo['flick_btn_state'] = document.getElementById('flick_btn').dataset.state;
+			mapConfig.panel_configuration.flickInfo['flick1'] = document.getElementById('flick1').value;
+			mapConfig.panel_configuration.flickInfo['flick2'] = document.getElementById('flick2').value;
+		} catch(err) {
+			console.error(err);
+		}
+	}
+
+	function saveSelectionsToMapConfig () {
+		mapConfig.panel_configuration['selections'] = SRCH.getSearchSaveState();
+		if (SUM.rowDendro) {
+		    const bars = SUM.rowDendro.saveSelectedBars();
+		    if (bars.length > 0) {
+			mapConfig.panel_configuration['selections']['selectedRowDendroBars'] = bars;
+		    }
+		}
+		if (SUM.colDendro) {
+		    const bars = SUM.colDendro.saveSelectedBars();
+		    if (bars.length > 0) {
+			mapConfig.panel_configuration['selections']['selectedColDendroBars'] = bars;
+		    }
+		}
+	}
+
+    }
+
+    /**********************************************************************************
+     * FUNCTION - zipSaveNotification: This function handles all of the tasks necessary
+     * display a modal window whenever a zip file is being saved. The textId passed in
+     * instructs the code to display either the startup save OR preferences save message.
+     **********************************************************************************/
+    function zipSaveNotification (heatMap, autoSave) {
+	    var text;
+	    UHM.initMessageBox();
+	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
+	    if (autoSave) {
+		    text = "<br>This NG-CHM archive file contains an out dated heat map configuration that has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>In order to upgrade the NG-CHM and avoid this notice in the future, you will want to replace your original file with the version now being displayed.<br><br>";
+		    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save NG-CHM button", () => {
+			heatMap.zipSaveMapProperties(addSaveStateToMapConfig());
+			UHM.messageBoxCancel();
+		    });
+	    } else {
+		    text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>" 
+		    UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", MMGR.zipAppDownload);
+	    }
+	    UHM.setMessageBoxText(text);
+	    UHM.setMessageBoxButton(3, UTIL.imageTable.cancelSmall, "Cancel button", UHM.messageBoxCancel);
+	    UHM.displayMessageBox();
+    }
+
+    function saveHeatMapToServer () {
+	    const heatMap = MMGR.getHeatMap();
+	    const mapConfig = heatMap.getMapConfig();
+	    UHM.initMessageBox();
+	    const success = MMGR.webSaveMapProperties(JSON.stringify(mapConfig));
+	    if (success !== "false") {
+		    heatMap.setUnAppliedChanges(false);
+	    } else {
+		    heatMap.setReadOnly();
+		    UHM.saveHeatMapChanges();
+	    }
+	    return success;
+    }
+    // End of map save functions.
+
+
     // Function configurePanelInterface must called once immediately after the HeatMap is loaded.
     // It configures the initial Panel user interface according to the heat map preferences and
     // the interface configuration parameters.
@@ -62,11 +221,19 @@
     (function() {
 	const debug = false;
 	var firstTime = true;
+
 	UIMGR.configurePanelInterface = function configurePanelInterface (event) {
 
 	    if (event !== MMGR.Event_INITIALIZED) {
 		return;
 	    }
+
+	    //If any new configs were added to the heatmap's config, save the config file.
+	    const heatMap = MMGR.getHeatMap();
+	    if (MMGR.mapUpdatedOnLoad() && heatMap.getMapInformation().read_only !== "Y") {
+		    var success = autoSaveHeatMap(heatMap);
+	    }
+
 	    CUST.addCustomJS();
 	    document.addEventListener ("keydown", DEV.keyNavigate);
 		if (MMGR.source === MMGR.FILE_SOURCE) {
@@ -462,32 +629,31 @@
 				    text = "<br>You have elected to save changes made to this NG-CHM heat map file.<br><br>You may save them to a new NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 			    }
 			    UHM.setMessageBoxText(text);
-			    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", heatMap.saveHeatMapToNgchm);
+			    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", saveHeatMapToNgchm);
 			    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
 		    } else {
 			    // If so, is read only?
 			    if (heatMap.isReadOnly()) {
 				    text = "<br>You have elected to save changes made to this READ-ONLY heat map. READ-ONLY heat maps cannot be updated.<br><br>However, you may save these changes to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				    UHM.setMessageBoxText(text);
-				    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", heatMap.saveHeatMapToNgchm);
+				    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", saveHeatMapToNgchm);
 				    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
 			    } else {
 				    text = "<br>You have elected to save changes made to this heat map.<br><br>You have the option to save these changes to the original map OR to save them to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				    UHM.setMessageBoxText(text);
-				    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", heatMap.saveHeatMapToNgchm);
-				    UHM.setMessageBoxButton(2, "images/saveOriginal.png", "Save Original Heat Map", heatMap.saveHeatMapToServer);
+				    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", saveHeatMapToNgchm);
+				    UHM.setMessageBoxButton(2, "images/saveOriginal.png", "Save Original Heat Map", saveHeatMapToServer);
 				    UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
 			    }
 		    }
 	    } else {
 		    text = "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 		    UHM.setMessageBoxText(text);
-		    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", heatMap.saveHeatMapToNgchm);
+		    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", saveHeatMapToNgchm);
 		    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
 	    }
 	    UHM.displayMessageBox();
     }
-
 
     const hamburgerButton = document.getElementById('barMenu_btn');
     hamburgerButton.onclick = (ev) => {
