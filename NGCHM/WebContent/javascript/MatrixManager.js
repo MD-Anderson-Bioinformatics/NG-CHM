@@ -265,6 +265,50 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 	const isRow = MMGR.isRow;
 
+	// Functions for getting and setting the data layer of this heat map
+	// currently being displayed.
+	// Set in the application by the user when, for exanple, flick views are toggled.
+	{
+	    this._currentDl = "dl1"; // Set default to Data Layer 1.
+
+	    this.setCurrentDL = function (dl) {
+		// Set the current data layer to dl.
+		// If the current data layer changes, the colors used for
+		// highlighting labels etc. will be automatically
+		// updated.  The colors of heat map views etc. will
+		// not be updated here.
+		if (this._currentDl != dl) {
+		    this._currentDl = dl;
+		    this.setSelectionColors();
+		}
+	    };
+
+	    this.getCurrentDL = function (dl) {
+		return this._currentDl;
+	    };
+	}
+
+	/********************************************************************************************
+	 * FUNCTION:  getCurrentColorMap - Get the color map for the heat map's current data layer.
+	 ********************************************************************************************/
+	this.getCurrentColorMap = function () {
+	    return this.getColorMapManager().getColorMap("data", this.getCurrentDL());
+	};
+
+	/*********************************************************************************************
+	 * FUNCTION:  setSelectionColors - Set the colors for selected labels based on the
+	 * current layer's color scheme.
+	 *********************************************************************************************/
+	this.setSelectionColors = function () {
+	    const colorMap = this.getColorMapManager().getColorMap("data",this._currentDl);
+	    const dataLayer = this.getDataLayers()[this._currentDl];
+	    const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
+	    const textColor = colorMap.isColorDark(selColor) ? "#000000" : "#FFFFFF";
+	    const root = document.documentElement;
+	    root.style.setProperty('--in-selection-color', textColor);
+	    root.style.setProperty('--in-selection-background-color', dataLayer.selection_color);
+	};
+
 	this.getMapConfig = function() {
 	    return mapConfig;
 	};
@@ -504,7 +548,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 
 	this.getCurrentDataLayer = function() {
-		return this.getDataLayers()[SEL.getCurrentDL()];
+		return this.getDataLayers()[this.getCurrentDL()];
 	};
 
 	this.getDividerPref = function() {
@@ -559,8 +603,8 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig.data_configuration.map_information.data_layer[key].grid_color = gridColorVal;
 		mapConfig.data_configuration.map_information.data_layer[key].cuts_color = gapColorVal;
 		mapConfig.data_configuration.map_information.data_layer[key].selection_color = selectionColorVal;
-		if (key == SEL.getCurrentDL()) {
-		    SEL.setSelectionColors ();
+		if (key == this.getCurrentDL()) {
+		    this.setSelectionColors ();
 		}
 	}
 	
@@ -674,7 +718,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (hasDetailTiles() === false) {
 			return true;
 		} else {
-		const currentDl = SEL.getCurrentDL();
+		const currentDl = this.getCurrentDL();
 	    	for (var i = details.startRowTile; i <= details.endRowTile; i++) {
 	    		for (var j = details.startColTile; j <= details.endColTile; j++) {
 				var tileCacheName=currentDl + "." + MMGR.DETAIL_LEVEL + "." + i + "." + j;
@@ -839,7 +883,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				}
 				flick1.innerHTML=flickOptions;
 				flick2.innerHTML=flickOptions;
-				flick1.value=SEL.getCurrentDL();
+				flick1.value=this.getCurrentDL();
 				flick2.value=orderedKeys[1];
 				flicks.style.display='';
 				flicks.style.right=1;
@@ -847,7 +891,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					flickViewsOff.style.display='';
 				}
 			} else {
-				SEL.setCurrentDL("dl1");
+				this.setCurrentDL("dl1");
 				flicks.style.display='none';
 			}
 			flickInitialized = true;
@@ -1203,8 +1247,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (UTIL.getURLParameter("column") !== "" && !isNaN(Number(UTIL.getURLParameter("column")))){
 			SEL.currentCol = Number(UTIL.getURLParameter("column"))
 		}
-	        SEL.setSelectionColors();
-
 		addDataLayers(mc);
 	}
 	
@@ -1347,6 +1389,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	//Call the users call back function to let them know the chm is initialized or updated.
 	function sendCallBack(event, tile) {
 
+		const heatMap = MMGR.getHeatMap();
 		//Initialize event
 		if ((event === MMGR.Event_INITIALIZED) || (event === MMGR.Event_JSON) ||
 			((event === MMGR.Event_NEWDATA) && (tile.level === MMGR.THUMBNAIL_LEVEL))) {
@@ -1354,11 +1397,10 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			if ((mapData != null) &&
 				(mapConfig != null) &&
 				(Object.keys(datalevels).length > 0) &&
-				(haveTileData(SEL.getCurrentDL()+"."+MMGR.THUMBNAIL_LEVEL+".1.1")) &&
+				(haveTileData(heatMap.getCurrentDL()+"."+MMGR.THUMBNAIL_LEVEL+".1.1")) &&
 				 (initialized == 0)) {
 					initialized = 1;
 					configurePageHeader();
-					const heatMap = MMGR.getHeatMap();
 					heatMap.configureFlick();
 					heatMap.configSearchCovars();
 					if (!mapConfig.hasOwnProperty('panel_configuration')) {
@@ -1368,8 +1410,8 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			}
 			//Unlikely, but possible to get init finished after all the summary tiles.
 			//As a back stop, if we already have the top left summary tile, send a data update event too.
-			if (haveTileData(SEL.getCurrentDL()+"."+MMGR.SUMMARY_LEVEL+".1.1")) {
-				sendAllListeners(MMGR.Event_NEWDATA, { layer: SEL.getCurrentDL(), level: MMGR.SUMMARY_LEVEL, row: 1, col: 1});
+			if (haveTileData(heatMap.getCurrentDL()+"."+MMGR.SUMMARY_LEVEL+".1.1")) {
+				sendAllListeners(MMGR.Event_NEWDATA, { layer: heatMap.getCurrentDL(), level: MMGR.SUMMARY_LEVEL, row: 1, col: 1});
 			}
 		} else	if ((event === MMGR.Event_NEWDATA) && (initialized === 1)) {
 			sendAllListeners(event, tile);
@@ -1563,7 +1605,7 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 		//Calculate which tile holds the row / column we are looking for.
 		var tileRow = Math.floor((row-1)/rowsPerTile) + 1;
 		var tileCol = Math.floor((column-1)/colsPerTile) + 1;
-		var arrayData = getTileCacheData(SEL.getCurrentDL()+"."+level+"."+tileRow+"."+tileCol);
+		var arrayData = getTileCacheData(MMGR.getHeatMap().getCurrentDL()+"."+level+"."+tileRow+"."+tileCol);
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {
@@ -1588,7 +1630,7 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 		var endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
 		var endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
     	
-	const currentDl = SEL.getCurrentDL();
+	const currentDl = MMGR.getHeatMap().getCurrentDL();
     	for (var i = startRowTile; i <= endRowTile; i++) {
     		for (var j = startColTile; j <= endColTile; j++) {
 			getTile(currentDl, level, i, j);
@@ -1608,7 +1650,7 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 		let endColCalc = (column+(numColumns-1))/colsPerTile;
 		let endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
 		let endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
-		const currentDl = SEL.getCurrentDL();
+		const currentDl = MMGR.getHeatMap().getCurrentDL();
 		var ensureTilesInCache = []
 		for (var i = startRowTile; i <= endRowTile; i++) {
 			for (var j = startColTile; j <= endColTile; j++) {

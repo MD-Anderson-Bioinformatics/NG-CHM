@@ -107,8 +107,9 @@ DET.flushDrawingCache = function (tile) {
 	// and the heat map would be redrawn then.
 	if (DET.detailHeatMapCache.hasOwnProperty (tile.layer) &&
 	    DET.detailHeatMapLevel[tile.layer] === tile.level) {
+		const heatMap = MMGR.getHeatMap();
 		DET.detailHeatMapValidator[tile.layer] = '';
-		if (tile.layer === SEL.getCurrentDL()) {
+		if (tile.layer === heatMap.getCurrentDL()) {
 			// Redraw 'now' if the tile is for the currently displayed layer.
 			DET.setDrawDetailsTimeout (DET.redrawUpdateTimeout, false);
 		}

@@ -203,6 +203,8 @@
 	    if (MMGR.mapUpdatedOnLoad() && heatMap.getMapInformation().read_only !== "Y") {
 		    var success = autoSaveHeatMap(heatMap);
 	    }
+	    heatMap.setSelectionColors();
+
 
 	    CUST.addCustomJS();
 	    document.addEventListener ("keydown", DEV.keyNavigate);
@@ -460,7 +462,6 @@
      **********************************************************************************/
     function resetCHM () {
     //	SEL.mode = 'NORMAL';
-	    SEL.setCurrentDL ("dl1");
 	    SEL.currentRow=null;
 	    SEL.currentCol=null;
     //	SEL.dataPerRow=null;

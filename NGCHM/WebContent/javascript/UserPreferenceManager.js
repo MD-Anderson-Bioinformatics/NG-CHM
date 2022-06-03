@@ -176,7 +176,7 @@ UPM.editPreferences = function(e,errorMsg) {
 		UPM.searchPerformed = false;
 		UPM.showClassPrefs();
 	} else {
-		UPM.showLayerBreak(SEL.getCurrentDL());
+		UPM.showLayerBreak(heatMap.getCurrentDL());
 		UPM.showLayerPrefs();
 	}
 	errorMsg = null;

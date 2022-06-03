@@ -837,7 +837,8 @@ DEV.matrixRightClick = function (e) {
 			return;
 		}
 	} 
-	SEL.setCurrentDL (mapItem.currentDl);
+	const heatMap = MMGR.getHeatMap();
+	heatMap.setCurrentDL (mapItem.currentDl);
 	SEL.flickInit();
 	SUM.buildSummaryTexture();
 	DMM.DetailMaps.forEach(dm => {

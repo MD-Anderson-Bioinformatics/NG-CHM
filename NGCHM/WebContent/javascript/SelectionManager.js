@@ -25,41 +25,6 @@ SEL.currentRow = null;      // Top row of current selected position
 SEL.currentCol = null;      // Left column of the current selected position
 SEL.scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
 
-// Global for the current data layer being displayed.
-// Set in application by user when flick views are toggled.
-// Hide so that it can only be changed using SEL.setCurrentDL.
-{
-    let currentDl = "dl1"; // Set default to Data Layer 1.
-
-    SEL.setCurrentDL = function (dl) {
-	// Update the selection colors when the current data layer changes.
-        if (currentDl != dl) {
-	    currentDl = dl;
-	    SEL.setSelectionColors();
-	}
-    };
-
-    SEL.getCurrentDL = function (dl) {
-        return currentDl;
-    };
-}
-
-/*********************************************************************************************
- * FUNCTION:  setSelectionColors - Set the colors for selected labels based on the
- * current layer's color scheme.
- *********************************************************************************************/
-SEL.setSelectionColors = function () {
-    const currentDl = SEL.getCurrentDL();
-    const heatMap = MMGR.getHeatMap();
-    const colorMap = heatMap.getColorMapManager().getColorMap("data",currentDl);
-    const dataLayer = heatMap.getDataLayers()[currentDl];
-    const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
-    const textColor = colorMap.isColorDark(selColor) ? "#000000" : "#FFFFFF";
-    const root = document.documentElement;
-    root.style.setProperty('--in-selection-color', textColor);
-    root.style.setProperty('--in-selection-background-color', dataLayer.selection_color);
-};
-
 /*********************************************************************************************
  * FUNCTION:  updateSelection - The purpose of this function is to set the state of a given
  * detail heat map panel.  This function is called when the selected row / column is changed.
