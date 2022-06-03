@@ -14,7 +14,6 @@
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const PANE = NgChm.importNS('NgChm.Pane');
-    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
 
 PDF.rowDendoWidth = null;
 PDF.rowDendroHeight = null;
@@ -86,7 +85,7 @@ PDF.openPdfPrefs = function(e) {
 			document.getElementById("pdfInputFont").value = UTIL.minLabelSize;
 		}
 	}
-    UIMGR.redrawCanvases();
+    SUM.redrawCanvases();
 }
 
 /**********************************************************************************

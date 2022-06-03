@@ -25,24 +25,6 @@
     const CUST = NgChm.importNS('NgChm.CUST');
     const UHM = NgChm.importNS('NgChm.UHM');
 
-    /**********************************************************************************
-     * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
-     * wegGl canvases in the viewer. It is called to deal with blurring issues occuring
-     * on the canvases when modal panels are drawn over the viewer canvases.
-     **********************************************************************************/
-    UIMGR.redrawCanvases = function () {
-	if ((UTIL.getBrowserType() !== "Firefox") && (MMGR.getHeatMap() !== null)) {
-	    SUM.drawHeatMap();
-	    DET.setDrawDetailsTimeout (DET.redrawSelectionTimeout);
-	    if (SUM.rCCanvas && SUM.rCCanvas.width > 0) {
-		SUM.drawRowClassBars();
-	    }
-	    if (SUM.cCCanvas && SUM.cCCanvas.height > 0) {
-		SUM.drawColClassBars();
-	    }
-	}
-    };
-
     /***
     *  Functions related to saving Ng-Chms.
     */
@@ -595,7 +577,7 @@
 	    } else {
 		    menu.style.display = 'none';
 	}
-	UIMGR.redrawCanvases();
+	SUM.redrawCanvases();
     }
 
     /**********************************************************************************
@@ -666,7 +648,7 @@
 	    const mapLinksTbl = openMapLinkoutsHelp();
 	    const allLinksTbl = openAllLinkoutsHelp();
 	    linkoutHelp(mapLinksTbl,allLinksTbl);
-	    UIMGR.redrawCanvases();
+	    SUM.redrawCanvases();
 	}
 
 	/**********************************************************************************
@@ -1001,7 +983,7 @@
 	    let url = location.origin+location.pathname;
 	    window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
 	}
-	UIMGR.redrawCanvases();
+	SUM.redrawCanvases();
     };
 
     document.getElementById('aboutMenu_btn').onclick = (ev) => {
