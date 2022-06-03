@@ -43,18 +43,6 @@
 	}
     };
 
-    /**
-    *  Function to show selected items when the 'SHOW' button in the Gear Dialog is clicked
-    *
-    *  @function redrawSearchResults
-    */
-    UIMGR.redrawSearchResults = function () {
-	    DET.updateDisplayedLabels();
-	    SUM.redrawSelectionMarks();
-	    SEL.updateSelections();
-	    SRCH.showSearchResults();
-    };
-
     /***
     *  Functions related to saving Ng-Chms.
     */
