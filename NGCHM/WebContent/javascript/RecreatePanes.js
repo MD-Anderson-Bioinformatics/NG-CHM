@@ -17,6 +17,7 @@
 	const SUM = NgChm.importNS('NgChm.SUM');
 	const DET = NgChm.importNS('NgChm.DET');
 	const DMM = NgChm.importNS('NgChm.DMM');
+	const CUST = NgChm.importNS('NgChm.CUST');
 	const debug = false;
 
 	RECPANES.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
@@ -46,12 +47,10 @@
 	    addDividerControlsToResizeHelpers();
 	    addResizeHandlersToContainers();
 
-	    waitForPlugins();
+	    CUST.waitForPlugins(populatePluginPanels);
 
 	    // Plugin panes require plugins loaded first.
-	    // FIXME: Modify to populate plugin panels after plugins load.
-	    function waitForPlugins () {
-		if (LNK.getPanePlugins().length>0) { // FIXME: Assumes there are pane plugins
+	    function populatePluginPanels () {
 			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
 			setFlickState();
@@ -69,10 +68,6 @@
 				[...document.getElementsByClassName('pane')].forEach(PANE.resizePane);
 				UTIL.hideLoader();  // Hide loader screen, display NG-CHM.
 			}, 500);
-		} else { // wait for plugins to load
-			if (debug) console.log("Waiting for plugins to load");
-			setTimeout(waitForPlugins, 500);
-		}
 	    }
 	}
 
