@@ -41,8 +41,18 @@ public class NGCHM_Minimizer {
     private static void writeJSFile(String webDir, String jsFile, BufferedWriter combinedWidget) throws Exception {
 		BufferedReader br = new BufferedReader(new FileReader(webDir + "/" + jsFile ));
 		String line = br.readLine();
+		Boolean inExcludedRegion = false;
 		while (line != null) {
-			if (line.contains("images/")) {
+			if (line.contains("BEGIN EXCLUDE")) {
+			    inExcludedRegion = true; // Exclude this and following lines.
+			}
+			else if (line.contains("END EXCLUDE")) {
+			    inExcludedRegion = false; // Include following lines.
+			}
+			else if (inExcludedRegion) {
+			    // Ignore excluded lines.
+			}
+			else if (line.contains("images/")) {
 				String toks[] = line.split(" ");
 				for (String tok : toks) {
 					if (tok.contains("images/")) {
