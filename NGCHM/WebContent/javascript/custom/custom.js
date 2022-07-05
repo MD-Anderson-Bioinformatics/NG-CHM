@@ -53,6 +53,12 @@ linkouts.addPanePlugin ({
     linkouts.addSubtype ("bio.gene.entrez", "bio.gene.entrezid");
 
     linkouts.describeTypes([
+	{ typeName: "bio.genome.position",
+	  displayName: "Genome Position/Range",
+	  description: "Genome position/range",
+	  examples: "chr2:80123456-80234567",
+	  format: "chromosome abbreviation, a colon, a numeric position, a hyphen, a numeric position"
+	},
         { typeName: "bio.gene.hugo",
           displayName: "HUGO gene symbol",
           description: "The official HUGO symbol for a gene.",
@@ -1075,6 +1081,31 @@ linkouts.addPlugin({
 	logo: "http://www.tumorportal.org/assets/tplogo-b2692452952b98eee833d30f08757924.png",
 	linkouts: [
             { menuEntry: "View Tumor Portal", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openTumorPortalGene }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+// UCSC Genome Browser Plugin                   //
+//==============================================//
+(function(linkouts) {
+
+    function openUCSC (posns) {
+	const ucscGenomeBrowserDB = linkouts.getAttribute ('bio.ucsc.browser.db') || 'hg38';
+	var position = posns[0];
+	let url = "https://genome.ucsc.edu/cgi-bin/hgTracks?position=" + position;
+	url += '&db=' + ucscGenomeBrowserDB;
+	linkouts.openUrl(url, "UCSC", { noframe: true });
+    }
+
+    linkouts.addPlugin({
+        name: "UCSC Genome Browser",
+	description: "Adds linkouts to UCSC Genome Browser.",
+	version: "0.1.2",
+	site: "https://genome.ucsc.edu/",
+	logo: "https://genome.ucsc.edu/images/newBlueHelix3.jpg",
+	linkouts: [
+	    { menuEntry: "View UCSC Genome Browser", typeName: "bio.genome.position", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openUCSC }
 	]
     });
 }) (linkouts);
