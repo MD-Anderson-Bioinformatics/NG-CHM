@@ -187,6 +187,7 @@ public class NGCHM_Widgetizer {
 
 		// Inject HTML.
 		String finalHtml = htmlString.replace("\"", "\\\"").replace("\\\\\"", "\\\"");
+		finalHtml = finalHtml.replace("</script>", "<\\/script>");	// fix to satisfy broken browser parsing
 		bw.write("(function() {\n");
     		bw.write("var htmlContent = \"" + finalHtml + "\"\n");
     		bw.write("var embedDiv = document.getElementById(\"NGCHMEmbed\");\n");
