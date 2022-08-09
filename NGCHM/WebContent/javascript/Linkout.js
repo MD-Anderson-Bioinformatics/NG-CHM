@@ -1757,12 +1757,12 @@ var linkoutsVersion = 'undefined';
 
 		function removeOpenGearPanels () {
 			const gears = document.getElementsByClassName('gearPanel');
-			for (item of gears) { 
+			for (let item of gears) {
 				const paneId = item.id.substring(0,item.id.indexOf("Gear"));
 				PANE.clearExistingGearDialog(paneId);
-	        } 
+			}
 		}
-		
+
 		function optionNode (type, value) {
 			const optNode = UTIL.newElement('OPTION');
 			optNode.appendChild(UTIL.newTxt(value));
