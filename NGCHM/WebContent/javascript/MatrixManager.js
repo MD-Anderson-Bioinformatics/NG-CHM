@@ -18,6 +18,7 @@
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const CFG = NgChm.importNS('NgChm.CFG');
+
     const CMM = NgChm.importNS('NgChm.CMM');
     const SEL = NgChm.importNS('NgChm.SEL');
     const UHM = NgChm.importNS('NgChm.UHM');
@@ -64,12 +65,11 @@ MMGR.latestReadWindow= null;
     //Main function of the matrix manager - retrieve a heat map object.
     //mapFile parameter is only used for local file based heat maps.
     //This function is called from a number of places:
-    //It is called from UTIL.onLoadCHM when displaying a map in the NG-CHM Viewer and for embedded NG-CHM maps
-    //It is called from UTIL.displayFileModeCHM when displaying a map in the stand-alone NG-CHM Viewer
+    //It is called from UIMGR.onLoadCHM when displaying a map in the NG-CHM Viewer and for embedded NG-CHM maps
+    //It is called from displayFileModeCHM (in UIMGR) when displaying a map in the stand-alone NG-CHM Viewer
     //It is called in script in the mda_heatmap_viz.mako file when displaying a map in the Galaxy NG-CHM Viewer
     MMGR.createHeatMap = function createHeatMap (fileSrc, heatMapName, updateCallbacks, mapFile) {
 	    heatMap = new MMGR.HeatMap(heatMapName, updateCallbacks, fileSrc, mapFile);
-	    NgChm.heatMap = heatMap;  // Deprecated. Remove when all references to NgChm.heatMap have been removed.
     };
 
     // Return the current heat map.
@@ -1479,9 +1479,8 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					const heatMap = MMGR.getHeatMap();
 					heatMap.configureFlick();
 					heatMap.configSearchCovars();
-					UTIL.configurePanelInterface(mapConfig);
 					if (!mapConfig.hasOwnProperty('panel_configuration')) {
-					    UTIL.UI.hideLoader();
+					    UTIL.hideLoader();
 					}
 					sendAllListeners(MMGR.Event_INITIALIZED);
 			}

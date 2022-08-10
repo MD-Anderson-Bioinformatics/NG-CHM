@@ -124,7 +124,7 @@ public class NGCHM_Widgetizer {
     				isScript = false;
     			} else if (isScript) { 
        				//Write out embedded Javascript from chm.html
-    				if (line.contains("window.onload")) {
+				if (false && line.contains("window.onload")) {
     					line = br.readLine();
         				scriptedLines.append(line + "\n");
     					line = br.readLine();
@@ -222,7 +222,7 @@ public class NGCHM_Widgetizer {
 		bw.write("var ngChmWidgetMode = '" + mode + "';\n");
 		copyToFile (args[0] + "javascript/ngchm-min.js", bw);
     		bw.write("document.body.addEventListener('click', NgChm.UHM.closeMenu,true);\n");
-    		bw.write(scriptedLines.toString());
+		//bw.write(scriptedLines.toString());
 
 		// Close output file.
     		bw.close();

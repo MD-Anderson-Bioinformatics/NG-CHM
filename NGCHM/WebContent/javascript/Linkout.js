@@ -22,6 +22,7 @@ var linkoutsVersion = 'undefined';
     const LNK = NgChm.createNS('NgChm.LNK');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
 
     linkouts.VISIBLE_LABELS = "visibleLabels";
     linkouts.HIDDEN_LABELS = "hiddenLabels";
@@ -1975,7 +1976,7 @@ var linkoutsVersion = 'undefined';
 						}
 						SRCH.clearAllAxisSearchItems (otherAxis);
 						SRCH.setAxisSearchResultsVec (otherAxis, sss[cid].data);
-						UTIL.redrawSearchResults ();
+						UIMGR.redrawSearchResults ();
 					};
 					optionsBox.appendChild (infoEl);
 					selectEl.onchange = function (e) {
@@ -2131,7 +2132,7 @@ var linkoutsVersion = 'undefined';
 							}
 							SRCH.clearAllAxisSearchItems (axisNameU);
 							SRCH.setAxisSearchResultsVec (axisNameU, sss[cid].data[idx]);
-							UTIL.redrawSearchResults ();
+							UIMGR.redrawSearchResults ();
 						}
 						function updateAxis (newAxis) {
 							axisName = newAxis;

@@ -16,6 +16,7 @@
     const LNK = NgChm.importNS('NgChm.LNK');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const DRAW = NgChm.importNS('NgChm.DRAW');
+    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
 
     DEV.targetCanvas = null;
 
@@ -586,36 +587,62 @@ DEV.handleMouseOut = function (e) {
 	SUM.mouseEventActive = false;
 }
 
+    /*********************************************************************************************
+     * FUNCTION:  isOnObject - The purpose of this function is to tell us if the cursor is over
+     * a given screen object.
+     *********************************************************************************************/
+    function isOnObject (e,type) {
+	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+	var rowClassWidthPx =  DET.getRowClassPixelWidth(mapItem);
+	var colClassHeightPx = DET.getColClassPixelHeight(mapItem);
+	var rowDendroWidthPx =  DET.getRowDendroPixelWidth(mapItem);
+	var colDendroHeightPx = DET.getColDendroPixelHeight(mapItem);
+	var coords = UTIL.getCursorPosition(e);
+	if (coords.y > colClassHeightPx) {
+	    if  ((type == "map") && coords.x > rowClassWidthPx) {
+		return true;
+	    }
+	    if  ((type == "rowClass") && coords.x < rowClassWidthPx + rowDendroWidthPx && coords.x > rowDendroWidthPx) {
+		return true;
+	    }
+	} else if (coords.y > colDendroHeightPx) {
+	    if  ((type == "colClass") && coords.x > rowClassWidthPx + rowDendroWidthPx) {
+		return true;
+	    }
+	}
+	return false;
+    }
+
 /*********************************************************************************************
- * FUNCTION:  handleMouseMove - The purpose of this function is to handle a user drag event.  
- * The type of move (drag-move or drag-select is determined, based upon keys pressed and the 
+ * FUNCTION:  handleMouseMove - The purpose of this function is to handle a user drag event.
+ * The type of move (drag-move or drag-select is determined, based upon keys pressed and the
  * appropriate function is called to perform the function.
  *********************************************************************************************/
 DEV.handleMouseMove = function (e) {
-	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
-    // Do not clear help if the mouse position did not change. Repeated firing of the mousemove event can happen on random 
+    const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+    // Do not clear help if the mouse position did not change. Repeated firing of the mousemove event can happen on random
     // machines in all browsers but FireFox. There are varying reasons for this so we check and exit if need be.
-	const eX = e.touches ? e.touches[0].clientX : e.clientX;
-	const eY = e.touches ? e.touches[0].clientY : e.clientY;
-	if(mapItem.oldMousePos[0] != eX ||mapItem.oldMousePos[1] != eY) {
-		mapItem.oldMousePos = [eX, eY];
-	} 
-	if (DET.mouseDown && SUM.mouseEventActive){
-		clearTimeout(DET.eventTimer);
-		//If mouse is down and shift key is pressed, perform a drag selection
-		//Else perform a drag move
-		if (e.shiftKey) {
-	        //process select drag only if the mouse is down AND the cursor is on the heat map.
-            if((DET.mouseDown) && (UTIL.isOnObject(e,"map"))) {
-			    SRCH.clearSearch(e);
-			    DEV.handleSelectDrag(e);
-            }
+    const eX = e.touches ? e.touches[0].clientX : e.clientX;
+    const eY = e.touches ? e.touches[0].clientY : e.clientY;
+    if(mapItem.oldMousePos[0] != eX ||mapItem.oldMousePos[1] != eY) {
+	mapItem.oldMousePos = [eX, eY];
+    }
+    if (DET.mouseDown && SUM.mouseEventActive) {
+	clearTimeout(DET.eventTimer);
+	//If mouse is down and shift key is pressed, perform a drag selection
+	//Else perform a drag move
+	if (e.shiftKey) {
+	    //process select drag only if the mouse is down AND the cursor is on the heat map.
+	    if((DET.mouseDown) && (isOnObject(e,"map"))) {
+		SRCH.clearSearch(e);
+		DEV.handleSelectDrag(e);
 	    }
-	    else {
-		DEV.handleMoveDrag(e);
-	    }
-	} 
- }
+	}
+	else {
+	    DEV.handleMoveDrag(e);
+	}
+    }
+};
 
 /*********************************************************************************************
  * FUNCTION:  handleMoveDrag - The purpose of this function is to handle a user "move drag" 
@@ -639,11 +666,11 @@ DEV.handleMoveDrag = function (e) {
     const yDrag = coords.y - mapItem.dragOffsetY;
     if ((Math.abs(xDrag/rowElementSize) > 1) || (Math.abs(yDrag/colElementSize) > 1)) {
     	//Disregard vertical movement if the cursor is not on the heat map.
-		if (!UTIL.isOnObject(e,"colClass")) {
+		if (!isOnObject(e,"colClass")) {
 			mapItem.currentRow = Math.round(mapItem.currentRow - (yDrag/colElementSize));
 			mapItem.dragOffsetY = coords.y;
 		}
-		if (!UTIL.isOnObject(e,"rowClass")) {
+		if (!isOnObject(e,"rowClass")) {
 			mapItem.currentCol = Math.round(mapItem.currentCol - (xDrag/rowElementSize));
 			mapItem.dragOffsetX = coords.x;  //canvas X coordinate 
 		}
@@ -690,7 +717,7 @@ DEV.handleSelectDrag = function (e) {
         DET.updateDisplayedLabels();
         DET.drawSelections();
         SRCH.updateLinkoutSelections();
-        UTIL.redrawCanvases();
+        UIMGR.redrawCanvases();
     }
 }	
 
