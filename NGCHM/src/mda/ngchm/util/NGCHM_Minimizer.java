@@ -103,7 +103,7 @@ public class NGCHM_Minimizer {
 	 *
 	 * This method is the driver for the js minimizer process. It reads
 	 * in the chm.html file and writes out the contents of all JS files
-	 * included therein into the output file (ngchm.js)
+	 * included therein, except those marked by PRESERVE, into the output file (ngchm.js)
 	 ******************************************************************/
 	public static void main(String[] args) {
 		System.out.println("BEGIN NGCHM_Minimizer  " + new Date());
@@ -117,13 +117,11 @@ public class NGCHM_Minimizer {
 
 			String line = br.readLine();
 			while (line != null) {
-				if (line.contains("src=\"javascript")) {
+				if (line.contains("src=\"javascript") && !line.contains("PRESERVE")) {
 					String jsFile = CompilerUtilities.getJavascriptFileName (line);
-					if (!jsFile.equals("javascript/lib/jspdf.min.js")) {
-						bw.write("/* BEGIN Javascript file: " + jsFile + " */ \n");
-						writeJSFile(args[0], jsFile, bw);
-						bw.write("/* END Javascript file: " + jsFile + " */ \n\n");
-					}
+					bw.write("/* BEGIN Javascript file: " + jsFile + " */ \n");
+					writeJSFile(args[0], jsFile, bw);
+					bw.write("/* END Javascript file: " + jsFile + " */ \n\n");
 				}
 				line = br.readLine();
 			}

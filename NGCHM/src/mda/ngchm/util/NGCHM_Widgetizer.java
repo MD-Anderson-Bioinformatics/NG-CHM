@@ -193,10 +193,34 @@ public class NGCHM_Widgetizer {
     		bw.write("if (embedDiv !== null) {embedDiv.innerHTML = htmlContent;}\n");
 		bw.write("})()\n");
 
-		// Inject scripts.
+		// Inject preserved scripts.
+		try {
+			BufferedReader br2 = new BufferedReader(new FileReader(args[0] + "/chm.html" ));
+
+			String line2 = br2.readLine();
+			while (line2 != null) {
+				if (line2.contains("src=\"javascript") && line2.contains("PRESERVE")) {
+					String jsFile = CompilerUtilities.getJavascriptFileName (line2);
+					bw.write("/* BEGIN Javascript file: " + jsFile + " */ \n");
+					BufferedReader br3 = new BufferedReader(new FileReader(args[0] + "/" + jsFile ));
+					String line3 = br3.readLine();
+					while (line3 != null) {
+					    bw.write (line3);
+					    line3 = br3.readLine();
+					}
+					br3.close();
+					bw.write("/* END Javascript file: " + jsFile + " */ \n\n");
+				}
+				line2 = br2.readLine();
+			}
+			br2.close();
+		} catch (Exception e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+		// Inject widget scripts.
 		bw.write("var ngChmWidgetMode = '" + mode + "';\n");
 		copyToFile (args[0] + "javascript/ngchm-min.js", bw);
-		copyToFile (args[0] + "javascript/lib/jspdf.min.js", bw);
     		bw.write("document.body.addEventListener('click', NgChm.UHM.closeMenu,true);\n");
     		bw.write(scriptedLines.toString());
 
