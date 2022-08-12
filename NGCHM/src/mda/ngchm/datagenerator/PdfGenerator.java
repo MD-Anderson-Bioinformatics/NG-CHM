@@ -246,7 +246,7 @@ public class PdfGenerator {
            PDImageXObject pdImageBorderBox = LosslessFactory.createFromImage(doc, borderBox);
            int rowCovStartY = 712;
    		   if (rcFiles.size() > 0)  {
-   			  writePDFText(contentStream, "Row Covariate Bar Legends", 12, PDF_FONT_BOLD, 10, rowCovStartY, false);
+   			  writePDFText(contentStream, "Target Covariate Bar Legends", 12, PDF_FONT_BOLD, 10, rowCovStartY, false);
    			  rowCovStartY -= 15;
    			  float pairs = new Float(rcFiles.size())/2;
    			  int next = 0;
@@ -263,7 +263,7 @@ public class PdfGenerator {
    					rowCovStartY = 712;
    					contentStream.close();
    					contentStream = getPdfPage(doc, iData);
-   	   			    writePDFText(contentStream, "Row Covariate Bar Legends (continued)", 12, PDF_FONT_BOLD, 10, rowCovStartY, false);
+   	   			    writePDFText(contentStream, "Target Covariate Bar Legends (continued)", 12, PDF_FONT_BOLD, 10, rowCovStartY, false);
    	   			    rowCovStartY -= 15;
    					rowCovStartY = writeLegend(doc, rcFiles, contentStream, next, legend2, rowCovStartY, pdImageBorderBox);
   				}
@@ -271,7 +271,7 @@ public class PdfGenerator {
    			  }
    		   }
    		   if (ccFiles.size() > 0)  {
-   			   writePDFText(contentStream, "Column Covariate Bar Legends", 12, PDF_FONT_BOLD, 10, rowCovStartY, false);
+   			   writePDFText(contentStream, "Sample Covariate Bar Legends", 12, PDF_FONT_BOLD, 10, rowCovStartY, false);
    	           rowCovStartY -= 15;
  			   float pairs = new Float(ccFiles.size())/2;
 			   int next = 0;
@@ -286,7 +286,7 @@ public class PdfGenerator {
        					rowCovStartY = 712;
        					contentStream.close();
        					contentStream = getPdfPage(doc, iData);
-       	   			    writePDFText(contentStream, "Column Covariate Bar Legends (continued)", 12, PDF_FONT_BOLD, 10, rowCovStartY, false);
+       	   			    writePDFText(contentStream, "Sample Covariate Bar Legends (continued)", 12, PDF_FONT_BOLD, 10, rowCovStartY, false);
        	   			    rowCovStartY -= 15;
        					rowCovStartY = writeLegend(doc, ccFiles, contentStream, next, legend2, rowCovStartY, pdImageBorderBox);
       				}
