@@ -58,11 +58,11 @@ NgChm.UHM.formatMapDetails = function (helpContents, pixelInfo) {
 	helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
 	NgChm.UHM.setTableRow(helpContents, ["<u>"+"Data Details"+"</u>", "&nbsp;"], 2);
 	NgChm.UHM.setTableRow(helpContents,["&nbsp;Value:", pixelInfo.value]);
-	NgChm.UHM.setTableRow(helpContents,[ "&nbsp;Row:", pixelInfo.rowLabel]);
-	NgChm.UHM.setTableRow(helpContents,["&nbsp;Column:", pixelInfo.colLabel]);
+	NgChm.UHM.setTableRow(helpContents,[ "&nbsp;Target:", pixelInfo.rowLabel]);
+	NgChm.UHM.setTableRow(helpContents,["&nbsp;Sample:", pixelInfo.colLabel]);
 	if (pixelInfo.rowCovariates.length > 0) {
 		helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
-		NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Row Covariates"+"</u>", "&nbsp;"], 2);
+		NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Target Covariates"+"</u>", "&nbsp;"], 2);
 		pixelInfo.rowCovariates.forEach ( cv => {
 			const displayName = cv.name.length > 20 ? cv.name.substring(0,20) + "..." : cv.name;
 			NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", cv.value]);
@@ -70,7 +70,7 @@ NgChm.UHM.formatMapDetails = function (helpContents, pixelInfo) {
 	}
 	if (pixelInfo.colCovariates.length > 0) {
 		helpContents.insertRow().innerHTML = NgChm.UHM.formatBlankRow();
-		NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Column Covariates"+"</u>", "&nbsp;"], 2);
+		NgChm.UHM.setTableRow(helpContents, ["&nbsp;<u>"+"Sample Covariates"+"</u>", "&nbsp;"], 2);
 		pixelInfo.colCovariates.forEach ( cv => {
 			const displayName = cv.name.length > 20 ? cv.name.substring(0,20) + "..." : cv.name;
 			NgChm.UHM.setTableRow(helpContents,["&nbsp;&nbsp;&nbsp;"+displayName+":"+"</u>", cv.value]);

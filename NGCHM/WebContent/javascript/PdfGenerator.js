@@ -1189,7 +1189,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 	 * row covariate bar on the heat map to the PDF legends page.
 	 **********************************************************************************/
 	function drawRowClassLegends() {
-		sectionHeader = "Row Covariate Bar Legends"  
+		sectionHeader = "Target Covariate Bar Legends"  
 		if (rowBarsToDraw.length > 0){
 			leftOff = 20; // ...reset leftOff...
 			topSkip  = classBarFigureH + classBarHeaderSize + classBarTitleSize + 20; // return class bar height to original value in case it got changed in this row
@@ -1222,7 +1222,7 @@ NgChm.PDF.genViewerHeatmapPDF = function() {
 	 * column covariate bar on the heat map to the PDF legends page.
 	 **********************************************************************************/
 	function drawColClassLegends() {
-		sectionHeader = "Column Covariate Bar Legends"
+		sectionHeader = "Sample Covariate Bar Legends"
 		// Draw column class bar legends
 		if (colBarsToDraw.length > 0){
 			topSkip  = classBarFigureH + classBarHeaderSize + classBarTitleSize + 20; // return class bar height to original value in case it got changed in this row

@@ -3,7 +3,7 @@
 	<head>
 		<title>NG-CHM</title>
 		<meta charset="utf-8"/>
-		<link rel="shortcut icon" href="alamarANAIcon.png">
+    <!--		<link rel="shortcut icon" href="alamarANAIcon.png">-->
 		<link rel="stylesheet" href="css/NGCHM.css?v=2.20.2">
 		<script src="javascript/lib/zip.js?v=2.20.2"></script>
 		<script src="javascript/lib/deflate.js?v=2.20.2"></script>
@@ -51,9 +51,9 @@
 		    <div class="mdaServiceHeader" id="mdaServiceHeader">
 				<img id='messageOpen_btn' style="position:absolute; vertical-align: top; display: none;" src='images/messageButton.png' alt='Open Alert' onmouseout="NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.hlp(this,"Display Startup Warnings",100)' onclick='NgChm.UHM.displayStartupWarnings();'/>
 		        <div id="mda_header" class="mdaServiceHeaderLogo">
-					<a href="https://alamarbio.com/"  target="_blank">
+              <!--					<a href="https://alamarbio.com/"  target="_blank">
 					<img id="absLogo" src="images/abslogo262x63.png" alt="Alamar Biosciences logo"/>
-			           </a>
+              </a>-->
 				</div>
 				<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);">
 					<table><tr>
@@ -71,8 +71,8 @@
 						<select name="search_on" id="search_on" class='srchSelect'>
 							<option value="labels">Labels</option>
 						</select>
-						<input id="search_text" name="search" type="text" class='srchText' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row and column labels.  Enter search term and click Go. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.",300);' />
-						<input id="search_cov_cont" name="search_cont" type="text" class='srchText' style='display:none;' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row/column covariate values.  Enter search term and click Go. The search will find rows/cols with continuous covariate values that fall within the search expressions entered. Search expressions should be entered in the form of a comma-delimited string with each segment representing an expression. Valid expressions would include individual numeric values, values preceded by one of the following operators: >, >=< <, <= (e.g. >10), and/or range expressions with 2 operators creating a range of values (e.g.>10<=20). Expressions that do not match these patterns will be ignored. If the search box turns red, no rows/cols containing the selected covariate values were found.",300);' />
+						<input id="search_text" name="search" type="text" class='srchText' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row and column labels.  Enter search term and click Search. The search will find labels that partially match the search text. To find exact matches only, put double-quote characters around the search term.  Multiple search terms can be separated by spaces.  If the search box turns red, none of the search terms were found.  If it turns yellow, only some of the search terms were found.",300);' />
+						<input id="search_cov_cont" name="search_cont" type="text" class='srchText' style='display:none;' onmouseout='NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.hlp(this,"Search row/column covariate values.  Enter search term and click Search. The search will find rows/cols with continuous covariate values that fall within the search expressions entered. Search expressions should be entered in the form of a comma-delimited string with each segment representing an expression. Valid expressions would include individual numeric values, values preceded by one of the following operators: >, >=< <, <= (e.g. >10), and/or range expressions with 2 operators creating a range of values (e.g.>10<=20). Expressions that do not match these patterns will be ignored. If the search box turns red, no rows/cols containing the selected covariate values were found.",300);' />
 						<div id="search_cov_disc" style="display:none;"> 
 							<div class="dropDownMultiSelect">
 						        <div id="srchCovSelectBox" class="dropDownSelectBox" onclick="NgChm.UTIL.showCheckBoxDropDown('srchCovCheckBoxes');">   
@@ -84,11 +84,11 @@
 						<!-- Changed visibility to hide dropdown from UI -->
 						<select name="search_target" id="search_target" class='srchSelect' style="display: none;">
 							<option value="Both">Both</option>
-							<option value="Column">Column</option>
-							<option value="Row">Row</option>
+							<option value="Column">Sample</option>
+							<option value="Row">Target</option>
 						</select>
 						<span class="dblSpace"/>
-						<input id='go_btn' type="button" value="Search" style="vertical-align: middle;" onmouseover='NgChm.UHM.hlp(this,"Search Row/Column Labels",140);'/>
+						<input id='go_btn' type="button" value="Search" style="vertical-align: middle;" onmouseover='NgChm.UHM.hlp(this,"Search Target/Sample Labels",140);'/>
 						<input id='prev_btn' type="button" style="background: url('images/prev.png') no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;"
 							onmouseout='this.setAttribute("style", "background: url(\"images/prev.png\") no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;");NgChm.UHM.hlpC();'
 							onmouseover='this.setAttribute("style", "background: url(\"images/prevHover.png\") no-repeat;vertical-align: middle;border: none;height: 22px; width: 20px;");NgChm.UHM.hlp(this,"Previous Search Result",115);' />
@@ -125,7 +125,7 @@
 		    </div>
 			<div id='loader' style='display: none;text-align: center;margin-top: 5%;'><img src='images/loader.gif' height="24" width="24" alt="loader" /> Loading...</div>
 			<div id="ngChmContainer" class="ngChmContainer" style="position: relative"></div>
-			<div id="footer"></div>
+      <div id="footer">* Shift + left mouse button + drag to define a bounding box</div>
 			<div style="display:none">
 				<!-- Templates -->
 				<div id='summary_chm'>
@@ -170,8 +170,8 @@
 										<h3 style="margin-bottom:0px;">Show classification bars:</h3>
 										<input id="pdfInputCondensed" type="radio" name="condensed" value="condensed" checked> Condensed
 										<input id="pdfInputHistogram" type="radio" name="condensed" value="histogram"> Histogram <br>
-										<input id="pdfInputColumn" type="checkbox" name="class" value="row" checked> Column<br>
-										<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Row<br>
+										<input id="pdfInputColumn" type="checkbox" name="class" value="row" checked> Sample<br>
+										<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Target<br>
 										<h3 style="margin-bottom:0px;">Display Options:</h3>
 										Font Size:&nbsp;&nbsp;&nbsp;<input id="pdfInputFont" type="number" name="font" value="" style="width:40px;" min="1" max="36" onchange="NgChm.PDF.customFont=true">
 										<p id="pdfErrorMessage" style="display:none;color:red; font-weight:bold;margin-left: 1.0em; margin-left: 1.0em;">Please select a font between 1 and 36</p><br>
