@@ -41,8 +41,18 @@ public class NGCHM_Minimizer {
     private static void writeJSFile(String webDir, String jsFile, BufferedWriter combinedWidget) throws Exception {
 		BufferedReader br = new BufferedReader(new FileReader(webDir + "/" + jsFile ));
 		String line = br.readLine();
+		Boolean inExcludedRegion = false;
 		while (line != null) {
-			if (line.contains("images/")) {
+			if (line.contains("BEGIN EXCLUDE")) {
+			    inExcludedRegion = true; // Exclude this and following lines.
+			}
+			else if (line.contains("END EXCLUDE")) {
+			    inExcludedRegion = false; // Include following lines.
+			}
+			else if (inExcludedRegion) {
+			    // Ignore excluded lines.
+			}
+			else if (line.contains("images/")) {
 				String toks[] = line.split(" ");
 				for (String tok : toks) {
 					if (tok.contains("images/")) {
@@ -103,7 +113,7 @@ public class NGCHM_Minimizer {
 	 *
 	 * This method is the driver for the js minimizer process. It reads
 	 * in the chm.html file and writes out the contents of all JS files
-	 * included therein into the output file (ngchm.js)
+	 * included therein, except those marked by PRESERVE, into the output file (ngchm.js)
 	 ******************************************************************/
 	public static void main(String[] args) {
 		System.out.println("BEGIN NGCHM_Minimizer  " + new Date());
@@ -117,13 +127,11 @@ public class NGCHM_Minimizer {
 
 			String line = br.readLine();
 			while (line != null) {
-				if (line.contains("src=\"javascript")) {
+				if (line.contains("src=\"javascript") && !line.contains("PRESERVE")) {
 					String jsFile = CompilerUtilities.getJavascriptFileName (line);
-					if (!jsFile.equals("javascript/lib/jspdf.min.js")) {
-						bw.write("/* BEGIN Javascript file: " + jsFile + " */ \n");
-						writeJSFile(args[0], jsFile, bw);
-						bw.write("/* END Javascript file: " + jsFile + " */ \n\n");
-					}
+					bw.write("/* BEGIN Javascript file: " + jsFile + " */ \n");
+					writeJSFile(args[0], jsFile, bw);
+					bw.write("/* END Javascript file: " + jsFile + " */ \n\n");
 				}
 				line = br.readLine();
 			}

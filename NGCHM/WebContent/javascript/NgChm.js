@@ -14,9 +14,7 @@ const NgChm = {};
     NgChm['exportToNS'] = exportToNS;
     NgChm['createNS'] = exportToNS;
     NgChm['importNS'] = importNS;
-    NgChm['markFile'] = markFile;
-    NgChm['getLog'] = getLog;
-    NgChm['dracula'] = dracula;
+    NgChm['markFile'] = () => {};  // No-op in compiled code. Dev mode version defined below.
     
     var lastFile = 'n/a';
 
@@ -42,6 +40,8 @@ const NgChm = {};
 	    nsparts = nsparts.slice(1);
 	}
 
+	// BEGIN EXCLUDE from production code.
+	//
 	// Determine javascript file name by creating an Error object
 	// and extracting the file name from the stack trace.
 	const err = new Error ("Defining namespace " + namespace);
@@ -62,6 +62,7 @@ const NgChm = {};
 	    trace.splice(1,1);
 	    console.log (trace.join(''));
 	}
+	// END EXCLUDE
 
 	let parent = NgChm;
 	// loop through the parts and create a nested namespace if necessary
@@ -82,6 +83,11 @@ const NgChm = {};
 	return parent;
     }
 
+    // BEGIN EXCLUDE from production code.
+    //
+    // The code from this comment block until the matching end block is removed
+    // by the compiler.
+    NgChm['getLog'] = getLog;
     function getLog () {
 	return log.slice(0);
     }
@@ -109,6 +115,7 @@ const NgChm = {};
     const moduleColor = '#eeeeff';      // Use slight blue color for modules.
 
     // Mark the current file.  Marked files are displayed in a distinct color.
+    NgChm['markFile'] = markFile;
     function markFile () {
 	const err = new Error ("Source file done");
 	const trace = err.stack.split('\n');
@@ -125,6 +132,7 @@ const NgChm = {};
 	}
     }
 
+    NgChm['dracula'] = dracula;
     function dracula () {
 	if (scriptLoaded) {
 	    drawGraph();
@@ -296,4 +304,7 @@ const NgChm = {};
 	    }
 	}
     }
+    // End of the code removed from the system by the compiler.
+    //
+    // END EXCLUDE
 })();
