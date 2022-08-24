@@ -118,10 +118,10 @@
 						</div>
 				    </div>
 					<img id='colorMenu_btn' src='images/barColors.png' alt='Open Alert' onmouseout="NgChm.UHM.colorOver(0);NgChm.UHM.hlpC();" onmouseover='NgChm.UHM.colorOver(1);NgChm.UHM.hlp(this,"Edit Map Colors",80,0)' onclick='NgChm.UPM.editPreferences(this,null);' style="vertical-align: top;"   />
-					<img id='barMenu_btn' class='farRightButton' src='images/barMenu.png' alt='Open Menu' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM Options Menu",140,0)' onclick='NgChm.UHM.openMenu(this);' style="vertical-align: top;"/>
+					<img id='barMenu_btn' class='farRightButton' src='images/barMenu.png' alt='Open Menu' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Options Menu",140,0)' onclick='NgChm.UHM.openMenu(this);' style="vertical-align: top;"/>
 			                <div id="droptarget" class="">DROP HERE</div>
 			    </div>
-		        <img id='aboutMenu_btn' class='farRightButton' src='images/aboutNgchm.png' alt='About NG-CHM' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"Open NG-CHM About",140,0)' onclick='NgChm.UHM.widgetHelp();' style="vertical-align: top;"/>
+		        <img id='aboutMenu_btn' class='farRightButton' src='images/aboutNgchm.png' alt='About NG-CHM' onmouseout='NgChm.UHM.menuOver(0);NgChm.UHM.hlpC();' onmouseover='NgChm.UHM.menuOver(1);NgChm.UHM.hlp(this,"About",140,0)' onclick='NgChm.UHM.widgetHelp();' style="vertical-align: top;"/>
 		    </div>
 			<div id='loader' style='display: none;text-align: center;margin-top: 5%;'><img src='images/loader.gif' height="24" width="24" alt="loader" /> Loading...</div>
 			<div id="ngChmContainer" class="ngChmContainer" style="position: relative"></div>
@@ -269,14 +269,14 @@
 			</div>
 			<div id="burgerMenuPanel" style="display: none;">
 				<div class="menuItemTop"></div>
-				<div id="menuPdf" class="menuItem" onclick='NgChm.PDF.openPdfPrefs(this,null);'><img id='menuPdf_btn' src='images/pdf.png' alt='save as PDF icon'>Save Heat Map As PDF...</div>
-				<div id="menuPng" class="menuItem" onclick='NgChm.UTIL.downloadSummaryPng(this);'><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
-				<div id="menuSave" class="menuItem" onclick='NgChm.UHM.saveHeatMapChanges();'><img id='menuSave_btn' src='images/saveButton.png' alt='save heat map changes icon'>Save Heat Map Changes...</div>
+				<div id="menuPdf" class="menuItem" onclick='NgChm.PDF.openPdfPrefs(this,null);'>Save as PDF...</div>
+        <!--<div id="menuPng" class="menuItem" onclick='NgChm.UTIL.downloadSummaryPng(this);'>Download Thumbnail...</div>-->
+				<div id="menuSave" class="menuItem" onclick='NgChm.UHM.saveHeatMapChanges();'>Save as NGCHM...</div>
 				<div class="menuItemBorder"></div>
-				<div id="menuLink" class="menuItem" onclick='NgChm.UHM.openLinkoutHelp();'><img id='linkHelp_btn' src='images/plugin.png' alt='open plugin help icon'>Plug-in Help...</div>
-				<div id="menuHelp" class="menuItem" onclick='NgChm.UHM.openHelp(this);'><img id='help_btn' src='images/questionMark.png' alt='open help icon'>NgChm Help...</div>
+        <!--<div id="menuLink" class="menuItem" onclick='NgChm.UHM.openLinkoutHelp();'><img id='linkHelp_btn' src='images/plugin.png' alt='open plugin help icon'>Plug-in Help...</div>-->
+				<div id="menuHelp" class="menuItem" onclick='NgChm.UHM.openHelp(this);'>Heat Map Viewer Help...</div>
 				<div id="menuSpaceAbout" class="menuItemBorder"></div>
-				<div id="menuAbout" class="menuItem" onclick='NgChm.UHM.widgetHelp();'><img id='about_btn' src='images/aboutNgchm.png' alt='about ngchm icon'>About NgChm...</div>
+				<div id="menuAbout" class="menuItem" onclick='NgChm.UHM.widgetHelp();'>About NgChm...</div>
 			</div>
 	</body>
 </html>
