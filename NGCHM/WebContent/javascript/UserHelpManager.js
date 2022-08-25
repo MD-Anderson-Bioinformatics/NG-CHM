@@ -397,7 +397,7 @@ NgChm.UHM.locateHelpBox = function(helptext,mapItem) {
  * pop-up help panel for the tool buttons at the top of the detail pane. It receives
  * text from chm.html. 
  **********************************************************************************/
-NgChm.UHM.hlp = function(e, text, width, reverse, delay=1500) {
+NgChm.UHM.hlp = function(e, text, width, reverse, delay=500) {
 	NgChm.UHM.hlpC();
 	const helptext = document.createElement('div');
 	helptext.id = 'bubbleHelp';
