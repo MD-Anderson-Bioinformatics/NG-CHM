@@ -2254,7 +2254,7 @@ NgChm.SUM.getTouchEventOffset = function (evt) {
 			}
 		}
 		NgChm.SUM.chmElement.style.display = '';
-		NgChm.Pane.setPaneTitle (loc, 'Summary');
+		NgChm.Pane.setPaneTitle (loc, 'Summary View');
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'empty', emptySummaryPane);
 		NgChm.Pane.registerPaneEventHandler (loc.pane, 'resize', resizeSummaryPane);
 	}
