@@ -967,10 +967,12 @@ NgChm.UPM.setupLayerBreaks = function(e, mapName) {
 			"<div class='presetPaletteMissingColor' style='background:black'></div></div>";
 	var redBlackGreen = "<div style='display:flex'><div id='setRedBlackGreen' class='presetPalette' style='background: linear-gradient(to right, green,black,red);' onclick='NgChm.UPM.setupLayerBreaksToPreset(event, \""+ mapName+ "\", [\"#00FF00\",\"#000000\",\"#FF0000\"],\"#ffffff\")'> </div>" +
 			"<div class='presetPaletteMissingColor' style='background:white'></div></div>"
-	var alamarTheme = "<div style='display:flex'><div id='setAlamarTheme' class='presetPalette' style='background: linear-gradient(to right, violet,blue,green,yellow);' onclick='NgChm.UPM.setupLayerBreaksToPreset(event, \""+ mapName+ "\", [\"#614794\",\"#279CA3\",\"#78C14C\",\"#F1BD3A\"],\"#000000\")'> </div>" +
-			"<div class='presetPaletteMissingColor' style='background:black'></div></div>";
-	NgChm.UHM.setTableRow(prefContents, [ alamarTheme, redWhiteBlue, rainbow, redBlackGreen ]);
-	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Alamar", "&nbsp;Blue Red",  "&nbsp;<b>Rainbow</b>","&nbsp;<b>Green Red</b>"]);
+//	var alamarTheme = "<div style='display:flex'><div id='setAlamarTheme' class='presetPalette' style='background: linear-gradient(to right, violet,blue,green,yellow);' onclick='NgChm.UPM.setupLayerBreaksToPreset(event, \""+ mapName+ "\", [\"#614794\",\"#279CA3\",\"#78C14C\",\"#F1BD3A\"],\"#000000\")'> </div>" +
+//			"<div class='presetPaletteMissingColor' style='background:black'></div></div>";
+//	NgChm.UHM.setTableRow(prefContents, [ alamarTheme, redWhiteBlue, rainbow, redBlackGreen ]);
+//	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Alamar", "&nbsp;Blue Red",  "&nbsp;<b>Rainbow</b>","&nbsp;<b>Green Red</b>"]);
+	NgChm.UHM.setTableRow(prefContents, [ redWhiteBlue, rainbow, redBlackGreen ]);
+	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Blue Red",  "&nbsp;<b>Rainbow</b>","&nbsp;<b>Green Red</b>"]);
 	NgChm.UHM.addBlankRow(prefContents, 3)
 	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Grid Lines:", gridColorInput, "<b>Grid Show:&nbsp;&nbsp;</b>"+gridShow]); 
 	NgChm.UHM.setTableRow(prefContents, ["&nbsp;Selection Color:", selectionColorInput, "<b>Gap Color:&nbsp;&nbsp;</b>"+gapColorInput]);

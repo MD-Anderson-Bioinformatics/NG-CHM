@@ -2405,12 +2405,12 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 			NgChm.DEV.clearModeHistory (mapItem);
 			NgChm.DEV.detailNormal (mapItem);
 		    }),
-		    modeButton ('ribbonH_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View', 115, () => {
+		    modeButton ('ribbonH_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonH.png', NgChm.UHM.ribbonHBtnOver, 'Horizontal Ribbon View: Show all columns/samples', 115, () => {
 			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
 			NgChm.DEV.clearModeHistory (mapItem);
 			NgChm.DEV.detailHRibbonButton (mapItem);
 		    }),
-		    modeButton ('ribbonV_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View', 100, () => {
+		    modeButton ('ribbonV_btn'+NgChm.DMM.nextMapNumber, 'images/ribbonV.png', NgChm.UHM.ribbonVBtnOver, 'Vertical Ribbon View: Show all rows/targets', 100, () => {
 			const mapItem = NgChm.DMM.getMapItemFromPane(loc.pane.id);
 			NgChm.DEV.clearModeHistory (mapItem);
 			NgChm.DEV.detailVRibbonButton (mapItem)
@@ -2418,7 +2418,7 @@ NgChm.DET.getDetFragmentShader = function (theGL) {
 		]);
 		if (isPrimary === true) {
 			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = 'none';
-			NgChm.Pane.setPaneTitle (loc, 'Primary');
+			NgChm.Pane.setPaneTitle (loc, 'Detailed View');
 		} else {
 			document.getElementById('primary_btn'+NgChm.DMM.nextMapNumber).style.display = '';
 			NgChm.Pane.setPaneTitle (loc, 'Heat Map Detail - Ver '+NgChm.DMM.nextMapNumber);
