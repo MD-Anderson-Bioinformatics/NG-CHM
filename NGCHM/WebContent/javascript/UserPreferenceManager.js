@@ -261,27 +261,6 @@ UPM.setSizePrefPrefs = function() {
 }
 
 
-/*
-  Keeps element from moving off the viewport as the user resizes the window.
-*/
-UPM.keepElementInViewport= function(elementId) {
-	let element = document.getElementById(elementId);
-	if (element !== null) {
-		if (element.getBoundingClientRect().bottom > window.innerHeight) {
-			element.style.height = (window.innerHeight - element.getBoundingClientRect().top) + 'px';
-		}
-		if (element.getBoundingClientRect().right > window.innerWidth) {
-			element.style.left = (window.innerWidth - element.getBoundingClientRect().width) + 'px';
-		}
-		if (element.getBoundingClientRect().top < 0) {
-			element.style.top = '0px';
-		}
-		if (element.getBoundingClientRect().left < 0) {
-			element.style.left = '0px';
-		}
-	}
-}
-
 /**********************************************************************************
  * FUNCTION - showRowsColsPrefs: The purpose of this function is to perform the 
  * processing for the preferences tab when the user selects the "Rows & Cols" tab.
@@ -731,7 +710,7 @@ UPM.prefsValidateBreakPoints = function(colorMapName,prefPanel) {
 	var charBreak = false;
 	var dupeBreak = false;
 	var breakOrder = false;
-	var prevBreakValue = SUM.minValues;
+	var prevBreakValue = MMGR.minValues;
 	var errorMsg = null;
 	//Loop thru colormap thresholds and validate for order and duplicates
 	for (var i = 0; i < thresholds.length; i++) {
@@ -1204,9 +1183,9 @@ UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 		for(var j=0;j<numRow;j++){
 			count++;
 			var val = heatMap.getValue(MMGR.SUMMARY_LEVEL,j,i);
-			if (isNaN(val) || val>=SUM.maxValues){ // is it Missing value?
+			if (isNaN(val) || val>=MMGR.maxValues){ // is it Missing value?
 				nan++;
-			} else if (val <= SUM.minValues){ // is it a cut location?
+			} else if (val <= MMGR.minValues){ // is it a cut location?
 				continue;
 			}
 			if (val <= lowBP){

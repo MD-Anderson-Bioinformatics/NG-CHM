@@ -19,7 +19,6 @@
 
 DET.labelLastClicked = {};
 DET.mouseDown = false;
-DET.minLabelSize = 5;
 DET.paddingHeight = 2;          // space between classification bars
 DET.SIZE_NORMAL_MODE = 506;
 DET.dataViewBorder = 2;
@@ -300,7 +299,7 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 		// of blank space.
 		// Line must be renderBuffer.width pixels wide.
 		// Using |0 ensures values are converted to integers.
-		const lineBytes = (renderBuffer.width * SUM.BYTE_PER_RGBA)|0;
+		const lineBytes = (renderBuffer.width * DRAW.BYTE_PER_RGBA)|0;
 		let pos = lineBytes; // Start with one line of blank space.
 		return function emitLines (line, reps) {
 			reps = reps | 0;
@@ -326,7 +325,7 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
 
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
-	const linelen = texWidth * SUM.BYTE_PER_RGBA;
+	const linelen = texWidth * DRAW.BYTE_PER_RGBA;
 	const gridLine = new Uint8Array(new ArrayBuffer(linelen));
 	//Build a horizontal cuts line using the cut color defined for the data layer.
 	const cutsLine = new Uint8Array(new ArrayBuffer(linelen));
@@ -339,8 +338,8 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 		}
 	}
 	if (params.showHorizontalGrid) {
-		let linePos = (rowClassBarWidth)*SUM.BYTE_PER_RGBA;
-		linePos+=SUM.BYTE_PER_RGBA;
+		let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
+		linePos+=DRAW.BYTE_PER_RGBA;
 		for (let j = 0; j < detDataPerRow; j++) {
 			//When building grid line check for vertical cuts by grabbing value of currentRow (any row really) and column being iterated to
 			const val = heatMap.getValue(drawWin.level, currDetRow, currDetCol+j);
@@ -348,8 +347,8 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
-				if (val <= SUM.minValues) {
-					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > SUM.minValues)) {
+				if (val <= MMGR.minValues) {
+					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > MMGR.minValues)) {
 						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
 					} else {
 						gridLine[linePos] = cutsColor.r; gridLine[linePos+1] = cutsColor.g; gridLine[linePos+2] = cutsColor.b;	gridLine[linePos+3] = cutsColor.a;
@@ -361,21 +360,21 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 						gridLine[linePos]=regularGridColor[0]; gridLine[linePos + 1]=regularGridColor[1]; gridLine[linePos + 2]=regularGridColor[2]; gridLine[linePos + 3]=255;
 					}
 				}
-				linePos += SUM.BYTE_PER_RGBA;
+				linePos += DRAW.BYTE_PER_RGBA;
 			}
 		}
-		linePos+=SUM.BYTE_PER_RGBA;
+		linePos+=DRAW.BYTE_PER_RGBA;
 	}
 	
-	let line = new Uint8Array(new ArrayBuffer((rowClassBarWidth + mapItem.dataViewWidth) * SUM.BYTE_PER_RGBA));
+	let line = new Uint8Array(new ArrayBuffer((rowClassBarWidth + mapItem.dataViewWidth) * DRAW.BYTE_PER_RGBA));
 
 	//Needs to go backward because WebGL draws bottom up.
 	for (let i = detDataPerCol-1; i >= 0; i--) {
-		let linePos = (rowClassBarWidth)*SUM.BYTE_PER_RGBA;
+		let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
 		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the 
 		// preceding line are "cut values" mark the current line as as a horizontal cut
 		const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
-		linePos+=SUM.BYTE_PER_RGBA;
+		linePos+=DRAW.BYTE_PER_RGBA;
 		for (let j = 0; j < detDataPerRow; j++) { // for every data point...
 			let val = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j);
 	        let nextVal = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1);
@@ -387,7 +386,7 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 					if (params.showVerticalGrid && k===mapItem.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
 						if (j < detDataPerRow-1) {
 							//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
-							if ((val <= SUM.minValues) && (nextVal <= SUM.minValues)) {
+							if ((val <= MMGR.minValues) && (nextVal <= MMGR.minValues)) {
 								line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
 							} else {
 								line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
@@ -396,11 +395,11 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 					} else {
 						line[linePos] = color['r'];	line[linePos + 1] = color['g'];	line[linePos + 2] = color['b'];	line[linePos + 3] = color['a'];
 					}
-					linePos += SUM.BYTE_PER_RGBA;
+					linePos += DRAW.BYTE_PER_RGBA;
 				}
 	        }
 		}
-		linePos+=SUM.BYTE_PER_RGBA;
+		linePos+=DRAW.BYTE_PER_RGBA;
 		
 		//Write each line several times to get correct data point height.
 		const numGridLines = params.showHorizontalGrid && i > 0 ? 1 : 0;
@@ -429,7 +428,7 @@ DET.isLineACut = function (mapItem, row) {
 	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
 		const val = heatMap.getValue(level, currDetRow+row, currDetCol+x);
 		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
-		if (val > SUM.minValues) {
+		if (val > MMGR.minValues) {
 			return false;
 		}
 	}
@@ -671,7 +670,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		mapItemVars.ctx.clearRect(0, 0, mapItem.boxCanvas.width, mapItem.boxCanvas.height);
 	
 		//Draw the border
-		if (UTIL.mapHasGaps() === false) {
+		if (MMGR.mapHasGaps() === false) {
 			const canH = mapItem.dataViewHeight + totalColBarHeight;
 			const canW = mapItem.dataViewWidth + totalRowBarHeight;
 			const boxX = (totalRowBarHeight / canW) * mapItem.boxCanvas.width;
@@ -1013,7 +1012,7 @@ DET.calcRowClassBarLabels = function (mapItem) {
 				const currentClassBar = rowClassBarConfig[rowClassBarConfigOrder[i]];
 				if (currentClassBar.show === 'Y') {
 					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
-					let labelText = UTIL.getLabelText(key,'COL');
+					let labelText = MMGR.getLabelText(key,'COL');
 					if (containsLegend) {
 						labelText = "XXX"+labelText; //calculate spacing for bar legend
 					}
@@ -1045,7 +1044,7 @@ DET.calcColClassBarLabels = function (mapItem) {
 				const currentClassBar = colClassBarConfig[key];
 				if (currentClassBar.show === 'Y') {
 					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
-					let labelText = UTIL.getLabelText(key,'ROW');
+					let labelText = MMGR.getLabelText(key,'ROW');
 					if (containsLegend) {
 						labelText = "XXXX"+labelText; //calculate spacing for bar legend
 					}
@@ -1170,7 +1169,7 @@ DET.calcRowLabels = function (mapItem, fontSize) {
 	}
 	const skip = (mapItem.canvas.clientHeight - headerSize) / mapItem.dataPerCol;
 	if (skip > mapItem.minLabelSize) {
-		const shownLabels = UTIL.getShownLabels('ROW');
+		const shownLabels = MMGR.getShownLabels('ROW');
 		for (let i = mapItem.currentRow; i < mapItem.currentRow + mapItem.dataPerCol; i++) {
 			DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
 		}
@@ -1190,7 +1189,7 @@ DET.calcColLabels = function (mapItem, fontSize) {
 	}
 	const skip = (mapItem.canvas.clientWidth - headerSize) / mapItem.dataPerRow;
 	if (skip > mapItem.minLabelSize) {
-		const shownLabels = UTIL.getShownLabels('COLUMN');
+		const shownLabels = MMGR.getShownLabels('COLUMN');
 		for (let i = mapItem.currentCol; i < mapItem.currentCol + mapItem.dataPerRow; i++) {
 			DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
 		}
@@ -1346,8 +1345,8 @@ DET.drawRowLabels = function (mapItem, fontSize) {
 	const start = Math.max((skip - fontSize)/2, 0) + headerSize-2;
 	
 	if (skip > mapItem.minLabelSize) {
-		const actualLabels = UTIL.getActualLabels('ROW');
-		const shownLabels = UTIL.getShownLabels('ROW');
+		const actualLabels = MMGR.getActualLabels('ROW');
+		const shownLabels = MMGR.getShownLabels('ROW');
 		const xPos = mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth + 3;
 		for (let i = mapItem.currentRow; i < mapItem.currentRow + mapItem.dataPerCol; i++) {
 			const yPos = mapItem.canvas.offsetTop + start + ((i-mapItem.currentRow) * skip);
@@ -1371,8 +1370,8 @@ DET.drawColLabels = function (mapItem, fontSize) {
 	const start = headerSize + fontSize + Math.max((skip - fontSize)/2, 0) + 3;
 
 	if (skip > mapItem.minLabelSize) {
-		const actualLabels = UTIL.getActualLabels('COLUMN');
-		const shownLabels = UTIL.getShownLabels('COLUMN');
+		const actualLabels = MMGR.getActualLabels('COLUMN');
+		const shownLabels = MMGR.getShownLabels('COLUMN');
 		const yPos = mapItem.canvas.offsetTop + mapItem.canvas.clientHeight + 3;
 		for (let i = mapItem.currentCol; i < mapItem.currentCol + mapItem.dataPerRow; i++) {
 			const xPos = mapItem.canvas.offsetLeft + start + ((i-mapItem.currentCol) * skip);
@@ -1422,7 +1421,7 @@ DET.detailDrawRowClassBarLabels = function (mapItem) {
 				if (currentClassBar.show === 'Y') {
 					DET.drawRowClassBarLegends(mapItem);
 					const currFont = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
-					const labelText = UTIL.getLabelText(key,'COL');
+					const labelText = MMGR.getLabelText(key,'COL');
 					if (containsLegend) {
 						yPos += 12; //add spacing for bar legend
 					}
@@ -1481,7 +1480,7 @@ DET.detailDrawColClassBarLabels = function (mapItem) {
 						if (currentClassBar.height >= 20) {
 							yOffset += ((((currentClassBar.height/2) - (mapItem.colClassLabelFont/2)) - 3) * scale);
 						}
-						const labelText = UTIL.getLabelText(key,'ROW');
+						const labelText = MMGR.getLabelText(key,'ROW');
 						if (containsLegend) {
 							xPos += 14; //add spacing for bar legend
 						}
@@ -2087,8 +2086,8 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 	const rowClassBarWidth = DET.calculateTotalClassBarHeight("row");
 	const fullWidth = mapItem.dataViewWidth + rowClassBarWidth;
 	const mapHeight = mapItem.dataViewHeight;
-	let pos = fullWidth*mapHeight*SUM.BYTE_PER_RGBA;
-	pos += fullWidth*DET.paddingHeight*SUM.BYTE_PER_RGBA;
+	let pos = fullWidth*mapHeight*DRAW.BYTE_PER_RGBA;
+	pos += fullWidth*DET.paddingHeight*DRAW.BYTE_PER_RGBA;
 	const colorMapMgr = heatMap.getColorMapManager();
 	
 	for (let i=colClassBarConfigOrder.length-1; i>= 0;i--) {
@@ -2101,7 +2100,7 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 			const colorMap = colorMapMgr.getColorMap("col",key); // assign the proper color scheme...
 			let classBarValues = colClassBarData[key].values;
 			const classBarLength = SEL.getCurrentDetDataPerRow(mapItem) * mapItem.dataBoxWidth;
-			pos += fullWidth*DET.paddingHeight*SUM.BYTE_PER_RGBA; // draw padding between class bars
+			pos += fullWidth*DET.paddingHeight*DRAW.BYTE_PER_RGBA; // draw padding between class bars
 			let start = mapItem.currentCol;
 			const length = SEL.getCurrentDetDataPerRow(mapItem);
 			if (((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) &&  (typeof colClassBarData[key].svalues !== 'undefined')) {
@@ -2125,7 +2124,7 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
  * color plot class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap) {
-	const line = new Uint8Array(new ArrayBuffer(classBarLength * SUM.BYTE_PER_RGBA)); // save a copy of the class bar
+	const line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA)); // save a copy of the class bar
 	let loc = 0;
 	for (let k = start; k <= start + length -1; k++) { 
 		const val = classBarValues[k-1];
@@ -2135,16 +2134,16 @@ DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, 
 			line[loc + 1] = color['g'];
 			line[loc + 2] = color['b'];
 			line[loc + 3] = color['a'];
-			loc += SUM.BYTE_PER_RGBA;
+			loc += DRAW.BYTE_PER_RGBA;
 		}
 	}
 	for (let j = 0; j < currentClassBar.height-DET.paddingHeight; j++){ // draw the class bar into the dataBuffer
-		pos += (rowClassBarWidth + 1)*SUM.BYTE_PER_RGBA;
+		pos += (rowClassBarWidth + 1)*DRAW.BYTE_PER_RGBA;
 		for (let k = 0; k < line.length; k++) { 
 			pixels[pos] = line[k];
 			pos++;
 		}
-		pos+=SUM.BYTE_PER_RGBA;
+		pos+=DRAW.BYTE_PER_RGBA;
 	}
 	return pos;
 }
@@ -2161,7 +2160,7 @@ DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, class
 	const rowClassBarWidth = DET.calculateTotalClassBarHeight("row");
 
 	//offset value for width of row class bars
-	let offset = (rowClassBarWidth + 2)*SUM.BYTE_PER_RGBA;
+	let offset = (rowClassBarWidth + 2)*DRAW.BYTE_PER_RGBA;
 	for (let h = 0; h < matrix.length; h++) { 
 		pos += offset;
 		let row = matrix[h];
@@ -2186,7 +2185,7 @@ DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, class
 						pixels[pos+3] = barBgColor['a'];
 					}
 				}
-				pos+=SUM.BYTE_PER_RGBA;
+				pos+=DRAW.BYTE_PER_RGBA;
 			}
 		}
 	}
@@ -2207,7 +2206,7 @@ DET.detailDrawRowClassBars = function (mapItem, pixels) {
 	const mapWidth =  DET.calculateTotalClassBarHeight("row") + mapItem.dataViewWidth;
 	const mapHeight = mapItem.dataViewHeight;
 	const colorMapMgr = heatMap.getColorMapManager();
-	let offset = ((detailTotalWidth*DET.dataViewBorder/2)) * SUM.BYTE_PER_RGBA; // start position of very bottom dendro
+	let offset = ((detailTotalWidth*DET.dataViewBorder/2)) * DRAW.BYTE_PER_RGBA; // start position of very bottom dendro
 	for (let i=0;i< rowClassBarConfigOrder.length;i++) {
 		const key = rowClassBarConfigOrder[i];
 		if (!rowClassBarConfig.hasOwnProperty(key)) {
@@ -2232,7 +2231,7 @@ DET.detailDrawRowClassBars = function (mapItem, pixels) {
 			} else {
 				pos = DET.drawScatterBarPlotRowClassBar(mapItem, pixels, pos, start, length, currentClassBar.height-DET.paddingHeight, classBarValues, mapWidth, colorMap, currentClassBar);
 			}
-			offset+= currentClassBar.height*SUM.BYTE_PER_RGBA;
+			offset+= currentClassBar.height*DRAW.BYTE_PER_RGBA;
 		}
 	}	
 }
@@ -2251,11 +2250,11 @@ DET.drawColorPlotRowClassBar = function(mapItem, pixels, pos, start, length, cur
 				pixels[pos + 1] = color['g'];
 				pixels[pos + 2] = color['b'];
 				pixels[pos + 3] = color['a'];
-				pos+=SUM.BYTE_PER_RGBA;	// 4 bytes per color
+				pos+=DRAW.BYTE_PER_RGBA;	// 4 bytes per color
 			}
 			// padding between class bars
-			pos+=DET.paddingHeight*SUM.BYTE_PER_RGBA;
-			pos+=(mapWidth - currentClassBar.height)*SUM.BYTE_PER_RGBA;
+			pos+=DET.paddingHeight*DRAW.BYTE_PER_RGBA;
+			pos+=(mapWidth - currentClassBar.height)*DRAW.BYTE_PER_RGBA;
 		}
 	}
 	return pos;
@@ -2293,12 +2292,12 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 						pixels[pos+3] = barBgColor['a'];
 					}
 				}
-				pos+=SUM.BYTE_PER_RGBA;
+				pos+=DRAW.BYTE_PER_RGBA;
 			}
 			// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row 
 			// padding between class bars
-			pos+=DET.paddingHeight*SUM.BYTE_PER_RGBA;
-			pos+=(mapWidth - currentClassBar.height)*SUM.BYTE_PER_RGBA;
+			pos+=DET.paddingHeight*DRAW.BYTE_PER_RGBA;
+			pos+=(mapWidth - currentClassBar.height)*DRAW.BYTE_PER_RGBA;
 		}
 	}
 	return pos;

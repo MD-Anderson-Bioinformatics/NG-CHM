@@ -391,7 +391,7 @@ var linkoutsVersion = 'undefined';
 			colSearchItems.forEach( y => {
 				let matrixValue = MMGR.getHeatMap().getValue(MMGR.DETAIL_LEVEL,x,y);
 				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
-				if (matrixValue !== SUM.minValues-1) {
+				if (matrixValue !== MMGR.minValues-1) {
 					dataMatrix.push(matrixValue);
 				}
 			});
@@ -685,7 +685,7 @@ var linkoutsVersion = 'undefined';
 			cell.innerHTML = ("<b>Linkouts for entire selection:</b>");
 		} else {
 			var labelVal = LNK.selection.indexOf("|") > 0 ? LNK.selection.substring(0,LNK.selection.indexOf("|")) : LNK.selection; 
-			labelVal = UTIL.getLabelText(labelVal,axis);
+			labelVal = MMGR.getLabelText(labelVal,axis);
 			cell.innerHTML = ("<b>Linkouts for: " + labelVal +"</b>");
 		}
 	}
@@ -1247,7 +1247,7 @@ var linkoutsVersion = 'undefined';
 						for (let j= 0; j < win.numRows; j++) {
 							for (let i=0;  i< win.numCols; i++) {
 								const val = accessWindow.getValue (j + win.firstRow, i + win.firstCol);
-								if (!isNaN(val) && val > SUM.minValues && val < SUM.maxValues) {
+								if (!isNaN(val) && val > MMGR.minValues && val < MMGR.maxValues) {
 									rawValues[j*win.numCols+i] += val;
 									rawCounts[j*win.numCols+i] ++;
 								}
@@ -1435,7 +1435,7 @@ var linkoutsVersion = 'undefined';
 			fullLabels.forEach((value,index) => { if (value === "") gapIndices.push (index); });
 			data.axes.push({
 				fullLabels: filterGaps (fullLabels, gapIndices),
-				actualLabels: filterGaps (UTIL.getActualLabels(axis.axisName), gapIndices),
+				actualLabels: filterGaps (MMGR.getActualLabels(axis.axisName), gapIndices),
 				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
@@ -1487,8 +1487,8 @@ var linkoutsVersion = 'undefined';
 			return false;
 		}
 		var otherAxisName = MMGR.isRow(msg.axisName) ? 'column' : 'row';
-		var otherAxisLabels = UTIL.getActualLabels (otherAxisName);
-		var heatMapAxisLabels = UTIL.getActualLabels (msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
+		var otherAxisLabels = MMGR.getActualLabels (otherAxisName);
+		var heatMapAxisLabels = MMGR.getActualLabels (msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
 		heatMapAxisLabels = heatMapAxisLabels.map (l => l.toUpperCase());
 		var axisIdx = [];
 		const pluginLabels = [];
@@ -2869,7 +2869,7 @@ var linkoutsVersion = 'undefined';
 
 	defineVanodiMessageHandler ('getLabels', function vanodiSendLabels (instance, msg) {
 		if (msg.axisName === 'row' || msg.axisName === 'column') {
-			LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'labels', labels: UTIL.getActualLabels(msg.axisName) });
+			LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'labels', labels: MMGR.getActualLabels(msg.axisName) });
 		} else {
 			console.log ({ m: 'Malformed getLabels request', msg, detail: 'msg.axisName must equal row or column' });
 		}
@@ -2988,7 +2988,7 @@ var linkoutsVersion = 'undefined';
 			heatMapAxisLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
 		} else {
 			// Plugin sent actual labels (or actual and full are identical).
-			heatMapAxisLabels = UTIL.getActualLabels(axis);
+			heatMapAxisLabels = MMGR.getActualLabels(axis);
 		}
 		heatMapAxisLabels = heatMapAxisLabels.map(l => l.toUpperCase());
 		var setSelected = new Set(pluginLabels) // make a set for faster access below, and avoiding use of indexOf
@@ -3015,7 +3015,7 @@ var linkoutsVersion = 'undefined';
 	*/
 	defineVanodiMessageHandler('mouseover', function vanodiMouseover(instance, msg) {
 		const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
-		const allLabels = UTIL.getActualLabels(axis);
+		const allLabels = MMGR.getActualLabels(axis);
 		const pointId = msg.selection.pointId
 		const ptIdx = allLabels.indexOf(pointId) + 1;
 		SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);

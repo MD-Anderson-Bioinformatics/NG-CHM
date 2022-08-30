@@ -264,65 +264,6 @@ UTIL.reverseObject = function(Obj) {
     return NewObj;
 }
 
-UTIL.actualAxisLabels = {};
-UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
-UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
-UTIL.getActualLabels = function (axis) {
-	axis = axis.toUpperCase();
-	if (!UTIL.actualAxisLabels.hasOwnProperty(axis)) {
-		const labels = MMGR.getHeatMap().getAxisLabels(axis)["labels"];
-		UTIL.actualAxisLabels[axis] = labels.map(text => {
-			return text === undefined ? undefined : text.split("|")[0];
-		});
-	}
-	return UTIL.actualAxisLabels[axis];
-};
-UTIL.getShownLabels = function (axis) {
-	axis = axis.toUpperCase();
-	const config = MMGR.getHeatMap().getAxisConfig(axis);
-	// Recalculate shown labels if parameters affecting them have changed.
-	if (UTIL.shownAxisLabelParams[axis].label_display_length !== config.label_display_length ||
-	    UTIL.shownAxisLabelParams[axis].label_display_method !== config.label_display_method) {
-		UTIL.shownAxisLabelParams[axis].label_display_length = config.label_display_length;
-		UTIL.shownAxisLabelParams[axis].label_display_method = config.label_display_method;
-		const labels = UTIL.getActualLabels(axis);
-		UTIL.shownAxisLabels[axis] = labels.map(text => {
-			return text === undefined ? "" : UTIL.getLabelText (text, axis);
-		});
-	}
-	return UTIL.shownAxisLabels[axis];
-};
-
-/**********************************************************************************
- * FUNCTION - getLabelText: The purpose of this function examine label text and 
- * shorten the text if the label exceeds the 20 character allowable length.  If the
- * label is in excess, the first 9 and last 8 characters will be written out 
- * separated by ellipsis (...);
- **********************************************************************************/
-UTIL.getLabelText = function(text,type,builder) {
-    const heatMap = MMGR.getHeatMap();
-	var size = parseInt(heatMap.getColConfig().label_display_length);
-	var elPos = heatMap.getColConfig().label_display_method;
-	if (type.toUpperCase() === "ROW") {
-		size = parseInt(heatMap.getRowConfig().label_display_length);
-		elPos = heatMap.getRowConfig().label_display_method;
-	}
-	//Done for displaying labels on Summary side in builder
-	if (typeof builder !== 'undefined') {
-		size = 16;
-	}
-	if (text.length > size) {
-		if (elPos === 'END') {
-			text = text.substr(0,size - 3)+"...";
-		} else if (elPos === 'MIDDLE') {
-			text = text.substr(0,(size/2 - 1))+"..."+text.substr(text.length-(size/2 - 2),text.length);
-		} else {
-			text = "..."+text.substr(text.length - (size - 3), text.length);
-		}
-	}
-	return text;
-}
-
 /**********************************************************************************
  * FUNCTION - isScreenZoomed: The purpose of this function is to determine if the 
  * browser zoom level, set by the user, is zoomed (other than 100%)
@@ -358,11 +299,12 @@ UTIL.getBrowserType = function () {
 }
 
 /**********************************************************************************
- * FUNCTION - setBrowserMinFontSize: The purpose of this function is to determine if the 
+ * FUNCTION - setMinFontSize: The purpose of this function is to determine if the
  * user has set a minimum font size on their browser and set the detail minimum label
  * size accordingly.
  **********************************************************************************/
-UTIL.setBrowserMinFontSize = function () {
+    UTIL.minLabelSize = 5;
+    function setMinFontSize () {
 	  const minMinLabelSize = 5;
 	  var minSettingFound = 0;
 	  var el = document.createElement('div');
@@ -386,17 +328,17 @@ UTIL.setBrowserMinFontSize = function () {
 	  }
 	  if (middle > minMinLabelSize) {
 		  minSettingFound = middle;
-		  DET.minLabelSize = Math.floor(middle) - 1;
+		  UTIL.minLabelSize = Math.floor(middle) - 1;
 	  }
 	  document.body.removeChild(el);
 	  return minSettingFound;
-}
+    }
 
-/**********************************************************************************
- * FUNCTION - iESupport: The purpose of this function is to allow for the support
- * of javascript functions that Internet Explorer does not recognize.
- **********************************************************************************/
-UTIL.iESupport = function () {
+    /**********************************************************************************
+     * FUNCTION - iESupport: The purpose of this function is to allow for the support
+     * of javascript functions that Internet Explorer does not recognize.
+     **********************************************************************************/
+    function iESupport () {
 	if (!String.prototype.startsWith) {
 	    String.prototype.startsWith = function(searchString, position){
 	      position = position || 0;
@@ -409,32 +351,32 @@ UTIL.iESupport = function () {
  		    this.parentElement.removeChild(this);
  		};
 	}
-}
+    }
 
-/**********************************************************************************
- * FUNCTION - startupChecks: The purpose of this function is to check for warning
- * conditions that will be flagged for a given heat map at startup.  These include:
- * Browser type = IE, zoom level other than 100%, and a minimum font size browser
- * setting greater than 5pt.
- **********************************************************************************/
-UTIL.startupChecks = function () {
-	var warningsRequired = false;
-	var msgButton = document.getElementById('messageOpen_btn');
+    /**********************************************************************************
+     * FUNCTION - startupChecks: The purpose of this function is to check for warning
+     * conditions that will be flagged for a given heat map at startup.  These include:
+     * Browser type = IE, zoom level other than 100%, and a minimum font size browser
+     * setting greater than 5pt.
+     **********************************************************************************/
+    function startupChecks () {
+	let warningsRequired = false;
 	if (UTIL.getBrowserType() === 'IE') {
-    	warningsRequired = true;
+	    warningsRequired = true;
 	}
-    if (DET.minLabelSize > 5) {
-    	warningsRequired = true;
-    }
+	if (UTIL.minLabelSize > 5) {
+	    warningsRequired = true;
+	}
     
-    if (msgButton != undefined) {
-        if (warningsRequired) {
-             msgButton.style.display = '';
-         } else {
-             msgButton.style.display = 'none';
-         }
+	const msgButton = document.getElementById('messageOpen_btn');
+	if (msgButton != undefined) {
+	    if (warningsRequired) {
+		 msgButton.style.display = '';
+	     } else {
+		 msgButton.style.display = 'none';
+	     }
+	}
     }
-}
 
 // Panel interface configuration parameters that can be set by UTIL.editWidget:
 UTIL.showSummaryPane = true;
@@ -574,21 +516,6 @@ UTIL.convertToArray = function(value) {
 	return valArr;
 };
 
-/**********************************************************************************
- * Perform Early Initializations.
- *
- * Perform latency sensitive initializations.  Note that the complete sources
- * have not loaded yet.
- **********************************************************************************/
-(function () {
-	//Call functions that enable viewing in IE.
-	UTIL.iESupport();
-
-	if (MMGR.embeddedMapName === null && (UTIL.mapId !== '' || UTIL.mapNameRef !== '')) {
-		MMGR.createWebLoader(MMGR.WEB_SOURCE);
-	}
-})();
-
 UTIL.isBuilderView = false;
 UTIL.containerElement = document.getElementById('ngChmContainer');
 
@@ -600,9 +527,7 @@ UTIL.containerElement = document.getElementById('ngChmContainer');
 UTIL.onLoadCHM = function (sizeBuilderView) {
 	
 	UTIL.isBuilderView = sizeBuilderView;
-	UTIL.setBrowserMinFontSize();
 	//Run startup checks that enable startup warnings button.
-	UTIL.startupChecks();
 	UTIL.setDragPanels();
 
 
@@ -829,9 +754,7 @@ UTIL.initDisplayVars = function() {
 	DET.detailHeatMapLevel = {};
 	DET.detailHeatMapValidator = {};
 	DET.mouseDown = false;
-	UTIL.actualAxisLabels = {};
-	UTIL.shownAxisLabels = { ROW: [], COLUMN: [] };
-	UTIL.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
+	MMGR.initAxisLabels();
 	UTIL.removeElementsByClass("DynamicLabel");
 	SRCH.clearCurrentSearchItem ();
 };
@@ -1138,15 +1061,6 @@ UTIL.createCheckBoxDropDown = function(selectBoxId,checkBoxesId,boxText,items,ma
 }
 
 /**********************************************************************************
- * FUNCTION - mapHasGaps: The purpose of this function indicate true/false whether
- * a given heat map contains gaps.
- **********************************************************************************/
-UTIL.mapHasGaps = function () {
-	const heatMap = MMGR.getHeatMap();
-	return heatMap.getMapInformation().map_cut_rows+heatMap.getMapInformation().map_cut_cols != 0;
-};
-
-/**********************************************************************************
  * FUNCTION - clearCheckBoxDropdown: The purpose of this function is to remove all
  * check box rows from within a given checkBox dropdown control.
  **********************************************************************************/
@@ -1202,6 +1116,28 @@ UTIL.closeCheckBoxDropdown = function(selectBoxId,checkBoxesId) {
 		 document.getElementById(selectBoxId).click();
 	  }
 }
+
+/*
+ * Keep element from moving off the viewport as the user resizes the window.
+ */
+UTIL.keepElementInViewport= function(elementId) {
+	const element = document.getElementById(elementId);
+	if (element !== null) {
+		const rect = element.getBoundingClientRect();
+		if (rect.bottom > window.innerHeight) {
+			element.style.height = (window.innerHeight - rect.top) + 'px';
+		}
+		if (rect.right > window.innerWidth) {
+			element.style.left = (window.innerWidth - rect.width) + 'px';
+		}
+		if (rect.top < 0) {
+			element.style.top = '0px';
+		}
+		if (rect.left < 0) {
+			element.style.left = '0px';
+		}
+	}
+};
 
 
 /**********************************************************************************
@@ -1651,5 +1587,16 @@ UTIL.imageTable = {
 	[...document.querySelectorAll('*[data-show-on-load]')].forEach(e => e.classList.remove('hide'));
     }
 })();
+
+// Executed at startup.
+iESupport();
+setMinFontSize();
+startupChecks();
+document.getElementById('srchCovSelectBox').onclick = function (event) {
+    UTIL.showCheckBoxDropDown('srchCovCheckBoxes');
+};
+document.getElementById('menuPng').onclick = function (event) {
+    UTIL.downloadSummaryPng (event.target);
+};
 
 })();

@@ -7,7 +7,6 @@
 
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SEL = NgChm.importNS('NgChm.SEL');
-    const SUM = NgChm.importNS('NgChm.SUM');
 
 CMM.ColorMap = function(colorMapObj) {
 	var type = colorMapObj["type"];
@@ -99,9 +98,9 @@ CMM.ColorMap = function(colorMapObj) {
 	this.getColor = function(value){
 		var color;
 	
-		if (value >= SUM.maxValues || value == "Missing" || isNaN(value)){
+		if (value >= MMGR.maxValues || value == "Missing" || isNaN(value)){
 			color = rgbaMissingColor;
-		}else if(value <= SUM.minValues){
+		}else if(value <= MMGR.minValues){
 			var layers = MMGR.getHeatMap().getDataLayers();
 			var dl = layers[SEL.getCurrentDL()];
 			if (typeof dl.cuts_color !== 'undefined') {

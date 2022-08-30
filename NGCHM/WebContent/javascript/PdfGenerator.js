@@ -82,7 +82,7 @@ PDF.openPdfPrefs = function(e) {
 		if (fSize > 0) {
 			document.getElementById("pdfInputFont").value = fSize;
 		} else {
-			document.getElementById("pdfInputFont").value = DET.minLabelSize;
+			document.getElementById("pdfInputFont").value = UTIL.minLabelSize;
 		}
 	}
     UTIL.redrawCanvases();
@@ -1109,9 +1109,9 @@ PDF.genViewerHeatmapPDF = function() {
 			for(var j=1;j<numRow+1;j++){
 				count++;
 				var val = Number(Math.round(heatMap.getValue(MMGR.DETAIL_LEVEL,j,i)+'e4')+'e-4')
-				if (isNaN(val) || val>=SUM.maxValues){ // is it Missing value?
+				if (isNaN(val) || val>=MMGR.maxValues){ // is it Missing value?
 					nan++;
-				} else if (val <= SUM.minValues){ // is it a cut location?
+				} else if (val <= MMGR.minValues){ // is it a cut location?
 					continue;
 				}
 				if (val <= breaks[0]){
@@ -1585,5 +1585,18 @@ PDF.genViewerHeatmapPDF = function() {
 
 	
 }
+
+document.getElementById('pdfInputFont').onchange = function (event) {
+    PDF.customFont = true;
+};
+document.getElementById('prefCancel_btn').onclick = function (event) {
+    PDF.pdfCancelButton();
+};
+document.getElementById('prefCreate_btn').onlick = function (event) {
+    PDF.callViewerHeatmapPDF();
+};
+document.getElementById('menuPdf').onlick = function (event) {
+    PDF.openPdfPrefs(event.target, null);
+};
 
 })();

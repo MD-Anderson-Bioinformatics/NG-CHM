@@ -1285,4 +1285,17 @@ DEV.zoomAnimation = function (chm,destRow,destCol) {
 
 }
 
+document.getElementById('flick_btn').onclick = function (event) {
+    DEV.flickChange();
+};
+document.getElementById('flick1').onchange = function (event) {
+    DEV.flickChange('flick1');
+};
+document.getElementById('flick2').onchange = function (event) {
+    DEV.flickChange('flick2');
+};
+document.getElementById('flickOn_pic').onclick = function (event) {
+    SEL.flickToggleOff();
+};
+
 })();

@@ -7,7 +7,6 @@
 
 	const UTIL = NgChm.importNS('NgChm.UTIL');
 	const UHM = NgChm.importNS('NgChm.UHM');
-	const UPM = NgChm.importNS('NgChm.UPM');
 	const LNK = NgChm.importNS('NgChm.LNK');
 	const MMGR = NgChm.importNS('NgChm.MMGR');
 	const TOUR = NgChm.importNS('NgChm.TOUR');
@@ -280,10 +279,10 @@
 					}}));
 				}
 				updatePopupPositions ();
-				UPM.keepElementInViewport("prefs");
-				UPM.keepElementInViewport("pdfPrefs");
-				UPM.keepElementInViewport("msgBox");
-				UPM.keepElementInViewport("linkBox");
+				UTIL.keepElementInViewport("prefs");
+				UTIL.keepElementInViewport("pdfPrefs");
+				UTIL.keepElementInViewport("msgBox");
+				UTIL.keepElementInViewport("linkBox");
 			}
 		}
 	}

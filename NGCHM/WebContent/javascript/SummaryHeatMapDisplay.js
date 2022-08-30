@@ -15,8 +15,6 @@
     const PANE = NgChm.importNS('NgChm.Pane');
     const SRCH = NgChm.importNS('NgChm.SRCH');
 
-SUM.BYTE_PER_RGBA = 4;
-
 // Flags.
 SUM.flagDrawClassBarLabels = false; // Labels are only drawn in NGCHM_GUI_Builder
 
@@ -62,8 +60,6 @@ SUM.minDimensionSize = 100; // minimum size the data matrix canvas can be
 SUM.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
 SUM.heightScale = 1;
 
-SUM.maxValues = 2147483647;
-SUM.minValues = -2147483647;
 SUM.avgValue = {};           // Average value for each layer.
 SUM.eventTimer = 0; // Used to delay draw updates
 SUM.dragSelect=false;	  // Indicates if user has made a drag selection on the summary panel
@@ -229,7 +225,7 @@ SUM.setTopItemsSize = function (){
 		for (let i = 0; i < SUM.colTopItems.length; i++){
 			let foundLabel = false;
 			let p = document.createElement("p");
-			p.innerText = UTIL.getLabelText(SUM.colTopItems[i].split("|")[0],"col");
+			p.innerText = MMGR.getLabelText(SUM.colTopItems[i].split("|")[0],"col");
 			p.className = "topItems";
 			SUM.chmElement.appendChild(p);
 			for (let j = 0; j < colLabels.length; j++){
@@ -251,7 +247,7 @@ SUM.setTopItemsSize = function (){
 		for (let i = 0; i < SUM.rowTopItems.length; i++){
 			let foundLabel = false;
 			let p = document.createElement("p");
-			p.innerText = UTIL.getLabelText(SUM.rowTopItems[i].split("|")[0],"row");
+			p.innerText = MMGR.getLabelText(SUM.rowTopItems[i].split("|")[0],"row");
 			p.className = "topItems";
 			SUM.chmElement.appendChild(p);
 			for (let j = 0; j < rowLabels.length; j++){
@@ -349,7 +345,7 @@ SUM.setSelectionDivSize = function(width, height){ // input params used for PDF 
 
     // Create a GL manager that uses the summary map vertex and fragment shaders.
     function createSummaryGlManager (canvas, onRestore) {
-	    return DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader, onRestore);
+	    return DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader, onRestore, SUM.widthScale, SUM.heightScale);
     }
 
     // Vertex shader for summary heat maps.
@@ -478,11 +474,11 @@ SUM.renderSummaryHeatmap = function (renderBuffer) {
 	//Needs to go backward because WebGL draws bottom up.
 	SUM.avgValue[currentDl] = 0;
 	for (var i = heatMap.getNumRows(MMGR.SUMMARY_LEVEL); i > 0; i--) {
-		var line = new Array(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)*SUM.widthScale*SUM.BYTE_PER_RGBA);
+		var line = new Array(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)*SUM.widthScale*DRAW.BYTE_PER_RGBA);
 		var linepos = 0;
 		for (var j = 1; j <= heatMap.getNumColumns(MMGR.SUMMARY_LEVEL); j++) { // draw the heatmap
 			var val = heatMap.getValue(MMGR.SUMMARY_LEVEL, i, j);
-			if ((val < SUM.maxValues) && (val > SUM.minValues)) {
+			if ((val < MMGR.maxValues) && (val > MMGR.minValues)) {
 				SUM.avgValue[currentDl] += val;
 			}
 			var color = colorMap.getColor(val);
@@ -491,7 +487,7 @@ SUM.renderSummaryHeatmap = function (renderBuffer) {
 				line[linepos + 1] = color['g'];
 				line[linepos + 2] = color['b'];
 				line[linepos + 3] = color['a'];
-				linepos+= SUM.BYTE_PER_RGBA;
+				linepos+= DRAW.BYTE_PER_RGBA;
 			}
 		}
 		for (var j = 0; j < SUM.heightScale*SUM.widthScale; j++) { // why is this heightScale * widthScale? why can't it just be heightScale??
@@ -544,7 +540,7 @@ SUM.buildRowClassTexture = function() {
 			} else {
 				pos = SUM.drawScatterBarPlotRowClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth);
 			}
-			offset+= height*SUM.BYTE_PER_RGBA;
+			offset+= height*DRAW.BYTE_PER_RGBA;
 		} else {
 			if (!document.getElementById("missingSumRowClassBars")){
 				var x = SUM.canvas.offsetLeft;
@@ -589,7 +585,7 @@ SUM.buildColClassTexture = function() {
 				classBarValues = classBarsData[key].svalues;
 				classBarLength = classBarValues.length;
 			}
-			pos += (SUM.totalWidth)*SUM.colClassPadding*SUM.BYTE_PER_RGBA*SUM.widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
+			pos += (SUM.totalWidth)*SUM.colClassPadding*DRAW.BYTE_PER_RGBA*SUM.widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
 			if (currentClassBar.bar_type === 'color_plot') {
 				pos = SUM.drawColorPlotColClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap);
 			} else {
@@ -845,7 +841,7 @@ SUM.resetBoxCanvas = function() {
 	ctx.strokeStyle="#000000";
 	
 	// If no row or column cuts, draw the heat map border in black
-	if (UTIL.mapHasGaps() === false){
+	if (MMGR.mapHasGaps() === false){
 		ctx.strokeRect(0,0,SUM.boxCanvas.width,SUM.boxCanvas.height);
 	}
 	
@@ -945,7 +941,7 @@ SUM.getScaledHeight = function(height, axis) {
 }
 
 SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap) {
-	var line = new Uint8Array(new ArrayBuffer(classBarLength * SUM.BYTE_PER_RGBA * SUM.widthScale)); // save a copy of the class bar
+	var line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA * SUM.widthScale)); // save a copy of the class bar
 	var loc = 0;
 	for (var k = 0; k < classBarLength; k++) { 
 		var val = classBarValues[k];
@@ -958,7 +954,7 @@ SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues,
 			line[loc + 1] = color['g'];
 			line[loc + 2] = color['b'];
 			line[loc + 3] = color['a'];
-			loc += SUM.BYTE_PER_RGBA;
+			loc += DRAW.BYTE_PER_RGBA;
 		}
 	}
 	for (var j = 0; j < (height-SUM.colClassPadding)*SUM.widthScale; j++){ // draw the class bar into the dataBuffer  ***not 100% sure why the widthscale is used as a factor here, but it works...
@@ -999,7 +995,7 @@ SUM.drawScatterBarPlotColClassBar = function(dataBuffer, pos, height, classBarVa
 							dataBuffer[pos+3] = barBgColor['a'];
 						}
 					}
-					pos+=SUM.BYTE_PER_RGBA;
+					pos+=DRAW.BYTE_PER_RGBA;
 				}
 		}
 	}
@@ -1061,7 +1057,7 @@ SUM.drawRowClassBarLabels = function () {
 		var key = classBarConfigOrder[j];
 		var currentClassBar = classBarsConfig[key];
 		if (currentClassBar.show === 'Y') {
-			var covLabel = UTIL.getLabelText(key,'COL', true);
+			var covLabel = MMGR.getLabelText(key,'COL', true);
 			var covPct = parseInt(currentClassBar.height) / totalHeight;
 			//scaled width of current bar
 			var barWidth = (SUM.rowClassBarWidth*covPct);
@@ -1106,7 +1102,7 @@ SUM.drawColClassBarLabel = function(key, currentClassBar, prevHeight) {
 	//find the first, middle, and last vertical positions for the bar legend being drawn
 	var topPos =  beginClasses+prevHeight;
 	var midPos =  topPos+((currentClassBar.height-15)/2)-1;
-	var midVal = UTIL.getLabelText(key,'ROW', true);
+	var midVal = MMGR.getLabelText(key,'ROW', true);
 	//Create div and place mid legend value
 	SUM.setLabelDivElement(key+"ColLabel",midVal,midPos,leftPos,false);
 }
@@ -1216,9 +1212,9 @@ SUM.drawColorPlotRowClassBar = function(dataBuffer, pos, height, classBarValues,
 				dataBuffer[pos + 1] = color['g'];  
 				dataBuffer[pos + 2] = color['b'];
 				dataBuffer[pos + 3] = color['a'];
-				pos+=SUM.BYTE_PER_RGBA;	// 4 bytes per color
+				pos+=DRAW.BYTE_PER_RGBA;	// 4 bytes per color
 			}
-			pos+=SUM.rowClassPadding*SUM.BYTE_PER_RGBA+(remainingWidth*SUM.BYTE_PER_RGBA);
+			pos+=SUM.rowClassPadding*DRAW.BYTE_PER_RGBA+(remainingWidth*DRAW.BYTE_PER_RGBA);
 		}
 	}
 	return pos;
@@ -1253,10 +1249,10 @@ SUM.drawScatterBarPlotRowClassBar = function(dataBuffer, pos, height, classBarVa
 						dataBuffer[pos+3] = barBgColor['a'];
 					}
 				}
-				pos+=SUM.BYTE_PER_RGBA;
+				pos+=DRAW.BYTE_PER_RGBA;
 			}
 			// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row 
-			pos+=SUM.rowClassPadding*SUM.BYTE_PER_RGBA+(remainingWidth*SUM.BYTE_PER_RGBA);
+			pos+=SUM.rowClassPadding*DRAW.BYTE_PER_RGBA+(remainingWidth*DRAW.BYTE_PER_RGBA);
 		}
 	}
 	return pos;
@@ -1927,7 +1923,7 @@ SUM.drawTopItems = function(){
 		item.axis = axis;
 		item.index = topItemIndex[index];
 		item.className = "topItems";
-		item.innerHTML = UTIL.getLabelText(labels[topItemIndex[index]].split("|")[0],axis);
+		item.innerHTML = MMGR.getLabelText(labels[topItemIndex[index]].split("|")[0],axis);
 		if (!isRow){
 			item.style.transform = "rotate(90deg)";
 		}
@@ -1936,34 +1932,6 @@ SUM.drawTopItems = function(){
 		item.style.left = (isRow ? rowLeft: colCanvas.offsetLeft+ positionArray[topItemIndex[index]]*colCanvas.clientWidth - item.offsetWidth/2) + 'px';
 		return item;
 	}
-}
-
-SUM.setBrowserMinFontSize = function () {
-	  var minSettingFound = 0;
-	  var el = document.createElement('div');
-	  document.body.appendChild(el);
-	  el.innerHTML = "<div><p>a b c d e f g h i j k l m n o p q r s t u v w x y z</p></div>";
-	  el.style.fontSize = '1px';
-	  el.style.width = '64px';
-	  var minimumHeight = el.offsetHeight;
-	  var least = 0;
-	  var most = 64;
-	  var middle; 
-	  for (var i = 0; i < 32; ++i) {
-	    middle = (least + most)/2;
-	    el.style.fontSize = middle + 'px';
-	    if (el.offsetHeight === minimumHeight) {
-	      least = middle;
-	    } else {
-	      most = middle;
-	    }
-	  }
-	  if (middle > 5) {
-		  minSettingFound = middle;
-		  DET.minLabelSize = Math.floor(middle) - 1;
-	  }
-	  document.body.removeChild(el);
-	  return minSettingFound;
 }
 
 SUM.onMouseUpSelRowCanvas = function(evt) {
