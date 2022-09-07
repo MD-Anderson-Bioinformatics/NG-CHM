@@ -1218,25 +1218,27 @@ var linkoutsVersion = 'undefined';
 		const colorMap = heatMap.getColorMapManager().getColorMap("data", SEL.getCurrentDL());
 		const colorThresholds = colorMap.getThresholds();
 		idx = idx === undefined ? [] : Array.isArray(idx) ? idx : [idx];
-		const win = {
-			layer: SEL.getCurrentDL(),
-			level: MMGR.DETAIL_LEVEL,
-			firstRow: 1,
-			firstCol: 1,
-			numRows: isRow ? 1 : heatMap.getNumRows(MMGR.DETAIL_LEVEL),
-			numCols: isRow ? heatMap.getNumColumns(MMGR.DETAIL_LEVEL) : 1
-		};
 		const values = [];
 		const rawValues = [];
 		const rawCounts = [];
-		for (let j= 0; j < win.numRows; j++) {
-			for (let i=0;  i< win.numCols; i++) {
+		let numRows = isRow ? 1 : heatMap.getNumRows(MMGR.DETAIL_LEVEL);
+		let numCols = isRow ? heatMap.getNumColumns(MMGR.DETAIL_LEVEL) : 1;
+		for (let j = 0; j < numRows; j++) {
+			for (let i = 0; i < numCols; i++) {
 				rawValues.push(0.0);
 				rawCounts.push(0);
 			}
 		}
 		let getAccessWindowPromises = []
 		for (let dd = 0; dd < idx.length; dd++) {
+			let win = {
+				layer: SEL.getCurrentDL(),
+				level: MMGR.DETAIL_LEVEL,
+				firstRow: 1,
+				firstCol: 1,
+				numRows: numRows,
+				numCols: numCols
+			};
 			if (isRow) win.firstRow = idx[dd]; else win.firstCol = idx[dd];
 			getAccessWindowPromises.push(heatMap.getAccessWindowPromise(win))
 		}
@@ -1244,12 +1246,12 @@ var linkoutsVersion = 'undefined';
 			Promise.all(getAccessWindowPromises).then(accessWindows => {
 				try {
 					accessWindows.forEach(accessWindow => {
-						for (let j= 0; j < win.numRows; j++) {
-							for (let i=0;  i< win.numCols; i++) {
-								const val = accessWindow.getValue (j + win.firstRow, i + win.firstCol);
+						for (let j = 0; j < accessWindow.win.numRows; j++) {
+							for (let i = 0; i < accessWindow.win.numCols; i++) {
+								const val = accessWindow.getValue(j + accessWindow.win.firstRow, i + accessWindow.win.firstCol);
 								if (!isNaN(val) && val > MMGR.minValues && val < MMGR.maxValues) {
-									rawValues[j*win.numCols+i] += val;
-									rawCounts[j*win.numCols+i] ++;
+									rawValues[j*accessWindow.win.numCols+i] += val;
+									rawCounts[j*accessWindow.win.numCols+i] ++;
 								}
 							}
 						}
