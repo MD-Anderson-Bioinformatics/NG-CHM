@@ -124,19 +124,7 @@ public class NGCHM_Widgetizer {
     				isScript = false;
     			} else if (isScript) { 
        				//Write out embedded Javascript from chm.html
-				if (false && line.contains("window.onload")) {
-    					line = br.readLine();
-        				scriptedLines.append(line + "\n");
-    					line = br.readLine();
-        				scriptedLines.append(line + "\n");
-        				line = br.readLine();
-    					line = br.readLine();
-    					line = br.readLine();
-    					line = br.readLine();
-					lineNumber += 6;
-     				} else {
-        				scriptedLines.append(line + "\n");
-     				}
+				scriptedLines.append(line + "\n");
         			//For css file - convert it into a string and use javascript to add it to the html document 
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
