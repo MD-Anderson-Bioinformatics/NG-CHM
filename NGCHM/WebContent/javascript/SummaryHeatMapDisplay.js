@@ -867,10 +867,10 @@ SUM.resetBoxCanvas = function() {
 		    var summaryRatio = heatMap.getColSummaryRatio(MMGR.SUMMARY_LEVEL);
 		    var adjustedStart = primaryMap.selectedStart*SUM.widthScale / summaryRatio;
 		    var adjustedStop = primaryMap.selectedStop*SUM.widthScale / summaryRatio;
-		    boxX = 0;
-		    boxY = 0;
-		    boxW = (((adjustedStart - SUM.widthScale) / SUM.canvas.width) * SUM.boxCanvas.width);
-		    boxH = SUM.boxCanvas.height-boxY;
+		    let boxX = 0;
+		    let boxY = 0;
+		    let boxW = (((adjustedStart - SUM.widthScale) / SUM.canvas.width) * SUM.boxCanvas.width);
+		    let boxH = SUM.boxCanvas.height-boxY;
 		    ctx.fillRect(boxX,boxY,boxW,boxH); 
 		    boxX = ((adjustedStop / SUM.canvas.width) * SUM.boxCanvas.width);
 		    boxW = (((SUM.canvas.width-adjustedStop)+1*SUM.widthScale) / SUM.canvas.width) * SUM.boxCanvas.width;
@@ -879,13 +879,13 @@ SUM.resetBoxCanvas = function() {
 		    var summaryRatio = heatMap.getRowSummaryRatio(MMGR.SUMMARY_LEVEL);
 		    var adjustedStart = primaryMap.selectedStart*SUM.heightScale / summaryRatio;
 		    var adjustedStop = primaryMap.selectedStop*SUM.heightScale / summaryRatio;
-		    boxX = 0;
-		    boxY = 0;
-		    var boxW = SUM.boxCanvas.width-boxX;
-		    var boxH = (((adjustedStart-SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height);
+		    let boxX = 0;
+		    let boxY = 0;
+		    let boxW = SUM.boxCanvas.width-boxX;
+		    let boxH = (((adjustedStart-SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height);
 		    ctx.fillRect(boxX,boxY,boxW,boxH); 
-		    var boxY = ((adjustedStop/SUM.canvas.height) * SUM.boxCanvas.height);
-		    var boxH = (((SUM.canvas.height-adjustedStop)+1*SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height;
+		    boxY = ((adjustedStop/SUM.canvas.height) * SUM.boxCanvas.height);
+		    boxH = (((SUM.canvas.height-adjustedStop)+1*SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height;
 		    ctx.fillRect(boxX,boxY,boxW,boxH); 
 	    }
 	}
