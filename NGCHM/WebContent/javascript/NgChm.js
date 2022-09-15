@@ -6,6 +6,7 @@ const NgChm = {};
 
     const debug = false;
     const log = [];
+    const definedNamespaces = [];
 
     // Function: exportToNS
     // This function is called from other JS files to define their individual namespaces.
@@ -17,6 +18,7 @@ const NgChm = {};
     NgChm['markFile'] = () => {};  // No-op in compiled code. Dev mode version defined below.
     
     var lastFile = 'n/a';
+    var importsBeforeDefinition = 0;
 
     function importNS (namespace) {
 	return getNS (namespace, 'import');
@@ -61,6 +63,17 @@ const NgChm = {};
 	if (debug) {
 	    trace.splice(1,1);
 	    console.log (trace.join(''));
+	}
+	if (op === 'export') {
+	    if (definedNamespaces.indexOf(namespace) < 0) {
+		definedNamespaces.push(namespace);
+	    }
+	}
+	if (op == 'import') {
+	    if (definedNamespaces.indexOf(namespace) < 0) {
+		importsBeforeDefinition++;
+		console.log ('Namespace imported before definition #' + importsBeforeDefinition + ': ' + namespace + ' in ' + lastFile);
+	    }
 	}
 	// END EXCLUDE
 
