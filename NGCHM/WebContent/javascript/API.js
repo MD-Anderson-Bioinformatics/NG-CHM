@@ -38,7 +38,8 @@
     });
 
     // Also add the deprecated API functions to UTIL module for the time being.
-    NgChm.exportToNS ('NgChm.UTIL', exports);
+    // Use Object.assign instead of exportToNS to avoid the module graph.
+    Object.assign (UTIL, exports);
 
     /**********************************************************************************
      * FUNCTION - downloadSummaryPng: This function downloads a PNG image of the
