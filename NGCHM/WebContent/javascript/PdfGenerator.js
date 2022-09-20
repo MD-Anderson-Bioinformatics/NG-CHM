@@ -1592,10 +1592,10 @@ document.getElementById('pdfInputFont').onchange = function (event) {
 document.getElementById('prefCancel_btn').onclick = function (event) {
     PDF.pdfCancelButton();
 };
-document.getElementById('prefCreate_btn').onlick = function (event) {
+document.getElementById('prefCreate_btn').onclick = function (event) {
     PDF.callViewerHeatmapPDF();
 };
-document.getElementById('menuPdf').onlick = function (event) {
+document.getElementById('menuPdf').onclick = function (event) {
     PDF.openPdfPrefs(event.target, null);
 };
 
