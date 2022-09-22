@@ -552,7 +552,7 @@ DET.getNearestBoxHeight = function (mapItem, sizeToGet) {
  **********************************************************************************/
 DET.scaleViewWidth = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
-	scale = Math.max(Math.floor(500/heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)), 1)
+	const scale = Math.max(Math.floor(500/heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)), 1)
 	mapItem.dataViewWidth=(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
 	DET.setDetailDataWidth(mapItem, scale);
 }
@@ -564,7 +564,7 @@ DET.scaleViewWidth = function (mapItem) {
  **********************************************************************************/
 DET.scaleViewHeight = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
-	scale = Math.max(Math.floor(500/heatMap.getNumRows(MMGR.SUMMARY_LEVEL)), 1)
+	const scale = Math.max(Math.floor(500/heatMap.getNumRows(MMGR.SUMMARY_LEVEL)), 1)
 	mapItem.dataViewHeight= (heatMap.getNumRows(MMGR.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
 	DET.setDetailDataHeight(mapItem, scale);
 }
