@@ -545,6 +545,7 @@ DDR.SummaryDendrogram = function(config, data, numLeaves) {
 	this.clearRibbonMode = function() {
 		this.ribbonModeBar = -1;
 		if (DMM.primaryMap) {
+		    DMM.primaryMap.subDendroMode = 'none';
 		    DMM.primaryMap.selectedStart = 0;
 		    DMM.primaryMap.selectedStop = 0;
 		}
@@ -563,6 +564,8 @@ DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			// Clear any previous ribbon mode on either axis.
 			SUM.rowDendro.clearRibbonMode();
 			SUM.colDendro.clearRibbonMode();
+
+			if (DMM.primaryMap) DMM.primaryMap.subDendroMode = this.axis;
 
 			this.clearSelectionMarks();
 			SRCH.clearSearchItems(this.axis);

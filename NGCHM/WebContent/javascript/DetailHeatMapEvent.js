@@ -947,9 +947,9 @@ DEV.detailFullMap = function (mapItem) {
 	
 	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more 
 	//than 1 pixel, scale calculates the appropriate height/width.
-	if (DDR.subDendroView === 'column') {
+	if (mapItem.subDendroMode === 'Column') {
 	    DET.scaleViewHeight(mapItem);
-	} else if (DDR.subDendroView === 'row') {
+	} else if (mapItem.subDendroMode === 'Row') {
 	    DET.scaleViewWidth(mapItem);
 	} else {
 	    SEL.setMode(mapItem, 'FULL_MAP');
