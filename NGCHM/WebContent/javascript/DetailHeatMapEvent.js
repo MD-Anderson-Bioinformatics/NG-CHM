@@ -768,7 +768,19 @@ DEV.detailDataZoomIn = function (mapItem) {
 			DEV.detailNormal (mapItem);
 		} else {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
-			if (current < DET.zoomBoxSizes.length - 1) {
+			if (current == -1) {
+			    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
+			    const heatMap = MMGR.getHeatMap();
+			    mapItem.dataBoxHeight = DET.zoomBoxSizes[0];
+			    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
+			    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= heatMap.getNumRows(MMGR.DETAIL_LEVEL)) {
+				DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
+			    }
+			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+			    mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+
+			    DET.detInitGl(mapItem);
+			} else if (current < DET.zoomBoxSizes.length - 1) {
 				DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current+1]);
 			}
 			SEL.updateSelection(mapItem, false);
@@ -786,8 +798,20 @@ DEV.detailDataZoomIn = function (mapItem) {
 			DEV.detailNormal (mapItem);
 		} else {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
-			if (current < DET.zoomBoxSizes.length - 1) {
-				DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[current+1]);
+			if (current == -1) {
+			    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
+			    const heatMap = MMGR.getHeatMap();
+			    mapItem.dataBoxWidth = DET.zoomBoxSizes[0];
+			    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
+			    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) {
+				DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
+			    }
+			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+			    mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+
+			    DET.detInitGl(mapItem);
+			} else if (current < DET.zoomBoxSizes.length - 1) {
+			    DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[current+1]);
 			}
 			SEL.updateSelection(mapItem, false);
 		}
@@ -947,9 +971,9 @@ DEV.detailFullMap = function (mapItem) {
 	
 	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more 
 	//than 1 pixel, scale calculates the appropriate height/width.
-	if (DDR.subDendroView === 'column') {
+	if (mapItem.subDendroMode === 'Column') {
 	    DET.scaleViewHeight(mapItem);
-	} else if (DDR.subDendroView === 'row') {
+	} else if (mapItem.subDendroMode === 'Row') {
 	    DET.scaleViewWidth(mapItem);
 	} else {
 	    SEL.setMode(mapItem, 'FULL_MAP');
