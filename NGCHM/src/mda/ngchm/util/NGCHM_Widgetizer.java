@@ -103,7 +103,6 @@ public class NGCHM_Widgetizer {
     		}
 		
 		StringBuffer cssLines = new StringBuffer();
-    		StringBuffer scriptedLines = new StringBuffer();
     		BufferedReader br = new BufferedReader(new FileReader(args[0] + "/chm.html" ));
 		BufferedWriter bw = new BufferedWriter(new FileWriter(args[1]));
     		String mode = args[2];
@@ -116,30 +115,14 @@ public class NGCHM_Widgetizer {
     		while (line != null) {
 			if (line.contains("text/Javascript")) {
     				//Beginning of embedded Javascript in chm.html
-    				scriptedLines.append("/* BEGIN chm.html Javascript: */\n");
     				isScript = true;
 			} else if (isScript && line.contains("</script>")) {
     				//End of embedded Javascript in chm.html
-    				scriptedLines.append("/* END chm.html Javascript: */\n\n");
     				isScript = false;
     			} else if (isScript) { 
-       				//Write out embedded Javascript from chm.html
-    				if (line.contains("window.onload")) {
-    					line = br.readLine();
-        				scriptedLines.append(line + "\n");
-    					line = br.readLine();
-        				scriptedLines.append(line + "\n");
-        				line = br.readLine();
-    					line = br.readLine();
-    					line = br.readLine();
-    					line = br.readLine();
-					lineNumber += 6;
-     				} else {
-        				scriptedLines.append(line + "\n");
-     				}
-        			//For css file - convert it into a string and use javascript to add it to the html document 
+				//Ignore embedded Javascript in chm.html
     			}  else if (line.contains("<link rel=\"stylesheet")) {
-       				//Write out css to be added into Javascript file later
+				//For css file - convert it into a string and use javascript to add it to the html document
 				String cssFile = CompilerUtilities.getCSSFileName (line);
 				cssLines.append("(function() { var css = document.createElement(\"style\");\ncss.type = \"text/css\";\n");
 				cssLines.append("css.innerText = \"" + styleToString(args[0], cssFile) + "\";\ndocument.head.appendChild(css);\n");
@@ -223,7 +206,6 @@ public class NGCHM_Widgetizer {
 		bw.write("var ngChmWidgetMode = '" + mode + "';\n");
 		copyToFile (args[0] + "javascript/ngchm-min.js", bw);
     		bw.write("document.body.addEventListener('click', NgChm.UHM.closeMenu,true);\n");
-    		bw.write(scriptedLines.toString());
 
 		// Close output file.
     		bw.close();

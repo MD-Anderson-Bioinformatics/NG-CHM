@@ -17,7 +17,7 @@
     const DMM = NgChm.importNS('NgChm.DMM');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const CUST = NgChm.importNS('NgChm.CUST');
-    const PDF = NgChm.importNS('NgChm.PDF');
+    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
     const COMPAT = NgChm.importNS('NgChm.CM');
 
     UHM.postMapDetails = false;	// Should we post map details to an enclosing document?
@@ -28,11 +28,6 @@
 //
 (function () {
     let uiElement;
-
-    const barMenu = document.getElementById('barMenu_btn');
-    barMenu.onclick = (ev) => {
-	UHM.openMenu(ev.target);
-    };
 
     const aboutMenu = document.getElementById('aboutMenu_btn');
     aboutMenu.onclick = (ev) => {
@@ -477,7 +472,7 @@ UHM.userHelpOpen = function(mapItem) {
     } else {  
     	// on the blank area in the top left corner
     }
-    UTIL.redrawCanvases();
+    UIMGR.redrawCanvases();
 }
 
 /**********************************************************************************
@@ -889,7 +884,7 @@ UHM.invalidFileFormat = function() {
  **********************************************************************************/
 UHM.initMessageBox = function() {
 	var msgBox = document.getElementById('msgBox');
-	UTIL.UI.hideLoader();
+	UTIL.hideLoader();
 	
 	document.getElementById('msgBox').style.display = 'none';
 	document.getElementById('msgBoxBtnImg_1').style.display = 'none';
@@ -903,7 +898,7 @@ UHM.initMessageBox = function() {
 	var msgButton = document.getElementById('messageOpen_btn');
     msgButton.style.display = 'none'; 
     if (SUM.texHmProgram !== undefined) {
-        UTIL.redrawCanvases();
+        UIMGR.redrawCanvases();
     }
 }
 
@@ -949,37 +944,7 @@ UHM.openHelp = function() {
 		var url = location.origin+location.pathname;
 		window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
 	}
-    UTIL.redrawCanvases();
-}
-
-UHM.openMenu = function(e) {
-	var menu = document.getElementById('burgerMenuPanel');
-	var parent = menu.parentElement;
-	var parentTop = parent.offsetTop+50;
-	menu.style.top = parentTop + 'px';
-	if (menu.style.display === 'none') {
-		menu.style.display = '';
-		if (MMGR.source !== MMGR.WEB_SOURCE) {
-			document.getElementById('menuAbout').style.display = 'none';
-			document.getElementById('menuSpaceAbout').style.display = 'none';
-		}
-		// Disable Save as PDF menu item if no heatmap window visble.
-		const pdfMenuItem = document.getElementById('menuPdf');
-		if (PDF.canGeneratePdf()) {
-			pdfMenuItem.classList.remove('disabled');
-		} else {
-			pdfMenuItem.classList.add('disabled');
-		}
-		// Disabled Save Thumbnail menu if summary heatmap not visble.
-		if (SUM.isVisible()) {
-			document.getElementById('menuPng').classList.remove('disabled');
-		} else {
-			document.getElementById('menuPng').classList.add('disabled');
-		}
-	} else {
-		menu.style.display = 'none';
-    }
-    UTIL.redrawCanvases();
+    UIMGR.redrawCanvases();
 }
 
 UHM.closeMenu = function() {
@@ -1048,7 +1013,7 @@ UHM.displayStartupWarnings = function() {
 	UHM.setMessageBoxText(warningText);
 	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
-    UTIL.redrawCanvases();
+    UIMGR.redrawCanvases();
 }
 
 /*===========================================================
@@ -1068,7 +1033,7 @@ UHM.openLinkoutHelp = function() {
 	var mapLinksTbl = UHM.openMapLinkoutsHelp();
 	var allLinksTbl = UHM.openAllLinkoutsHelp();
 	UHM.linkoutHelp(mapLinksTbl,allLinksTbl);
-    UTIL.redrawCanvases();
+    UIMGR.redrawCanvases();
 }
 
 /**********************************************************************************
@@ -1258,7 +1223,7 @@ UHM.linkoutHelp = function(mapLinksTbl, allLinksTbl) {
 	var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
 	var pluginCtr = allLinksTbl.rows.length;
 	var headerpanel = document.getElementById('mdaServiceHeader');
-	UTIL.UI.hideLoader();
+	UTIL.hideLoader();
 	linkBox.classList.add ('hide');
 	linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 	linkBox.style.right = "5%";

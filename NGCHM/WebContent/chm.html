@@ -405,24 +405,19 @@
 		<script src="javascript/CompatibilityManager.js"></script>
 		<script src="javascript/SearchManager.js"></script>
 		<script src="javascript/RecreatePanes.js"></script>
+		<script src="javascript/UI-Manager.js"></script>
 		<!-- NEW CHUNK -->
 		<script src="javascript/lib/intro.min.js"></script>
 		<script src="javascript/Tour.js"></script>
+		<script src="javascript/API.js"></script>
 		<!-- NEW CHUNK -->
 		<script src="javascript/lib/jstat.min.js"></script>
 		<script src="javascript/use_jstat.js"></script>
 		<!-- NEW CHUNK -->
 		<script src="javascript/lib/jspdf.min.js"></script> <!--PRESERVE-->
 		<script type="text/Javascript">
-			NgChm.heatMap = null;  //global - heatmap object.
-			NgChm.UTIL.containerElement = document.getElementById('ngChmContainer');
-			window.onload = function() {
-				// Line intentionally left blank
-				// Line intentionally left blank
-				NgChm.UTIL.onLoadCHM();
-				// Line intentionally left blank
-				// Line intentionally left blank
-			};
+			// Note: inline javascript is removed by the Widgetizer.
+			NgChm.importNS('NgChm.UI-Manager').onLoadCHM();
 		</script>
 	</body>
 </html>

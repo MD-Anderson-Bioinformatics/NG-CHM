@@ -16,6 +16,7 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
     const CMM = NgChm.importNS('NgChm.CMM');
+    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
     const COMPAT = NgChm.importNS('NgChm.CM');
 
 // Define action handlers for static UPM UI elements.
@@ -182,7 +183,7 @@ UPM.editPreferences = function(e,errorMsg) {
 	errorMsg = null;
 	prefspanel.style.display= '';	
 	UPM.locatePrefsPanel();
-	UTIL.redrawCanvases();
+	UIMGR.redrawCanvases();
 }
 
 /**********************************************************************************

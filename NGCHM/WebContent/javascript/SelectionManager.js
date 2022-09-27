@@ -14,6 +14,8 @@
     const SEL = NgChm.createNS('NgChm.SEL');
 
     const MMGR = NgChm.importNS('NgChm.MMGR');
+
+    // Needed only for updateSelection.
     const SUM = NgChm.importNS('NgChm.SUM');
     const DET = NgChm.importNS('NgChm.DET');
     const DMM = NgChm.importNS('NgChm.DMM');
@@ -61,7 +63,7 @@ SEL.setSelectionColors = function () {
 /*********************************************************************************************
  * FUNCTION:  updateSelection - The purpose of this function is to set the state of a given
  * detail heat map panel.  This function is called when the selected row / column is changed.
- * It is assumed that the caller modified currentRow, currentCol, dataPerRow, and dataPerCol 
+ * It is assumed that the caller modified currentRow, currentCol, dataPerRow, and dataPerCol
  * as desired. This method does redrawing and notification as necessary.
  *********************************************************************************************/
 SEL.updateSelection = function (mapItem,noResize) {
@@ -69,7 +71,7 @@ SEL.updateSelection = function (mapItem,noResize) {
     SUM.drawLeftCanvasBox();
     MMGR.getHeatMap().setReadWindow(SEL.getLevelFromMode(mapItem, MMGR.DETAIL_LEVEL),SEL.getCurrentDetRow(mapItem),SEL.getCurrentDetCol(mapItem),SEL.getCurrentDetDataPerCol(mapItem),SEL.getCurrentDetDataPerRow(mapItem));
     DET.setDrawDetailTimeout (mapItem, DET.redrawSelectionTimeout,noResize);
-}
+};
 
 /*********************************************************************************************
  * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection
@@ -84,7 +86,8 @@ SEL.updateSelections = function (noResize) {
 		}
 	}
 	MMGR.getHeatMap().setUnAppliedChanges(true);
-}
+};
+
 
 /**********************************************************************************
  * FUNCTION - getLevelFromMode: This function returns the level that is associated
