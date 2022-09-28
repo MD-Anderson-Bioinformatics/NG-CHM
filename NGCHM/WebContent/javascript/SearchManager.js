@@ -884,17 +884,17 @@
 	if (currentSearchItem.axis == "Row") {
 		mapItem.currentRow = currentSearchItem.index;
 		if ((mapItem.mode == 'RIBBONV') && mapItem.selectedStart!= 0 && (mapItem.currentRow < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentRow)){
-			UHM.showSearchError(1);
+			showSearchError(1);
 		} else if (mapItem.mode == 'RIBBONV' && mapItem.selectedStart == 0){
-			UHM.showSearchError(2);
+			showSearchError(2);
 		} 
 		SEL.checkRow(mapItem);
 	} else if (currentSearchItem.axis == "Column"){
 		mapItem.currentCol = currentSearchItem.index;
 		if ((mapItem.mode == 'RIBBONH') && mapItem.selectedStart!= 0 && (mapItem.currentCol < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentCol )){
-			UHM.showSearchError(1)
+			showSearchError(1)
 		} else if (mapItem.mode == 'RIBBONH' && mapItem.selectedStart == 0){
-			UHM.showSearchError(2);
+			showSearchError(2);
 		} 
 		SEL.checkCol(mapItem);
 	}
@@ -1066,6 +1066,25 @@
         const rowCount = SRCH.getAxisSearchResults("Row").length;
         const colCount = SRCH.getAxisSearchResults("Column").length;
 	return [ rowCount, colCount, rowCount+colCount ];
+    }
+
+    function showSearchError (type) {
+	    var searchError = UHM.getDivElement('searchError');
+	    searchError.style.display = 'inherit';
+	    var searchBar = document.getElementById('search_text');
+	    searchError.style.top = (searchBar.offsetTop + searchBar.offsetHeight) + 'px';
+	    searchError.style.left = (searchBar.offsetLeft + searchBar.offsetWidth) + 'px';
+	    const searchItem = SRCH.getCurrentSearchItem();
+	    switch (type){
+		    case 0: searchError.innerHTML = "No matching labels found"; break;
+		    case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + searchItem.label;break;
+		    case 2: searchError.innerHTML = "All " + searchItem.axis +  " items are visible. Change the view mode to see " + searchItem.label;break;
+	    }
+	    UHM.hlpC();
+	    document.body.appendChild(searchError);
+	    setTimeout(function(){
+		    searchError.remove();
+	    }, 2000);
     }
 
 /***********************************************************

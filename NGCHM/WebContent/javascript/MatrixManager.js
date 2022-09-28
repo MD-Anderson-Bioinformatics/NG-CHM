@@ -27,10 +27,8 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
     const DET = NgChm.importNS('NgChm.DET');
-    const DEV = NgChm.importNS('NgChm.DEV');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const COMPAT = NgChm.importNS('NgChm.CM');
-    const CUST = NgChm.importNS('NgChm.CUST');
 
 //For web-based NGCHMs, we will create a Worker process to overlap I/O and computation.
 MMGR.webLoader = null;
@@ -677,7 +675,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		UHM.initMessageBox();
 		if (fileSrc === MMGR.WEB_SOURCE) {
 			success = zipMapProperties(JSON.stringify(mapConfig)); 
-			UHM.zipSaveNotification(false);
+			zipSaveNotification(false);
 		} else {
 			let waitForPluginDataCount = 0;
 			let awaitingPluginData = setInterval(function() {
@@ -688,7 +686,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					clearInterval(awaitingPluginData);
 				}
 			}, 1000);
-			UHM.zipSaveNotification(false);
+			zipSaveNotification(false);
 		}
 		MMGR.getHeatMap().setUnAppliedChanges(false);
 	}
@@ -701,7 +699,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			if (fileSrc !== MMGR.FILE_SOURCE) {
 				success = webSaveMapProperties(JSON.stringify(mapConfig)); 
 			} else if (MMGR.embeddedMapName === null) {
-				UHM.zipSaveNotification(true);
+				zipSaveNotification(true);
 			}
 		}
 		return success;
@@ -1313,8 +1311,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		mapConfig = mc;
 		sendCallBack(MMGR.Event_JSON);
 
-		CUST.addCustomJS();
-
 		// set the position to (1,1) so that the detail pane loads at the top left corner of the summary.
 		SEL.currentRow = 1;
 		SEL.currentCol = 1;
@@ -1325,7 +1321,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			SEL.currentCol = Number(UTIL.getURLParameter("column"))
 		}
 	        SEL.setSelectionColors();
-		document.addEventListener("keydown", DEV.keyNavigate);
 
 		addDataLayers(mc);
 	}
@@ -1641,7 +1636,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		        	var latestVersion = req.response;
 				// FIXME.
 				if ((latestVersion > COMPAT.version) && (typeof NgChm.galaxy === 'undefined') && (MMGR.embeddedMapName === null) && (fileSrc == MMGR.WEB_SOURCE)) {
-				    UHM.viewerAppVersionExpiredNotification(COMPAT.version, latestVersion);
+				    viewerAppVersionExpiredNotification(COMPAT.version, latestVersion);
 		        	}
 			    } 
 			}
@@ -1836,6 +1831,51 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 	    return text;
     };
 
+    /**********************************************************************************
+     * FUNCTION - zipSaveNotification: This function handles all of the tasks necessary
+     * display a modal window whenever a zip file is being saved. The textId passed in
+     * instructs the code to display either the startup save OR preferences save message.
+     **********************************************************************************/
+    function zipSaveNotification (autoSave) {
+	    var text;
+	    UHM.initMessageBox();
+	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
+	    if (autoSave) {
+		    text = "<br>This NG-CHM archive file contains an out dated heat map configuration that has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>In order to upgrade the NG-CHM and avoid this notice in the future, you will want to replace your original file with the version now being displayed.<br><br>";
+		    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save NG-CHM button", MMGR.getHeatMap().zipSaveNgchm);
+	    } else {
+		    text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>" 
+		    UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", zipAppDownload);
+	    }
+	    UHM.setMessageBoxText(text);
+	    UHM.setMessageBoxButton(3, UTIL.imageTable.cancelSmall, "Cancel button", UHM.messageBoxCancel);
+	    UHM.displayMessageBox();
+    }
+
+    /**********************************************************************************
+     * FUNCTION - zipAppDownload: This function calls the Matrix Manager to initiate
+     * the download of the NG-CHM File Viewer application.
+     **********************************************************************************/
+    function zipAppDownload () {
+	    var dlButton = document.getElementById('msgBoxBtnImg_1');
+	    dlButton.style.display = 'none';
+	    MMGR.getHeatMap().downloadFileApplication();
+    }
+
+    /**********************************************************************************
+     * FUNCTION - viewerAppVersionExpiredNotification: This function handles all of the tasks
+     * necessary display a modal window whenever a user's version of the file application
+     * has been superceded and a new version of the file application should be downloaded.
+     **********************************************************************************/
+    function viewerAppVersionExpiredNotification (oldVersion, newVersion) {
+	    UHM.initMessageBox();
+	    UHM.setMessageBoxHeader("New NG-CHM File Viewer Version Available");
+	    UHM.setMessageBoxText("<br>The version of the NG-CHM File Viewer application that you are running ("+oldVersion+") has been superceded by a newer version ("+newVersion+"). You will be able to view all pre-existing heat maps with this new backward-compatible version. However, you may wish to download the latest version of the viewer.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>");
+	    UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", zipAppDownload);
+	    UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Cancel button", UHM.messageBoxCancel);
+	    UHM.displayMessageBox();
+    }
+
 /**********************************************************************************
  * Perform Early Initializations.
  *
@@ -1846,5 +1886,11 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 if (MMGR.embeddedMapName === null && (UTIL.mapId !== '' || UTIL.mapNameRef !== '')) {
 	MMGR.createWebLoader(MMGR.WEB_SOURCE);
 }
+
+// Special tooltip with content populated from the loaded heat map.
+document.getElementById('mapName').addEventListener('mouseover', (ev) => {
+    const heatMap = MMGR.getHeatMap();
+    UHM.hlp(ev.target,"Map Name: " + (heatMap !== null ? heatMap.getMapInformation().name : "Not yet available") + "<br><br>Description: " + (heatMap !== null ? heatMap.getMapInformation().description : "N/A"),350);
+}, { passive: true });
 
 })();
