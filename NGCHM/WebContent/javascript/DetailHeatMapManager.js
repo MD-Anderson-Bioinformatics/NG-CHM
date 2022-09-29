@@ -13,6 +13,7 @@
     const DEV = NgChm.importNS('NgChm.DEV');
     const DETDDR = NgChm.importNS('NgChm.DETDDR');
     const PANE = NgChm.importNS('NgChm.Pane');
+    const PIM = NgChm.importNS('NgChm.PIM');
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
@@ -124,7 +125,7 @@ DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
 		SUM.clearAxisSelectionMarks(axis);
 		SUM.drawAxisSelectionMarks(axis);
 		SUM.drawTopItems();
-		LNK.postSelectionToLinkouts(axis, clickType, 0, null);
+		PIM.postSelectionToPlugins(axis, clickType, 0, null);
 	    },
 	};
 	const labelCallbacks = {

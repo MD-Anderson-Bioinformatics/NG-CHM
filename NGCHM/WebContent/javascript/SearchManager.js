@@ -9,10 +9,10 @@
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const SUM = NgChm.importNS('NgChm.SUM');
-    const LNK = NgChm.importNS('NgChm.LNK');
     const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
     const UHM = NgChm.importNS('NgChm.UHM');
+    const PIM = NgChm.importNS('NgChm.PIM');
 
     SRCH.clearCurrentSearchItem = function() {
 	SRCHSTATE.clearCurrentSearchItem();
@@ -89,8 +89,8 @@
      * all selections (both row and column) to linkouts.
      ***********************************************************************************/
     SRCH.updateLinkoutSelections = function () {
-	LNK.postSelectionToLinkouts("column", "standardClick");
-	LNK.postSelectionToLinkouts("row", "standardClick");
+	PIM.postSelectionToPlugins("column", "standardClick");
+	PIM.postSelectionToPlugins("row", "standardClick");
     };
 
     /**********************************************************************************

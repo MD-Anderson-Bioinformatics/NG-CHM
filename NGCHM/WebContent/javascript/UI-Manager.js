@@ -21,6 +21,7 @@
     const DVW = NgChm.importNS('NgChm.DVW');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const PANE = NgChm.importNS('NgChm.Pane');
+    const PIM = NgChm.importNS('NgChm.PIM');
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const DRAW = NgChm.importNS('NgChm.DRAW');
@@ -33,7 +34,7 @@
     */
     function saveHeatMapToNgchm () {
 	    const heatMap = MMGR.getHeatMap();
-	    LNK.requestDataFromPlugins();
+	    PIM.requestDataFromPlugins();
 	    var success = true;
 	    UHM.initMessageBox();
 	    if (MMGR.source === MMGR.WEB_SOURCE) {
@@ -43,9 +44,9 @@
 		    let waitForPluginDataCount = 0;
 		    let awaitingPluginData = setInterval(function() {
 			    waitForPluginDataCount = waitForPluginDataCount + 1; // only wait so long
-			    if (LNK.havePluginData() || waitForPluginDataCount > 3) {
+			    if (PIM.havePluginData() || waitForPluginDataCount > 3) {
 				    clearInterval(awaitingPluginData);
-				    LNK.warnAboutMissingPluginData();
+				    PIM.warnAboutMissingPluginData();
 				    heatMap.zipSaveMapProperties(addSaveStateToMapConfig());
 			    }
 		    }, 1000);
@@ -1169,7 +1170,7 @@
 	    SUM.redrawSelectionMarks();
 	    DET.updateSelections();
 	    SRCH.showSearchResults();
-	    LNK.postSelectionToLinkouts (axis, msg.selection.clickType, 0, msg.nonce);
+	    PIM.postSelectionToPlugins (axis, msg.selection.clickType, 0, msg.nonce);
 	});
 
 	/*

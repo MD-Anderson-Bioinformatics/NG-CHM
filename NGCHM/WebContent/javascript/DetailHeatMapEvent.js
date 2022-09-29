@@ -18,6 +18,7 @@
     const LNK = NgChm.importNS('NgChm.LNK');
     const DRAW = NgChm.importNS('NgChm.DRAW');
     const PANE = NgChm.importNS('NgChm.Pane');
+    const PIM = NgChm.importNS('NgChm.PIM');
 
     var mouseEventActive = false;
     var mouseDown = false;
@@ -1007,7 +1008,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	}
 	const clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
 	const lastClickedIndex = (typeof index == 'undefined') ? focusIndex : index;
-	LNK.postSelectionToLinkouts(this.dataset.axis, clickType, index, null);
+	PIM.postSelectionToPlugins(this.dataset.axis, clickType, index, null);
 	const searchElement = document.getElementById('search_text');
 	searchElement.value = "";
 	document.getElementById('prev_btn').style.display='';
