@@ -5,6 +5,7 @@
     //Define Namespace for NgChm Events
     const DEV = NgChm.createNS('NgChm.DEV');
 
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const DMM = NgChm.importNS('NgChm.DMM');
     const DET = NgChm.importNS('NgChm.DET');
     const UTIL = NgChm.importNS('NgChm.UTIL');
@@ -183,10 +184,10 @@ DEV.userHelpOpen = function(mapItem) {
 	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
 	if ((row <= heatMap.getNumRows('d')) && (col <= heatMap.getNumColumns('d'))) {
 		// Gather the information about the current pixel.
-		let matrixValue = heatMap.getValue(MMGR.DETAIL_LEVEL,row,col);
-		if (matrixValue >= MMGR.maxValues) {
+		let matrixValue = heatMap.getValue(MAPREP.DETAIL_LEVEL,row,col);
+		if (matrixValue >= MAPREP.maxValues) {
 		    matrixValue = "Missing Value";
-		} else if (matrixValue <= MMGR.minValues) {
+		} else if (matrixValue <= MAPREP.minValues) {
 		    return; // A gap.
 		} else {
 		    matrixValue = matrixValue.toFixed(5);
@@ -1075,7 +1076,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			    const heatMap = MMGR.getHeatMap();
 			    mapItem.dataBoxHeight = DET.zoomBoxSizes[0];
 			    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-			    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= heatMap.getNumRows(MMGR.DETAIL_LEVEL)) {
+			    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
 				DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 			    }
 			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
@@ -1105,7 +1106,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			    const heatMap = MMGR.getHeatMap();
 			    mapItem.dataBoxWidth = DET.zoomBoxSizes[0];
 			    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
-			    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) {
+			    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
 				DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 			    }
 			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
@@ -1139,15 +1140,15 @@ DEV.detailDataZoomOut = function (chm) {
 	if (mapItem.mode == 'NORMAL') {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MMGR.DETAIL_LEVEL)) &&
-		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL))){
+		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) &&
+		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))){
 			DET.setDetailDataSize (mapItem,DET.zoomBoxSizes[current-1]);
 			SEL.updateSelection(mapItem);
 		} else {
 			//If we can't zoom out anymore see if ribbon mode would show more of the map or , switch to full map view.
-			if ((current > 0) && (heatMap.getNumRows(MMGR.DETAIL_LEVEL) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) ) {
+			if ((current > 0) && (heatMap.getNumRows(MAPREP.DETAIL_LEVEL) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) ) {
 				DEV.detailVRibbonButton(mapItem);
-			} else if ((current > 0) && (heatMap.getNumRows(MMGR.DETAIL_LEVEL) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) ) {
+			} else if ((current > 0) && (heatMap.getNumRows(MAPREP.DETAIL_LEVEL) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) ) {
 				DEV.detailHRibbonButton(mapItem);
 			} else {
 				DEV.detailFullMap(mapItem);
@@ -1156,7 +1157,7 @@ DEV.detailDataZoomOut = function (chm) {
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MMGR.DETAIL_LEVEL))) {
+		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MAPREP.DETAIL_LEVEL))) {
 			// Additional zoom out in ribbon mode.
 			DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current-1]);
 			SEL.updateSelection(mapItem);
@@ -1167,7 +1168,7 @@ DEV.detailDataZoomOut = function (chm) {
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL))){
+		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))){
 			// Additional zoom out in ribbon mode.
 			DET.setDetailDataWidth (mapItem,DET.zoomBoxSizes[current-1]);
 			SEL.updateSelection(mapItem);
@@ -1230,8 +1231,8 @@ DEV.detailNormal = function (mapItem, restoreInfo) {
 
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
 	    const heatMap = MMGR.getHeatMap();
-	    while ((Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MMGR.DETAIL_LEVEL)) ||
-	       (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL))) {
+	    while ((Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) ||
+	       (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))) {
 		DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 	    }
 	
@@ -1321,11 +1322,11 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	    // If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	    // and data size to 1.
 	    if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewWidth = heatMap.getNumColumns(MMGR.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
+		mapItem.dataViewWidth = heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
 		let ddw = 1;
 		while(2*mapItem.dataViewWidth < 500){ // make the width wider to prevent blurry/big dendros for smaller maps
 			ddw *=2;
-			mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MMGR.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
+			mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
 		}
 		DET.setDetailDataWidth(mapItem,ddw);
 		mapItem.currentCol = 1;
@@ -1351,7 +1352,7 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	    }
 
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MMGR.DETAIL_LEVEL)) {
+	    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
 		DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 	    }
 	}
@@ -1390,11 +1391,11 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
 	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewHeight = heatMap.getNumRows(MMGR.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
+		mapItem.dataViewHeight = heatMap.getNumRows(MAPREP.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
 		let ddh = 1;
 		while(2*mapItem.dataViewHeight < 500){ // make the height taller to prevent blurry/big dendros for smaller maps
 			ddh *=2;
-			mapItem.dataViewHeight = ddh*heatMap.getNumRows(MMGR.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
+			mapItem.dataViewHeight = ddh*heatMap.getNumRows(MAPREP.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
 		}
 		DET.setDetailDataHeight(mapItem,ddh);
 		mapItem.currentRow = 1;
@@ -1405,7 +1406,7 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 			DEV.clearModeHistory (mapItem);
 			SEL.setMode(mapItem, 'RIBBONV_DETAIL');
 		} else {
-			const rvRate = heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+			const rvRate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 			selectionSize = Math.floor(selectionSize / rvRate);			
 		}
 		const height = Math.max(1, Math.floor(500/selectionSize));
@@ -1426,7 +1427,7 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	    }
 	
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) {
+	    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
 		DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 	    }
 	}

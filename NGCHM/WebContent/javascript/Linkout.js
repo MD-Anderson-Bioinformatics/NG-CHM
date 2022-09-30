@@ -20,6 +20,7 @@ var linkoutsVersion = 'undefined';
 
     //Define Namespace for NgChm Linkout
     const LNK = NgChm.createNS('NgChm.LNK');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
 
@@ -325,10 +326,10 @@ var linkoutsVersion = 'undefined';
 		let tilesReady = false;
 		const heatMap = MMGR.getHeatMap();
 		if (SRCH.getAxisSearchResults("Row").length === 0) {
-		    heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MMGR.DETAIL_LEVEL),1,1,heatMap.getNumRows(MMGR.DETAIL_LEVEL),heatMap.getNumColumns(MMGR.DETAIL_LEVEL));
+		    heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
 		} else if (SRCH.getAxisSearchResults("Column").length === 0) {
-		    heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MMGR.DETAIL_LEVEL),1,1,heatMap.getNumRows(MMGR.DETAIL_LEVEL),heatMap.getNumColumns(MMGR.DETAIL_LEVEL));
+		    heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
 		} else {
 			return LNK.createMatrixDataTsv(searchLabels);
@@ -389,9 +390,9 @@ var linkoutsVersion = 'undefined';
 		var dataMatrix = new Array();
 		rowSearchItems.forEach( x => {
 			colSearchItems.forEach( y => {
-				let matrixValue = MMGR.getHeatMap().getValue(MMGR.DETAIL_LEVEL,x,y);
+				let matrixValue = MMGR.getHeatMap().getValue(MAPREP.DETAIL_LEVEL,x,y);
 				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
-				if (matrixValue !== MMGR.minValues-1) {
+				if (matrixValue !== MAPREP.minValues-1) {
 					dataMatrix.push(matrixValue);
 				}
 			});
@@ -1221,8 +1222,8 @@ var linkoutsVersion = 'undefined';
 		const values = [];
 		const rawValues = [];
 		const rawCounts = [];
-		let numRows = isRow ? 1 : heatMap.getNumRows(MMGR.DETAIL_LEVEL);
-		let numCols = isRow ? heatMap.getNumColumns(MMGR.DETAIL_LEVEL) : 1;
+		let numRows = isRow ? 1 : heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
+		let numCols = isRow ? heatMap.getNumColumns(MAPREP.DETAIL_LEVEL) : 1;
 		for (let j = 0; j < numRows; j++) {
 			for (let i = 0; i < numCols; i++) {
 				rawValues.push(0.0);
@@ -1233,7 +1234,7 @@ var linkoutsVersion = 'undefined';
 		for (let dd = 0; dd < idx.length; dd++) {
 			let win = {
 				layer: heatMap.getCurrentDL(),
-				level: MMGR.DETAIL_LEVEL,
+				level: MAPREP.DETAIL_LEVEL,
 				firstRow: 1,
 				firstCol: 1,
 				numRows: numRows,
@@ -1249,7 +1250,7 @@ var linkoutsVersion = 'undefined';
 						for (let j = 0; j < accessWindow.win.numRows; j++) {
 							for (let i = 0; i < accessWindow.win.numCols; i++) {
 								const val = accessWindow.getValue(j + accessWindow.win.firstRow, i + accessWindow.win.firstCol);
-								if (!isNaN(val) && val > MMGR.minValues && val < MMGR.maxValues) {
+								if (!isNaN(val) && val > MAPREP.minValues && val < MAPREP.maxValues) {
 									rawValues[j*accessWindow.win.numCols+i] += val;
 									rawCounts[j*accessWindow.win.numCols+i] ++;
 								}
@@ -1300,11 +1301,11 @@ var linkoutsVersion = 'undefined';
 			// Get access window for each axisIdx (one vector per iteration)
 			const win = {
 				layer: heatMap.getCurrentDL(),
-				level: MMGR.DETAIL_LEVEL,
+				level: MAPREP.DETAIL_LEVEL,
 				firstRow: isRow ? 1+axisIdx[i] : 1,
 				firstCol: isRow ? 1 : 1+axisIdx[i],
-				numRows: isRow ? 1 : heatMap.getNumRows(MMGR.DETAIL_LEVEL),
-				numCols: isRow ? heatMap.getNumColumns(MMGR.DETAIL_LEVEL) : 1
+				numRows: isRow ? 1 : heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
+				numCols: isRow ? heatMap.getNumColumns(MAPREP.DETAIL_LEVEL) : 1
 			};
 			getAccessWindowPromises.push(heatMap.getAccessWindowPromise(win))
 		}

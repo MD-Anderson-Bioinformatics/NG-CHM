@@ -2,12 +2,13 @@
     'use strict';
     NgChm.markFile();
 
-    //Define Namespace for NgChm ColorMapManager
+    // Define Namespace for NgChm ColorMapManager
     const CMM = NgChm.createNS('NgChm.CMM');
 
-    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
 
-CMM.ColorMap = function(colorMapObj) {
+    CMM.ColorMap = function(heatMap, colorMapObj) {
+	this.heatMap = heatMap;
 	var type = colorMapObj["type"];
 	var thresholds;
 	if (type == "quantile"){
@@ -97,11 +98,10 @@ CMM.ColorMap = function(colorMapObj) {
 	this.getColor = function(value){
 		var color;
 	
-		if (value >= MMGR.maxValues || value == "Missing" || isNaN(value)){
+		if (value >= MAPREP.maxValues || value == "Missing" || isNaN(value)){
 			color = rgbaMissingColor;
-		}else if(value <= MMGR.minValues){
-			const heatMap = MMGR.getHeatMap();
-			const dl = heatMap.getDataLayers()[heatMap.getCurrentDL()];
+		}else if(value <= MAPREP.minValues){
+			const dl = this.heatMap.getDataLayers()[heatMap.getCurrentDL()];
 			if (typeof dl.cuts_color !== 'undefined') {
 				color = this.getHexToRgba(dl.cuts_color);
 			} else {
@@ -296,33 +296,25 @@ CMM.darkenHexColorIfNeeded = darkenHexColorIfNeeded;
 
 }
 		
-// All color maps and current color maps are stored here.
-CMM.ColorMapManager = function(mapConfig) {
+    // All color maps and current color maps are stored here.
+    CMM.ColorMapManager = function(heatMap, mapConfig) {
 	
-	var colorMapCollection = [mapConfig.data_configuration.map_information.data_layer,mapConfig.row_configuration.classifications,mapConfig.col_configuration.classifications];
+	this.heatMap = heatMap;
+
+	const colorMapCollection = [mapConfig.data_configuration.map_information.data_layer,mapConfig.row_configuration.classifications,mapConfig.col_configuration.classifications];
 	
 	this.getColorMap = function(type, colorMapName){
-		if (type === "data") {
-			var colorMap = new CMM.ColorMap(colorMapCollection[0][colorMapName].color_map);
-		} else if (type === "row") {
-			var colorMap = new CMM.ColorMap(colorMapCollection[1][colorMapName].color_map);
-		} else {
-			var colorMap = new CMM.ColorMap(colorMapCollection[2][colorMapName].color_map);
-		}
-		return colorMap;
+	    const colorMapIdx = type === "data" ? 0 : type === "row" ? 1 : 2;
+	    const colorMap = new CMM.ColorMap(this.heatMap, colorMapCollection[colorMapIdx][colorMapName].color_map);
+	    return colorMap;
 	};
 	
 	this.setColorMap = function(colorMapName, colorMap, type) {
-		if (type === "row") {
-			var existingColorMap = colorMapCollection[1][colorMapName].color_map;
-		} else if (type === "col") {
-			var existingColorMap = colorMapCollection[2][colorMapName].color_map;
-		} else {
-		    var existingColorMap = colorMapCollection[0][colorMapName].color_map;
-		}
-		existingColorMap.colors = colorMap.getColors();
-		existingColorMap.thresholds = colorMap.getThresholds();
-		existingColorMap.missing = colorMap.getMissingColor();
+	    const colorMapIdx = type === "data" ? 0 : type === "row" ? 1 : 2;
+	    const existingColorMap = colorMapCollection[colorMapIdx][colorMapName].color_map;
+	    existingColorMap.colors = colorMap.getColors();
+	    existingColorMap.thresholds = colorMap.getThresholds();
+	    existingColorMap.missing = colorMap.getMissingColor();
 	};
 }
 })();

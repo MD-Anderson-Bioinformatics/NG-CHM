@@ -4,6 +4,7 @@
 
     const SUM = NgChm.createNS('NgChm.SUM');
 
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const DDR = NgChm.importNS('NgChm.DDR');
     const DET = NgChm.importNS('NgChm.DET');
@@ -101,7 +102,7 @@ SUM.initSummaryDisplay = function() {
 // initialize, new data, etc.  This callback draws the summary heat map.
 SUM.processSummaryMapUpdate = function(event, tile) {
 
-	if (event === MMGR.Event_NEWDATA && tile.level === MMGR.SUMMARY_LEVEL){
+	if (event === MMGR.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL){
 		//Summary tile - wait a bit to see if we get another tile quickly, then draw
 		if (SUM.eventTimer != 0) {
 			//New tile arrived - reset timer
@@ -132,8 +133,8 @@ SUM.initSummaryData = function() {
 		SUM.rowTopItems = heatMap.getRowConfig().top_items.sort();
 	}
 	
-	SUM.matrixWidth = heatMap.getNumColumns(MMGR.SUMMARY_LEVEL);
-	SUM.matrixHeight = heatMap.getNumRows(MMGR.SUMMARY_LEVEL);
+	SUM.matrixWidth = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
+	SUM.matrixHeight = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
 	
 	if (SUM.matrixWidth < SUM.minDimensionSize){
 		SUM.widthScale = Math.max(2,Math.ceil(SUM.minDimensionSize /SUM.matrixWidth));
@@ -474,12 +475,12 @@ SUM.renderSummaryHeatmap = function (renderBuffer) {
 	//Setup texture to draw on canvas.
 	//Needs to go backward because WebGL draws bottom up.
 	SUM.avgValue[currentDl] = 0;
-	for (var i = heatMap.getNumRows(MMGR.SUMMARY_LEVEL); i > 0; i--) {
-		var line = new Array(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)*SUM.widthScale*DRAW.BYTE_PER_RGBA);
+	for (var i = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL); i > 0; i--) {
+		var line = new Array(heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL)*SUM.widthScale*DRAW.BYTE_PER_RGBA);
 		var linepos = 0;
-		for (var j = 1; j <= heatMap.getNumColumns(MMGR.SUMMARY_LEVEL); j++) { // draw the heatmap
-			var val = heatMap.getValue(MMGR.SUMMARY_LEVEL, i, j);
-			if ((val < MMGR.maxValues) && (val > MMGR.minValues)) {
+		for (var j = 1; j <= heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL); j++) { // draw the heatmap
+			var val = heatMap.getValue(MAPREP.SUMMARY_LEVEL, i, j);
+			if ((val < MAPREP.maxValues) && (val > MAPREP.minValues)) {
 				SUM.avgValue[currentDl] += val;
 			}
 			var color = colorMap.getColor(val);
@@ -498,7 +499,7 @@ SUM.renderSummaryHeatmap = function (renderBuffer) {
 			}
 		}
 	}
-	SUM.avgValue[currentDl] = (SUM.avgValue[currentDl] / (heatMap.getNumRows(MMGR.SUMMARY_LEVEL) * heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)));
+	SUM.avgValue[currentDl] = (SUM.avgValue[currentDl] / (heatMap.getNumRows(MAPREP.SUMMARY_LEVEL) * heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL)));
 };
 
 //WebGL code to draw the Summary Heat Map.
@@ -624,8 +625,8 @@ SUM.onMouseDownCanvas = function(evt) {
 		SUM.canvas.style.cursor="crosshair";
 	}
 	const heatMap = MMGR.getHeatMap();
-	SUM.clickStartRow = (sumRow*heatMap.getRowSummaryRatio(MMGR.SUMMARY_LEVEL));
-	SUM.clickStartCol = (sumCol*heatMap.getColSummaryRatio(MMGR.SUMMARY_LEVEL));
+	SUM.clickStartRow = (sumRow*heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL));
+	SUM.clickStartCol = (sumCol*heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL));
 }
 
 SUM.onMouseOut = function(evt) {
@@ -664,16 +665,16 @@ SUM.onMouseUpCanvas = function(evt) {
 		//When doing a shift drag, this block will actually do the selection on mouse up.
 		if (SUM.dragSelect) {
 			const heatMap = MMGR.getHeatMap();
-			var totalRows = heatMap.getNumRows(MMGR.SUMMARY_LEVEL);
-			var totalCols = heatMap.getNumColumns(MMGR.SUMMARY_LEVEL);
+			var totalRows = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
+			var totalCols = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
 			var xPos = SUM.getCanvasX(sumOffsetX);
 			var yPos = SUM.getCanvasY(sumOffsetY);
 			var sumRow = SUM.canvasToMatrixRow(yPos);
 			var sumCol = SUM.canvasToMatrixCol(xPos);
 			if (sumRow > totalRows) {sumRow = totalRows;}
 			if (sumCol > totalCols) {sumCol = totalCols;}
-			var clickEndRow = Math.max(sumRow*heatMap.getRowSummaryRatio(MMGR.SUMMARY_LEVEL),1);
-			var clickEndCol = Math.max(sumCol*heatMap.getColSummaryRatio(MMGR.SUMMARY_LEVEL),0);
+			var clickEndRow = Math.max(sumRow*heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL),1);
+			var clickEndCol = Math.max(sumCol*heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL),0);
 			var startRow = Math.max(Math.min(SUM.clickStartRow,clickEndRow),1);
 			var startCol = Math.max(Math.min(SUM.clickStartCol,clickEndCol)+1,1);
 			var endRow = Math.max(SUM.clickStartRow,clickEndRow);
@@ -760,8 +761,8 @@ SUM.dragMove = function(evt) {
 //a shift drag is happening.  When mouse up occurs, the actual selection will be done.
 SUM.dragSelection = function(evt) {
 	const heatMap = MMGR.getHeatMap();
-	var totalRows = heatMap.getNumRows(MMGR.SUMMARY_LEVEL);
-	var totalCols = heatMap.getNumColumns(MMGR.SUMMARY_LEVEL);
+	var totalRows = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
+	var totalCols = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
 	var sumOffsetX = evt.offsetX;
 	var sumOffsetY = evt.offsetY;
 	if (evt.touches){
@@ -773,8 +774,8 @@ SUM.dragSelection = function(evt) {
 		var sumRow = SUM.canvasToMatrixRow(SUM.getCanvasY(initSumOffsetY));
 		var sumCol = SUM.canvasToMatrixCol(SUM.getCanvasX(initSumOffsetX));
 
-		SUM.clickStartRow = (sumRow*heatMap.getRowSummaryRatio(MMGR.SUMMARY_LEVEL));
-		SUM.clickStartCol = (sumCol*heatMap.getColSummaryRatio(MMGR.SUMMARY_LEVEL));
+		SUM.clickStartRow = (sumRow*heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL));
+		SUM.clickStartCol = (sumCol*heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL));
 	}
 	var xPos = SUM.getCanvasX(sumOffsetX);
 	var yPos = SUM.getCanvasY(sumOffsetY);
@@ -782,8 +783,8 @@ SUM.dragSelection = function(evt) {
 	var sumCol = SUM.canvasToMatrixCol(xPos);
 	if (sumRow > totalRows) {sumRow = totalRows;}
 	if (sumCol > totalCols) {sumCol = totalCols;}
-	var clickEndRow = Math.max(sumRow*heatMap.getRowSummaryRatio(MMGR.SUMMARY_LEVEL),1);
-	var clickEndCol = Math.max(sumCol*heatMap.getColSummaryRatio(MMGR.SUMMARY_LEVEL),0);
+	var clickEndRow = Math.max(sumRow*heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL),1);
+	var clickEndCol = Math.max(sumCol*heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL),0);
 	var startRow = Math.min(SUM.clickStartRow,clickEndRow);
 	var startCol = Math.min(SUM.clickStartCol,clickEndCol)+1;
 	if (startRow < 0 || startCol < 0){
@@ -865,7 +866,7 @@ SUM.resetBoxCanvas = function() {
 
 	    //Draw sub-dendro box
 	    if (primaryMap.mode.startsWith('RIBBONH') && (primaryMap.selectedStart > 0)) {
-		    var summaryRatio = heatMap.getColSummaryRatio(MMGR.SUMMARY_LEVEL);
+		    var summaryRatio = heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
 		    var adjustedStart = primaryMap.selectedStart*SUM.widthScale / summaryRatio;
 		    var adjustedStop = primaryMap.selectedStop*SUM.widthScale / summaryRatio;
 		    let boxX = 0;
@@ -877,7 +878,7 @@ SUM.resetBoxCanvas = function() {
 		    boxW = (((SUM.canvas.width-adjustedStop)+1*SUM.widthScale) / SUM.canvas.width) * SUM.boxCanvas.width;
 		    ctx.fillRect(boxX,boxY,boxW,boxH); 
 	    } else if (primaryMap.mode.startsWith('RIBBONV')  && primaryMap.selectedStart > 0) {
-		    var summaryRatio = heatMap.getRowSummaryRatio(MMGR.SUMMARY_LEVEL);
+		    var summaryRatio = heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
 		    var adjustedStart = primaryMap.selectedStart*SUM.heightScale / summaryRatio;
 		    var adjustedStop = primaryMap.selectedStop*SUM.heightScale / summaryRatio;
 		    let boxX = 0;
@@ -1727,8 +1728,8 @@ SUM.drawTopItems = function(){
 	
 	var matrixW = SUM.matrixWidth;
 	var matrixH = SUM.matrixHeight;
-	var colSumRatio = heatMap.getColSummaryRatio(MMGR.SUMMARY_LEVEL);
-	var rowSumRatio = heatMap.getRowSummaryRatio(MMGR.SUMMARY_LEVEL);
+	var colSumRatio = heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
+	var rowSumRatio = heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	
 	var referenceItem = document.createElement("Div"); // create a reference top item div to space the elements properly. removed at end
 	referenceItem.className = "topItems";

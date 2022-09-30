@@ -5,6 +5,7 @@
     //Define Namespace for NgChm DetailHeatMapDisplay
     const DET = NgChm.createNS('NgChm.DET');
 
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
@@ -171,8 +172,8 @@ DET.setInitialDetailDisplaySize = function (mapItem) {
 	// set the to show the box size closest to the lower value ELSE
 	// set it to show 42 rows/cols.
 	const heatMap = MMGR.getHeatMap();
-	const rows = heatMap.getNumRows(MMGR.DETAIL_LEVEL);
-	const cols = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
+	const rows = heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
+	const cols = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
 	if ((rows < 42) || (cols < 42)) {
 		const boxSize = DET.getNearestBoxSize(mapItem, Math.min(rows,cols));
 		DET.setDetailDataSize(mapItem,boxSize);
@@ -347,8 +348,8 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
-				if (val <= MMGR.minValues) {
-					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > MMGR.minValues)) {
+				if (val <= MAPREP.minValues) {
+					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > MAPREP.minValues)) {
 						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
 					} else {
 						gridLine[linePos] = cutsColor.r; gridLine[linePos+1] = cutsColor.g; gridLine[linePos+2] = cutsColor.b;	gridLine[linePos+3] = cutsColor.a;
@@ -371,7 +372,7 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	//Needs to go backward because WebGL draws bottom up.
 	for (let i = detDataPerCol-1; i >= 0; i--) {
 		let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
-		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the 
+		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the
 		// preceding line are "cut values" mark the current line as as a horizontal cut
 		const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
 		linePos+=DRAW.BYTE_PER_RGBA;
@@ -380,13 +381,13 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	        let nextVal = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1);
 	        if (val !== undefined) {
 	            const color = colorMap.getColor(val);
-	            
+
 				//For each data point, write it several times to get correct data point width.
 				for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 					if (params.showVerticalGrid && k===mapItem.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
 						if (j < detDataPerRow-1) {
 							//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
-							if ((val <= MMGR.minValues) && (nextVal <= MMGR.minValues)) {
+							if ((val <= MAPREP.minValues) && (nextVal <= MAPREP.minValues)) {
 								line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
 							} else {
 								line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
@@ -421,14 +422,14 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 DET.isLineACut = function (mapItem, row) {
 	let lineIsCut = true;
 	const heatMap = MMGR.getHeatMap();
-	const level = SEL.getLevelFromMode(mapItem, MMGR.DETAIL_LEVEL);
+	const level = SEL.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL);
 	const currDetRow = SEL.getCurrentDetRow(mapItem);
 	const currDetCol = SEL.getCurrentDetCol(mapItem);
 	const detDataPerRow = SEL.getCurrentDetDataPerRow(mapItem);
 	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
 		const val = heatMap.getValue(level, currDetRow+row, currDetCol+x);
 		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
-		if (val > MMGR.minValues) {
+		if (val > MAPREP.minValues) {
 			return false;
 		}
 	}
@@ -546,26 +547,26 @@ DET.getNearestBoxHeight = function (mapItem, sizeToGet) {
 }
 
 /**********************************************************************************
- * FUNCTION - scaleViewWidth: For maps that have less rows/columns than the size 
- * of the detail panel, matrix elements get  width more  than 1 pixel, scale calculates 
+ * FUNCTION - scaleViewWidth: For maps that have less rows/columns than the size
+ * of the detail panel, matrix elements get  width more  than 1 pixel, scale calculates
  * the appropriate height/width.
  **********************************************************************************/
 DET.scaleViewWidth = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
-	const scale = Math.max(Math.floor(500/heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)), 1)
-	mapItem.dataViewWidth=(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
+	const scale = Math.max(Math.floor(500/heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL)), 1)
+	mapItem.dataViewWidth=(heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
 	DET.setDetailDataWidth(mapItem, scale);
 }
 
 /**********************************************************************************
- * FUNCTION - scaleViewHeight: For maps that have less rows/columns than the size 
- * of the detail panel, matrix elements get height more than 1 pixel, scale calculates 
+ * FUNCTION - scaleViewHeight: For maps that have less rows/columns than the size
+ * of the detail panel, matrix elements get height more than 1 pixel, scale calculates
  * the appropriate height/width.
  **********************************************************************************/
 DET.scaleViewHeight = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
-	const scale = Math.max(Math.floor(500/heatMap.getNumRows(MMGR.SUMMARY_LEVEL)), 1)
-	mapItem.dataViewHeight= (heatMap.getNumRows(MMGR.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
+	const scale = Math.max(Math.floor(500/heatMap.getNumRows(MAPREP.SUMMARY_LEVEL)), 1)
+	mapItem.dataViewHeight= (heatMap.getNumRows(MAPREP.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
 	DET.setDetailDataHeight(mapItem, scale);
 }
 
@@ -2106,7 +2107,7 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 			if (((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) &&  (typeof colClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps - if we are showing the whole row or a large part of it, use the summary classification values.
 				classBarValues = colClassBarData[key].svalues;
-				const rhRate = heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
+				const rhRate = heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 			    start = Math.ceil(start/rhRate);
 			}
 			if (currentClassBar.bar_type === 'color_plot') {
@@ -2222,7 +2223,7 @@ DET.detailDrawRowClassBars = function (mapItem, pixels) {
 			if (((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) &&  (typeof rowClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps, if we are showing the whole column, switch to the summary classificaiton values
 				classBarValues = rowClassBarData[key].svalues;
-				const rvRate = heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+				const rvRate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 			    start = Math.ceil(start/rvRate);
 			}
 			let pos = offset; // move past the dendro and the other class bars...

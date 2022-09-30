@@ -13,6 +13,7 @@
 //Define Namespace for NgChm SelectionManager  
     const SEL = NgChm.createNS('NgChm.SEL');
 
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
 
     // Needed only for updateSelection.
@@ -34,7 +35,7 @@ SEL.scrollTime = null;    // timer for scroll events to prevent multiple events 
 SEL.updateSelection = function (mapItem,noResize) {
     //We have the summary heat map so redraw the yellow selection box.
     SUM.drawLeftCanvasBox();
-    MMGR.getHeatMap().setReadWindow(SEL.getLevelFromMode(mapItem, MMGR.DETAIL_LEVEL),SEL.getCurrentDetRow(mapItem),SEL.getCurrentDetCol(mapItem),SEL.getCurrentDetDataPerCol(mapItem),SEL.getCurrentDetDataPerRow(mapItem));
+    MMGR.getHeatMap().setReadWindow(SEL.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),SEL.getCurrentDetRow(mapItem),SEL.getCurrentDetCol(mapItem),SEL.getCurrentDetDataPerCol(mapItem),SEL.getCurrentDetDataPerRow(mapItem));
     DET.setDrawDetailTimeout (mapItem, DET.redrawSelectionTimeout,noResize);
 };
 
@@ -61,11 +62,11 @@ SEL.updateSelections = function (noResize) {
  **********************************************************************************/
 SEL.getLevelFromMode = function(mapItem, lvl) {
 	if (mapItem.mode == 'RIBBONV') {
-		return MMGR.RIBBON_VERT_LEVEL;
+		return MAPREP.RIBBON_VERT_LEVEL;
 	} else if (mapItem.mode == 'RIBBONH') {
-		return MMGR.RIBBON_HOR_LEVEL;
+		return MAPREP.RIBBON_HOR_LEVEL;
 	} else if (mapItem.mode == 'FULL_MAP') {
-		return MMGR.SUMMARY_LEVEL;
+		return MAPREP.SUMMARY_LEVEL;
 	} else {
 		return lvl;
 	} 
@@ -87,7 +88,7 @@ SEL.setMode = function(mapItem, newMode) {
 SEL.getDetailWindow = function(mapItem) {
 	return {
 		layer: mapItem.currentDl,
-		level: SEL.getLevelFromMode(mapItem, MMGR.DETAIL_LEVEL),
+		level: SEL.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),
 		firstRow: SEL.getCurrentDetRow(mapItem),
 		firstCol: SEL.getCurrentDetCol(mapItem),
 		numRows: SEL.getCurrentDetDataPerCol(mapItem),
@@ -112,13 +113,13 @@ SEL.getDetailWindow = function(mapItem) {
 SEL.getCurrentSumRow = function(mapItem) {
 	const currRow = mapItem.currentRow;
 	// Convert selected current row value to Summary level
-	const rowSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MMGR.SUMMARY_LEVEL);
+	const rowSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	return  Math.round(currRow/rowSummaryRatio);
 }
 //Follow similar methodology for Column as is used in above row based function
 SEL.getCurrentSumCol = function(mapItem) {
 	const currCol =  mapItem.currentCol;
-	const colSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MMGR.SUMMARY_LEVEL);
+	const colSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	return  Math.round(currCol/colSummaryRatio);
 }
 
@@ -131,7 +132,7 @@ SEL.getCurrentSumCol = function(mapItem) {
 SEL.getCurrentDetRow = function(mapItem) { //SEL
 	let detRow = mapItem.currentRow;
 	if ((mapItem.mode == 'RIBBONV') && (mapItem.selectedStart >= 1)) {
-		const rvRatio = MMGR.getHeatMap().getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+		const rvRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 		detRow = Math.round(mapItem.selectedStart/rvRatio);
 	}
 	return  detRow;
@@ -140,7 +141,7 @@ SEL.getCurrentDetRow = function(mapItem) { //SEL
 SEL.getCurrentDetCol = function(mapItem) { //SEL
 	let detCol = mapItem.currentCol;
 	if ((mapItem.mode == 'RIBBONH') && (mapItem.selectedStart >= 1)) {
-		const rhRatio = MMGR.getHeatMap().getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
+		const rhRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 		detCol = Math.round(mapItem.selectedStart/rhRatio);
 	}
 	return  detCol;
@@ -155,7 +156,7 @@ SEL.getCurrentDetDataPerRow = function(mapItem) {
 	// make sure dataPerCol is the correct value. 
 	let	detDataPerRow = mapItem.dataPerRow;
 	if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
-		const rate = MMGR.getHeatMap().getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
+		const rate = MMGR.getHeatMap().getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 		detDataPerRow = Math.ceil(detDataPerRow/rate);
 	} 
 	return detDataPerRow;
@@ -165,7 +166,7 @@ SEL.getCurrentDetDataPerCol = function(mapItem) {
 	// make sure dataPerCol is the correct value.  
 	let	detDataPerCol = mapItem.dataPerCol;
 	if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) {
-		const rate = MMGR.getHeatMap().getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+		const rate = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 		detDataPerCol = Math.ceil(detDataPerCol/rate);
 	} 
 	return detDataPerCol;
@@ -178,14 +179,14 @@ SEL.getCurrentDetDataPerCol = function(mapItem) {
  * leftCanvasBox on that side of the screen.
  **********************************************************************************/
 SEL.getCurrentSumDataPerRow = function(mapItem) {
-	const rowSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MMGR.SUMMARY_LEVEL);
+	const rowSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	// Summary data per row for  using the summary ration for that level
 	const	sumDataPerRow = Math.floor(mapItem.dataPerRow/rowSummaryRatio);
 	return sumDataPerRow;
 }
 // Follow similar methodology for Column as is used in above row based function
 SEL.getCurrentSumDataPerCol = function(mapItem) {
-	const colSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MMGR.SUMMARY_LEVEL);
+	const colSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	const	sumDataPerCol = Math.floor(mapItem.dataPerCol/colSummaryRatio);
 	return sumDataPerCol;
 }
@@ -201,10 +202,10 @@ SEL.setDataPerRowFromDet = function(detDataPerRow, mapItem) {
 	if (isPrimary === true) mapItem.dataPerRow = detDataPerRow;
 	if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
 		if (mapItem.selectedStart==0) {
-			mapItem.dataPerRow = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
-			if (isPrimary === true) mapItem.dataPerRow = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
+			mapItem.dataPerRow = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
+			if (isPrimary === true) mapItem.dataPerRow = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
 		} else {
-			const rate = heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
+			const rate = heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 			mapItem.dataPerRow = detDataPerRow * rate;
 			if (isPrimary === true) mapItem.dataPerRow = detDataPerRow * rate;
 		}
@@ -218,10 +219,10 @@ SEL.setDataPerColFromDet = function(detDataPerCol, mapItem) {
 	if (isPrimary === true) mapItem.dataPerCol = detDataPerCol;
 	if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) {
 		if (mapItem.selectedStart==0) {
-			mapItem.dataPerCol = heatMap.getNumRows(MMGR.DETAIL_LEVEL);
-			if (isPrimary === true) mapItem.dataPerCol = heatMap.getNumRows(MMGR.DETAIL_LEVEL);
+			mapItem.dataPerCol = heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
+			if (isPrimary === true) mapItem.dataPerCol = heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
 		} else {
-			const rate = heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+			const rate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 			mapItem.dataPerCol = detDataPerCol * rate;
 			if (isPrimary === true) mapItem.dataPerCol = detDataPerCol * rate;
 		}
@@ -238,11 +239,11 @@ SEL.setDataPerColFromDet = function(detDataPerCol, mapItem) {
  **********************************************************************************/
 SEL.setCurrentRowFromSum = function(mapItem,sumRow) {
 	// Up scale current summary row to detail equivalent
-	mapItem.currentRow = (sumRow*MMGR.getHeatMap().getRowSummaryRatio(MMGR.SUMMARY_LEVEL));
+	mapItem.currentRow = (sumRow*MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL));
 	SEL.checkRow(mapItem);
 }
 SEL.setCurrentColFromSum = function(mapItem,sumCol) {
-	mapItem.currentCol = (sumCol*MMGR.getHeatMap().getColSummaryRatio(MMGR.SUMMARY_LEVEL));
+	mapItem.currentCol = (sumCol*MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL));
 	SEL.checkCol(mapItem);
 }
 
@@ -263,7 +264,7 @@ SEL.checkRow = function(mapItem) {
 		if (isPrimary === true) mapItem.currentRow = mapItem.selectedStart;
 	}
 	//Check row against detail boundaries
-	const numRows = MMGR.getHeatMap().getNumRows(MMGR.DETAIL_LEVEL);
+	const numRows = MMGR.getHeatMap().getNumRows(MAPREP.DETAIL_LEVEL);
 	if (mapItem.currentRow > ((numRows + 1) - mapItem.dataPerCol)) {
 		mapItem.currentRow = (numRows + 1) - mapItem.dataPerCol;
 		if (isPrimary === true) mapItem.currentRow = (numRows + 1) - mapItem.dataPerCol;
@@ -282,7 +283,7 @@ SEL.checkCol = function(mapItem) {
     	if (isPrimary === true) mapItem.currentCol = mapItem.selectedStart;
     }
     //Check column against detail boundaries
-    const numCols = MMGR.getHeatMap().getNumColumns(MMGR.DETAIL_LEVEL);
+    const numCols = MMGR.getHeatMap().getNumColumns(MAPREP.DETAIL_LEVEL);
     if (mapItem.currentCol > ((numCols + 1) -mapItem.dataPerRow)) {
     	mapItem.currentCol = (numCols + 1) - mapItem.dataPerRow;
     	if (isPrimary === true) mapItem.currentCol = (numCols + 1) - mapItem.dataPerRow;
@@ -297,17 +298,17 @@ SEL.getSamplingRatio = function (mode,axis) {
 	const heatMap = MMGR.getHeatMap();
 	if (axis == 'row'){
 		switch (mode){
-			case 'RIBBONH': return heatMap.getRowSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
-			case 'RIBBONV': return heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
-			case 'FULL_MAP': return heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
-			default:        return heatMap.getRowSummaryRatio(MMGR.DETAIL_LEVEL);
+			case 'RIBBONH': return heatMap.getRowSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
+			case 'RIBBONV': return heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
+			case 'FULL_MAP': return heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
+			default:        return heatMap.getRowSummaryRatio(MAPREP.DETAIL_LEVEL);
 		}
 	} else {
 		switch (mode){
-			case 'RIBBONH': return heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
-			case 'RIBBONV': return heatMap.getColSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
-			case 'FULL_MAP': return heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
-			default:        return  heatMap.getColSummaryRatio(MMGR.DETAIL_LEVEL);
+			case 'RIBBONH': return heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
+			case 'RIBBONV': return heatMap.getColSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
+			case 'FULL_MAP': return heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
+			default:        return  heatMap.getColSummaryRatio(MAPREP.DETAIL_LEVEL);
 		}
 	}
 }

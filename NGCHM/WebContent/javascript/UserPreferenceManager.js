@@ -10,6 +10,7 @@
     const UPM = NgChm.createNS('NgChm.UPM');
 
     const UHM = NgChm.importNS('NgChm.UHM');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const SEL = NgChm.importNS('NgChm.SEL');
@@ -710,7 +711,7 @@ UPM.prefsValidateBreakPoints = function(colorMapName,prefPanel) {
 	var charBreak = false;
 	var dupeBreak = false;
 	var breakOrder = false;
-	var prevBreakValue = MMGR.minValues;
+	var prevBreakValue = MAPREP.minValues;
 	var errorMsg = null;
 	//Loop thru colormap thresholds and validate for order and duplicates
 	for (var i = 0; i < thresholds.length; i++) {
@@ -1175,17 +1176,17 @@ UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 	var saveDl = DMM.primaryMap.currentDl;
 	DMM.primaryMap.currentDl = mapName;
 	const heatMap = MMGR.getHeatMap();
-	var numCol = heatMap.getNumColumns(MMGR.SUMMARY_LEVEL);
-	var numRow = heatMap.getNumRows(MMGR.SUMMARY_LEVEL)
+	var numCol = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
+	var numRow = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL)
 	var count = 0;
 	var nan=0;
 	for (var i=0; i<numCol;i++){
 		for(var j=0;j<numRow;j++){
 			count++;
-			var val = heatMap.getValue(MMGR.SUMMARY_LEVEL,j,i);
-			if (isNaN(val) || val>=MMGR.maxValues){ // is it Missing value?
+			var val = heatMap.getValue(MAPREP.SUMMARY_LEVEL,j,i);
+			if (isNaN(val) || val>=MAPREP.maxValues){ // is it Missing value?
 				nan++;
-			} else if (val <= MMGR.minValues){ // is it a cut location?
+			} else if (val <= MAPREP.minValues){ // is it a cut location?
 				continue;
 			}
 			if (val <= lowBP){
@@ -1244,6 +1245,7 @@ UPM.setupLayerBreaksToPreset = function(e, mapName, preset, missingColor,axis,ty
 	var lastShown = i-1;
 	// create dummy colorScheme
 	var thresh = [];
+	const heatMap = MMGR.getHeatMap();
 	if (document.getElementById(elemName+"_breakPt0_breakPref")){ // if the breakpoints are changeable (data layer)...
 		var firstBP = document.getElementById(elemName+"_breakPt0_breakPref").value;
 		var lastBP = document.getElementById(elemName+"_breakPt"+ lastShown +"_breakPref").value;
@@ -1252,7 +1254,7 @@ UPM.setupLayerBreaksToPreset = function(e, mapName, preset, missingColor,axis,ty
 			thresh[j] =Number(firstBP)+j*(range/(preset.length-1));
 		}
 		var colorScheme = {"missing": missingColor,"thresholds": thresh,"colors": preset,"type": "continuous"};
-		var csTemp = new CMM.ColorMap(colorScheme);
+		var csTemp = new CMM.ColorMap(heatMap, colorScheme);
 		
 		for (var j = 0; j < i; j++) {
 			var threshId = mapName+"_breakPt"+j;
@@ -1273,14 +1275,14 @@ UPM.setupLayerBreaksToPreset = function(e, mapName, preset, missingColor,axis,ty
 			} 
 			document.getElementById(elemName+"_missing_colorPref").value = missingColor; 
 		} else { // if colors need to be blended
-			var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap(axis, mapName)
+			var colorMap = heatMap.getColorMapManager().getColorMap(axis, mapName)
 			var thresholds = colorMap.getThresholds();
 			var range = thresholds[thresholds.length-1]-thresholds[0];
 			for (var j = 0; j < preset.length; j++){
 				thresh[j] = Number(thresholds[0])+j*(range/(preset.length-1));
 			}
 			var colorScheme = {"missing": missingColor,"thresholds": thresh,"colors": preset,"type": "continuous"};
-			var csTemp = new CMM.ColorMap(colorScheme);
+			var csTemp = new CMM.ColorMap(heatMap, colorScheme);
 			for (var j = 0; j < thresholds.length; j++) {
 				var colorId = elemName+"_color"+j;
 				var breakpoint = thresholds[j];

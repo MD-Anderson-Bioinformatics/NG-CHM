@@ -8,6 +8,7 @@
     const DMM = NgChm.importNS('NgChm.DMM');
     const SUM = NgChm.importNS('NgChm.SUM');
     const SEL = NgChm.importNS('NgChm.SEL');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const DEV = NgChm.importNS('NgChm.DEV');
     const DET = NgChm.importNS('NgChm.DET');
@@ -1071,7 +1072,7 @@ DDR.DetailColumnDendrogram = function(dendroCanvas) {
 		if (typeof mapItem === 'undefined') {
 			return {};
 		} else if (mapItem.mode === 'FULL_MAP') {
-			return { startIdx: 1, numElements: MMGR.getHeatMap().getNumColumns(MMGR.DETAIL_LEVEL) };
+			return { startIdx: 1, numElements: MMGR.getHeatMap().getNumColumns(MAPREP.DETAIL_LEVEL) };
 		} else {
 			return { startIdx: mapItem.currentCol, numElements: mapItem.dataPerRow };
 		}
@@ -1093,7 +1094,7 @@ DDR.DetailRowDendrogram = function(dendroCanvas) {
 		if (typeof mapItem === 'undefined') {
 			return {};
 		} else if (mapItem.mode === 'FULL_MAP') {
-			return { startIdx: 1, numElements: MMGR.getHeatMap().getNumRows(MMGR.DETAIL_LEVEL) };
+			return { startIdx: 1, numElements: MMGR.getHeatMap().getNumRows(MAPREP.DETAIL_LEVEL) };
 		} else {
 			return { startIdx: mapItem.currentRow, numElements: mapItem.dataPerCol };
 		}

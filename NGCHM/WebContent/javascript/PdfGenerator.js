@@ -11,6 +11,7 @@
     const DET = NgChm.importNS('NgChm.DET');
     const SEL = NgChm.importNS('NgChm.SEL');
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const PANE = NgChm.importNS('NgChm.Pane');
@@ -185,7 +186,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 PDF.callViewerHeatmapPDF = function() {
 	document.body.style.cursor = 'wait';
     const heatMap = MMGR.getHeatMap();
-    const details = heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MMGR.DETAIL_LEVEL),1,1,heatMap.getNumRows(MMGR.DETAIL_LEVEL),heatMap.getNumColumns(MMGR.DETAIL_LEVEL));
+    const details = heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
     let tilesReady = heatMap.allTilesAvailable();
     if (tilesReady === true) {
 	 PDF.getViewerHeatmapPDF();
@@ -1101,17 +1102,17 @@ PDF.genViewerHeatmapPDF = function() {
 			breaks[i]+=lowBP+diff/(breaks.length-1)*i; // array of the breakpoints shown in the preview div
 			breaks[i]=parseFloat(breaks[i].toFixed(2));
 		}
-		var numCol = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
-		var numRow = heatMap.getNumRows(MMGR.DETAIL_LEVEL)
+		var numCol = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
+		var numRow = heatMap.getNumRows(MAPREP.DETAIL_LEVEL)
 		var count = 0;
 		var nan=0;
 		for (var i=1; i<numCol+1;i++){
 			for(var j=1;j<numRow+1;j++){
 				count++;
-				var val = Number(Math.round(heatMap.getValue(MMGR.DETAIL_LEVEL,j,i)+'e4')+'e-4')
-				if (isNaN(val) || val>=MMGR.maxValues){ // is it Missing value?
+				var val = Number(Math.round(heatMap.getValue(MAPREP.DETAIL_LEVEL,j,i)+'e4')+'e-4')
+				if (isNaN(val) || val>=MAPREP.maxValues){ // is it Missing value?
 					nan++;
-				} else if (val <= MMGR.minValues){ // is it a cut location?
+				} else if (val <= MAPREP.minValues){ // is it a cut location?
 					continue;
 				}
 				if (val <= breaks[0]){

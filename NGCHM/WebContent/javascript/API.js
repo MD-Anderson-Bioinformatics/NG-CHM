@@ -26,6 +26,7 @@
     const API = NgChm.createNS('NgChm.API', exports);
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SUM = NgChm.importNS('NgChm.SUM');
     const PANE = NgChm.importNS('NgChm.Pane');
@@ -311,7 +312,7 @@
      **********************************************************************************/
     function loadAllTilesTimer () {
 	    const heatMap = MMGR.getHeatMap();
-	    const dimensionVal = heatMap.getNumRows(MMGR.DETAIL_LEVEL) + heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
+	    const dimensionVal = heatMap.getNumRows(MAPREP.DETAIL_LEVEL) + heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
 	    if (dimensionVal <= 1000) {
 		    return 500;
 	    } else if (dimensionVal <= 2000) {
