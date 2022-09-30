@@ -10,6 +10,7 @@
     const UIMGR = NgChm.createNS('NgChm.UI-Manager');
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const FLICK = NgChm.importNS('NgChm.FLICK');
     const SUM = NgChm.importNS('NgChm.SUM');
     const PDF = NgChm.importNS('NgChm.PDF');
     const DET = NgChm.importNS('NgChm.DET');
@@ -207,7 +208,7 @@
 
 
 	    CUST.addCustomJS();
-	    document.addEventListener ("keydown", DEV.keyNavigate);
+	    document.addEventListener ("keydown", keyNavigate);
 		if (MMGR.source === MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (SUM.chmElement) {
@@ -998,5 +999,127 @@
     document.getElementById('menuSave').onclick = () => {
 	saveHeatMapChanges();
     };
+
+    /************************************************************************************************
+     * FUNCTION: flickChange - Responds to a change in the flick view control.  All of these actions
+     * depend upon the flick control being visible (i.e. active) There are 3 types of changes
+     * (1) User clicks on the toggle control. (2) User changes the value of one of the 2 dropdowns
+     * AND the toggle control is on that dropdown. (3) The user presses the one or two key, corresponding
+     * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown.
+     * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
+     ***********************************************************************************************/
+    UIMGR.flickChange = function(fromList) {
+	const newDataLayer = FLICK.toggleFlickState (fromList);
+	setDataLayer (newDataLayer);
+    };
+    FLICK.setFlickHandler (UIMGR.flickChange);
+
+    function setFlickState (state) {
+	const newDataLayer = FLICK.setFlickState (state);
+	setDataLayer (newDataLayer);
+    }
+
+    function setDataLayer (newDataLayer) {
+	if (!newDataLayer) return;
+
+	const heatMap = MMGR.getHeatMap();
+	heatMap.setCurrentDL (newDataLayer);
+
+	SUM.buildSummaryTexture();
+	DVW.detailMaps.forEach(dm => {
+		dm.currentDl = newDataLayer;
+	})
+	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout);
+    }
+
+    /*********************************************************************************************
+     * FUNCTION:  keyNavigate - The purpose of this function is to handle a user key press event.
+     * As key presses are received at the document level, their detail processing will be routed to
+     * the primary detail panel.
+     *********************************************************************************************/
+    function keyNavigate (e) {
+	const mapItem = DVW.primaryMap;
+	UHM.hlpC();
+	if (e.target.type != "text" && e.target.type != "textarea") {
+		switch(e.keyCode){ // prevent default added redundantly to each case so that other key inputs won't get ignored
+			case 37: // left key
+				if (document.activeElement.id !== "search_text"){
+					e.preventDefault();
+					if (e.shiftKey){mapItem.currentCol -= mapItem.dataPerRow;}
+					else if (e.ctrlKey){mapItem.currentCol -= 1;mapItem.selectedStart -= 1;mapItem.selectedStop -= 1; DET.callDetailDrawFunction(mapItem.mode);}
+					else {mapItem.currentCol--;}
+				}
+				break;
+			case 38: // up key
+				if (document.activeElement.id !== "search_text"){
+					e.preventDefault();
+					if (e.shiftKey){mapItem.currentRow -= mapItem.dataPerCol;}
+					else if (e.ctrlKey){mapItem.selectedStop += 1; DET.callDetailDrawFunction(mapItem.mode);}
+					else {mapItem.currentRow--;}
+				}
+				break;
+			case 39: // right key
+				if (document.activeElement.id !== "search_text"){
+					e.preventDefault();
+					if (e.shiftKey){mapItem.currentCol += mapItem.dataPerRow;}
+					else if (e.ctrlKey){mapItem.currentCol += 1;mapItem.selectedStart += 1;mapItem.selectedStop += 1; DET.callDetailDrawFunction(mapItem.mode);}
+					else {mapItem.currentCol++;}
+				}
+				break;
+			case 40: // down key
+				if (document.activeElement.id !== "search_text"){
+					e.preventDefault();
+					if (e.shiftKey){mapItem.currentRow += mapItem.dataPerCol;}
+					else if (e.ctrlKey){mapItem.selectedStop -= 1; DET.callDetailDrawFunction(mapItem.mode);}
+					else {mapItem.currentRow++;}
+				}
+				break;
+			case 33: // page up
+				e.preventDefault();
+				if (e.shiftKey){
+					let newMode;
+					clearDendroSelection();
+					switch(mapItem.mode){
+						case "RIBBONV": newMode = 'RIBBONH'; break;
+						case "RIBBONH": newMode = 'NORMAL'; break;
+						default: newMode = mapItem.mode;break;
+					}
+					DET.callDetailDrawFunction(newMode);
+				} else {
+					DEV.zoomAnimation(mapItem.chm);
+				}
+				break;
+			case 34: // page down
+				e.preventDefault();
+				if (e.shiftKey){
+					let newMode;
+					clearDendroSelection();
+					switch(mapItem.mode){
+						case "NORMAL": newMode = 'RIBBONH'; break;
+						case "RIBBONH": newMode = 'RIBBONV'; break;
+						default: newMode = mapItem.mode;break;
+					}
+					DET.callDetailDrawFunction(newMode);
+				} else {
+					DEV.detailDataZoomOut(mapItem.chm);
+				}
+				break;
+			case 113: // F2 key
+				if (FLICK.flickIsOn()) {
+				    UIMGR.flickChange (FLICK.isFlickUp() ? "toggle2" : "toggle1");
+				}
+				break;
+			default:
+				return;
+		}
+		DVW.checkRow(mapItem);
+		DVW.checkCol(mapItem);
+	    mapItem.updateSelection();
+	} else {
+	    if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
+		    SRCH.detailSearch();
+	    }
+	}
+    }
 
 })();

@@ -314,61 +314,6 @@ DVW.getSamplingRatio = function (mode,axis) {
 	}
 }
 
-
-
-/*==============================================================================================
- * 
- * FLICK VIEW PROCESSING FUNCTIONS
- * 
- *=============================================================================================*/
-
-/************************************************************************************************
- * FUNCTION: flickExists - Returns true if the heatmap contains multiple data layers by checking
- * to see if the "FLICK" button is present on the screen.
- ***********************************************************************************************/ 
-DVW.flickExists = function() {
-	var flicks = document.getElementById("flicks");
-	if ((flicks != null) && (flicks.style.display === '')) {
-		return true;
-	}
-	return false;
-}
-
-/************************************************************************************************
- * FUNCTION: flickIsOn - Returns true if the user has opened the flick control by checking to 
- * see if the flickViews DIV is visible.
- ***********************************************************************************************/ 
-DVW.flickIsOn = function() {
-	var flickViews = document.getElementById("flickViews");
-	if (flickViews.style.display === '') {
-		return true;
-	}
-	return false;
-}
-
-/************************************************************************************************
- * FUNCTION: flickToggleOn - Opens the flick control.
- ***********************************************************************************************/ 
-DVW.flickToggleOn = function() {
-	var flickDrop1 = document.getElementById("flick1");
-	var flickDrop2 = document.getElementById("flick2");
-	//Make sure that dropdowns contain different
-	//options (with the selected option in the top box)
-	if (flickDrop1.selectedIndex === flickDrop2.selectedIndex) {
-		if (flickDrop1.selectedIndex === 0) {
-			flickDrop2.selectedIndex = 1;
-		} else {
-			flickDrop2.selectedIndex = 0;
-		}
-	}
-	DVW.flickInit();
-	var flicks = document.getElementById("flicks");
-	var flickViewsOff = document.getElementById("noFlickViews");
-	var flickViewsOn = document.getElementById("flickViews");
-	flickViewsOff.style.display="none";
-	flickViewsOn.style.display='';
-}
-
 DVW.openFileToggle = function() {
 	var fileButton = document.getElementById('fileButton');
 	var detailButtons = document.getElementById('detail_buttons');
@@ -380,36 +325,8 @@ DVW.openFileToggle = function() {
 	} 
 }
 
-/************************************************************************************************
- * FUNCTION: flickToggleOff - Closes (hides) the flick control.
- ***********************************************************************************************/ 
-DVW.flickToggleOff = function() {
-	var flicks = document.getElementById("flicks");
-	var flickViewsOff = document.getElementById("noFlickViews");
-	var flickViewsOn = document.getElementById("flickViews");
-	flickViewsOn.style.display="none";
-	flickViewsOff.style.display='';
-}
-
-DVW.flickInit = function() {
-	var flickBtn = document.getElementById("flick_btn");
-	var flickDrop1 = document.getElementById("flick1");
-	var flickDrop2 = document.getElementById("flick2");
-	if ((flickBtn.dataset.state === 'flickUp')) {
-		flickDrop1.style.backgroundColor="yellow";
-		flickDrop2.style.backgroundColor="white";
-	} else {
-		flickDrop1.style.backgroundColor="white";
-		flickDrop2.style.backgroundColor="yellow";
-	}
-}
-
     document.getElementById('fileOpen_btn').onclick = () => {
 	DVW.openFileToggle();
-    };
-
-    document.getElementById('flickOff').onclick = () => {
-	DVW.flickToggleOn();
     };
 
 })();

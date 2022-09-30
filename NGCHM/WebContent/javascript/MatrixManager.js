@@ -17,6 +17,7 @@
     const MMGR = NgChm.createNS('NgChm.MMGR');
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const FLICK = NgChm.importNS('NgChm.FLICK');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const CFG = NgChm.importNS('NgChm.CFG');
 
@@ -845,46 +846,31 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 	this.configureFlick = function(){
 		if (!flickInitialized) {
-			var flicks = document.getElementById("flicks");
-			var flickViewsOff = document.getElementById("noFlickViews");
-			var flickViewsDiv = document.getElementById("flickViews");
-			var flick1 = document.getElementById("flick1");
-			var flick2 = document.getElementById("flick2");
-			var dl = this.getDataLayers();
-			var maxDisplay = 0;
-			if (Object.keys(dl).length > 1) {
-				var dls = new Array(Object.keys(dl).length);
-				var orderedKeys = new Array(Object.keys(dl).length);
-				var flickOptions = "";
-				for (var key in dl){
-					var dlNext = key.substring(2, key.length);
+			const dl = this.getDataLayers();
+			const numLayers = Object.keys(dl).length;
+			let maxDisplay = 0;
+			if (numLayers > 1) {
+				const dls = new Array(numLayers);
+				const orderedKeys = new Array(numLayers);
+				for (let key in dl){
+					const dlNext = +key.substring(2, key.length);
 					orderedKeys[dlNext-1] = key;
-					var displayName = dl[key].name;
+					let displayName = dl[key].name;
 					if (displayName.length > maxDisplay) {
 						maxDisplay = displayName.length;
 					}
-					if (displayName.length > 20){
-						displayName = displayName.substring(0,20) + "...";
+					if (displayName.length > 20) {
+						displayName = displayName.substring(0,17) + "...";
 					}
 					dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
 				}
-				for(var i=0;i<dls.length;i++) {
-					flickOptions += dls[i];
-				}
-				flick1.innerHTML=flickOptions;
-				flick2.innerHTML=flickOptions;
-				flick1.value=this.getCurrentDL();
-				flick2.value=orderedKeys[1];
-				flicks.style.display='';
-				flicks.style.right=1;
-				if (flickViewsDiv.style.display === 'none') {;
-					flickViewsOff.style.display='';
-				}
+				FLICK.enableFlicks (dls.join(""), this.getCurrentDL(), orderedKeys[1]);
 			} else {
 				this.setCurrentDL("dl1");
-				flicks.style.display='none';
+				FLICK.disableFlicks();
 			}
 			flickInitialized = true;
+
 			var gearBtnPanel = document.getElementById("pdf_gear");
 			if (maxDisplay > 15) {
 				gearBtnPanel.style.minWidth = '320px';

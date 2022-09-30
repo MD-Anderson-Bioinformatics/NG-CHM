@@ -438,103 +438,6 @@ DEV.handleScroll = function(evt) {
 	return false;
 } 		
 
-
-/*********************************************************************************************
- * FUNCTION:  keyNavigate - The purpose of this function is to handle a user key press event. 
- * As key presses are received at the document level, their detail processing will be routed to
- * the primary detail panel. 
- *********************************************************************************************/
-DEV.keyNavigate = function(e) {
-	const mapItem = DMM.primaryMap;
-	UHM.hlpC();
-    if (e.target.type != "text" && e.target.type != "textarea"){
-		switch(e.keyCode){ // prevent default added redundantly to each case so that other key inputs won't get ignored
-			case 37: // left key 
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (e.shiftKey){mapItem.currentCol -= mapItem.dataPerRow;} 
-					else if (e.ctrlKey){mapItem.currentCol -= 1;mapItem.selectedStart -= 1;mapItem.selectedStop -= 1; DEV.callDetailDrawFunction(mapItem.mode);}
-					else {mapItem.currentCol--;}
-				}
-				break;
-			case 38: // up key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (e.shiftKey){mapItem.currentRow -= mapItem.dataPerCol;} 
-					else if (e.ctrlKey){mapItem.selectedStop += 1; DEV.callDetailDrawFunction(mapItem.mode);}
-					else {mapItem.currentRow--;}
-				}
-				break;
-			case 39: // right key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (e.shiftKey){mapItem.currentCol += mapItem.dataPerRow;} 
-					else if (e.ctrlKey){mapItem.currentCol += 1;mapItem.selectedStart += 1;mapItem.selectedStop += 1; DEV.callDetailDrawFunction(mapItem.mode);} 
-					else {mapItem.currentCol++;}
-				}
-				break;
-			case 40: // down key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (e.shiftKey){mapItem.currentRow += mapItem.dataPerCol;} 
-					else if (e.ctrlKey){mapItem.selectedStop -= 1; DEV.callDetailDrawFunction(mapItem.mode);} 
-					else {mapItem.currentRow++;}
-				}
-				break;
-			case 33: // page up
-				e.preventDefault();
-				if (e.shiftKey){
-					let newMode;
-					DDR.clearDendroSelection();
-					switch(mapItem.mode){
-						case "RIBBONV": newMode = 'RIBBONH'; break;
-						case "RIBBONH": newMode = 'NORMAL'; break;
-						default: newMode = mapItem.mode;break;
-					}
-					DEV.callDetailDrawFunction(newMode);
-				} else {
-					DEV.zoomAnimation(mapItem.chm);
-				}
-				break;
-			case 34: // page down 
-				e.preventDefault();
-				if (e.shiftKey){
-					let newMode;
-					DDR.clearDendroSelection();
-					switch(mapItem.mode){
-						case "NORMAL": newMode = 'RIBBONH'; break;
-						case "RIBBONH": newMode = 'RIBBONV'; break;
-						default: newMode = mapItem.mode;break;
-					}
-					DEV.callDetailDrawFunction(newMode);
-				} else {
-					DEV.detailDataZoomOut(mapItem.chm);
-				}
-				break;
-			case 113: // F2 key 
-				if (DVW.flickIsOn()) {
-					let flickBtn = document.getElementById("flick_btn");
-					if (flickBtn.dataset.state === 'flickUp') {
-						DEV.flickChange("toggle2");
-					} else {
-						DEV.flickChange("toggle1");
-					}
-				}
-				break;
-			default:
-				return;
-		}
-		DVW.checkRow(mapItem);
-		DVW.checkCol(mapItem);
-	    DVW.updateSelection(mapItem);
-    } else {
-    	if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
-		SRCH.detailSearch();
-    	}
-    }
-	
-}
-
 /*********************************************************************************************
  * FUNCTION:  clickStart - The purpose of this function is to handle a user mouse down event.  
  *********************************************************************************************/
@@ -782,73 +685,6 @@ DEV.matrixRightClick = function (e) {
     selection.removeAllRanges();
     return false;
 };
-
-/************************************************************************************************
- * FUNCTION: flickChange - Responds to a change in the flick view control.  All of these actions 
- * depend upon the flick control being visible (i.e. active) There are 3 types of changes 
- * (1) User clicks on the toggle control. (2) User changes the value of one of the 2 dropdowns 
- * AND the toggle control is on that dropdown. (3) The user presses the one or two key, corresponding
- * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown. 
- * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
- ***********************************************************************************************/ 
-(function() {
-    // Table of flick button images so that Widgetizer only adds one
-    // data: URL for each to the widget.
-    const toggleButtons = {
-	flickUp: 'images/toggleUp.png',
-	flickDown: 'images/toggleDown.png'
-    };
-    DEV.flickChange = function(fromList) {
-	const mapItem = DMM.primaryMap;
-	const flickBtn = document.getElementById("flick_btn");
-	const flickDrop1 = document.getElementById("flick1");
-	const flickDrop2 = document.getElementById("flick2");
-	if (typeof fromList === 'undefined') {
-		if (flickBtn.dataset.state === 'flickUp') {
-			flickBtn.dataset.state = 'flickDown';
-			mapItem.currentDl = flickDrop2.value;
-		} else {
-			flickBtn.dataset.state = 'flickUp';
-			mapItem.currentDl = flickDrop1.value;
-		}
-		flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-	} else if (fromList === null) {
-		if (flickBtn.dataset.state === 'flickUp') {
-			flickBtn.dataset.state = 'flickUp';
-			mapItem.currentDl = flickDrop1.value === "" ? 'dl1' : flickDrop1.value;
-		} else {
-			flickBtn.dataset.state = 'flickDown';
-			mapItem.currentDl = flickDrop2.value === "" ? 'dl1' : flickDrop2.value;
-		}
-		flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-	} else {
-		if ((fromList === "flick1") && (flickBtn.dataset.state === 'flickUp')) {
-			mapItem.currentDl = document.getElementById(fromList).value;
-		} else if ((fromList === "flick2") && (flickBtn.dataset.state === 'flickDown')) {
-			mapItem.currentDl = document.getElementById(fromList).value;
-		} else if ((fromList === "toggle1") && (flickBtn.dataset.state === 'flickDown')) {
-			flickBtn.dataset.state = 'flickUp';
-			flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-			mapItem.currentDl = flickDrop1.value;
-		} else if ((fromList === "toggle2") && (flickBtn.dataset.state === 'flickUp')) {
-			flickBtn.dataset.state = 'flickDown';
-			flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-			mapItem.currentDl = flickDrop2.value;
-		} else {
-			return;
-		}
-	} 
-	const heatMap = MMGR.getHeatMap();
-	heatMap.setCurrentDL (mapItem.currentDl);
-	DVW.flickInit();
-	SUM.buildSummaryTexture();
-	DMM.DetailMaps.forEach(dm => {
-		dm.currentDl = mapItem.currentDl;
-	})
-	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout,true);
-	DVW.updateSelections(true);
-    };
-})();
 
 /*********************************************************************************************
  * FUNCTION:  handleMouseOut - The purpose of this function is to handle the situation where 
@@ -1642,19 +1478,5 @@ DEV.zoomAnimation = function (chm,destRow,destCol) {
 	    }
 	    helptext.style.top = boxTop + 'px';
     }
-
-
-document.getElementById('flick_btn').onclick = function (event) {
-    DEV.flickChange();
-};
-document.getElementById('flick1').onchange = function (event) {
-    DEV.flickChange('flick1');
-};
-document.getElementById('flick2').onchange = function (event) {
-    DEV.flickChange('flick2');
-};
-document.getElementById('flickOn_pic').onclick = function (event) {
-    DVW.flickToggleOff();
-};
 
 })();
