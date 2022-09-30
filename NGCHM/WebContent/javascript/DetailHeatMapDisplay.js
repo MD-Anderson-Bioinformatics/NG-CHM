@@ -9,7 +9,7 @@
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const LNK = NgChm.importNS('NgChm.LNK');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const SRCH = NgChm.importNS('NgChm.SRCH');
@@ -82,7 +82,7 @@ DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
 	if (!noResize) mapItem.resizeOnNextDraw = true;
 	if (!DMM.isVisible(mapItem)) { return false }
 
-	const drawWin = SEL.getDetailWindow(mapItem);
+	const drawWin = DVW.getDetailWindow(mapItem);
 	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
 		if (mapItem.chm) {
 			DET.drawDetailHeatMap(mapItem, drawWin);
@@ -136,7 +136,7 @@ DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	
 	setTimeout (function() {
 		DET.detInitGl(mapItem);
-		SEL.updateSelection(mapItem);
+		DVW.updateSelection(mapItem);
 		if (UTIL.getURLParameter("selected") !== ""){
 			const selected = UTIL.getURLParameter("selected").replace(","," ");
 			document.getElementById("search_text").value = selected;
@@ -422,10 +422,10 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 DET.isLineACut = function (mapItem, row) {
 	let lineIsCut = true;
 	const heatMap = MMGR.getHeatMap();
-	const level = SEL.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL);
-	const currDetRow = SEL.getCurrentDetRow(mapItem);
-	const currDetCol = SEL.getCurrentDetCol(mapItem);
-	const detDataPerRow = SEL.getCurrentDetDataPerRow(mapItem);
+	const level = DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL);
+	const currDetRow = DVW.getCurrentDetRow(mapItem);
+	const currDetCol = DVW.getCurrentDetCol(mapItem);
+	const detDataPerRow = DVW.getCurrentDetDataPerRow(mapItem);
 	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
 		const val = heatMap.getValue(level, currDetRow+row, currDetCol+x);
 		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
@@ -586,7 +586,7 @@ DET.setDetailDataSize = function (mapItem, size) {
 DET.setDetailDataWidth = function (mapItem, size) {
 	const prevDataPerRow = mapItem.dataPerRow;
 	mapItem.dataBoxWidth = size;
-	SEL.setDataPerRowFromDet(Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/mapItem.dataBoxWidth), mapItem);
+	DVW.setDataPerRowFromDet(Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/mapItem.dataBoxWidth), mapItem);
 
 	//Adjust the current column based on zoom but don't go outside or the heat map matrix dimensions.
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
@@ -597,7 +597,7 @@ DET.setDetailDataWidth = function (mapItem, size) {
 			mapItem.currentCol -= Math.floor((mapItem.dataPerRow - prevDataPerRow) / 2);
 		}
 	}
-	SEL.checkCol(mapItem);
+	DVW.checkCol(mapItem);
 }
 
 /**********************************************************************************
@@ -607,7 +607,7 @@ DET.setDetailDataWidth = function (mapItem, size) {
 DET.setDetailDataHeight = function (mapItem, size) {
 	const prevDataPerCol = mapItem.dataPerCol;
 	mapItem.dataBoxHeight = size;
-	SEL.setDataPerColFromDet(Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/mapItem.dataBoxHeight), mapItem);
+	DVW.setDataPerColFromDet(Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/mapItem.dataBoxHeight), mapItem);
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	
 	//Adjust the current row but don't go outside of the current heat map dimensions
@@ -617,7 +617,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		else
 			mapItem.currentRow -= Math.floor((mapItem.dataPerCol - prevDataPerCol) / 2);
 	}
-	SEL.checkRow(mapItem);
+	DVW.checkRow(mapItem);
 };
 
 //----------------------------------------------------------------------------------------------//
@@ -739,13 +739,13 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 	// width of a data cell in pixels
 	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONV') {
-		mapItemVars.cellWidth = mapItemVars.mapXWidth/SEL.getCurrentDetDataPerRow(mapItem);
+		mapItemVars.cellWidth = mapItemVars.mapXWidth/DVW.getCurrentDetDataPerRow(mapItem);
 	} else {
 		mapItemVars.cellWidth = mapItemVars.mapXWidth/mapItem.dataPerRow;
 	}
 	// height of a data cell in pixels
 	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONH') {
-		mapItemVars.cellHeight = mapItemVars.mapYHeight/SEL.getCurrentDetDataPerCol(mapItem);
+		mapItemVars.cellHeight = mapItemVars.mapYHeight/DVW.getCurrentDetDataPerCol(mapItem);
 	} else {
 		mapItemVars.cellHeight = mapItemVars.mapYHeight/mapItem.dataPerCol;
 	}
@@ -2100,10 +2100,10 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 		if (currentClassBar.show === 'Y') {
 			const colorMap = colorMapMgr.getColorMap("col",key); // assign the proper color scheme...
 			let classBarValues = colClassBarData[key].values;
-			const classBarLength = SEL.getCurrentDetDataPerRow(mapItem) * mapItem.dataBoxWidth;
+			const classBarLength = DVW.getCurrentDetDataPerRow(mapItem) * mapItem.dataBoxWidth;
 			pos += fullWidth*DET.paddingHeight*DRAW.BYTE_PER_RGBA; // draw padding between class bars
 			let start = mapItem.currentCol;
-			const length = SEL.getCurrentDetDataPerRow(mapItem);
+			const length = DVW.getCurrentDetDataPerRow(mapItem);
 			if (((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) &&  (typeof colClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps - if we are showing the whole row or a large part of it, use the summary classification values.
 				classBarValues = colClassBarData[key].svalues;
@@ -2219,7 +2219,7 @@ DET.detailDrawRowClassBars = function (mapItem, pixels) {
 			let classBarValues = rowClassBarData[key].values;
 			const classBarLength = classBarValues.length;
 			let start = mapItem.currentRow;
-			const length = SEL.getCurrentDetDataPerCol(mapItem);
+			const length = DVW.getCurrentDetDataPerCol(mapItem);
 			if (((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) &&  (typeof rowClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps, if we are showing the whole column, switch to the summary classificaiton values
 				classBarValues = rowClassBarData[key].svalues;
@@ -2324,7 +2324,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
     DET.detInitGl = function (mapItem) {
 	    if (!mapItem.glManager) {
 		mapItem.glManager = DRAW.GL.createGlManager (mapItem.canvas, getDetVertexShader, getDetFragmentShader, () => {
-		    const drawWin = SEL.getDetailWindow(mapItem);
+		    const drawWin = DVW.getDetailWindow(mapItem);
 		    DET.drawDetailHeatMap(mapItem, drawWin);
 		});
 	    }

@@ -12,10 +12,10 @@
 	const SRCH = NgChm.importNS('NgChm.SRCH');
 	const PANE = NgChm.importNS('NgChm.Pane');
 	const MMGR = NgChm.importNS('NgChm.MMGR');
-	const DEV = NgChm.importNS('NgChm.DEV');
-	const SEL = NgChm.importNS('NgChm.SEL');
-	const SUM = NgChm.importNS('NgChm.SUM');
+	const DVW = NgChm.importNS('NgChm.DVW');
 	const DET = NgChm.importNS('NgChm.DET');
+	const DEV = NgChm.importNS('NgChm.DEV');
+	const SUM = NgChm.importNS('NgChm.SUM');
 	const DMM = NgChm.importNS('NgChm.DMM');
 	const CUST = NgChm.importNS('NgChm.CUST');
 	const debug = false;
@@ -59,7 +59,7 @@
 			PANE.resizeNGCHM();
 			MMGR.getHeatMap().setUnAppliedChanges(false);
 			setTimeout(() => {
-				SEL.updateSelections(true);
+				DVW.updateSelections(true);
 				const expanded = document.querySelector("DIV[data-expanded-panel]");
 				if (expanded) {
 				    delete expanded.dataset.expandedPanel;
@@ -245,7 +245,7 @@
 			DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
 			let mapItem = DMM.getMapItemFromPane(pane.id);
-			SEL.updateSelection(mapItem);
+			DVW.updateSelection(mapItem);
 			delete RECPANES.mapConfigPanelConfiguration[paneid];
 			PANE.resizePane (mapItem.canvas);
 		} else if (config.type === 'plugin') {

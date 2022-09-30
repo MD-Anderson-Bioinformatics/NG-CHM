@@ -21,7 +21,7 @@
     const CFG = NgChm.importNS('NgChm.CFG');
 
     const CMM = NgChm.importNS('NgChm.CMM');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const UHM = NgChm.importNS('NgChm.UHM');
     const COMPAT = NgChm.importNS('NgChm.CM');
 
@@ -1229,13 +1229,13 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		sendCallBack(MMGR.Event_JSON);
 
 		// set the position to (1,1) so that the detail pane loads at the top left corner of the summary.
-		SEL.currentRow = 1;
-		SEL.currentCol = 1;
+		DVW.currentRow = 1;
+		DVW.currentCol = 1;
 		if (UTIL.getURLParameter("row") !== "" && !isNaN(Number(UTIL.getURLParameter("row")))){
-			SEL.currentRow = Number(UTIL.getURLParameter("row"))
+			DVW.currentRow = Number(UTIL.getURLParameter("row"))
 		}
 		if (UTIL.getURLParameter("column") !== "" && !isNaN(Number(UTIL.getURLParameter("column")))){
-			SEL.currentCol = Number(UTIL.getURLParameter("column"))
+			DVW.currentCol = Number(UTIL.getURLParameter("column"))
 		}
 		addDataLayers(mc);
 	}

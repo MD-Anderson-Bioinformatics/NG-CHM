@@ -6,16 +6,16 @@
     const DEV = NgChm.createNS('NgChm.DEV');
 
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
-    const DMM = NgChm.importNS('NgChm.DMM');
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
+    const DMM = NgChm.importNS('NgChm.DMM');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const UHM = NgChm.importNS('NgChm.UHM');
-    const SEL = NgChm.importNS('NgChm.SEL');
     const DDR = NgChm.importNS('NgChm.DDR');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');
-    const MMGR = NgChm.importNS('NgChm.MMGR');
     const DRAW = NgChm.importNS('NgChm.DRAW');
 
     DEV.targetCanvas = null;
@@ -180,8 +180,8 @@ DEV.userHelpOpen = function(mapItem) {
 	}
     }
     if (objectType === "map") {
-	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
-	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
+	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*DVW.getSamplingRatio('row'));
+	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*DVW.getSamplingRatio('col'));
 	if ((row <= heatMap.getNumRows('d')) && (col <= heatMap.getNumColumns('d'))) {
 		// Gather the information about the current pixel.
 		let matrixValue = heatMap.getValue(MAPREP.DETAIL_LEVEL,row,col);
@@ -243,7 +243,7 @@ DEV.userHelpOpen = function(mapItem) {
 	var pos, value, label;
 	var hoveredBar, hoveredBarColorScheme, hoveredBarValues;
 	if (objectType === "colClass") {
-		var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
+		var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*DVW.getSamplingRatio('col'));
 		var colLabels = heatMap.getColLabels().labels;
 		label = colLabels[col-1];
 		var coveredHeight = 0;
@@ -264,7 +264,7 @@ DEV.userHelpOpen = function(mapItem) {
 		}
 		var colorMap = heatMap.getColorMapManager().getColorMap("col",hoveredBar);
 	} else {
-		var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
+		var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*DVW.getSamplingRatio('row'));
 		var rowLabels = heatMap.getRowLabels().labels;
 		label = rowLabels[row-1];
 		var coveredWidth = 0;
@@ -427,8 +427,8 @@ DEV.handleScroll = function(evt) {
 	        if (!DMM.primaryMap) return;
 		parentElement = DMM.primaryMap.chm;
 	}
-	if (SEL.scrollTime == null || evt.timeStamp - SEL.scrollTime > 150){
-		SEL.scrollTime = evt.timeStamp;
+	if (DVW.scrollTime == null || evt.timeStamp - DVW.scrollTime > 150){
+		DVW.scrollTime = evt.timeStamp;
 		if (evt.wheelDelta < -30 || evt.deltaY > 0 || evt.scale < 1) { //Zoom out
             DEV.detailDataZoomOut(parentElement);
 		} else if ((evt.wheelDelta > 30 || evt.deltaY < 0 || evt.scale > 1)){ // Zoom in
@@ -512,21 +512,21 @@ DEV.keyNavigate = function(e) {
 				}
 				break;
 			case 113: // F2 key 
-				if (SEL.flickIsOn()) {
+				if (DVW.flickIsOn()) {
 					let flickBtn = document.getElementById("flick_btn");
 					if (flickBtn.dataset.state === 'flickUp') {
-						SEL.flickChange("toggle2");
+						DEV.flickChange("toggle2");
 					} else {
-						SEL.flickChange("toggle1");
+						DEV.flickChange("toggle1");
 					}
 				}
 				break;
 			default:
 				return;
 		}
-		SEL.checkRow(mapItem);
-		SEL.checkCol(mapItem);
-	    SEL.updateSelection(mapItem);
+		DVW.checkRow(mapItem);
+		DVW.checkCol(mapItem);
+	    DVW.updateSelection(mapItem);
     } else {
     	if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
 		SRCH.detailSearch();
@@ -611,14 +611,14 @@ DEV.dblClick = function(e) {
 	const mapLocY = coords.y - DET.getColClassPixelHeight(mapItem);
 	const mapLocX = coords.x - DET.getRowClassPixelWidth(mapItem);
 
-	const clickRow = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
-	const clickCol = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
-	const destRow = clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2);
-	const destCol = clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerRow(mapItem)/2);
+	const clickRow = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*DVW.getSamplingRatio('row'));
+	const clickCol = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*DVW.getSamplingRatio('col'));
+	const destRow = clickRow + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2);
+	const destCol = clickCol + 1 - Math.floor(DVW.getCurrentDetDataPerRow(mapItem)/2);
 	
 	// set up panning animation 
-	const diffRow =  clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2) - mapItem.currentRow;
-	const diffCol =  clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerRow(mapItem)/2) - mapItem.currentCol;
+	const diffRow =  clickRow + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2) - mapItem.currentRow;
+	const diffCol =  clickCol + 1 - Math.floor(DVW.getCurrentDetDataPerRow(mapItem)/2) - mapItem.currentCol;
 	const diffMax = Math.max(diffRow,diffCol);
 	const numSteps = 7;
 	const rowStep = diffRow/numSteps;
@@ -632,11 +632,11 @@ DEV.dblClick = function(e) {
 	function drawScene(now){
 		steps++;
 		if (steps < numSteps && !(mapItem.currentRow == destRow && mapItem.currentCol == destCol)){ // if we have not finished the animation, continue redrawing
-			mapItem.currentRow = clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*rowStep);
-			mapItem.currentCol = clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*colStep);
-			SEL.checkRow(mapItem);
-			SEL.checkCol(mapItem);
-			SEL.updateSelection(mapItem);
+			mapItem.currentRow = clickRow + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*rowStep);
+			mapItem.currentCol = clickCol + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*colStep);
+			DVW.checkRow(mapItem);
+			DVW.checkCol(mapItem);
+			DVW.updateSelection(mapItem);
 			requestAnimationFrame(drawScene); // requestAnimationFrame is a native JS function that calls drawScene after a short time delay
 		} else { // if we are done animating, zoom in
 			mapItem.currentRow = destRow;
@@ -648,9 +648,9 @@ DEV.dblClick = function(e) {
 				DEV.zoomAnimation(mapItem.chm, clickRow, clickCol);
 			}
 			//Center the map on the cursor position
-			SEL.checkRow(mapItem);
-			SEL.checkCol(mapItem);
-			SEL.updateSelection(mapItem);
+			DVW.checkRow(mapItem);
+			DVW.checkCol(mapItem);
+			DVW.updateSelection(mapItem);
 		}
 	}
 }
@@ -709,7 +709,7 @@ DEV.labelClick = function (e) {
 	document.getElementById('cancel_btn').style.display='';
 	SUM.clearSelectionMarks();
 	DET.updateDisplayedLabels();
-	SEL.updateSelections();
+	DVW.updateSelections();
 	SUM.drawSelectionMarks();
 	SUM.drawTopItems();
 	SRCH.showSearchResults();
@@ -749,7 +749,7 @@ DEV.labelDrag = function(e){
 	document.getElementById('cancel_btn').style.display='';
 	DET.updateDisplayedLabels();
 	SRCH.showSearchResults();
-	SEL.updateSelections();
+	DVW.updateSelections();
 	SUM.drawSelectionMarks();
 	SUM.drawTopItems();
 	SRCH.showSearchResults();
@@ -840,13 +840,13 @@ DEV.matrixRightClick = function (e) {
 	} 
 	const heatMap = MMGR.getHeatMap();
 	heatMap.setCurrentDL (mapItem.currentDl);
-	SEL.flickInit();
+	DVW.flickInit();
 	SUM.buildSummaryTexture();
 	DMM.DetailMaps.forEach(dm => {
 		dm.currentDl = mapItem.currentDl;
 	})
 	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout,true);
-	SEL.updateSelections(true);
+	DVW.updateSelections(true);
     };
 })();
 
@@ -950,9 +950,9 @@ DEV.handleMoveDrag = function (e) {
 			mapItem.currentCol = Math.round(mapItem.currentCol - (xDrag/rowElementSize));
 			mapItem.dragOffsetX = coords.x;  //canvas X coordinate 
 		}
-	    SEL.checkRow(mapItem);
-	    SEL.checkCol(mapItem);
-	    SEL.updateSelection(mapItem);
+	    DVW.checkRow(mapItem);
+	    DVW.checkCol(mapItem);
+	    DVW.updateSelection(mapItem);
     } 
 }	
 
@@ -1006,14 +1006,14 @@ DEV.getRowFromLayerY = function (mapItem,layerY) {
 	const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
 	const colClassHeightPx = DET.getColClassPixelHeight(mapItem);
 	const mapLocY = layerY - colClassHeightPx;
-	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio(mapItem.mode,'row'));
+	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*DVW.getSamplingRatio(mapItem.mode,'row'));
 }
 
 DEV.getColFromLayerX = function (mapItem,layerX) {
 	const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
 	const rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
 	const mapLocX = layerX - rowClassWidthPx;
-	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio(mapItem.mode,'col'));
+	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*DVW.getSamplingRatio(mapItem.mode,'col'));
 }
 
 
@@ -1058,7 +1058,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			let zoomBoxSize = DET.zoomBoxSizes[current+1];
 			DET.setDetailDataSize (mapItem, zoomBoxSize);
 		}
-		SEL.updateSelection(mapItem, false);
+		DVW.updateSelection(mapItem, false);
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
 	        let mode = mapItem.mode, col;
 		if (mapItem.modeHistory.length > 0) {
@@ -1086,7 +1086,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			} else if (current < DET.zoomBoxSizes.length - 1) {
 				DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current+1]);
 			}
-			SEL.updateSelection(mapItem, false);
+			DVW.updateSelection(mapItem, false);
 		}
 		mapItem.modeHistory.pop();
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
@@ -1116,7 +1116,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			} else if (current < DET.zoomBoxSizes.length - 1) {
 			    DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[current+1]);
 			}
-			SEL.updateSelection(mapItem, false);
+			DVW.updateSelection(mapItem, false);
 		}
 		mapItem.modeHistory.pop();
 	}
@@ -1143,7 +1143,7 @@ DEV.detailDataZoomOut = function (chm) {
 		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) &&
 		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))){
 			DET.setDetailDataSize (mapItem,DET.zoomBoxSizes[current-1]);
-			SEL.updateSelection(mapItem);
+			DVW.updateSelection(mapItem);
 		} else {
 			//If we can't zoom out anymore see if ribbon mode would show more of the map or , switch to full map view.
 			if ((current > 0) && (heatMap.getNumRows(MAPREP.DETAIL_LEVEL) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) ) {
@@ -1160,7 +1160,7 @@ DEV.detailDataZoomOut = function (chm) {
 		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MAPREP.DETAIL_LEVEL))) {
 			// Additional zoom out in ribbon mode.
 			DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current-1]);
-			SEL.updateSelection(mapItem);
+			DVW.updateSelection(mapItem);
 		} else {
 			// Switch to full map view.
 			DEV.detailFullMap(mapItem);
@@ -1171,7 +1171,7 @@ DEV.detailDataZoomOut = function (chm) {
 		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))){
 			// Additional zoom out in ribbon mode.
 			DET.setDetailDataWidth (mapItem,DET.zoomBoxSizes[current-1]);
-			SEL.updateSelection(mapItem);
+			DVW.updateSelection(mapItem);
 		} else {
 			// Switch to full map view.
 			DEV.detailFullMap(mapItem);
@@ -1216,7 +1216,7 @@ DEV.clearModeHistory = function (mapItem) {
 DEV.detailNormal = function (mapItem, restoreInfo) {
 	UHM.hlpC();
 	const previousMode = mapItem.mode;
-	SEL.setMode(mapItem,'NORMAL');
+	DVW.setMode(mapItem,'NORMAL');
 	DET.setButtons(mapItem);
 	if (!restoreInfo) {
 	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
@@ -1246,14 +1246,14 @@ DEV.detailNormal = function (mapItem, restoreInfo) {
 	    }
 	}
 	
-	SEL.checkRow(mapItem);
-	SEL.checkCol(mapItem);
+	DVW.checkRow(mapItem);
+	DVW.checkCol(mapItem);
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	 
 	DET.detInitGl(mapItem);
 	DDR.clearDendroSelection();
-	SEL.updateSelection(mapItem);
+	DVW.updateSelection(mapItem);
 	try {
 		document.getElementById("viewport").setAttribute("content", "height=device-height");
 		document.getElementById("viewport").setAttribute("content", "");
@@ -1279,7 +1279,7 @@ DEV.detailFullMap = function (mapItem) {
 	} else if (mapItem.subDendroMode === 'Row') {
 	    DET.scaleViewWidth(mapItem);
 	} else {
-	    SEL.setMode(mapItem, 'FULL_MAP');
+	    DVW.setMode(mapItem, 'FULL_MAP');
 	    DET.scaleViewHeight(mapItem);
 	    DET.scaleViewWidth(mapItem);
 	}
@@ -1288,7 +1288,7 @@ DEV.detailFullMap = function (mapItem) {
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	DET.detInitGl(mapItem);
-	SEL.updateSelection(mapItem);
+	DVW.updateSelection(mapItem);
 }
 
 /**********************************************************************************
@@ -1312,7 +1312,7 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	const previousMode = mapItem.mode;
 	const prevWidth = mapItem.dataBoxWidth;
 	mapItem.saveCol = mapItem.currentCol;
-	SEL.setMode(mapItem,'RIBBONH');
+	DVW.setMode(mapItem,'RIBBONH');
 	DET.setButtons(mapItem);
 
 	if (!restoreInfo) {
@@ -1360,7 +1360,7 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	DET.detInitGl(mapItem);
-	SEL.updateSelection(mapItem);
+	DVW.updateSelection(mapItem);
 }
 
 /**********************************************************************************
@@ -1385,7 +1385,7 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	const prevHeight = mapItem.dataBoxHeight;
 	mapItem.saveRow = mapItem.currentRow;
 	
-	SEL.setMode(mapItem, 'RIBBONV');
+	DVW.setMode(mapItem, 'RIBBONV');
 	DET.setButtons(mapItem);
 
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
@@ -1404,7 +1404,7 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
 		if (selectionSize < 500) {
 			DEV.clearModeHistory (mapItem);
-			SEL.setMode(mapItem, 'RIBBONV_DETAIL');
+			DVW.setMode(mapItem, 'RIBBONV_DETAIL');
 		} else {
 			const rvRate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 			selectionSize = Math.floor(selectionSize / rvRate);			
@@ -1435,7 +1435,7 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	DET.detInitGl(mapItem);
-	SEL.updateSelection(mapItem);
+	DVW.updateSelection(mapItem);
 	try {
 		document.getElementById("viewport").setAttribute("content", "height=device-height");
 		document.getElementById("viewport").setAttribute("content", "");
@@ -1553,9 +1553,9 @@ DEV.zoomAnimation = function (chm,destRow,destCol) {
 								
 				//TODO: do we need to account for summary ratio???
 				const leftRatio=(saveCol-1)*mapWRatio /mapItem.dataPerRow /animateCountMax/heatMap.getColSummaryRatio("d");
-				const rightRatio=Math.max(0,(SEL.getCurrentDetDataPerRow(mapItem)*heatMap.getColSummaryRatio("d")-saveCol-1-detNum)*mapWRatio /SEL.getCurrentDetDataPerRow(mapItem) /animateCountMax/heatMap.getColSummaryRatio("d")); // this one works for maps that are not too big!!
+				const rightRatio=Math.max(0,(DVW.getCurrentDetDataPerRow(mapItem)*heatMap.getColSummaryRatio("d")-saveCol-1-detNum)*mapWRatio /DVW.getCurrentDetDataPerRow(mapItem) /animateCountMax/heatMap.getColSummaryRatio("d")); // this one works for maps that are not too big!!
 				const topRatio = (saveRow-1)*mapHRatio /mapItem.dataPerCol /animateCountMax/heatMap.getRowSummaryRatio("d");
-				const bottomRatio = Math.max(0,(SEL.getCurrentDetDataPerCol(mapItem)*heatMap.getRowSummaryRatio("d")-saveRow-1-detNum)*mapHRatio   /SEL.getCurrentDetDataPerCol(mapItem) /animateCountMax/heatMap.getRowSummaryRatio("d")); // this one works for maps that are not too big!
+				const bottomRatio = Math.max(0,(DVW.getCurrentDetDataPerCol(mapItem)*heatMap.getRowSummaryRatio("d")-saveRow-1-detNum)*mapHRatio   /DVW.getCurrentDetDataPerCol(mapItem) /animateCountMax/heatMap.getRowSummaryRatio("d")); // this one works for maps that are not too big!
 				
 				texLeft = dendroClassWRatio+animateCount*leftRatio;
 			        texBottom = animateCount*bottomRatio;
@@ -1654,7 +1654,7 @@ document.getElementById('flick2').onchange = function (event) {
     DEV.flickChange('flick2');
 };
 document.getElementById('flickOn_pic').onclick = function (event) {
-    SEL.flickToggleOff();
+    DVW.flickToggleOff();
 };
 
 })();

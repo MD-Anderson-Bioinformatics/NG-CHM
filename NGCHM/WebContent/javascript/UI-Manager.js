@@ -16,7 +16,7 @@
     const DEV = NgChm.importNS('NgChm.DEV');
     const DMM = NgChm.importNS('NgChm.DMM');
     const LNK = NgChm.importNS('NgChm.LNK');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const PANE = NgChm.importNS('NgChm.Pane');
     const SRCH = NgChm.importNS('NgChm.SRCH');
@@ -415,7 +415,7 @@
 	    UHM.invalidFileFormat();
 	} else {
 	    displayFileModeCHM(chmFile);
-	    SEL.openFileToggle();
+	    DVW.openFileToggle();
 	}
     }
 
@@ -461,15 +461,15 @@
      * from one file-mode heatmap to another
      **********************************************************************************/
     function resetCHM () {
-    //	SEL.mode = 'NORMAL';
-	    SEL.currentRow=null;
-	    SEL.currentCol=null;
-    //	SEL.dataPerRow=null;
-    //	SEL.dataPerCol=null;
-    //	SEL.selectedStart=0;
-    //	SEL.selectedStop=0;
+    //	DVW.mode = 'NORMAL';
+	    DVW.currentRow=null;
+	    DVW.currentCol=null;
+    //	DVW.dataPerRow=null;
+    //	DVW.dataPerCol=null;
+    //	DVW.selectedStart=0;
+    //	DVW.selectedStop=0;
 	    SRCH.clearAllSearchResults ();
-	    SEL.scrollTime = null;
+	    DVW.scrollTime = null;
 	    SUM.colDendro = null;
 	    SUM.rowDendro = null;
     }

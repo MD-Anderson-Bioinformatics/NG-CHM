@@ -9,7 +9,7 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
     const DET = NgChm.importNS('NgChm.DET');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
@@ -186,7 +186,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 PDF.callViewerHeatmapPDF = function() {
 	document.body.style.cursor = 'wait';
     const heatMap = MMGR.getHeatMap();
-    const details = heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
+    const details = heatMap.setReadWindow(DVW.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
     let tilesReady = heatMap.allTilesAvailable();
     if (tilesReady === true) {
 	 PDF.getViewerHeatmapPDF();
@@ -218,7 +218,7 @@ PDF.pdfDataReady = function(event, tile) {
  * https://mrrio.github.io/jsPDF/doc/symbols/jsPDF.html#setLineCap
  **********************************************************************************/
 PDF.getViewerHeatmapPDF = function() {
-	SEL.updateSelections(true);
+	DVW.updateSelections(true);
 	setTimeout(function(){ PDF.genViewerHeatmapPDF(); }, 1500);
 }
 

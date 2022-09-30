@@ -7,7 +7,7 @@
 
     const DMM = NgChm.importNS('NgChm.DMM');
     const SUM = NgChm.importNS('NgChm.SUM');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const DEV = NgChm.importNS('NgChm.DEV');
@@ -49,7 +49,7 @@ DDR.clearDendroSelection = function() {
 		DMM.primaryMap.selectedStop = 0;
 		SUM.rowDendro.clearRibbonMode();
 		SUM.colDendro.clearRibbonMode();
-		if (!SEL.isSub) {
+		if (!DVW.isSub) {
 			const heatMap = MMGR.getHeatMap();
 			if (heatMap.showRowDendrogram("summary")) {
 				SUM.rowDendro.draw();
@@ -1002,7 +1002,7 @@ DDR.DetailDendrogram = function(summaryDendrogram) {
 			const sumIdx = this.bars[barIdx].idx;  // Get index of bar in summary dendrogram.
 			SUM.clearSelectionMarks();
 			this.summaryDendrogram.addSelectedBar(sumIdx, e.shiftKey,e.metaKey||e.ctrlKey);
-			SEL.updateSelection(DMM.getMapItemFromDendro(this));
+			DVW.updateSelection(DMM.getMapItemFromDendro(this));
 			SUM.drawSelectionMarks();
 			SUM.drawTopItems();
 			let clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';

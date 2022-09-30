@@ -11,7 +11,7 @@
  */
 
 //Define Namespace for NgChm SelectionManager  
-    const SEL = NgChm.createNS('NgChm.SEL');
+    const DVW = NgChm.createNS('NgChm.DVW');
 
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
@@ -22,9 +22,9 @@
     const DMM = NgChm.importNS('NgChm.DMM');
 
 //Globals that provide information about heat map position selection.
-SEL.currentRow = null;      // Top row of current selected position
-SEL.currentCol = null;      // Left column of the current selected position
-SEL.scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
+DVW.currentRow = null;      // Top row of current selected position
+DVW.currentCol = null;      // Left column of the current selected position
+DVW.scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
 
 /*********************************************************************************************
  * FUNCTION:  updateSelection - The purpose of this function is to set the state of a given
@@ -32,10 +32,10 @@ SEL.scrollTime = null;    // timer for scroll events to prevent multiple events 
  * It is assumed that the caller modified currentRow, currentCol, dataPerRow, and dataPerCol
  * as desired. This method does redrawing and notification as necessary.
  *********************************************************************************************/
-SEL.updateSelection = function (mapItem,noResize) {
+DVW.updateSelection = function (mapItem,noResize) {
     //We have the summary heat map so redraw the yellow selection box.
     SUM.drawLeftCanvasBox();
-    MMGR.getHeatMap().setReadWindow(SEL.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),SEL.getCurrentDetRow(mapItem),SEL.getCurrentDetCol(mapItem),SEL.getCurrentDetDataPerCol(mapItem),SEL.getCurrentDetDataPerRow(mapItem));
+    MMGR.getHeatMap().setReadWindow(DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),DVW.getCurrentDetRow(mapItem),DVW.getCurrentDetCol(mapItem),DVW.getCurrentDetDataPerCol(mapItem),DVW.getCurrentDetDataPerRow(mapItem));
     DET.setDrawDetailTimeout (mapItem, DET.redrawSelectionTimeout,noResize);
 };
 
@@ -43,12 +43,12 @@ SEL.updateSelection = function (mapItem,noResize) {
  * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection
  * function for each detail map panel.
  *********************************************************************************************/
-SEL.updateSelections = function (noResize) {
+DVW.updateSelections = function (noResize) {
 	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
 		if (typeof noResize !== 'undefined') {
-			SEL.updateSelection(DMM.DetailMaps[i],noResize)
+			DVW.updateSelection(DMM.DetailMaps[i],noResize)
 		} else {
-			SEL.updateSelection(DMM.DetailMaps[i])
+			DVW.updateSelection(DMM.DetailMaps[i])
 		}
 	}
 	MMGR.getHeatMap().setUnAppliedChanges(true);
@@ -60,7 +60,7 @@ SEL.updateSelections = function (noResize) {
  * with a given mode.  A level is passed in from either the summary or detail display
  * as a default value and returned if the mode is not one of the Ribbon modes.
  **********************************************************************************/
-SEL.getLevelFromMode = function(mapItem, lvl) {
+DVW.getLevelFromMode = function(mapItem, lvl) {
 	if (mapItem.mode == 'RIBBONV') {
 		return MAPREP.RIBBON_VERT_LEVEL;
 	} else if (mapItem.mode == 'RIBBONH') {
@@ -76,7 +76,7 @@ SEL.getLevelFromMode = function(mapItem, lvl) {
  * FUNCTION - getLevelFromMode: This function sets the mode for the mapItem passed
  * in.
  **********************************************************************************/
-SEL.setMode = function(mapItem, newMode) {
+DVW.setMode = function(mapItem, newMode) {
 	mapItem.prevMode = mapItem.mode;
 	mapItem.mode = newMode;
 }
@@ -85,14 +85,14 @@ SEL.setMode = function(mapItem, newMode) {
  * FUNCTION:  getDetailWindow - The purpose of this function is to return an object containing
  * selection information for a given detail heat map window.  
  *********************************************************************************************/
-SEL.getDetailWindow = function(mapItem) {
+DVW.getDetailWindow = function(mapItem) {
 	return {
 		layer: mapItem.currentDl,
-		level: SEL.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),
-		firstRow: SEL.getCurrentDetRow(mapItem),
-		firstCol: SEL.getCurrentDetCol(mapItem),
-		numRows: SEL.getCurrentDetDataPerCol(mapItem),
-		numCols: SEL.getCurrentDetDataPerRow(mapItem)
+		level: DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),
+		firstRow: DVW.getCurrentDetRow(mapItem),
+		firstCol: DVW.getCurrentDetCol(mapItem),
+		numRows: DVW.getCurrentDetDataPerCol(mapItem),
+		numCols: DVW.getCurrentDetDataPerRow(mapItem)
 	}
 }
 
@@ -110,14 +110,14 @@ SEL.getDetailWindow = function(mapItem) {
  * row/col summary ratios (ratio of detail to summary) are used to  calculate the 
  * proper detail coordinates.
  **********************************************************************************/
-SEL.getCurrentSumRow = function(mapItem) {
+DVW.getCurrentSumRow = function(mapItem) {
 	const currRow = mapItem.currentRow;
 	// Convert selected current row value to Summary level
 	const rowSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	return  Math.round(currRow/rowSummaryRatio);
 }
 //Follow similar methodology for Column as is used in above row based function
-SEL.getCurrentSumCol = function(mapItem) {
+DVW.getCurrentSumCol = function(mapItem) {
 	const currCol =  mapItem.currentCol;
 	const colSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	return  Math.round(currCol/colSummaryRatio);
@@ -129,30 +129,31 @@ SEL.getCurrentSumCol = function(mapItem) {
  * position.  This is usually the same but when in ribbon view on a large matrix, 
  * the positions are scaled.
  **********************************************************************************/
-SEL.getCurrentDetRow = function(mapItem) { //SEL
+DVW.getCurrentDetRow = function(mapItem) {
 	let detRow = mapItem.currentRow;
 	if ((mapItem.mode == 'RIBBONV') && (mapItem.selectedStart >= 1)) {
 		const rvRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 		detRow = Math.round(mapItem.selectedStart/rvRatio);
 	}
 	return  detRow;
-}
+};
+
 //Follow similar methodology for Column as is used in above row based function
-SEL.getCurrentDetCol = function(mapItem) { //SEL
+DVW.getCurrentDetCol = function(mapItem) {
 	let detCol = mapItem.currentCol;
 	if ((mapItem.mode == 'RIBBONH') && (mapItem.selectedStart >= 1)) {
 		const rhRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 		detCol = Math.round(mapItem.selectedStart/rhRatio);
 	}
 	return  detCol;
-}
+};
 
 /**********************************************************************************
  * FUNCTIONS - getCurrentDetDataPerRow(): DataPerRow/Col is in full matrix coordinates
  * and usually the detail view uses this value directly unless we are in ribbon
  * view where the value needs to be scaled in one dimension.
  **********************************************************************************/
-SEL.getCurrentDetDataPerRow = function(mapItem) {
+DVW.getCurrentDetDataPerRow = function(mapItem) {
 	// make sure dataPerCol is the correct value. 
 	let	detDataPerRow = mapItem.dataPerRow;
 	if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
@@ -162,7 +163,7 @@ SEL.getCurrentDetDataPerRow = function(mapItem) {
 	return detDataPerRow;
 }
 // Follow similar methodology for Column as is used in above row based function
-SEL.getCurrentDetDataPerCol = function(mapItem) {
+DVW.getCurrentDetDataPerCol = function(mapItem) {
 	// make sure dataPerCol is the correct value.  
 	let	detDataPerCol = mapItem.dataPerCol;
 	if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) {
@@ -178,14 +179,14 @@ SEL.getCurrentDetDataPerCol = function(mapItem) {
  * proper view pane can be calculated on the summary heat map when drawing the 
  * leftCanvasBox on that side of the screen.
  **********************************************************************************/
-SEL.getCurrentSumDataPerRow = function(mapItem) {
+DVW.getCurrentSumDataPerRow = function(mapItem) {
 	const rowSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	// Summary data per row for  using the summary ration for that level
 	const	sumDataPerRow = Math.floor(mapItem.dataPerRow/rowSummaryRatio);
 	return sumDataPerRow;
 }
 // Follow similar methodology for Column as is used in above row based function
-SEL.getCurrentSumDataPerCol = function(mapItem) {
+DVW.getCurrentSumDataPerCol = function(mapItem) {
 	const colSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	const	sumDataPerCol = Math.floor(mapItem.dataPerCol/colSummaryRatio);
 	return sumDataPerCol;
@@ -195,7 +196,7 @@ SEL.getCurrentSumDataPerCol = function(mapItem) {
  * FUNCTIONS - setDataPerRowFromDet(): DataPerRow/Col is in full matrix coordinates
  * so sometimes in ribbon view this needs to be translated to full coordinates.
  **********************************************************************************/
-SEL.setDataPerRowFromDet = function(detDataPerRow, mapItem) {
+DVW.setDataPerRowFromDet = function(detDataPerRow, mapItem) {
 	const heatMap = MMGR.getHeatMap();
 	const isPrimary = mapItem.version === 'P' ? true : false;
 	mapItem.dataPerRow = detDataPerRow;
@@ -212,7 +213,7 @@ SEL.setDataPerRowFromDet = function(detDataPerRow, mapItem) {
 	} 
 }
 // Follow similar methodology for Column as is used in above row based function
-SEL.setDataPerColFromDet = function(detDataPerCol, mapItem) {
+DVW.setDataPerColFromDet = function(detDataPerCol, mapItem) {
 	const heatMap = MMGR.getHeatMap();
 	const isPrimary = mapItem.version === 'P' ? true : false;
 	mapItem.dataPerCol = detDataPerCol;
@@ -237,14 +238,14 @@ SEL.setDataPerColFromDet = function(detDataPerCol, mapItem) {
  * in the summary pane. The heatmap row/col summary ratios (ratio of detail to summary) 
  * are used to calculate the proper detail coordinates.  
  **********************************************************************************/
-SEL.setCurrentRowFromSum = function(mapItem,sumRow) {
+DVW.setCurrentRowFromSum = function(mapItem,sumRow) {
 	// Up scale current summary row to detail equivalent
 	mapItem.currentRow = (sumRow*MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL));
-	SEL.checkRow(mapItem);
+	DVW.checkRow(mapItem);
 }
-SEL.setCurrentColFromSum = function(mapItem,sumCol) {
+DVW.setCurrentColFromSum = function(mapItem,sumCol) {
 	mapItem.currentCol = (sumCol*MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL));
-	SEL.checkCol(mapItem);
+	DVW.checkCol(mapItem);
 }
 
 /**********************************************************************************
@@ -252,7 +253,7 @@ SEL.setCurrentColFromSum = function(mapItem,sumCol) {
  * is valid and adjusts that value into the viewing pane if it is not. It is called
  * just prior to calling UpdateSelection().
  **********************************************************************************/
-SEL.checkRow = function(mapItem) {
+DVW.checkRow = function(mapItem) {
 	const isPrimary = mapItem.version === 'P' ? true : false;
     //Set column to one if off the row boundary when in ribbon vert view
 	if ((mapItem.currentRow < 1) || ((mapItem.mode == 'RIBBONV') && (mapItem.selectedStart==0))) {
@@ -271,7 +272,7 @@ SEL.checkRow = function(mapItem) {
 	}
 }
 
-SEL.checkCol = function(mapItem) {
+DVW.checkCol = function(mapItem) {
 	const isPrimary = mapItem.version === 'P' ? true : false;
     //Set column to one if off the column boundary when in ribbon horiz view
     if ((mapItem.currentCol < 1) || ((mapItem.mode == 'RIBBONH') && mapItem.selectedStart==0)) {
@@ -294,7 +295,7 @@ SEL.checkCol = function(mapItem) {
  * FUNCTION:  getSamplingRatio - This function returns the appropriate row/col sampling ration
  * for the heat map based upon the screen mode.  
  *********************************************************************************************/
-SEL.getSamplingRatio = function (mode,axis) {
+DVW.getSamplingRatio = function (mode,axis) {
 	const heatMap = MMGR.getHeatMap();
 	if (axis == 'row'){
 		switch (mode){
@@ -325,7 +326,7 @@ SEL.getSamplingRatio = function (mode,axis) {
  * FUNCTION: flickExists - Returns true if the heatmap contains multiple data layers by checking
  * to see if the "FLICK" button is present on the screen.
  ***********************************************************************************************/ 
-SEL.flickExists = function() {
+DVW.flickExists = function() {
 	var flicks = document.getElementById("flicks");
 	if ((flicks != null) && (flicks.style.display === '')) {
 		return true;
@@ -337,7 +338,7 @@ SEL.flickExists = function() {
  * FUNCTION: flickIsOn - Returns true if the user has opened the flick control by checking to 
  * see if the flickViews DIV is visible.
  ***********************************************************************************************/ 
-SEL.flickIsOn = function() {
+DVW.flickIsOn = function() {
 	var flickViews = document.getElementById("flickViews");
 	if (flickViews.style.display === '') {
 		return true;
@@ -348,7 +349,7 @@ SEL.flickIsOn = function() {
 /************************************************************************************************
  * FUNCTION: flickToggleOn - Opens the flick control.
  ***********************************************************************************************/ 
-SEL.flickToggleOn = function() {
+DVW.flickToggleOn = function() {
 	var flickDrop1 = document.getElementById("flick1");
 	var flickDrop2 = document.getElementById("flick2");
 	//Make sure that dropdowns contain different
@@ -360,7 +361,7 @@ SEL.flickToggleOn = function() {
 			flickDrop2.selectedIndex = 0;
 		}
 	}
-	SEL.flickInit();
+	DVW.flickInit();
 	var flicks = document.getElementById("flicks");
 	var flickViewsOff = document.getElementById("noFlickViews");
 	var flickViewsOn = document.getElementById("flickViews");
@@ -368,7 +369,7 @@ SEL.flickToggleOn = function() {
 	flickViewsOn.style.display='';
 }
 
-SEL.openFileToggle = function() {
+DVW.openFileToggle = function() {
 	var fileButton = document.getElementById('fileButton');
 	var detailButtons = document.getElementById('detail_buttons');
 	if (fileButton.style.display === 'none') {
@@ -382,7 +383,7 @@ SEL.openFileToggle = function() {
 /************************************************************************************************
  * FUNCTION: flickToggleOff - Closes (hides) the flick control.
  ***********************************************************************************************/ 
-SEL.flickToggleOff = function() {
+DVW.flickToggleOff = function() {
 	var flicks = document.getElementById("flicks");
 	var flickViewsOff = document.getElementById("noFlickViews");
 	var flickViewsOn = document.getElementById("flickViews");
@@ -390,7 +391,7 @@ SEL.flickToggleOff = function() {
 	flickViewsOff.style.display='';
 }
 
-SEL.flickInit = function() {
+DVW.flickInit = function() {
 	var flickBtn = document.getElementById("flick_btn");
 	var flickDrop1 = document.getElementById("flick1");
 	var flickDrop2 = document.getElementById("flick2");
@@ -404,11 +405,11 @@ SEL.flickInit = function() {
 }
 
     document.getElementById('fileOpen_btn').onclick = () => {
-	SEL.openFileToggle();
+	DVW.openFileToggle();
     };
 
     document.getElementById('flickOff').onclick = () => {
-	SEL.flickToggleOn();
+	DVW.flickToggleOn();
     };
 
 })();

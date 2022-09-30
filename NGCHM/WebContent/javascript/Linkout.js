@@ -102,10 +102,10 @@ var linkoutsVersion = 'undefined';
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const PANE = NgChm.importNS('NgChm.Pane');
     const UHM = NgChm.importNS('NgChm.UHM');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
     const DMM = NgChm.importNS('NgChm.DMM');
-    const SEL = NgChm.importNS('NgChm.SEL');
     const SUM = NgChm.importNS('NgChm.SUM');
     const CUST = NgChm.importNS('NgChm.CUST');
     const CMM = NgChm.importNS('NgChm.CMM');
@@ -326,10 +326,10 @@ var linkoutsVersion = 'undefined';
 		let tilesReady = false;
 		const heatMap = MMGR.getHeatMap();
 		if (SRCH.getAxisSearchResults("Row").length === 0) {
-		    heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
+		    heatMap.setReadWindow(DVW.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
 		} else if (SRCH.getAxisSearchResults("Column").length === 0) {
-		    heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
+		    heatMap.setReadWindow(DVW.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
 		} else {
 			return LNK.createMatrixDataTsv(searchLabels);
@@ -3010,7 +3010,7 @@ var linkoutsVersion = 'undefined';
 		}
 		DET.updateDisplayedLabels();
 		SUM.redrawSelectionMarks();
-		SEL.updateSelections();
+		DVW.updateSelections();
 		SRCH.showSearchResults();
 		LNK.postSelectionToLinkouts (axis, msg.selection.clickType, 0, msg.nonce);
 	});
@@ -3026,7 +3026,7 @@ var linkoutsVersion = 'undefined';
 		SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
 		DET.labelLastClicked[axis] = ptIdx;
 		DET.updateDisplayedLabels();
-		SEL.updateSelections();
+		DVW.updateSelections();
 		SRCH.showSearchResults();
 		SUM.redrawSelectionMarks();
 	});

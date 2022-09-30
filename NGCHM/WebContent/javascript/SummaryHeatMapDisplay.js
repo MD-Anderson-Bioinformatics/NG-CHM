@@ -12,7 +12,7 @@
     const DEV = NgChm.importNS('NgChm.DEV');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const DRAW = NgChm.importNS('NgChm.DRAW');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const PANE = NgChm.importNS('NgChm.Pane');
     const SRCH = NgChm.importNS('NgChm.SRCH');
 
@@ -638,7 +638,7 @@ SUM.onMouseOut = function(evt) {
 	//Gotta redraw everything because of event cascade occurring when mousing out of the layers that contain the canvas 
 	// (container and summary_chm) we set the right position mousing up on the canvas above, but move events are still coming in.
 	if (DMM.DetailMaps.length > 0) { // only 'redraw everything' if there are detail maps showing
-		SEL.updateSelection(DMM.primaryMap);
+		DVW.updateSelection(DMM.primaryMap);
 	}
 }
 
@@ -691,8 +691,8 @@ SUM.onMouseUpCanvas = function(evt) {
 		SUM.canvas.style.cursor="default";
 		//Make sure the selected row/column are within the bounds of the matrix.
 		if (DMM.primaryMap) {
-		    SEL.checkRow(DMM.primaryMap);
-		    SEL.checkCol(DMM.primaryMap);
+		    DVW.checkRow(DMM.primaryMap);
+		    DVW.checkCol(DMM.primaryMap);
 		}
 		SUM.mouseEventActive = false;
 	}
@@ -731,16 +731,16 @@ SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
 		mapItem.currentCol = startCol; 
 		DEV.callDetailDrawFunction('RIBBONV', mapItem);
 	}
-	SEL.updateSelection(mapItem);
+	DVW.updateSelection(mapItem);
 }
 
 SUM.clickSelection = function(xPos, yPos) {
 	if (!DMM.primaryMap) return;
-	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.floor(SEL.getCurrentSumDataPerCol(DMM.primaryMap)/2);
-	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.floor(SEL.getCurrentSumDataPerRow(DMM.primaryMap)/2);
-	SEL.setCurrentRowFromSum(DMM.primaryMap,sumRow);
-	SEL.setCurrentColFromSum(DMM.primaryMap,sumCol);
-	SEL.updateSelection(DMM.primaryMap);
+	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.floor(DVW.getCurrentSumDataPerCol(DMM.primaryMap)/2);
+	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.floor(DVW.getCurrentSumDataPerRow(DMM.primaryMap)/2);
+	DVW.setCurrentRowFromSum(DMM.primaryMap,sumRow);
+	DVW.setCurrentColFromSum(DMM.primaryMap,sumCol);
+	DVW.updateSelection(DMM.primaryMap);
 }
 
 SUM.dragMove = function(evt) {
@@ -749,11 +749,11 @@ SUM.dragMove = function(evt) {
 	var sumOffsetY = evt.touches ? SUM.getTouchEventOffset(evt).offsetY : evt.offsetY;
 	var xPos = SUM.getCanvasX(sumOffsetX);
 	var yPos = SUM.getCanvasY(sumOffsetY);
-	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.round(SEL.getCurrentSumDataPerCol(DMM.primaryMap)/2);
-	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.round(SEL.getCurrentSumDataPerRow(DMM.primaryMap)/2);
-	SEL.setCurrentRowFromSum(DMM.primaryMap,sumRow);
-	SEL.setCurrentColFromSum(DMM.primaryMap,sumCol);
-	SEL.updateSelection(DMM.primaryMap);
+	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.round(DVW.getCurrentSumDataPerCol(DMM.primaryMap)/2);
+	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.round(DVW.getCurrentSumDataPerRow(DMM.primaryMap)/2);
+	DVW.setCurrentRowFromSum(DMM.primaryMap,sumRow);
+	DVW.setCurrentColFromSum(DMM.primaryMap,sumCol);
+	DVW.updateSelection(DMM.primaryMap);
 	MMGR.getHeatMap().setUnAppliedChanges(true);
 }
 
@@ -910,10 +910,10 @@ SUM.drawLeftCanvasBox = function() {
 	const ctx = SUM.resetBoxCanvas(SUM.boxCanvas);
 	DMM.DetailMaps.forEach(mapItem => {
 		// Draw the View Box using user-defined defined selection color 
-		const boxX = ((((SEL.getCurrentSumCol(mapItem)-1) * SUM.widthScale) / SUM.canvas.width) * SUM.boxCanvas.width);
-		const boxY = ((((SEL.getCurrentSumRow(mapItem)-1) * SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height);
-		const boxW = (SEL.getCurrentSumDataPerRow(mapItem)*SUM.widthScale / SUM.canvas.width) * SUM.boxCanvas.width - 2;
-		const boxH = (SEL.getCurrentSumDataPerCol(mapItem)*SUM.heightScale / SUM.canvas.height) * SUM.boxCanvas.height - 2;
+		const boxX = ((((DVW.getCurrentSumCol(mapItem)-1) * SUM.widthScale) / SUM.canvas.width) * SUM.boxCanvas.width);
+		const boxY = ((((DVW.getCurrentSumRow(mapItem)-1) * SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height);
+		const boxW = (DVW.getCurrentSumDataPerRow(mapItem)*SUM.widthScale / SUM.canvas.width) * SUM.boxCanvas.width - 2;
+		const boxH = (DVW.getCurrentSumDataPerCol(mapItem)*SUM.heightScale / SUM.canvas.height) * SUM.boxCanvas.height - 2;
 		const heatMap = MMGR.getHeatMap();
 		const dataLayers = heatMap.getDataLayers();
 		const dataLayer = dataLayers[mapItem.currentDl];
@@ -1944,14 +1944,14 @@ SUM.onMouseUpSelRowCanvas = function(evt) {
 	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
 	var xPos = SUM.getCanvasX(sumOffsetX);
 	var yPos = SUM.getCanvasY(sumOffsetY);
-	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.floor(SEL.getCurrentSumDataPerCol(DMM.primaryMap)/2);
-	SEL.setCurrentRowFromSum(DMM.primaryMap, sumRow);
-	SEL.updateSelection(DMM.primaryMap);
+	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.floor(DVW.getCurrentSumDataPerCol(DMM.primaryMap)/2);
+	DVW.setCurrentRowFromSum(DMM.primaryMap, sumRow);
+	DVW.updateSelection(DMM.primaryMap);
 	SUM.clickStartRow = null;
 	SUM.clickStartCol = null;
 	//Make sure the selected row/column are within the bounds of the matrix.
-	SEL.checkRow(DMM.primaryMap);
-	SEL.checkCol(DMM.primaryMap);
+	DVW.checkRow(DMM.primaryMap);
+	DVW.checkCol(DMM.primaryMap);
 	SUM.mouseEventActive = false;
 }
 
@@ -1963,14 +1963,14 @@ SUM.onMouseUpSelColCanvas = function(evt) {
 	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
 	var xPos = SUM.getCanvasX(sumOffsetX);
 	var yPos = SUM.getCanvasY(sumOffsetY);
-	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.floor(SEL.getCurrentSumDataPerRow(DMM.primaryMap)/2);
-	SEL.setCurrentColFromSum(DMM.primaryMap, sumCol);
-	SEL.updateSelection(DMM.primaryMap);
+	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.floor(DVW.getCurrentSumDataPerRow(DMM.primaryMap)/2);
+	DVW.setCurrentColFromSum(DMM.primaryMap, sumCol);
+	DVW.updateSelection(DMM.primaryMap);
 	SUM.clickStartRow = null;
 	SUM.clickStartCol = null;
 	//Make sure the selected row/column are within the bounds of the matrix.
-	SEL.checkRow(DMM.primaryMap);
-	SEL.checkCol(DMM.primaryMap);
+	DVW.checkRow(DMM.primaryMap);
+	DVW.checkCol(DMM.primaryMap);
 	SUM.mouseEventActive = false;
 }
 
