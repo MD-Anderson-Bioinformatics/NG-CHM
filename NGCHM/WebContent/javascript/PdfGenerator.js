@@ -14,7 +14,6 @@
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const PANE = NgChm.importNS('NgChm.Pane');
-    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
 
 PDF.rowDendoWidth = null;
 PDF.rowDendroHeight = null;
@@ -86,7 +85,7 @@ PDF.openPdfPrefs = function(e) {
 			document.getElementById("pdfInputFont").value = UTIL.minLabelSize;
 		}
 	}
-    UIMGR.redrawCanvases();
+    SUM.redrawCanvases();
 }
 
 /**********************************************************************************
@@ -365,7 +364,7 @@ PDF.genViewerHeatmapPDF = function() {
 		}
 
 	}
-	var colorMap = heatMap.getColorMapManager().getColorMap("data",SEL.getCurrentDL());
+	var colorMap = heatMap.getCurrentColorMap();
 
 	// Add row and column labels to the PDF
 	if (mapsToShow !== "S") {
@@ -1017,7 +1016,7 @@ PDF.genViewerHeatmapPDF = function() {
 	 **********************************************************************************/
 	function drawDetailSelectionBoxes(mapItem,detClient2PdfWRatio,detClient2PdfHRatio,selectedColor) {
 		const heatMap = MMGR.getHeatMap();
-		var colorMap = heatMap.getColorMapManager().getColorMap("data",SEL.getCurrentDL());
+		var colorMap = heatMap.getCurrentColorMap();
 		const mapLabels = mapItem.labelElements;
 		// Draw selection boxes first (this way they will not overlap text)
 		var rowLabels = 0;
@@ -1089,7 +1088,7 @@ PDF.genViewerHeatmapPDF = function() {
 	function getDataMatrixDistributionPlot(){
 		const heatMap = MMGR.getHeatMap();
 		// function ripped from UPM used in the gear panel
-		var currentDl = SEL.getCurrentDL();
+		var currentDl = heatMap.getCurrentDL();
 		var cm = heatMap.getColorMapManager().getColorMap("data",currentDl);
 		var thresholds = cm.getThresholds();
 		var numBreaks = thresholds.length;

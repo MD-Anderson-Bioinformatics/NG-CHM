@@ -405,7 +405,8 @@ SUM.flushDrawingCache = function(tile) {
 SUM.buildSummaryTexture = function() {
 	const debug = false;
 
-	const currentDl = SEL.getCurrentDL();
+	const heatMap = MMGR.getHeatMap();
+	const currentDl = heatMap.getCurrentDL();
 	let renderBuffer;
 	if (SUM.summaryHeatMapCache.hasOwnProperty(currentDl)) {
 		renderBuffer = SUM.summaryHeatMapCache[currentDl];
@@ -416,7 +417,6 @@ SUM.buildSummaryTexture = function() {
 	}
 	SUM.eventTimer = 0;
 
-	const heatMap = MMGR.getHeatMap();
 	const colorMap = heatMap.getColorMapManager().getColorMap("data",currentDl);
 
 	// Together with the data, these parameters determine the color of a matrix value.
@@ -456,7 +456,8 @@ SUM.buildSummaryTexture = function() {
 
 // Redisplay the summary heat map for the current data layer.
 SUM.drawHeatMap = function() {
-	const currentDl = SEL.getCurrentDL();
+	const heatMap = MMGR.getHeatMap();
+	const currentDl = heatMap.getCurrentDL();
 	if (SUM.summaryHeatMapCache[currentDl] !== undefined) {
 		SUM.drawHeatMapRenderBuffer (SUM.summaryHeatMapCache[currentDl]);
 	}
@@ -465,7 +466,7 @@ SUM.drawHeatMap = function() {
 // Renders the Summary Heat Map for the current data layer into the specified renderBuffer.
 SUM.renderSummaryHeatmap = function (renderBuffer) {
 	const heatMap = MMGR.getHeatMap();
-	const currentDl = SEL.getCurrentDL();
+	const currentDl = heatMap.getCurrentDL();
 	var colorMap = heatMap.getColorMapManager().getColorMap("data",currentDl);
 	var colors = colorMap.getColors();
 	var missing = colorMap.getMissingColor();
@@ -852,7 +853,7 @@ SUM.resetBoxCanvas = function() {
 	    //Furthermore, if the average color is dark make those rectangles
 	    //lighter than the heatmap, otherwise, darker.
 	    if (primaryMap.mode.startsWith('RIBBON')) {
-		    const currentDl = SEL.getCurrentDL();
+		    const currentDl = heatMap.getCurrentDL();
 		    var colorMap = heatMap.getColorMapManager().getColorMap("data",currentDl);
 		    var color = colorMap.getColor(SUM.avgValue[currentDl]);
 		    if (colorMap.isColorDark(color)) {
@@ -1985,6 +1986,24 @@ SUM.getTouchEventOffset = function (evt) {
 	}
 	return {"offsetX": x, "offsetY": y}
 };
+
+    /**********************************************************************************
+     * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
+     * wegGl canvases in the viewer. It is called to deal with blurring issues occuring
+     * on the canvases when modal panels are drawn over the viewer canvases.
+     **********************************************************************************/
+    SUM.redrawCanvases = function () {
+	if ((UTIL.getBrowserType() !== "Firefox") && (MMGR.getHeatMap() !== null)) {
+	    SUM.drawHeatMap();
+	    DET.setDrawDetailsTimeout (DET.redrawSelectionTimeout);
+	    if (SUM.rCCanvas && SUM.rCCanvas.width > 0) {
+		SUM.drawRowClassBars();
+	    }
+	    if (SUM.cCCanvas && SUM.cCCanvas.height > 0) {
+		SUM.drawColClassBars();
+	    }
+	}
+    };
 
 (function() {
 	// Define a function to switch a panel to the summary view.

@@ -239,6 +239,17 @@
 		initLabelTypes ([].concat(colTypes,rowTypes));
     };
 
+    var pluginsLoaded = false;
+    var pluginsLoadedCallbacks = [];
+
+    CUST.waitForPlugins = function (callback) {
+	if (pluginsLoaded) {
+	    setTimeout (callback, 0);
+	} else {
+	    pluginsLoadedCallbacks.push (callback);
+	}
+    };
+
     // Executed after custom.js has been loaded.
     CUST.definePluginLinkouts = function() {
 	for (var pidx = 0; pidx < CUST.customPlugins.length; pidx++) {
@@ -262,6 +273,12 @@
 		    linkouts.addMatrixLinkout( l.menuEntry, l.typeName1, l.typeName2, l.selectMode, l.linkoutFn, l.attributes||[] );
 		}
 	    }
+	}
+
+	// Remove and call any waiting callbacks in order.
+	pluginsLoaded = true;
+	while (pluginsLoadedCallbacks.length > 0) {
+	    pluginsLoadedCallbacks.shift()();
 	}
     };
 

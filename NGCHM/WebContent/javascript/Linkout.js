@@ -22,7 +22,6 @@ var linkoutsVersion = 'undefined';
     const LNK = NgChm.createNS('NgChm.LNK');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
-    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
 
     linkouts.VISIBLE_LABELS = "visibleLabels";
     linkouts.HIDDEN_LABELS = "hiddenLabels";
@@ -1216,7 +1215,7 @@ var linkoutsVersion = 'undefined';
 	function getDataValues (axis, idx) {
 		const heatMap = MMGR.getHeatMap();
 		const isRow = MMGR.isRow (axis);
-		const colorMap = heatMap.getColorMapManager().getColorMap("data", SEL.getCurrentDL());
+		const colorMap = heatMap.getCurrentColorMap();
 		const colorThresholds = colorMap.getThresholds();
 		idx = idx === undefined ? [] : Array.isArray(idx) ? idx : [idx];
 		const values = [];
@@ -1233,7 +1232,7 @@ var linkoutsVersion = 'undefined';
 		let getAccessWindowPromises = []
 		for (let dd = 0; dd < idx.length; dd++) {
 			let win = {
-				layer: SEL.getCurrentDL(),
+				layer: heatMap.getCurrentDL(),
 				level: MMGR.DETAIL_LEVEL,
 				firstRow: 1,
 				firstCol: 1,
@@ -1300,7 +1299,7 @@ var linkoutsVersion = 'undefined';
 		for (let i=0; i<axisIdx.length; i++) {
 			// Get access window for each axisIdx (one vector per iteration)
 			const win = {
-				layer: SEL.getCurrentDL(),
+				layer: heatMap.getCurrentDL(),
 				level: MMGR.DETAIL_LEVEL,
 				firstRow: isRow ? 1+axisIdx[i] : 1,
 				firstCol: isRow ? 1 : 1+axisIdx[i],
@@ -1411,7 +1410,8 @@ var linkoutsVersion = 'undefined';
 	}
 
 	function getDataColors (axis, idx) {
-		const colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap("data", SEL.getCurrentDL());
+		const heatMap = MMGR.getHeatMap();
+		const colorMap = heatMap.getCurrentColorMap();
 		const { breaks, classColors } = getDiscMapFromContMap (colorMap.getThresholds(), colorMap.getColors());
 		const values = getDataValues (axis, idx);
 		const valClasses = getValueClassesColors (values, breaks, classColors, colorMap.getMissingColor(),'Class');
@@ -1539,7 +1539,8 @@ var linkoutsVersion = 'undefined';
 		};
 
 		if (msg.testToRun === 'Mean') {
-		    const colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap("data", SEL.getCurrentDL());
+		    const heatMap = MMGR.getHeatMap();
+		    const colorMap = heatMap.getCurrentColorMap();
 		    const vColorMap = {
 		        thresholds: colorMap.getThresholds(),
 			colors: colorMap.getColors().map(CMM.darkenHexColorIfNeeded),
@@ -1639,7 +1640,7 @@ var linkoutsVersion = 'undefined';
 				let unfilteredValues = await getDataValues(isRow ? 'column' : 'row', idx)
 				const values = filterGaps (unfilteredValues, gapIndices);
 				cocodata[valueField].push(values);
-				const colorMap = heatMap.getColorMapManager().getColorMap("data", SEL.getCurrentDL());
+				const colorMap = heatMap.getCurrentColorMap();
 
 				const colorsForThisData = []
 				for (let idv = 0; idv < values.length; idv++) {
@@ -1978,7 +1979,7 @@ var linkoutsVersion = 'undefined';
 						}
 						SRCH.clearAllAxisSearchItems (otherAxis);
 						SRCH.setAxisSearchResultsVec (otherAxis, sss[cid].data);
-						UIMGR.redrawSearchResults ();
+						SRCH.redrawSearchResults ();
 					};
 					optionsBox.appendChild (infoEl);
 					selectEl.onchange = function (e) {
@@ -2134,7 +2135,7 @@ var linkoutsVersion = 'undefined';
 							}
 							SRCH.clearAllAxisSearchItems (axisNameU);
 							SRCH.setAxisSearchResultsVec (axisNameU, sss[cid].data[idx]);
-							UIMGR.redrawSearchResults ();
+							SRCH.redrawSearchResults ();
 						}
 						function updateAxis (newAxis) {
 							axisName = newAxis;

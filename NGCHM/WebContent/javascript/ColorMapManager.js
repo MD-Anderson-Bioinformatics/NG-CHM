@@ -6,7 +6,6 @@
     const CMM = NgChm.createNS('NgChm.CMM');
 
     const MMGR = NgChm.importNS('NgChm.MMGR');
-    const SEL = NgChm.importNS('NgChm.SEL');
 
 CMM.ColorMap = function(colorMapObj) {
 	var type = colorMapObj["type"];
@@ -101,8 +100,8 @@ CMM.ColorMap = function(colorMapObj) {
 		if (value >= MMGR.maxValues || value == "Missing" || isNaN(value)){
 			color = rgbaMissingColor;
 		}else if(value <= MMGR.minValues){
-			var layers = MMGR.getHeatMap().getDataLayers();
-			var dl = layers[SEL.getCurrentDL()];
+			const heatMap = MMGR.getHeatMap();
+			const dl = heatMap.getDataLayers()[heatMap.getCurrentDL()];
 			if (typeof dl.cuts_color !== 'undefined') {
 				color = this.getHexToRgba(dl.cuts_color);
 			} else {
@@ -113,7 +112,7 @@ CMM.ColorMap = function(colorMapObj) {
 		} else if (value >= thresholds[numBreaks-1]){
 			color = rgbaColors[numBreaks-1]; // return color for highest threshold if value is above range
 		} else {
-			var bounds = findBounds(value, thresholds);
+			const bounds = findBounds(value, thresholds);
 			color = blendColors(value, bounds);
 		}
 		

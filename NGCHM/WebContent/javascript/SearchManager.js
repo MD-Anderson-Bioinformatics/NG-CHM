@@ -1087,6 +1087,18 @@
 	    }, 2000);
     }
 
+    /**
+    *  Function to show selected items when the 'SHOW' button in the Gear Dialog is clicked
+    *
+    *  @function redrawSearchResults
+    */
+    SRCH.redrawSearchResults = function () {
+	    DET.updateDisplayedLabels();
+	    SUM.redrawSelectionMarks();
+	    SEL.updateSelections();
+	    SRCH.showSearchResults();
+    };
+
 /***********************************************************
  * End - Search Functions
  ***********************************************************/

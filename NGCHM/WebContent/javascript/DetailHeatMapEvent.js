@@ -16,7 +16,6 @@
     const LNK = NgChm.importNS('NgChm.LNK');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const DRAW = NgChm.importNS('NgChm.DRAW');
-    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
 
     DEV.targetCanvas = null;
 
@@ -412,7 +411,7 @@ DEV.userHelpOpen = function(mapItem) {
     } else {
 	// on the blank area in the top left corner
     }
-    UIMGR.redrawCanvases();
+    SUM.redrawCanvases();
 };
 
 
@@ -838,7 +837,8 @@ DEV.matrixRightClick = function (e) {
 			return;
 		}
 	} 
-	SEL.setCurrentDL (mapItem.currentDl);
+	const heatMap = MMGR.getHeatMap();
+	heatMap.setCurrentDL (mapItem.currentDl);
 	SEL.flickInit();
 	SUM.buildSummaryTexture();
 	DMM.DetailMaps.forEach(dm => {
@@ -992,7 +992,7 @@ DEV.handleSelectDrag = function (e) {
         DET.updateDisplayedLabels();
         DET.drawSelections();
         SRCH.updateLinkoutSelections();
-        UIMGR.redrawCanvases();
+        SUM.redrawCanvases();
     }
 }	
 

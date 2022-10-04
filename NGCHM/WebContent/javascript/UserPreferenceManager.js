@@ -16,7 +16,6 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
     const CMM = NgChm.importNS('NgChm.CMM');
-    const UIMGR = NgChm.importNS('NgChm.UI-Manager');
     const COMPAT = NgChm.importNS('NgChm.CM');
 
 // Define action handlers for static UPM UI elements.
@@ -177,13 +176,13 @@ UPM.editPreferences = function(e,errorMsg) {
 		UPM.searchPerformed = false;
 		UPM.showClassPrefs();
 	} else {
-		UPM.showLayerBreak(SEL.getCurrentDL());
+		UPM.showLayerBreak(heatMap.getCurrentDL());
 		UPM.showLayerPrefs();
 	}
 	errorMsg = null;
 	prefspanel.style.display= '';	
 	UPM.locatePrefsPanel();
-	UIMGR.redrawCanvases();
+	SUM.redrawCanvases();
 }
 
 /**********************************************************************************
