@@ -408,19 +408,4 @@ DVW.getSamplingRatio = function (mode,axis) {
 	}
 }
 
-DVW.openFileToggle = function() {
-	var fileButton = document.getElementById('fileButton');
-	var detailButtons = document.getElementById('detail_buttons');
-	if (fileButton.style.display === 'none') {
-		location.reload(); 
-	} else {
-		fileButton.style.display = 'none';
-		detailButtons.style.display = '';
-	} 
-}
-
-    document.getElementById('fileOpen_btn').onclick = () => {
-	DVW.openFileToggle();
-    };
-
 })();

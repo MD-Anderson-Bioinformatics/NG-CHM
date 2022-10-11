@@ -416,7 +416,18 @@
 	    UHM.invalidFileFormat();
 	} else {
 	    displayFileModeCHM(chmFile);
-	    DVW.openFileToggle();
+	    openFileToggle();
+	}
+    }
+
+    function openFileToggle () {
+	const fileButton = document.getElementById('fileButton');
+	const detailButtons = document.getElementById('detail_buttons');
+	if (fileButton.style.display === 'none') {
+	    location.reload();
+	} else {
+	    fileButton.style.display = 'none';
+	    detailButtons.style.display = '';
 	}
     }
 
@@ -998,6 +1009,10 @@
 
     document.getElementById('menuSave').onclick = () => {
 	saveHeatMapChanges();
+    };
+
+    document.getElementById('fileOpen_btn').onclick = () => {
+	openFileToggle();
     };
 
     /************************************************************************************************
