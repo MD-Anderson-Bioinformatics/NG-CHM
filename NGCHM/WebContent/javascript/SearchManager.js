@@ -878,7 +878,7 @@
      * focus of the detail heat map panel to the current search item.
      ***********************************************************************************/
     function goToCurrentSearchItem () {
-	const mapItem = DMM.primaryMap;
+	const mapItem = DVW.primaryMap;
 	if (!mapItem) return;
 
 	if (currentSearchItem.axis == "Row") {
@@ -979,7 +979,7 @@
 	}
 	let markLabels = document.getElementsByClassName('MarkLabel');
 	for (let ii = 0; ii < markLabels.length; ii++){ // clear tick marks
-		DET.removeLabels(markLabels[ii].id);
+		DVW.removeLabels(markLabels[ii].id);
 	}
     };
 

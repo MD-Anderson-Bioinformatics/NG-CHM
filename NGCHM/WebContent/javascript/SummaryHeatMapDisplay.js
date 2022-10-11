@@ -179,8 +179,8 @@ SUM.redrawSummaryPanel = function() {
 			SUM.drawColClassBarLabels();
 			SUM.drawRowClassBarLabels();
 		}
-		if(document.getElementById("missingSumRowClassBars")) DET.removeLabels("missingSumRowClassBars");
-		if(document.getElementById("missingSumColClassBars")) DET.removeLabels("missingSumColClassBars");
+		if(document.getElementById("missingSumRowClassBars")) DVW.removeLabels("missingSumRowClassBars");
+		if(document.getElementById("missingSumColClassBars")) DVW.removeLabels("missingSumColClassBars");
 		SUM.drawMissingRowClassBarsMark();
 		SUM.drawMissingColClassBarsMark();
 		//SUM.drawColClassBarLegends(); Temporarily removed legends from summary
@@ -520,7 +520,7 @@ SUM.buildRowClassTexture = function() {
 	var classBarConfigOrder = heatMap.getRowClassificationOrder();
 	var classBarsData = heatMap.getRowClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
-	DET.removeLabels("missingSumRowClassBars");
+	DVW.removeLabels("missingSumRowClassBars");
 	var offset = 0;
 	for (var i = 0; i < classBarConfigOrder.length; i++) {
 		var remainingWidth = SUM.rowClassBarWidth;
@@ -566,7 +566,7 @@ SUM.buildColClassTexture = function() {
 	const heatMap = MMGR.getHeatMap();
 	SUM.texCc = DRAW.createRenderBuffer (SUM.totalWidth*SUM.widthScale, SUM.colClassBarHeight*SUM.heightScale, 1.0);
 	var dataBuffer = SUM.texCc.pixels;
-	DET.removeLabels("missingSumColClassBars");
+	DVW.removeLabels("missingSumColClassBars");
 	var classBarsConfig = heatMap.getColClassificationConfig();
 	var classBarConfigOrder = heatMap.getColClassificationOrder();
 	var classBarsData = heatMap.getColClassificationData();
@@ -637,8 +637,8 @@ SUM.onMouseOut = function(evt) {
 	SUM.canvas.style.cursor="default";
 	//Gotta redraw everything because of event cascade occurring when mousing out of the layers that contain the canvas 
 	// (container and summary_chm) we set the right position mousing up on the canvas above, but move events are still coming in.
-	if (DMM.DetailMaps.length > 0) { // only 'redraw everything' if there are detail maps showing
-		DVW.updateSelection(DMM.primaryMap);
+	if (DVW.detailMaps.length > 0) { // only 'redraw everything' if there are detail maps showing
+		DVW.primaryMap.updateSelection();
 	}
 }
 
@@ -690,9 +690,9 @@ SUM.onMouseUpCanvas = function(evt) {
 		SUM.dragSelect = false;
 		SUM.canvas.style.cursor="default";
 		//Make sure the selected row/column are within the bounds of the matrix.
-		if (DMM.primaryMap) {
-		    DVW.checkRow(DMM.primaryMap);
-		    DVW.checkCol(DMM.primaryMap);
+		if (DVW.primaryMap) {
+		    DVW.checkRow(DVW.primaryMap);
+		    DVW.checkCol(DVW.primaryMap);
 		}
 		SUM.mouseEventActive = false;
 	}
@@ -701,7 +701,7 @@ SUM.onMouseUpCanvas = function(evt) {
 //This is a helper function that can set a sub-ribbon view that best matches a user
 //selected region of the map.
 SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
-	let mapItem = (DEV.targetCanvas !== null) ? DMM.getMapItemFromCanvas(DEV.targetCanvas) : DMM.primaryMap;
+	let mapItem = (DEV.targetCanvas !== null) ? DVW.getMapItemFromCanvas(DEV.targetCanvas) : DVW.primaryMap;
 	DEV.targetCanvas = null;
 	const selRows = Math.abs(endRow - startRow);
 	const selCols = Math.abs(endCol - startCol);
@@ -731,29 +731,29 @@ SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
 		mapItem.currentCol = startCol; 
 		DEV.callDetailDrawFunction('RIBBONV', mapItem);
 	}
-	DVW.updateSelection(mapItem);
+	mapItem.updateSelection();
 }
 
 SUM.clickSelection = function(xPos, yPos) {
-	if (!DMM.primaryMap) return;
-	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.floor(DVW.getCurrentSumDataPerCol(DMM.primaryMap)/2);
-	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.floor(DVW.getCurrentSumDataPerRow(DMM.primaryMap)/2);
-	DVW.setCurrentRowFromSum(DMM.primaryMap,sumRow);
-	DVW.setCurrentColFromSum(DMM.primaryMap,sumCol);
-	DVW.updateSelection(DMM.primaryMap);
+	if (!DVW.primaryMap) return;
+	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.floor(DVW.getCurrentSumDataPerCol(DVW.primaryMap)/2);
+	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.floor(DVW.getCurrentSumDataPerRow(DVW.primaryMap)/2);
+	DVW.setCurrentRowFromSum(DVW.primaryMap,sumRow);
+	DVW.setCurrentColFromSum(DVW.primaryMap,sumCol);
+	DVW.primaryMap.updateSelection();
 }
 
 SUM.dragMove = function(evt) {
-	if (!DMM.primaryMap) return;
+	if (!DVW.primaryMap) return;
 	var sumOffsetX = evt.touches ? SUM.getTouchEventOffset(evt).offsetX : evt.offsetX;
 	var sumOffsetY = evt.touches ? SUM.getTouchEventOffset(evt).offsetY : evt.offsetY;
 	var xPos = SUM.getCanvasX(sumOffsetX);
 	var yPos = SUM.getCanvasY(sumOffsetY);
-	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.round(DVW.getCurrentSumDataPerCol(DMM.primaryMap)/2);
-	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.round(DVW.getCurrentSumDataPerRow(DMM.primaryMap)/2);
-	DVW.setCurrentRowFromSum(DMM.primaryMap,sumRow);
-	DVW.setCurrentColFromSum(DMM.primaryMap,sumCol);
-	DVW.updateSelection(DMM.primaryMap);
+	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.round(DVW.getCurrentSumDataPerCol(DVW.primaryMap)/2);
+	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.round(DVW.getCurrentSumDataPerRow(DVW.primaryMap)/2);
+	DVW.setCurrentRowFromSum(DVW.primaryMap,sumRow);
+	DVW.setCurrentColFromSum(DVW.primaryMap,sumCol);
+	DVW.primaryMap.updateSelection();
 	MMGR.getHeatMap().setUnAppliedChanges(true);
 }
 
@@ -793,11 +793,11 @@ SUM.dragSelection = function(evt) {
 	var endRow = Math.max(SUM.clickStartRow,clickEndRow);
 	var endCol = Math.max(SUM.clickStartCol,clickEndCol)+1;
 	SUM.dragSelect = true;
-	if (DMM.primaryMap) {
-	    DMM.primaryMap.dataPerRow = endCol - startCol;
-	    DMM.primaryMap.dataPerCol = endRow - startRow;
-	    DMM.primaryMap.currentRow = startRow;
-	    DMM.primaryMap.currentCol = startCol;
+	if (DVW.primaryMap) {
+	    DVW.primaryMap.dataPerRow = endCol - startCol;
+	    DVW.primaryMap.dataPerCol = endRow - startRow;
+	    DVW.primaryMap.currentRow = startRow;
+	    DVW.primaryMap.currentCol = startCol;
 	}
 	SUM.drawLeftCanvasBox();
 }
@@ -848,7 +848,7 @@ SUM.resetBoxCanvas = function() {
 	}
 	
 	const heatMap = MMGR.getHeatMap();
-	const primaryMap = DMM.primaryMap;
+	const primaryMap = DVW.primaryMap;
 	if (primaryMap) {
 	    //If in sub-dendro mode, draw rectangles outside of selected range.
 	    //Furthermore, if the average color is dark make those rectangles
@@ -908,7 +908,7 @@ SUM.drawLeftCanvasBox = function() {
         if (!SUM.chmElement) return;
 	// Reset the canvas (drawing borders and sub-dendro selections)
 	const ctx = SUM.resetBoxCanvas(SUM.boxCanvas);
-	DMM.DetailMaps.forEach(mapItem => {
+	DVW.detailMaps.forEach(mapItem => {
 		// Draw the View Box using user-defined defined selection color 
 		const boxX = ((((DVW.getCurrentSumCol(mapItem)-1) * SUM.widthScale) / SUM.canvas.width) * SUM.boxCanvas.width);
 		const boxY = ((((DVW.getCurrentSumRow(mapItem)-1) * SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height);
@@ -1448,8 +1448,8 @@ SUM.summaryResize = function() {
 				if (SUM.colDendro) SUM.colDendro.draw();
 				SUM.clearSelectionMarks();
 				SUM.clearTopItems();
-				if(document.getElementById("missingSumRowClassBars")) DET.removeLabels("missingSumRowClassBars");
-				if(document.getElementById("missingSumColClassBars")) DET.removeLabels("missingSumColClassBars");
+				if(document.getElementById("missingSumRowClassBars")) DVW.removeLabels("missingSumRowClassBars");
+				if(document.getElementById("missingSumColClassBars")) DVW.removeLabels("missingSumColClassBars");
 				XT = window.setTimeout (() => {
 					XT = 0;
 					SUM.buildRowClassTexture ();
@@ -1635,7 +1635,7 @@ SUM.drawAxisSelectionMarks = function(axis) {
 
 SUM.drawMissingRowClassBarsMark = function (){
 	if (document.getElementById("missingSumRowClassBars")){
-		DET.removeLabels("missingSumRowClassBars");
+		DVW.removeLabels("missingSumRowClassBars");
 		var x = SUM.canvas.offsetLeft;
 		var y = SUM.canvas.offsetTop + SUM.canvas.clientHeight + 2;
 		DET.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
@@ -1644,7 +1644,7 @@ SUM.drawMissingRowClassBarsMark = function (){
 
 SUM.drawMissingColClassBarsMark = function (){
 	if (document.getElementById("missingSumColClassBars")){
-		DET.removeLabels("missingSumColClassBars");
+		DVW.removeLabels("missingSumColClassBars");
 		var x = SUM.canvas.offsetLeft + SUM.canvas.offsetWidth + 2;
 		var y = SUM.canvas.offsetTop + SUM.canvas.clientHeight/SUM.totalHeight - 10;
 		DET.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Col");
@@ -1944,14 +1944,14 @@ SUM.onMouseUpSelRowCanvas = function(evt) {
 	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
 	var xPos = SUM.getCanvasX(sumOffsetX);
 	var yPos = SUM.getCanvasY(sumOffsetY);
-	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.floor(DVW.getCurrentSumDataPerCol(DMM.primaryMap)/2);
-	DVW.setCurrentRowFromSum(DMM.primaryMap, sumRow);
-	DVW.updateSelection(DMM.primaryMap);
+	var sumRow = SUM.canvasToMatrixRow(yPos) - Math.floor(DVW.getCurrentSumDataPerCol(DVW.primaryMap)/2);
+	DVW.setCurrentRowFromSum(DVW.primaryMap, sumRow);
+	DVW.primaryMap.updateSelection();
 	SUM.clickStartRow = null;
 	SUM.clickStartCol = null;
 	//Make sure the selected row/column are within the bounds of the matrix.
-	DVW.checkRow(DMM.primaryMap);
-	DVW.checkCol(DMM.primaryMap);
+	DVW.checkRow(DVW.primaryMap);
+	DVW.checkCol(DVW.primaryMap);
 	SUM.mouseEventActive = false;
 }
 
@@ -1963,14 +1963,14 @@ SUM.onMouseUpSelColCanvas = function(evt) {
 	var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
 	var xPos = SUM.getCanvasX(sumOffsetX);
 	var yPos = SUM.getCanvasY(sumOffsetY);
-	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.floor(DVW.getCurrentSumDataPerRow(DMM.primaryMap)/2);
-	DVW.setCurrentColFromSum(DMM.primaryMap, sumCol);
-	DVW.updateSelection(DMM.primaryMap);
+	var sumCol = SUM.canvasToMatrixCol(xPos) - Math.floor(DVW.getCurrentSumDataPerRow(DVW.primaryMap)/2);
+	DVW.setCurrentColFromSum(DVW.primaryMap, sumCol);
+	DVW.primaryMap.updateSelection();
 	SUM.clickStartRow = null;
 	SUM.clickStartCol = null;
 	//Make sure the selected row/column are within the bounds of the matrix.
-	DVW.checkRow(DMM.primaryMap);
-	DVW.checkCol(DMM.primaryMap);
+	DVW.checkRow(DVW.primaryMap);
+	DVW.checkCol(DVW.primaryMap);
 	SUM.mouseEventActive = false;
 }
 

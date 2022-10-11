@@ -108,7 +108,7 @@
 	* Save enough information from the detail map to reconstruct the zoom/pan state
 	*/
 	function saveDetailMapInfoToMapConfig() {
-		DMM.DetailMaps.forEach(dm => {
+		DVW.detailMaps.forEach(dm => {
 			mapConfig.panel_configuration[dm.pane] = DET.getDetailSaveState (dm);
 		})
 	}
@@ -214,9 +214,9 @@
 			if (SUM.chmElement) {
 				PANE.emptyPaneLocation (PANE.findPaneLocation (SUM.chmElement));
 			}
-			if (DMM.DetailMaps.length > 0) {
-				for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-					PANE.emptyPaneLocation (PANE.findPaneLocation (DMM.DetailMaps[i].chm));
+			if (DVW.detailMaps.length > 0) {
+				for (let i=0; i<DVW.detailMaps.length;i++ ) {
+					PANE.emptyPaneLocation (PANE.findPaneLocation (DVW.detailMaps[i].chm));
 				}
 			}
 		}

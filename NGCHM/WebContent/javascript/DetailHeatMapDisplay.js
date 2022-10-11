@@ -63,8 +63,8 @@ DET.processDetailMapUpdate = function (event, tile) {
  * routine timer for all existing heat map panels.
  *********************************************************************************************/
 DET.setDrawDetailsTimeout = function (ms, noResize) {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
+	for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		const mapItem = DVW.detailMaps[i];
 		DET.setDrawDetailTimeout(mapItem,ms,noResize);
 	}
 }
@@ -80,7 +80,7 @@ DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
 		clearTimeout (mapItem.drawEventTimer);
 	}
 	if (!noResize) mapItem.resizeOnNextDraw = true;
-	if (!DMM.isVisible(mapItem)) { return false }
+	if (!mapItem.isVisible()) { return false }
 
 	const drawWin = DVW.getDetailWindow(mapItem);
 	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
@@ -124,7 +124,7 @@ DET.flushDrawingCache = function (tile) {
 DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	DET.setDendroShow(mapItem);
 	//If we are opening the first detail "copy" of this map set the data sizing for initial display
-	if (DMM.DetailMaps.length === 0 && !restoreInfo) {
+	if (DVW.detailMaps.length === 0 && !restoreInfo) {
 		DET.setInitialDetailDisplaySize(mapItem);
 	}
 	LNK.createLabelMenus();
@@ -136,7 +136,7 @@ DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	
 	setTimeout (function() {
 		DET.detInitGl(mapItem);
-		DVW.updateSelection(mapItem);
+		mapItem.updateSelection();
 		if (UTIL.getURLParameter("selected") !== ""){
 			const selected = UTIL.getURLParameter("selected").replace(","," ");
 			document.getElementById("search_text").value = selected;
@@ -148,9 +148,9 @@ DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		}
 	}, 1);
   	
-	DMM.DetailMaps.push(mapItem);
+	DVW.detailMaps.push(mapItem);
   	if (mapItem.version === 'P') {
-		DMM.primaryMap = mapItem;
+		DVW.primaryMap = mapItem;
   	}
 	if (restoreInfo) {
 	    if (mapItem.rowDendro !== null) {
@@ -160,7 +160,7 @@ DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		mapItem.colDendro.setZoomLevel(restoreInfo.colZoomLevel || 1);
 	    }
 	}
-	DET.setButtons(mapItem);
+	mapItem.setButtons();
 }
 
 /*********************************************************************************************
@@ -661,9 +661,9 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	totalColBarHeight = DET.calculateTotalClassBarHeight("column");
 	totalRowBarHeight = DET.calculateTotalClassBarHeight("row");
 
-	for (let k=0; k<DMM.DetailMaps.length;k++ ) {
+	for (let k=0; k<DVW.detailMaps.length;k++ ) {
 	        // Get context for this detail map.
-		const mapItem = DMM.DetailMaps[k];
+		const mapItem = DVW.detailMaps[k];
 		mapItemVars.ctx = mapItem.boxCanvas.getContext("2d");
 		calcMapItemVariables (mapItem);
 
@@ -905,8 +905,8 @@ DET.setDetailDataHeight = function (mapItem, size) {
  * in order to best accommodate the maximum label sizes for each axis.
  ************************************************************************************************/
 DET.sizeCanvasForLabels = function() {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
+	for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		const mapItem = DVW.detailMaps[i];
 		DET.resetLabelLengths(mapItem);
 		if (mapItem.pane !== "") {  //Used by builder which does not contain the detail pane necessary, nor the use, for this logic
 			DET.calcRowAndColLabels(mapItem);
@@ -1271,9 +1271,9 @@ DET.getColLabelFontSize = function (mapItem) {
  * remaining dynamic labels
  ************************************************************************************************/
 DET.updateDisplayedLabels = function () {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
-		if (!DMM.isVisible(mapItem)) {
+	for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		const mapItem = DVW.detailMaps[i];
+		if (!mapItem.isVisible()) {
 		    continue;
 		}
 		const debug = false;
@@ -1401,7 +1401,7 @@ DET.resetLabelLengths = function (mapItem) {
 DET.detailDrawRowClassBarLabels = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
 	const rowClassBarConfigOrder = heatMap.getRowClassificationOrder();
-	DET.removeLabel (mapItem, "missingDetRowClassBars");
+	mapItem.removeLabel ("missingDetRowClassBars");
 	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	const classBarAreaWidth = DET.calculateTotalClassBarHeight("row")*scale;
 	const dataAreaWidth = mapItem.dataViewWidth*scale;
@@ -1458,7 +1458,7 @@ DET.detailDrawRowClassBarLabels = function (mapItem) {
  ************************************************************************************************/
 DET.detailDrawColClassBarLabels = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
-	DET.removeLabel (mapItem, "missingDetColClassBars");
+	mapItem.removeLabel ("missingDetColClassBars");
 	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	const colClassBarConfig = heatMap.getColClassificationConfig();
 	const colClassBarConfigOrder = heatMap.getColClassificationOrder();
@@ -1703,33 +1703,23 @@ DET.setLegendDivElement = function (mapItem,itemId,boundVal,topVal,leftVal,isRow
 }
 
 /************************************************************************************************
- * FUNCTION - removeLabels: This function removes a label from all detail map items.  
+ * FUNCTION - addLabelDivs: This function adds a label div to all detail map items.  
  ************************************************************************************************/
-DET.removeLabels = function (label) {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
-		DET.removeLabel(mapItem, label);
+DET.addLabelDivs = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
+	for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		const mapItem = DVW.detailMaps[i];
+		DET.addLabelDiv(mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
 	}
 };
 
 /************************************************************************************************
- * FUNCTION - removeLabel: This function removes a label from a specific detail map item.  
+ * FUNCTION - removeLabel: This function removes a label from a specific detail map item.
  ************************************************************************************************/
 DET.removeLabel = function (mapItem, label) {
 	if (mapItem.oldLabelElements.hasOwnProperty (label)) {
 		const e = mapItem.oldLabelElements[label];
 		e.parent.removeChild(e.div);
 		delete mapItem.oldLabelElements[label];
-	}
-};
-
-/************************************************************************************************
- * FUNCTION - addLabelDivs: This function adds a label div to all detail map items.  
- ************************************************************************************************/
-DET.addLabelDivs = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
-		DET.addLabelDiv(mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
 	}
 };
 
@@ -2413,7 +2403,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
-		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DMM.primaryMap === null);
+		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DVW.primaryMap === null);
 		const mapNumber = restoreInfo ? restoreInfo.mapNumber : DMM.nextMapNumber;
 
 		PANE.clearExistingGearDialog(paneId);
@@ -2614,7 +2604,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	//
 	function updateButtonImage (btn, hovering) {
 	        const loc = PANE.findPaneLocation (btn);
-		const mapItem = DMM.getMapItemFromPane (loc.pane.id);
+		const mapItem = DVW.getMapItemFromPane (loc.pane.id);
 		const buttonMode = btn.dataset.mode;
 		if (!mapItem.mode.includes(buttonMode)) {
 			let buttonSrc = buttonBaseName (buttonMode);
@@ -2632,7 +2622,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 
 	function resizeDetailPane (loc) {
 		DMM.detailResize();
-		DET.setDrawDetailTimeout(DMM.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
+		DET.setDrawDetailTimeout(DVW.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
 	}
 
 	function zoomButton (btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
@@ -2675,7 +2665,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 			UHM.hlp(img, btnHelp, btnSize);
 		};
 		img.onclick = function (e) {
-			const mapItem = DMM.getMapItemFromPane(paneId);
+			const mapItem = DVW.getMapItemFromPane(paneId);
 			DEV.clearModeHistory (mapItem);
 			clickFn(mapItem);
 		};

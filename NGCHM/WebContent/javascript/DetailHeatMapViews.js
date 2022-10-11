@@ -16,44 +16,138 @@
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
 
-    // Needed only for updateSelection.
-    const SUM = NgChm.importNS('NgChm.SUM');
-    const DET = NgChm.importNS('NgChm.DET');
-    const DMM = NgChm.importNS('NgChm.DMM');
-
 //Globals that provide information about heat map position selection.
 DVW.currentRow = null;      // Top row of current selected position
 DVW.currentCol = null;      // Left column of the current selected position
 DVW.scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
 
-/*********************************************************************************************
- * FUNCTION:  updateSelection - The purpose of this function is to set the state of a given
- * detail heat map panel.  This function is called when the selected row / column is changed.
- * It is assumed that the caller modified currentRow, currentCol, dataPerRow, and dataPerCol
- * as desired. This method does redrawing and notification as necessary.
- *********************************************************************************************/
-DVW.updateSelection = function (mapItem,noResize) {
-    //We have the summary heat map so redraw the yellow selection box.
-    SUM.drawLeftCanvasBox();
-    MMGR.getHeatMap().setReadWindow(DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),DVW.getCurrentDetRow(mapItem),DVW.getCurrentDetCol(mapItem),DVW.getCurrentDetDataPerCol(mapItem),DVW.getCurrentDetDataPerRow(mapItem));
-    DET.setDrawDetailTimeout (mapItem, DET.redrawSelectionTimeout,noResize);
-};
+    /*********************************************************************************************
+     * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection
+     * function for each detail map panel.
+     *********************************************************************************************/
+    DVW.updateSelections = function (noResize) {
+	    for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		    if (typeof noResize !== 'undefined') {
+			    DVW.detailMaps[i].updateSelection(noResize)
+		    } else {
+			    DVW.detailMaps[i].updateSelection()
+		    }
+	    }
+	    MMGR.getHeatMap().setUnAppliedChanges(true);
+    };
 
-/*********************************************************************************************
- * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection
- * function for each detail map panel.
- *********************************************************************************************/
-DVW.updateSelections = function (noResize) {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		if (typeof noResize !== 'undefined') {
-			DVW.updateSelection(DMM.DetailMaps[i],noResize)
-		} else {
-			DVW.updateSelection(DMM.DetailMaps[i])
-		}
+    // DVW.detailMaps is an array of mapItems for all current
+    // detailHeatMapViews.
+    //
+    // This array is defined here for read-only access.
+    // All updates to it should be in functions in the DisplayHeatMapManager (DMM).
+    DVW.detailMaps = [];
+
+    // DVW.primaryMap references the primary DetailHeatMap.
+    // It is defined here for read-only access.
+    // All updates to it should be in functions in the DisplayHeatMapManager (DMM).
+    DVW.primaryMap = null;
+
+    // This is a utility function to support the getMapItemFrom... functions below.
+    // matches is a function(mapItem) that returns true iff the mapItem matches
+    // the type of DetailheatMap required.
+    // The function returns the first map that matches the required criteria.
+    // If no match is found, it issues a console warning/error and returns DVW.primaryMap.
+    function getMatchingMap (matches) {
+	for (let i=0; i<DVW.detailMaps.length; i++) {
+	    const mapItem = DVW.detailMaps[i];
+	    if (matches (mapItem)) {
+		return mapItem;
+	    }
 	}
-	MMGR.getHeatMap().setUnAppliedChanges(true);
-};
+	if (DVW.primaryMap !== null) {
+	    console.warn ("Cannot find the required detail map. Returning the primary detail map.");
+	    return DVW.primaryMap;
+	}
+	console.error ("Cannot find the required detail map and there is no primary detail map. Returning null.");
+	return null;
+    }
 
+    /*********************************************************************************************
+     * FUNCTION:  getMapItemFromChm - The purpose of this function is to retrieve a detail heat map
+     * object using the chm.
+     *********************************************************************************************/
+    DVW.getMapItemFromChm = function (chm) {
+	return getMatchingMap (mapItem => mapItem.chm === chm);
+    };
+
+    /*********************************************************************************************
+     * FUNCTION:  getMapItemFromPane - The purpose of this function is to retrieve a detail heat map
+     * object using the panel id associated with that map object.
+     *********************************************************************************************/
+    DVW.getMapItemFromPane = function (paneId) {
+	return getMatchingMap (mapItem => mapItem.pane === paneId);
+    };
+
+    /*********************************************************************************************
+     * FUNCTION:  getMapItemFromPane - The purpose of this function is to retrieve a detail heat map
+     * object using the canvas associated with that map object.
+     *********************************************************************************************/
+    DVW.getMapItemFromCanvas = function (canvas) {
+	return getMatchingMap (mapItem => mapItem.canvas === canvas);
+    };
+
+    /*********************************************************************************************
+     * FUNCTION:  getMapItemFromDendro - The purpose of this function is to retrieve a detail heat map
+     * object using the dendrogram associated with that map object.
+     *********************************************************************************************/
+    DVW.getMapItemFromDendro = function (dendro) {
+	return getMatchingMap (mapItem => mapItem.rowDendro === dendro || mapItem.colDendro == dendro);
+    };
+
+    /*********************************************************************************************
+     * FUNCTION:  getMapItemFromEvent - The purpose of this function is to retrieve a detail heat map
+     * object using the event.
+     * FIXME: BMB: Function not used.
+     *********************************************************************************************/
+    DVW.getMapItemFromEvent = function (e) {
+	    let mapItem = null;
+	    if (e.pane !== null) {
+		    mapItem = DVW.getMapItemFromPane(e.pane);
+	    } else if (e.currentTarget !== null) {
+		    mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
+	    } else {
+		console.error ("mapItem event has neither paneId or currentTarget. Returning null.");
+	    }
+	    return mapItem;
+    };
+
+    /*********************************************************************************************
+     * FUNCTION:  anyVisible - Return true if any Detail View is visible.
+     *********************************************************************************************/
+    DVW.anyVisible = function anyVisible () {
+	for (let i=0; i<DVW.detailMaps.length;i++ ) {
+	    if (DVW.detailMaps[i].isVisible()) {
+		return true;
+	    };
+	}
+	return false;
+    };
+
+    /************************************************************************************************
+     * FUNCTION - removeLabels: This function removes a label from all detail map items.
+     ************************************************************************************************/
+    DVW.removeLabels = function (label) {
+	    for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		    const mapItem = DVW.detailMaps[i];
+		    mapItem.removeLabel(label);
+	    }
+    };
+
+    /************************************************************************************************
+     * FUNCTION - addLabelDivs: This function adds a label div to all detail map items.
+     ************************************************************************************************/
+    DVW.addLabelDivs = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
+	    for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		    const mapItem = DVW.detailMaps[i];
+		    mapItem.addLabelDiv(parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
+	    }
+    };
 
 /**********************************************************************************
  * FUNCTION - getLevelFromMode: This function returns the level that is associated

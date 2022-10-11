@@ -1173,8 +1173,8 @@ UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 	for (var i=0; i <breaks.length;i++){
 		breaks[i]+=lowBP+diff/(breaks.length-1)*i; // array of the breakpoints shown in the preview div
 	}
-	var saveDl = DMM.primaryMap.currentDl;
-	DMM.primaryMap.currentDl = mapName;
+	var saveDl = DVW.primaryMap.currentDl;
+	DVW.primaryMap.currentDl = mapName;
 	const heatMap = MMGR.getHeatMap();
 	var numCol = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
 	var numRow = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL)
@@ -1225,7 +1225,7 @@ UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 	var preview = "<div id='previewMainColor"+mapName+"' style='height: 100px; width:100px;background:"+gradient+";position:absolute; left: 10px; top: 20px;'></div>"
 		+"<div id='previewMissingColor"+mapName+"'style='height: 100px; width:10px;background:"+cm.missing+";position:absolute;left:110px;top:20px;'></div>"
 		+svg+binNums+boundNums;
-	DMM.primaryMap.currentDl = saveDl;
+	DVW.primaryMap.currentDl = saveDl;
 	wrapper.innerHTML= preview;
 }
 

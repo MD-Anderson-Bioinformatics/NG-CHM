@@ -105,7 +105,6 @@ var linkoutsVersion = 'undefined';
     const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
-    const DMM = NgChm.importNS('NgChm.DMM');
     const SUM = NgChm.importNS('NgChm.SUM');
     const CUST = NgChm.importNS('NgChm.CUST');
     const CMM = NgChm.importNS('NgChm.CMM');
@@ -326,10 +325,10 @@ var linkoutsVersion = 'undefined';
 		let tilesReady = false;
 		const heatMap = MMGR.getHeatMap();
 		if (SRCH.getAxisSearchResults("Row").length === 0) {
-		    heatMap.setReadWindow(DVW.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
+		    heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
 		} else if (SRCH.getAxisSearchResults("Column").length === 0) {
-		    heatMap.setReadWindow(DVW.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
+		    heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
 		} else {
 			return LNK.createMatrixDataTsv(searchLabels);

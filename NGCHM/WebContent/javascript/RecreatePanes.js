@@ -244,8 +244,8 @@
 
 			DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
-			let mapItem = DMM.getMapItemFromPane(pane.id);
-			DVW.updateSelection(mapItem);
+			let mapItem = DVW.getMapItemFromPane(pane.id);
+			mapItem.updateSelection();
 			delete RECPANES.mapConfigPanelConfiguration[paneid];
 			PANE.resizePane (mapItem.canvas);
 		} else if (config.type === 'plugin') {

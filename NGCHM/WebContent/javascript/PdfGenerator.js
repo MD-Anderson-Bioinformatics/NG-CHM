@@ -30,7 +30,7 @@ PDF.isGenerating = false;
  * button on the menu bar.  The PDF preferences panel is then launched
  **********************************************************************************/
 PDF.canGeneratePdf = function() {
-	return SUM.isVisible() || DMM.anyVisible();
+	return SUM.isVisible() || DVW.anyVisible();
 };
 
 PDF.openPdfPrefs = function(e) {
@@ -46,17 +46,17 @@ PDF.openPdfPrefs = function(e) {
 	const sumButton = document.getElementById ('pdfInputSummaryMap');
 	const detButton = document.getElementById ('pdfInputDetailMap');
 	const bothButton = document.getElementById ('pdfInputBothMaps');
-	if (SUM.isVisible() && !DMM.anyVisible()) {
+	if (SUM.isVisible() && !DVW.anyVisible()) {
 		sumButton.checked = true;
 		sumButton.disabled = false;
 		detButton.disabled = true;
 		bothButton.disabled = true;
-	} else if (DMM.anyVisible() && !SUM.isVisible()) {
+	} else if (DVW.anyVisible() && !SUM.isVisible()) {
 		detButton.checked = true;
 		sumButton.disabled = true;
 		detButton.disabled = false;
 		bothButton.disabled = true;
-	} else if (SUM.isVisible() && DMM.anyVisible()) {
+	} else if (SUM.isVisible() && DVW.anyVisible()) {
 		bothButton.checked = true;
 		sumButton.disabled = false;
 		detButton.disabled = false;
@@ -79,7 +79,7 @@ PDF.openPdfPrefs = function(e) {
 	if (labels.length > 0) {
 		document.getElementById("pdfInputFont").value = parseInt(labels[0].style["font-size"]);
 	} else {
-		const fSize = Math.min(DMM.primaryMap.colLabelFont,DMM.primaryMap.rowLabelFont);
+		const fSize = Math.min(DVW.primaryMap.colLabelFont,DVW.primaryMap.rowLabelFont);
 		if (fSize > 0) {
 			document.getElementById("pdfInputFont").value = fSize;
 		} else {
@@ -98,7 +98,7 @@ PDF.pdfCancelButton = function() {
 	document.getElementById('pdfErrorMessage').style.display="none";
 	var prefspanel = document.getElementById('pdfPrefs');
 	prefspanel.classList.add ('hide');
-	DMM.primaryMap.canvas.focus();
+	DVW.primaryMap.canvas.focus();
 }
 
 /**********************************************************************************
@@ -186,7 +186,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 PDF.callViewerHeatmapPDF = function() {
 	document.body.style.cursor = 'wait';
     const heatMap = MMGR.getHeatMap();
-    const details = heatMap.setReadWindow(DVW.getLevelFromMode(DMM.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
+    const details = heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
     let tilesReady = heatMap.allTilesAvailable();
     if (tilesReady === true) {
 	 PDF.getViewerHeatmapPDF();
@@ -416,7 +416,7 @@ PDF.genViewerHeatmapPDF = function() {
 
 	// Reset Summary and Detail Panels on Viewer Screen
 	if (includeDetailMap) {
-		DMM.primaryMap.canvas.focus();
+		DVW.primaryMap.canvas.focus();
 		DMM.detailResize();
 	}
 	
@@ -921,8 +921,8 @@ PDF.genViewerHeatmapPDF = function() {
 	 * onto the detail heat map PDF page.
 	 **********************************************************************************/
 	function drawDetailHeatMapPages(theFont) {
-		for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-			const mapItem = DMM.DetailMaps[i];
+		for (let i=0; i<DVW.detailMaps.length;i++ ) {
+			const mapItem = DVW.detailMaps[i];
 			const loc = PANE.findPaneLocation (mapItem.chm);
 			if (loc.pane.classList.contains('collapsed')) {
 				break;

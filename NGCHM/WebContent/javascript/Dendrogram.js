@@ -44,9 +44,9 @@ DDR.minDendroHeight = 500;
 DDR.minDendroWidth = 500;
 
 DDR.clearDendroSelection = function() {
-	if (DMM.primaryMap && DMM.primaryMap.selectedStart != 0) {
-		DMM.primaryMap.selectedStart = 0;
-		DMM.primaryMap.selectedStop = 0;
+	if (DVW.primaryMap && DVW.primaryMap.selectedStart != 0) {
+		DVW.primaryMap.selectedStart = 0;
+		DVW.primaryMap.selectedStop = 0;
 		SUM.rowDendro.clearRibbonMode();
 		SUM.colDendro.clearRibbonMode();
 		if (!DVW.isSub) {
@@ -545,10 +545,10 @@ DDR.SummaryDendrogram = function(config, data, numLeaves) {
 	// Clear ribbon mode for this dendrogram.
 	this.clearRibbonMode = function() {
 		this.ribbonModeBar = -1;
-		if (DMM.primaryMap) {
-		    DMM.primaryMap.subDendroMode = 'none';
-		    DMM.primaryMap.selectedStart = 0;
-		    DMM.primaryMap.selectedStop = 0;
+		if (DVW.primaryMap) {
+		    DVW.primaryMap.subDendroMode = 'none';
+		    DVW.primaryMap.selectedStart = 0;
+		    DVW.primaryMap.selectedStop = 0;
 		}
 	};
 
@@ -566,7 +566,7 @@ DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			SUM.rowDendro.clearRibbonMode();
 			SUM.colDendro.clearRibbonMode();
 
-			if (DMM.primaryMap) DMM.primaryMap.subDendroMode = this.axis;
+			if (DVW.primaryMap) DVW.primaryMap.subDendroMode = this.axis;
 
 			this.clearSelectionMarks();
 			SRCH.clearSearchItems(this.axis);
@@ -579,11 +579,11 @@ DDR.SummaryDendrogram = function(config, data, numLeaves) {
 			SUM.colDendro.draw();
 
 			// Set start and stop coordinates
-			if (DMM.primaryMap) {
+			if (DVW.primaryMap) {
 			    const rmBar = this.bars[barIndex];
-			    DMM.primaryMap.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
-			    DMM.primaryMap.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
-			    if (debug) console.log ({ rmBar, start: DMM.primaryMap.selectedStart, stop: DMM.primaryMap.selectedStop });
+			    DVW.primaryMap.selectedStart = Math.round(rmBar.leftBoundary / pointsPerLeaf);
+			    DVW.primaryMap.selectedStop = Math.round(rmBar.rightBoundary / pointsPerLeaf);
+			    if (debug) console.log ({ rmBar, start: DVW.primaryMap.selectedStart, stop: DVW.primaryMap.selectedStop });
 			}
 			SRCH.showSearchResults();
 
@@ -1002,7 +1002,7 @@ DDR.DetailDendrogram = function(summaryDendrogram) {
 			const sumIdx = this.bars[barIdx].idx;  // Get index of bar in summary dendrogram.
 			SUM.clearSelectionMarks();
 			this.summaryDendrogram.addSelectedBar(sumIdx, e.shiftKey,e.metaKey||e.ctrlKey);
-			DVW.updateSelection(DMM.getMapItemFromDendro(this));
+			DVW.getMapItemFromDendro(this).updateSelection();
 			SUM.drawSelectionMarks();
 			SUM.drawTopItems();
 			let clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
@@ -1068,7 +1068,7 @@ DDR.DetailColumnDendrogram = function(dendroCanvas) {
 
 	// Get region of dendrogram currently visible.
 	this.getWindow = function() {
-		const mapItem = DMM.getMapItemFromDendro(this);
+		const mapItem = DVW.getMapItemFromDendro(this);
 		if (typeof mapItem === 'undefined') {
 			return {};
 		} else if (mapItem.mode === 'FULL_MAP') {
@@ -1090,7 +1090,7 @@ DDR.DetailRowDendrogram = function(dendroCanvas) {
 
 	// Get region of dendrogram currently visible.
 	this.getWindow = function() {
-		const mapItem = DMM.getMapItemFromDendro(this);
+		const mapItem = DVW.getMapItemFromDendro(this);
 		if (typeof mapItem === 'undefined') {
 			return {};
 		} else if (mapItem.mode === 'FULL_MAP') {
