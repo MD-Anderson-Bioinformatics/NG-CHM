@@ -385,27 +385,4 @@ DVW.checkCol = function(mapItem) {
     }
 }
 
-/*********************************************************************************************
- * FUNCTION:  getSamplingRatio - This function returns the appropriate row/col sampling ration
- * for the heat map based upon the screen mode.  
- *********************************************************************************************/
-DVW.getSamplingRatio = function (mode,axis) {
-	const heatMap = MMGR.getHeatMap();
-	if (axis == 'row'){
-		switch (mode){
-			case 'RIBBONH': return heatMap.getRowSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
-			case 'RIBBONV': return heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
-			case 'FULL_MAP': return heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
-			default:        return heatMap.getRowSummaryRatio(MAPREP.DETAIL_LEVEL);
-		}
-	} else {
-		switch (mode){
-			case 'RIBBONH': return heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
-			case 'RIBBONV': return heatMap.getColSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
-			case 'FULL_MAP': return heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
-			default:        return  heatMap.getColSummaryRatio(MAPREP.DETAIL_LEVEL);
-		}
-	}
-}
-
 })();

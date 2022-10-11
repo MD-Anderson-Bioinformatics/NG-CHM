@@ -179,8 +179,8 @@ DEV.userHelpOpen = function(mapItem) {
 	}
     }
     if (objectType === "map") {
-	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*DVW.getSamplingRatio('row'));
-	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*DVW.getSamplingRatio('col'));
+	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio('row'));
+	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio('col'));
 	if ((row <= heatMap.getNumRows('d')) && (col <= heatMap.getNumColumns('d'))) {
 		// Gather the information about the current pixel.
 		let matrixValue = heatMap.getValue(MAPREP.DETAIL_LEVEL,row,col);
@@ -242,7 +242,7 @@ DEV.userHelpOpen = function(mapItem) {
 	var pos, value, label;
 	var hoveredBar, hoveredBarColorScheme, hoveredBarValues;
 	if (objectType === "colClass") {
-		var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*DVW.getSamplingRatio('col'));
+		var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio('col'));
 		var colLabels = heatMap.getColLabels().labels;
 		label = colLabels[col-1];
 		var coveredHeight = 0;
@@ -263,7 +263,7 @@ DEV.userHelpOpen = function(mapItem) {
 		}
 		var colorMap = heatMap.getColorMapManager().getColorMap("col",hoveredBar);
 	} else {
-		var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*DVW.getSamplingRatio('row'));
+		var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio('row'));
 		var rowLabels = heatMap.getRowLabels().labels;
 		label = rowLabels[row-1];
 		var coveredWidth = 0;
@@ -513,8 +513,8 @@ DEV.dblClick = function(e) {
 	const mapLocY = coords.y - DET.getColClassPixelHeight(mapItem);
 	const mapLocX = coords.x - DET.getRowClassPixelWidth(mapItem);
 
-	const clickRow = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*DVW.getSamplingRatio('row'));
-	const clickCol = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*DVW.getSamplingRatio('col'));
+	const clickRow = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio('row'));
+	const clickCol = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio('col'));
 	const destRow = clickRow + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2);
 	const destCol = clickCol + 1 - Math.floor(DVW.getCurrentDetDataPerRow(mapItem)/2);
 	
@@ -724,6 +724,28 @@ DEV.handleMouseOut = function (e) {
 	return false;
     }
 
+    /*********************************************************************************************
+     * FUNCTION:  getSamplingRatio - This function returns the appropriate row/col sampling ration
+     * for the heat map based upon the screen mode.
+     *********************************************************************************************/
+    function getSamplingRatio (mode,axis) {
+	const heatMap = MMGR.getHeatMap();
+	const isRow = MMGR.isRow (axis);
+	let level;
+	switch (mode){
+	    case 'RIBBONH': level = MAPREP.RIBBON_HOR_LEVEL;
+	    case 'RIBBONV': level = MAPREP.RIBBON_VERT_LEVEL;
+	    case 'FULL_MAP': level = isRow ? MAPREP.RIBBON_VERT_LEVEL : MAPREP.RIBBON_HOR_LEVEL;
+	    default:        level = MAPREP.DETAIL_LEVEL;
+	}
+
+	if (isRow) {
+	    return heatMap.getRowSummaryRatio(level);
+	} else {
+	    return heatMap.getColSummaryRatio(level);
+	}
+    }
+
 /*********************************************************************************************
  * FUNCTION:  handleMouseMove - The purpose of this function is to handle a user drag event.
  * The type of move (drag-move or drag-select is determined, based upon keys pressed and the
@@ -841,14 +863,14 @@ DEV.getRowFromLayerY = function (mapItem,layerY) {
 	const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
 	const colClassHeightPx = DET.getColClassPixelHeight(mapItem);
 	const mapLocY = layerY - colClassHeightPx;
-	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*DVW.getSamplingRatio(mapItem.mode,'row'));
+	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio(mapItem.mode,'row'));
 }
 
 DEV.getColFromLayerX = function (mapItem,layerX) {
 	const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
 	const rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
 	const mapLocX = layerX - rowClassWidthPx;
-	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*DVW.getSamplingRatio(mapItem.mode,'col'));
+	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio(mapItem.mode,'col'));
 }
 
 
