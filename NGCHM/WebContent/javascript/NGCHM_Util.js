@@ -842,6 +842,40 @@ UTIL.getCursorPosition = function (e) {
     return "#" + (0x1000000 | rgb).toString(16).substring(1);
 };  
 
+/*********************************************************************************************
+ * FUNCTION:  getContigRanges - This function iterates thru a sorted array of integers (e.g.
+ * searchRows or searchCols) and returns an array containing entries for each contiguous range
+ * present in the original Array.  The elements of the returned array will be sub-arrays that
+ * each have 2 entries: one for the starting position and the other for the ending position.
+ *********************************************************************************************/
+UTIL.getContigRanges = function (sortedArr) {
+    const ranges = [];
+    let prevVal=sortedArr[0];
+    let startVal = sortedArr[0];
+    if (sortedArr.length >  0) {
+	for (let i=0;i<sortedArr.length;i++) {
+	    let currVal = sortedArr[i];
+	    // If a contiguous range has been found, write array entry
+	    if (currVal - prevVal > 1) {
+		ranges.push([startVal,prevVal]);
+		startVal = currVal;
+		// If this is ALSO the last entry, write one more array for
+		// for the current single row/col selection
+		if (i === sortedArr.length -1) {
+		    ranges.push([currVal,currVal]);
+		}
+	    } else {
+		// If last entry, write array entry
+		if (i === sortedArr.length -1) {
+		    ranges.push([startVal,currVal]);
+		}
+	    }
+	    prevVal = currVal;
+	}
+    }
+    return ranges;
+};
+
 // A table of frequently used images.
 // Used to reduce widget size by having a single data: URL for each image instead of one per use.
 UTIL.imageTable = {

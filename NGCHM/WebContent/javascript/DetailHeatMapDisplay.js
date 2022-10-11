@@ -653,9 +653,9 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 	// Retrieve contiguous row and column search arrays
 	const searchRows = SRCH.getAxisSearchResults("Row");
-	const rowRanges = DET.getContigSearchRanges(searchRows);
+	const rowRanges = UTIL.getContigRanges(searchRows);
 	const searchCols = SRCH.getAxisSearchResults("Column");
-	const colRanges = DET.getContigSearchRanges(searchCols);
+	const colRanges = UTIL.getContigRanges(searchCols);
 
 	// Get total row and column bar "heights".
 	totalColBarHeight = DET.calculateTotalClassBarHeight("column");
@@ -1848,40 +1848,6 @@ DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, l
 // BEGIN SEARCH RELATED DETAIL DISPLAY FUNCTIONS
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
-
-/*********************************************************************************************
- * FUNCTION:  getContigSearchRanges - This function iterates thru a searchArray (searchRows
- *  or searchCols) and writes an array containing entries for each contiguous range selected 
- *  in the /searchArray.  This array will contain sub-arrays that have 2 entries (one for 
- *  starting position and the other for ending)
- *********************************************************************************************/
-DET.getContigSearchRanges = function (searchArr) {
-	let ranges = [];
-	let prevVal=searchArr[0];
-	let startVal = searchArr[0];
-	if (searchArr.length >  0) {
-		for (let i=0;i<searchArr.length;i++) {
-			let currVal = searchArr[i];
-			//If a contiguous range has been found, write array entry
-			if (currVal - prevVal > 1) {
-				ranges.push([startVal,prevVal]);
-				startVal = currVal;
-				//If this is ALSO the last entry, write one more array for
-				//for the current single row/col selection
-				if (i === searchArr.length -1) {
-					ranges.push([currVal,currVal]);
-				}
-			} else {
-				//If last entry, write array entry
-				if (i === searchArr.length -1) {
-					ranges.push([startVal,currVal]);
-				}
-			}
-			prevVal = currVal;
-		}
-	}
-	return ranges;
-}
 
 /*********************************************************************************************
  * FUNCTION:  getAllLabelsByAxis - This function retrieves and array of search labels containing

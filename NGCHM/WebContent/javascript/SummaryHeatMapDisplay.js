@@ -1607,7 +1607,7 @@ SUM.drawAxisSelectionMarks = function(axis) {
 	const summaryRatio = axis === 'Row' ? heatMap.getSummaryRowRatio() : heatMap.getSummaryColRatio();
 	const minSelectionMarkSize = summaryRatio === 1 ? 1 : ((2*summaryRatio)*window.devicePixelRatio);
 
-	const marks = DET.getContigSearchRanges(selection).map(range => {
+	const marks = UTIL.getContigRanges(selection).map(range => {
 		let posn = Math.floor (range[0] * scale) - 1;
 		let size = Math.ceil ((range[1] - range[0]) * scale) + 1;
 		if (size < minSelectionMarkSize) {
