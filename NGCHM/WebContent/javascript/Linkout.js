@@ -2875,6 +2875,7 @@ var linkoutsVersion = 'undefined';
 		@option {String} testToRun Optional. String denoting tests to run. E.g. 'T-test'
 	*/
 	const vanodiMessageHandlers = {};
+	LNK.defineVanodiMessageHandler = defineVanodiMessageHandler;
 	function defineVanodiMessageHandler (op, fn) {
 	    vanodiMessageHandlers[op] = fn;
 	};
@@ -3007,56 +3008,6 @@ var linkoutsVersion = 'undefined';
 		    data: { axis, pointIds:pointLabelNames, clickType, lastClickText }
 		});
 	};
-
-	/*
-		Process message from plugins to highlight points selected in plugin
-	*/
-	defineVanodiMessageHandler ('selectLabels', function vanodiSelectLabels(instance, msg) {
-		const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
-		const pluginLabels = msg.selection.pointIds.map(l => l.toUpperCase()) // labels from plugin
-		var heatMapAxisLabels;
-		if (pluginLabels.length > 0 && pluginLabels[0].indexOf('|') !== -1) {
-			// Plugin sent full labels
-			heatMapAxisLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-		} else {
-			// Plugin sent actual labels (or actual and full are identical).
-			heatMapAxisLabels = MMGR.getActualLabels(axis);
-		}
-		heatMapAxisLabels = heatMapAxisLabels.map(l => l.toUpperCase());
-		var setSelected = new Set(pluginLabels) // make a set for faster access below, and avoiding use of indexOf
-		SRCH.clearSearchItems(axis);
-		var indexes = []
-		for (var i=0; i<heatMapAxisLabels.length; i++) { // loop over all labels
-			if (setSelected.has(heatMapAxisLabels[i])) {  // if set of selected points has label, add index to array of indexes
-				indexes.push(i+1);  
-			}
-		}
-		if (indexes.length > 0) {
-		    SRCH.setAxisSearchResultsVec (axis, indexes);
-		    DET.labelLastClicked[axis] = indexes[indexes.length-1];
-		}
-		DET.updateDisplayedLabels();
-		SUM.redrawSelectionMarks();
-		DVW.updateSelections();
-		SRCH.showSearchResults();
-		LNK.postSelectionToLinkouts (axis, msg.selection.clickType, 0, msg.nonce);
-	});
-
-	/*
-		Process message from scatter plot to highlight single point under mouse on plot
-	*/
-	defineVanodiMessageHandler('mouseover', function vanodiMouseover(instance, msg) {
-		const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
-		const allLabels = MMGR.getActualLabels(axis);
-		const pointId = msg.selection.pointId
-		const ptIdx = allLabels.indexOf(pointId) + 1;
-		SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
-		DET.labelLastClicked[axis] = ptIdx;
-		DET.updateDisplayedLabels();
-		DVW.updateSelections();
-		SRCH.showSearchResults();
-		SUM.redrawSelectionMarks();
-	});
 
 	// Listen for messages from plugins.
 	(function() {
