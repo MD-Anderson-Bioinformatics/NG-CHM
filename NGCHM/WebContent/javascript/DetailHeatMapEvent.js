@@ -116,39 +116,27 @@ DEV.addEvents = function (paneId) {
 	const rowLabelDiv = document.getElementById(mapItem.rowLabelDiv);
 	const colLabelDiv = document.getElementById(mapItem.colLabelDiv);
 	
-	rowLabelDiv.addEventListener("touchstart", function(e){
+	addLabelTouchEventHandlers (mapItem, rowLabelDiv);
+	addLabelTouchEventHandlers (mapItem, colLabelDiv);
+
+	function addLabelTouchEventHandlers (mapItem, labelDiv) {
+	    labelDiv.addEventListener("touchstart", function(e){
 		UHM.hlpC();
 		const now = new Date().getTime();
 		mapItem.latestLabelTap = now;
-	}, UTIL.passiveCompat({ passive: true }));
-		
-	rowLabelDiv.addEventListener("touchend", function(e){
+	    }, UTIL.passiveCompat({ passive: true }));
+
+	    labelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
 			const now = new Date().getTime();
 			const timesince = now - mapItem.latestLabelTap;
 			if (timesince > 500){
-				DEV.labelRightClick(e);
+			    mapItem.labelCallbacks.labelRightClick(e);
 			}
 		}
-	}, UTIL.passiveCompat({ passive: false }));
-	
-	colLabelDiv.addEventListener("touchstart", function(e){
-		UHM.hlpC();
-		const now = new Date().getTime();
-		mapItem.latestLabelTap = now;
-	}, UTIL.passiveCompat({ passive: true }));
-	
-	colLabelDiv.addEventListener("touchend", function(e){
-		if (e.touches.length == 0){
-			const now = new Date().getTime();
-			const timesince = now - mapItem.latestLabelTap;
-			if (timesince > 500){
-				DEV.labelRightClick(e);
-			}
-		}
-	}, UTIL.passiveCompat({ passive: false }));
-	
-}
+	    }, UTIL.passiveCompat({ passive: false }));
+	}
+};
 
 /**********************************************************************************
  * FUNCTION - userHelpOpen: This function handles all of the tasks necessary to

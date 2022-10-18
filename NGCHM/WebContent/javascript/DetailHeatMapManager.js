@@ -9,6 +9,7 @@
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
+    const DEV = NgChm.importNS('NgChm.DEV');
     const DDR = NgChm.importNS('NgChm.DDR');
     const PANE = NgChm.importNS('NgChm.Pane');
     const SUM = NgChm.importNS('NgChm.SUM');
@@ -100,6 +101,11 @@ DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
  * (either intial or copy) being created.
  *********************************************************************************************/
 DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
+	const labelCallbacks = {
+	    labelClick: DEV.labelClick,
+	    labelDrag: DEV.labelDrag,
+	    labelRightClick: DEV.labelRightClick,
+	};
 	mapItem.chm = chm;
 	mapItem.version = DVW.detailMaps.length === 0 ? 'P' : 'S';
 	mapItem.colDendroCanvas = chm.children[0];
@@ -113,7 +119,8 @@ DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
 	mapItem.labelPostScript = mapNumber === 1 ? '' : '_' + mapNumber;
 	mapItem.rowLabelDiv =  'rowL'+mapItem.labelElement.id.substring(1);
 	mapItem.colLabelDiv =  'colL'+mapItem.labelElement.id.substring(1);
-}
+	mapItem.labelCallbacks = labelCallbacks;
+};
 
 /*********************************************************************************************
  * FUNCTION:  RemoveDetailMap - The purpose of this function is to remove a detail heat map 

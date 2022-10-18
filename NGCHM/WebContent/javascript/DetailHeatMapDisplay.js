@@ -1778,8 +1778,8 @@ DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left
 	}
 	
 	if (text !== "<" && text !== "..." && text.length > 0){
-		div.addEventListener('click',DEV.labelClick , UTIL.passiveCompat({ capture: false, passive: false }));
-		div.addEventListener('contextmenu',DEV.labelRightClick, UTIL.passiveCompat({ capture: false, passive: false }));
+		div.addEventListener('click', mapItem.labelCallbacks.labelClick, UTIL.passiveCompat({ capture: false, passive: false }));
+		div.addEventListener('contextmenu', mapItem.labelCallbacks.labelRightClick, UTIL.passiveCompat({ capture: false, passive: false }));
 		div.onmouseover = function(){UHM.hlp(this,longText,longText.length*9,0);}
 		div.onmouseleave = UHM.hlpC;
 		div.addEventListener("touchstart", function(e){
@@ -1794,11 +1794,11 @@ DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left
 				const now = new Date().getTime();
 				const timesince = now - mapItem.latestLabelTap;
 				if (timesince > 500){
-					DEV.labelRightClick(e);
+				    mapItem.labelCallbacks.labelRightClick(e);
 				}
 			}
 		}, UTIL.passiveCompat({ passive: false }));
-		div.addEventListener("touchmove", DEV.labelDrag, UTIL.passiveCompat({ passive: false }));
+		div.addEventListener("touchmove", mapItem.labelCallbacks.labelDrag, UTIL.passiveCompat({ passive: false }));
 	}
 	if (text == "..."){
 		const listenOpts = UTIL.passiveCompat({ capture: false, passive: false });
