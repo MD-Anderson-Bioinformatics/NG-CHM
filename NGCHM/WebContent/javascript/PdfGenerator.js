@@ -418,7 +418,7 @@ PDF.genViewerHeatmapPDF = function() {
 	// Reset Summary and Detail Panels on Viewer Screen
 	if (includeDetailMap) {
 		DVW.primaryMap.canvas.focus();
-		DMM.detailResize();
+		DET.detailResize();
 	}
 	
 	// Reset cursor to default

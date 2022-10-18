@@ -190,7 +190,7 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 	const heatMap = MMGR.getHeatMap();
 	DET.setDendroShow(mapItem);
 	if (mapItem.resizeOnNextDraw) {
-		DMM.detailResize();
+		DET.detailResize();
 		mapItem.resizeOnNextDraw = false;
 	}
 	DET.setViewPort(mapItem);
@@ -2215,6 +2215,29 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	return pos;
 };
 
+    /************************************************************************************************
+     * FUNCTION - detailResize: This function calls all of the functions necessary to resize all
+     * of the open detail panel instances.
+     ************************************************************************************************/
+    DET.detailResize = function () {
+	DVW.detailMaps.forEach(mapItem => {
+	    DET.rowDendroResize(mapItem);
+	    DET.colDendroResize(mapItem);
+	});
+	if (DVW.detailMaps.length > 0) {
+	    DET.sizeCanvasForLabels();
+	    //Done twice because changing canvas size affects fonts selected for drawing labels
+	    DET.sizeCanvasForLabels();
+	    DET.updateDisplayedLabels();
+	    DET.drawSelections();
+	}
+	DVW.detailMaps.forEach(mapItem => {
+	    DET.rowDendroResize(mapItem);
+	    DET.colDendroResize(mapItem);
+	});
+    };
+
+
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
 //BEGIN WEBGL RELATED DETAIL DISPLAY FUNCTIONS
@@ -2542,7 +2565,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	}
 
 	function resizeDetailPane (loc) {
-		DMM.detailResize();
+		DET.detailResize();
 		DET.setDrawDetailTimeout(DVW.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
 	}
 

@@ -229,26 +229,5 @@ DMM.resizeDetailMapCanvases = function resizeDetailMapCanvases () {
 	}
 };
 
-/************************************************************************************************
- * FUNCTION - detailResize: This function calls all of the functions necessary to resize all 
- * of the open detail panel instances.
- ************************************************************************************************/
-DMM.detailResize = function () {
-	DVW.detailMaps.forEach(mapItem => {
-	    DET.rowDendroResize(mapItem);
-	    DET.colDendroResize(mapItem);
-	});
-	if (DVW.detailMaps.length > 0) {
-		 DET.sizeCanvasForLabels();
-		 //Done twice because changing canvas size affects fonts selected for drawing labels
-		 DET.sizeCanvasForLabels();
-		 DET.updateDisplayedLabels();
-		 DET.drawSelections();
-	}
-	DVW.detailMaps.forEach(mapItem => {
-	    DET.rowDendroResize(mapItem);
-	    DET.colDendroResize(mapItem);
-	});
-}
 
 })();
