@@ -256,7 +256,7 @@
 	}
 	if (results.length === 0) {
 	    //Clear previous matches when search is empty.
-	    DVW.updateSelections();
+	    DET.updateSelections();
 	    searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 	} else {
 	    SRCHSTATE.setAxisSearchResultsVec(axis, results);
@@ -532,7 +532,7 @@
 			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 		}	
 		//Clear previous matches when search is empty.
-		DVW.updateSelections();
+		DET.updateSelections();
 	}
     }
 
@@ -735,7 +735,7 @@
 		} 
 		DVW.checkCol(mapItem);
 	}
-	DVW.updateSelections();
+	DET.updateSelections();
     }
 
     /**********************************************************************************
@@ -773,7 +773,7 @@
 	}
 	clearSearchElement();
 	SRCH.showSearchResults();
-	DVW.updateSelections();
+	DET.updateSelections();
 	SRCH.updateLinkoutSelections();
 	resetSearchBoxColor()
     };
@@ -931,7 +931,7 @@
     SRCH.redrawSearchResults = function () {
 	    DET.updateDisplayedLabels();
 	    SUM.redrawSelectionMarks();
-	    DVW.updateSelections();
+	    DET.updateSelections();
 	    SRCH.showSearchResults();
     };
 

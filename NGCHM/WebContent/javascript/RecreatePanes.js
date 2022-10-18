@@ -61,7 +61,7 @@
 			PANE.resizeNGCHM();
 			MMGR.getHeatMap().setUnAppliedChanges(false);
 			setTimeout(() => {
-				DVW.updateSelections(true);
+				DET.updateSelections(true);
 				const expanded = document.querySelector("DIV[data-expanded-panel]");
 				if (expanded) {
 				    delete expanded.dataset.expandedPanel;

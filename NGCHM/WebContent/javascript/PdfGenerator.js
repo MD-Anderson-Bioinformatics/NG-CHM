@@ -5,14 +5,13 @@
     //Define Namespace for NgChm PdfGenerator
     const PDF = NgChm.createNS('NgChm.PDF');
 
-    const UHM = NgChm.importNS('NgChm.UHM');
-    const SUM = NgChm.importNS('NgChm.SUM');
-    const DMM = NgChm.importNS('NgChm.DMM');
-    const DET = NgChm.importNS('NgChm.DET');
-    const DVW = NgChm.importNS('NgChm.DVW');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
+    const UHM = NgChm.importNS('NgChm.UHM');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const DVW = NgChm.importNS('NgChm.DVW');
+    const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const PANE = NgChm.importNS('NgChm.Pane');
@@ -219,7 +218,7 @@ PDF.pdfDataReady = function(event, tile) {
  * https://mrrio.github.io/jsPDF/doc/symbols/jsPDF.html#setLineCap
  **********************************************************************************/
 PDF.getViewerHeatmapPDF = function() {
-	DVW.updateSelections(true);
+	DET.updateSelections(true);
 	setTimeout(function(){ PDF.genViewerHeatmapPDF(); }, 1500);
 }
 

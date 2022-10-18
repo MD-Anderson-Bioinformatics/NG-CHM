@@ -611,7 +611,7 @@ DEV.labelClick = function (e) {
 	document.getElementById('cancel_btn').style.display='';
 	SUM.clearSelectionMarks();
 	DET.updateDisplayedLabels();
-	DVW.updateSelections();
+	DET.updateSelections();
 	SUM.drawSelectionMarks();
 	SUM.drawTopItems();
 	SRCH.showSearchResults();
@@ -651,7 +651,7 @@ DEV.labelDrag = function(e){
 	document.getElementById('cancel_btn').style.display='';
 	DET.updateDisplayedLabels();
 	SRCH.showSearchResults();
-	DVW.updateSelections();
+	DET.updateSelections();
 	SUM.drawSelectionMarks();
 	SUM.drawTopItems();
 	SRCH.showSearchResults();
@@ -921,7 +921,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		} else {
 			mapItem.saveRow = row;
 			mapItem.saveCol = col;
-			DEV.detailNormal(mapItem);
+			DET.detailNormal(mapItem);
 		}
 		mapItem.modeHistory.pop();
 	} else if (mapItem.mode == 'NORMAL') {
@@ -943,7 +943,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		    }
 		}
 		if (mode == 'NORMAL') {
-			DEV.detailNormal (mapItem);
+			DET.detailNormal (mapItem);
 		} else {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 			if (current == -1) {
@@ -973,7 +973,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		    }
 		}
 		if (mode == 'NORMAL') {
-			DEV.detailNormal (mapItem);
+			DET.detailNormal (mapItem);
 		} else {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 			if (current == -1) {
@@ -997,11 +997,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 	}
 };
 
-/**********************************************************************************
- * FUNCTION - detailDataZoomOut: The purpose of this function is to handle all of
- * the processing necessary to zoom outwards on a given heat map panel.
- **********************************************************************************/
-DEV.detailDataZoomOut = function (chm) {
+    /**********************************************************************************
+     * FUNCTION - detailDataZoomOut: The purpose of this function is to handle all of
+     * the processing necessary to zoom outwards on a given heat map panel.
+     **********************************************************************************/
+    DEV.detailDataZoomOut = function (chm) {
 	const heatMap = MMGR.getHeatMap();
 	const mapItem = DVW.getMapItemFromChm(chm);
 	if (mapItem.mode == 'FULL_MAP') {
@@ -1026,7 +1026,7 @@ DEV.detailDataZoomOut = function (chm) {
 			} else if ((current > 0) && (heatMap.getNumRows(MAPREP.DETAIL_LEVEL) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) ) {
 				DEV.detailHRibbonButton(mapItem);
 			} else {
-				DEV.detailFullMap(mapItem);
+				DET.detailFullMap(mapItem);
 			}	
 		}	
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
@@ -1038,7 +1038,7 @@ DEV.detailDataZoomOut = function (chm) {
 			mapItem.updateSelection();
 		} else {
 			// Switch to full map view.
-			DEV.detailFullMap(mapItem);
+			DET.detailFullMap(mapItem);
 		}	
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
@@ -1049,7 +1049,7 @@ DEV.detailDataZoomOut = function (chm) {
 			mapItem.updateSelection();
 		} else {
 			// Switch to full map view.
-			DEV.detailFullMap(mapItem);
+			DET.detailFullMap(mapItem);
 		}	
         } else {
 	    console.error ('Unknown zoom mode ', mapItem.mode);
@@ -1062,7 +1062,7 @@ DEV.detailDataZoomOut = function (chm) {
      **********************************************************************************/
     DEV.detailHRibbonButton = function (mapItem) {
 	DET.clearDendroSelection(mapItem);
-	DEV.detailHRibbon(mapItem);
+	DET.detailHRibbon(mapItem);
     };
 /**********************************************************************************
  * FUNCTION - callDetailDrawFunction: The purpose of this function is to respond to
@@ -1073,13 +1073,13 @@ DEV.callDetailDrawFunction = function(modeVal, target) {
 	let mapItem = (typeof target !== 'undefined') ? target : DVW.primaryMap;
 	if (!mapItem) return;
 	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
-		DEV.detailHRibbon(mapItem);
+		DET.detailHRibbon(mapItem);
 	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
-		DEV.detailVRibbon(mapItem);
+		DET.detailVRibbon(mapItem);
 	if (modeVal == 'FULL_MAP')
-		DEV.detailFullMap(mapItem);
+		DET.detailFullMap(mapItem);
 	if (modeVal == 'NORMAL') {
-		DEV.detailNormal(mapItem);
+		DET.detailNormal(mapItem);
 	}
 }
 
@@ -1097,227 +1097,8 @@ DEV.clearModeHistory = function (mapItem) {
      **********************************************************************************/
     DEV.detailVRibbonButton = function (mapItem) {
 	DET.clearDendroSelection(mapItem);
-	DEV.detailVRibbon(mapItem);
+	DET.detailVRibbon(mapItem);
     };
-/**********************************************************************************
- * FUNCTION - detailNormal: The purpose of this function is to handle all of
- * the processing necessary to return a heat map panel to normal mode.
- * mapItem is the detail view map item.
- **********************************************************************************/
-DEV.detailNormal = function (mapItem, restoreInfo) {
-	UHM.hlpC();
-	const previousMode = mapItem.mode;
-	DVW.setMode(mapItem,'NORMAL');
-	mapItem.setButtons();
-	if (!restoreInfo) {
-	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
-	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
-		DET.setDetailDataSize(mapItem, mapItem.dataBoxWidth);
-	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
-		DET.setDetailDataSize(mapItem,mapItem.dataBoxHeight);
-	    } else if (previousMode=='FULL_MAP') {
-		DET.setDetailDataSize(mapItem,DET.zoomBoxSizes[0]);
-	    }
-
-	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    const heatMap = MMGR.getHeatMap();
-	    while ((Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) ||
-	       (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))) {
-		DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
-	    }
-	
-	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
-		mapItem.currentRow = mapItem.saveRow;
-	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
-		mapItem.currentCol = mapItem.saveCol;
-	    } else if (previousMode=='FULL_MAP') {
-		mapItem.currentRow = mapItem.saveRow;
-		mapItem.currentCol = mapItem.saveCol;		
-	    }
-	}
-	
-	DVW.checkRow(mapItem);
-	DVW.checkCol(mapItem);
-	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-	 
-	DET.detInitGl(mapItem);
-	DET.clearDendroSelection();
-	mapItem.updateSelection();
-	try {
-		document.getElementById("viewport").setAttribute("content", "height=device-height");
-		document.getElementById("viewport").setAttribute("content", "");
-	} catch(err) {
-		console.error("Unable to adjust viewport content attribute");
-	}
-}
-
-/**********************************************************************************
- * FUNCTION - detailFullMap: The purpose of this function is to show the whole map 
- * in the detail pane. Processes ribbon h/v differently. In these cases, one axis 
- * is kept static so that the "full view" stays within the selected sub-dendro.
- **********************************************************************************/
-DEV.detailFullMap = function (mapItem) {
-	UHM.hlpC();
-	mapItem.saveRow = mapItem.currentRow;
-	mapItem.saveCol = mapItem.currentCol;
-	
-	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more 
-	//than 1 pixel, scale calculates the appropriate height/width.
-	if (mapItem.subDendroMode === 'Column') {
-	    DET.scaleViewHeight(mapItem);
-	} else if (mapItem.subDendroMode === 'Row') {
-	    DET.scaleViewWidth(mapItem);
-	} else {
-	    DVW.setMode(mapItem, 'FULL_MAP');
-	    DET.scaleViewHeight(mapItem);
-	    DET.scaleViewWidth(mapItem);
-	}
-
-	//Canvas is adjusted to fit the number of rows/columns and matrix height/width of each element.
-	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-	DET.detInitGl(mapItem);
-	mapItem.updateSelection();
-}
-
-
-/**********************************************************************************
- * FUNCTION - detailHRibbon: The purpose of this function is to change the view for
- * a given heat map panel to horizontal ribbon view.  Note there is a standard full 
- * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.  
- * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
- **********************************************************************************/
-DEV.detailHRibbon = function (mapItem, restoreInfo) {
-	UHM.hlpC();
-	const heatMap = MMGR.getHeatMap();
-	const previousMode = mapItem.mode;
-	const prevWidth = mapItem.dataBoxWidth;
-	mapItem.saveCol = mapItem.currentCol;
-	DVW.setMode(mapItem,'RIBBONH');
-	mapItem.setButtons();
-
-	if (!restoreInfo) {
-	    if (previousMode=='FULL_MAP') {
-		DET.setDetailDataHeight(mapItem, DET.zoomBoxSizes[0]);
-	    }
-	    // If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
-	    // and data size to 1.
-	    if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewWidth = heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
-		let ddw = 1;
-		while(2*mapItem.dataViewWidth < 500){ // make the width wider to prevent blurry/big dendros for smaller maps
-			ddw *=2;
-			mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
-		}
-		DET.setDetailDataWidth(mapItem,ddw);
-		mapItem.currentCol = 1;
-	    } else {
-		mapItem.saveCol = mapItem.selectedStart;
-		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
-		DEV.clearModeHistory (mapItem);
-		mapItem.mode='RIBBONH_DETAIL'
-		const width = Math.max(1, Math.floor(500/selectionSize));
-		mapItem.dataViewWidth = (selectionSize * width) + DET.dataViewBorder;
-		DET.setDetailDataWidth(mapItem,width);
-		mapItem.currentCol = mapItem.selectedStart;
-	    }
-	
-	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-	    if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
-		if (previousMode == 'FULL_MAP') {
-		    DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[0]);
-		} else {
-		    DET.setDetailDataHeight(mapItem,prevWidth);
-		}
-		mapItem.currentRow = mapItem.saveRow;
-	    }
-
-	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
-		DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
-	    }
-	}
-
-	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-	DET.detInitGl(mapItem);
-	mapItem.updateSelection();
-}
-
-
-/**********************************************************************************
- * FUNCTION - detailVRibbon: The purpose of this function is to change the view for
- * a given heat map panel to vertical ribbon view.  Note there is a standard full 
- * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.  
- * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
- **********************************************************************************/
-DEV.detailVRibbon = function (mapItem, restoreInfo) {
-	UHM.hlpC();
-	const heatMap = MMGR.getHeatMap();
-	const previousMode = mapItem.mode;
-	const prevHeight = mapItem.dataBoxHeight;
-	mapItem.saveRow = mapItem.currentRow;
-	
-	DVW.setMode(mapItem, 'RIBBONV');
-	mapItem.setButtons();
-
-	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
-	// and data size to 1.
-	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewHeight = heatMap.getNumRows(MAPREP.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
-		let ddh = 1;
-		while(2*mapItem.dataViewHeight < 500){ // make the height taller to prevent blurry/big dendros for smaller maps
-			ddh *=2;
-			mapItem.dataViewHeight = ddh*heatMap.getNumRows(MAPREP.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
-		}
-		DET.setDetailDataHeight(mapItem,ddh);
-		mapItem.currentRow = 1;
-	} else {
-		mapItem.saveRow = mapItem.selectedStart;
-		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
-		if (selectionSize < 500) {
-			DEV.clearModeHistory (mapItem);
-			DVW.setMode(mapItem, 'RIBBONV_DETAIL');
-		} else {
-			const rvRate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
-			selectionSize = Math.floor(selectionSize / rvRate);			
-		}
-		const height = Math.max(1, Math.floor(500/selectionSize));
-		mapItem.dataViewHeight = (selectionSize * height) + DET.dataViewBorder;
-		DET.setDetailDataHeight(mapItem, height);
-		mapItem.currentRow = mapItem.selectedStart;
-	}
-	
-	if (!restoreInfo) {
-	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
-	    if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
-		if (previousMode == 'FULL_MAP') {
-			DET.setDetailDataWidth(mapItem, DET.zoomBoxSizes[0]);
-		} else {
-			DET.setDetailDataWidth(mapItem, prevHeight);
-		}
-		mapItem.currentCol = mapItem.saveCol;
-	    }
-	
-	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
-		DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
-	    }
-	}
-
-	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-	DET.detInitGl(mapItem);
-	mapItem.updateSelection();
-	try {
-		document.getElementById("viewport").setAttribute("content", "height=device-height");
-		document.getElementById("viewport").setAttribute("content", "");
-	} catch(err) {
-		console.error("Unable to adjust viewport content attribute");
-	}
-}
 
 /**********************************************************************************
  * FUNCTION - zoomAnimation: The purpose of this function is to perform a zoom 

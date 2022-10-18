@@ -477,7 +477,7 @@ UPM.prefsSuccess = function() {
 	UPM.bkpColorMaps = null;
 	SUM.redrawSummaryPanel();
 	DMM.resizeDetailMapCanvases ();
-	DVW.updateSelections(false); // Do not skip resize: covariate bar changes may require resize
+	DET.updateSelections(false); // Do not skip resize: covariate bar changes may require resize
 	UPM.applyDone = true;
 	UPM.setMessage("");
 }
