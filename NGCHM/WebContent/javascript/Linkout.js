@@ -20,6 +20,7 @@ var linkoutsVersion = 'undefined';
 
     //Define Namespace for NgChm Linkout
     const LNK = NgChm.createNS('NgChm.LNK');
+    const CUST = NgChm.importNS('NgChm.CUST');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
@@ -94,6 +95,31 @@ var linkoutsVersion = 'undefined';
 	LNK.addHamburgerLinkout(params);
     };
 
+    // Define a subtype: any linkouts defined for the supertype will also be defined
+    // for the subtype.  No transformation will be applied to the labels.  For
+    // instance: addSubtype('bio.gene.hugo', 'bio.pubmed'): linkouts defined for bio.pubmed
+    // will also be defined for bio.gene.hugo.
+    linkouts.addSubtype = function (subtype, supertype) {
+        CUST.addSubtype (subtype, supertype);
+    };
+
+    // Add the specified plugin.
+    linkouts.addPlugin = function ( plugin ) {
+	for (var i=0;i<CUST.customPlugins.length;i++) {
+		var currPlug = CUST.customPlugins[i];
+		if (currPlug.name === plugin.name) {
+			CUST.customPlugins.splice(i, 1);
+		}
+	}
+        if (CUST.verbose) console.log( 'NgChm.CUST: adding plugin ' + plugin.name );
+        CUST.customPlugins.push( plugin );
+    };
+
+    // Describe plugin types.
+    linkouts.describeTypes = function (typelist) {
+        CUST.describeTypes (typelist);
+    };
+
     /*******************************************
      * END EXTERNAL INTERFACE
      *******************************************/
@@ -107,7 +133,6 @@ var linkoutsVersion = 'undefined';
     const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
     const SUM = NgChm.importNS('NgChm.SUM');
-    const CUST = NgChm.importNS('NgChm.CUST');
     const CMM = NgChm.importNS('NgChm.CMM');
     const RECPANES = NgChm.importNS('NgChm.RecPanes');
 
@@ -3091,4 +3116,5 @@ var linkoutsVersion = 'undefined';
 	        LNK.addLinkoutPlugin(kind, spec);
 	   }
 	};
+
 })(); // end of big IIFE
