@@ -12,6 +12,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const FLICK = NgChm.importNS('NgChm.FLICK');
     const SUM = NgChm.importNS('NgChm.SUM');
+    const SMM = NgChm.importNS('NgChm.SMM');
     const PDF = NgChm.importNS('NgChm.PDF');
     const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
@@ -280,11 +281,11 @@
 		} else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
 			const s = PANE.splitPane (false, initialLoc);
 			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
-			SUM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
+			SMM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
 			DET.switchPaneToDetail (PANE.findPaneLocation(s.child2));
 			SRCH.doInitialSearch();
 		} else if (UTIL.showSummaryPane) {
-			SUM.switchPaneToSummary (initialLoc);
+			SMM.switchPaneToSummary (initialLoc);
 			SRCH.doInitialSearch();
 		} else if (UTIL.showDetailPane) {
 			DET.switchPaneToDetail (initialLoc);

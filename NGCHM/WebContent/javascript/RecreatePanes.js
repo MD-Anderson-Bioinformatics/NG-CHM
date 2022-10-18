@@ -13,10 +13,11 @@
 	const SRCH = NgChm.importNS('NgChm.SRCH');
 	const PANE = NgChm.importNS('NgChm.Pane');
 	const MMGR = NgChm.importNS('NgChm.MMGR');
+	const SMM = NgChm.importNS('NgChm.SMM');
+	const SUM = NgChm.importNS('NgChm.SUM');
 	const DVW = NgChm.importNS('NgChm.DVW');
 	const DET = NgChm.importNS('NgChm.DET');
 	const DEV = NgChm.importNS('NgChm.DEV');
-	const SUM = NgChm.importNS('NgChm.SUM');
 	const DMM = NgChm.importNS('NgChm.DMM');
 	const CUST = NgChm.importNS('NgChm.CUST');
 	const debug = false;
@@ -232,7 +233,7 @@
 		    return;
 		}
 		if (config.type === "summaryMap") {
-			SUM.switchPaneToSummary(PANE.findPaneLocation(pane));
+			SMM.switchPaneToSummary(PANE.findPaneLocation(pane));
 			delete RECPANES.mapConfigPanelConfiguration[paneid];
 		} else if (config.type === "detailMap") {
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
