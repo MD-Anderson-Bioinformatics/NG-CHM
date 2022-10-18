@@ -997,7 +997,7 @@ DDR.DetailDendrogram = function(summaryDendrogram) {
 		const h3n = canvasPosn.h * this.summaryDendrogram.dendroViewHeight / heightScale;
 		// console.log ({ w3n, h3n });
 
-		DET.mouseDown = true;
+		DEV.setMouseDown (true);
 		this.checkDendroHit (h3n, w3n, barIdx => {
 			const sumIdx = this.bars[barIdx].idx;  // Get index of bar in summary dendrogram.
 			SUM.clearSelectionMarks();

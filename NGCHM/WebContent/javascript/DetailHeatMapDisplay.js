@@ -19,7 +19,6 @@
     const PANE = NgChm.importNS('NgChm.Pane');
 
 DET.labelLastClicked = {};
-DET.mouseDown = false;
 DET.paddingHeight = 2;          // space between classification bars
 DET.SIZE_NORMAL_MODE = 506;
 DET.dataViewBorder = 2;

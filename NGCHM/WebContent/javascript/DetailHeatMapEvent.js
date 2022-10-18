@@ -16,8 +16,19 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');
     const DRAW = NgChm.importNS('NgChm.DRAW');
+    var mouseEventActive = false;
+    var mouseDown = false;
 
     DEV.targetCanvas = null;
+    var scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
+
+    DEV.clearScrollTime = function() {
+	scrollTime = null;
+    };
+
+    DEV.setMouseDown = function (isDown) {
+	mouseDown = isDown;
+    };
 
 /**********************************************************************************
  * FUNCTION - addEvents: These function adds event listeners to canvases on a
@@ -73,7 +84,7 @@ DEV.addEvents = function (paneId) {
 	    		mapItem.latestPinchDistance = distance;
 	    	} else if (e.touches.length == 1){
 			clearTimeout(DET.eventTimer);
-			DET.mouseDown = true;
+			mouseDown = true;
 			DET.handleMoveDrag(e);
 	    	}
 	    }
@@ -81,7 +92,7 @@ DEV.addEvents = function (paneId) {
 	
 	mapItem.canvas.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
-			DET.mouseDown = false;
+			mouseDown = false;
 			mapItem.latestPinchDistance = null;
 			const now = new Date().getTime();
 			if (mapItem.latestTap){
@@ -426,8 +437,8 @@ DEV.handleScroll = function(evt) {
 	        if (!DVW.primaryMap) return;
 		parentElement = DVW.primaryMap.chm;
 	}
-	if (DVW.scrollTime == null || evt.timeStamp - DVW.scrollTime > 150){
-		DVW.scrollTime = evt.timeStamp;
+	if (scrollTime == null || evt.timeStamp - scrollTime > 150){
+		scrollTime = evt.timeStamp;
 		if (evt.wheelDelta < -30 || evt.deltaY > 0 || evt.scale < 1) { //Zoom out
             DEV.detailDataZoomOut(parentElement);
 		} else if ((evt.wheelDelta > 30 || evt.deltaY < 0 || evt.scale > 1)){ // Zoom in
@@ -443,14 +454,14 @@ DEV.handleScroll = function(evt) {
 DEV.clickStart = function (e) {
 	e.preventDefault();
 	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
-	SUM.mouseEventActive = true;
+	mouseEventActive = true;
 	const clickType = UTIL.getClickType(e);
 	UHM.hlpC();
 	if (clickType === 0) { 
 		const coords = UTIL.getCursorPosition(e);
 		mapItem.dragOffsetX = coords.x;  //canvas X coordinate 
 		mapItem.dragOffsetY = coords.y;
-		DET.mouseDown = true;
+		mouseDown = true;
 		// client space
 		const divW = e.target.clientWidth;
 		const divH = e.target.clientHeight;
@@ -484,16 +495,16 @@ DEV.clickStart = function (e) {
  *********************************************************************************************/
 DEV.clickEnd = function (e) {
 	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
-	if (SUM.mouseEventActive) {
+	if (mouseEventActive) {
 		const clickType = UTIL.getClickType(e);
 		if (clickType === 0) {
 			//Reset mouse event indicators
-			DET.mouseDown = false;
+			mouseDown = false;
 			//Set cursor back to default
 			mapItem.canvas.style.cursor="default";
 		}
 	}
-	SUM.mouseEventActive = false;
+	mouseEventActive = false;
 }
 
 /*********************************************************************************************
@@ -694,8 +705,8 @@ DEV.matrixRightClick = function (e) {
 DEV.handleMouseOut = function (e) {
 	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
 	mapItem.canvas.style.cursor="default";
-	DET.mouseDown = false;
-	SUM.mouseEventActive = false;
+	mouseDown = false;
+	mouseEventActive = false;
 }
 
     /*********************************************************************************************
@@ -760,13 +771,13 @@ DEV.handleMouseMove = function (e) {
     if(mapItem.oldMousePos[0] != eX ||mapItem.oldMousePos[1] != eY) {
 	mapItem.oldMousePos = [eX, eY];
     }
-    if (DET.mouseDown && SUM.mouseEventActive) {
+    if (mouseDown && mouseEventActive) {
 	clearTimeout(DET.eventTimer);
 	//If mouse is down and shift key is pressed, perform a drag selection
 	//Else perform a drag move
 	if (e.shiftKey) {
 	    //process select drag only if the mouse is down AND the cursor is on the heat map.
-	    if((DET.mouseDown) && (isOnObject(e,"map"))) {
+	    if((mouseDown) && (isOnObject(e,"map"))) {
 		SRCH.clearSearch(e);
 		DEV.handleSelectDrag(e);
 	    }
@@ -785,7 +796,7 @@ DEV.handleMouseMove = function (e) {
  *********************************************************************************************/
 DEV.handleMoveDrag = function (e) {
 	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
-    if(!DET.mouseDown) return;
+    if(!mouseDown) return;
     mapItem.canvas.style.cursor="move"; 
     const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width;
     const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;

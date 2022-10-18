@@ -19,7 +19,6 @@
 //Globals that provide information about heat map position selection.
 DVW.currentRow = null;      // Top row of current selected position
 DVW.currentCol = null;      // Left column of the current selected position
-DVW.scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
 
     /*********************************************************************************************
      * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection

@@ -501,7 +501,7 @@
 	    DET.detailHeatMapCache = {};
 	    DET.detailHeatMapLevel = {};
 	    DET.detailHeatMapValidator = {};
-	    DET.mouseDown = false;
+	    DEV.setMouseDown (false);
 	    MMGR.initAxisLabels();
 	    UTIL.removeElementsByClass("DynamicLabel");
 	    SRCH.clearCurrentSearchItem ();
