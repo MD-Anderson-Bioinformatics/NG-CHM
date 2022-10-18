@@ -99,6 +99,7 @@ var linkoutsVersion = 'undefined';
      *******************************************/
 
     /* Additional imports. */
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const PANE = NgChm.importNS('NgChm.Pane');
     const UHM = NgChm.importNS('NgChm.UHM');
@@ -249,7 +250,7 @@ var linkoutsVersion = 'undefined';
 					searchLabels.push( generateSearchLabel(LNK.selection,formatIndex));
 				} else {
 				//ELSE the linkout is multi select, load all selected items to searchLabels (not necessarily the item that was clicked on)
-					SRCH.getAxisSearchResults(axis).forEach(i => {
+					SRCHSTATE.getAxisSearchResults(axis).forEach(i => {
 						if (axis.includes("Covar")){ // Covariate linkouts have not been tested very extensively. May need revision in future. 
 							searchLabels.push( generateSearchLabel(labels[i],formatIndex)) ;
 						} else {
@@ -259,19 +260,20 @@ var linkoutsVersion = 'undefined';
 				}
 			} else {
 				searchLabels = {"Row" : [], "Column" : []};
-				SRCH.getAxisSearchResults("Row").forEach (i => {
+				SRCHSTATE.getAxisSearchResults("Row").forEach (i => {
 					searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],[formatIndex[0]]) );
 				});
-				SRCH.getAxisSearchResults("Column").forEach (i => {
+				SRCHSTATE.getAxisSearchResults("Column").forEach (i => {
 					searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],[formatIndex[0]]) );
 				});
 				if (linkout.title !== 'Copy selected labels to clipboard') {
-					if (searchLabels["Row"].length === 0) {
-						searchLabels["Row"] = DET.getAllLabelsByAxis("Row");
-					}
-					if (searchLabels["Column"].length === 0) {
-						searchLabels["Column"] = DET.getAllLabelsByAxis("Column");
-					}
+				    const heatMap = MMGR.getHeatMap();
+				    if (searchLabels["Row"].length === 0) {
+					    searchLabels["Row"] = heatMap.getAxisLabels("Row")["labels"];
+				    }
+				    if (searchLabels["Column"].length === 0) {
+					    searchLabels["Column"] = heatMap.getAxisLabels("Column")["labels"];
+				    }
 				}
 				if (linkout.title === 'Download selected matrix data to file') {
 					labelDataMatrix = LNK.createMatrixData(searchLabels);
@@ -296,10 +298,10 @@ var linkoutsVersion = 'undefined';
 				formatIndex.col[i] = heatMap.getColLabels()["label_type"].indexOf(type);
 			}
 			// Build the searchLabels and put them into the return object
-			SRCH.getAxisSearchResults("Row").forEach( i => {
+			SRCHSTATE.getAxisSearchResults("Row").forEach( i => {
 				searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],formatIndex.row) );
 			});
-			SRCH.getAxisSearchResults("Column").forEach( i => {
+			SRCHSTATE.getAxisSearchResults("Column").forEach( i => {
 				searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],formatIndex.col) );
 			});
 			
@@ -322,12 +324,13 @@ var linkoutsVersion = 'undefined';
 
 
 	LNK.createMatrixData = function(searchLabels) {
+		//console.log ({ m: 'LNK.createMatrixData', searchLabels});
 		let tilesReady = false;
 		const heatMap = MMGR.getHeatMap();
-		if (SRCH.getAxisSearchResults("Row").length === 0) {
+		if (SRCHSTATE.getAxisSearchResults("Row").length === 0) {
 		    heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
-		} else if (SRCH.getAxisSearchResults("Column").length === 0) {
+		} else if (SRCHSTATE.getAxisSearchResults("Column").length === 0) {
 		    heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
 		} else {
@@ -355,14 +358,14 @@ var linkoutsVersion = 'undefined';
 	LNK.createMatrixDataTsv = function(searchLabels) {
 		var matrix = new Array();
 
-		let rowSearchItems = SRCH.getAxisSearchResults("Row");
+		let rowSearchItems = SRCHSTATE.getAxisSearchResults("Row");
 		//Check to see if we need new searchItems because entire axis is selected by 
 		//default of no items being selected on opposing axis, Otherwise, use
 		//searchItems selected.
 		if (rowSearchItems.length === 0) {
 			rowSearchItems = LNK.getEntireAxisSearchItems(searchLabels,"Row");
 		}
-		let colSearchItems = SRCH.getAxisSearchResults("Column");
+		let colSearchItems = SRCHSTATE.getAxisSearchResults("Column");
 		if (colSearchItems.length === 0) {
 			colSearchItems = LNK.getEntireAxisSearchItems(searchLabels,"Column");
 		}
@@ -479,7 +482,7 @@ var linkoutsVersion = 'undefined';
 
 		var labelMenu =  axis !== "Matrix" ? document.getElementById(axis + 'LabelMenu') : document.getElementById("MatrixMenu");
 		var labelMenuTable = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenuTable') : document.getElementById('MatrixMenuTable');
-	    var axisLabelsLength = axis !== "Matrix" ? SRCH.getSearchLabelsByAxis(axis).length : {"Row":SRCH.getSearchLabelsByAxis("Row").length ,"Column":  SRCH.getSearchLabelsByAxis("Column").length};
+	    var axisLabelsLength = axis !== "Matrix" ? SRCHSTATE.getSearchLabelsByAxis(axis).length : {"Row":SRCHSTATE.getSearchLabelsByAxis("Row").length ,"Column":  SRCHSTATE.getSearchLabelsByAxis("Column").length};
 	    var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
 	    var row = header.getElementsByTagName('TR')[0];
 	    if (((axisLabelsLength > 0) || (LNK.selection !== '')) && axis !== "Matrix"){
@@ -488,9 +491,9 @@ var linkoutsVersion = 'undefined';
 			LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else if ((axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) && axis == "Matrix"){
 	    	if (axisLabelsLength["Row"] === 0) {
-			axisLabelsLength["Row"] = DET.getAllLabelsByAxis("Row").length;
+			axisLabelsLength["Row"] = heatMap.getAxisLabels("Row")["labels"].length;
 	    	} else if (axisLabelsLength["Column"] === 0) {
-			axisLabelsLength["Column"] = DET.getAllLabelsByAxis("Column").length;
+			axisLabelsLength["Column"] = heatMap.getAxisLabels("Column")["labels"].length;
 	    	}
 			row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
 			LNK.populateLabelMenu(axis,axisLabelsLength);
@@ -545,7 +548,7 @@ var linkoutsVersion = 'undefined';
 	LNK.itemInSelection = function (axis) {
 	    const heatMap = MMGR.getHeatMap();
 		const labels = axis == "Row" ? heatMap.getRowLabels() : axis == "Column" ? heatMap.getColLabels() : axis == "RowCovar" ? heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? heatMap.getColClassificationConfigOrder() : []; 
-		SRCH.getAxisSearchResults(axis).forEach( key => {
+		SRCHSTATE.getAxisSearchResults(axis).forEach( key => {
 			let selItem;
 			if (axis.includes("Covar")){
 				selItem = labels[key];
@@ -562,7 +565,7 @@ var linkoutsVersion = 'undefined';
 	//Check to see if we have selections
 	LNK.hasSelection = function (axis) {
 		// Check to see if clicked item is part of selected labels group
-		return SRCH.getAxisSearchResults(axis).length > 0;
+		return SRCHSTATE.getAxisSearchResults(axis).length > 0;
 	};
 
 	//adds the row linkouts and the column linkouts to the menus
@@ -729,7 +732,7 @@ var linkoutsVersion = 'undefined';
 			var add = false;
 			if ( linkout.labelType == "ColumnCovar"){
 				for (var i=0; i < linkout.reqAttributes.length; i++){
-					SRCH.getAxisSearchResults(axis).forEach( j => {
+					SRCHSTATE.getAxisSearchResults(axis).forEach( j => {
 						var name = heatMap.getColClassificationConfigOrder()[j];
 						if (heatMap.getColClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
 							add = true;
@@ -741,7 +744,7 @@ var linkoutsVersion = 'undefined';
 				}
 			} else if (linkout.labelType == "RowCovar"){
 				for (var i=0; i < linkout.reqAttributes.length; i++){
-					SRCH.getAxisSearchResults(axis).forEach( j => {
+					SRCHSTATE.getAxisSearchResults(axis).forEach( j => {
 						var name = heatMap.getRowClassificationConfigOrder()[j];
 						if (heatMap.getRowClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
 							add = true;
@@ -837,8 +840,8 @@ var linkoutsVersion = 'undefined';
 		const newWindow = window.open("","",'width=335,height=330,resizable=1');
 		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
-		const axisLabels = SRCH.getSearchLabelsByAxis(axis);
-		const labelIndex = SRCH.getAxisSearchResults(axis);
+		const axisLabels = SRCHSTATE.getSearchLabelsByAxis(axis);
+		const labelIndex = SRCHSTATE.getAxisSearchResults(axis);
 		const classBars = MMGR.getHeatMap().getAxisCovariateData(axis);
 		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
 		for (let i = 0; i < axisLabels.length; i++){
@@ -881,11 +884,11 @@ var linkoutsVersion = 'undefined';
 	//row/col selected and last row/col selected so it will work well with a drag
 	//selected box but not with random selections all over the map.
 	LNK.setDetailView = function(searchLabels){
-		let selRows = SRCH.getAxisSearchResults("Row");
+		let selRows = SRCHSTATE.getAxisSearchResults("Row");
 		if (selRows.length === 0) {
 			selRows = LNK.getEntireAxisSearchItems(searchLabels,"Row");
 		}
-		let selCols = SRCH.getAxisSearchResults("Column");
+		let selCols = SRCHSTATE.getAxisSearchResults("Column");
 		if (selCols.length === 0) {
 			selCols = LNK.getEntireAxisSearchItems(searchLabels,"Column");
 		}
@@ -1427,7 +1430,7 @@ var linkoutsVersion = 'undefined';
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
 			const fullLabels = heatMap.getAxisLabels(axis.axisName).labels;
-		        const searchItemsIdx = SRCH.getAxisSearchResults (axis.axisName);
+		        const searchItemsIdx = SRCHSTATE.getAxisSearchResults (axis.axisName);
 			let selectedLabels = []
 			for (let i=0; i<searchItemsIdx.length; i++) {
 				let selectedLabel = fullLabels[searchItemsIdx[i] - 1];
@@ -1961,13 +1964,13 @@ var linkoutsVersion = 'undefined';
 
 					infoEl.children[1].onclick = function (e) {
 						if (debug) console.log ('GRAB');
-						const results = SRCH.getAxisSearchResults(otherAxis)
+						const results = SRCHSTATE.getAxisSearchResults(otherAxis)
 						if (results.length < 1) {
 							UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 							return;
 						}
 						sss[cid].grabbers.clearData();
-						sss[cid].data = SRCH.getAxisSearchResults(otherAxis);
+						sss[cid].data = SRCHSTATE.getAxisSearchResults(otherAxis);
 						if (debug) console.log ({ m: 'Grabbed', results: sss[cid].data });
 						sss[cid].grabbers.setSummary();
 					};
@@ -2114,13 +2117,13 @@ var linkoutsVersion = 'undefined';
 
 						function doGrab (e) {
 							if (debug) console.log ('GRAB');
-							if (SRCH.getAxisSearchResults(axisNameU).length < 1) {
+							if (SRCHSTATE.getAxisSearchResults(axisNameU).length < 1) {
 								UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 								return;
 							}
 							clearData(idx);
 							let count = 0;
-							SRCH.getAxisSearchResults(axisNameU).forEach(si => {
+							SRCHSTATE.getAxisSearchResults(axisNameU).forEach(si => {
 								if (debug) console.log ({ m: 'Grabbed', si });
 								sss[cid].data[idx].push (si);
 								count++;
@@ -2966,7 +2969,7 @@ var linkoutsVersion = 'undefined';
 	*/
 	LNK.postSelectionToLinkouts = function(axis, clickType, lastClickIndex, srcNonce) {
 		const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-	        const searchItems = SRCH.getAxisSearchResults (axis);
+	        const searchItems = SRCHSTATE.getAxisSearchResults (axis);
 		const pointLabelNames = [];
 		for (let i=0; i<searchItems.length; i++) {
 			let pointId = allLabels[searchItems[i] - 1];

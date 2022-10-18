@@ -12,6 +12,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const UHM = NgChm.importNS('NgChm.UHM');
     const DDR = NgChm.importNS('NgChm.DDR');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');

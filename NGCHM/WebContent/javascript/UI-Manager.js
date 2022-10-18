@@ -20,6 +20,7 @@
     const DVW = NgChm.importNS('NgChm.DVW');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const PANE = NgChm.importNS('NgChm.Pane');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const DRAW = NgChm.importNS('NgChm.DRAW');
     const RECPANES = NgChm.importNS('NgChm.RecPanes');
@@ -128,7 +129,7 @@
 	}
 
 	function saveSelectionsToMapConfig () {
-		mapConfig.panel_configuration['selections'] = SRCH.getSearchSaveState();
+		mapConfig.panel_configuration['selections'] = SRCHSTATE.getSearchSaveState();
 		if (SUM.rowDendro) {
 		    const bars = SUM.rowDendro.saveSelectedBars();
 		    if (bars.length > 0) {

@@ -14,7 +14,7 @@
     const DRAW = NgChm.importNS('NgChm.DRAW');
     const DVW = NgChm.importNS('NgChm.DVW');
     const PANE = NgChm.importNS('NgChm.Pane');
-    const SRCH = NgChm.importNS('NgChm.SRCH');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
 
 // Flags.
 SUM.flagDrawClassBarLabels = false; // Labels are only drawn in NGCHM_GUI_Builder
@@ -1599,7 +1599,7 @@ SUM.drawSelectionMarks = function() {
 SUM.drawAxisSelectionMarks = function(axis) {
 	const heatMap = MMGR.getHeatMap();
 	const isRow = MMGR.isRow (axis);
-	const selection = SRCH.getAxisSearchResults(axis);
+	const selection = SRCHSTATE.getAxisSearchResults(axis);
 	const canvas = document.getElementById (isRow ? "summary_row_select_canvas" : "summary_col_select_canvas");
 	if (canvas === null) { return;}
 	const limit = isRow ? canvas.height : canvas.width;

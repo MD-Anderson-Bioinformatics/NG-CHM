@@ -9,6 +9,7 @@
 
 	const UTIL = NgChm.importNS('NgChm.UTIL');
 	const LNK = NgChm.importNS('NgChm.LNK');
+	const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
 	const SRCH = NgChm.importNS('NgChm.SRCH');
 	const PANE = NgChm.importNS('NgChm.Pane');
 	const MMGR = NgChm.importNS('NgChm.MMGR');
@@ -367,7 +368,7 @@
 
 	function getSelectedLabels(axis) {
 		const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-		const searchItems = SRCH.getAxisSearchResults(axis); // axis == 'Row' or 'Column'
+		const searchItems = SRCHSTATE.getAxisSearchResults(axis); // axis == 'Row' or 'Column'
 		let selectedLabels = [];
 		searchItems.forEach((si, idx) => {
 			let pointId = allLabels[si - 1];

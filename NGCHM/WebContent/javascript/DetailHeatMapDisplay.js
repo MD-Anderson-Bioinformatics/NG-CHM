@@ -7,6 +7,7 @@
 
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
     const DVW = NgChm.importNS('NgChm.DVW');
@@ -216,8 +217,8 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 		colBarTypes: heatMap.getCovariateBarTypes("column"),
 		rowDendroHeight: heatMap.getRowDendroConfig().height,
 		colDendroHeight: heatMap.getColDendroConfig().height,
-		searchRows: SRCH.getAxisSearchResults("Row"),
-		searchCols: SRCH.getAxisSearchResults("Column"),
+		searchRows: SRCHSTATE.getAxisSearchResults("Row"),
+		searchCols: SRCHSTATE.getAxisSearchResults("Column"),
 		searchGridColor: [0,0,0]
 	};
 
@@ -651,9 +652,9 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	const mapNumCols = heatMap.getNumColumns('d');
 
 	// Retrieve contiguous row and column search arrays
-	const searchRows = SRCH.getAxisSearchResults("Row");
+	const searchRows = SRCHSTATE.getAxisSearchResults("Row");
 	const rowRanges = UTIL.getContigRanges(searchRows);
-	const searchCols = SRCH.getAxisSearchResults("Column");
+	const searchCols = SRCHSTATE.getAxisSearchResults("Column");
 	const colRanges = UTIL.getContigRanges(searchCols);
 
 	// Get total row and column bar "heights".
@@ -1739,7 +1740,7 @@ DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left
 	} else {
 		div.dataset.axis = 'Row';
 	}
-	if (SRCH.labelIndexInSearch && SRCH.labelIndexInSearch(axis,index)) {
+	if (SRCHSTATE.labelIndexInSearch(axis,index)) {
 		div.classList.add('inSelection');
 	}
 	if (rotate == 'T') {
@@ -1818,7 +1819,7 @@ DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, l
 	mapItem.labelElements[id] = { div, parent };
 	delete mapItem.oldLabelElements[id];
 
-	if (SRCH.labelIndexInSearch(axis,index)) {
+	if (SRCHSTATE.labelIndexInSearch(axis,index)) {
 		div.classList.add ('inSelection');
 	} else {
 		div.classList.remove ('inSelection');
@@ -1831,46 +1832,6 @@ DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, l
 	//div.style.fontFamily = 'sans-serif';
 	//div.style.fontWeight = 'bold';
 	div.innerText = text;
-}
-
-//----------------------------------------------------------------------------------------------//
-//----------------------------------------------------------------------------------------------//
-// BEGIN SEARCH RELATED DETAIL DISPLAY FUNCTIONS
-//----------------------------------------------------------------------------------------------//
-//----------------------------------------------------------------------------------------------//
-
-/*********************************************************************************************
- * FUNCTION:  getAllLabelsByAxis - This function retrieves and array of search labels containing
- * every label on a given axis.
- *********************************************************************************************/
-DET.getAllLabelsByAxis = function (axis, labelType) {
-	const heatMap = MMGR.getHeatMap();
-	const labels = axis == 'Row' ? heatMap.getRowLabels()["labels"] : axis == "Column" ? heatMap.getColLabels()['labels'] :
-		axis == "ColumnCovar" ? Object.keys(heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(heatMap.getRowClassificationConfig()) : 
-			[heatMap.getRowLabels()["labels"], heatMap.getColLabels()['labels'] ];
-	let searchLabels = [];
-	if (axis === "Row") {
-		for (let i in labels){
-			if (labelType == linkouts.VISIBLE_LABELS){
-				searchLabels.push(labels[i].split("|")[0]);
-			}else if (labelType == linkouts.HIDDEN_LABELS){
-				searchLabels.push(labels[i].split("|")[1]);
-			} else {
-				searchLabels.push(labels[i])
-			}
-		}
-	} else {
-		for (let i in labels){
-				if (labelType == linkouts.VISIBLE_LABELS){
-					searchLabels.push(labels[i].split("|")[0]);
-				}else if (labelType == linkouts.HIDDEN_LABELS){
-					searchLabels.push(labels[i].split("|")[1]);
-				} else {
-					searchLabels.push(labels[i])
-				}
-			}
-	}
-	return searchLabels;
 }
 
 //----------------------------------------------------------------------------------------------//

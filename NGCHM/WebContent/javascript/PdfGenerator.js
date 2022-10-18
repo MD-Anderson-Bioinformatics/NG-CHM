@@ -13,7 +13,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
-    const SRCH = NgChm.importNS('NgChm.SRCH');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const PANE = NgChm.importNS('NgChm.Pane');
 
 PDF.rowDendoWidth = null;
@@ -1028,13 +1028,13 @@ PDF.genViewerHeatmapPDF = function() {
 		for (var i in mapLabels) {
 			var label = mapLabels[i].div;		
 			if (label.dataset.axis == "Row"){
-				if (SRCH.labelIndexInSearch("Row",mapItem.currentRow+i)) {
+				if (SRCHSTATE.labelIndexInSearch("Row",mapItem.currentRow+i)) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 					doc.rect((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, longestRowLabelUnits+2, theFont,'F');
 				}
 				rowLabels++;
 			} else if (label.dataset.axis == "Column") {
-				if (SRCH.labelIndexInSearch("Column",mapItem.currentCol+i-rowLabels)) {
+				if (SRCHSTATE.labelIndexInSearch("Column",mapItem.currentCol+i-rowLabels)) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 					doc.rect((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth-2, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight,  theFont+2.5, longestColLabelUnits+2,'F'); 
 				}
