@@ -16,10 +16,6 @@
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
 
-//Globals that provide information about heat map position selection.
-DVW.currentRow = null;      // Top row of current selected position
-DVW.currentCol = null;      // Left column of the current selected position
-
     /*********************************************************************************************
      * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection
      * function for each detail map panel.

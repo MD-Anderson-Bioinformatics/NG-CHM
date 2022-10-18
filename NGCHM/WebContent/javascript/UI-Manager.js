@@ -473,13 +473,6 @@
      * from one file-mode heatmap to another
      **********************************************************************************/
     function resetCHM () {
-    //	DVW.mode = 'NORMAL';
-	    DVW.currentRow=null;
-	    DVW.currentCol=null;
-    //	DVW.dataPerRow=null;
-    //	DVW.dataPerCol=null;
-    //	DVW.selectedStart=0;
-    //	DVW.selectedStop=0;
 	    SRCH.clearAllSearchResults ();
 	    DVW.scrollTime = null;
 	    SUM.colDendro = null;
