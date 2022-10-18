@@ -1036,8 +1036,16 @@ DEV.detailDataZoomOut = function (chm) {
         } else {
 	    console.error ('Unknown zoom mode ', mapItem.mode);
 	}
-};
+    };
 
+    /**********************************************************************************
+     * FUNCTION - detailHRibbonButton: The purpose of this function is to clear dendro
+     * selections and call processing to change to Horizontal Ribbon Mode.
+     **********************************************************************************/
+    DEV.detailHRibbonButton = function (mapItem) {
+	DET.clearDendroSelection(mapItem);
+	DEV.detailHRibbon(mapItem);
+    };
 /**********************************************************************************
  * FUNCTION - callDetailDrawFunction: The purpose of this function is to respond to
  * mode changes on the Summary Panel by calling the appropriate detail drawing
@@ -1065,6 +1073,14 @@ DEV.clearModeHistory = function (mapItem) {
 	mapItem.modeHistory = [];
 };
 
+    /**********************************************************************************
+     * FUNCTION - detailVRibbonButton: The purpose of this function is to clear dendro
+     * selections and call processing to change to Vertical Ribbon Mode.
+     **********************************************************************************/
+    DEV.detailVRibbonButton = function (mapItem) {
+	DET.clearDendroSelection(mapItem);
+	DEV.detailVRibbon(mapItem);
+    };
 /**********************************************************************************
  * FUNCTION - detailNormal: The purpose of this function is to handle all of
  * the processing necessary to return a heat map panel to normal mode.
@@ -1109,7 +1125,7 @@ DEV.detailNormal = function (mapItem, restoreInfo) {
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	 
 	DET.detInitGl(mapItem);
-	DDR.clearDendroSelection();
+	DET.clearDendroSelection();
 	mapItem.updateSelection();
 	try {
 		document.getElementById("viewport").setAttribute("content", "height=device-height");
@@ -1148,14 +1164,6 @@ DEV.detailFullMap = function (mapItem) {
 	mapItem.updateSelection();
 }
 
-/**********************************************************************************
- * FUNCTION - detailHRibbonButton: The purpose of this function is to clear dendro
- * selections and call processing to change to Horizontal Ribbon Mode.
- **********************************************************************************/
-DEV.detailHRibbonButton = function (mapItem) {
-	DDR.clearDendroSelection(mapItem);
-	DEV.detailHRibbon(mapItem);
-}
 
 /**********************************************************************************
  * FUNCTION - detailHRibbon: The purpose of this function is to change the view for
@@ -1220,14 +1228,6 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	mapItem.updateSelection();
 }
 
-/**********************************************************************************
- * FUNCTION - detailVRibbonButton: The purpose of this function is to clear dendro
- * selections and call processing to change to Vertical Ribbon Mode.
- **********************************************************************************/
-DEV.detailVRibbonButton = function (mapItem) {
-	DDR.clearDendroSelection(mapItem);
-	DEV.detailVRibbon(mapItem);
-}
 
 /**********************************************************************************
  * FUNCTION - detailVRibbon: The purpose of this function is to change the view for

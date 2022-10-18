@@ -6,7 +6,7 @@
 
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
-    const DDR = NgChm.importNS('NgChm.DDR');
+    const SUMDDR = NgChm.importNS('NgChm.SUMDDR');
     const DET = NgChm.importNS('NgChm.DET');
     const DMM = NgChm.importNS('NgChm.DMM');
     const DEV = NgChm.importNS('NgChm.DEV');
@@ -117,38 +117,98 @@ SUM.processSummaryMapUpdate = function(event, tile) {
 // Initialize heatmap summary data that is independent of there being
 // a summary panel.  This function is called once the heatmap data
 // has been loaded, but before creating any view panels.
-SUM.initSummaryData = function() {
+SUM.initSummaryData = function(callbacks) {
 	
-	const heatMap = MMGR.getHeatMap();
-	if (!SUM.colDendro){
-		SUM.colDendro = new DDR.SummaryColumnDendrogram();
-	}
-	if (!SUM.rowDendro){
-		SUM.rowDendro = new DDR.SummaryRowDendrogram ();
-	}
-	if (heatMap.getColConfig().top_items){
-		SUM.colTopItems = heatMap.getColConfig().top_items.sort();
-	}
-	if (heatMap.getRowConfig().top_items){
-		SUM.rowTopItems = heatMap.getRowConfig().top_items.sort();
-	}
-	
-	SUM.matrixWidth = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
-	SUM.matrixHeight = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
-	
-	if (SUM.matrixWidth < SUM.minDimensionSize){
-		SUM.widthScale = Math.max(2,Math.ceil(SUM.minDimensionSize /SUM.matrixWidth));
-	}
-	if (SUM.matrixHeight < SUM.minDimensionSize ){
-		SUM.heightScale = Math.max(2,Math.ceil(SUM.minDimensionSize /SUM.matrixHeight));
-	}
-	SUM.calcTotalSize();
+	const ddrCallbacks = {
+	    clearSelectedRegion: function(axis) {
+		callbacks.callDetailDrawFunction('NORMAL');
+		if (DVW.primaryMap) {
+		    DVW.primaryMap.selectedStart = 0;
+		    DVW.primaryMap.selectedStop = 0;
+		}
+	    },
+	    setSelectedRegion: function (axis, regionStart, regionStop) {
+		// Clear any previous ribbon mode on either axis.
+		const otherDendro = MMGR.isRow(axis) ? SUM.colDendro : SUM.rowDendro;
+
+		otherDendro.clearSelectedRegion();
+		SUM.clearAxisSelectionMarks(axis);
+		callbacks.clearSearchItems(axis);
+
+		// Set start and stop coordinates
+		if (DVW.primaryMap) {
+		    DVW.primaryMap.subDendroMode = axis;
+		    DVW.primaryMap.selectedStart = regionStart;
+		    DVW.primaryMap.selectedStop = regionStop;
+		}
+		callbacks.showSearchResults();
+		callbacks.callDetailDrawFunction(axis === 'Row' ? 'RIBBONV' : 'RIBBONH');
+
+	    },
+	    calcDetailDendrogramSize: function (axis, size, totalSize) {
+		// axis is 'row' or 'column'
+		// - For rows, calculate the dendrogram width.
+		// - For columns, calculate the dendrogram height.
+		// size is the current width/height of the detail dendrogram.
+		// totalSize is maximum available width/height of the entire detail canvas.
+		const sumDendro = MMGR.isRow(axis) ? SUM.rowDendro : SUM.colDendro;
+		const covarCanvas = MMGR.isRow(axis) ? SUM.rCCanvas : SUM.cCCanvas;
+		const sizeProperty = MMGR.isRow(axis) ? 'width' : 'height';
+		const sumDendroSize = parseInt(sumDendro.dendroCanvas.style[sizeProperty], 10);
+		if (!SUM.chmElement || (sumDendroSize < 5)) {
+		    // Either no SUM element or it's minimized.
+		    // Retain existing dendro size but ensure that it is
+		    // no smaller than 10% of the total detail size.
+		    const minSize = totalSize * 0.1;
+		    if (size < minSize) {
+			size = minSize;
+		    }
+		} else {
+		    // Summary view consists of three relevant canvases: dendrogram, covariates, and the map.
+		    // Compute the proportion of the total used by the dendrogram.
+		    const sumMapSize = parseInt(SUM.canvas.style[sizeProperty], 10);
+		    const sumCovarSize = parseInt(covarCanvas.style[sizeProperty], 10)
+		    const dendroSumPct = sumDendroSize / (sumMapSize + sumDendroSize + sumCovarSize);
+		    // Calculate size as the same proportion of the total detail width.
+		    size = totalSize * dendroSumPct;
+		}
+		return size;
+	    },
+	};
+
+	SUM.reinitSummaryData = function () {
+	    const heatMap = MMGR.getHeatMap();
+	    if (!SUM.colDendro){
+		    SUM.colDendro = new SUMDDR.SummaryColumnDendrogram(heatMap, ddrCallbacks);
+	    }
+	    if (!SUM.rowDendro){
+		    SUM.rowDendro = new SUMDDR.SummaryRowDendrogram (heatMap, ddrCallbacks);
+	    }
+	    if (heatMap.getColConfig().top_items){
+		    SUM.colTopItems = heatMap.getColConfig().top_items.sort();
+	    }
+	    if (heatMap.getRowConfig().top_items){
+		    SUM.rowTopItems = heatMap.getRowConfig().top_items.sort();
+	    }
+
+	    SUM.matrixWidth = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
+	    SUM.matrixHeight = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
+
+	    if (SUM.matrixWidth < SUM.minDimensionSize){
+		    SUM.widthScale = Math.max(2,Math.ceil(SUM.minDimensionSize /SUM.matrixWidth));
+	    }
+	    if (SUM.matrixHeight < SUM.minDimensionSize ){
+		    SUM.heightScale = Math.max(2,Math.ceil(SUM.minDimensionSize /SUM.matrixHeight));
+	    }
+	    SUM.calcTotalSize();
+	};
+	SUM.reinitSummaryData();
 };
 
 SUM.redrawSummaryPanel = function() {
 	// Nothing to redraw if never initialized.
 	if (!SUM.chmElement) return;
-	SUM.initSummaryData();
+	SUM.reinitSummaryData();
 
 	//Classificaton bars get stretched on small maps, scale down the bars and padding.
 	SUM.rowClassBarWidth = SUM.calculateSummaryTotalClassBarHeight("row");

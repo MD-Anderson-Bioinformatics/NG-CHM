@@ -266,7 +266,11 @@
 			}
 		    });
 		});
-		SUM.initSummaryData();
+		SUM.initSummaryData({
+		    clearSearchItems: SRCH.clearSearchItems,
+		    showSearchResults: SRCH.showSearchResults,
+		    callDetailDrawFunction: DET.callDetailDrawFunction,
+		});
 		const initialLoc = PANE.initializePanes ();
 		const panelConfig = MMGR.getHeatMap().getPanelConfiguration();
 		if (panelConfig) {
@@ -1089,7 +1093,7 @@
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
-					clearDendroSelection();
+					DET.clearDendroSelection();
 					switch(mapItem.mode){
 						case "RIBBONV": newMode = 'RIBBONH'; break;
 						case "RIBBONH": newMode = 'NORMAL'; break;
@@ -1104,7 +1108,7 @@
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
-					clearDendroSelection();
+					DET.clearDendroSelection();
 					switch(mapItem.mode){
 						case "NORMAL": newMode = 'RIBBONH'; break;
 						case "RIBBONH": newMode = 'RIBBONV'; break;

@@ -10,7 +10,7 @@
     const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
-    const DDR = NgChm.importNS('NgChm.DDR');
+    const DETDDR = NgChm.importNS('NgChm.DETDDR');
     const PANE = NgChm.importNS('NgChm.Pane');
     const SUM = NgChm.importNS('NgChm.SUM');
 
@@ -101,6 +101,27 @@ DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
  * (either intial or copy) being created.
  *********************************************************************************************/
 DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
+        const dendroCallbacks = {
+	    setMouseDown: function () {
+		DEV.setMouseDown (true);
+	    },
+	    getLabelLastClicked: function (axis) {
+		return DET.labelLastClicked[axis];
+	    },
+	    isVisible: function (canvas) {
+		const loc = PANE.findPaneLocation (canvas);
+		return !loc.pane.classList.contains('collapsed');
+	    },
+	    searchResultsChanged: function (axis, clickType) {
+		SRCH.showSearchResults();
+		DET.setDrawDetailTimeout(mapItem, DET.redrawSelectionTimeout, true);
+		DET.updateDisplayedLabels();
+		SUM.clearAxisSelectionMarks(axis);
+		SUM.drawAxisSelectionMarks(axis);
+		SUM.drawTopItems();
+		LNK.postSelectionToLinkouts(axis, clickType, 0, null);
+	    },
+	};
 	const labelCallbacks = {
 	    labelClick: DEV.labelClick,
 	    labelDrag: DEV.labelDrag,
@@ -113,8 +134,8 @@ DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
 	mapItem.canvas = chm.children[2];
 	mapItem.boxCanvas = chm.children[3];
 	mapItem.labelElement = chm.children[4];
-	mapItem.rowDendro = new DDR.DetailRowDendrogram(chm.children[1]);
-	mapItem.colDendro = new DDR.DetailColumnDendrogram(chm.children[0]);
+	mapItem.rowDendro = new DETDDR.DetailRowDendrogram(mapItem, chm.children[1], SUM.rowDendro, dendroCallbacks);
+	mapItem.colDendro = new DETDDR.DetailColumnDendrogram(mapItem, chm.children[0], SUM.colDendro, dendroCallbacks);
 	mapItem.panelNbr = mapNumber;
 	mapItem.labelPostScript = mapNumber === 1 ? '' : '_' + mapNumber;
 	mapItem.rowLabelDiv =  'rowL'+mapItem.labelElement.id.substring(1);

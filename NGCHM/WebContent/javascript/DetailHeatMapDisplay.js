@@ -620,6 +620,25 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	DVW.checkRow(mapItem);
 };
 
+    DET.clearDendroSelection = clearDendroSelection;
+    function clearDendroSelection () {
+	if (DVW.primaryMap && DVW.primaryMap.selectedStart != 0) {
+		DVW.primaryMap.selectedStart = 0;
+		DVW.primaryMap.selectedStop = 0;
+		SUM.rowDendro.clearSelectedRegion();
+		SUM.colDendro.clearSelectedRegion();
+		if (!DVW.isSub) {
+			const heatMap = MMGR.getHeatMap();
+			if (heatMap.showRowDendrogram("summary")) {
+				SUM.rowDendro.draw();
+			}
+			if (heatMap.showColDendrogram("summary")) {
+				SUM.colDendro.draw();
+			}
+		}
+	}
+    }
+
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
 //BEGIN SELECTION BOX DETAIL DISPLAY FUNCTIONS
@@ -1874,16 +1893,7 @@ DET.colDendroResize = function(mapItem) {
 			//If summary side is hidden, retain existing dendro height
 			const totalDetHeight = mapItem.chm.offsetHeight - 50;
 			let height = parseInt (dendroCanvas.style.height, 10) | 0;
-			const sumMinimized = parseInt(SUM.colDendro.dendroCanvas.style.height, 10) < 5;
-			if (!SUM.chmElement || sumMinimized) {
-				const minHeight = totalDetHeight * 0.1;
-				if (height < minHeight) {
-				    height = minHeight;
-				}
-			} else {
-				const dendroSumPct = parseInt(SUM.colDendro.dendroCanvas.style.height, 10) / (parseInt(SUM.canvas.style.height, 10) + parseInt(SUM.colDendro.dendroCanvas.style.height, 10) + parseInt(SUM.cCCanvas.style.height, 10));
-				height = totalDetHeight * dendroSumPct; 
-			}
+			height = mapItem.colDendro.summaryDendrogram.callbacks.calcDetailDendrogramSize ('column', height, totalDetHeight);
 			dendroCanvas.style.height = height + 'px';
 			dendroCanvas.height = Math.round(height);
 			dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/canW)) + 'px';
@@ -1902,28 +1912,22 @@ DET.colDendroResize = function(mapItem) {
 DET.rowDendroResize = function(mapItem) {
 	if (mapItem.rowDendroCanvas !== null) {
 		const dendroCanvas = mapItem.rowDendroCanvas;
-		const top = mapItem.colDendro.getDivHeight() + SUM.paddingHeight;
+		const top = mapItem.colDendro.getDivHeight() + DET.paddingHeight;
 		const canH = mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column")
 		dendroCanvas.style.top = (top + mapItem.canvas.clientHeight * (1-mapItem.dataViewHeight/canH)) + 'px';
 		if (mapItem.rowDendro.isVisible()){
 			//If summary side is hidden, retain existing dendro width
 			const totalDetWidth = (mapItem.chm.offsetWidth - 50);
-			const sumMinimized = parseInt(SUM.rowDendro.dendroCanvas.style.width, 10) < 5 ? true : false;
-			const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
 			let width = parseInt (dendroCanvas.style.width, 10) | 0;
-			if (!SUM.chmElement || sumMinimized) {
-			    const minWidth = totalDetWidth * 0.1;
-			    if (width < minWidth) {
-				width = minWidth;
-			    }
-			} else {
-			    const dendroSumPct = (parseInt(SUM.rowDendro.dendroCanvas.style.width, 10) / (parseInt(SUM.canvas.style.width, 10) + parseInt(SUM.rowDendro.dendroCanvas.style.width, 10) + parseInt(SUM.rCCanvas.style.width, 10)));
-			    width = (totalDetWidth * dendroSumPct); 
-			}
+
+			width = mapItem.rowDendro.summaryDendrogram.callbacks.calcDetailDendrogramSize ('row', width, totalDetWidth);
 			dendroCanvas.style.width = width + 'px';
 			dendroCanvas.width = Math.round(width);
+
+			const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
 			dendroCanvas.style.height = (height-2) + 'px';
 			dendroCanvas.height = Math.round(height);
+
 			mapItem.rowDendro.draw();
 		} else {
 			dendroCanvas.style.width = '0px';
