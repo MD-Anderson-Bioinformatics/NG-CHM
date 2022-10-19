@@ -1702,16 +1702,6 @@ DET.setLegendDivElement = function (mapItem,itemId,boundVal,topVal,leftVal,isRow
 }
 
 /************************************************************************************************
- * FUNCTION - addLabelDivs: This function adds a label div to all detail map items.  
- ************************************************************************************************/
-DET.addLabelDivs = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
-	for (let i=0; i<DVW.detailMaps.length;i++ ) {
-		const mapItem = DVW.detailMaps[i];
-		DET.addLabelDiv(mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
-	}
-};
-
-/************************************************************************************************
  * FUNCTION - removeLabel: This function removes a label from a specific detail map item.
  ************************************************************************************************/
 DET.removeLabel = function (mapItem, label) {

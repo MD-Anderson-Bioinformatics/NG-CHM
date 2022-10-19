@@ -547,7 +547,7 @@ SUM.buildRowClassTexture = function() {
 			if (!document.getElementById("missingSumRowClassBars")){
 				var x = SUM.canvas.offsetLeft;
 				var y = SUM.canvas.offsetTop + SUM.canvas.clientHeight + 2;
-				DET.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
+				DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
 			}
 		}
 	}
@@ -597,7 +597,7 @@ SUM.buildColClassTexture = function() {
 			if (!document.getElementById("missingSumColClassBars")){
 				var x = SUM.canvas.offsetLeft + SUM.canvas.offsetWidth + 2;
 				var y = SUM.canvas.offsetTop + SUM.canvas.clientHeight/SUM.totalHeight - 10;
-				DET.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
+				DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
 			}		
 		}
 	}
@@ -1638,7 +1638,7 @@ SUM.drawMissingRowClassBarsMark = function (){
 		DVW.removeLabels("missingSumRowClassBars");
 		var x = SUM.canvas.offsetLeft;
 		var y = SUM.canvas.offsetTop + SUM.canvas.clientHeight + 2;
-		DET.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
+		DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
 	}
 }
 
@@ -1647,7 +1647,7 @@ SUM.drawMissingColClassBarsMark = function (){
 		DVW.removeLabels("missingSumColClassBars");
 		var x = SUM.canvas.offsetLeft + SUM.canvas.offsetWidth + 2;
 		var y = SUM.canvas.offsetTop + SUM.canvas.clientHeight/SUM.totalHeight - 10;
-		DET.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Col");
+		DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Col");
 	}
 }
 
