@@ -914,7 +914,7 @@ var linkoutsVersion = 'undefined';
 	}
 
 	LNK.switchPaneToLinkouts = function switchPaneToLinkouts (loc) {
-		PANE.clearExistingGearDialog(loc.pane.id);
+		PANE.clearExistingDialogs(loc.pane.id);
 		const oldLinkoutPane = LNK.linkoutElement && PANE.findPaneLocation (LNK.linkoutElement);
 		if (oldLinkoutPane && oldLinkoutPane.paneTitle && oldLinkoutPane.paneTitle.innerText === 'Linkouts') {
 			PANE.setPaneTitle (oldLinkoutPane, 'Empty');
@@ -979,7 +979,8 @@ var linkoutsVersion = 'undefined';
 			return instances;
 		}
 
-	    LNK.removePluginInstance = function removePluginInstance(nonceToRemove) {
+	    LNK.removePluginInstance = function removePluginInstance (loc, elements) {
+		const nonceToRemove = loc.pane.nonce;
 	    	delete instances[nonceToRemove];
 	    }
 
@@ -1147,7 +1148,7 @@ var linkoutsVersion = 'undefined';
 	    if (restoreInfo) {
 		pluginRestoreInfo[loc.pane.id] = restoreInfo;
 	    }
-	    PANE.switchToPlugin (loc, plugin.name);
+	    switchToPlugin (loc, plugin.name);
 	    MMGR.getHeatMap().setUnAppliedChanges(true);
 	    const params = plugin.params;
 	    if (!params) {
@@ -1783,7 +1784,7 @@ var linkoutsVersion = 'undefined';
 			const gears = document.getElementsByClassName('gearPanel');
 			for (let item of gears) {
 				const paneId = item.id.substring(0,item.id.indexOf("Gear"));
-				PANE.clearExistingGearDialog(paneId);
+				PANE.clearExistingDialogs(paneId);
 			}
 		}
 
@@ -2884,7 +2885,7 @@ var linkoutsVersion = 'undefined';
 		instance.plugin.config = { name: msg.name, axes: msg.axes, options: msg.options };
 		if (Object.entries(instance.params).length === 0) {
 		        LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'none' }); // Let plugin know we heard it.
-			PANE.switchToPlugin (loc, instance.plugin.name);
+			switchToPlugin (loc, instance.plugin.name);
 			MMGR.saveDataSentToPluginToMapConfig(msg.nonce, null, null);
 		} else {
 			loc.paneTitle.innerText = instance.plugin.name;
@@ -2961,6 +2962,49 @@ var linkoutsVersion = 'undefined';
 			selectedLabels.push(pointId);
 		});
 		return selectedLabels;
+	}
+
+	function switchToPlugin (loc, title) {
+	    PANE.registerPaneEventHandler (loc.pane, 'empty', LNK.removePluginInstance);
+	    PANE.setPaneTitle (loc, title);
+	    const gearIcon = addGearIconToPane (loc);
+	    PANE.clearExistingDialogs (loc.pane.id);
+	    LNK.newGearDialog (gearIcon, loc.pane.id);
+	}
+
+	function addGearIconToPane (loc) {
+	    let gearIcon = loc.paneHeader.querySelector('IMG.gearIcon');
+	    if (!gearIcon) {
+		const paneid = loc.pane.id;
+		gearIcon = UTIL.newElement('IMG.gearIcon', {
+			src: 'images/gear.png',
+			alt: 'Open gear menu',
+			align: 'top',
+			id: paneid+"Icon"
+		});
+		gearIcon.dataset.popupName = paneid + "Gear";
+		initializeGearIconMenu (gearIcon);
+		PANE.addPanelIcons (loc, [gearIcon]);
+	    }
+	    return gearIcon;
+	}
+
+	// Initialize DOM IMG element icon to a gear menu.
+	function initializeGearIconMenu (icon) {
+		icon.onmouseout = function(e) {
+			icon.src = 'images/gear.png';
+			UHM.hlpC();
+		};
+		icon.onmouseover = function(e) {
+			icon.src = 'images/gearHover.png';
+			UHM.hlp(icon, 'Open gear menu', 120, 0);
+		};
+		icon.onclick = function(e) {
+			if (debug) console.log ({ m: 'paneGearIcon click', e });
+			e.stopPropagation();
+			let paneIdx = e.target.id.slice(0,-4) // e.g. 'pane2Gear'
+			LNK.newGearDialog (icon, paneIdx);
+		};
 	}
 
 	defineVanodiMessageHandler ('getLabels', function vanodiSendLabels (instance, msg) {
@@ -3130,5 +3174,12 @@ var linkoutsVersion = 'undefined';
 	        LNK.addLinkoutPlugin(kind, spec);
 	   }
 	};
+
+    CUST.waitForPlugins(() => {
+	const panePlugins = LNK.getPanePlugins ();
+	panePlugins.forEach(plugin => {
+	    PANE.registerPaneExtraOption (plugin.name, () => !!plugin.params, LNK.switchPaneToPlugin, plugin );
+	});
+    });
 
 })(); // end of big IIFE

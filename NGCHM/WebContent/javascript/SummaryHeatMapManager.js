@@ -268,7 +268,7 @@
 	    // NG-CHM is not visible.
 
 	    function switchPaneToSummary (loc) {
-		    PANE.clearExistingGearDialog(loc.pane.id);
+		    PANE.clearExistingDialogs(loc.pane.id);
 		    if (SUM.chmElement) {
 			    // The summary NGCHM is currently showing in a pane.
 			    // Proceed only if the current and target panes are different.

@@ -367,7 +367,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DVW.primaryMap === null);
 		const mapNumber = restoreInfo ? restoreInfo.mapNumber : DMM.nextMapNumber;
 
-		PANE.clearExistingGearDialog(paneId);
+		PANE.clearExistingDialogs(paneId);
 		if (initialSwitchPaneToDetail) {
 			// First time detail NGCHM created.
 			constructDetailMapDOMTemplate()
