@@ -5,6 +5,7 @@
     //Define Namespace for NgChm Drawing
     const DMM = NgChm.createNS('NgChm.DMM');
 
+    const UTIL = NgChm.importNS('NgChm.UTIL');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const DVW = NgChm.importNS('NgChm.DVW');
@@ -13,6 +14,8 @@
     const DETDDR = NgChm.importNS('NgChm.DETDDR');
     const PANE = NgChm.importNS('NgChm.Pane');
     const SUM = NgChm.importNS('NgChm.SUM');
+    const LNK = NgChm.importNS('NgChm.LNK');
+    const SRCH = NgChm.importNS('NgChm.SRCH');
 
 //Next available heatmap object iterator (used for subscripting new map DOM elements) 
 DMM.nextMapNumber = 1;
@@ -86,7 +89,7 @@ DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
 	if (restoreInfo) {
 	    DET.restoreFromSavedState (newMapObj, restoreInfo);
 	}
-	DET.setDetailMapDisplay(newMapObj, restoreInfo);
+	DMM.setDetailMapDisplay(newMapObj, restoreInfo);
 	if (isPrimary) {
 	    DMM.setPrimaryDetailMap (newMapObj);
 	} else {
@@ -229,5 +232,50 @@ DMM.resizeDetailMapCanvases = function resizeDetailMapCanvases () {
 	}
 };
 
+
+/*********************************************************************************************
+ * FUNCTION:  setDetailMapDisplay - The purpose of this function is to complete the construction
+ * of a detail heat map object and add it to the DetailMaps object array.
+ *********************************************************************************************/
+DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
+	DET.setDendroShow(mapItem);
+	//If we are opening the first detail "copy" of this map set the data sizing for initial display
+	if (DVW.detailMaps.length === 0 && !restoreInfo) {
+		DET.setInitialDetailDisplaySize(mapItem);
+	}
+	LNK.createLabelMenus();
+	DET.setDendroShow(mapItem);
+	if (mapItem.canvas) {
+		mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+		mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+	}
+
+	setTimeout (function() {
+		DET.detInitGl(mapItem);
+		mapItem.updateSelection();
+		if (UTIL.getURLParameter("selected") !== ""){
+			const selected = UTIL.getURLParameter("selected").replace(","," ");
+			document.getElementById("search_text").value = selected;
+			if (mapItem.version === 'P') {
+				SRCH.detailSearch();
+				SUM.drawSelectionMarks();
+				SUM.drawTopItems();
+			}
+		}
+	}, 1);
+
+	DVW.detailMaps.push(mapItem);
+	if (mapItem.version === 'P') {
+		DET.primaryMap = mapItem;
+	}
+	if (restoreInfo) {
+	    if (mapItem.rowDendro !== null) {
+		mapItem.rowDendro.setZoomLevel(restoreInfo.rowZoomLevel || 1);
+	    }
+	    if (mapItem.colDendro !== null) {
+		mapItem.colDendro.setZoomLevel(restoreInfo.colZoomLevel || 1);
+	    }
+	}
+};
 
 })();
