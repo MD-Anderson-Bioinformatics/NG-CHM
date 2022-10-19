@@ -17,6 +17,8 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');
     const DRAW = NgChm.importNS('NgChm.DRAW');
+    const PANE = NgChm.importNS('NgChm.Pane');
+
     var mouseEventActive = false;
     var mouseDown = false;
 
@@ -1091,6 +1093,144 @@ DEV.callDetailDrawFunction = function(modeVal, target) {
 	DET.clearDendroSelection(mapItem);
 	DET.detailVRibbon(mapItem);
     };
+
+    (function() {
+	// Table to convert image names to image source names.
+	// A table is required for this otherwise trivial conversion
+	// because the minimizer will convert all the filenames in the
+	// table to inline data sources.
+	const imageTable = {
+	    full: 'images/full.png',
+	    fullHover: 'images/fullHover.png',
+	    full_selected: 'images/full_selected.png',
+	    ribbonH: 'images/ribbonH.png',
+	    ribbonHHover: 'images/ribbonHHover.png',
+	    ribbonH_selected: 'images/ribbonH_selected.png',
+	    ribbonV: 'images/ribbonV.png',
+	    ribbonVHover: 'images/ribbonVHover.png',
+	    ribbonV_selected: 'images/ribbonV_selected.png',
+	};
+
+	DEV.createClientButtons = function (mapNumber, paneId, foobar, switchToPrimaryFn) {
+	    return [
+		zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75,
+		    switchToPrimaryFn.bind('chm', foobar)),
+		zoomButton ('zoomOut_btn'+mapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50,
+		    DEV.detailDataZoomOut.bind('chm', foobar)),
+		zoomButton ('zoomIn_btn'+mapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40,
+		    DEV.zoomAnimation.bind('chm', foobar)),
+		modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, DET.detailNormal),
+		modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, DEV.detailHRibbonButton),
+		modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, DEV.detailVRibbonButton)
+	    ];
+	};
+
+	function zoomButton (btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
+	    const img = UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
+	    img.onmouseout = function (e) {
+			img.setAttribute ('src', btnIcon);
+			UHM.hlpC();
+	    };
+	    img.onmouseover = function (e) {
+			img.setAttribute ('src', btnHoverIcon);
+			UHM.hlp(img, btnHelp, btnSize);
+	    };
+	    img.onclick = function (e) {
+			clickFn();
+	    };
+	    return UTIL.newElement ('SPAN.tdTop', {}, [img]);
+	}
+
+	// Create a zoomModeButton when creating a new zoomed view.
+	// Parameters:
+	// mapNumber - the number of the new zoomed view
+	// paneId - the panel id containing the new zoomed view
+	// selected - is this button selected initially (must be set for exactly one button in the map)
+	// mode - the type of zoom mode set by pressing the button (NORMAL, RIBBONH, RIBBONV)
+	// btnHelp - help text to display when the user hovers over the button for a while
+	// btnSize - size of the button help text
+	// clickFn - function called when the button is clicked.
+	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
+		const baseName = buttonBaseName (mode);
+		const selStr = selected ? '_selected' : '';
+		const img = UTIL.newElement ('IMG', { src: imageTable[baseName+selStr], alt: btnHelp });
+		img.id = baseName + '_btn' + mapNumber;
+		img.dataset.mode = mode;
+		img.onmouseout = function (e) {
+			updateButtonImage (img, false);
+			UHM.hlpC();
+		};
+		img.onmouseover = function (e) {
+			updateButtonImage (img, true);
+			UHM.hlp(img, btnHelp, btnSize);
+		};
+		img.onclick = function (e) {
+			const mapItem = DVW.getMapItemFromPane(paneId);
+			DET.clearModeHistory (mapItem);
+			clickFn(mapItem);
+		};
+		return UTIL.newElement ('SPAN.tdTop', {}, [img]);
+	}
+
+	// Return the baseName of the zoom mode buttons.
+	function buttonBaseName (buttonMode) {
+		if (buttonMode == 'RIBBONH') return 'ribbonH';
+		if (buttonMode == 'RIBBONV') return 'ribbonV';
+		return 'full';
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - setButtons: The purpose of this function is to set the state of
+	 * buttons on the detail pane header bar when the user selects a button.
+	 **********************************************************************************/
+	DEV.setButtons = setButtons;
+	function setButtons (mapItem) {
+		const full_btn = document.getElementById('full_btn'+mapItem.panelNbr);
+		const ribbonH_btn = document.getElementById('ribbonH_btn'+mapItem.panelNbr);
+		const ribbonV_btn = document.getElementById('ribbonV_btn'+mapItem.panelNbr);
+		let full_src= "full";
+		let ribbonH_src= "ribbonH";
+		let ribbonV_src= "ribbonV";
+		if (mapItem.mode=='RIBBONV')
+			ribbonV_src += "_selected";
+		else if (mapItem.mode == "RIBBONH")
+			ribbonH_src += "_selected";
+		else
+			full_src += "_selected";
+		full_btn.src = imageTable[full_src];
+		ribbonH_btn.src = imageTable[ribbonH_src];
+		ribbonV_btn.src = imageTable[ribbonV_src];
+	}
+
+
+	// Update a mode button image when the mouse enters/leaves the button.
+	// btn is the IMG element for the button.
+	// It should have data.mode set to NORMAL, RIBBONH, or RIBBONV.
+	// The button's image is updated according to the following rules:
+	//
+	// - If in a zoom mode that matches the button, the image is not changed.
+	//   (The button's image should already be set to the _selected image variant.)
+	//   The "includes" check is used so that e.g. both the RIBBONH and RIBBONH_DETAIL
+	//   zoom modes will match the RIBBONH button.
+	//
+	// - Otherwise, if the mouse is hovering over the image: the hover image is used.
+	//
+	// - Otherwise, the base image is used.
+	//
+	function updateButtonImage (btn, hovering) {
+	        const loc = PANE.findPaneLocation (btn);
+		const mapItem = DVW.getMapItemFromPane (loc.pane.id);
+		const buttonMode = btn.dataset.mode;
+		if (!mapItem.mode.includes(buttonMode)) {
+			let buttonSrc = buttonBaseName (buttonMode);
+			if (hovering) {
+			        buttonSrc += 'Hover';
+			}
+			btn.setAttribute('src', imageTable[buttonSrc]);
+		}
+	}
+
+    })();
 
 /**********************************************************************************
  * FUNCTION - zoomAnimation: The purpose of this function is to perform a zoom 

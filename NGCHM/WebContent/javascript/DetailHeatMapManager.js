@@ -69,7 +69,7 @@ DMM.nextMapNumber = 1;
 	}
 
 	setButtons () {
-	    DET.setButtons(this);
+	    DEV.setButtons(this);
 	}
     };
 
@@ -90,6 +90,7 @@ DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
 	    DET.restoreFromSavedState (newMapObj, restoreInfo);
 	}
 	DMM.setDetailMapDisplay(newMapObj, restoreInfo);
+	DEV.setButtons(newMapObj);
 	if (isPrimary) {
 	    DMM.setPrimaryDetailMap (newMapObj);
 	} else {
@@ -277,5 +278,168 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	    }
 	}
 };
+
+(function() {
+	// Define a function to switch a panel to the detail view.
+	// Similar to the corresponding function for switching a pane to the summary view.
+	// See additional comments in that function.
+	DMM.switchPaneToDetail = switchPaneToDetail;
+	PANE.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
+
+	var initialSwitchPaneToDetail = true
+
+	function switchPaneToDetail (loc, restoreInfo) {
+		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
+		const debug = false;
+		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
+		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DVW.primaryMap === null);
+		const mapNumber = restoreInfo ? restoreInfo.mapNumber : DMM.nextMapNumber;
+
+		PANE.clearExistingGearDialog(paneId);
+		if (initialSwitchPaneToDetail) {
+			// First time detail NGCHM created.
+			constructDetailMapDOMTemplate()
+			initialSwitchPaneToDetail = false;
+		}
+
+		if (loc.pane.querySelector('.detail_chm') !== null) {
+			// Cannot switch if already a detail_chm in this panel.
+			return;
+		}
+		PANE.emptyPaneLocation (loc);
+		if (restoreInfo) {
+		    if (mapNumber >= DMM.nextMapNumber) {
+			DMM.nextMapNumber = mapNumber+1;
+		    }
+		} else {
+		    DMM.nextMapNumber++;
+		}
+
+		/* Clone DIV#detail_chm from DIV#templates. */
+		let chm = cloneDetailChm (mapNumber);
+		loc.pane.appendChild (chm);
+		PANE.setPaneClientIcons(loc, DEV.createClientButtons(mapNumber, paneId, loc.pane.children[1], DMM.switchToPrimary));
+		const mapItem = DMM.addDetailMap (chm, paneId, mapNumber, isPrimary, restoreInfo ? restoreInfo.paneInfo : null);
+		// If primary is collapsed set chm detail of clone to visible
+		if (!restoreInfo && chm.style.display === 'none') {
+			chm.style.display = '';
+		}
+		SUM.drawLeftCanvasBox();
+		DEV.addEvents(paneId);
+		if (isPrimary) {
+			document.getElementById('primary_btn'+mapNumber).style.display = 'none';
+			PANE.setPaneTitle (loc, 'Heat Map Detail - Primary');
+		} else {
+			document.getElementById('primary_btn'+mapNumber).style.display = '';
+			PANE.setPaneTitle (loc, 'Heat Map Detail - Ver ' + mapNumber);
+		}
+		PANE.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
+		PANE.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
+		DET.setDrawDetailTimeout (mapItem, 0, true);
+	}
+
+	/*
+		Construct DOM template for Detail Heat Map and append to div with id = 'template'
+	*/
+	function constructDetailMapDOMTemplate () {
+		let detailTemplate = document.createElement('div')
+		detailTemplate.setAttribute('id', 'detail_chm');
+		detailTemplate.setAttribute('class','detail_chm')
+		detailTemplate.setAttribute('style','position: absolute;')
+		let columnDendro = document.createElement('canvas')
+		columnDendro.setAttribute('id','detail_column_dendro_canvas')
+		columnDendro.setAttribute('width','1200')
+		columnDendro.setAttribute('height','500')
+		columnDendro.setAttribute('style','position: absolute;')
+		detailTemplate.appendChild(columnDendro)
+		let rowDendro = document.createElement('canvas')
+		rowDendro.setAttribute('id','detail_row_dendro_canvas')
+		rowDendro.setAttribute('width','1200')
+		rowDendro.setAttribute('height','500')
+		rowDendro.setAttribute('style','position: absolute;')
+		detailTemplate.appendChild(rowDendro)
+		let detailCanvas = document.createElement('canvas')
+		detailCanvas.setAttribute('id','detail_canvas')
+		detailCanvas.setAttribute('class','detail_canvas')
+		detailCanvas.setAttribute('tabindex','1')
+		detailTemplate.appendChild(detailCanvas)
+		let detailBoxCanvas = document.createElement('canvas')
+		detailBoxCanvas.setAttribute('id','detail_box_canvas')
+		detailBoxCanvas.setAttribute('class','detail_box_canvas')
+		detailTemplate.appendChild(detailBoxCanvas)
+		// labels div has children colLabels and rowLabels
+		let labels = document.createElement('div')
+		labels.setAttribute('id','labelDiv')
+		labels.setAttribute('style','display: inline-block;')
+		let colLabels = document.createElement('div')
+		colLabels.setAttribute('id','colLabelDiv')
+		colLabels.setAttribute('data-axis','Column')
+		colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
+		colLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
+		labels.appendChild(colLabels)
+		let rowLabels = document.createElement('div')
+		rowLabels.setAttribute('id','rowLabelDiv')
+		rowLabels.setAttribute('data-axis','Row')
+		rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
+		rowLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
+		labels.appendChild(rowLabels)
+		detailTemplate.appendChild(labels)
+		let templates = document.getElementById('templates')
+		templates.appendChild(detailTemplate)
+	}
+
+
+	function cloneDetailChm (mapNumber) {
+		const tmp = document.querySelector('#detail_chm');
+		const pClone = tmp.cloneNode(true);
+		pClone.id = 'detail_chm' + mapNumber;
+		renameElements(pClone, mapNumber);
+		// Return cloned client element.
+		return pClone;
+	}
+
+	function renameElements (pClone, mapNumber) {
+		// Rename all client elements on the pane.
+		for (let idx = 0; idx < pClone.children.length; idx++) {
+			const p = pClone.children[idx];
+			p.id = p.id + mapNumber;
+			if (p.children.length > 0) {
+				let removals = [];
+		        for (let idx2 = 0; idx2 < p.children.length; idx2++) {
+					const q = p.children[idx2];
+					//rename all but label elements and place label elements in a deletion array
+					if ((q.id.includes('rowLabelDiv')) || (q.id.includes('colLabelDiv'))) {
+						q.id = q.id + mapNumber;
+					} else {
+						removals.push(q.id);
+					}
+		        }
+		        //strip out all label elements
+		        for (let idx3 = 0; idx3 < removals.length; idx3++) {
+					const rem = removals[idx3];
+			        for (let idx4 = 0; idx4 < p.children.length; idx4++) {
+						const q = p.children[idx4];
+						if (rem === q.id) {
+							q.remove();
+							break;
+						}
+			        }
+		        }
+			}
+		}
+	}
+
+
+	function emptyDetailPane (loc, elements) {
+		DMM.RemoveDetailMap(loc.pane.id);
+		SUM.drawLeftCanvasBox ();
+	}
+
+	function resizeDetailPane (loc) {
+		DET.detailResize();
+		DET.setDrawDetailTimeout(DVW.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
+	}
+
+})();
 
 })();

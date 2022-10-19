@@ -239,10 +239,7 @@
 			let paneInfo = getPaneInfoFromMapConfig(paneid);
 			const isPrimary = paneInfo.version == 'P';
 			let mapNumber = paneInfo.versionNumber == "" ? getUnusedVersionNumber() : parseInt(paneInfo.versionNumber);
-                        if (mapNumber >= DMM.nextMapNumber) {
-                            DMM.nextMapNumber = mapNumber+1;
-                        }
-                        DET.switchPaneToDetail(PANE.findPaneLocation(pane), { isPrimary, mapNumber, paneInfo });
+                        DMM.switchPaneToDetail(PANE.findPaneLocation(pane), { isPrimary, mapNumber, paneInfo });
 
 			DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map

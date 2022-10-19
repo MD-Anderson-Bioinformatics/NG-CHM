@@ -282,13 +282,13 @@
 			const s = PANE.splitPane (false, initialLoc);
 			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
 			SMM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
-			DET.switchPaneToDetail (PANE.findPaneLocation(s.child2));
+			DMM.switchPaneToDetail (PANE.findPaneLocation(s.child2));
 			SRCH.doInitialSearch();
 		} else if (UTIL.showSummaryPane) {
 			SMM.switchPaneToSummary (initialLoc);
 			SRCH.doInitialSearch();
 		} else if (UTIL.showDetailPane) {
-			DET.switchPaneToDetail (initialLoc);
+			DMM.switchPaneToDetail (initialLoc);
 			SRCH.doInitialSearch();
 		}
 	};
