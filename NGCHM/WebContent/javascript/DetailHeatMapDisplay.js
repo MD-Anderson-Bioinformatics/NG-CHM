@@ -603,6 +603,14 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	DVW.checkRow(mapItem);
 };
 
+    /***********************************************************************************
+     * FUNCTION - clearModeHistory: Clears mode history.  Should be done every time the
+     * user explicitly changes the zoom mode.
+     ***********************************************************************************/
+    DET.clearModeHistory = function (mapItem) {
+	mapItem.modeHistory = [];
+    };
+
     /**********************************************************************************
      * FUNCTION - detailFullMap: The purpose of this function is to show the whole map
      * in the detail pane. Processes ribbon h/v differently. In these cases, one axis
@@ -2843,7 +2851,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 		};
 		img.onclick = function (e) {
 			const mapItem = DVW.getMapItemFromPane(paneId);
-			DEV.clearModeHistory (mapItem);
+			DET.clearModeHistory (mapItem);
 			clickFn(mapItem);
 		};
 		return UTIL.newElement ('SPAN.tdTop', {}, [img]);

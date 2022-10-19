@@ -1083,14 +1083,6 @@ DEV.callDetailDrawFunction = function(modeVal, target) {
 	}
 }
 
-/***********************************************************************************
- * FUNCTION - clearModeHistory: Clears mode history.  Should be done every time the
- * user explicitly changes the zoom mode.
- ***********************************************************************************/
-DEV.clearModeHistory = function (mapItem) {
-	mapItem.modeHistory = [];
-};
-
     /**********************************************************************************
      * FUNCTION - detailVRibbonButton: The purpose of this function is to clear dendro
      * selections and call processing to change to Vertical Ribbon Mode.
