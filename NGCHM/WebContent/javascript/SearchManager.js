@@ -687,11 +687,11 @@
      ***********************************************************************************/
     function findPrevSearchItem (index, axis) {
 	const heatMap = MMGR.getHeatMap();
-	const axisLength = axis == "Row" ? heatMap.getRowLabels().labels.length : heatMap.getColLabels().labels.length;
+	const axisLength = heatMap.getAxisLabels(axis).labels.length;
 	let curr = findPrevAxisSearchItem (axis, index);
 	if (curr < 0) { // if no searchResults exist in first axis, move to other axis
 		if (document.getElementById('search_target').value === 'Both') { 
-			const otherAxis = axis == "Row" ? "Column" : "Row";
+			const otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
 			curr = findPrevAxisSearchItem (otherAxis, -1);
 			if (curr > 0){
 				SRCHSTATE.setSearchItem(otherAxis, curr);
