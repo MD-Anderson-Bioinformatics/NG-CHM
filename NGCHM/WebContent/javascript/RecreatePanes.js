@@ -31,7 +31,7 @@
 	 * This is a hack.
 	 * TODO: Understand the NGCHM initialization code well enough to not need this hack.
 	 */
-	function reconstructPanelsFromMapConfig(initialLoc, savedState) {
+	function reconstructPanelsFromMapConfig(initialLoc, savedState, callbacks) {
 
 	    if (debug) console.log("Reconstructing panes");
 	    RECPANES.mapConfigPanelConfiguration = Object.assign({}, savedState);
@@ -53,7 +53,7 @@
 	    function populatePluginPanels () {
 			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
-			setFlickState();
+			setFlickState(callbacks.setFlickState);
 			setSelections();  // Set saved results, if any.
 			SRCH.doInitialSearch();  // Will override saved results, if requested.
 			PANE.resizeNGCHM();
@@ -405,26 +405,14 @@
 	/*
 	 * Set the 'flick' control and data layer
 	*/
-	function setFlickState() {
+	function setFlickState(setFlick) {
 		if (!RECPANES.mapConfigPanelConfiguration.hasOwnProperty('flickInfo')) {
 			return;
 		}
 		if (Object.keys(MMGR.getHeatMap().getDataLayers()).length == 1) {
 			return;
 		}
-		try {
-			document.getElementById('flick1').value = RECPANES.mapConfigPanelConfiguration.flickInfo.flick1;
-			document.getElementById('flick2').value = RECPANES.mapConfigPanelConfiguration.flickInfo.flick2;
-			if (RECPANES.mapConfigPanelConfiguration.flickInfo['flick_btn_state'] === 'flickDown') {
-				document.getElementById('flick_btn').dataset.state = 'flickUp'; // <-- set to opposite so flickChange will set to desired
-				DEV.flickChange();
-			} else {
-				document.getElementById('flick_btn').dataset.state = 'flickDown'; // <-- set to opposite so flickChange will set to desired
-				DEV.flickChange();
-			}
-		} catch(err) {
-			console.error(err)
-		}
+		setFlick (RECPANES.mapConfigPanelConfiguration.flickInfo['flick_btn_state']);
 	}
 })();
 

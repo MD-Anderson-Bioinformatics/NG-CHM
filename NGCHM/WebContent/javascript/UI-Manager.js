@@ -269,7 +269,9 @@
 		const initialLoc = PANE.initializePanes ();
 		const panelConfig = MMGR.getHeatMap().getPanelConfiguration();
 		if (panelConfig) {
-			RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig);
+			RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig, {
+			    setFlickState: setFlickState,
+			});
 		} else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
 			const s = PANE.splitPane (false, initialLoc);
 			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
