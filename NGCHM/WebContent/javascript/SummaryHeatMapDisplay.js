@@ -14,6 +14,7 @@
     const DVW = NgChm.importNS('NgChm.DVW');
     const PANE = NgChm.importNS('NgChm.Pane');
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
+    const LNK = NgChm.importNS('NgChm.LNK');
 
 // Flags.
 SUM.flagDrawClassBarLabels = false; // Labels are only drawn in NGCHM_GUI_Builder
@@ -657,8 +658,11 @@ SUM.drawColClassBars = function() {
 //This is a helper function that can set a sub-ribbon view that best matches a user
 //selected region of the map.
 SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
-	let mapItem = (DEV.targetCanvas !== null) ? DVW.getMapItemFromCanvas(DEV.targetCanvas) : DVW.primaryMap;
-	DEV.targetCanvas = null;
+	const menuOpenCanvas = LNK.getMenuOpenCanvas();
+	if (!menuOpenCanvas) return;
+	const mapItem = DVW.getMapItemFromCanvas (menuOpenCanvas);
+	if (!mapItem) return;
+
 	const selRows = Math.abs(endRow - startRow);
 	const selCols = Math.abs(endCol - startCol);
 	//In case there was a previous dendo selection - clear it.
@@ -666,7 +670,6 @@ SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
 	SUM.colDendro.draw();
 	SUM.rowDendro.draw();
 
-	if (!mapItem) return;
 	//If tiny tiny box was selected, discard and go back to previous selection size
 	if (endRow-startRow<1 && endCol-startCol<1) {
 		DET.setDetailDataSize (mapItem, mapItem.dataBoxWidth);

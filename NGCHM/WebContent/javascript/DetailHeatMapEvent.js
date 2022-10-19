@@ -22,7 +22,6 @@
     var mouseEventActive = false;
     var mouseDown = false;
 
-    DEV.targetCanvas = null;
     var scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
 
     DEV.clearScrollTime = function() {

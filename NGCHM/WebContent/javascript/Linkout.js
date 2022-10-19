@@ -131,9 +131,10 @@ var linkoutsVersion = 'undefined';
     const UHM = NgChm.importNS('NgChm.UHM');
     const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
-    const DEV = NgChm.importNS('NgChm.DEV');
     const SUM = NgChm.importNS('NgChm.SUM');
     const CMM = NgChm.importNS('NgChm.CMM');
+
+    var menuOpenCanvas = null;  // Canvas on which the most recent linkouts popup was opened.
 
     const pluginRestoreInfo = {};
 
@@ -490,8 +491,8 @@ var linkoutsVersion = 'undefined';
 	}
 
 	LNK.labelHelpOpen = function(axis, e){
+	    menuOpenCanvas = e.currentTarget;
 	    const heatMap = MMGR.getHeatMap();
-		DEV.targetCanvas = e.currentTarget;
 		LNK.labelHelpCloseAll();
 		//Get the label item that the user clicked on (by axis) and save that value for use in LNK.selection
 	    var index = e.target.dataset.index;
@@ -835,6 +836,19 @@ var linkoutsVersion = 'undefined';
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 		LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
+
+	// Return and clear a reference to the last canvas on which a label help menu was opened.
+	// Used to determine which detail map an operation chosen from that menu should apply to.
+	// e.g. which detail map should be zoomed in response to the user picking 'zoom to selection'.
+	LNK.getMenuOpenCanvas = function () {
+	    if (menuOpenCanvas == null) {
+		console.error ("Canvas on which the menu popup was opened is not set");
+		return null;
+	    }
+	    const retval = menuOpenCanvas;
+	    menuOpenCanvas = null;
+	    return retval;
+	};
 
 
 	//===================//
