@@ -145,7 +145,27 @@ DET.setInitialDetailDisplaySize = function (mapItem) {
 	} else {
 		DET.setDetailDataSize(mapItem,12);
 	}
-}
+};
+
+
+/**********************************************************************************
+ * FUNCTION - callDetailDrawFunction: The purpose of this function is to respond to
+ * mode changes on the Summary Panel by calling the appropriate detail drawing
+ * function. It acts only on the Primary heat map pane.
+ **********************************************************************************/
+DET.callDetailDrawFunction = function(modeVal, target) {
+    let mapItem = (typeof target !== 'undefined') ? target : DET.primaryMap;
+    if (!mapItem) return;
+    if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
+	    DET.detailHRibbon(mapItem);
+    if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
+	    DET.detailVRibbon(mapItem);
+    if (modeVal == 'FULL_MAP')
+	    DET.detailFullMap(mapItem);
+    if (modeVal == 'NORMAL') {
+	    DET.detailNormal(mapItem);
+    }
+};
 
 /*********************************************************************************************
  * FUNCTION:  drawDetailHeatMap - The purpose of this function is to draw the region of the

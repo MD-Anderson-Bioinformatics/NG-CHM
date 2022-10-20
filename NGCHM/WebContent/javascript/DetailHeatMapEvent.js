@@ -1065,24 +1065,6 @@ DEV.detailDataZoomIn = function (mapItem) {
 	DET.clearDendroSelection(mapItem);
 	DET.detailHRibbon(mapItem);
     };
-/**********************************************************************************
- * FUNCTION - callDetailDrawFunction: The purpose of this function is to respond to
- * mode changes on the Summary Panel by calling the appropriate detail drawing
- * function. It acts only on the Primary heat map pane.
- **********************************************************************************/
-DEV.callDetailDrawFunction = function(modeVal, target) {
-	let mapItem = (typeof target !== 'undefined') ? target : DVW.primaryMap;
-	if (!mapItem) return;
-	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
-		DET.detailHRibbon(mapItem);
-	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
-		DET.detailVRibbon(mapItem);
-	if (modeVal == 'FULL_MAP')
-		DET.detailFullMap(mapItem);
-	if (modeVal == 'NORMAL') {
-		DET.detailNormal(mapItem);
-	}
-}
 
     /**********************************************************************************
      * FUNCTION - detailVRibbonButton: The purpose of this function is to clear dendro

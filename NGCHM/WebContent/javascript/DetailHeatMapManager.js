@@ -337,7 +337,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		    mapItem.selectedStart= startCol;
 		    mapItem.selectedStop=endCol;
 		    mapItem.currentRow = startRow;
-		    DEV.callDetailDrawFunction('RIBBONH', mapItem);
+		    DET.callDetailDrawFunction('RIBBONH', mapItem);
 	    } else {
 		    //More columns than rows, do a vertical sub-ribbon view that fits the selection.
 		    var boxSize = DET.getNearestBoxSize(mapItem, endCol - startCol + 1);
@@ -345,7 +345,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		    mapItem.selectedStart=startRow;
 		    mapItem.selectedStop=endRow;
 		    mapItem.currentCol = startCol;
-		    DEV.callDetailDrawFunction('RIBBONV', mapItem);
+		    DET.callDetailDrawFunction('RIBBONV', mapItem);
 	    }
 	    mapItem.updateSelection(mapItem);
     }
