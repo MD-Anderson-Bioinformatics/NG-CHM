@@ -1813,22 +1813,4 @@ SUM.drawTopItems = function(){
 	}
 }
 
-    /**********************************************************************************
-     * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
-     * wegGl canvases in the viewer. It is called to deal with blurring issues occuring
-     * on the canvases when modal panels are drawn over the viewer canvases.
-     **********************************************************************************/
-    SUM.redrawCanvases = function () {
-	if ((UTIL.getBrowserType() !== "Firefox") && (MMGR.getHeatMap() !== null)) {
-	    SUM.drawHeatMap();
-	    DET.setDrawDetailsTimeout (DET.redrawSelectionTimeout);
-	    if (SUM.rCCanvas && SUM.rCCanvas.width > 0) {
-		SUM.drawRowClassBars();
-	    }
-	    if (SUM.cCCanvas && SUM.cCCanvas.height > 0) {
-		SUM.drawColClassBars();
-	    }
-	}
-    };
-
 })();

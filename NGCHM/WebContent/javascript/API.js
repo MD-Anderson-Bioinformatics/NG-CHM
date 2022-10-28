@@ -30,6 +30,7 @@
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SUM = NgChm.importNS('NgChm.SUM');
     const PANE = NgChm.importNS('NgChm.Pane');
+    const DEV = NgChm.importNS('NgChm.DEV');
 
     // Re-exports.
     NgChm.exportToNS ('NgChm.API', {
@@ -95,7 +96,7 @@
 			    dl.click();
 			    dl.remove();
 	    });
-	    SUM.redrawCanvases();
+	    DEV.redrawCanvases();
     }
 
     /**********************************************************************************

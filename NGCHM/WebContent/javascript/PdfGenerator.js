@@ -13,6 +13,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
+    const DEV = NgChm.importNS('NgChm.DEV');
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const PANE = NgChm.importNS('NgChm.Pane');
 
@@ -86,7 +87,7 @@ PDF.openPdfPrefs = function(e) {
 			document.getElementById("pdfInputFont").value = UTIL.minLabelSize;
 		}
 	}
-    SUM.redrawCanvases();
+    DEV.redrawCanvases();
 }
 
 /**********************************************************************************

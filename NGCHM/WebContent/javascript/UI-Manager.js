@@ -591,7 +591,7 @@
 	    } else {
 		    menu.style.display = 'none';
 	}
-	SUM.redrawCanvases();
+	DEV.redrawCanvases();
     }
 
     /**********************************************************************************
@@ -662,7 +662,7 @@
 	    const mapLinksTbl = openMapLinkoutsHelp();
 	    const allLinksTbl = openAllLinkoutsHelp();
 	    linkoutHelp(mapLinksTbl,allLinksTbl);
-	    SUM.redrawCanvases();
+	    DEV.redrawCanvases();
 	}
 
 	/**********************************************************************************
@@ -997,7 +997,7 @@
 	    let url = location.origin+location.pathname;
 	    window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
 	}
-	SUM.redrawCanvases();
+	DEV.redrawCanvases();
     };
 
     document.getElementById('aboutMenu_btn').onclick = (ev) => {
