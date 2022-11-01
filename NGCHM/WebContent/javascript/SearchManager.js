@@ -9,7 +9,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const DMM = NgChm.importNS('NgChm.DMM');
     const DET = NgChm.importNS('NgChm.DET');
     const UHM = NgChm.importNS('NgChm.UHM');
@@ -399,7 +399,7 @@
 	}
 	if (results.length === 0) {
 	    //Clear previous matches when search is empty.
-	    SEL.updateSelections();
+	    DVW.updateSelections();
 	    searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 	} else {
 	    SRCH.setAxisSearchResultsVec(axis, results);
@@ -674,7 +674,7 @@
 			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 		}	
 		//Clear previous matches when search is empty.
-		SEL.updateSelections();
+		DVW.updateSelections();
 	}
     }
 
@@ -878,7 +878,7 @@
      * focus of the detail heat map panel to the current search item.
      ***********************************************************************************/
     function goToCurrentSearchItem () {
-	const mapItem = DMM.primaryMap;
+	const mapItem = DVW.primaryMap;
 	if (!mapItem) return;
 
 	if (currentSearchItem.axis == "Row") {
@@ -888,7 +888,7 @@
 		} else if (mapItem.mode == 'RIBBONV' && mapItem.selectedStart == 0){
 			showSearchError(2);
 		} 
-		SEL.checkRow(mapItem);
+		DVW.checkRow(mapItem);
 	} else if (currentSearchItem.axis == "Column"){
 		mapItem.currentCol = currentSearchItem.index;
 		if ((mapItem.mode == 'RIBBONH') && mapItem.selectedStart!= 0 && (mapItem.currentCol < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentCol )){
@@ -896,9 +896,9 @@
 		} else if (mapItem.mode == 'RIBBONH' && mapItem.selectedStart == 0){
 			showSearchError(2);
 		} 
-		SEL.checkCol(mapItem);
+		DVW.checkCol(mapItem);
 	}
-	SEL.updateSelections();
+	DVW.updateSelections();
     }
 
     /**********************************************************************************
@@ -935,7 +935,7 @@
 	}
 	clearSearchElement();
 	SRCH.showSearchResults();
-	SEL.updateSelections();
+	DVW.updateSelections();
 	SRCH.updateLinkoutSelections();
 	resetSearchBoxColor()
     };
@@ -979,7 +979,7 @@
 	}
 	let markLabels = document.getElementsByClassName('MarkLabel');
 	for (let ii = 0; ii < markLabels.length; ii++){ // clear tick marks
-		DET.removeLabels(markLabels[ii].id);
+		DVW.removeLabels(markLabels[ii].id);
 	}
     };
 
@@ -1095,7 +1095,7 @@
     SRCH.redrawSearchResults = function () {
 	    DET.updateDisplayedLabels();
 	    SUM.redrawSelectionMarks();
-	    SEL.updateSelections();
+	    DVW.updateSelections();
 	    SRCH.showSearchResults();
     };
 

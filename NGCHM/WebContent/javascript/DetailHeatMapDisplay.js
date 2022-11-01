@@ -5,10 +5,11 @@
     //Define Namespace for NgChm DetailHeatMapDisplay
     const DET = NgChm.createNS('NgChm.DET');
 
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const LNK = NgChm.importNS('NgChm.LNK');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const SRCH = NgChm.importNS('NgChm.SRCH');
@@ -18,7 +19,6 @@
     const PANE = NgChm.importNS('NgChm.Pane');
 
 DET.labelLastClicked = {};
-DET.mouseDown = false;
 DET.paddingHeight = 2;          // space between classification bars
 DET.SIZE_NORMAL_MODE = 506;
 DET.dataViewBorder = 2;
@@ -47,31 +47,31 @@ DET.detailHeatMapValidator = {};  // Encoded drawing parameters used to check he
 //----------------------------------------------------------------------------------------------//
 
 /*********************************************************************************************
- * FUNCTION:  processDetailMapUpdate - The purpose of this function is to serve as a Callback 
- * that is notified every time there is an update to the heat map initialize, new data, etc.  
+ * FUNCTION:  processDetailMapUpdate - The purpose of this function is to serve as a Callback
+ * that is notified every time there is an update to the heat map initialize, new data, etc.
  * This callback draws the summary heat map.
  *********************************************************************************************/
 DET.processDetailMapUpdate = function (event, tile) {
 	if (event !== MMGR.Event_INITIALIZED) {
 		DET.flushDrawingCache(tile);
-	} 
+	}
 };
 
 /*********************************************************************************************
- * FUNCTION:  setDrawDetailsTimeout - The purpose of this function is to call the drawing 
+ * FUNCTION:  setDrawDetailsTimeout - The purpose of this function is to call the drawing
  * routine timer for all existing heat map panels.
  *********************************************************************************************/
 DET.setDrawDetailsTimeout = function (ms, noResize) {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
+	for (let i=0; i< DVW.detailMaps.length;i++ ) {
+		const mapItem = DVW.detailMaps[i];
 		DET.setDrawDetailTimeout(mapItem,ms,noResize);
 	}
 }
 
 /*********************************************************************************************
- * FUNCTION:  setDrawDetailTimeout - The purpose of this function is to redraw a detail 
- * heatmap after ms milliseconds to a detail heat map pane. noResize is used to skip the resize routine and help speed 
- * up the drawing routine for some cases. If noResize is true for every call to setDrawDetailTimeout, 
+ * FUNCTION:  setDrawDetailTimeout - The purpose of this function is to redraw a detail
+ * heatmap after ms milliseconds to a detail heat map pane. noResize is used to skip the resize routine and help speed
+ * up the drawing routine for some cases. If noResize is true for every call to setDrawDetailTimeout,
  * the resize routine will be skipped on the next redraw.
  *********************************************************************************************/
 DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
@@ -79,9 +79,9 @@ DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
 		clearTimeout (mapItem.drawEventTimer);
 	}
 	if (!noResize) mapItem.resizeOnNextDraw = true;
-	if (!DMM.isVisible(mapItem)) { return false }
+	if (!mapItem.isVisible()) { return false }
 
-	const drawWin = SEL.getDetailWindow(mapItem);
+	const drawWin = DVW.getDetailWindow(mapItem);
 	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
 		if (mapItem.chm) {
 			DET.drawDetailHeatMap(mapItem, drawWin);
@@ -91,7 +91,7 @@ DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
 
 /*********************************************************************************************
  * FUNCTION:  flushDrawingCache - The purpose of this function is to process the receipt of
- * a new data tile on the primary heat map panel. It causes any cached heat map affected by 
+ * a new data tile on the primary heat map panel. It causes any cached heat map affected by
  * the new tile to be redrawn the next time it is displayed.  The currently displayed primary
  * heat map will be redrawn after a short delay if it might be affected by the tile.
  *********************************************************************************************/
@@ -123,7 +123,7 @@ DET.flushDrawingCache = function (tile) {
 DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	DET.setDendroShow(mapItem);
 	//If we are opening the first detail "copy" of this map set the data sizing for initial display
-	if (DMM.DetailMaps.length === 0 && !restoreInfo) {
+	if (DVW.detailMaps.length === 0 && !restoreInfo) {
 		DET.setInitialDetailDisplaySize(mapItem);
 	}
 	LNK.createLabelMenus();
@@ -135,7 +135,7 @@ DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	
 	setTimeout (function() {
 		DET.detInitGl(mapItem);
-		SEL.updateSelection(mapItem);
+		mapItem.updateSelection();
 		if (UTIL.getURLParameter("selected") !== ""){
 			const selected = UTIL.getURLParameter("selected").replace(","," ");
 			document.getElementById("search_text").value = selected;
@@ -147,9 +147,9 @@ DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		}
 	}, 1);
   	
-	DMM.DetailMaps.push(mapItem);
+	DVW.detailMaps.push(mapItem);
   	if (mapItem.version === 'P') {
-		DMM.primaryMap = mapItem;
+		DVW.primaryMap = mapItem;
   	}
 	if (restoreInfo) {
 	    if (mapItem.rowDendro !== null) {
@@ -159,7 +159,7 @@ DET.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		mapItem.colDendro.setZoomLevel(restoreInfo.colZoomLevel || 1);
 	    }
 	}
-	DET.setButtons(mapItem);
+	mapItem.setButtons();
 }
 
 /*********************************************************************************************
@@ -171,8 +171,8 @@ DET.setInitialDetailDisplaySize = function (mapItem) {
 	// set the to show the box size closest to the lower value ELSE
 	// set it to show 42 rows/cols.
 	const heatMap = MMGR.getHeatMap();
-	const rows = heatMap.getNumRows(MMGR.DETAIL_LEVEL);
-	const cols = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
+	const rows = heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
+	const cols = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
 	if ((rows < 42) || (cols < 42)) {
 		const boxSize = DET.getNearestBoxSize(mapItem, Math.min(rows,cols));
 		DET.setDetailDataSize(mapItem,boxSize);
@@ -182,7 +182,7 @@ DET.setInitialDetailDisplaySize = function (mapItem) {
 }
 
 /*********************************************************************************************
- * FUNCTION:  drawDetailHeatMap - The purpose of this function is to draw the region of the 
+ * FUNCTION:  drawDetailHeatMap - The purpose of this function is to draw the region of the
  * NGCHM specified by drawWin to a detail heat map pane.
  *********************************************************************************************/
 DET.drawDetailHeatMap = function (mapItem, drawWin) {
@@ -255,9 +255,9 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 };
 
 /*********************************************************************************************
- * FUNCTION:  getDetailHeatMap - The purpose of this function is to return a renderBuffer 
- * containing an image of the region of the NGCHM specified by drawWin rendered using the 
- * parameters in params.handle a user mouse down event.  
+ * FUNCTION:  getDetailHeatMap - The purpose of this function is to return a renderBuffer
+ * containing an image of the region of the NGCHM specified by drawWin rendered using the
+ * parameters in params.handle a user mouse down event.
  *********************************************************************************************/
 DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
@@ -347,8 +347,8 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
-				if (val <= MMGR.minValues) {
-					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > MMGR.minValues)) {
+				if (val <= MAPREP.minValues) {
+					if ((k === mapItem.dataBoxWidth - 1) && (nextVal > MAPREP.minValues)) {
 						gridLine[linePos] = gridColor[0]; gridLine[linePos+1] = gridColor[1]; gridLine[linePos+2] = gridColor[2];	gridLine[linePos+3] = 255;
 					} else {
 						gridLine[linePos] = cutsColor.r; gridLine[linePos+1] = cutsColor.g; gridLine[linePos+2] = cutsColor.b;	gridLine[linePos+3] = cutsColor.a;
@@ -371,7 +371,7 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	//Needs to go backward because WebGL draws bottom up.
 	for (let i = detDataPerCol-1; i >= 0; i--) {
 		let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
-		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the 
+		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the
 		// preceding line are "cut values" mark the current line as as a horizontal cut
 		const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
 		linePos+=DRAW.BYTE_PER_RGBA;
@@ -380,13 +380,13 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	        let nextVal = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1);
 	        if (val !== undefined) {
 	            const color = colorMap.getColor(val);
-	            
+
 				//For each data point, write it several times to get correct data point width.
 				for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 					if (params.showVerticalGrid && k===mapItem.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
 						if (j < detDataPerRow-1) {
 							//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
-							if ((val <= MMGR.minValues) && (nextVal <= MMGR.minValues)) {
+							if ((val <= MAPREP.minValues) && (nextVal <= MAPREP.minValues)) {
 								line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
 							} else {
 								line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
@@ -421,14 +421,14 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 DET.isLineACut = function (mapItem, row) {
 	let lineIsCut = true;
 	const heatMap = MMGR.getHeatMap();
-	const level = SEL.getLevelFromMode(mapItem, MMGR.DETAIL_LEVEL);
-	const currDetRow = SEL.getCurrentDetRow(mapItem);
-	const currDetCol = SEL.getCurrentDetCol(mapItem);
-	const detDataPerRow = SEL.getCurrentDetDataPerRow(mapItem);
+	const level = DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL);
+	const currDetRow = DVW.getCurrentDetRow(mapItem);
+	const currDetCol = DVW.getCurrentDetCol(mapItem);
+	const detDataPerRow = DVW.getCurrentDetDataPerRow(mapItem);
 	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
 		const val = heatMap.getValue(level, currDetRow+row, currDetCol+x);
 		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
-		if (val > MMGR.minValues) {
+		if (val > MAPREP.minValues) {
 			return false;
 		}
 	}
@@ -436,8 +436,8 @@ DET.isLineACut = function (mapItem, row) {
 }
 
 /*********************************************************************************************
- * FUNCTION:  setDetBoxCanvasSize - The purpose of this function is to set the size of the 
- * detail box canvas to match that of the heat map canvas.  
+ * FUNCTION:  setDetBoxCanvasSize - The purpose of this function is to set the size of the
+ * detail box canvas to match that of the heat map canvas.
  *********************************************************************************************/
 DET.setDetBoxCanvasSize = function (mapItem) {
 	mapItem.boxCanvas.width =  mapItem.canvas.clientWidth;
@@ -447,7 +447,7 @@ DET.setDetBoxCanvasSize = function (mapItem) {
 }
 
 /*********************************************************************************************
- * FUNCTION: getNearestBoxSize  -  The purpose of this function is to loop zoomBoxSizes to 
+ * FUNCTION: getNearestBoxSize  -  The purpose of this function is to loop zoomBoxSizes to
  * pick the one that will be large enough to encompass user-selected area
  *********************************************************************************************/
 DET.getNearestBoxSize = function (mapItem, sizeToGet) {
@@ -525,7 +525,7 @@ DET.restoreFromSavedState = function (mapItem, savedState) {
 };
 
 /*********************************************************************************************
- * FUNCTION: getNearestBoxHeight  -  The purpose of this function is to loop zoomBoxSizes to pick the one that 
+ * FUNCTION: getNearestBoxHeight  -  The purpose of this function is to loop zoomBoxSizes to pick the one that
  * will be large enough to encompass user-selected area.
  *********************************************************************************************/
 DET.getNearestBoxHeight = function (mapItem, sizeToGet) {
@@ -546,26 +546,26 @@ DET.getNearestBoxHeight = function (mapItem, sizeToGet) {
 }
 
 /**********************************************************************************
- * FUNCTION - scaleViewWidth: For maps that have less rows/columns than the size 
- * of the detail panel, matrix elements get  width more  than 1 pixel, scale calculates 
+ * FUNCTION - scaleViewWidth: For maps that have less rows/columns than the size
+ * of the detail panel, matrix elements get  width more  than 1 pixel, scale calculates
  * the appropriate height/width.
  **********************************************************************************/
 DET.scaleViewWidth = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
-	const scale = Math.max(Math.floor(500/heatMap.getNumColumns(MMGR.SUMMARY_LEVEL)), 1)
-	mapItem.dataViewWidth=(heatMap.getNumColumns(MMGR.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
+	const scale = Math.max(Math.floor(500/heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL)), 1)
+	mapItem.dataViewWidth=(heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
 	DET.setDetailDataWidth(mapItem, scale);
 }
 
 /**********************************************************************************
- * FUNCTION - scaleViewHeight: For maps that have less rows/columns than the size 
- * of the detail panel, matrix elements get height more than 1 pixel, scale calculates 
+ * FUNCTION - scaleViewHeight: For maps that have less rows/columns than the size
+ * of the detail panel, matrix elements get height more than 1 pixel, scale calculates
  * the appropriate height/width.
  **********************************************************************************/
 DET.scaleViewHeight = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
-	const scale = Math.max(Math.floor(500/heatMap.getNumRows(MMGR.SUMMARY_LEVEL)), 1)
-	mapItem.dataViewHeight= (heatMap.getNumRows(MMGR.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
+	const scale = Math.max(Math.floor(500/heatMap.getNumRows(MAPREP.SUMMARY_LEVEL)), 1)
+	mapItem.dataViewHeight= (heatMap.getNumRows(MAPREP.SUMMARY_LEVEL) * scale) + DET.dataViewBorder;
 	DET.setDetailDataHeight(mapItem, scale);
 }
 
@@ -577,7 +577,7 @@ DET.setDetailDataSize = function (mapItem, size) {
 	DET.setDetailDataWidth (mapItem, size);
 	DET.setDetailDataHeight(mapItem, size);
 }
- 
+
 /**********************************************************************************
  * FUNCTION - setDetailDataWidth: The purpose of this function is to determine and
  * set how big the detail data width should be for a given detail pane.
@@ -585,7 +585,7 @@ DET.setDetailDataSize = function (mapItem, size) {
 DET.setDetailDataWidth = function (mapItem, size) {
 	const prevDataPerRow = mapItem.dataPerRow;
 	mapItem.dataBoxWidth = size;
-	SEL.setDataPerRowFromDet(Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/mapItem.dataBoxWidth), mapItem);
+	DVW.setDataPerRowFromDet(Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/mapItem.dataBoxWidth), mapItem);
 
 	//Adjust the current column based on zoom but don't go outside or the heat map matrix dimensions.
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
@@ -596,7 +596,7 @@ DET.setDetailDataWidth = function (mapItem, size) {
 			mapItem.currentCol -= Math.floor((mapItem.dataPerRow - prevDataPerRow) / 2);
 		}
 	}
-	SEL.checkCol(mapItem);
+	DVW.checkCol(mapItem);
 }
 
 /**********************************************************************************
@@ -606,7 +606,7 @@ DET.setDetailDataWidth = function (mapItem, size) {
 DET.setDetailDataHeight = function (mapItem, size) {
 	const prevDataPerCol = mapItem.dataPerCol;
 	mapItem.dataBoxHeight = size;
-	SEL.setDataPerColFromDet(Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/mapItem.dataBoxHeight), mapItem);
+	DVW.setDataPerColFromDet(Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/mapItem.dataBoxHeight), mapItem);
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	
 	//Adjust the current row but don't go outside of the current heat map dimensions
@@ -616,7 +616,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		else
 			mapItem.currentRow -= Math.floor((mapItem.dataPerCol - prevDataPerCol) / 2);
 	}
-	SEL.checkRow(mapItem);
+	DVW.checkRow(mapItem);
 };
 
 //----------------------------------------------------------------------------------------------//
@@ -652,17 +652,17 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 	// Retrieve contiguous row and column search arrays
 	const searchRows = SRCH.getAxisSearchResults("Row");
-	const rowRanges = DET.getContigSearchRanges(searchRows);
+	const rowRanges = UTIL.getContigRanges(searchRows);
 	const searchCols = SRCH.getAxisSearchResults("Column");
-	const colRanges = DET.getContigSearchRanges(searchCols);
+	const colRanges = UTIL.getContigRanges(searchCols);
 
 	// Get total row and column bar "heights".
 	totalColBarHeight = DET.calculateTotalClassBarHeight("column");
 	totalRowBarHeight = DET.calculateTotalClassBarHeight("row");
 
-	for (let k=0; k<DMM.DetailMaps.length;k++ ) {
+	for (let k=0; k<DVW.detailMaps.length;k++ ) {
 	        // Get context for this detail map.
-		const mapItem = DMM.DetailMaps[k];
+		const mapItem = DVW.detailMaps[k];
 		mapItemVars.ctx = mapItem.boxCanvas.getContext("2d");
 		calcMapItemVariables (mapItem);
 
@@ -738,13 +738,13 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 	// width of a data cell in pixels
 	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONV') {
-		mapItemVars.cellWidth = mapItemVars.mapXWidth/SEL.getCurrentDetDataPerRow(mapItem);
+		mapItemVars.cellWidth = mapItemVars.mapXWidth/DVW.getCurrentDetDataPerRow(mapItem);
 	} else {
 		mapItemVars.cellWidth = mapItemVars.mapXWidth/mapItem.dataPerRow;
 	}
 	// height of a data cell in pixels
 	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONH') {
-		mapItemVars.cellHeight = mapItemVars.mapYHeight/SEL.getCurrentDetDataPerCol(mapItem);
+		mapItemVars.cellHeight = mapItemVars.mapYHeight/DVW.getCurrentDetDataPerCol(mapItem);
 	} else {
 		mapItemVars.cellHeight = mapItemVars.mapYHeight/mapItem.dataPerCol;
 	}
@@ -899,13 +899,13 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 /************************************************************************************************
  * FUNCTION - sizeCanvasForLabels: This function resizes the row heat map canvas on all open detail
- * heat map panel instances.  It sets the sizes of the main canvas, the box canvas, and the 
+ * heat map panel instances.  It sets the sizes of the main canvas, the box canvas, and the
  * row/col lavel DIVs. It calculates and adjusts the size of the detail canvas and box canvas
  * in order to best accommodate the maximum label sizes for each axis.
  ************************************************************************************************/
 DET.sizeCanvasForLabels = function() {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
+	for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		const mapItem = DVW.detailMaps[i];
 		DET.resetLabelLengths(mapItem);
 		if (mapItem.pane !== "") {  //Used by builder which does not contain the detail pane necessary, nor the use, for this logic
 			DET.calcRowAndColLabels(mapItem);
@@ -965,7 +965,7 @@ DET.setViewPort = function (mapItem) {
 };
 
 /************************************************************************************************
- * FUNCTION - calcRowAndColLabels: This function determines if labels are to be drawn on each 
+ * FUNCTION - calcRowAndColLabels: This function determines if labels are to be drawn on each
  * axis and calls the appropriate function to calculate the maximum label size for each axis.
  ************************************************************************************************/
 DET.calcRowAndColLabels = function (mapItem) {
@@ -984,7 +984,7 @@ DET.calcRowAndColLabels = function (mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - calcClassRowAndColLabels: This function calls the functions necessary to calculate 
+ * FUNCTION - calcClassRowAndColLabels: This function calls the functions necessary to calculate
  * the maximum row/col class bar label sizes and update maximum label size variables (if necessary)
  ************************************************************************************************/
 DET.calcClassRowAndColLabels = function (mapItem) {
@@ -993,8 +993,8 @@ DET.calcClassRowAndColLabels = function (mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - calcRowClassBarLabels: This function calculates the maximum size of all row class 
- * bar labels and update the map item's rowLabelLen if the value of any label exceeds the existing 
+ * FUNCTION - calcRowClassBarLabels: This function calculates the maximum size of all row class
+ * bar labels and update the map item's rowLabelLen if the value of any label exceeds the existing
  * maximum stored in that variable
  ************************************************************************************************/
 DET.calcRowClassBarLabels = function (mapItem) {
@@ -1017,16 +1017,16 @@ DET.calcRowClassBarLabels = function (mapItem) {
 						labelText = "XXX"+labelText; //calculate spacing for bar legend
 					}
 					DET.addTmpLabelForSizeCalc(mapItem, labelText, mapItem.rowClassLabelFont);
-				} 
-			} 
+				}
+			}
 			DET.calcLabelDiv(mapItem, 'COL');
 		}	
 	}
 }
 
 /************************************************************************************************
- * FUNCTION - calcColClassBarLabels: This function calculates the maximum size of all column 
- * class bar labels and update the mapItem's colLabelLen if the value of any label exceeds the 
+ * FUNCTION - calcColClassBarLabels: This function calculates the maximum size of all column
+ * class bar labels and update the mapItem's colLabelLen if the value of any label exceeds the
  * existing maximum stored in that variable
  ************************************************************************************************/
 DET.calcColClassBarLabels = function (mapItem) {
@@ -1049,7 +1049,7 @@ DET.calcColClassBarLabels = function (mapItem) {
 						labelText = "XXXX"+labelText; //calculate spacing for bar legend
 					}
 					DET.addTmpLabelForSizeCalc(mapItem, labelText, mapItem.colClassLabelFont);
-				} 
+				}
 			}	
 			DET.calcLabelDiv(mapItem, 'ROW');
 		}
@@ -1057,7 +1057,7 @@ DET.calcColClassBarLabels = function (mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - rowClassBarLabelFont: This function calculates the appropriate font size for row 
+ * FUNCTION - rowClassBarLabelFont: This function calculates the appropriate font size for row
  * class bar labels
  ************************************************************************************************/
 DET.rowClassBarLabelFont = function(mapItem) {
@@ -1069,7 +1069,7 @@ DET.rowClassBarLabelFont = function(mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - colClassBarLabelFont: This function calculates the appropriate font size for 
+ * FUNCTION - colClassBarLabelFont: This function calculates the appropriate font size for
  * column class bar labels
  ************************************************************************************************/
 DET.colClassBarLabelFont = function(mapItem) {
@@ -1081,7 +1081,7 @@ DET.colClassBarLabelFont = function(mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - classLabelsContainLegend: This function returns a boolean indicating if the 
+ * FUNCTION - classLabelsContainLegend: This function returns a boolean indicating if the
  * provided class bar axis contains a label with a bar or scatter plot legend.
  ************************************************************************************************/
 DET.classLabelsContainLegend = function (type) {
@@ -1104,8 +1104,8 @@ DET.classLabelsContainLegend = function (type) {
 }
 
 /************************************************************************************************
- * FUNCTION - addTmpLabelForSizeCalc: This function adds an entry to tmpLabelSizeElements for the 
- * specified text and fontSize.  If the combination of text and fontSize has not been seen before, 
+ * FUNCTION - addTmpLabelForSizeCalc: This function adds an entry to tmpLabelSizeElements for the
+ * specified text and fontSize.  If the combination of text and fontSize has not been seen before,
  * a pool label element for performing the width calculation is also created.
  ************************************************************************************************/
 DET.addTmpLabelForSizeCalc = function (mapItem, text, fontSize) {
@@ -1141,8 +1141,8 @@ DET.addTmpLabelForSizeCalc = function (mapItem, text, fontSize) {
 }
 
 /************************************************************************************************
- * FUNCTION - getClassBarLabelFontSize: This function searches for the minimum font size for all 
- * classification bars in a set (row/col) that have a size greater than 7.  Those <= 7 are ignored 
+ * FUNCTION - getClassBarLabelFontSize: This function searches for the minimum font size for all
+ * classification bars in a set (row/col) that have a size greater than 7.  Those <= 7 are ignored
  * as they will have "..." placed next to them as labels.
  ************************************************************************************************/
 DET.getClassBarLabelFontSize = function (mapItem, classBarConfig,scale) {
@@ -1158,7 +1158,7 @@ DET.getClassBarLabelFontSize = function (mapItem, classBarConfig,scale) {
 }
 
 /************************************************************************************************
- * FUNCTION - calcRowLabels: This function calculates the maximum label size (in pixels) on the 
+ * FUNCTION - calcRowLabels: This function calculates the maximum label size (in pixels) on the
  * row axis.
  ************************************************************************************************/
 DET.calcRowLabels = function (mapItem, fontSize) {
@@ -1178,7 +1178,7 @@ DET.calcRowLabels = function (mapItem, fontSize) {
 }
 
 /************************************************************************************************
- * FUNCTION - calcRowLabels: This function calculates the maximum label size (in pixels) on the 
+ * FUNCTION - calcRowLabels: This function calculates the maximum label size (in pixels) on the
  * column axis.
  ************************************************************************************************/
 DET.calcColLabels = function (mapItem, fontSize) {
@@ -1198,8 +1198,8 @@ DET.calcColLabels = function (mapItem, fontSize) {
 }
 
 /************************************************************************************************
- * FUNCTION - calcLabelDiv: This function assesses the size of the entries that have been added 
- * to tmpLabelSizeElements and increases the row/col label length if the longest label is longer 
+ * FUNCTION - calcLabelDiv: This function assesses the size of the entries that have been added
+ * to tmpLabelSizeElements and increases the row/col label length if the longest label is longer
  * than those already processed. rowLabelLen and colLabelLen are used to size the detail screen
  * to accommodate labels on both axes.
  ************************************************************************************************/
@@ -1264,15 +1264,15 @@ DET.getColLabelFontSize = function (mapItem) {
 
 /************************************************************************************************
  * FUNCTION - updateDisplayedLabels: This function updates detail labels when the user scrolls or
- * zooms on the detail pane. The existing labels are first moved to oldLabelElements. Adding a 
- * label will first check to see if the label element already exists in oldLabelElements and if 
- * so update it and move it to labelElements. After all elements have been added/updated, any 
+ * zooms on the detail pane. The existing labels are first moved to oldLabelElements. Adding a
+ * label will first check to see if the label element already exists in oldLabelElements and if
+ * so update it and move it to labelElements. After all elements have been added/updated, any
  * remaining dynamic labels
  ************************************************************************************************/
 DET.updateDisplayedLabels = function () {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
-		if (!DMM.isVisible(mapItem)) {
+	for (let i=0; i<DVW.detailMaps.length;i++ ) {
+		const mapItem = DVW.detailMaps[i];
+		if (!mapItem.isVisible()) {
 		    continue;
 		}
 		const debug = false;
@@ -1316,7 +1316,7 @@ DET.updateDisplayedLabels = function () {
 }
 
 /************************************************************************************************
- * FUNCTION - drawRowAndColLabels: This function determines if labels are to be drawn on each 
+ * FUNCTION - drawRowAndColLabels: This function determines if labels are to be drawn on each
  * axis and calls the appropriate function to draw those labels on the screen.
  ************************************************************************************************/
 DET.drawRowAndColLabels = function (mapItem) {
@@ -1386,7 +1386,7 @@ DET.drawColLabels = function (mapItem, fontSize) {
 }
 
 /************************************************************************************************
- * FUNCTION - resetLabelLengths: This function resets the maximum //label size variables for each 
+ * FUNCTION - resetLabelLengths: This function resets the maximum //label size variables for each
  * axis in preparation for a screen redraw.
  ************************************************************************************************/
 DET.resetLabelLengths = function (mapItem) {
@@ -1400,7 +1400,7 @@ DET.resetLabelLengths = function (mapItem) {
 DET.detailDrawRowClassBarLabels = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
 	const rowClassBarConfigOrder = heatMap.getRowClassificationOrder();
-	DET.removeLabel (mapItem, "missingDetRowClassBars");
+	mapItem.removeLabel ("missingDetRowClassBars");
 	const scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	const classBarAreaWidth = DET.calculateTotalClassBarHeight("row")*scale;
 	const dataAreaWidth = mapItem.dataViewWidth*scale;
@@ -1446,18 +1446,18 @@ DET.detailDrawRowClassBarLabels = function (mapItem) {
 					}
 				}
 				prevClassBarHeight = currentClassBar.height;
-			} 
+			}
 		}	
 	}
 }
 
 /************************************************************************************************
- * FUNCTION - detailDrawRowClassBarLabels: This function draws column class bar labels on the 
+ * FUNCTION - detailDrawRowClassBarLabels: This function draws column class bar labels on the
  * detail panel.
  ************************************************************************************************/
 DET.detailDrawColClassBarLabels = function (mapItem) {
 	const heatMap = MMGR.getHeatMap();
-	DET.removeLabel (mapItem, "missingDetColClassBars");
+	mapItem.removeLabel ("missingDetColClassBars");
 	const scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	const colClassBarConfig = heatMap.getColClassificationConfig();
 	const colClassBarConfigOrder = heatMap.getColClassificationOrder();
@@ -1505,7 +1505,7 @@ DET.detailDrawColClassBarLabels = function (mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - drawRowClassBarLegends: This function draws all row class bar legends on the 
+ * FUNCTION - drawRowClassBarLegends: This function draws all row class bar legends on the
  * detail panel for maps that contain bar/scatter plot covariates.  It calls a second function
  * (drawRowClassBarLegend) to draw each legend.
  ************************************************************************************************/
@@ -1536,8 +1536,8 @@ DET.drawRowClassBarLegends = function (mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - drawRowClassBarLegend: This function draws a specific row class bar legend on the 
- * detail panel for maps that contain bar/scatter plot covariates.  
+ * FUNCTION - drawRowClassBarLegend: This function draws a specific row class bar legend on the
+ * detail panel for maps that contain bar/scatter plot covariates.
  ************************************************************************************************/
 DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeight,totalHeight,i) {
 	const classHgt = DET.calculateTotalClassBarHeight("row");
@@ -1573,7 +1573,7 @@ DET.drawRowClassBarLegend = function(mapItem,key,currentClassBar,prevHeight,tota
 }
 
 /************************************************************************************************
- * FUNCTION - drawColClassBarLegends: This function draws column class bar legends on the 
+ * FUNCTION - drawColClassBarLegends: This function draws column class bar legends on the
  * detail panel for maps that contain bar/scatter plot covariates.  It calls a second function
  * (drawColClassBarLegend) to draw each legend.
  ************************************************************************************************/
@@ -1605,8 +1605,8 @@ DET.drawColClassBarLegends = function (mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - drawColClassBarLegend: This function draws a specific column class bar legend on the 
- * detail panel for maps that contain bar/scatter plot covariates.  
+ * FUNCTION - drawColClassBarLegend: This function draws a specific column class bar legend on the
+ * detail panel for maps that contain bar/scatter plot covariates.
  ************************************************************************************************/
 DET.drawColClassBarLegend = function(mapItem,key,currentClassBar,prevHeight,totalHeight) {
 	const classHgt = DET.calculateTotalClassBarHeight("column");
@@ -1657,7 +1657,7 @@ DET.drawColClassBarLegend = function(mapItem,key,currentClassBar,prevHeight,tota
 
 /************************************************************************************************
  * FUNCTION - removeColClassBarLegendElements: This function removes any existing legend elements
- * for a bar/scatter plot class bar that is being redrawn.  
+ * for a bar/scatter plot class bar that is being redrawn.
  ************************************************************************************************/
 DET.removeClassBarLegendElements = function(key,mapItem) {
 	let legItem = document.getElementById(key+mapItem.panelNbr+"legendDetHigh-");
@@ -1673,14 +1673,14 @@ DET.removeClassBarLegendElements = function(key,mapItem) {
 }
 
 /************************************************************************************************
- * FUNCTION - setLegendDivElement: This function sets the position for a bar/scatter plot 
- * covariates legend on the detail panel.  
+ * FUNCTION - setLegendDivElement: This function sets the position for a bar/scatter plot
+ * covariates legend on the detail panel.
  ************************************************************************************************/
 DET.setLegendDivElement = function (mapItem,itemId,boundVal,topVal,leftVal,isRowVal) {
 	//Create div and place high legend value
 	let itemElem = document.getElementById(itemId);
 	if (itemElem === null) {
-		itemElem = document.createElement("Div"); 
+		itemElem = document.createElement("Div");
 		itemElem.id = itemId;
 		itemElem.innerHTML = boundVal;
 		itemElem.className = "DynamicLabel ClassBar";
@@ -1696,23 +1696,13 @@ DET.setLegendDivElement = function (mapItem,itemId,boundVal,topVal,leftVal,isRow
 		itemElem.style.fontFamily = 'sans-serif';
 		itemElem.style.fontWeight = 'bold';
 		mapItem.labelElement.appendChild(itemElem);
-	} 
+	}
 	itemElem.style.top = topVal + 'px';
 	itemElem.style.left = leftVal + 'px';
 }
 
 /************************************************************************************************
- * FUNCTION - removeLabels: This function removes a label from all detail map items.  
- ************************************************************************************************/
-DET.removeLabels = function (label) {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
-		DET.removeLabel(mapItem, label);
-	}
-};
-
-/************************************************************************************************
- * FUNCTION - removeLabel: This function removes a label from a specific detail map item.  
+ * FUNCTION - removeLabel: This function removes a label from a specific detail map item.
  ************************************************************************************************/
 DET.removeLabel = function (mapItem, label) {
 	if (mapItem.oldLabelElements.hasOwnProperty (label)) {
@@ -1723,17 +1713,7 @@ DET.removeLabel = function (mapItem, label) {
 };
 
 /************************************************************************************************
- * FUNCTION - addLabelDivs: This function adds a label div to all detail map items.  
- ************************************************************************************************/
-DET.addLabelDivs = function (parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
-	for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-		const mapItem = DMM.DetailMaps[i];
-		DET.addLabelDiv(mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy);
-	}
-};
-
-/************************************************************************************************
- * FUNCTION - addLabelDiv: This function adds a label div element to a specific detail map item  
+ * FUNCTION - addLabelDiv: This function adds a label div element to a specific detail map item
  ************************************************************************************************/
 DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
 	if (mapItem.oldLabelElements.hasOwnProperty(id)) {
@@ -1788,8 +1768,8 @@ DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left
 	}
 	
 	if (text !== "<" && text !== "..." && text.length > 0){
-		div.addEventListener('click',DEV.labelClick , UTIL.passiveCompat({ capture: false, passive: false }));
-		div.addEventListener('contextmenu',DEV.labelRightClick, UTIL.passiveCompat({ capture: false, passive: false }));
+		div.addEventListener('click', mapItem.labelCallbacks.labelClick, UTIL.passiveCompat({ capture: false, passive: false }));
+		div.addEventListener('contextmenu', mapItem.labelCallbacks.labelRightClick, UTIL.passiveCompat({ capture: false, passive: false }));
 		div.onmouseover = function(){UHM.hlp(this,longText,longText.length*9,0);}
 		div.onmouseleave = UHM.hlpC;
 		div.addEventListener("touchstart", function(e){
@@ -1804,11 +1784,11 @@ DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left
 				const now = new Date().getTime();
 				const timesince = now - mapItem.latestLabelTap;
 				if (timesince > 500){
-					DEV.labelRightClick(e);
+				    mapItem.labelCallbacks.labelRightClick(e);
 				}
 			}
 		}, UTIL.passiveCompat({ passive: false }));
-		div.addEventListener("touchmove", DEV.labelDrag, UTIL.passiveCompat({ passive: false }));
+		div.addEventListener("touchmove", mapItem.labelCallbacks.labelDrag, UTIL.passiveCompat({ passive: false }));
 	}
 	if (text == "..."){
 		const listenOpts = UTIL.passiveCompat({ capture: false, passive: false });
@@ -1818,12 +1798,13 @@ DET.addLabelDiv = function (mapItem, parent, id, className, text ,longText, left
 		div.addEventListener('mouseleave', (function() {
 		    return function(e) {UHM.hlpC(); };
 		}) (this), listenOpts);
-	}   
+	}
 }
 
+
 /************************************************************************************************
- * FUNCTION - updateLabelDiv: This function updates a label DIV and removes it from the 
- * oldLabelElements array if it is no longer visible on the detail panel.  
+ * FUNCTION - updateLabelDiv: This function updates a label DIV and removes it from the
+ * oldLabelElements array if it is no longer visible on the detail panel.
  ************************************************************************************************/
 DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, left, top, fontSize, rotate, index,axis,xy) {
 	if (mapItem.oldLabelElements[id].parent !== parent) {
@@ -1857,40 +1838,6 @@ DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, l
 // BEGIN SEARCH RELATED DETAIL DISPLAY FUNCTIONS
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
-
-/*********************************************************************************************
- * FUNCTION:  getContigSearchRanges - This function iterates thru a searchArray (searchRows
- *  or searchCols) and writes an array containing entries for each contiguous range selected 
- *  in the /searchArray.  This array will contain sub-arrays that have 2 entries (one for 
- *  starting position and the other for ending)
- *********************************************************************************************/
-DET.getContigSearchRanges = function (searchArr) {
-	let ranges = [];
-	let prevVal=searchArr[0];
-	let startVal = searchArr[0];
-	if (searchArr.length >  0) {
-		for (let i=0;i<searchArr.length;i++) {
-			let currVal = searchArr[i];
-			//If a contiguous range has been found, write array entry
-			if (currVal - prevVal > 1) {
-				ranges.push([startVal,prevVal]);
-				startVal = currVal;
-				//If this is ALSO the last entry, write one more array for
-				//for the current single row/col selection
-				if (i === searchArr.length -1) {
-					ranges.push([currVal,currVal]);
-				}
-			} else {
-				//If last entry, write array entry
-				if (i === searchArr.length -1) {
-					ranges.push([startVal,currVal]);
-				}
-			}
-			prevVal = currVal;
-		}
-	}
-	return ranges;
-}
 
 /*********************************************************************************************
  * FUNCTION:  getAllLabelsByAxis - This function retrieves and array of search labels containing
@@ -2066,8 +2013,8 @@ DET.getRowClassPixelWidth = function (mapItem) {
 }
 
 /*********************************************************************************************
- * FUNCTION:  calculateTotalClassBarHeight - This function calculates the total class bar 
- * height for detail covariates on a given axis. Covariate bars in the detail pane are just 
+ * FUNCTION:  calculateTotalClassBarHeight - This function calculates the total class bar
+ * height for detail covariates on a given axis. Covariate bars in the detail pane are just
  * their specified height, with no rescaling.
  *********************************************************************************************/
 DET.calculateTotalClassBarHeight = function (axis) {
@@ -2075,7 +2022,7 @@ DET.calculateTotalClassBarHeight = function (axis) {
 }
 
 /**********************************************************************************
- * FUNCTION - detailDrawColClassBars: The purpose of this function is to column 
+ * FUNCTION - detailDrawColClassBars: The purpose of this function is to column
  * class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.detailDrawColClassBars = function (mapItem, pixels) {
@@ -2099,14 +2046,14 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 		if (currentClassBar.show === 'Y') {
 			const colorMap = colorMapMgr.getColorMap("col",key); // assign the proper color scheme...
 			let classBarValues = colClassBarData[key].values;
-			const classBarLength = SEL.getCurrentDetDataPerRow(mapItem) * mapItem.dataBoxWidth;
+			const classBarLength = DVW.getCurrentDetDataPerRow(mapItem) * mapItem.dataBoxWidth;
 			pos += fullWidth*DET.paddingHeight*DRAW.BYTE_PER_RGBA; // draw padding between class bars
 			let start = mapItem.currentCol;
-			const length = SEL.getCurrentDetDataPerRow(mapItem);
+			const length = DVW.getCurrentDetDataPerRow(mapItem);
 			if (((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) &&  (typeof colClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps - if we are showing the whole row or a large part of it, use the summary classification values.
 				classBarValues = colClassBarData[key].svalues;
-				const rhRate = heatMap.getColSummaryRatio(MMGR.RIBBON_HOR_LEVEL);
+				const rhRate = heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 			    start = Math.ceil(start/rhRate);
 			}
 			if (currentClassBar.bar_type === 'color_plot') {
@@ -2120,13 +2067,13 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 }
 
 /**********************************************************************************
- * FUNCTION - drawColorPlotColClassBar: The purpose of this function is to column 
+ * FUNCTION - drawColorPlotColClassBar: The purpose of this function is to column
  * color plot class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, classBarLength, colorMap) {
 	const line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA)); // save a copy of the class bar
 	let loc = 0;
-	for (let k = start; k <= start + length -1; k++) { 
+	for (let k = start; k <= start + length -1; k++) {
 		const val = classBarValues[k-1];
 		const color = colorMap.getClassificationColor(val);
 		for (let j = 0; j < mapItem.dataBoxWidth; j++) {
@@ -2139,7 +2086,7 @@ DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, 
 	}
 	for (let j = 0; j < currentClassBar.height-DET.paddingHeight; j++){ // draw the class bar into the dataBuffer
 		pos += (rowClassBarWidth + 1)*DRAW.BYTE_PER_RGBA;
-		for (let k = 0; k < line.length; k++) { 
+		for (let k = 0; k < line.length; k++) {
 			pixels[pos] = line[k];
 			pos++;
 		}
@@ -2149,7 +2096,7 @@ DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, 
 }
 
 /**********************************************************************************
- * FUNCTION - drawScatterBarPlotColClassBar: The purpose of this function is to column 
+ * FUNCTION - drawScatterBarPlotColClassBar: The purpose of this function is to column
  * bar and scatter plot class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, classBarValues, start, length, currentClassBar, colorMap) {
@@ -2161,10 +2108,10 @@ DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, class
 
 	//offset value for width of row class bars
 	let offset = (rowClassBarWidth + 2)*DRAW.BYTE_PER_RGBA;
-	for (let h = 0; h < matrix.length; h++) { 
+	for (let h = 0; h < matrix.length; h++) {
 		pos += offset;
 		let row = matrix[h];
-		for (let k = 0; k < row.length; k++) { 
+		for (let k = 0; k < row.length; k++) {
 			let posVal = row[k];
 			for (let j = 0; j < mapItem.dataBoxWidth; j++) {
 				if (posVal == 1) {
@@ -2193,7 +2140,7 @@ DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, class
 }
 
 /**********************************************************************************
- * FUNCTION - detailDrawRowClassBars: The purpose of this function is to row 
+ * FUNCTION - detailDrawRowClassBars: The purpose of this function is to row
  * class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.detailDrawRowClassBars = function (mapItem, pixels) {
@@ -2218,11 +2165,11 @@ DET.detailDrawRowClassBars = function (mapItem, pixels) {
 			let classBarValues = rowClassBarData[key].values;
 			const classBarLength = classBarValues.length;
 			let start = mapItem.currentRow;
-			const length = SEL.getCurrentDetDataPerCol(mapItem);
+			const length = DVW.getCurrentDetDataPerCol(mapItem);
 			if (((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) &&  (typeof rowClassBarData[key].svalues !== 'undefined')) {
 				//Special case on large maps, if we are showing the whole column, switch to the summary classificaiton values
 				classBarValues = rowClassBarData[key].svalues;
-				const rvRate = heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+				const rvRate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 			    start = Math.ceil(start/rvRate);
 			}
 			let pos = offset; // move past the dendro and the other class bars...
@@ -2237,7 +2184,7 @@ DET.detailDrawRowClassBars = function (mapItem, pixels) {
 }
 
 /**********************************************************************************
- * FUNCTION - drawColorPlotRowClassBar: The purpose of this function is to row 
+ * FUNCTION - drawColorPlotRowClassBar: The purpose of this function is to row
  * color plot class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.drawColorPlotRowClassBar = function(mapItem, pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap) {
@@ -2261,7 +2208,7 @@ DET.drawColorPlotRowClassBar = function(mapItem, pixels, pos, start, length, cur
 }
 
 /**********************************************************************************
- * FUNCTION - drawScatterBarPlotRowClassBar: The purpose of this function is to row 
+ * FUNCTION - drawScatterBarPlotRowClassBar: The purpose of this function is to row
  * bar and scatter plot class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length, height, classBarValues, mapWidth, colorMap, currentClassBar) {
@@ -2269,7 +2216,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	const barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
 	const barCutColor = colorMap.getHexToRgba("#FFFFFF");
 	const matrix = SUM.buildScatterBarPlotMatrix(height, classBarValues, start-1, length, currentClassBar, MMGR.getHeatMap().getTotalRows(), false);
-	for (let h = matrix[0].length-1; h >= 0 ; h--) { 
+	for (let h = matrix[0].length-1; h >= 0 ; h--) {
 		for (let j = 0; j < mapItem.dataBoxHeight; j++) {
 			for (let i = 0; i < height;i++) {
 				const row = matrix[i];
@@ -2294,7 +2241,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 				}
 				pos+=DRAW.BYTE_PER_RGBA;
 			}
-			// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row 
+			// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row
 			// padding between class bars
 			pos+=DET.paddingHeight*DRAW.BYTE_PER_RGBA;
 			pos+=(mapWidth - currentClassBar.height)*DRAW.BYTE_PER_RGBA;
@@ -2323,7 +2270,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
     DET.detInitGl = function (mapItem) {
 	    if (!mapItem.glManager) {
 		mapItem.glManager = DRAW.GL.createGlManager (mapItem.canvas, getDetVertexShader, getDetFragmentShader, () => {
-		    const drawWin = SEL.getDetailWindow(mapItem);
+		    const drawWin = DVW.getDetailWindow(mapItem);
 		    DET.drawDetailHeatMap(mapItem, drawWin);
 		});
 	    }
@@ -2412,7 +2359,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
 		const debug = false;
 		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
-		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DMM.primaryMap === null);
+		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DVW.primaryMap === null);
 		const mapNumber = restoreInfo ? restoreInfo.mapNumber : DMM.nextMapNumber;
 
 		PANE.clearExistingGearDialog(paneId);
@@ -2613,7 +2560,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	//
 	function updateButtonImage (btn, hovering) {
 	        const loc = PANE.findPaneLocation (btn);
-		const mapItem = DMM.getMapItemFromPane (loc.pane.id);
+		const mapItem = DVW.getMapItemFromPane (loc.pane.id);
 		const buttonMode = btn.dataset.mode;
 		if (!mapItem.mode.includes(buttonMode)) {
 			let buttonSrc = buttonBaseName (buttonMode);
@@ -2631,7 +2578,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 
 	function resizeDetailPane (loc) {
 		DMM.detailResize();
-		DET.setDrawDetailTimeout(DMM.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
+		DET.setDrawDetailTimeout(DVW.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
 	}
 
 	function zoomButton (btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
@@ -2674,7 +2621,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 			UHM.hlp(img, btnHelp, btnSize);
 		};
 		img.onclick = function (e) {
-			const mapItem = DMM.getMapItemFromPane(paneId);
+			const mapItem = DVW.getMapItemFromPane(paneId);
 			DEV.clearModeHistory (mapItem);
 			clickFn(mapItem);
 		};

@@ -13,30 +13,20 @@
 // the tile is retrieved.
 //
 
-//Define Namespace for NgChm MatrixManager
+    // Define Namespace for NgChm MatrixManager
     const MMGR = NgChm.createNS('NgChm.MMGR');
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const FLICK = NgChm.importNS('NgChm.FLICK');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const CFG = NgChm.importNS('NgChm.CFG');
 
     const CMM = NgChm.importNS('NgChm.CMM');
-    const SEL = NgChm.importNS('NgChm.SEL');
     const UHM = NgChm.importNS('NgChm.UHM');
     const COMPAT = NgChm.importNS('NgChm.CM');
 
 //For web-based NGCHMs, we will create a Worker process to overlap I/O and computation.
 MMGR.webLoader = null;
-
-// Special values in NG-CHM representation:
-MMGR.maxValues = 2147483647;
-MMGR.minValues = -2147483647;
-
-//Supported map data summary levels.
-MMGR.THUMBNAIL_LEVEL = 'tn';
-MMGR.SUMMARY_LEVEL = 's';
-MMGR.RIBBON_VERT_LEVEL = 'rv';
-MMGR.RIBBON_HOR_LEVEL = 'rh';
-MMGR.DETAIL_LEVEL = 'd';
 
 MMGR.WEB_SOURCE = 'W';
 MMGR.LOCAL_SOURCE = 'L';
@@ -336,29 +326,29 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Return the total number of detail rows
 	this.getTotalRows = function(){
-		return datalevels[MMGR.DETAIL_LEVEL].totalRows;
+		return datalevels[MAPREP.DETAIL_LEVEL].totalRows;
 	}
 	
 	//Return the summary row ratio
 	this.getSummaryRowRatio = function(){
-		if (datalevels[MMGR.SUMMARY_LEVEL] !== null) {
-			return datalevels[MMGR.SUMMARY_LEVEL].rowSummaryRatio;
+		if (datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
+			return datalevels[MAPREP.SUMMARY_LEVEL].rowSummaryRatio;
 		} else {
-			return datalevels[MMGR_THUMBNAIL_LEVEL].rowSummaryRatio;
+			return datalevels[MAPREP.THUMBNAIL_LEVEL].rowSummaryRatio;
 		}
 	}
 	
 	//Return the summary row ratio
 	this.getSummaryColRatio = function(){
-		if (datalevels[MMGR.SUMMARY_LEVEL] !== null) {
-			return datalevels[MMGR.SUMMARY_LEVEL].colSummaryRatio;
+		if (datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
+			return datalevels[MAPREP.SUMMARY_LEVEL].colSummaryRatio;
 		} else {
-			return datalevels[MMGR_THUMBNAIL_LEVEL].col_summaryRatio;
+			return datalevels[MAPREP.THUMBNAIL_LEVEL].col_summaryRatio;
 		}
 	}
 	//Return the total number of detail rows
 	this.getTotalRows = function(){
-		return datalevels[MMGR.DETAIL_LEVEL].totalRows;
+		return datalevels[MAPREP.DETAIL_LEVEL].totalRows;
 	}
 	
 	this.setFlickInitialized = function(value){
@@ -367,12 +357,12 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Return the total number of detail rows
 	this.getTotalCols = function(){
-		return datalevels[MMGR.DETAIL_LEVEL].totalColumns;
+		return datalevels[MAPREP.DETAIL_LEVEL].totalColumns;
 	}
 	
 	//Return the total number of rows/columns on the specified axis.
 	this.getTotalElementsForAxis = function(axis) {
-		const level = datalevels[MMGR.DETAIL_LEVEL];
+		const level = datalevels[MAPREP.DETAIL_LEVEL];
 		return isRow(axis) ? level.totalRows : level.totalColumns;
 	};
 
@@ -407,7 +397,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			return null;
 		
 		if (colorMapMgr == null ) {
-			colorMapMgr = new CMM.ColorMapManager(mapConfig);
+			colorMapMgr = new CMM.ColorMapManager(this, mapConfig);
 		}
 		return colorMapMgr;
 	}
@@ -721,7 +711,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		const currentDl = this.getCurrentDL();
 	    	for (var i = details.startRowTile; i <= details.endRowTile; i++) {
 	    		for (var j = details.startColTile; j <= details.endColTile; j++) {
-				var tileCacheName=currentDl + "." + MMGR.DETAIL_LEVEL + "." + i + "." + j;
+				var tileCacheName=currentDl + "." + MAPREP.DETAIL_LEVEL + "." + i + "." + j;
 	    			if (getTileCacheData(tileCacheName) === null) {
 	     				//Do not yet have tile in cache return false
 	    				return false;
@@ -739,7 +729,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		MMGR.latestReadWindow = null;
 		let details;
 		//Thumb nail and summary level are always kept in the cache.  Don't do fetch for them.
-		if (level != MMGR.THUMBNAIL_LEVEL && level != MMGR.SUMMARY_LEVEL) {
+		if (level != MAPREP.THUMBNAIL_LEVEL && level != MAPREP.SUMMARY_LEVEL) {
 			details = datalevels[level].setReadWindow(row, column, numRows, numColumns);
 		}
 		MMGR.latestReadWindow = details;
@@ -752,7 +742,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	*/
 	this.setReadWindowPromise = function(level, row, column, numRows, numColumns) {
 		return new Promise((resolve, reject) => {
-			if (level != MMGR.THUMBNAIL_LEVEL && level != MMGR.SUMMARY_LEVEL) {
+			if (level != MAPREP.THUMBNAIL_LEVEL && level != MAPREP.SUMMARY_LEVEL) {
 				datalevels[level].setReadWindowPromise(row, column, numRows, numColumns)
 					.then((result) => {
 						resolve(result)
@@ -855,46 +845,31 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 	this.configureFlick = function(){
 		if (!flickInitialized) {
-			var flicks = document.getElementById("flicks");
-			var flickViewsOff = document.getElementById("noFlickViews");
-			var flickViewsDiv = document.getElementById("flickViews");
-			var flick1 = document.getElementById("flick1");
-			var flick2 = document.getElementById("flick2");
-			var dl = this.getDataLayers();
-			var maxDisplay = 0;
-			if (Object.keys(dl).length > 1) {
-				var dls = new Array(Object.keys(dl).length);
-				var orderedKeys = new Array(Object.keys(dl).length);
-				var flickOptions = "";
-				for (var key in dl){
-					var dlNext = key.substring(2, key.length);
+			const dl = this.getDataLayers();
+			const numLayers = Object.keys(dl).length;
+			let maxDisplay = 0;
+			if (numLayers > 1) {
+				const dls = new Array(numLayers);
+				const orderedKeys = new Array(numLayers);
+				for (let key in dl){
+					const dlNext = +key.substring(2, key.length);
 					orderedKeys[dlNext-1] = key;
-					var displayName = dl[key].name;
+					let displayName = dl[key].name;
 					if (displayName.length > maxDisplay) {
 						maxDisplay = displayName.length;
 					}
-					if (displayName.length > 20){
-						displayName = displayName.substring(0,20) + "...";
+					if (displayName.length > 20) {
+						displayName = displayName.substring(0,17) + "...";
 					}
 					dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
 				}
-				for(var i=0;i<dls.length;i++) {
-					flickOptions += dls[i];
-				}
-				flick1.innerHTML=flickOptions;
-				flick2.innerHTML=flickOptions;
-				flick1.value=this.getCurrentDL();
-				flick2.value=orderedKeys[1];
-				flicks.style.display='';
-				flicks.style.right=1;
-				if (flickViewsDiv.style.display === 'none') {;
-					flickViewsOff.style.display='';
-				}
+				FLICK.enableFlicks (dls.join(""), this.getCurrentDL(), orderedKeys[1]);
 			} else {
 				this.setCurrentDL("dl1");
-				flicks.style.display='none';
+				FLICK.disableFlicks();
 			}
 			flickInitialized = true;
+
 			var gearBtnPanel = document.getElementById("pdf_gear");
 			if (maxDisplay > 15) {
 				gearBtnPanel.style.minWidth = '320px';
@@ -1213,11 +1188,11 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					alternateLevels[altLevelId].push (levelId);				}
 			}
 
-			createLevel (MMGR.THUMBNAIL_LEVEL);
-			createLevel (MMGR.SUMMARY_LEVEL, MMGR.THUMBNAIL_LEVEL, MMGR.THUMBNAIL_LEVEL);
-			createLevel (MMGR.DETAIL_LEVEL, MMGR.SUMMARY_LEVEL, MMGR.SUMMARY_LEVEL);
-			createLevel (MMGR.RIBBON_VERT_LEVEL, MMGR.SUMMARY_LEVEL, MMGR.DETAIL_LEVEL);
-			createLevel (MMGR.RIBBON_HOR_LEVEL, MMGR.SUMMARY_LEVEL, MMGR.DETAIL_LEVEL);
+			createLevel (MAPREP.THUMBNAIL_LEVEL);
+			createLevel (MAPREP.SUMMARY_LEVEL, MAPREP.THUMBNAIL_LEVEL, MAPREP.THUMBNAIL_LEVEL);
+			createLevel (MAPREP.DETAIL_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.SUMMARY_LEVEL);
+			createLevel (MAPREP.RIBBON_VERT_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.DETAIL_LEVEL);
+			createLevel (MAPREP.RIBBON_HOR_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.DETAIL_LEVEL);
 
 			prefetchInitialTiles(datalayers, datalevels, levelsConf);
 			sendCallBack(MMGR.Event_INITIALIZED);
@@ -1237,16 +1212,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 		mapConfig = mc;
 		sendCallBack(MMGR.Event_JSON);
-
-		// set the position to (1,1) so that the detail pane loads at the top left corner of the summary.
-		SEL.currentRow = 1;
-		SEL.currentCol = 1;
-		if (UTIL.getURLParameter("row") !== "" && !isNaN(Number(UTIL.getURLParameter("row")))){
-			SEL.currentRow = Number(UTIL.getURLParameter("row"))
-		}
-		if (UTIL.getURLParameter("column") !== "" && !isNaN(Number(UTIL.getURLParameter("column")))){
-			SEL.currentCol = Number(UTIL.getURLParameter("column"))
-		}
 		addDataLayers(mc);
 	}
 	
@@ -1262,15 +1227,15 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		// Prefetch tiles for initial (first) layer.
 		if (levels.tn !== undefined) {
 			//Kickoff retrieve of thumb nail data tile.
-			datalevels[MMGR.THUMBNAIL_LEVEL].loadTiles(layers1, levels.tn.tile_rows, levels.tn.tile_cols);
+			datalevels[MAPREP.THUMBNAIL_LEVEL].loadTiles(layers1, levels.tn.tile_rows, levels.tn.tile_cols);
 		}
 		if (levels.d !== undefined) {
 			// Initial tile for detail pane only. (Assume top-left tile.)
-			datalevels[MMGR.DETAIL_LEVEL].loadTiles(layers1, 1, 1);
+			datalevels[MAPREP.DETAIL_LEVEL].loadTiles(layers1, 1, 1);
 		}
 		if (levels.s !== undefined) {
 			//Kickoff retrieve of summary data tiles.
-			datalevels[MMGR.SUMMARY_LEVEL].loadTiles(layers1, levels.s.tile_rows, levels.s.tile_cols);
+			datalevels[MAPREP.SUMMARY_LEVEL].loadTiles(layers1, levels.s.tile_rows, levels.s.tile_cols);
 		}
 
 		if (otherLayers.length > 0) {
@@ -1278,11 +1243,11 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		// Prefetch tiles for other layers.
 		if (levels.tn !== undefined) {
 			//Kickoff retrieve of thumb nail data tile.
-			datalevels[MMGR.THUMBNAIL_LEVEL].loadTiles(otherLayers, levels.tn.tile_rows, levels.tn.tile_cols);
+			datalevels[MAPREP.THUMBNAIL_LEVEL].loadTiles(otherLayers, levels.tn.tile_rows, levels.tn.tile_cols);
 		}
 		if (levels.s !== undefined) {
 			//Kickoff retrieve of summary data tiles.
-			datalevels[MMGR.SUMMARY_LEVEL].loadTiles(otherLayers, levels.s.tile_rows, levels.s.tile_cols);
+			datalevels[MAPREP.SUMMARY_LEVEL].loadTiles(otherLayers, levels.s.tile_rows, levels.s.tile_cols);
 		}
 			}, 0);
 		}
@@ -1392,12 +1357,12 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		const heatMap = MMGR.getHeatMap();
 		//Initialize event
 		if ((event === MMGR.Event_INITIALIZED) || (event === MMGR.Event_JSON) ||
-			((event === MMGR.Event_NEWDATA) && (tile.level === MMGR.THUMBNAIL_LEVEL))) {
+			((event === MMGR.Event_NEWDATA) && (tile.level === MAPREP.THUMBNAIL_LEVEL))) {
 			//Only send initialized status if several conditions are met: need all summary JSON and thumb nail.
 			if ((mapData != null) &&
 				(mapConfig != null) &&
 				(Object.keys(datalevels).length > 0) &&
-				(haveTileData(heatMap.getCurrentDL()+"."+MMGR.THUMBNAIL_LEVEL+".1.1")) &&
+				(haveTileData(heatMap.getCurrentDL()+"."+MAPREP.THUMBNAIL_LEVEL+".1.1")) &&
 				 (initialized == 0)) {
 					initialized = 1;
 					configurePageHeader();
@@ -1410,8 +1375,8 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			}
 			//Unlikely, but possible to get init finished after all the summary tiles.
 			//As a back stop, if we already have the top left summary tile, send a data update event too.
-			if (haveTileData(heatMap.getCurrentDL()+"."+MMGR.SUMMARY_LEVEL+".1.1")) {
-				sendAllListeners(MMGR.Event_NEWDATA, { layer: heatMap.getCurrentDL(), level: MMGR.SUMMARY_LEVEL, row: 1, col: 1});
+			if (haveTileData(heatMap.getCurrentDL()+"."+MAPREP.SUMMARY_LEVEL+".1.1")) {
+				sendAllListeners(MMGR.Event_NEWDATA, { layer: heatMap.getCurrentDL(), level: MAPREP.SUMMARY_LEVEL, row: 1, col: 1});
 			}
 		} else	if ((event === MMGR.Event_NEWDATA) && (initialized === 1)) {
 			sendAllListeners(event, tile);

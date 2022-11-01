@@ -10,13 +10,14 @@
     const UIMGR = NgChm.createNS('NgChm.UI-Manager');
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const FLICK = NgChm.importNS('NgChm.FLICK');
     const SUM = NgChm.importNS('NgChm.SUM');
     const PDF = NgChm.importNS('NgChm.PDF');
     const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
     const DMM = NgChm.importNS('NgChm.DMM');
     const LNK = NgChm.importNS('NgChm.LNK');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const PANE = NgChm.importNS('NgChm.Pane');
     const SRCH = NgChm.importNS('NgChm.SRCH');
@@ -107,7 +108,7 @@
 	* Save enough information from the detail map to reconstruct the zoom/pan state
 	*/
 	function saveDetailMapInfoToMapConfig() {
-		DMM.DetailMaps.forEach(dm => {
+		DVW.detailMaps.forEach(dm => {
 			mapConfig.panel_configuration[dm.pane] = DET.getDetailSaveState (dm);
 		})
 	}
@@ -207,15 +208,15 @@
 
 
 	    CUST.addCustomJS();
-	    document.addEventListener ("keydown", DEV.keyNavigate);
+	    document.addEventListener ("keydown", keyNavigate);
 		if (MMGR.source === MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (SUM.chmElement) {
 				PANE.emptyPaneLocation (PANE.findPaneLocation (SUM.chmElement));
 			}
-			if (DMM.DetailMaps.length > 0) {
-				for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-					PANE.emptyPaneLocation (PANE.findPaneLocation (DMM.DetailMaps[i].chm));
+			if (DVW.detailMaps.length > 0) {
+				for (let i=0; i<DVW.detailMaps.length;i++ ) {
+					PANE.emptyPaneLocation (PANE.findPaneLocation (DVW.detailMaps[i].chm));
 				}
 			}
 		}
@@ -268,7 +269,9 @@
 		const initialLoc = PANE.initializePanes ();
 		const panelConfig = MMGR.getHeatMap().getPanelConfiguration();
 		if (panelConfig) {
-			RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig);
+			RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig, {
+			    setFlickState: setFlickState,
+			});
 		} else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
 			const s = PANE.splitPane (false, initialLoc);
 			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
@@ -415,7 +418,18 @@
 	    UHM.invalidFileFormat();
 	} else {
 	    displayFileModeCHM(chmFile);
-	    SEL.openFileToggle();
+	    openFileToggle();
+	}
+    }
+
+    function openFileToggle () {
+	const fileButton = document.getElementById('fileButton');
+	const detailButtons = document.getElementById('detail_buttons');
+	if (fileButton.style.display === 'none') {
+	    location.reload();
+	} else {
+	    fileButton.style.display = 'none';
+	    detailButtons.style.display = '';
 	}
     }
 
@@ -461,15 +475,8 @@
      * from one file-mode heatmap to another
      **********************************************************************************/
     function resetCHM () {
-    //	SEL.mode = 'NORMAL';
-	    SEL.currentRow=null;
-	    SEL.currentCol=null;
-    //	SEL.dataPerRow=null;
-    //	SEL.dataPerCol=null;
-    //	SEL.selectedStart=0;
-    //	SEL.selectedStop=0;
 	    SRCH.clearAllSearchResults ();
-	    SEL.scrollTime = null;
+	    DVW.scrollTime = null;
 	    SUM.colDendro = null;
 	    SUM.rowDendro = null;
     }
@@ -489,7 +496,7 @@
 	    DET.detailHeatMapCache = {};
 	    DET.detailHeatMapLevel = {};
 	    DET.detailHeatMapValidator = {};
-	    DET.mouseDown = false;
+	    DEV.setMouseDown (false);
 	    MMGR.initAxisLabels();
 	    UTIL.removeElementsByClass("DynamicLabel");
 	    SRCH.clearCurrentSearchItem ();
@@ -998,5 +1005,131 @@
     document.getElementById('menuSave').onclick = () => {
 	saveHeatMapChanges();
     };
+
+    document.getElementById('fileOpen_btn').onclick = () => {
+	openFileToggle();
+    };
+
+    /************************************************************************************************
+     * FUNCTION: flickChange - Responds to a change in the flick view control.  All of these actions
+     * depend upon the flick control being visible (i.e. active) There are 3 types of changes
+     * (1) User clicks on the toggle control. (2) User changes the value of one of the 2 dropdowns
+     * AND the toggle control is on that dropdown. (3) The user presses the one or two key, corresponding
+     * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown.
+     * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
+     ***********************************************************************************************/
+    UIMGR.flickChange = function(fromList) {
+	const newDataLayer = FLICK.toggleFlickState (fromList);
+	setDataLayer (newDataLayer);
+    };
+    FLICK.setFlickHandler (UIMGR.flickChange);
+
+    function setFlickState (state) {
+	const newDataLayer = FLICK.setFlickState (state);
+	setDataLayer (newDataLayer);
+    }
+
+    function setDataLayer (newDataLayer) {
+	if (!newDataLayer) return;
+
+	const heatMap = MMGR.getHeatMap();
+	heatMap.setCurrentDL (newDataLayer);
+
+	SUM.buildSummaryTexture();
+	DVW.detailMaps.forEach(dm => {
+		dm.currentDl = newDataLayer;
+	})
+	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout);
+    }
+
+    /*********************************************************************************************
+     * FUNCTION:  keyNavigate - The purpose of this function is to handle a user key press event.
+     * As key presses are received at the document level, their detail processing will be routed to
+     * the primary detail panel.
+     *********************************************************************************************/
+    function keyNavigate (e) {
+	const mapItem = DVW.primaryMap;
+	UHM.hlpC();
+	if (e.target.type != "text" && e.target.type != "textarea") {
+		switch(e.keyCode){ // prevent default added redundantly to each case so that other key inputs won't get ignored
+			case 37: // left key
+				if (document.activeElement.id !== "search_text"){
+					e.preventDefault();
+					if (e.shiftKey){mapItem.currentCol -= mapItem.dataPerRow;}
+					else if (e.ctrlKey){mapItem.currentCol -= 1;mapItem.selectedStart -= 1;mapItem.selectedStop -= 1; DET.callDetailDrawFunction(mapItem.mode);}
+					else {mapItem.currentCol--;}
+				}
+				break;
+			case 38: // up key
+				if (document.activeElement.id !== "search_text"){
+					e.preventDefault();
+					if (e.shiftKey){mapItem.currentRow -= mapItem.dataPerCol;}
+					else if (e.ctrlKey){mapItem.selectedStop += 1; DET.callDetailDrawFunction(mapItem.mode);}
+					else {mapItem.currentRow--;}
+				}
+				break;
+			case 39: // right key
+				if (document.activeElement.id !== "search_text"){
+					e.preventDefault();
+					if (e.shiftKey){mapItem.currentCol += mapItem.dataPerRow;}
+					else if (e.ctrlKey){mapItem.currentCol += 1;mapItem.selectedStart += 1;mapItem.selectedStop += 1; DET.callDetailDrawFunction(mapItem.mode);}
+					else {mapItem.currentCol++;}
+				}
+				break;
+			case 40: // down key
+				if (document.activeElement.id !== "search_text"){
+					e.preventDefault();
+					if (e.shiftKey){mapItem.currentRow += mapItem.dataPerCol;}
+					else if (e.ctrlKey){mapItem.selectedStop -= 1; DET.callDetailDrawFunction(mapItem.mode);}
+					else {mapItem.currentRow++;}
+				}
+				break;
+			case 33: // page up
+				e.preventDefault();
+				if (e.shiftKey){
+					let newMode;
+					clearDendroSelection();
+					switch(mapItem.mode){
+						case "RIBBONV": newMode = 'RIBBONH'; break;
+						case "RIBBONH": newMode = 'NORMAL'; break;
+						default: newMode = mapItem.mode;break;
+					}
+					DET.callDetailDrawFunction(newMode);
+				} else {
+					DEV.zoomAnimation(mapItem.chm);
+				}
+				break;
+			case 34: // page down
+				e.preventDefault();
+				if (e.shiftKey){
+					let newMode;
+					clearDendroSelection();
+					switch(mapItem.mode){
+						case "NORMAL": newMode = 'RIBBONH'; break;
+						case "RIBBONH": newMode = 'RIBBONV'; break;
+						default: newMode = mapItem.mode;break;
+					}
+					DET.callDetailDrawFunction(newMode);
+				} else {
+					DEV.detailDataZoomOut(mapItem.chm);
+				}
+				break;
+			case 113: // F2 key
+				if (FLICK.flickIsOn()) {
+				    UIMGR.flickChange (FLICK.isFlickUp() ? "toggle2" : "toggle1");
+				}
+				break;
+			default:
+				return;
+		}
+		DVW.checkRow(mapItem);
+		DVW.checkCol(mapItem);
+	    mapItem.updateSelection();
+	} else {
+	    if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
+		    SRCH.detailSearch();
+	    }
+	}
+    }
 
 })();

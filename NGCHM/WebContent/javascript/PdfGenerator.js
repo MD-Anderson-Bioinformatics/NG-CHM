@@ -9,8 +9,9 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const DMM = NgChm.importNS('NgChm.DMM');
     const DET = NgChm.importNS('NgChm.DET');
-    const SEL = NgChm.importNS('NgChm.SEL');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const PANE = NgChm.importNS('NgChm.Pane');
@@ -29,7 +30,7 @@ PDF.isGenerating = false;
  * button on the menu bar.  The PDF preferences panel is then launched
  **********************************************************************************/
 PDF.canGeneratePdf = function() {
-	return SUM.isVisible() || DMM.anyVisible();
+	return SUM.isVisible() || DVW.anyVisible();
 };
 
 PDF.openPdfPrefs = function(e) {
@@ -45,17 +46,17 @@ PDF.openPdfPrefs = function(e) {
 	const sumButton = document.getElementById ('pdfInputSummaryMap');
 	const detButton = document.getElementById ('pdfInputDetailMap');
 	const bothButton = document.getElementById ('pdfInputBothMaps');
-	if (SUM.isVisible() && !DMM.anyVisible()) {
+	if (SUM.isVisible() && !DVW.anyVisible()) {
 		sumButton.checked = true;
 		sumButton.disabled = false;
 		detButton.disabled = true;
 		bothButton.disabled = true;
-	} else if (DMM.anyVisible() && !SUM.isVisible()) {
+	} else if (DVW.anyVisible() && !SUM.isVisible()) {
 		detButton.checked = true;
 		sumButton.disabled = true;
 		detButton.disabled = false;
 		bothButton.disabled = true;
-	} else if (SUM.isVisible() && DMM.anyVisible()) {
+	} else if (SUM.isVisible() && DVW.anyVisible()) {
 		bothButton.checked = true;
 		sumButton.disabled = false;
 		detButton.disabled = false;
@@ -78,7 +79,7 @@ PDF.openPdfPrefs = function(e) {
 	if (labels.length > 0) {
 		document.getElementById("pdfInputFont").value = parseInt(labels[0].style["font-size"]);
 	} else {
-		const fSize = Math.min(DMM.primaryMap.colLabelFont,DMM.primaryMap.rowLabelFont);
+		const fSize = Math.min(DVW.primaryMap.colLabelFont,DVW.primaryMap.rowLabelFont);
 		if (fSize > 0) {
 			document.getElementById("pdfInputFont").value = fSize;
 		} else {
@@ -97,7 +98,7 @@ PDF.pdfCancelButton = function() {
 	document.getElementById('pdfErrorMessage').style.display="none";
 	var prefspanel = document.getElementById('pdfPrefs');
 	prefspanel.classList.add ('hide');
-	DMM.primaryMap.canvas.focus();
+	DVW.primaryMap.canvas.focus();
 }
 
 /**********************************************************************************
@@ -185,7 +186,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 PDF.callViewerHeatmapPDF = function() {
 	document.body.style.cursor = 'wait';
     const heatMap = MMGR.getHeatMap();
-    const details = heatMap.setReadWindow(SEL.getLevelFromMode(DMM.primaryMap, MMGR.DETAIL_LEVEL),1,1,heatMap.getNumRows(MMGR.DETAIL_LEVEL),heatMap.getNumColumns(MMGR.DETAIL_LEVEL));
+    const details = heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
     let tilesReady = heatMap.allTilesAvailable();
     if (tilesReady === true) {
 	 PDF.getViewerHeatmapPDF();
@@ -217,7 +218,7 @@ PDF.pdfDataReady = function(event, tile) {
  * https://mrrio.github.io/jsPDF/doc/symbols/jsPDF.html#setLineCap
  **********************************************************************************/
 PDF.getViewerHeatmapPDF = function() {
-	SEL.updateSelections(true);
+	DVW.updateSelections(true);
 	setTimeout(function(){ PDF.genViewerHeatmapPDF(); }, 1500);
 }
 
@@ -415,7 +416,7 @@ PDF.genViewerHeatmapPDF = function() {
 
 	// Reset Summary and Detail Panels on Viewer Screen
 	if (includeDetailMap) {
-		DMM.primaryMap.canvas.focus();
+		DVW.primaryMap.canvas.focus();
 		DMM.detailResize();
 	}
 	
@@ -920,8 +921,8 @@ PDF.genViewerHeatmapPDF = function() {
 	 * onto the detail heat map PDF page.
 	 **********************************************************************************/
 	function drawDetailHeatMapPages(theFont) {
-		for (let i=0; i<DMM.DetailMaps.length;i++ ) {
-			const mapItem = DMM.DetailMaps[i];
+		for (let i=0; i<DVW.detailMaps.length;i++ ) {
+			const mapItem = DVW.detailMaps[i];
 			const loc = PANE.findPaneLocation (mapItem.chm);
 			if (loc.pane.classList.contains('collapsed')) {
 				break;
@@ -1101,17 +1102,17 @@ PDF.genViewerHeatmapPDF = function() {
 			breaks[i]+=lowBP+diff/(breaks.length-1)*i; // array of the breakpoints shown in the preview div
 			breaks[i]=parseFloat(breaks[i].toFixed(2));
 		}
-		var numCol = heatMap.getNumColumns(MMGR.DETAIL_LEVEL);
-		var numRow = heatMap.getNumRows(MMGR.DETAIL_LEVEL)
+		var numCol = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
+		var numRow = heatMap.getNumRows(MAPREP.DETAIL_LEVEL)
 		var count = 0;
 		var nan=0;
 		for (var i=1; i<numCol+1;i++){
 			for(var j=1;j<numRow+1;j++){
 				count++;
-				var val = Number(Math.round(heatMap.getValue(MMGR.DETAIL_LEVEL,j,i)+'e4')+'e-4')
-				if (isNaN(val) || val>=MMGR.maxValues){ // is it Missing value?
+				var val = Number(Math.round(heatMap.getValue(MAPREP.DETAIL_LEVEL,j,i)+'e4')+'e-4')
+				if (isNaN(val) || val>=MAPREP.maxValues){ // is it Missing value?
 					nan++;
-				} else if (val <= MMGR.minValues){ // is it a cut location?
+				} else if (val <= MAPREP.minValues){ // is it a cut location?
 					continue;
 				}
 				if (val <= breaks[0]){

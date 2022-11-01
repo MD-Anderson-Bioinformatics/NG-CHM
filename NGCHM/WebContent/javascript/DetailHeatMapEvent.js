@@ -5,26 +5,37 @@
     //Define Namespace for NgChm Events
     const DEV = NgChm.createNS('NgChm.DEV');
 
-    const DMM = NgChm.importNS('NgChm.DMM');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
+    const MMGR = NgChm.importNS('NgChm.MMGR');
+    const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const UHM = NgChm.importNS('NgChm.UHM');
-    const SEL = NgChm.importNS('NgChm.SEL');
     const DDR = NgChm.importNS('NgChm.DDR');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');
-    const MMGR = NgChm.importNS('NgChm.MMGR');
     const DRAW = NgChm.importNS('NgChm.DRAW');
+    var mouseEventActive = false;
+    var mouseDown = false;
 
     DEV.targetCanvas = null;
+    var scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
+
+    DEV.clearScrollTime = function() {
+	scrollTime = null;
+    };
+
+    DEV.setMouseDown = function (isDown) {
+	mouseDown = isDown;
+    };
 
 /**********************************************************************************
  * FUNCTION - addEvents: These function adds event listeners to canvases on a
  * given heat map panel.  
  **********************************************************************************/
 DEV.addEvents = function (paneId) {
-	const mapItem = DMM.getMapItemFromPane(paneId);
+	const mapItem = DVW.getMapItemFromPane(paneId);
 	mapItem.canvas.oncontextmenu = DEV.matrixRightClick;
 	mapItem.canvas.onmouseup = DEV.clickEnd;
 	mapItem.canvas.onmousemove = DEV.handleMouseMove;
@@ -73,7 +84,7 @@ DEV.addEvents = function (paneId) {
 	    		mapItem.latestPinchDistance = distance;
 	    	} else if (e.touches.length == 1){
 			clearTimeout(DET.eventTimer);
-			DET.mouseDown = true;
+			mouseDown = true;
 			DET.handleMoveDrag(e);
 	    	}
 	    }
@@ -81,7 +92,7 @@ DEV.addEvents = function (paneId) {
 	
 	mapItem.canvas.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
-			DET.mouseDown = false;
+			mouseDown = false;
 			mapItem.latestPinchDistance = null;
 			const now = new Date().getTime();
 			if (mapItem.latestTap){
@@ -105,39 +116,27 @@ DEV.addEvents = function (paneId) {
 	const rowLabelDiv = document.getElementById(mapItem.rowLabelDiv);
 	const colLabelDiv = document.getElementById(mapItem.colLabelDiv);
 	
-	rowLabelDiv.addEventListener("touchstart", function(e){
+	addLabelTouchEventHandlers (mapItem, rowLabelDiv);
+	addLabelTouchEventHandlers (mapItem, colLabelDiv);
+
+	function addLabelTouchEventHandlers (mapItem, labelDiv) {
+	    labelDiv.addEventListener("touchstart", function(e){
 		UHM.hlpC();
 		const now = new Date().getTime();
 		mapItem.latestLabelTap = now;
-	}, UTIL.passiveCompat({ passive: true }));
-		
-	rowLabelDiv.addEventListener("touchend", function(e){
+	    }, UTIL.passiveCompat({ passive: true }));
+
+	    labelDiv.addEventListener("touchend", function(e){
 		if (e.touches.length == 0){
 			const now = new Date().getTime();
 			const timesince = now - mapItem.latestLabelTap;
 			if (timesince > 500){
-				DEV.labelRightClick(e);
+			    mapItem.labelCallbacks.labelRightClick(e);
 			}
 		}
-	}, UTIL.passiveCompat({ passive: false }));
-	
-	colLabelDiv.addEventListener("touchstart", function(e){
-		UHM.hlpC();
-		const now = new Date().getTime();
-		mapItem.latestLabelTap = now;
-	}, UTIL.passiveCompat({ passive: true }));
-	
-	colLabelDiv.addEventListener("touchend", function(e){
-		if (e.touches.length == 0){
-			const now = new Date().getTime();
-			const timesince = now - mapItem.latestLabelTap;
-			if (timesince > 500){
-				DEV.labelRightClick(e);
-			}
-		}
-	}, UTIL.passiveCompat({ passive: false }));
-	
-}
+	    }, UTIL.passiveCompat({ passive: false }));
+	}
+};
 
 /**********************************************************************************
  * FUNCTION - userHelpOpen: This function handles all of the tasks necessary to
@@ -179,19 +178,19 @@ DEV.userHelpOpen = function(mapItem) {
 	}
     }
     if (objectType === "map") {
-	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
-	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
+	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio('row'));
+	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio('col'));
 	if ((row <= heatMap.getNumRows('d')) && (col <= heatMap.getNumColumns('d'))) {
 		// Gather the information about the current pixel.
-		let matrixValue = heatMap.getValue(MMGR.DETAIL_LEVEL,row,col);
-		if (matrixValue >= MMGR.maxValues) {
+		let matrixValue = heatMap.getValue(MAPREP.DETAIL_LEVEL,row,col);
+		if (matrixValue >= MAPREP.maxValues) {
 		    matrixValue = "Missing Value";
-		} else if (matrixValue <= MMGR.minValues) {
+		} else if (matrixValue <= MAPREP.minValues) {
 		    return; // A gap.
 		} else {
 		    matrixValue = matrixValue.toFixed(5);
 		}
-		if (DMM.primaryMap.mode === 'FULL_MAP') {
+		if (DVW.primaryMap.mode === 'FULL_MAP') {
 		    matrixValue = matrixValue + "<br>(summarized)";
 		}
 
@@ -242,7 +241,7 @@ DEV.userHelpOpen = function(mapItem) {
 	var pos, value, label;
 	var hoveredBar, hoveredBarColorScheme, hoveredBarValues;
 	if (objectType === "colClass") {
-		var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
+		var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio('col'));
 		var colLabels = heatMap.getColLabels().labels;
 		label = colLabels[col-1];
 		var coveredHeight = 0;
@@ -263,7 +262,7 @@ DEV.userHelpOpen = function(mapItem) {
 		}
 		var colorMap = heatMap.getColorMapManager().getColorMap("col",hoveredBar);
 	} else {
-		var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
+		var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio('row'));
 		var rowLabels = heatMap.getRowLabels().labels;
 		label = rowLabels[row-1];
 		var coveredWidth = 0;
@@ -423,11 +422,11 @@ DEV.handleScroll = function(evt) {
 	evt.preventDefault();
 	let parentElement = evt.target.parentElement;
 	if (!parentElement.classList.contains('detail_chm')) {
-	        if (!DMM.primaryMap) return;
-		parentElement = DMM.primaryMap.chm;
+	        if (!DVW.primaryMap) return;
+		parentElement = DVW.primaryMap.chm;
 	}
-	if (SEL.scrollTime == null || evt.timeStamp - SEL.scrollTime > 150){
-		SEL.scrollTime = evt.timeStamp;
+	if (scrollTime == null || evt.timeStamp - scrollTime > 150){
+		scrollTime = evt.timeStamp;
 		if (evt.wheelDelta < -30 || evt.deltaY > 0 || evt.scale < 1) { //Zoom out
             DEV.detailDataZoomOut(parentElement);
 		} else if ((evt.wheelDelta > 30 || evt.deltaY < 0 || evt.scale > 1)){ // Zoom in
@@ -437,117 +436,20 @@ DEV.handleScroll = function(evt) {
 	return false;
 } 		
 
-
-/*********************************************************************************************
- * FUNCTION:  keyNavigate - The purpose of this function is to handle a user key press event. 
- * As key presses are received at the document level, their detail processing will be routed to
- * the primary detail panel. 
- *********************************************************************************************/
-DEV.keyNavigate = function(e) {
-	const mapItem = DMM.primaryMap;
-	UHM.hlpC();
-    if (e.target.type != "text" && e.target.type != "textarea"){
-		switch(e.keyCode){ // prevent default added redundantly to each case so that other key inputs won't get ignored
-			case 37: // left key 
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (e.shiftKey){mapItem.currentCol -= mapItem.dataPerRow;} 
-					else if (e.ctrlKey){mapItem.currentCol -= 1;mapItem.selectedStart -= 1;mapItem.selectedStop -= 1; DEV.callDetailDrawFunction(mapItem.mode);}
-					else {mapItem.currentCol--;}
-				}
-				break;
-			case 38: // up key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (e.shiftKey){mapItem.currentRow -= mapItem.dataPerCol;} 
-					else if (e.ctrlKey){mapItem.selectedStop += 1; DEV.callDetailDrawFunction(mapItem.mode);}
-					else {mapItem.currentRow--;}
-				}
-				break;
-			case 39: // right key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (e.shiftKey){mapItem.currentCol += mapItem.dataPerRow;} 
-					else if (e.ctrlKey){mapItem.currentCol += 1;mapItem.selectedStart += 1;mapItem.selectedStop += 1; DEV.callDetailDrawFunction(mapItem.mode);} 
-					else {mapItem.currentCol++;}
-				}
-				break;
-			case 40: // down key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (e.shiftKey){mapItem.currentRow += mapItem.dataPerCol;} 
-					else if (e.ctrlKey){mapItem.selectedStop -= 1; DEV.callDetailDrawFunction(mapItem.mode);} 
-					else {mapItem.currentRow++;}
-				}
-				break;
-			case 33: // page up
-				e.preventDefault();
-				if (e.shiftKey){
-					let newMode;
-					DDR.clearDendroSelection();
-					switch(mapItem.mode){
-						case "RIBBONV": newMode = 'RIBBONH'; break;
-						case "RIBBONH": newMode = 'NORMAL'; break;
-						default: newMode = mapItem.mode;break;
-					}
-					DEV.callDetailDrawFunction(newMode);
-				} else {
-					DEV.zoomAnimation(mapItem.chm);
-				}
-				break;
-			case 34: // page down 
-				e.preventDefault();
-				if (e.shiftKey){
-					let newMode;
-					DDR.clearDendroSelection();
-					switch(mapItem.mode){
-						case "NORMAL": newMode = 'RIBBONH'; break;
-						case "RIBBONH": newMode = 'RIBBONV'; break;
-						default: newMode = mapItem.mode;break;
-					}
-					DEV.callDetailDrawFunction(newMode);
-				} else {
-					DEV.detailDataZoomOut(mapItem.chm);
-				}
-				break;
-			case 113: // F2 key 
-				if (SEL.flickIsOn()) {
-					let flickBtn = document.getElementById("flick_btn");
-					if (flickBtn.dataset.state === 'flickUp') {
-						SEL.flickChange("toggle2");
-					} else {
-						SEL.flickChange("toggle1");
-					}
-				}
-				break;
-			default:
-				return;
-		}
-		SEL.checkRow(mapItem);
-		SEL.checkCol(mapItem);
-	    SEL.updateSelection(mapItem);
-    } else {
-    	if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
-		SRCH.detailSearch();
-    	}
-    }
-	
-}
-
 /*********************************************************************************************
  * FUNCTION:  clickStart - The purpose of this function is to handle a user mouse down event.  
  *********************************************************************************************/
 DEV.clickStart = function (e) {
 	e.preventDefault();
-	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
-	SUM.mouseEventActive = true;
+	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
+	mouseEventActive = true;
 	const clickType = UTIL.getClickType(e);
 	UHM.hlpC();
 	if (clickType === 0) { 
 		const coords = UTIL.getCursorPosition(e);
 		mapItem.dragOffsetX = coords.x;  //canvas X coordinate 
 		mapItem.dragOffsetY = coords.y;
-		DET.mouseDown = true;
+		mouseDown = true;
 		// client space
 		const divW = e.target.clientWidth;
 		const divH = e.target.clientHeight;
@@ -580,17 +482,17 @@ DEV.clickStart = function (e) {
  * user help is opened for that cell.
  *********************************************************************************************/
 DEV.clickEnd = function (e) {
-	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
-	if (SUM.mouseEventActive) {
+	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
+	if (mouseEventActive) {
 		const clickType = UTIL.getClickType(e);
 		if (clickType === 0) {
 			//Reset mouse event indicators
-			DET.mouseDown = false;
+			mouseDown = false;
 			//Set cursor back to default
 			mapItem.canvas.style.cursor="default";
 		}
 	}
-	SUM.mouseEventActive = false;
+	mouseEventActive = false;
 }
 
 /*********************************************************************************************
@@ -599,7 +501,7 @@ DEV.clickEnd = function (e) {
  * Zoom in if the shift key is not held down and zoom out if the key is held down.
  *********************************************************************************************/
 DEV.dblClick = function(e) {
-	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
 	//turn off single click help if double click
 	clearTimeout(DET.eventTimer);
 	UHM.hlpC();
@@ -610,14 +512,14 @@ DEV.dblClick = function(e) {
 	const mapLocY = coords.y - DET.getColClassPixelHeight(mapItem);
 	const mapLocX = coords.x - DET.getRowClassPixelWidth(mapItem);
 
-	const clickRow = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio('row'));
-	const clickCol = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio('col'));
-	const destRow = clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2);
-	const destCol = clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerRow(mapItem)/2);
+	const clickRow = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio('row'));
+	const clickCol = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio('col'));
+	const destRow = clickRow + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2);
+	const destCol = clickCol + 1 - Math.floor(DVW.getCurrentDetDataPerRow(mapItem)/2);
 	
 	// set up panning animation 
-	const diffRow =  clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2) - mapItem.currentRow;
-	const diffCol =  clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerRow(mapItem)/2) - mapItem.currentCol;
+	const diffRow =  clickRow + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2) - mapItem.currentRow;
+	const diffCol =  clickCol + 1 - Math.floor(DVW.getCurrentDetDataPerRow(mapItem)/2) - mapItem.currentCol;
 	const diffMax = Math.max(diffRow,diffCol);
 	const numSteps = 7;
 	const rowStep = diffRow/numSteps;
@@ -631,11 +533,11 @@ DEV.dblClick = function(e) {
 	function drawScene(now){
 		steps++;
 		if (steps < numSteps && !(mapItem.currentRow == destRow && mapItem.currentCol == destCol)){ // if we have not finished the animation, continue redrawing
-			mapItem.currentRow = clickRow + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*rowStep);
-			mapItem.currentCol = clickCol + 1 - Math.floor(SEL.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*colStep);
-			SEL.checkRow(mapItem);
-			SEL.checkCol(mapItem);
-			SEL.updateSelection(mapItem);
+			mapItem.currentRow = clickRow + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*rowStep);
+			mapItem.currentCol = clickCol + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem)/2 + (numSteps-steps)*colStep);
+			DVW.checkRow(mapItem);
+			DVW.checkCol(mapItem);
+			mapItem.updateSelection();
 			requestAnimationFrame(drawScene); // requestAnimationFrame is a native JS function that calls drawScene after a short time delay
 		} else { // if we are done animating, zoom in
 			mapItem.currentRow = destRow;
@@ -647,9 +549,9 @@ DEV.dblClick = function(e) {
 				DEV.zoomAnimation(mapItem.chm, clickRow, clickCol);
 			}
 			//Center the map on the cursor position
-			SEL.checkRow(mapItem);
-			SEL.checkCol(mapItem);
-			SEL.updateSelection(mapItem);
+			DVW.checkRow(mapItem);
+			DVW.checkCol(mapItem);
+			mapItem.updateSelection();
 		}
 	}
 }
@@ -659,7 +561,7 @@ DEV.dblClick = function(e) {
  * detail panel.
  *********************************************************************************************/
 DEV.labelClick = function (e) {
-	const mapItem = DMM.getMapItemFromChm(e.target.parentElement.parentElement);
+	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
 	SRCH.showSearchResults();
 	//These were changed from vars defined multiple times below
 	let searchIndex = null;
@@ -708,7 +610,7 @@ DEV.labelClick = function (e) {
 	document.getElementById('cancel_btn').style.display='';
 	SUM.clearSelectionMarks();
 	DET.updateDisplayedLabels();
-	SEL.updateSelections();
+	DVW.updateSelections();
 	SUM.drawSelectionMarks();
 	SUM.drawTopItems();
 	SRCH.showSearchResults();
@@ -719,7 +621,7 @@ DEV.labelClick = function (e) {
  * detail panel.
  *********************************************************************************************/
 DEV.labelDrag = function(e){
-	const mapItem = DMM.getMapItemFromChm(e.target.parentElement.parentElement);
+	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
 	e.preventDefault();
 	mapItem.latestLabelTap = null;
 	const selection = window.getSelection();
@@ -748,7 +650,7 @@ DEV.labelDrag = function(e){
 	document.getElementById('cancel_btn').style.display='';
 	DET.updateDisplayedLabels();
 	SRCH.showSearchResults();
-	SEL.updateSelections();
+	DVW.updateSelections();
 	SUM.drawSelectionMarks();
 	SUM.drawTopItems();
 	SRCH.showSearchResults();
@@ -782,73 +684,6 @@ DEV.matrixRightClick = function (e) {
     return false;
 };
 
-/************************************************************************************************
- * FUNCTION: flickChange - Responds to a change in the flick view control.  All of these actions 
- * depend upon the flick control being visible (i.e. active) There are 3 types of changes 
- * (1) User clicks on the toggle control. (2) User changes the value of one of the 2 dropdowns 
- * AND the toggle control is on that dropdown. (3) The user presses the one or two key, corresponding
- * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown. 
- * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
- ***********************************************************************************************/ 
-(function() {
-    // Table of flick button images so that Widgetizer only adds one
-    // data: URL for each to the widget.
-    const toggleButtons = {
-	flickUp: 'images/toggleUp.png',
-	flickDown: 'images/toggleDown.png'
-    };
-    DEV.flickChange = function(fromList) {
-	const mapItem = DMM.primaryMap;
-	const flickBtn = document.getElementById("flick_btn");
-	const flickDrop1 = document.getElementById("flick1");
-	const flickDrop2 = document.getElementById("flick2");
-	if (typeof fromList === 'undefined') {
-		if (flickBtn.dataset.state === 'flickUp') {
-			flickBtn.dataset.state = 'flickDown';
-			mapItem.currentDl = flickDrop2.value;
-		} else {
-			flickBtn.dataset.state = 'flickUp';
-			mapItem.currentDl = flickDrop1.value;
-		}
-		flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-	} else if (fromList === null) {
-		if (flickBtn.dataset.state === 'flickUp') {
-			flickBtn.dataset.state = 'flickUp';
-			mapItem.currentDl = flickDrop1.value === "" ? 'dl1' : flickDrop1.value;
-		} else {
-			flickBtn.dataset.state = 'flickDown';
-			mapItem.currentDl = flickDrop2.value === "" ? 'dl1' : flickDrop2.value;
-		}
-		flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-	} else {
-		if ((fromList === "flick1") && (flickBtn.dataset.state === 'flickUp')) {
-			mapItem.currentDl = document.getElementById(fromList).value;
-		} else if ((fromList === "flick2") && (flickBtn.dataset.state === 'flickDown')) {
-			mapItem.currentDl = document.getElementById(fromList).value;
-		} else if ((fromList === "toggle1") && (flickBtn.dataset.state === 'flickDown')) {
-			flickBtn.dataset.state = 'flickUp';
-			flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-			mapItem.currentDl = flickDrop1.value;
-		} else if ((fromList === "toggle2") && (flickBtn.dataset.state === 'flickUp')) {
-			flickBtn.dataset.state = 'flickDown';
-			flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-			mapItem.currentDl = flickDrop2.value;
-		} else {
-			return;
-		}
-	} 
-	const heatMap = MMGR.getHeatMap();
-	heatMap.setCurrentDL (mapItem.currentDl);
-	SEL.flickInit();
-	SUM.buildSummaryTexture();
-	DMM.DetailMaps.forEach(dm => {
-		dm.currentDl = mapItem.currentDl;
-	})
-	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout,true);
-	SEL.updateSelections(true);
-    };
-})();
-
 /*********************************************************************************************
  * FUNCTION:  handleMouseOut - The purpose of this function is to handle the situation where 
  * the user clicks on and drags off the detail canvas without letting up the mouse button.  
@@ -856,10 +691,10 @@ DEV.matrixRightClick = function (e) {
  * reset the cursor to default.
  *********************************************************************************************/
 DEV.handleMouseOut = function (e) {
-	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
 	mapItem.canvas.style.cursor="default";
-	DET.mouseDown = false;
-	SUM.mouseEventActive = false;
+	mouseDown = false;
+	mouseEventActive = false;
 }
 
     /*********************************************************************************************
@@ -867,7 +702,7 @@ DEV.handleMouseOut = function (e) {
      * a given screen object.
      *********************************************************************************************/
     function isOnObject (e,type) {
-	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
 	var rowClassWidthPx =  DET.getRowClassPixelWidth(mapItem);
 	var colClassHeightPx = DET.getColClassPixelHeight(mapItem);
 	var rowDendroWidthPx =  DET.getRowDendroPixelWidth(mapItem);
@@ -888,13 +723,35 @@ DEV.handleMouseOut = function (e) {
 	return false;
     }
 
+    /*********************************************************************************************
+     * FUNCTION:  getSamplingRatio - This function returns the appropriate row/col sampling ration
+     * for the heat map based upon the screen mode.
+     *********************************************************************************************/
+    function getSamplingRatio (mode,axis) {
+	const heatMap = MMGR.getHeatMap();
+	const isRow = MMGR.isRow (axis);
+	let level;
+	switch (mode){
+	    case 'RIBBONH': level = MAPREP.RIBBON_HOR_LEVEL;
+	    case 'RIBBONV': level = MAPREP.RIBBON_VERT_LEVEL;
+	    case 'FULL_MAP': level = isRow ? MAPREP.RIBBON_VERT_LEVEL : MAPREP.RIBBON_HOR_LEVEL;
+	    default:        level = MAPREP.DETAIL_LEVEL;
+	}
+
+	if (isRow) {
+	    return heatMap.getRowSummaryRatio(level);
+	} else {
+	    return heatMap.getColSummaryRatio(level);
+	}
+    }
+
 /*********************************************************************************************
  * FUNCTION:  handleMouseMove - The purpose of this function is to handle a user drag event.
  * The type of move (drag-move or drag-select is determined, based upon keys pressed and the
  * appropriate function is called to perform the function.
  *********************************************************************************************/
 DEV.handleMouseMove = function (e) {
-    const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+    const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
     // Do not clear help if the mouse position did not change. Repeated firing of the mousemove event can happen on random
     // machines in all browsers but FireFox. There are varying reasons for this so we check and exit if need be.
     const eX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -902,13 +759,13 @@ DEV.handleMouseMove = function (e) {
     if(mapItem.oldMousePos[0] != eX ||mapItem.oldMousePos[1] != eY) {
 	mapItem.oldMousePos = [eX, eY];
     }
-    if (DET.mouseDown && SUM.mouseEventActive) {
+    if (mouseDown && mouseEventActive) {
 	clearTimeout(DET.eventTimer);
 	//If mouse is down and shift key is pressed, perform a drag selection
 	//Else perform a drag move
 	if (e.shiftKey) {
 	    //process select drag only if the mouse is down AND the cursor is on the heat map.
-	    if((DET.mouseDown) && (isOnObject(e,"map"))) {
+	    if((mouseDown) && (isOnObject(e,"map"))) {
 		SRCH.clearSearch(e);
 		DEV.handleSelectDrag(e);
 	    }
@@ -926,8 +783,8 @@ DEV.handleMouseMove = function (e) {
  * map is redrawn 
  *********************************************************************************************/
 DEV.handleMoveDrag = function (e) {
-	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
-    if(!DET.mouseDown) return;
+	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
+    if(!mouseDown) return;
     mapItem.canvas.style.cursor="move"; 
     const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width;
     const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
@@ -949,9 +806,9 @@ DEV.handleMoveDrag = function (e) {
 			mapItem.currentCol = Math.round(mapItem.currentCol - (xDrag/rowElementSize));
 			mapItem.dragOffsetX = coords.x;  //canvas X coordinate 
 		}
-	    SEL.checkRow(mapItem);
-	    SEL.checkCol(mapItem);
-	    SEL.updateSelection(mapItem);
+	    DVW.checkRow(mapItem);
+	    DVW.checkCol(mapItem);
+	    mapItem.updateSelection();
     } 
 }	
 
@@ -964,7 +821,7 @@ DEV.handleMoveDrag = function (e) {
  * re-drawn 
  *********************************************************************************************/
 DEV.handleSelectDrag = function (e) {
-	const mapItem = DMM.getMapItemFromCanvas(e.currentTarget);
+	const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
 	mapItem.canvas.style.cursor="crosshair";
 	const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width;
 	const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
@@ -1005,14 +862,14 @@ DEV.getRowFromLayerY = function (mapItem,layerY) {
 	const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
 	const colClassHeightPx = DET.getColClassPixelHeight(mapItem);
 	const mapLocY = layerY - colClassHeightPx;
-	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*SEL.getSamplingRatio(mapItem.mode,'row'));
+	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio(mapItem.mode,'row'));
 }
 
 DEV.getColFromLayerX = function (mapItem,layerX) {
 	const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
 	const rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
 	const mapLocX = layerX - rowClassWidthPx;
-	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*SEL.getSamplingRatio(mapItem.mode,'col'));
+	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio(mapItem.mode,'col'));
 }
 
 
@@ -1057,7 +914,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			let zoomBoxSize = DET.zoomBoxSizes[current+1];
 			DET.setDetailDataSize (mapItem, zoomBoxSize);
 		}
-		SEL.updateSelection(mapItem, false);
+		mapItem.updateSelection(false);
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
 	        let mode = mapItem.mode, col;
 		if (mapItem.modeHistory.length > 0) {
@@ -1075,7 +932,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			    const heatMap = MMGR.getHeatMap();
 			    mapItem.dataBoxHeight = DET.zoomBoxSizes[0];
 			    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-			    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= heatMap.getNumRows(MMGR.DETAIL_LEVEL)) {
+			    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
 				DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 			    }
 			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
@@ -1085,7 +942,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			} else if (current < DET.zoomBoxSizes.length - 1) {
 				DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current+1]);
 			}
-			SEL.updateSelection(mapItem, false);
+			mapItem.updateSelection(false);
 		}
 		mapItem.modeHistory.pop();
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
@@ -1105,7 +962,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			    const heatMap = MMGR.getHeatMap();
 			    mapItem.dataBoxWidth = DET.zoomBoxSizes[0];
 			    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
-			    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) {
+			    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
 				DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 			    }
 			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
@@ -1115,7 +972,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			} else if (current < DET.zoomBoxSizes.length - 1) {
 			    DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[current+1]);
 			}
-			SEL.updateSelection(mapItem, false);
+			mapItem.updateSelection(false);
 		}
 		mapItem.modeHistory.pop();
 	}
@@ -1127,7 +984,7 @@ DEV.detailDataZoomIn = function (mapItem) {
  **********************************************************************************/
 DEV.detailDataZoomOut = function (chm) {
 	const heatMap = MMGR.getHeatMap();
-	const mapItem = DMM.getMapItemFromChm(chm);
+	const mapItem = DVW.getMapItemFromChm(chm);
 	if (mapItem.mode == 'FULL_MAP') {
 	    // Already in full map view. We actually can't zoom out any further.
 	    return;
@@ -1139,15 +996,15 @@ DEV.detailDataZoomOut = function (chm) {
 	if (mapItem.mode == 'NORMAL') {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MMGR.DETAIL_LEVEL)) &&
-		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL))){
+		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) &&
+		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))){
 			DET.setDetailDataSize (mapItem,DET.zoomBoxSizes[current-1]);
-			SEL.updateSelection(mapItem);
+			mapItem.updateSelection();
 		} else {
 			//If we can't zoom out anymore see if ribbon mode would show more of the map or , switch to full map view.
-			if ((current > 0) && (heatMap.getNumRows(MMGR.DETAIL_LEVEL) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) ) {
+			if ((current > 0) && (heatMap.getNumRows(MAPREP.DETAIL_LEVEL) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) ) {
 				DEV.detailVRibbonButton(mapItem);
-			} else if ((current > 0) && (heatMap.getNumRows(MMGR.DETAIL_LEVEL) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) ) {
+			} else if ((current > 0) && (heatMap.getNumRows(MAPREP.DETAIL_LEVEL) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) ) {
 				DEV.detailHRibbonButton(mapItem);
 			} else {
 				DEV.detailFullMap(mapItem);
@@ -1156,10 +1013,10 @@ DEV.detailDataZoomOut = function (chm) {
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MMGR.DETAIL_LEVEL))) {
+		    (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumRows(MAPREP.DETAIL_LEVEL))) {
 			// Additional zoom out in ribbon mode.
 			DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current-1]);
-			SEL.updateSelection(mapItem);
+			mapItem.updateSelection();
 		} else {
 			// Switch to full map view.
 			DEV.detailFullMap(mapItem);
@@ -1167,10 +1024,10 @@ DEV.detailDataZoomOut = function (chm) {
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
-		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MMGR.DETAIL_LEVEL))){
+		    (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[current-1]) <= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))){
 			// Additional zoom out in ribbon mode.
 			DET.setDetailDataWidth (mapItem,DET.zoomBoxSizes[current-1]);
-			SEL.updateSelection(mapItem);
+			mapItem.updateSelection();
 		} else {
 			// Switch to full map view.
 			DEV.detailFullMap(mapItem);
@@ -1186,7 +1043,7 @@ DEV.detailDataZoomOut = function (chm) {
  * function. It acts only on the Primary heat map pane.
  **********************************************************************************/
 DEV.callDetailDrawFunction = function(modeVal, target) {
-	let mapItem = (typeof target !== 'undefined') ? target : DMM.primaryMap;
+	let mapItem = (typeof target !== 'undefined') ? target : DVW.primaryMap;
 	if (!mapItem) return;
 	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
 		DEV.detailHRibbon(mapItem);
@@ -1215,8 +1072,8 @@ DEV.clearModeHistory = function (mapItem) {
 DEV.detailNormal = function (mapItem, restoreInfo) {
 	UHM.hlpC();
 	const previousMode = mapItem.mode;
-	SEL.setMode(mapItem,'NORMAL');
-	DET.setButtons(mapItem);
+	DVW.setMode(mapItem,'NORMAL');
+	mapItem.setButtons();
 	if (!restoreInfo) {
 	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
 	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
@@ -1230,8 +1087,8 @@ DEV.detailNormal = function (mapItem, restoreInfo) {
 
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
 	    const heatMap = MMGR.getHeatMap();
-	    while ((Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MMGR.DETAIL_LEVEL)) ||
-	       (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL))) {
+	    while ((Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) ||
+	       (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))) {
 		DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 	    }
 	
@@ -1245,14 +1102,14 @@ DEV.detailNormal = function (mapItem, restoreInfo) {
 	    }
 	}
 	
-	SEL.checkRow(mapItem);
-	SEL.checkCol(mapItem);
+	DVW.checkRow(mapItem);
+	DVW.checkCol(mapItem);
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	 
 	DET.detInitGl(mapItem);
 	DDR.clearDendroSelection();
-	SEL.updateSelection(mapItem);
+	mapItem.updateSelection();
 	try {
 		document.getElementById("viewport").setAttribute("content", "height=device-height");
 		document.getElementById("viewport").setAttribute("content", "");
@@ -1278,7 +1135,7 @@ DEV.detailFullMap = function (mapItem) {
 	} else if (mapItem.subDendroMode === 'Row') {
 	    DET.scaleViewWidth(mapItem);
 	} else {
-	    SEL.setMode(mapItem, 'FULL_MAP');
+	    DVW.setMode(mapItem, 'FULL_MAP');
 	    DET.scaleViewHeight(mapItem);
 	    DET.scaleViewWidth(mapItem);
 	}
@@ -1287,7 +1144,7 @@ DEV.detailFullMap = function (mapItem) {
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	DET.detInitGl(mapItem);
-	SEL.updateSelection(mapItem);
+	mapItem.updateSelection();
 }
 
 /**********************************************************************************
@@ -1311,8 +1168,8 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	const previousMode = mapItem.mode;
 	const prevWidth = mapItem.dataBoxWidth;
 	mapItem.saveCol = mapItem.currentCol;
-	SEL.setMode(mapItem,'RIBBONH');
-	DET.setButtons(mapItem);
+	DVW.setMode(mapItem,'RIBBONH');
+	mapItem.setButtons();
 
 	if (!restoreInfo) {
 	    if (previousMode=='FULL_MAP') {
@@ -1321,11 +1178,11 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	    // If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	    // and data size to 1.
 	    if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewWidth = heatMap.getNumColumns(MMGR.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
+		mapItem.dataViewWidth = heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
 		let ddw = 1;
 		while(2*mapItem.dataViewWidth < 500){ // make the width wider to prevent blurry/big dendros for smaller maps
 			ddw *=2;
-			mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MMGR.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
+			mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
 		}
 		DET.setDetailDataWidth(mapItem,ddw);
 		mapItem.currentCol = 1;
@@ -1351,7 +1208,7 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	    }
 
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MMGR.DETAIL_LEVEL)) {
+	    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
 		DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 	    }
 	}
@@ -1359,7 +1216,7 @@ DEV.detailHRibbon = function (mapItem, restoreInfo) {
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	DET.detInitGl(mapItem);
-	SEL.updateSelection(mapItem);
+	mapItem.updateSelection();
 }
 
 /**********************************************************************************
@@ -1384,17 +1241,17 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	const prevHeight = mapItem.dataBoxHeight;
 	mapItem.saveRow = mapItem.currentRow;
 	
-	SEL.setMode(mapItem, 'RIBBONV');
-	DET.setButtons(mapItem);
+	DVW.setMode(mapItem, 'RIBBONV');
+	mapItem.setButtons();
 
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
 	// and data size to 1.
 	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewHeight = heatMap.getNumRows(MMGR.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
+		mapItem.dataViewHeight = heatMap.getNumRows(MAPREP.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
 		let ddh = 1;
 		while(2*mapItem.dataViewHeight < 500){ // make the height taller to prevent blurry/big dendros for smaller maps
 			ddh *=2;
-			mapItem.dataViewHeight = ddh*heatMap.getNumRows(MMGR.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
+			mapItem.dataViewHeight = ddh*heatMap.getNumRows(MAPREP.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
 		}
 		DET.setDetailDataHeight(mapItem,ddh);
 		mapItem.currentRow = 1;
@@ -1403,9 +1260,9 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
 		if (selectionSize < 500) {
 			DEV.clearModeHistory (mapItem);
-			SEL.setMode(mapItem, 'RIBBONV_DETAIL');
+			DVW.setMode(mapItem, 'RIBBONV_DETAIL');
 		} else {
-			const rvRate = heatMap.getRowSummaryRatio(MMGR.RIBBON_VERT_LEVEL);
+			const rvRate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 			selectionSize = Math.floor(selectionSize / rvRate);			
 		}
 		const height = Math.max(1, Math.floor(500/selectionSize));
@@ -1426,7 +1283,7 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	    }
 	
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MMGR.DETAIL_LEVEL)) {
+	    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
 		DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 	    }
 	}
@@ -1434,7 +1291,7 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	DET.detInitGl(mapItem);
-	SEL.updateSelection(mapItem);
+	mapItem.updateSelection();
 	try {
 		document.getElementById("viewport").setAttribute("content", "height=device-height");
 		document.getElementById("viewport").setAttribute("content", "");
@@ -1448,7 +1305,7 @@ DEV.detailVRibbon = function (mapItem, restoreInfo) {
  * animation when users are zooming out on a given heat map canvas.
  **********************************************************************************/
 DEV.zoomAnimation = function (chm,destRow,destCol) {
-	const mapItem = DMM.getMapItemFromChm(chm);
+	const mapItem = DVW.getMapItemFromChm(chm);
 	// set proportion variables for heatmap canvas
 	const detViewW = mapItem.dataViewWidth;
 	const detViewH = mapItem.dataViewHeight;
@@ -1552,9 +1409,9 @@ DEV.zoomAnimation = function (chm,destRow,destCol) {
 								
 				//TODO: do we need to account for summary ratio???
 				const leftRatio=(saveCol-1)*mapWRatio /mapItem.dataPerRow /animateCountMax/heatMap.getColSummaryRatio("d");
-				const rightRatio=Math.max(0,(SEL.getCurrentDetDataPerRow(mapItem)*heatMap.getColSummaryRatio("d")-saveCol-1-detNum)*mapWRatio /SEL.getCurrentDetDataPerRow(mapItem) /animateCountMax/heatMap.getColSummaryRatio("d")); // this one works for maps that are not too big!!
+				const rightRatio=Math.max(0,(DVW.getCurrentDetDataPerRow(mapItem)*heatMap.getColSummaryRatio("d")-saveCol-1-detNum)*mapWRatio /DVW.getCurrentDetDataPerRow(mapItem) /animateCountMax/heatMap.getColSummaryRatio("d")); // this one works for maps that are not too big!!
 				const topRatio = (saveRow-1)*mapHRatio /mapItem.dataPerCol /animateCountMax/heatMap.getRowSummaryRatio("d");
-				const bottomRatio = Math.max(0,(SEL.getCurrentDetDataPerCol(mapItem)*heatMap.getRowSummaryRatio("d")-saveRow-1-detNum)*mapHRatio   /SEL.getCurrentDetDataPerCol(mapItem) /animateCountMax/heatMap.getRowSummaryRatio("d")); // this one works for maps that are not too big!
+				const bottomRatio = Math.max(0,(DVW.getCurrentDetDataPerCol(mapItem)*heatMap.getRowSummaryRatio("d")-saveRow-1-detNum)*mapHRatio   /DVW.getCurrentDetDataPerCol(mapItem) /animateCountMax/heatMap.getRowSummaryRatio("d")); // this one works for maps that are not too big!
 				
 				texLeft = dendroClassWRatio+animateCount*leftRatio;
 			        texBottom = animateCount*bottomRatio;
@@ -1641,19 +1498,5 @@ DEV.zoomAnimation = function (chm,destRow,destCol) {
 	    }
 	    helptext.style.top = boxTop + 'px';
     }
-
-
-document.getElementById('flick_btn').onclick = function (event) {
-    DEV.flickChange();
-};
-document.getElementById('flick1').onchange = function (event) {
-    DEV.flickChange('flick1');
-};
-document.getElementById('flick2').onchange = function (event) {
-    DEV.flickChange('flick2');
-};
-document.getElementById('flickOn_pic').onclick = function (event) {
-    SEL.flickToggleOff();
-};
 
 })();

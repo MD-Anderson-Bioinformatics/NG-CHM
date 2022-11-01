@@ -12,10 +12,10 @@
 	const SRCH = NgChm.importNS('NgChm.SRCH');
 	const PANE = NgChm.importNS('NgChm.Pane');
 	const MMGR = NgChm.importNS('NgChm.MMGR');
-	const DEV = NgChm.importNS('NgChm.DEV');
-	const SEL = NgChm.importNS('NgChm.SEL');
-	const SUM = NgChm.importNS('NgChm.SUM');
+	const DVW = NgChm.importNS('NgChm.DVW');
 	const DET = NgChm.importNS('NgChm.DET');
+	const DEV = NgChm.importNS('NgChm.DEV');
+	const SUM = NgChm.importNS('NgChm.SUM');
 	const DMM = NgChm.importNS('NgChm.DMM');
 	const CUST = NgChm.importNS('NgChm.CUST');
 	const debug = false;
@@ -31,7 +31,7 @@
 	 * This is a hack.
 	 * TODO: Understand the NGCHM initialization code well enough to not need this hack.
 	 */
-	function reconstructPanelsFromMapConfig(initialLoc, savedState) {
+	function reconstructPanelsFromMapConfig(initialLoc, savedState, callbacks) {
 
 	    if (debug) console.log("Reconstructing panes");
 	    RECPANES.mapConfigPanelConfiguration = Object.assign({}, savedState);
@@ -53,13 +53,13 @@
 	    function populatePluginPanels () {
 			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
-			setFlickState();
+			setFlickState(callbacks.setFlickState);
 			setSelections();  // Set saved results, if any.
 			SRCH.doInitialSearch();  // Will override saved results, if requested.
 			PANE.resizeNGCHM();
 			MMGR.getHeatMap().setUnAppliedChanges(false);
 			setTimeout(() => {
-				SEL.updateSelections(true);
+				DVW.updateSelections(true);
 				const expanded = document.querySelector("DIV[data-expanded-panel]");
 				if (expanded) {
 				    delete expanded.dataset.expandedPanel;
@@ -244,8 +244,8 @@
 
 			DET.updateDisplayedLabels();
 			// set zoom/pan state of detail map
-			let mapItem = DMM.getMapItemFromPane(pane.id);
-			SEL.updateSelection(mapItem);
+			let mapItem = DVW.getMapItemFromPane(pane.id);
+			mapItem.updateSelection();
 			delete RECPANES.mapConfigPanelConfiguration[paneid];
 			PANE.resizePane (mapItem.canvas);
 		} else if (config.type === 'plugin') {
@@ -405,26 +405,14 @@
 	/*
 	 * Set the 'flick' control and data layer
 	*/
-	function setFlickState() {
+	function setFlickState(setFlick) {
 		if (!RECPANES.mapConfigPanelConfiguration.hasOwnProperty('flickInfo')) {
 			return;
 		}
 		if (Object.keys(MMGR.getHeatMap().getDataLayers()).length == 1) {
 			return;
 		}
-		try {
-			document.getElementById('flick1').value = RECPANES.mapConfigPanelConfiguration.flickInfo.flick1;
-			document.getElementById('flick2').value = RECPANES.mapConfigPanelConfiguration.flickInfo.flick2;
-			if (RECPANES.mapConfigPanelConfiguration.flickInfo['flick_btn_state'] === 'flickDown') {
-				document.getElementById('flick_btn').dataset.state = 'flickUp'; // <-- set to opposite so flickChange will set to desired
-				DEV.flickChange();
-			} else {
-				document.getElementById('flick_btn').dataset.state = 'flickDown'; // <-- set to opposite so flickChange will set to desired
-				DEV.flickChange();
-			}
-		} catch(err) {
-			console.error(err)
-		}
+		setFlick (RECPANES.mapConfigPanelConfiguration.flickInfo['flick_btn_state']);
 	}
 })();
 
