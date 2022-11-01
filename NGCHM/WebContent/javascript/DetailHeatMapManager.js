@@ -15,6 +15,7 @@
     const PANE = NgChm.importNS('NgChm.Pane');
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
 
 //Next available heatmap object iterator (used for subscripting new map DOM elements) 
@@ -245,6 +246,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		DET.setInitialDetailDisplaySize(mapItem);
 	}
 	LNK.createLabelMenus();
+	LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT, setSelectionAsDetailView, null, 0);
 	DET.setDendroShow(mapItem);
 	if (mapItem.canvas) {
 		mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
@@ -278,6 +280,76 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	    }
 	}
 };
+
+    function setSelectionAsDetailView (searchLabels, axis) {
+	const menuOpenCanvas = LNK.getMenuOpenCanvas();
+	if (menuOpenCanvas) {
+	    const mapItem = DVW.getMapItemFromCanvas (menuOpenCanvas);
+	    if (mapItem == null) {
+		console.error ("Cannot find the detail panel on which the menu popup was opened");
+		return;
+	    }
+	    setDetailView(mapItem, searchLabels);
+	}
+    }
+
+    //This matrix function allows users to create a special sub-ribbon view that matches
+    //the currently selected box in the detail panel.  It just uses the first
+    //row/col selected and last row/col selected so it will work well with a drag
+    //selected box but not with random selections all over the map.
+    function setDetailView (mapItem, searchLabels) {
+	    let selRows = SRCHSTATE.getAxisSearchResults("Row");
+	    if (selRows.length === 0) {
+		    selRows = LNK.getEntireAxisSearchItems(searchLabels,"Row");
+	    }
+	    let selCols = SRCHSTATE.getAxisSearchResults("Column");
+	    if (selCols.length === 0) {
+		    selCols = LNK.getEntireAxisSearchItems(searchLabels,"Column");
+	    }
+	    var startCol = parseInt(selCols[0])
+	    var endCol = parseInt(selCols[selCols.length-1])
+	    var startRow = parseInt(selRows[0])
+	    var endRow = parseInt(selRows[selRows.length-1])
+
+	    setSubRibbonView(mapItem, startRow, endRow, startCol, endCol);
+    };
+
+    //This is a helper function that can set a sub-ribbon view that best matches a user
+    //selected region of the map.
+    DMM.setSubRibbonView = setSubRibbonView;
+    function setSubRibbonView  (mapItem, startRow, endRow, startCol, endCol) {
+	    const selRows = Math.abs(endRow - startRow);
+	    const selCols = Math.abs(endCol - startCol);
+
+	    //In case there was a previous dendo selection - clear it.
+	    SUM.clearSelectionMarks();
+	    SUM.colDendro.draw();
+	    SUM.rowDendro.draw();
+
+	    if (!mapItem) return;
+	    //If tiny tiny box was selected, discard and go back to previous selection size
+	    if (endRow-startRow<1 && endCol-startCol<1) {
+		    DET.setDetailDataSize (mapItem, mapItem.dataBoxWidth);
+	    //If there are more rows than columns do a horizontal sub-ribbon view that fits the selection. 	
+	    } else if (selRows >= selCols) {
+		    var boxSize = DET.getNearestBoxHeight(mapItem, endRow - startRow + 1);
+		    DET.setDetailDataHeight(mapItem,boxSize);
+		    mapItem.selectedStart= startCol;
+		    mapItem.selectedStop=endCol;
+		    mapItem.currentRow = startRow;
+		    DEV.callDetailDrawFunction('RIBBONH', mapItem);
+	    } else {
+		    //More columns than rows, do a vertical sub-ribbon view that fits the selection.
+		    var boxSize = DET.getNearestBoxSize(mapItem, endCol - startCol + 1);
+		    DET.setDetailDataWidth(mapItem,boxSize);
+		    mapItem.selectedStart=startRow;
+		    mapItem.selectedStop=endRow;
+		    mapItem.currentCol = startCol;
+		    DEV.callDetailDrawFunction('RIBBONV', mapItem);
+	    }
+	    mapItem.updateSelection(mapItem);
+    }
+
 
 (function() {
 	// Define a function to switch a panel to the detail view.

@@ -7,14 +7,11 @@
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const SUMDDR = NgChm.importNS('NgChm.SUMDDR');
-    const DET = NgChm.importNS('NgChm.DET');
-    const DEV = NgChm.importNS('NgChm.DEV');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const DRAW = NgChm.importNS('NgChm.DRAW');
     const DVW = NgChm.importNS('NgChm.DVW');
     const PANE = NgChm.importNS('NgChm.Pane');
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
-    const LNK = NgChm.importNS('NgChm.LNK');
 
 // Flags.
 SUM.flagDrawClassBarLabels = false; // Labels are only drawn in NGCHM_GUI_Builder
@@ -654,44 +651,6 @@ SUM.drawColClassBars = function() {
 		SUM.ccGlManager.drawTexture ();
 	}
 };
-
-//This is a helper function that can set a sub-ribbon view that best matches a user
-//selected region of the map.
-SUM.setSubRibbonView  = function(startRow, endRow, startCol, endCol) {
-	const menuOpenCanvas = LNK.getMenuOpenCanvas();
-	if (!menuOpenCanvas) return;
-	const mapItem = DVW.getMapItemFromCanvas (menuOpenCanvas);
-	if (!mapItem) return;
-
-	const selRows = Math.abs(endRow - startRow);
-	const selCols = Math.abs(endCol - startCol);
-	//In case there was a previous dendo selection - clear it.
-	SUM.clearSelectionMarks();
-	SUM.colDendro.draw();
-	SUM.rowDendro.draw();
-
-	//If tiny tiny box was selected, discard and go back to previous selection size
-	if (endRow-startRow<1 && endCol-startCol<1) {
-		DET.setDetailDataSize (mapItem, mapItem.dataBoxWidth);
-	//If there are more rows than columns do a horizontal sub-ribbon view that fits the selection. 	
-	} else if (selRows >= selCols) {
-		var boxSize = DET.getNearestBoxHeight(mapItem, endRow - startRow + 1);
-		DET.setDetailDataHeight(mapItem,boxSize);
-		mapItem.selectedStart= startCol;
-		mapItem.selectedStop=endCol;
-		mapItem.currentRow = startRow;
-		DEV.callDetailDrawFunction('RIBBONH', mapItem);
-	} else {
-		//More columns than rows, do a vertical sub-ribbon view that fits the selection. 	
-		var boxSize = DET.getNearestBoxSize(mapItem, endCol - startCol + 1);
-		DET.setDetailDataWidth(mapItem,boxSize);
-		mapItem.selectedStart=startRow;
-		mapItem.selectedStop=endRow;
-		mapItem.currentCol = startCol; 
-		DEV.callDetailDrawFunction('RIBBONV', mapItem);
-	}
-	mapItem.updateSelection();
-}
 
 //Browsers resizes the canvas.  This function translates from a click position
 //back to the original (non-scaled) canvas position. 

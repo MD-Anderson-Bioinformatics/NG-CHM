@@ -136,7 +136,7 @@
 			    var startCol = Math.max(Math.min(clickStartCol,clickEndCol)+1,1);
 			    var endRow = Math.max(clickStartRow,clickEndRow);
 			    var endCol = Math.max(clickStartCol,clickEndCol);
-			    SUM.setSubRibbonView(DVW.primaryMap, startRow, endRow, startCol, endCol);
+			    DMM.setSubRibbonView(DVW.primaryMap, startRow, endRow, startCol, endCol);
 		    } else {
 			    var xPos = SUM.getCanvasX(sumOffsetX);
 			    var yPos = SUM.getCanvasY(sumOffsetY);

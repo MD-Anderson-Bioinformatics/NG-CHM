@@ -131,7 +131,6 @@ var linkoutsVersion = 'undefined';
     const UHM = NgChm.importNS('NgChm.UHM');
     const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
-    const SUM = NgChm.importNS('NgChm.SUM');
     const CMM = NgChm.importNS('NgChm.CMM');
 
     var menuOpenCanvas = null;  // Canvas on which the most recent linkouts popup was opened.
@@ -304,9 +303,6 @@ var linkoutsVersion = 'undefined';
 				}
 				if (linkout.title === 'Download selected matrix data to file') {
 					labelDataMatrix = LNK.createMatrixData(searchLabels);
-				}
-				if (linkout.title === 'Set selection as detail view') {
-					LNK.setDetailView(searchLabels);
 				}
 			}
 		} else { // if this linkout was added using addMatrixLinkout
@@ -834,7 +830,6 @@ var linkoutsVersion = 'undefined';
 		LNK.addLinkout("Copy bar data for selected labels", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
-		LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
 
 	// Return and clear a reference to the last canvas on which a label help menu was opened.
@@ -917,28 +912,6 @@ var linkoutsVersion = 'undefined';
 		element.click();
 		document.body.removeChild(element);
 	}
-
-
-	//This matrix function allows users to create a special sub-ribbon view that matches
-	//the currently selected box in the detail panel.  It just uses the first
-	//row/col selected and last row/col selected so it will work well with a drag
-	//selected box but not with random selections all over the map.
-	LNK.setDetailView = function(searchLabels){
-		let selRows = SRCHSTATE.getAxisSearchResults("Row");
-		if (selRows.length === 0) {
-			selRows = LNK.getEntireAxisSearchItems(searchLabels,"Row");
-		}
-		let selCols = SRCHSTATE.getAxisSearchResults("Column");
-		if (selCols.length === 0) {
-			selCols = LNK.getEntireAxisSearchItems(searchLabels,"Column");
-		}
-		var startCol = parseInt(selCols[0])
-		var endCol = parseInt(selCols[selCols.length-1])
-		var startRow = parseInt(selRows[0])
-		var endRow = parseInt(selRows[selRows.length-1])
-
-		SUM.setSubRibbonView(startRow, endRow, startCol, endCol);
-	};
 
 	LNK.switchPaneToLinkouts = function switchPaneToLinkouts (loc) {
 		PANE.clearExistingGearDialog(loc.pane.id);
