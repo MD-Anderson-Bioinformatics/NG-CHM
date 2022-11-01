@@ -559,121 +559,6 @@ DEV.dblClick = function(e) {
 }
 
 /*********************************************************************************************
- * FUNCTION:  labelClick -  The purpose of this function is to handle a label click on a given
- * detail panel.
- *********************************************************************************************/
-DEV.labelClick = function (e) {
-	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
-	SRCH.showSearchResults();
-	//These were changed from vars defined multiple times below
-	let searchIndex = null;
-	let axis = this.dataset.axis;
-	const index = this.dataset.index;
-	if (e.shiftKey || e.type == "touchmove"){ // shift + click
-		const selection = window.getSelection();
-		selection.removeAllRanges();
-		const focusNode = e.type == "touchmove" ? e.target : this;
-		const focusIndex = Number(focusNode.dataset.index);
-		axis = focusNode.dataset.axis;
-		if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
-			const anchorIndex = Number(DET.labelLastClicked[axis]);
-			const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-			SRCH.setAxisSearchResults (axis, startIndex, endIndex);
-		} else { // otherwise, treat as normal click
-			SRCH.clearSearchItems(focusNode.dataset.axis);
-			searchIndex = SRCH.labelIndexInSearch(axis,focusIndex);
-			if (searchIndex ){
-				SRCH.clearAxisSearchItems (axis, index, index);
-			} else {
-				SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
-			}
-		}
-		DET.labelLastClicked[axis] = focusIndex;
-	} else if (e.ctrlKey || e.metaKey){ // ctrl or Mac key + click
-		searchIndex = SRCH.labelIndexInSearch(axis, index);
-		if (searchIndex){ // if already searched, remove from search items
-			SRCH.clearAxisSearchItems (axis, index, index);
-		} else {
-			SRCH.setAxisSearchResults (axis, index, index);
-		}
-		DET.labelLastClicked[axis] = index;
-	} else { // standard click
-		SRCH.clearSearchItems(axis);
-		SRCH.setAxisSearchResults (axis, index, index);
-		DET.labelLastClicked[axis] = index;
-	}
-	const clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
-	const lastClickedIndex = (typeof index == 'undefined') ? focusIndex : index;
-	LNK.postSelectionToLinkouts(this.dataset.axis, clickType, index, null);
-	const searchElement = document.getElementById('search_text');
-	searchElement.value = "";
-	document.getElementById('prev_btn').style.display='';
-	document.getElementById('next_btn').style.display='';
-	document.getElementById('cancel_btn').style.display='';
-	SUM.clearSelectionMarks();
-	DET.updateDisplayedLabels();
-	DET.updateSelections();
-	SUM.drawSelectionMarks();
-	SUM.drawTopItems();
-	SRCH.showSearchResults();
-}
-
-/*********************************************************************************************
- * FUNCTION:  labelDrag -  The purpose of this function is to handle a label drag on a given
- * detail panel.
- *********************************************************************************************/
-DEV.labelDrag = function(e){
-	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
-	e.preventDefault();
-	mapItem.latestLabelTap = null;
-	const selection = window.getSelection();
-	selection.removeAllRanges();
-	const focusNode = e.type == "touchmove" ? document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY) : this;
-	const focusIndex = Number(focusNode.dataset.index);
-	const axis = focusNode.dataset.axis;
-	if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
-		const anchorIndex = Number(DET.labelLastClicked[axis]);
-		const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-		SRCH.setAxisSearchResults (axis, startIndex, endIndex);
-	} else { // otherwise, treat as normal click
-		SRCH.clearSearchItems(focusNode.dataset.axis);
-		const searchIndex = SRCH.labelIndexInSearch(axis,focusIndex);
-		if (searchIndex ){
-			SRCH.clearAxisSearchItems (axis, index, index);
-		} else {
-			SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
-		}
-	}
-	DET.labelLastClicked[axis] = focusIndex;
-	let searchElement = document.getElementById('search_text');
-	searchElement.value = "";
-	document.getElementById('prev_btn').style.display='';
-	document.getElementById('next_btn').style.display='';
-	document.getElementById('cancel_btn').style.display='';
-	DET.updateDisplayedLabels();
-	SRCH.showSearchResults();
-	DET.updateSelections();
-	SUM.drawSelectionMarks();
-	SUM.drawTopItems();
-	SRCH.showSearchResults();
-	return;
-}
-
-/*********************************************************************************************
- * FUNCTION:  labelRightClick -  The purpose of this function is to handle a label right click on a given
- * detail panel.
- *********************************************************************************************/
-DEV.labelRightClick = function (e) {
-    e.preventDefault();
-    const axis = e.target.dataset.axis;
-    LNK.labelHelpClose(axis);
-    LNK.labelHelpOpen(axis,e);
-    let selection = window.getSelection();
-    selection.removeAllRanges();
-    return false;
-}
-
-/*********************************************************************************************
  * FUNCTION:  matrixRightClick -  The purpose of this function is to handle a matrix right 
  * click on a given detail panel.
  *********************************************************************************************/
@@ -1074,6 +959,123 @@ DEV.detailDataZoomIn = function (mapItem) {
 	DET.clearDendroSelection(mapItem);
 	DET.detailVRibbon(mapItem);
     };
+
+    /*********************************************************************************************
+     * FUNCTION:  labelClick -  The purpose of this function is to handle a label click on a given
+     * detail panel.
+     *********************************************************************************************/
+    DEV.labelClick = labelClick;
+    function labelClick (e) {
+	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
+	SRCH.showSearchResults();
+	//These were changed from vars defined multiple times below
+	let searchIndex = null;
+	let axis = this.dataset.axis;
+	const index = this.dataset.index;
+	if (e.shiftKey || e.type == "touchmove"){ // shift + click
+	    const selection = window.getSelection();
+	    selection.removeAllRanges();
+	    const focusNode = e.type == "touchmove" ? e.target : this;
+	    const focusIndex = Number(focusNode.dataset.index);
+	    axis = focusNode.dataset.axis;
+	    if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
+		const anchorIndex = Number(DET.labelLastClicked[axis]);
+		const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
+		SRCH.setAxisSearchResults (axis, startIndex, endIndex);
+	    } else { // otherwise, treat as normal click
+		SRCH.clearSearchItems(focusNode.dataset.axis);
+		searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
+		if (searchIndex ){
+		    SRCH.clearAxisSearchItems (axis, index, index);
+		} else {
+		    SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
+		}
+	    }
+	    DET.labelLastClicked[axis] = focusIndex;
+	} else if (e.ctrlKey || e.metaKey){ // ctrl or Mac key + click
+	    searchIndex = SRCHSTATE.labelIndexInSearch(axis, index);
+	    if (searchIndex){ // if already searched, remove from search items
+		SRCH.clearAxisSearchItems (axis, index, index);
+	    } else {
+		SRCH.setAxisSearchResults (axis, index, index);
+	    }
+	    DET.labelLastClicked[axis] = index;
+	} else { // standard click
+	    SRCH.clearSearchItems(axis);
+	    SRCH.setAxisSearchResults (axis, index, index);
+	    DET.labelLastClicked[axis] = index;
+	}
+	const clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
+	const lastClickedIndex = (typeof index == 'undefined') ? focusIndex : index;
+	LNK.postSelectionToLinkouts(this.dataset.axis, clickType, index, null);
+	const searchElement = document.getElementById('search_text');
+	searchElement.value = "";
+	document.getElementById('prev_btn').style.display='';
+	document.getElementById('next_btn').style.display='';
+	document.getElementById('cancel_btn').style.display='';
+	SUM.clearSelectionMarks();
+	DET.updateDisplayedLabels();
+	DET.updateSelections();
+	SUM.drawSelectionMarks();
+	SUM.drawTopItems();
+	SRCH.showSearchResults();
+    }
+
+    /*********************************************************************************************
+     * FUNCTION:  labelDrag -  The purpose of this function is to handle a label drag on a given
+     * detail panel.
+     *********************************************************************************************/
+    DEV.labelDrag = labelDrag;
+    function labelDrag (e) {
+	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
+	e.preventDefault();
+	mapItem.latestLabelTap = null;
+	const selection = window.getSelection();
+	selection.removeAllRanges();
+	const focusNode = e.type == "touchmove" ? document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY) : this;
+	const focusIndex = Number(focusNode.dataset.index);
+	const axis = focusNode.dataset.axis;
+	if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
+	    const anchorIndex = Number(DET.labelLastClicked[axis]);
+	    const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
+	    SRCH.setAxisSearchResults (axis, startIndex, endIndex);
+	} else { // otherwise, treat as normal click
+	    SRCH.clearSearchItems(focusNode.dataset.axis);
+	    const searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
+	    if (searchIndex ){
+		SRCH.clearAxisSearchItems (axis, index, index);
+	    } else {
+		SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
+	    }
+	}
+	DET.labelLastClicked[axis] = focusIndex;
+	let searchElement = document.getElementById('search_text');
+	searchElement.value = "";
+	document.getElementById('prev_btn').style.display='';
+	document.getElementById('next_btn').style.display='';
+	document.getElementById('cancel_btn').style.display='';
+	DET.updateDisplayedLabels();
+	SRCH.showSearchResults();
+	DET.updateSelections();
+	SUM.drawSelectionMarks();
+	SUM.drawTopItems();
+	SRCH.showSearchResults();
+    }
+
+    /*********************************************************************************************
+     * FUNCTION:  labelRightClick -  The purpose of this function is to handle a label right click on a given
+     * detail panel.
+     *********************************************************************************************/
+    DEV.labelRightClick = labelRightClick;
+    function labelRightClick (e) {
+	e.preventDefault();
+	const axis = e.target.dataset.axis;
+	LNK.labelHelpClose(axis);
+	LNK.labelHelpOpen(axis,e);
+	let selection = window.getSelection();
+	selection.removeAllRanges();
+	return false;
+    }
 
     (function() {
 	// Table to convert image names to image source names.
