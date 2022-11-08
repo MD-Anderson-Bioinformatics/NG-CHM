@@ -295,6 +295,10 @@
         script.onload = CUST.definePluginLinkouts;
         // Internet explorer:
         script.onreadystatechange = function() { if (this.readyState == 'complete') {     	CUST.definePluginLinkouts();   }   };  //Leave this as one line for filemode version app builder
+	script.onerror = function () {
+	    console.warn ("Loading of " + CFG.custom_script + " failed.");
+	    CUST.definePluginLinkouts();
+	};
 	head.appendChild(script);
     };
     
@@ -306,6 +310,10 @@
         head.appendChild(script);
         script.src = customJs;
         script.onload = CUST.definePluginLinkouts;
+	script.onerror = function () {
+	    console.warn ("Loading of " + customJS + " failed.");
+	    CUST.definePluginLinkouts();
+	};
         // Internet explorer:
         script.onreadystatechange = function() { if (this.readyState == 'complete') {     	CUST.definePluginLinkouts();   }   };  //Leave this as one line for filemode version app builder
     }
