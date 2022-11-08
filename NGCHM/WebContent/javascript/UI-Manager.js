@@ -10,6 +10,7 @@
     const UIMGR = NgChm.createNS('NgChm.UI-Manager');
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const COMPAT = NgChm.importNS('NgChm.COMPAT');
     const FLICK = NgChm.importNS('NgChm.FLICK');
     const SUM = NgChm.importNS('NgChm.SUM');
     const SMM = NgChm.importNS('NgChm.SMM');
