@@ -531,7 +531,10 @@
      * on load processing for the viewer.  repository (default .) is the path to the
      * directory containing the specified map.
      **********************************************************************************/
-    UIMGR.embedCHM = function (map, repository, sizeBuilderView) {
+    NgChm.exportToNS ("NgChm.API", { embedCHM, showEmbed, showEmbedded });
+    // FIXME: BMB: Why do both showEmbed and showEmbedded exist and how are they different?
+
+    function embedCHM (map, repository, sizeBuilderView) {
 	    MMGR.embeddedMapName = map;
 	    MMGR.localRepository = repository || ".";
 	    //Reset dendros for local/widget load
@@ -540,7 +543,75 @@
     //	DET.colDendro = null;
     //	DET.rowDendro = null;
 	    UIMGR.onLoadCHM(sizeBuilderView);
-    };
+    }
+
+    /**********************************************************************************
+     * FUNCTION - showEmbed: This function shows the embedded heat map when the
+     * user clicks on the embedded map image.
+     **********************************************************************************/
+    function showEmbed (baseDiv,dispWidth,dispHeight,customJS) {
+	    var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
+	    UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	    UTIL.embedThumbHeight = embeddedWrapper.style.height;
+	    var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
+	    var embeddedMap = document.getElementById('NGCHMEmbed');
+	    var iFrame = window.frameElement; // reference to iframe element container
+	    iFrame.className='ngchm';
+	    var wid = 100;
+	    if (dispWidth < 100) {
+		    wid = wid*(dispWidth/100);
+	    }
+	    var hgt = 100;
+	    if (dispHeight < 100) {
+		    hgt = hgt*(dispHeight/100);
+	    }
+	    iFrame.style.height = hgt + 'vh';
+	    iFrame.style.width = wid + 'vw';
+	    iFrame.style.display = 'flex';
+	    embeddedMap.style.height = '92vh';
+	    embeddedMap.style.width = '97vw';
+	    embeddedMap.style.display = 'flex';
+	    embeddedMap.style.flexDirection = 'column';
+	    embeddedWrapper.style.display = 'none';
+	    embeddedCollapse.style.display = '';
+	    if (UTIL.embedLoaded === false) {
+		    UTIL.embedLoaded = true;
+		    loadLocalModeCHM(false);
+		    if (customJS !== "") {
+			    setTimeout(function(){ CUST.addExtraCustomJS(customJS);}, 2000);
+		    }
+	    }
+    }
+
+    /**********************************************************************************
+     * FUNCTION - showEmbed: This function shows the embedded heat map when the
+     * user clicks on the embedded map image.  It is used by NGCHM_Embed.js from
+     * the minimized file ngchmEmbed-min.js
+     **********************************************************************************/
+    function showEmbedded (baseDiv,iframeStyle,customJS) {
+	    var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
+	    UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	    UTIL.embedThumbHeight = embeddedWrapper.style.height;
+	    var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
+	    var embeddedMap = document.getElementById('NGCHMEmbed');
+	    var iFrame = window.frameElement; // reference to iframe element container
+	    iFrame.className='ngchm';
+	    iFrame.style = iframeStyle;
+	    iFrame.style.display = 'flex';
+	    embeddedMap.style.height = '92vh';
+	    embeddedMap.style.width = '97vw';
+	    embeddedMap.style.display = 'flex';
+	    embeddedMap.style.flexDirection = 'column';
+	    embeddedWrapper.style.display = 'none';
+	    embeddedCollapse.style.display = '';
+	    if (UTIL.embedLoaded === false) {
+		    UTIL.embedLoaded = true;
+		    loadLocalModeCHM(false);
+		    if (customJS !== "") {
+			    setTimeout(function(){ CUST.addExtraCustomJS(customJS);}, 2000);
+		    }
+	    }
+    }
 
     /**********************************************************************************
      * FUNCTION - widgetHelp: This function displays a special help popup box for
