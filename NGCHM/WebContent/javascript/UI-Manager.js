@@ -533,6 +533,8 @@
      **********************************************************************************/
     NgChm.exportToNS ("NgChm.API", { embedCHM, showEmbed, showEmbedded });
     // FIXME: BMB: Why do both showEmbed and showEmbedded exist and how are they different?
+    // To preserve compatibility with old API:
+    Object.assign (UTIL, { embedCHM, showEmbed, showEmbedded });
 
     function embedCHM (map, repository, sizeBuilderView) {
 	    MMGR.embeddedMapName = map;
