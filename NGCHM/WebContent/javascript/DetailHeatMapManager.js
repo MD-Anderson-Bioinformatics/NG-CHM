@@ -5,14 +5,19 @@
     //Define Namespace for NgChm Drawing
     const DMM = NgChm.createNS('NgChm.DMM');
 
+    const UTIL = NgChm.importNS('NgChm.UTIL');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
-    const DDR = NgChm.importNS('NgChm.DDR');
+    const DETDDR = NgChm.importNS('NgChm.DETDDR');
     const PANE = NgChm.importNS('NgChm.Pane');
+    const PIM = NgChm.importNS('NgChm.PIM');
     const SUM = NgChm.importNS('NgChm.SUM');
+    const LNK = NgChm.importNS('NgChm.LNK');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
+    const SRCH = NgChm.importNS('NgChm.SRCH');
 
 //Next available heatmap object iterator (used for subscripting new map DOM elements) 
 DMM.nextMapNumber = 1;
@@ -66,7 +71,7 @@ DMM.nextMapNumber = 1;
 	}
 
 	setButtons () {
-	    DET.setButtons(this);
+	    DEV.setButtons(this);
 	}
     };
 
@@ -86,7 +91,8 @@ DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
 	if (restoreInfo) {
 	    DET.restoreFromSavedState (newMapObj, restoreInfo);
 	}
-	DET.setDetailMapDisplay(newMapObj, restoreInfo);
+	DMM.setDetailMapDisplay(newMapObj, restoreInfo);
+	DEV.setButtons(newMapObj);
 	if (isPrimary) {
 	    DMM.setPrimaryDetailMap (newMapObj);
 	} else {
@@ -101,6 +107,27 @@ DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
  * (either intial or copy) being created.
  *********************************************************************************************/
 DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
+        const dendroCallbacks = {
+	    setMouseDown: function () {
+		DEV.setMouseDown (true);
+	    },
+	    getLabelLastClicked: function (axis) {
+		return DET.labelLastClicked[axis];
+	    },
+	    isVisible: function (canvas) {
+		const loc = PANE.findPaneLocation (canvas);
+		return !loc.pane.classList.contains('collapsed');
+	    },
+	    searchResultsChanged: function (axis, clickType) {
+		SRCH.showSearchResults();
+		DET.setDrawDetailTimeout(mapItem, DET.redrawSelectionTimeout, true);
+		DET.updateDisplayedLabels();
+		SUM.clearAxisSelectionMarks(axis);
+		SUM.drawAxisSelectionMarks(axis);
+		SUM.drawTopItems();
+		PIM.postSelectionToPlugins(axis, clickType, 0, null);
+	    },
+	};
 	const labelCallbacks = {
 	    labelClick: DEV.labelClick,
 	    labelDrag: DEV.labelDrag,
@@ -113,8 +140,8 @@ DMM.completeMapItemConfig = function (mapItem, chm, mapNumber) {
 	mapItem.canvas = chm.children[2];
 	mapItem.boxCanvas = chm.children[3];
 	mapItem.labelElement = chm.children[4];
-	mapItem.rowDendro = new DDR.DetailRowDendrogram(chm.children[1]);
-	mapItem.colDendro = new DDR.DetailColumnDendrogram(chm.children[0]);
+	mapItem.rowDendro = new DETDDR.DetailRowDendrogram(mapItem, chm.children[1], SUM.rowDendro, dendroCallbacks);
+	mapItem.colDendro = new DETDDR.DetailColumnDendrogram(mapItem, chm.children[0], SUM.colDendro, dendroCallbacks);
 	mapItem.panelNbr = mapNumber;
 	mapItem.labelPostScript = mapNumber === 1 ? '' : '_' + mapNumber;
 	mapItem.rowLabelDiv =  'rowL'+mapItem.labelElement.id.substring(1);
@@ -208,26 +235,284 @@ DMM.resizeDetailMapCanvases = function resizeDetailMapCanvases () {
 	}
 };
 
-/************************************************************************************************
- * FUNCTION - detailResize: This function calls all of the functions necessary to resize all 
- * of the open detail panel instances.
- ************************************************************************************************/
-DMM.detailResize = function () {
-	DVW.detailMaps.forEach(mapItem => {
-	    DET.rowDendroResize(mapItem);
-	    DET.colDendroResize(mapItem);
-	});
-	if (DVW.detailMaps.length > 0) {
-		 DET.sizeCanvasForLabels();
-		 //Done twice because changing canvas size affects fonts selected for drawing labels
-		 DET.sizeCanvasForLabels();
-		 DET.updateDisplayedLabels();
-		 DET.drawSelections();
+
+/*********************************************************************************************
+ * FUNCTION:  setDetailMapDisplay - The purpose of this function is to complete the construction
+ * of a detail heat map object and add it to the DetailMaps object array.
+ *********************************************************************************************/
+DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
+	DET.setDendroShow(mapItem);
+	//If we are opening the first detail "copy" of this map set the data sizing for initial display
+	if (DVW.detailMaps.length === 0 && !restoreInfo) {
+		DET.setInitialDetailDisplaySize(mapItem);
 	}
-	DVW.detailMaps.forEach(mapItem => {
-	    DET.rowDendroResize(mapItem);
-	    DET.colDendroResize(mapItem);
-	});
-}
+	LNK.createLabelMenus();
+	LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT, setSelectionAsDetailView, null, 0);
+	DET.setDendroShow(mapItem);
+	if (mapItem.canvas) {
+		mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
+		mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+	}
+
+	setTimeout (function() {
+		DET.detInitGl(mapItem);
+		mapItem.updateSelection();
+		if (UTIL.getURLParameter("selected") !== ""){
+			const selected = UTIL.getURLParameter("selected").replace(","," ");
+			document.getElementById("search_text").value = selected;
+			if (mapItem.version === 'P') {
+				SRCH.detailSearch();
+				SUM.drawSelectionMarks();
+				SUM.drawTopItems();
+			}
+		}
+	}, 1);
+
+	DVW.detailMaps.push(mapItem);
+	if (mapItem.version === 'P') {
+		DET.primaryMap = mapItem;
+	}
+	if (restoreInfo) {
+	    if (mapItem.rowDendro !== null) {
+		mapItem.rowDendro.setZoomLevel(restoreInfo.rowZoomLevel || 1);
+	    }
+	    if (mapItem.colDendro !== null) {
+		mapItem.colDendro.setZoomLevel(restoreInfo.colZoomLevel || 1);
+	    }
+	}
+};
+
+    function setSelectionAsDetailView (searchLabels, axis) {
+	const menuOpenCanvas = LNK.getMenuOpenCanvas();
+	if (menuOpenCanvas) {
+	    const mapItem = DVW.getMapItemFromCanvas (menuOpenCanvas);
+	    if (mapItem == null) {
+		console.error ("Cannot find the detail panel on which the menu popup was opened");
+		return;
+	    }
+	    setDetailView(mapItem, searchLabels);
+	}
+    }
+
+    //This matrix function allows users to create a special sub-ribbon view that matches
+    //the currently selected box in the detail panel.  It just uses the first
+    //row/col selected and last row/col selected so it will work well with a drag
+    //selected box but not with random selections all over the map.
+    function setDetailView (mapItem, searchLabels) {
+	    let selRows = SRCHSTATE.getAxisSearchResults("Row");
+	    if (selRows.length === 0) {
+		    selRows = LNK.getEntireAxisSearchItems(searchLabels,"Row");
+	    }
+	    let selCols = SRCHSTATE.getAxisSearchResults("Column");
+	    if (selCols.length === 0) {
+		    selCols = LNK.getEntireAxisSearchItems(searchLabels,"Column");
+	    }
+	    var startCol = parseInt(selCols[0])
+	    var endCol = parseInt(selCols[selCols.length-1])
+	    var startRow = parseInt(selRows[0])
+	    var endRow = parseInt(selRows[selRows.length-1])
+
+	    setSubRibbonView(mapItem, startRow, endRow, startCol, endCol);
+    };
+
+    //This is a helper function that can set a sub-ribbon view that best matches a user
+    //selected region of the map.
+    DMM.setSubRibbonView = setSubRibbonView;
+    function setSubRibbonView  (mapItem, startRow, endRow, startCol, endCol) {
+	    const selRows = Math.abs(endRow - startRow);
+	    const selCols = Math.abs(endCol - startCol);
+
+	    //In case there was a previous dendo selection - clear it.
+	    SUM.clearSelectionMarks();
+	    SUM.colDendro.draw();
+	    SUM.rowDendro.draw();
+
+	    if (!mapItem) return;
+	    //If tiny tiny box was selected, discard and go back to previous selection size
+	    if (endRow-startRow<1 && endCol-startCol<1) {
+		    DET.setDetailDataSize (mapItem, mapItem.dataBoxWidth);
+	    //If there are more rows than columns do a horizontal sub-ribbon view that fits the selection. 	
+	    } else if (selRows >= selCols) {
+		    var boxSize = DET.getNearestBoxHeight(mapItem, endRow - startRow + 1);
+		    DET.setDetailDataHeight(mapItem,boxSize);
+		    mapItem.selectedStart= startCol;
+		    mapItem.selectedStop=endCol;
+		    mapItem.currentRow = startRow;
+		    DET.callDetailDrawFunction('RIBBONH', mapItem);
+	    } else {
+		    //More columns than rows, do a vertical sub-ribbon view that fits the selection.
+		    var boxSize = DET.getNearestBoxSize(mapItem, endCol - startCol + 1);
+		    DET.setDetailDataWidth(mapItem,boxSize);
+		    mapItem.selectedStart=startRow;
+		    mapItem.selectedStop=endRow;
+		    mapItem.currentCol = startCol;
+		    DET.callDetailDrawFunction('RIBBONV', mapItem);
+	    }
+	    mapItem.updateSelection(mapItem);
+    }
+
+
+(function() {
+	// Define a function to switch a panel to the detail view.
+	// Similar to the corresponding function for switching a pane to the summary view.
+	// See additional comments in that function.
+	DMM.switchPaneToDetail = switchPaneToDetail;
+	PANE.registerPaneContentOption ('Detail heatmap', switchPaneToDetail);
+
+	var initialSwitchPaneToDetail = true
+
+	function switchPaneToDetail (loc, restoreInfo) {
+		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
+		const debug = false;
+		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
+		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DVW.primaryMap === null);
+		const mapNumber = restoreInfo ? restoreInfo.mapNumber : DMM.nextMapNumber;
+
+		PANE.clearExistingDialogs(paneId);
+		if (initialSwitchPaneToDetail) {
+			// First time detail NGCHM created.
+			constructDetailMapDOMTemplate()
+			initialSwitchPaneToDetail = false;
+		}
+
+		if (loc.pane.querySelector('.detail_chm') !== null) {
+			// Cannot switch if already a detail_chm in this panel.
+			return;
+		}
+		PANE.emptyPaneLocation (loc);
+		if (restoreInfo) {
+		    if (mapNumber >= DMM.nextMapNumber) {
+			DMM.nextMapNumber = mapNumber+1;
+		    }
+		} else {
+		    DMM.nextMapNumber++;
+		}
+
+		/* Clone DIV#detail_chm from DIV#templates. */
+		let chm = cloneDetailChm (mapNumber);
+		loc.pane.appendChild (chm);
+		PANE.setPaneClientIcons(loc, DEV.createClientButtons(mapNumber, paneId, loc.pane.children[1], DMM.switchToPrimary));
+		const mapItem = DMM.addDetailMap (chm, paneId, mapNumber, isPrimary, restoreInfo ? restoreInfo.paneInfo : null);
+		// If primary is collapsed set chm detail of clone to visible
+		if (!restoreInfo && chm.style.display === 'none') {
+			chm.style.display = '';
+		}
+		SUM.drawLeftCanvasBox();
+		DEV.addEvents(paneId);
+		if (isPrimary) {
+			document.getElementById('primary_btn'+mapNumber).style.display = 'none';
+			PANE.setPaneTitle (loc, 'Heat Map Detail - Primary');
+		} else {
+			document.getElementById('primary_btn'+mapNumber).style.display = '';
+			PANE.setPaneTitle (loc, 'Heat Map Detail - Ver ' + mapNumber);
+		}
+		PANE.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
+		PANE.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
+		DET.setDrawDetailTimeout (mapItem, 0, true);
+	}
+
+	/*
+		Construct DOM template for Detail Heat Map and append to div with id = 'template'
+	*/
+	function constructDetailMapDOMTemplate () {
+		let detailTemplate = document.createElement('div')
+		detailTemplate.setAttribute('id', 'detail_chm');
+		detailTemplate.setAttribute('class','detail_chm')
+		detailTemplate.setAttribute('style','position: absolute;')
+		let columnDendro = document.createElement('canvas')
+		columnDendro.setAttribute('id','detail_column_dendro_canvas')
+		columnDendro.setAttribute('width','1200')
+		columnDendro.setAttribute('height','500')
+		columnDendro.setAttribute('style','position: absolute;')
+		detailTemplate.appendChild(columnDendro)
+		let rowDendro = document.createElement('canvas')
+		rowDendro.setAttribute('id','detail_row_dendro_canvas')
+		rowDendro.setAttribute('width','1200')
+		rowDendro.setAttribute('height','500')
+		rowDendro.setAttribute('style','position: absolute;')
+		detailTemplate.appendChild(rowDendro)
+		let detailCanvas = document.createElement('canvas')
+		detailCanvas.setAttribute('id','detail_canvas')
+		detailCanvas.setAttribute('class','detail_canvas')
+		detailCanvas.setAttribute('tabindex','1')
+		detailTemplate.appendChild(detailCanvas)
+		let detailBoxCanvas = document.createElement('canvas')
+		detailBoxCanvas.setAttribute('id','detail_box_canvas')
+		detailBoxCanvas.setAttribute('class','detail_box_canvas')
+		detailTemplate.appendChild(detailBoxCanvas)
+		// labels div has children colLabels and rowLabels
+		let labels = document.createElement('div')
+		labels.setAttribute('id','labelDiv')
+		labels.setAttribute('style','display: inline-block;')
+		let colLabels = document.createElement('div')
+		colLabels.setAttribute('id','colLabelDiv')
+		colLabels.setAttribute('data-axis','Column')
+		colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
+		colLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
+		labels.appendChild(colLabels)
+		let rowLabels = document.createElement('div')
+		rowLabels.setAttribute('id','rowLabelDiv')
+		rowLabels.setAttribute('data-axis','Row')
+		rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
+		rowLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
+		labels.appendChild(rowLabels)
+		detailTemplate.appendChild(labels)
+		let templates = document.getElementById('templates')
+		templates.appendChild(detailTemplate)
+	}
+
+
+	function cloneDetailChm (mapNumber) {
+		const tmp = document.querySelector('#detail_chm');
+		const pClone = tmp.cloneNode(true);
+		pClone.id = 'detail_chm' + mapNumber;
+		renameElements(pClone, mapNumber);
+		// Return cloned client element.
+		return pClone;
+	}
+
+	function renameElements (pClone, mapNumber) {
+		// Rename all client elements on the pane.
+		for (let idx = 0; idx < pClone.children.length; idx++) {
+			const p = pClone.children[idx];
+			p.id = p.id + mapNumber;
+			if (p.children.length > 0) {
+				let removals = [];
+		        for (let idx2 = 0; idx2 < p.children.length; idx2++) {
+					const q = p.children[idx2];
+					//rename all but label elements and place label elements in a deletion array
+					if ((q.id.includes('rowLabelDiv')) || (q.id.includes('colLabelDiv'))) {
+						q.id = q.id + mapNumber;
+					} else {
+						removals.push(q.id);
+					}
+		        }
+		        //strip out all label elements
+		        for (let idx3 = 0; idx3 < removals.length; idx3++) {
+					const rem = removals[idx3];
+			        for (let idx4 = 0; idx4 < p.children.length; idx4++) {
+						const q = p.children[idx4];
+						if (rem === q.id) {
+							q.remove();
+							break;
+						}
+			        }
+		        }
+			}
+		}
+	}
+
+
+	function emptyDetailPane (loc, elements) {
+		DMM.RemoveDetailMap(loc.pane.id);
+		SUM.drawLeftCanvasBox ();
+	}
+
+	function resizeDetailPane (loc) {
+		DET.detailResize();
+		DET.setDrawDetailTimeout(DVW.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
+	}
+
+})();
 
 })();

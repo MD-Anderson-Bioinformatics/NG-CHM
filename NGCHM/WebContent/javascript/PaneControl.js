@@ -6,9 +6,8 @@
 	const PANE = NgChm.createNS('NgChm.Pane');
 
 	const UTIL = NgChm.importNS('NgChm.UTIL');
-	const UHM = NgChm.importNS('NgChm.UHM');
-	const LNK = NgChm.importNS('NgChm.LNK');
 	const MMGR = NgChm.importNS('NgChm.MMGR');
+	const UHM = NgChm.importNS('NgChm.UHM');
 	const TOUR = NgChm.importNS('NgChm.TOUR');
 
 	PANE.showPaneHeader = true;
@@ -26,7 +25,6 @@
 	PANE.initializePanes = initializePanes;
 	PANE.newPane = newPane;
 	PANE.resizePane = resizePane;
-	PANE.initializeGearIconMenu = initializeGearIconMenu;
 	PANE.DividerControl = DividerControl;
 	PANE.resizeHandler = resizeHandler;
 	PANE.resetPaneCounter = resetPaneCounter;
@@ -49,23 +47,26 @@
 	// function registerPaneContentOption (menuEntry, callback) - register pane content option
 	PANE.registerPaneContentOption = registerPaneContentOption;
 
+	// function registerPaneExtraOption (menuEntry, enabled, callback, data) - register pane extra content option
+	PANE.registerPaneExtraOption = registerPaneExtraOption;
+
 	// function setPanePropWidths (percent, left, right, divider) - set default pane proportions
 	PANE.setPanePropWidths = setPanePropWidths;
 
 	// function registerPaneEventHandler(pane,name,callback) - set callback for Event name on pane
 	PANE.registerPaneEventHandler = registerPaneEventHandler;
 
-	// function switchToPlugin (loc, name) - switch the pane to the plugin called name.
-	PANE.switchToPlugin = switchToPlugin;
-	
-	// function clearExistingGearDialog (paneId) - clear any existing gear dialog from pane.
-	PANE.clearExistingGearDialog = clearExistingGearDialog
+	// function clearExistingDialogs (paneId) - clear any existing dialogs from pane.
+	PANE.clearExistingDialogs = clearExistingDialogs;
 
 	// function setDividerPref (percent) - resize panes in standard configuration.
 	PANE.setDividerPref = setDividerPref;
 
 	// function setPaneTitle (loc, title) - set the title of the pane at PaneLocation loc
 	PANE.setPaneTitle = setPaneTitle;
+
+	// function addPanelIcons (icons) Add the icons (an array) to the left of the PanelIcon in the PanelIconGroup
+	PANE.addPanelIcons = addPanelIcons;
 
 	// function setPaneClientIcons (loc, icons) - Set the icon group containing icons (an array) to the pane header.
 	PANE.setPaneClientIcons = setPaneClientIcons;
@@ -443,48 +444,30 @@
 	}
 	//******* END SCREEN MODE FUNCTIONS *********//
 
-	// Initialize DOM IMG element icon to a gear menu.
-	function initializeGearIconMenu (icon) {
-		icon.classList.add('hide');
-		icon.onmouseout = function(e) {
-			icon.src = 'images/gear.png';
-			UHM.hlpC();
-		};
-		icon.onmouseover = function(e) {
-			icon.src = 'images/gearHover.png';
-			UHM.hlp(icon, 'Open gear menu', 120, 0);
-		};
-		icon.onclick = function(e) {
-			if (debug) console.log ({ m: 'paneGearIcon click', e });
-			e.stopPropagation();
-			let paneIdx = e.target.id.slice(0,-4) // e.g. 'pane2Gear'
-			LNK.newGearDialog (icon, paneIdx);
-		};
-	}
-
 	// Exported function.
 	function setPaneTitle (loc, title) {
 		loc.paneTitle.innerText = title;
 	}
 
 	// Exported function.
-	// Switch the pane specified by Pane Location loc to the plugin called name.
-	function switchToPlugin (loc, name) {
-		setPaneTitle (loc, name);
-		const gearIcon = loc.paneHeader.getElementsByClassName('gearIcon')[0];
-		gearIcon.classList.remove('hide');
-		clearExistingGearDialog (loc.pane.id);
-		LNK.newGearDialog (gearIcon, loc.pane.id);
+	function addPanelIcons (loc, userIcons) {
+	    // Find the icon group containing the paneMenuIcon.
+	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group IMG.paneMenuIcon');
+	    const iconGroup = paneIcon.parentElement;
+	    userIcons.forEach (icon => {
+		iconGroup.insertBefore (icon, paneIcon);
+	    });
 	}
 	
 	// Exported function.
 	// Check for and clear any existing gear dialog on the pane.
-	function clearExistingGearDialog (paneId) {
-		const existingGear = document.getElementById(paneId+"Gear");
-		const existingIcon = document.getElementById(paneId+"Icon");
-		if (existingGear !== null) {
-			removePopupNearIcon (existingGear, existingIcon);
+	function clearExistingDialogs (paneId) {
+	    [...document.querySelectorAll('#' + paneId + ' [data-popup-name]')].forEach (icon => {
+		const popup = document.getElementById(icon.dataset.popupName);
+		if (popup !== null) {
+			removePopupNearIcon (popup, icon);
 		}
+	    });
 	}
 
 	// Handler for custom resize event for both Panels (leaf nodes) and Containers.
@@ -573,15 +556,6 @@
 
 			const ig = UTIL.newElement('DIV.icon_group');
 			h.appendChild(ig);
-
-			const img2 = UTIL.newElement('IMG.gearIcon', {
-				src: 'images/gear.png',
-				alt: 'Open gear menu',
-				align: 'top',
-				id: paneid+"Icon"
-			});
-			initializeGearIconMenu (img2);
-			ig.appendChild(img2);
 
 			const img = UTIL.newElement('IMG.paneMenuIcon', {
 				src: 'images/paneMenu.png',
@@ -791,6 +765,12 @@
 		paneContentOptions.push ({ menuEntry, callback });
 	}
 
+	const paneExtraOptions = [];
+	// Exported function.
+	function registerPaneExtraOption (name, enabled, switcher, data) {
+		paneExtraOptions.push ({ name, enabled, switcher, data });
+	}
+
 	// Get the next (or previous if need be) unexpanded sibling of a pane.
 	function getExpandedSibling (loc) {
 		// Get all children of parent container.
@@ -858,13 +838,12 @@
 				});
 			});
 			// Add plugin options.
-			const plugins = LNK.getPanePlugins ();
-			plugins.forEach(plugin => {
-				if (plugin.params) {
-					menuItem (plugin.name, () => {
+			paneExtraOptions.forEach (opt => {
+				if (opt.enabled()) {
+					menuItem (opt.name, () => {
 						const loc = findPaneLocation (icon);
 						emptyPaneLocation (loc);
-						LNK.switchPaneToPlugin (loc, plugin);
+						opt.switcher (loc, opt.data);
 					});
 				}
 			});  
@@ -1256,7 +1235,6 @@
 	// - the removed client elements are returned.
 	function emptyPaneLocation (loc) {
 		if (loc.pane === null) return;  //builder logic
-		LNK.removePluginInstance(loc.pane.nonce);
 		// Remove all client elements from the pane.
 		const clientElements = [];
 		for (let idx = 0; idx < loc.pane.childNodes.length; idx++) {
@@ -1271,13 +1249,24 @@
 		removePaneHandlers (loc.pane);
 		// Set pane title to empty, hide the gear icon, and remove client icons (if any).
 		setPaneTitle (loc, 'empty');
-		const gearIcon = loc.paneHeader.getElementsByClassName('gearIcon')[0];
-		gearIcon.classList.add('hide');
+		removePanelMenuGroupIcons (loc);
 		PANE.setPaneClientIcons (loc, []);
 		MMGR.removePaneInfoFromMapConfig(loc.pane.id)
 		// Return remaining client elements to caller.
 		return clientElements;
 	}
+
+	// Remove any icons except the PanelMenuIcon from the panel menu group.
+	function removePanelMenuGroupIcons (loc) {
+	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group IMG.paneMenuIcon');
+	    const iconGroup = paneIcon.parentElement;
+	    [...iconGroup.children].forEach (element => {
+		if (element !== paneIcon) {
+		    element.remove();
+		}
+	    });
+	}
+
 	
 	// Create an initial, immediate child pane of the top-level container.
 	// Used only during initialization of the panel interface.

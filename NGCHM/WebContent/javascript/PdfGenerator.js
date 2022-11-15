@@ -5,15 +5,15 @@
     //Define Namespace for NgChm PdfGenerator
     const PDF = NgChm.createNS('NgChm.PDF');
 
-    const UHM = NgChm.importNS('NgChm.UHM');
-    const SUM = NgChm.importNS('NgChm.SUM');
-    const DMM = NgChm.importNS('NgChm.DMM');
-    const DET = NgChm.importNS('NgChm.DET');
-    const DVW = NgChm.importNS('NgChm.DVW');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
-    const SRCH = NgChm.importNS('NgChm.SRCH');
+    const UHM = NgChm.importNS('NgChm.UHM');
+    const SUM = NgChm.importNS('NgChm.SUM');
+    const DVW = NgChm.importNS('NgChm.DVW');
+    const DET = NgChm.importNS('NgChm.DET');
+    const DEV = NgChm.importNS('NgChm.DEV');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const PANE = NgChm.importNS('NgChm.Pane');
 
 PDF.rowDendoWidth = null;
@@ -86,7 +86,7 @@ PDF.openPdfPrefs = function(e) {
 			document.getElementById("pdfInputFont").value = UTIL.minLabelSize;
 		}
 	}
-    SUM.redrawCanvases();
+    DEV.redrawCanvases();
 }
 
 /**********************************************************************************
@@ -218,7 +218,7 @@ PDF.pdfDataReady = function(event, tile) {
  * https://mrrio.github.io/jsPDF/doc/symbols/jsPDF.html#setLineCap
  **********************************************************************************/
 PDF.getViewerHeatmapPDF = function() {
-	DVW.updateSelections(true);
+	DET.updateSelections(true);
 	setTimeout(function(){ PDF.genViewerHeatmapPDF(); }, 1500);
 }
 
@@ -417,7 +417,7 @@ PDF.genViewerHeatmapPDF = function() {
 	// Reset Summary and Detail Panels on Viewer Screen
 	if (includeDetailMap) {
 		DVW.primaryMap.canvas.focus();
-		DMM.detailResize();
+		DET.detailResize();
 	}
 	
 	// Reset cursor to default
@@ -1028,13 +1028,13 @@ PDF.genViewerHeatmapPDF = function() {
 		for (var i in mapLabels) {
 			var label = mapLabels[i].div;		
 			if (label.dataset.axis == "Row"){
-				if (SRCH.labelIndexInSearch("Row",mapItem.currentRow+i)) {
+				if (SRCHSTATE.labelIndexInSearch("Row",mapItem.currentRow+i)) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 					doc.rect((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth+paddingLeft, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight, longestRowLabelUnits+2, theFont,'F');
 				}
 				rowLabels++;
 			} else if (label.dataset.axis == "Column") {
-				if (SRCH.labelIndexInSearch("Column",mapItem.currentCol+i-rowLabels)) {
+				if (SRCHSTATE.labelIndexInSearch("Column",mapItem.currentCol+i-rowLabels)) {
 					doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 					doc.rect((label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+rowDendroWidth-2, (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+colDendroHeight,  theFont+2.5, longestColLabelUnits+2,'F'); 
 				}

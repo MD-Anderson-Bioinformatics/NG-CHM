@@ -39,6 +39,7 @@ RUN mkdir -p ${GMAPGEN} &&\
 # Stage 3: Create NG-CHM Standalone
 FROM ant AS standalone
 COPY NGCHM /NGCHM/
+COPY .git /.git/
 
 ENV STANDALONE=/artifacts/standalone
 ENV SERVERAPP=/artifacts/server.app

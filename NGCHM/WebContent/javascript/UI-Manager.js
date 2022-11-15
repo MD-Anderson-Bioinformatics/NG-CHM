@@ -10,8 +10,10 @@
     const UIMGR = NgChm.createNS('NgChm.UI-Manager');
 
     const UTIL = NgChm.importNS('NgChm.UTIL');
+    const COMPAT = NgChm.importNS('NgChm.CM');
     const FLICK = NgChm.importNS('NgChm.FLICK');
     const SUM = NgChm.importNS('NgChm.SUM');
+    const SMM = NgChm.importNS('NgChm.SMM');
     const PDF = NgChm.importNS('NgChm.PDF');
     const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
@@ -20,6 +22,8 @@
     const DVW = NgChm.importNS('NgChm.DVW');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const PANE = NgChm.importNS('NgChm.Pane');
+    const PIM = NgChm.importNS('NgChm.PIM');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const DRAW = NgChm.importNS('NgChm.DRAW');
     const RECPANES = NgChm.importNS('NgChm.RecPanes');
@@ -31,7 +35,7 @@
     */
     function saveHeatMapToNgchm () {
 	    const heatMap = MMGR.getHeatMap();
-	    LNK.requestDataFromPlugins();
+	    PIM.requestDataFromPlugins();
 	    var success = true;
 	    UHM.initMessageBox();
 	    if (MMGR.source === MMGR.WEB_SOURCE) {
@@ -41,9 +45,9 @@
 		    let waitForPluginDataCount = 0;
 		    let awaitingPluginData = setInterval(function() {
 			    waitForPluginDataCount = waitForPluginDataCount + 1; // only wait so long
-			    if (LNK.havePluginData() || waitForPluginDataCount > 3) {
+			    if (PIM.havePluginData() || waitForPluginDataCount > 3) {
 				    clearInterval(awaitingPluginData);
-				    LNK.warnAboutMissingPluginData();
+				    PIM.warnAboutMissingPluginData();
 				    heatMap.zipSaveMapProperties(addSaveStateToMapConfig());
 			    }
 		    }, 1000);
@@ -128,7 +132,7 @@
 	}
 
 	function saveSelectionsToMapConfig () {
-		mapConfig.panel_configuration['selections'] = SRCH.getSearchSaveState();
+		mapConfig.panel_configuration['selections'] = SRCHSTATE.getSearchSaveState();
 		if (SUM.rowDendro) {
 		    const bars = SUM.rowDendro.saveSelectedBars();
 		    if (bars.length > 0) {
@@ -161,7 +165,7 @@
 			UHM.messageBoxCancel();
 		    });
 	    } else {
-		    text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>" 
+		    text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
 		    UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", MMGR.zipAppDownload);
 	    }
 	    UHM.setMessageBoxText(text);
@@ -265,7 +269,11 @@
 			}
 		    });
 		});
-		SUM.initSummaryData();
+		SUM.initSummaryData({
+		    clearSearchItems: SRCH.clearSearchItems,
+		    showSearchResults: SRCH.showSearchResults,
+		    callDetailDrawFunction: DET.callDetailDrawFunction,
+		});
 		const initialLoc = PANE.initializePanes ();
 		const panelConfig = MMGR.getHeatMap().getPanelConfiguration();
 		if (panelConfig) {
@@ -275,14 +283,14 @@
 		} else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
 			const s = PANE.splitPane (false, initialLoc);
 			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
-			SUM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
-			DET.switchPaneToDetail (PANE.findPaneLocation(s.child2));
+			SMM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
+			DMM.switchPaneToDetail (PANE.findPaneLocation(s.child2));
 			SRCH.doInitialSearch();
 		} else if (UTIL.showSummaryPane) {
-			SUM.switchPaneToSummary (initialLoc);
+			SMM.switchPaneToSummary (initialLoc);
 			SRCH.doInitialSearch();
 		} else if (UTIL.showDetailPane) {
-			DET.switchPaneToDetail (initialLoc);
+			DMM.switchPaneToDetail (initialLoc);
 			SRCH.doInitialSearch();
 		}
 	};
@@ -523,7 +531,12 @@
      * on load processing for the viewer.  repository (default .) is the path to the
      * directory containing the specified map.
      **********************************************************************************/
-    UIMGR.embedCHM = function (map, repository, sizeBuilderView) {
+    NgChm.exportToNS ("NgChm.API", { embedCHM, showEmbed, showEmbedded });
+    // FIXME: BMB: Why do both showEmbed and showEmbedded exist and how are they different?
+    // To preserve compatibility with old API:
+    Object.assign (UTIL, { embedCHM, showEmbed, showEmbedded });
+
+    function embedCHM (map, repository, sizeBuilderView) {
 	    MMGR.embeddedMapName = map;
 	    MMGR.localRepository = repository || ".";
 	    //Reset dendros for local/widget load
@@ -532,7 +545,75 @@
     //	DET.colDendro = null;
     //	DET.rowDendro = null;
 	    UIMGR.onLoadCHM(sizeBuilderView);
-    };
+    }
+
+    /**********************************************************************************
+     * FUNCTION - showEmbed: This function shows the embedded heat map when the
+     * user clicks on the embedded map image.
+     **********************************************************************************/
+    function showEmbed (baseDiv,dispWidth,dispHeight,customJS) {
+	    var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
+	    UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	    UTIL.embedThumbHeight = embeddedWrapper.style.height;
+	    var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
+	    var embeddedMap = document.getElementById('NGCHMEmbed');
+	    var iFrame = window.frameElement; // reference to iframe element container
+	    iFrame.className='ngchm';
+	    var wid = 100;
+	    if (dispWidth < 100) {
+		    wid = wid*(dispWidth/100);
+	    }
+	    var hgt = 100;
+	    if (dispHeight < 100) {
+		    hgt = hgt*(dispHeight/100);
+	    }
+	    iFrame.style.height = hgt + 'vh';
+	    iFrame.style.width = wid + 'vw';
+	    iFrame.style.display = 'flex';
+	    embeddedMap.style.height = '92vh';
+	    embeddedMap.style.width = '97vw';
+	    embeddedMap.style.display = 'flex';
+	    embeddedMap.style.flexDirection = 'column';
+	    embeddedWrapper.style.display = 'none';
+	    embeddedCollapse.style.display = '';
+	    if (UTIL.embedLoaded === false) {
+		    UTIL.embedLoaded = true;
+		    loadLocalModeCHM(false);
+		    if (customJS !== "") {
+			    setTimeout(function(){ CUST.addExtraCustomJS(customJS);}, 2000);
+		    }
+	    }
+    }
+
+    /**********************************************************************************
+     * FUNCTION - showEmbed: This function shows the embedded heat map when the
+     * user clicks on the embedded map image.  It is used by NGCHM_Embed.js from
+     * the minimized file ngchmEmbed-min.js
+     **********************************************************************************/
+    function showEmbedded (baseDiv,iframeStyle,customJS) {
+	    var embeddedWrapper = document.getElementById('NGCHMEmbedWrapper');
+	    UTIL.embedThumbWidth = embeddedWrapper.style.width;
+	    UTIL.embedThumbHeight = embeddedWrapper.style.height;
+	    var embeddedCollapse = document.getElementById('NGCHMEmbedCollapse');
+	    var embeddedMap = document.getElementById('NGCHMEmbed');
+	    var iFrame = window.frameElement; // reference to iframe element container
+	    iFrame.className='ngchm';
+	    iFrame.style = iframeStyle;
+	    iFrame.style.display = 'flex';
+	    embeddedMap.style.height = '92vh';
+	    embeddedMap.style.width = '97vw';
+	    embeddedMap.style.display = 'flex';
+	    embeddedMap.style.flexDirection = 'column';
+	    embeddedWrapper.style.display = 'none';
+	    embeddedCollapse.style.display = '';
+	    if (UTIL.embedLoaded === false) {
+		    UTIL.embedLoaded = true;
+		    loadLocalModeCHM(false);
+		    if (customJS !== "") {
+			    setTimeout(function(){ CUST.addExtraCustomJS(customJS);}, 2000);
+		    }
+	    }
+    }
 
     /**********************************************************************************
      * FUNCTION - widgetHelp: This function displays a special help popup box for
@@ -585,7 +666,7 @@
 	    } else {
 		    menu.style.display = 'none';
 	}
-	SUM.redrawCanvases();
+	DEV.redrawCanvases();
     }
 
     /**********************************************************************************
@@ -656,7 +737,7 @@
 	    const mapLinksTbl = openMapLinkoutsHelp();
 	    const allLinksTbl = openAllLinkoutsHelp();
 	    linkoutHelp(mapLinksTbl,allLinksTbl);
-	    SUM.redrawCanvases();
+	    DEV.redrawCanvases();
 	}
 
 	/**********************************************************************************
@@ -991,7 +1072,7 @@
 	    let url = location.origin+location.pathname;
 	    window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
 	}
-	SUM.redrawCanvases();
+	DEV.redrawCanvases();
     };
 
     document.getElementById('aboutMenu_btn').onclick = (ev) => {
@@ -1088,7 +1169,7 @@
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
-					clearDendroSelection();
+					DET.clearDendroSelection();
 					switch(mapItem.mode){
 						case "RIBBONV": newMode = 'RIBBONH'; break;
 						case "RIBBONH": newMode = 'NORMAL'; break;
@@ -1103,7 +1184,7 @@
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
-					clearDendroSelection();
+					DET.clearDendroSelection();
 					switch(mapItem.mode){
 						case "NORMAL": newMode = 'RIBBONH'; break;
 						case "RIBBONH": newMode = 'RIBBONV'; break;
@@ -1131,5 +1212,55 @@
 	    }
 	}
     }
+
+	/*
+		Process message from plugins to highlight points selected in plugin
+	*/
+	LNK.defineVanodiMessageHandler ('selectLabels', function vanodiSelectLabels(instance, msg) {
+	    const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
+	    const pluginLabels = msg.selection.pointIds.map(l => l.toUpperCase()) // labels from plugin
+	    var heatMapAxisLabels;
+	    if (pluginLabels.length > 0 && pluginLabels[0].indexOf('|') !== -1) {
+		// Plugin sent full labels
+		heatMapAxisLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
+	    } else {
+		// Plugin sent actual labels (or actual and full are identical).
+		heatMapAxisLabels = MMGR.getActualLabels(axis);
+	    }
+	    heatMapAxisLabels = heatMapAxisLabels.map(l => l.toUpperCase());
+	    var setSelected = new Set(pluginLabels) // make a set for faster access below, and avoiding use of indexOf
+	    SRCH.clearSearchItems(axis);
+	    var indexes = []
+	    for (var i=0; i<heatMapAxisLabels.length; i++) { // loop over all labels
+		if (setSelected.has(heatMapAxisLabels[i])) {  // if set of selected points has label, add index to array of indexes
+		    indexes.push(i+1);
+		}
+	    }
+	    if (indexes.length > 0) {
+		SRCH.setAxisSearchResultsVec (axis, indexes);
+		DET.labelLastClicked[axis] = indexes[indexes.length-1];
+	    }
+	    DET.updateDisplayedLabels();
+	    SUM.redrawSelectionMarks();
+	    DET.updateSelections();
+	    SRCH.showSearchResults();
+	    PIM.postSelectionToPlugins (axis, msg.selection.clickType, 0, msg.nonce);
+	});
+
+	/*
+		Process message from scatter plot to highlight single point under mouse on plot
+	*/
+	LNK.defineVanodiMessageHandler('mouseover', function vanodiMouseover(instance, msg) {
+	    const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
+	    const allLabels = MMGR.getActualLabels(axis);
+	    const pointId = msg.selection.pointId
+	    const ptIdx = allLabels.indexOf(pointId) + 1;
+	    SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
+	    DET.labelLastClicked[axis] = ptIdx;
+	    DET.updateDisplayedLabels();
+	    DET.updateSelections();
+	    SRCH.showSearchResults();
+	    SUM.redrawSelectionMarks();
+	});
 
 })();

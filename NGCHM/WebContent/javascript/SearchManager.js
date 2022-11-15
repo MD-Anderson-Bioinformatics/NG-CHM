@@ -5,53 +5,25 @@
     //Define Namespace for NgChm SearchManager
     const SRCH = NgChm.createNS('NgChm.SRCH');
 
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const SUM = NgChm.importNS('NgChm.SUM');
-    const LNK = NgChm.importNS('NgChm.LNK');
     const DVW = NgChm.importNS('NgChm.DVW');
-    const DMM = NgChm.importNS('NgChm.DMM');
     const DET = NgChm.importNS('NgChm.DET');
     const UHM = NgChm.importNS('NgChm.UHM');
+    const PIM = NgChm.importNS('NgChm.PIM');
 
-    /***********************************************************
-     * STATE VARIABLES SECTION
-     ***********************************************************/
+    SRCH.clearCurrentSearchItem = function() {
+	SRCHSTATE.clearCurrentSearchItem();
+    };
 
-    // searchResults maintains the database of all search results
-    // and/or manual selections on each axis. e.g. searchResults["Row"]
-    // is an object that contains the search results for the row axis.
-    // Each axis object contains an entry with value 1 for the indices
-    // of all selected items and no entry for all other items.
-    // e.g.  if rows 2, 4, and 6 are selected,
-    //     searchResults["Row"] == { "2": 1, "4": 1, "6": 1 }.
-    //
-    // Initialize this to avoid bug #320 when loading old maps via shaid
-    const searchResults = { Row: {}, Column: {}, RowCovar: {}, ColumnCovar: {} };
+    SRCH.setAxisSearchResults = function(axis, left, right) {
+	SRCHSTATE.setAxisSearchResults (axis, left, right);
+    };
 
-    // currentSearchItem contains the axis and index of the current
-    // search item (used by the forward and backward search arrow buttons).
-    var currentSearchItem = {};
-
-    // discCovStates stores for each axis the selected options in the select drop down
-    // for a discrete covariate.  Used to preserve selection state of the drop down
-    // as the user switches between label and covariate searches and axis changes.
-    const discCovStates = {};
-
-    // gapItems is a cache of which label indices are gap items.  It is
-    // not directly affect user-visible state.  It is used to prevent
-    // gapItems from being selected.
-    const gapItems = {};
-
-    /***********************************************************
-     * SEARCH FUNCTIONS SECTION
-     ***********************************************************/
-
-    SRCH.getSearchSaveState = function () {
-	const state = {};
-	state['row'] = SRCH.getAxisSearchResults('row');
-	state['col'] = SRCH.getAxisSearchResults('col');
-	return state;
+    SRCH.setAxisSearchResultsVec = function(axis, vec) {
+	SRCHSTATE.setAxisSearchResultsVec(axis, vec);
     };
 
     /**********************************************************************************
@@ -59,15 +31,7 @@
      * search-related state variables.
      **********************************************************************************/
     SRCH.clearAllSearchResults = function() {
-	searchResults["Row"]= {};
-	searchResults["Column"]= {};
-	searchResults["RowCovar"] = {};
-	searchResults["ColumnCovar"]= {};
-
-	currentSearchItem = {};
-	discCovStates["Row"] = "";
-	discCovStates["Column"] = "";
-	for (let axis in gapItems) delete gapItems[axis];
+	SRCHSTATE.clearAllSearchResults ();
 
 	// Connect UI elements to onclick handlers.
 	let e = document.getElementById('next_btn');
@@ -82,111 +46,6 @@
 	// Connect UI elements to onchange handlers.
 	e = document.getElementById('search_on');
 	if (e) e.onchange = () => searchOnSel();
-    };
-
-    // Private function getGaps returns a dictionary object
-    // for the specified axis that contains a true entry for the
-    // indices of any gap elements.
-    function getGaps (axis) {
-	// Get and cache which labels are gap items the first
-	// time we access the specified axis.
-	if (!(axis in gapItems)) {
-	    let labels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-	    gapItems[axis] = {};
-            // Note: indices for row and column labels are 1-origin.
-	    labels.forEach((label, index) => {
-		if (label == "") gapItems[axis][index+1] = true;
-	    });
-	}
-	return gapItems[axis];
-    }
-
-    /**********************************************************************************
-     * FUNCTION - getAxisSearchResults: get indices of all search results on the
-     * specified axis.
-     ***********************************************************************************/
-    SRCH.getAxisSearchResults = function (axis) {
-	// axis is capitalized in so many ways :-(.
-	axis = MMGR.isRow (axis) ? 'Row' : 'Column';
-	// Convert keys to integers so that callers don't have to.
-	return Object.keys(searchResults[axis]).map (val => +val);
-    };
-
-    /**********************************************************************************
-     * FUNCTION - setAxisSearchResults: set all search items from left to right (inclusive)
-     * on the specified axis.
-     ***********************************************************************************/
-    SRCH.setAxisSearchResults = function (axis, left, right) {
-        const axisResults = searchResults[axis];
-	const gaps = getGaps(axis);
-	for (let i = left; i <= right; i++) {
-	    if (!gaps[i]) axisResults[i] = 1;
-	}
-    };
-
-    /**********************************************************************************
-     * FUNCTION - setAxisSearchResultsVec: set all label indices in vec as search results
-     * on the specified axis.
-     ***********************************************************************************/
-    SRCH.setAxisSearchResultsVec = function (axis, vec) {
-        const axisResults = searchResults[axis];
-	const gaps = getGaps(axis);
-	vec.forEach (i => {
-	    if (!gaps[i]) axisResults[i] = 1;
-	});
-    };
-
-    /**********************************************************************************
-     * FUNCTION - clearAxisSearchItems: clear all search items from left to right (inclusive)
-     * on the specified axis.
-     ***********************************************************************************/
-    SRCH.clearAxisSearchItems = function (axis, left, right) {
-	for (let j = +left; j < +right+1; j++) {
-	    delete searchResults[axis][j];
-	}
-    };
-
-    SRCH.clearAllAxisSearchItems = function (axis) {
-        searchResults[axis] = {};
-    };
-
-    /*********************************************************************************************
-     * FUNCTION:  labelIndexInSearch - Returns true iff index is included in axis search results.
-     *********************************************************************************************/
-    SRCH.labelIndexInSearch = function (axis, index) {
-	return index != null && axis != null && searchResults[axis][index] == 1;
-    };
-
-    /*********************************************************************************************
-     * FUNCTION:  labelIndexInSearch - This function retrieves and array of search labels based
-     * upon type an axis.
-     *********************************************************************************************/
-    SRCH.getSearchLabelsByAxis = function (axis, labelType) {
-	let searchLabels = [];
-	const heatMap = MMGR.getHeatMap();
-	const labels = axis == 'Row' ? heatMap.getRowLabels()["labels"] : axis == "Column" ? heatMap.getColLabels()['labels'] :
-		axis == "ColumnCovar" ? Object.keys(heatMap.getColClassificationConfig()) : axis == "ColumnCovar" ? Object.keys(heatMap.getRowClassificationConfig()) : 
-			[heatMap.getRowLabels()["labels"], heatMap.getColLabels()['labels'] ];
-	SRCH.getAxisSearchResults(axis).forEach(i => {
-		if (axis.includes("Covar")){
-			if (labelType == linkouts.VISIBLE_LABELS){
-				searchLabels.push(labels[i].split("|")[0]);
-			} else if (labelType == linkouts.HIDDEN_LABELS){
-				searchLabels.push(labels[i].split("|")[1]);
-			} else {
-				searchLabels.push(labels[i]);
-			}
-		} else {
-			if (labelType == linkouts.VISIBLE_LABELS){
-				searchLabels.push(labels[i-1].split("|")[0]);
-			} else if (labelType == linkouts.HIDDEN_LABELS){
-				searchLabels.push(labels[i-1].split("|")[1]);
-			} else {
-				searchLabels.push(labels[i-1]);
-			}
-		}
-	});
-	return searchLabels;
     };
 
     SRCH.doInitialSearch = function () {
@@ -230,8 +89,8 @@
      * all selections (both row and column) to linkouts.
      ***********************************************************************************/
     SRCH.updateLinkoutSelections = function () {
-	LNK.postSelectionToLinkouts("column", "standardClick");
-	LNK.postSelectionToLinkouts("row", "standardClick");
+	PIM.postSelectionToPlugins("column", "standardClick");
+	PIM.postSelectionToPlugins("row", "standardClick");
     };
 
     /**********************************************************************************
@@ -289,16 +148,13 @@
 	const searchTarget = document.getElementById('search_target');
 	const checkBoxes = document.getElementById('srchCovCheckBoxes');
 	const selectBox = document.getElementById('srchCovSelectBox');
-	const covType = searchOn.value.split("|")[0];
+	const covAxis = searchOn.value.split("|")[0];
 	const covVal = searchOn.value.split("|")[1];
 	const heatMap = MMGR.getHeatMap();
-	let classBarsConfig = heatMap.getRowClassificationConfig();
-	if (covType !== "row") {
-		classBarsConfig = heatMap.getColClassificationConfig();
-	}
+	const classBarsConfig = heatMap.getAxisCovariateConfig(covAxis);
 	const currentClassBar = classBarsConfig[covVal];
 	UTIL.createCheckBoxDropDown('srchCovSelectBox','srchCovCheckBoxes',"Select Category(s)", currentClassBar.color_map.thresholds,"300px");
-	loadSavedCovarState(covType,covVal);
+	loadSavedCovarState(covAxis,covVal);
     }
 
     /**********************************************************************************
@@ -308,13 +164,13 @@
     function saveCovarState (covVal) {
 	const searchTarget = document.getElementById('search_target').value;
 	const currElems = document.getElementsByClassName('srchCovCheckBox');
-	let state = covVal+"|"
+	let state = covVal+"|";
 	for (let i=0; i<currElems.length;i++) {
 	    if (currElems[i].checked) {
 		state = state + i + "|";
 	    }
 	}
-	discCovStates[searchTarget] = state;
+	SRCHSTATE.setDiscCovState(searchTarget, state);
     }
 
     /**********************************************************************************
@@ -324,11 +180,12 @@
      ***********************************************************************************/
     function loadSavedCovarState (covType, covVal) {
 	const searchTarget = document.getElementById('search_target').value;
-	if (discCovStates[searchTarget] === "") {
+	const targetState = SRCHSTATE.getDiscCovState (searchTarget);
+	if (targetState === "") {
 		return;
 	}
 	const checkBoxes = document.getElementById('srchCovCheckBoxes');
-	const stateElems = discCovStates[searchTarget].split("|");
+	const stateElems = targetState.split("|");
 	if ((stateElems[0] === covType) && (stateElems[1] === covVal)) {
 		for (let i=2;i<stateElems.length-1;i++) {
 			let stateElem = parseInt(stateElems[i]);
@@ -399,10 +256,10 @@
 	}
 	if (results.length === 0) {
 	    //Clear previous matches when search is empty.
-	    DVW.updateSelections();
+	    DET.updateSelections();
 	    searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 	} else {
-	    SRCH.setAxisSearchResultsVec(axis, results);
+	    SRCHSTATE.setAxisSearchResultsVec(axis, results);
 	    searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
 	}
 	searchNext(true);
@@ -663,6 +520,7 @@
 
 	searchNext(true);
 	searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 	if (currentSearchItem.index && currentSearchItem.axis){
 		if (itemsFound.length != tmpSearchItems.length && itemsFound.length > 0) {
 			searchElement.style.backgroundColor = "rgba(255,255,0,0.3)";
@@ -674,7 +532,7 @@
 			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
 		}	
 		//Clear previous matches when search is empty.
-		DVW.updateSelections();
+		DET.updateSelections();
 	}
     }
 
@@ -706,7 +564,7 @@
 		let matches = [];
 		labels.forEach((label,index) => { if (reg.test(label)) matches.push (index+1); });
 		if (matches.length > 0) {
-		    SRCH.setAxisSearchResultsVec(axis, matches);
+		    SRCHSTATE.setAxisSearchResultsVec(axis, matches);
 		    if (itemsFound.indexOf(searchItem) == -1)
 			    itemsFound.push(searchItem);
 		}	
@@ -716,26 +574,14 @@
     /**********************************************************************************/
 
     /**********************************************************************************
-     * FUNCTION - getCurrentSearchItem: This function returns the current search item.
-     **********************************************************************************/
-    SRCH.getCurrentSearchItem = function() {
-	    return currentSearchItem;
-    };
-
-    /**********************************************************************************
-     * FUNCTION - clearCurrentSearchItem: This function clears the current search item.
-     **********************************************************************************/
-    SRCH.clearCurrentSearchItem = function() {
-	    currentSearchItem = {};
-    };
-
-    /**********************************************************************************
      * FUNCTION - searchNext: The purpose of this function is to find the
      * next search item, set it as the current search item, and move the focus of
      * the heat map detail panel to that item.
      ***********************************************************************************/
     function searchNext (firstTime) {
 	const searchAxis = document.getElementById('search_target').value;
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
+
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	if (firstTime || !currentSearchItem["index"] || !currentSearchItem["axis"]) {
 	    // Start new search.  If searchAxis == "Both", start on the columns.
@@ -758,7 +604,7 @@
     function findNextAxisSearchItem (axis, index) {
 	const heatMap = MMGR.getHeatMap();
 	const axisLength = heatMap.getAxisLabels(axis).labels.length;
-        const axisItems = searchResults[axis];
+        const axisItems = SRCHSTATE.getSearchResults(axis);
 	while( ++index <= axisLength) {
 	    if (axisItems[index]) return index;
 	}
@@ -793,7 +639,7 @@
 	let curr = findNextAxisSearchItem (axis, index);
 	if (curr >= 0) {
 	        // Found it. Set search item.
-		setSearchItem(axis, curr);
+		SRCHSTATE.setSearchItem(axis, curr);
 	} else {
 		const searchTarget = document.getElementById('search_target').value;
 	        // if no more searchResults exist in first axis, move to other axis if possible.
@@ -802,7 +648,7 @@
 			curr = findNextAxisSearchItem (otherAxis, -1);
 			if (curr >= 0) {
 				// Found it. Set search item.
-				setSearchItem(otherAxis, curr);
+				SRCHSTATE.setSearchItem(otherAxis, curr);
 				return;
 			}
 		}
@@ -811,19 +657,9 @@
 		curr = findNextAxisSearchItem (axis, -1);
 		if (curr >= 0) {
 			// Found it. Set search item.
-			setSearchItem(axis, curr);
+			SRCHSTATE.setSearchItem(axis, curr);
 		}
 	}
-    }
-
-    /**********************************************************************************
-     * Internal FUNCTION - setSearchItem: The purpose of this function is to set the current
-     * search item with the supplied axis and curr values. It is called by both the "next"
-     * and "previous" searches.
-      **********************************************************************************/
-    function setSearchItem (axis, curr) {
-	currentSearchItem["axis"] = axis;
-	currentSearchItem["index"] = curr;
     }
 
     /**********************************************************************************
@@ -851,14 +687,14 @@
      ***********************************************************************************/
     function findPrevSearchItem (index, axis) {
 	const heatMap = MMGR.getHeatMap();
-	const axisLength = axis == "Row" ? heatMap.getRowLabels().labels.length : heatMap.getColLabels().labels.length;
+	const axisLength = heatMap.getAxisLabels(axis).labels.length;
 	let curr = findPrevAxisSearchItem (axis, index);
 	if (curr < 0) { // if no searchResults exist in first axis, move to other axis
 		if (document.getElementById('search_target').value === 'Both') { 
-			const otherAxis = axis == "Row" ? "Column" : "Row";
+			const otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
 			curr = findPrevAxisSearchItem (otherAxis, -1);
 			if (curr > 0){
-				setSearchItem(otherAxis, curr);
+				SRCHSTATE.setSearchItem(otherAxis, curr);
 				return;
 			}
 		}
@@ -866,10 +702,10 @@
 		// Try from end of current axis.
 		curr = findPrevAxisSearchItem (axis, -1);
 		if (curr >= 0) {
-			setSearchItem(axis, curr);
+			SRCHSTATE.setSearchItem(axis, curr);
 		}
 	} else {
-		setSearchItem(axis, curr);
+		SRCHSTATE.setSearchItem(axis, curr);
 	}
     }
 
@@ -880,6 +716,7 @@
     function goToCurrentSearchItem () {
 	const mapItem = DVW.primaryMap;
 	if (!mapItem) return;
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 
 	if (currentSearchItem.axis == "Row") {
 		mapItem.currentRow = currentSearchItem.index;
@@ -898,7 +735,7 @@
 		} 
 		DVW.checkCol(mapItem);
 	}
-	DVW.updateSelections();
+	DET.updateSelections();
     }
 
     /**********************************************************************************
@@ -909,6 +746,7 @@
      * next search item will move to the other axis.
      ***********************************************************************************/
     SRCH.clearSearch = function () {
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const searchTarget = document.getElementById('search_target').value;
 	SUM.clearSelectionMarks(searchTarget);
@@ -928,14 +766,14 @@
 		SUM.colDendro.clearSelectedBars();
 		SRCH.showSearchResults();
 	} else {
-		SRCH.clearCurrentSearchItem();
+		SRCHSTATE.clearCurrentSearchItem();
 		DET.labelLastClicked = {};
 		SUM.rowDendro.clearSelectedBars();
 		SUM.colDendro.clearSelectedBars();
 	}
 	clearSearchElement();
 	SRCH.showSearchResults();
-	DVW.updateSelections();
+	DET.updateSelections();
 	SRCH.updateLinkoutSelections();
 	resetSearchBoxColor()
     };
@@ -971,10 +809,10 @@
      * items on a particular axis.
      ***********************************************************************************/
     SRCH.clearSearchItems = function (clickAxis) {
-	searchResults[clickAxis] = {};
-	if (clickAxis === "Row"){
+	SRCHSTATE.clearAllAxisSearchItems (clickAxis);
+	if (clickAxis === "Row") {
 		SUM.rowDendro.clearSelectedBars();
-	} else if (clickAxis === "Column"){
+	} else if (clickAxis === "Column") {
 		SUM.colDendro.clearSelectedBars();
 	}
 	let markLabels = document.getElementsByClassName('MarkLabel');
@@ -1022,14 +860,12 @@
 		}
 	}
 	if (searchTarget === 'row') {
-		discCovRowState = "";
-		
+		SRCHSTATE.setDiscCovState ("Row", "");
 	} else if (searchTarget === 'column') {
-		discCovColState = "";
-		
+		SRCHSTATE.setDiscCovState ("Column", "");
 	} else {
-		discCovRowState = "";
-		discCovColState = "";
+		SRCHSTATE.setDiscCovState ("Row", "");
+		SRCHSTATE.setDiscCovState ("Column", "");
 	}
     }
 
@@ -1063,8 +899,8 @@
      * total row search results, total column results, and total combined results.
      ***********************************************************************************/
     function getSearchResultsCounts () {
-        const rowCount = SRCH.getAxisSearchResults("Row").length;
-        const colCount = SRCH.getAxisSearchResults("Column").length;
+        const rowCount = SRCHSTATE.getAxisSearchResults("Row").length;
+        const colCount = SRCHSTATE.getAxisSearchResults("Column").length;
 	return [ rowCount, colCount, rowCount+colCount ];
     }
 
@@ -1074,7 +910,7 @@
 	    var searchBar = document.getElementById('search_text');
 	    searchError.style.top = (searchBar.offsetTop + searchBar.offsetHeight) + 'px';
 	    searchError.style.left = (searchBar.offsetLeft + searchBar.offsetWidth) + 'px';
-	    const searchItem = SRCH.getCurrentSearchItem();
+	    const searchItem = SRCHSTATE.getCurrentSearchItem();
 	    switch (type){
 		    case 0: searchError.innerHTML = "No matching labels found"; break;
 		    case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + searchItem.label;break;
@@ -1095,7 +931,7 @@
     SRCH.redrawSearchResults = function () {
 	    DET.updateDisplayedLabels();
 	    SUM.redrawSelectionMarks();
-	    DVW.updateSelections();
+	    DET.updateSelections();
 	    SRCH.showSearchResults();
     };
 

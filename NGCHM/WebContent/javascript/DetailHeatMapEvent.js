@@ -12,14 +12,17 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const UHM = NgChm.importNS('NgChm.UHM');
     const DDR = NgChm.importNS('NgChm.DDR');
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const SUM = NgChm.importNS('NgChm.SUM');
     const LNK = NgChm.importNS('NgChm.LNK');
     const DRAW = NgChm.importNS('NgChm.DRAW');
+    const PANE = NgChm.importNS('NgChm.Pane');
+    const PIM = NgChm.importNS('NgChm.PIM');
+
     var mouseEventActive = false;
     var mouseDown = false;
 
-    DEV.targetCanvas = null;
     var scrollTime = null;    // timer for scroll events to prevent multiple events firing after scroll ends
 
     DEV.clearScrollTime = function() {
@@ -410,7 +413,7 @@ DEV.userHelpOpen = function(mapItem) {
     } else {
 	// on the blank area in the top left corner
     }
-    SUM.redrawCanvases();
+    DEV.redrawCanvases();
 };
 
 
@@ -554,121 +557,6 @@ DEV.dblClick = function(e) {
 			mapItem.updateSelection();
 		}
 	}
-}
-
-/*********************************************************************************************
- * FUNCTION:  labelClick -  The purpose of this function is to handle a label click on a given
- * detail panel.
- *********************************************************************************************/
-DEV.labelClick = function (e) {
-	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
-	SRCH.showSearchResults();
-	//These were changed from vars defined multiple times below
-	let searchIndex = null;
-	let axis = this.dataset.axis;
-	const index = this.dataset.index;
-	if (e.shiftKey || e.type == "touchmove"){ // shift + click
-		const selection = window.getSelection();
-		selection.removeAllRanges();
-		const focusNode = e.type == "touchmove" ? e.target : this;
-		const focusIndex = Number(focusNode.dataset.index);
-		axis = focusNode.dataset.axis;
-		if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
-			const anchorIndex = Number(DET.labelLastClicked[axis]);
-			const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-			SRCH.setAxisSearchResults (axis, startIndex, endIndex);
-		} else { // otherwise, treat as normal click
-			SRCH.clearSearchItems(focusNode.dataset.axis);
-			searchIndex = SRCH.labelIndexInSearch(axis,focusIndex);
-			if (searchIndex ){
-				SRCH.clearAxisSearchItems (axis, index, index);
-			} else {
-				SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
-			}
-		}
-		DET.labelLastClicked[axis] = focusIndex;
-	} else if (e.ctrlKey || e.metaKey){ // ctrl or Mac key + click
-		searchIndex = SRCH.labelIndexInSearch(axis, index);
-		if (searchIndex){ // if already searched, remove from search items
-			SRCH.clearAxisSearchItems (axis, index, index);
-		} else {
-			SRCH.setAxisSearchResults (axis, index, index);
-		}
-		DET.labelLastClicked[axis] = index;
-	} else { // standard click
-		SRCH.clearSearchItems(axis);
-		SRCH.setAxisSearchResults (axis, index, index);
-		DET.labelLastClicked[axis] = index;
-	}
-	const clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
-	const lastClickedIndex = (typeof index == 'undefined') ? focusIndex : index;
-	LNK.postSelectionToLinkouts(this.dataset.axis, clickType, index, null);
-	const searchElement = document.getElementById('search_text');
-	searchElement.value = "";
-	document.getElementById('prev_btn').style.display='';
-	document.getElementById('next_btn').style.display='';
-	document.getElementById('cancel_btn').style.display='';
-	SUM.clearSelectionMarks();
-	DET.updateDisplayedLabels();
-	DVW.updateSelections();
-	SUM.drawSelectionMarks();
-	SUM.drawTopItems();
-	SRCH.showSearchResults();
-}
-
-/*********************************************************************************************
- * FUNCTION:  labelDrag -  The purpose of this function is to handle a label drag on a given
- * detail panel.
- *********************************************************************************************/
-DEV.labelDrag = function(e){
-	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
-	e.preventDefault();
-	mapItem.latestLabelTap = null;
-	const selection = window.getSelection();
-	selection.removeAllRanges();
-	const focusNode = e.type == "touchmove" ? document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY) : this;
-	const focusIndex = Number(focusNode.dataset.index);
-	const axis = focusNode.dataset.axis;
-	if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
-		const anchorIndex = Number(DET.labelLastClicked[axis]);
-		const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-		SRCH.setAxisSearchResults (axis, startIndex, endIndex);
-	} else { // otherwise, treat as normal click
-		SRCH.clearSearchItems(focusNode.dataset.axis);
-		const searchIndex = SRCH.labelIndexInSearch(axis,focusIndex);
-		if (searchIndex ){
-			SRCH.clearAxisSearchItems (axis, index, index);
-		} else {
-			SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
-		}
-	}
-	DET.labelLastClicked[axis] = focusIndex;
-	let searchElement = document.getElementById('search_text');
-	searchElement.value = "";
-	document.getElementById('prev_btn').style.display='';
-	document.getElementById('next_btn').style.display='';
-	document.getElementById('cancel_btn').style.display='';
-	DET.updateDisplayedLabels();
-	SRCH.showSearchResults();
-	DVW.updateSelections();
-	SUM.drawSelectionMarks();
-	SUM.drawTopItems();
-	SRCH.showSearchResults();
-	return;
-}
-
-/*********************************************************************************************
- * FUNCTION:  labelRightClick -  The purpose of this function is to handle a label right click on a given
- * detail panel.
- *********************************************************************************************/
-DEV.labelRightClick = function (e) {
-    e.preventDefault();
-    const axis = e.target.dataset.axis;
-    LNK.labelHelpClose(axis);
-    LNK.labelHelpOpen(axis,e);
-    let selection = window.getSelection();
-    selection.removeAllRanges();
-    return false;
 }
 
 /*********************************************************************************************
@@ -849,9 +737,27 @@ DEV.handleSelectDrag = function (e) {
         DET.updateDisplayedLabels();
         DET.drawSelections();
         SRCH.updateLinkoutSelections();
-        SUM.redrawCanvases();
+        DEV.redrawCanvases();
     }
 }	
+
+    /**********************************************************************************
+     * FUNCTION - redrawCanvases: The purpose of this function is to redraw the various
+     * wegGl canvases in the viewer. It is called to deal with blurring issues occuring
+     * on the canvases when modal panels are drawn over the viewer canvases.
+     **********************************************************************************/
+    DEV.redrawCanvases = function () {
+	if ((UTIL.getBrowserType() !== "Firefox") && (MMGR.getHeatMap() !== null)) {
+	    SUM.drawHeatMap();
+	    DET.setDrawDetailsTimeout (DET.redrawSelectionTimeout);
+	    if (SUM.rCCanvas && SUM.rCCanvas.width > 0) {
+		SUM.drawRowClassBars();
+	    }
+	    if (SUM.cCCanvas && SUM.cCCanvas.height > 0) {
+		SUM.drawColClassBars();
+	    }
+	}
+    };
 
 /*********************************************************************************************
  * FUNCTIONS:  getRowFromLayerY AND getColFromLayerX -  The purpose of this function is to 
@@ -902,7 +808,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		} else {
 			mapItem.saveRow = row;
 			mapItem.saveCol = col;
-			DEV.detailNormal(mapItem);
+			DET.detailNormal(mapItem);
 		}
 		mapItem.modeHistory.pop();
 	} else if (mapItem.mode == 'NORMAL') {
@@ -924,7 +830,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		    }
 		}
 		if (mode == 'NORMAL') {
-			DEV.detailNormal (mapItem);
+			DET.detailNormal (mapItem);
 		} else {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 			if (current == -1) {
@@ -954,7 +860,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		    }
 		}
 		if (mode == 'NORMAL') {
-			DEV.detailNormal (mapItem);
+			DET.detailNormal (mapItem);
 		} else {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 			if (current == -1) {
@@ -978,11 +884,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 	}
 };
 
-/**********************************************************************************
- * FUNCTION - detailDataZoomOut: The purpose of this function is to handle all of
- * the processing necessary to zoom outwards on a given heat map panel.
- **********************************************************************************/
-DEV.detailDataZoomOut = function (chm) {
+    /**********************************************************************************
+     * FUNCTION - detailDataZoomOut: The purpose of this function is to handle all of
+     * the processing necessary to zoom outwards on a given heat map panel.
+     **********************************************************************************/
+    DEV.detailDataZoomOut = function (chm) {
 	const heatMap = MMGR.getHeatMap();
 	const mapItem = DVW.getMapItemFromChm(chm);
 	if (mapItem.mode == 'FULL_MAP') {
@@ -1007,7 +913,7 @@ DEV.detailDataZoomOut = function (chm) {
 			} else if ((current > 0) && (heatMap.getNumRows(MAPREP.DETAIL_LEVEL) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) ) {
 				DEV.detailHRibbonButton(mapItem);
 			} else {
-				DEV.detailFullMap(mapItem);
+				DET.detailFullMap(mapItem);
 			}	
 		}	
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
@@ -1019,7 +925,7 @@ DEV.detailDataZoomOut = function (chm) {
 			mapItem.updateSelection();
 		} else {
 			// Switch to full map view.
-			DEV.detailFullMap(mapItem);
+			DET.detailFullMap(mapItem);
 		}	
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
@@ -1030,275 +936,285 @@ DEV.detailDataZoomOut = function (chm) {
 			mapItem.updateSelection();
 		} else {
 			// Switch to full map view.
-			DEV.detailFullMap(mapItem);
+			DET.detailFullMap(mapItem);
 		}	
         } else {
 	    console.error ('Unknown zoom mode ', mapItem.mode);
 	}
-};
+    };
 
-/**********************************************************************************
- * FUNCTION - callDetailDrawFunction: The purpose of this function is to respond to
- * mode changes on the Summary Panel by calling the appropriate detail drawing
- * function. It acts only on the Primary heat map pane.
- **********************************************************************************/
-DEV.callDetailDrawFunction = function(modeVal, target) {
-	let mapItem = (typeof target !== 'undefined') ? target : DVW.primaryMap;
-	if (!mapItem) return;
-	if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
-		DEV.detailHRibbon(mapItem);
-	if (modeVal == 'RIBBONV' || modeVal == 'RIBBONV_DETAIL')
-		DEV.detailVRibbon(mapItem);
-	if (modeVal == 'FULL_MAP')
-		DEV.detailFullMap(mapItem);
-	if (modeVal == 'NORMAL') {
-		DEV.detailNormal(mapItem);
-	}
-}
+    /**********************************************************************************
+     * FUNCTION - detailHRibbonButton: The purpose of this function is to clear dendro
+     * selections and call processing to change to Horizontal Ribbon Mode.
+     **********************************************************************************/
+    DEV.detailHRibbonButton = function (mapItem) {
+	DET.clearDendroSelection(mapItem);
+	DET.detailHRibbon(mapItem);
+    };
 
-/***********************************************************************************
- * FUNCTION - clearModeHistory: Clears mode history.  Should be done every time the
- * user explicitly changes the zoom mode.
- ***********************************************************************************/
-DEV.clearModeHistory = function (mapItem) {
-	mapItem.modeHistory = [];
-};
+    /**********************************************************************************
+     * FUNCTION - detailVRibbonButton: The purpose of this function is to clear dendro
+     * selections and call processing to change to Vertical Ribbon Mode.
+     **********************************************************************************/
+    DEV.detailVRibbonButton = function (mapItem) {
+	DET.clearDendroSelection(mapItem);
+	DET.detailVRibbon(mapItem);
+    };
 
-/**********************************************************************************
- * FUNCTION - detailNormal: The purpose of this function is to handle all of
- * the processing necessary to return a heat map panel to normal mode.
- * mapItem is the detail view map item.
- **********************************************************************************/
-DEV.detailNormal = function (mapItem, restoreInfo) {
-	UHM.hlpC();
-	const previousMode = mapItem.mode;
-	DVW.setMode(mapItem,'NORMAL');
-	mapItem.setButtons();
-	if (!restoreInfo) {
-	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
-	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
-		DET.setDetailDataSize(mapItem, mapItem.dataBoxWidth);
-	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
-		DET.setDetailDataSize(mapItem,mapItem.dataBoxHeight);
-	    } else if (previousMode=='FULL_MAP') {
-		DET.setDetailDataSize(mapItem,DET.zoomBoxSizes[0]);
-	    }
-
-	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    const heatMap = MMGR.getHeatMap();
-	    while ((Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) ||
-	       (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL))) {
-		DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
-	    }
-	
-	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
-		mapItem.currentRow = mapItem.saveRow;
-	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
-		mapItem.currentCol = mapItem.saveCol;
-	    } else if (previousMode=='FULL_MAP') {
-		mapItem.currentRow = mapItem.saveRow;
-		mapItem.currentCol = mapItem.saveCol;		
-	    }
-	}
-	
-	DVW.checkRow(mapItem);
-	DVW.checkCol(mapItem);
-	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-	 
-	DET.detInitGl(mapItem);
-	DDR.clearDendroSelection();
-	mapItem.updateSelection();
-	try {
-		document.getElementById("viewport").setAttribute("content", "height=device-height");
-		document.getElementById("viewport").setAttribute("content", "");
-	} catch(err) {
-		console.error("Unable to adjust viewport content attribute");
-	}
-}
-
-/**********************************************************************************
- * FUNCTION - detailFullMap: The purpose of this function is to show the whole map 
- * in the detail pane. Processes ribbon h/v differently. In these cases, one axis 
- * is kept static so that the "full view" stays within the selected sub-dendro.
- **********************************************************************************/
-DEV.detailFullMap = function (mapItem) {
-	UHM.hlpC();
-	mapItem.saveRow = mapItem.currentRow;
-	mapItem.saveCol = mapItem.currentCol;
-	
-	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more 
-	//than 1 pixel, scale calculates the appropriate height/width.
-	if (mapItem.subDendroMode === 'Column') {
-	    DET.scaleViewHeight(mapItem);
-	} else if (mapItem.subDendroMode === 'Row') {
-	    DET.scaleViewWidth(mapItem);
-	} else {
-	    DVW.setMode(mapItem, 'FULL_MAP');
-	    DET.scaleViewHeight(mapItem);
-	    DET.scaleViewWidth(mapItem);
-	}
-
-	//Canvas is adjusted to fit the number of rows/columns and matrix height/width of each element.
-	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-	DET.detInitGl(mapItem);
-	mapItem.updateSelection();
-}
-
-/**********************************************************************************
- * FUNCTION - detailHRibbonButton: The purpose of this function is to clear dendro
- * selections and call processing to change to Horizontal Ribbon Mode.
- **********************************************************************************/
-DEV.detailHRibbonButton = function (mapItem) {
-	DDR.clearDendroSelection(mapItem);
-	DEV.detailHRibbon(mapItem);
-}
-
-/**********************************************************************************
- * FUNCTION - detailHRibbon: The purpose of this function is to change the view for
- * a given heat map panel to horizontal ribbon view.  Note there is a standard full 
- * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.  
- * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
- **********************************************************************************/
-DEV.detailHRibbon = function (mapItem, restoreInfo) {
-	UHM.hlpC();
-	const heatMap = MMGR.getHeatMap();
-	const previousMode = mapItem.mode;
-	const prevWidth = mapItem.dataBoxWidth;
-	mapItem.saveCol = mapItem.currentCol;
-	DVW.setMode(mapItem,'RIBBONH');
-	mapItem.setButtons();
-
-	if (!restoreInfo) {
-	    if (previousMode=='FULL_MAP') {
-		DET.setDetailDataHeight(mapItem, DET.zoomBoxSizes[0]);
-	    }
-	    // If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
-	    // and data size to 1.
-	    if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewWidth = heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
-		let ddw = 1;
-		while(2*mapItem.dataViewWidth < 500){ // make the width wider to prevent blurry/big dendros for smaller maps
-			ddw *=2;
-			mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
+    /*********************************************************************************************
+     * FUNCTION:  labelClick -  The purpose of this function is to handle a label click on a given
+     * detail panel.
+     *********************************************************************************************/
+    DEV.labelClick = labelClick;
+    function labelClick (e) {
+	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
+	SRCH.showSearchResults();
+	//These were changed from vars defined multiple times below
+	let searchIndex = null;
+	let axis = this.dataset.axis;
+	const index = this.dataset.index;
+	if (e.shiftKey || e.type == "touchmove"){ // shift + click
+	    const selection = window.getSelection();
+	    selection.removeAllRanges();
+	    const focusNode = e.type == "touchmove" ? e.target : this;
+	    const focusIndex = Number(focusNode.dataset.index);
+	    axis = focusNode.dataset.axis;
+	    if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
+		const anchorIndex = Number(DET.labelLastClicked[axis]);
+		const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
+		SRCH.setAxisSearchResults (axis, startIndex, endIndex);
+	    } else { // otherwise, treat as normal click
+		SRCH.clearSearchItems(focusNode.dataset.axis);
+		searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
+		if (searchIndex ){
+		    SRCH.clearAxisSearchItems (axis, index, index);
+		} else {
+		    SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 		}
-		DET.setDetailDataWidth(mapItem,ddw);
-		mapItem.currentCol = 1;
+	    }
+	    DET.labelLastClicked[axis] = focusIndex;
+	} else if (e.ctrlKey || e.metaKey){ // ctrl or Mac key + click
+	    searchIndex = SRCHSTATE.labelIndexInSearch(axis, index);
+	    if (searchIndex){ // if already searched, remove from search items
+		SRCH.clearAxisSearchItems (axis, index, index);
 	    } else {
-		mapItem.saveCol = mapItem.selectedStart;
-		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
-		DEV.clearModeHistory (mapItem);
-		mapItem.mode='RIBBONH_DETAIL'
-		const width = Math.max(1, Math.floor(500/selectionSize));
-		mapItem.dataViewWidth = (selectionSize * width) + DET.dataViewBorder;
-		DET.setDetailDataWidth(mapItem,width);
-		mapItem.currentCol = mapItem.selectedStart;
+		SRCH.setAxisSearchResults (axis, index, index);
 	    }
-	
-	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-	    if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
-		if (previousMode == 'FULL_MAP') {
-		    DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[0]);
-		} else {
-		    DET.setDetailDataHeight(mapItem,prevWidth);
-		}
-		mapItem.currentRow = mapItem.saveRow;
-	    }
+	    DET.labelLastClicked[axis] = index;
+	} else { // standard click
+	    SRCH.clearSearchItems(axis);
+	    SRCH.setAxisSearchResults (axis, index, index);
+	    DET.labelLastClicked[axis] = index;
+	}
+	const clickType = (e.ctrlKey || e.metaKey) ? 'ctrlClick' : 'standardClick';
+	const lastClickedIndex = (typeof index == 'undefined') ? focusIndex : index;
+	PIM.postSelectionToPlugins(this.dataset.axis, clickType, index, null);
+	const searchElement = document.getElementById('search_text');
+	searchElement.value = "";
+	document.getElementById('prev_btn').style.display='';
+	document.getElementById('next_btn').style.display='';
+	document.getElementById('cancel_btn').style.display='';
+	SUM.clearSelectionMarks();
+	DET.updateDisplayedLabels();
+	DET.updateSelections();
+	SUM.drawSelectionMarks();
+	SUM.drawTopItems();
+	SRCH.showSearchResults();
+    }
 
-	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
-		DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
+    /*********************************************************************************************
+     * FUNCTION:  labelDrag -  The purpose of this function is to handle a label drag on a given
+     * detail panel.
+     *********************************************************************************************/
+    DEV.labelDrag = labelDrag;
+    function labelDrag (e) {
+	const mapItem = DVW.getMapItemFromChm(e.target.parentElement.parentElement);
+	e.preventDefault();
+	mapItem.latestLabelTap = null;
+	const selection = window.getSelection();
+	selection.removeAllRanges();
+	const focusNode = e.type == "touchmove" ? document.elementFromPoint(e.touches[0].pageX, e.touches[0].pageY) : this;
+	const focusIndex = Number(focusNode.dataset.index);
+	const axis = focusNode.dataset.axis;
+	if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
+	    const anchorIndex = Number(DET.labelLastClicked[axis]);
+	    const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
+	    SRCH.setAxisSearchResults (axis, startIndex, endIndex);
+	} else { // otherwise, treat as normal click
+	    SRCH.clearSearchItems(focusNode.dataset.axis);
+	    const searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
+	    if (searchIndex ){
+		SRCH.clearAxisSearchItems (axis, index, index);
+	    } else {
+		SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 	    }
 	}
+	DET.labelLastClicked[axis] = focusIndex;
+	let searchElement = document.getElementById('search_text');
+	searchElement.value = "";
+	document.getElementById('prev_btn').style.display='';
+	document.getElementById('next_btn').style.display='';
+	document.getElementById('cancel_btn').style.display='';
+	DET.updateDisplayedLabels();
+	SRCH.showSearchResults();
+	DET.updateSelections();
+	SUM.drawSelectionMarks();
+	SUM.drawTopItems();
+	SRCH.showSearchResults();
+    }
 
-	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-	DET.detInitGl(mapItem);
-	mapItem.updateSelection();
-}
+    /*********************************************************************************************
+     * FUNCTION:  labelRightClick -  The purpose of this function is to handle a label right click on a given
+     * detail panel.
+     *********************************************************************************************/
+    DEV.labelRightClick = labelRightClick;
+    function labelRightClick (e) {
+	e.preventDefault();
+	const axis = e.target.dataset.axis;
+	LNK.labelHelpClose(axis);
+	LNK.labelHelpOpen(axis,e);
+	let selection = window.getSelection();
+	selection.removeAllRanges();
+	return false;
+    }
 
-/**********************************************************************************
- * FUNCTION - detailVRibbonButton: The purpose of this function is to clear dendro
- * selections and call processing to change to Vertical Ribbon Mode.
- **********************************************************************************/
-DEV.detailVRibbonButton = function (mapItem) {
-	DDR.clearDendroSelection(mapItem);
-	DEV.detailVRibbon(mapItem);
-}
+    (function() {
+	// Table to convert image names to image source names.
+	// A table is required for this otherwise trivial conversion
+	// because the minimizer will convert all the filenames in the
+	// table to inline data sources.
+	const imageTable = {
+	    full: 'images/full.png',
+	    fullHover: 'images/fullHover.png',
+	    full_selected: 'images/full_selected.png',
+	    ribbonH: 'images/ribbonH.png',
+	    ribbonHHover: 'images/ribbonHHover.png',
+	    ribbonH_selected: 'images/ribbonH_selected.png',
+	    ribbonV: 'images/ribbonV.png',
+	    ribbonVHover: 'images/ribbonVHover.png',
+	    ribbonV_selected: 'images/ribbonV_selected.png',
+	};
 
-/**********************************************************************************
- * FUNCTION - detailVRibbon: The purpose of this function is to change the view for
- * a given heat map panel to vertical ribbon view.  Note there is a standard full 
- * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.  
- * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
- **********************************************************************************/
-DEV.detailVRibbon = function (mapItem, restoreInfo) {
-	UHM.hlpC();
-	const heatMap = MMGR.getHeatMap();
-	const previousMode = mapItem.mode;
-	const prevHeight = mapItem.dataBoxHeight;
-	mapItem.saveRow = mapItem.currentRow;
-	
-	DVW.setMode(mapItem, 'RIBBONV');
-	mapItem.setButtons();
+	DEV.createClientButtons = function (mapNumber, paneId, foobar, switchToPrimaryFn) {
+	    return [
+		zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75,
+		    switchToPrimaryFn.bind('chm', foobar)),
+		zoomButton ('zoomOut_btn'+mapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50,
+		    DEV.detailDataZoomOut.bind('chm', foobar)),
+		zoomButton ('zoomIn_btn'+mapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40,
+		    DEV.zoomAnimation.bind('chm', foobar)),
+		modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, DET.detailNormal),
+		modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, DEV.detailHRibbonButton),
+		modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, DEV.detailVRibbonButton)
+	    ];
+	};
 
-	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
-	// and data size to 1.
-	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewHeight = heatMap.getNumRows(MAPREP.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
-		let ddh = 1;
-		while(2*mapItem.dataViewHeight < 500){ // make the height taller to prevent blurry/big dendros for smaller maps
-			ddh *=2;
-			mapItem.dataViewHeight = ddh*heatMap.getNumRows(MAPREP.RIBBON_VERT_LEVEL) + DET.dataViewBorder;
-		}
-		DET.setDetailDataHeight(mapItem,ddh);
-		mapItem.currentRow = 1;
-	} else {
-		mapItem.saveRow = mapItem.selectedStart;
-		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
-		if (selectionSize < 500) {
-			DEV.clearModeHistory (mapItem);
-			DVW.setMode(mapItem, 'RIBBONV_DETAIL');
-		} else {
-			const rvRate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
-			selectionSize = Math.floor(selectionSize / rvRate);			
-		}
-		const height = Math.max(1, Math.floor(500/selectionSize));
-		mapItem.dataViewHeight = (selectionSize * height) + DET.dataViewBorder;
-		DET.setDetailDataHeight(mapItem, height);
-		mapItem.currentRow = mapItem.selectedStart;
+	function zoomButton (btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
+	    const img = UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
+	    img.onmouseout = function (e) {
+			img.setAttribute ('src', btnIcon);
+			UHM.hlpC();
+	    };
+	    img.onmouseover = function (e) {
+			img.setAttribute ('src', btnHoverIcon);
+			UHM.hlp(img, btnHelp, btnSize);
+	    };
+	    img.onclick = function (e) {
+			clickFn();
+	    };
+	    return UTIL.newElement ('SPAN.tdTop', {}, [img]);
 	}
-	
-	if (!restoreInfo) {
-	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
-	    if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
-		if (previousMode == 'FULL_MAP') {
-			DET.setDetailDataWidth(mapItem, DET.zoomBoxSizes[0]);
-		} else {
-			DET.setDetailDataWidth(mapItem, prevHeight);
-		}
-		mapItem.currentCol = mapItem.saveCol;
-	    }
-	
-	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
-		DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
-	    }
+
+	// Create a zoomModeButton when creating a new zoomed view.
+	// Parameters:
+	// mapNumber - the number of the new zoomed view
+	// paneId - the panel id containing the new zoomed view
+	// selected - is this button selected initially (must be set for exactly one button in the map)
+	// mode - the type of zoom mode set by pressing the button (NORMAL, RIBBONH, RIBBONV)
+	// btnHelp - help text to display when the user hovers over the button for a while
+	// btnSize - size of the button help text
+	// clickFn - function called when the button is clicked.
+	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
+		const baseName = buttonBaseName (mode);
+		const selStr = selected ? '_selected' : '';
+		const img = UTIL.newElement ('IMG', { src: imageTable[baseName+selStr], alt: btnHelp });
+		img.id = baseName + '_btn' + mapNumber;
+		img.dataset.mode = mode;
+		img.onmouseout = function (e) {
+			updateButtonImage (img, false);
+			UHM.hlpC();
+		};
+		img.onmouseover = function (e) {
+			updateButtonImage (img, true);
+			UHM.hlp(img, btnHelp, btnSize);
+		};
+		img.onclick = function (e) {
+			const mapItem = DVW.getMapItemFromPane(paneId);
+			DET.clearModeHistory (mapItem);
+			clickFn(mapItem);
+		};
+		return UTIL.newElement ('SPAN.tdTop', {}, [img]);
 	}
 
-	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-	DET.detInitGl(mapItem);
-	mapItem.updateSelection();
-	try {
-		document.getElementById("viewport").setAttribute("content", "height=device-height");
-		document.getElementById("viewport").setAttribute("content", "");
-	} catch(err) {
-		console.error("Unable to adjust viewport content attribute");
+	// Return the baseName of the zoom mode buttons.
+	function buttonBaseName (buttonMode) {
+		if (buttonMode == 'RIBBONH') return 'ribbonH';
+		if (buttonMode == 'RIBBONV') return 'ribbonV';
+		return 'full';
 	}
-}
+
+	/**********************************************************************************
+	 * FUNCTION - setButtons: The purpose of this function is to set the state of
+	 * buttons on the detail pane header bar when the user selects a button.
+	 **********************************************************************************/
+	DEV.setButtons = setButtons;
+	function setButtons (mapItem) {
+		const full_btn = document.getElementById('full_btn'+mapItem.panelNbr);
+		const ribbonH_btn = document.getElementById('ribbonH_btn'+mapItem.panelNbr);
+		const ribbonV_btn = document.getElementById('ribbonV_btn'+mapItem.panelNbr);
+		let full_src= "full";
+		let ribbonH_src= "ribbonH";
+		let ribbonV_src= "ribbonV";
+		if (mapItem.mode=='RIBBONV')
+			ribbonV_src += "_selected";
+		else if (mapItem.mode == "RIBBONH")
+			ribbonH_src += "_selected";
+		else
+			full_src += "_selected";
+		full_btn.src = imageTable[full_src];
+		ribbonH_btn.src = imageTable[ribbonH_src];
+		ribbonV_btn.src = imageTable[ribbonV_src];
+	}
+
+
+	// Update a mode button image when the mouse enters/leaves the button.
+	// btn is the IMG element for the button.
+	// It should have data.mode set to NORMAL, RIBBONH, or RIBBONV.
+	// The button's image is updated according to the following rules:
+	//
+	// - If in a zoom mode that matches the button, the image is not changed.
+	//   (The button's image should already be set to the _selected image variant.)
+	//   The "includes" check is used so that e.g. both the RIBBONH and RIBBONH_DETAIL
+	//   zoom modes will match the RIBBONH button.
+	//
+	// - Otherwise, if the mouse is hovering over the image: the hover image is used.
+	//
+	// - Otherwise, the base image is used.
+	//
+	function updateButtonImage (btn, hovering) {
+	        const loc = PANE.findPaneLocation (btn);
+		const mapItem = DVW.getMapItemFromPane (loc.pane.id);
+		const buttonMode = btn.dataset.mode;
+		if (!mapItem.mode.includes(buttonMode)) {
+			let buttonSrc = buttonBaseName (buttonMode);
+			if (hovering) {
+			        buttonSrc += 'Hover';
+			}
+			btn.setAttribute('src', imageTable[buttonSrc]);
+		}
+	}
+
+    })();
 
 /**********************************************************************************
  * FUNCTION - zoomAnimation: The purpose of this function is to perform a zoom 

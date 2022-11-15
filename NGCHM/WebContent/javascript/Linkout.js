@@ -20,6 +20,7 @@ var linkoutsVersion = 'undefined';
 
     //Define Namespace for NgChm Linkout
     const LNK = NgChm.createNS('NgChm.LNK');
+    const CUST = NgChm.importNS('NgChm.CUST');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
@@ -94,21 +95,48 @@ var linkoutsVersion = 'undefined';
 	LNK.addHamburgerLinkout(params);
     };
 
+    // Define a subtype: any linkouts defined for the supertype will also be defined
+    // for the subtype.  No transformation will be applied to the labels.  For
+    // instance: addSubtype('bio.gene.hugo', 'bio.pubmed'): linkouts defined for bio.pubmed
+    // will also be defined for bio.gene.hugo.
+    linkouts.addSubtype = function (subtype, supertype) {
+        CUST.addSubtype (subtype, supertype);
+    };
+
+    // Add the specified plugin.
+    linkouts.addPlugin = function ( plugin ) {
+	for (var i=0;i<CUST.customPlugins.length;i++) {
+		var currPlug = CUST.customPlugins[i];
+		if (currPlug.name === plugin.name) {
+			CUST.customPlugins.splice(i, 1);
+		}
+	}
+        if (CUST.verbose) console.log( 'NgChm.CUST: adding plugin ' + plugin.name );
+        CUST.customPlugins.push( plugin );
+    };
+
+    // Describe plugin types.
+    linkouts.describeTypes = function (typelist) {
+        CUST.describeTypes (typelist);
+    };
+
     /*******************************************
      * END EXTERNAL INTERFACE
      *******************************************/
 
     /* Additional imports. */
+    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
     const PANE = NgChm.importNS('NgChm.Pane');
     const UHM = NgChm.importNS('NgChm.UHM');
     const DVW = NgChm.importNS('NgChm.DVW');
     const DET = NgChm.importNS('NgChm.DET');
-    const DEV = NgChm.importNS('NgChm.DEV');
-    const SUM = NgChm.importNS('NgChm.SUM');
-    const CUST = NgChm.importNS('NgChm.CUST');
+    const PIM = NgChm.importNS('NgChm.PIM');
     const CMM = NgChm.importNS('NgChm.CMM');
-    const RECPANES = NgChm.importNS('NgChm.RecPanes');
+
+    var menuOpenCanvas = null;  // Canvas on which the most recent linkouts popup was opened.
+
+    const pluginRestoreInfo = {};
 
 	//Used to store the label item that the user clicked-on
 	LNK.selection = 0;
@@ -249,7 +277,7 @@ var linkoutsVersion = 'undefined';
 					searchLabels.push( generateSearchLabel(LNK.selection,formatIndex));
 				} else {
 				//ELSE the linkout is multi select, load all selected items to searchLabels (not necessarily the item that was clicked on)
-					SRCH.getAxisSearchResults(axis).forEach(i => {
+					SRCHSTATE.getAxisSearchResults(axis).forEach(i => {
 						if (axis.includes("Covar")){ // Covariate linkouts have not been tested very extensively. May need revision in future. 
 							searchLabels.push( generateSearchLabel(labels[i],formatIndex)) ;
 						} else {
@@ -259,25 +287,23 @@ var linkoutsVersion = 'undefined';
 				}
 			} else {
 				searchLabels = {"Row" : [], "Column" : []};
-				SRCH.getAxisSearchResults("Row").forEach (i => {
+				SRCHSTATE.getAxisSearchResults("Row").forEach (i => {
 					searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],[formatIndex[0]]) );
 				});
-				SRCH.getAxisSearchResults("Column").forEach (i => {
+				SRCHSTATE.getAxisSearchResults("Column").forEach (i => {
 					searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],[formatIndex[0]]) );
 				});
 				if (linkout.title !== 'Copy selected labels to clipboard') {
-					if (searchLabels["Row"].length === 0) {
-						searchLabels["Row"] = DET.getAllLabelsByAxis("Row");
-					}
-					if (searchLabels["Column"].length === 0) {
-						searchLabels["Column"] = DET.getAllLabelsByAxis("Column");
-					}
+				    const heatMap = MMGR.getHeatMap();
+				    if (searchLabels["Row"].length === 0) {
+					    searchLabels["Row"] = heatMap.getAxisLabels("Row")["labels"];
+				    }
+				    if (searchLabels["Column"].length === 0) {
+					    searchLabels["Column"] = heatMap.getAxisLabels("Column")["labels"];
+				    }
 				}
 				if (linkout.title === 'Download selected matrix data to file') {
 					labelDataMatrix = LNK.createMatrixData(searchLabels);
-				}
-				if (linkout.title === 'Set selection as detail view') {
-					LNK.setDetailView(searchLabels);
 				}
 			}
 		} else { // if this linkout was added using addMatrixLinkout
@@ -296,10 +322,10 @@ var linkoutsVersion = 'undefined';
 				formatIndex.col[i] = heatMap.getColLabels()["label_type"].indexOf(type);
 			}
 			// Build the searchLabels and put them into the return object
-			SRCH.getAxisSearchResults("Row").forEach( i => {
+			SRCHSTATE.getAxisSearchResults("Row").forEach( i => {
 				searchLabels["Row"].push( generateSearchLabel(labels[0][i-1],formatIndex.row) );
 			});
-			SRCH.getAxisSearchResults("Column").forEach( i => {
+			SRCHSTATE.getAxisSearchResults("Column").forEach( i => {
 				searchLabels["Column"].push( generateSearchLabel(labels[1][i-1],formatIndex.col) );
 			});
 			
@@ -322,12 +348,13 @@ var linkoutsVersion = 'undefined';
 
 
 	LNK.createMatrixData = function(searchLabels) {
+		//console.log ({ m: 'LNK.createMatrixData', searchLabels});
 		let tilesReady = false;
 		const heatMap = MMGR.getHeatMap();
-		if (SRCH.getAxisSearchResults("Row").length === 0) {
+		if (SRCHSTATE.getAxisSearchResults("Row").length === 0) {
 		    heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
-		} else if (SRCH.getAxisSearchResults("Column").length === 0) {
+		} else if (SRCHSTATE.getAxisSearchResults("Column").length === 0) {
 		    heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
 		    tilesReady = heatMap.allTilesAvailable();
 		} else {
@@ -355,14 +382,14 @@ var linkoutsVersion = 'undefined';
 	LNK.createMatrixDataTsv = function(searchLabels) {
 		var matrix = new Array();
 
-		let rowSearchItems = SRCH.getAxisSearchResults("Row");
+		let rowSearchItems = SRCHSTATE.getAxisSearchResults("Row");
 		//Check to see if we need new searchItems because entire axis is selected by 
 		//default of no items being selected on opposing axis, Otherwise, use
 		//searchItems selected.
 		if (rowSearchItems.length === 0) {
 			rowSearchItems = LNK.getEntireAxisSearchItems(searchLabels,"Row");
 		}
-		let colSearchItems = SRCH.getAxisSearchResults("Column");
+		let colSearchItems = SRCHSTATE.getAxisSearchResults("Column");
 		if (colSearchItems.length === 0) {
 			colSearchItems = LNK.getEntireAxisSearchItems(searchLabels,"Column");
 		}
@@ -386,10 +413,11 @@ var linkoutsVersion = 'undefined';
 		}
 		
 		//Load up an array containing data values for the selected data matrix
+		const heatMap = MMGR.getHeatMap();
 		var dataMatrix = new Array();
 		rowSearchItems.forEach( x => {
 			colSearchItems.forEach( y => {
-				let matrixValue = MMGR.getHeatMap().getValue(MAPREP.DETAIL_LEVEL,x,y);
+				let matrixValue = heatMap.getValue(MAPREP.DETAIL_LEVEL,x,y);
 				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
 				if (matrixValue !== MAPREP.minValues-1) {
 					dataMatrix.push(matrixValue);
@@ -461,8 +489,8 @@ var linkoutsVersion = 'undefined';
 	}
 
 	LNK.labelHelpOpen = function(axis, e){
+	    menuOpenCanvas = e.currentTarget;
 	    const heatMap = MMGR.getHeatMap();
-		DEV.targetCanvas = e.currentTarget;
 		LNK.labelHelpCloseAll();
 		//Get the label item that the user clicked on (by axis) and save that value for use in LNK.selection
 	    var index = e.target.dataset.index;
@@ -479,7 +507,7 @@ var linkoutsVersion = 'undefined';
 
 		var labelMenu =  axis !== "Matrix" ? document.getElementById(axis + 'LabelMenu') : document.getElementById("MatrixMenu");
 		var labelMenuTable = axis !== "Matrix" ? document.getElementById(axis + 'LabelMenuTable') : document.getElementById('MatrixMenuTable');
-	    var axisLabelsLength = axis !== "Matrix" ? SRCH.getSearchLabelsByAxis(axis).length : {"Row":SRCH.getSearchLabelsByAxis("Row").length ,"Column":  SRCH.getSearchLabelsByAxis("Column").length};
+	    var axisLabelsLength = axis !== "Matrix" ? SRCHSTATE.getSearchLabelsByAxis(axis).length : {"Row":SRCHSTATE.getSearchLabelsByAxis("Row").length ,"Column":  SRCHSTATE.getSearchLabelsByAxis("Column").length};
 	    var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
 	    var row = header.getElementsByTagName('TR')[0];
 	    if (((axisLabelsLength > 0) || (LNK.selection !== '')) && axis !== "Matrix"){
@@ -488,9 +516,9 @@ var linkoutsVersion = 'undefined';
 			LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else if ((axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) && axis == "Matrix"){
 	    	if (axisLabelsLength["Row"] === 0) {
-			axisLabelsLength["Row"] = DET.getAllLabelsByAxis("Row").length;
+			axisLabelsLength["Row"] = heatMap.getAxisLabels("Row")["labels"].length;
 	    	} else if (axisLabelsLength["Column"] === 0) {
-			axisLabelsLength["Column"] = DET.getAllLabelsByAxis("Column").length;
+			axisLabelsLength["Column"] = heatMap.getAxisLabels("Column")["labels"].length;
 	    	}
 			row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
 			LNK.populateLabelMenu(axis,axisLabelsLength);
@@ -545,7 +573,7 @@ var linkoutsVersion = 'undefined';
 	LNK.itemInSelection = function (axis) {
 	    const heatMap = MMGR.getHeatMap();
 		const labels = axis == "Row" ? heatMap.getRowLabels() : axis == "Column" ? heatMap.getColLabels() : axis == "RowCovar" ? heatMap.getRowClassificationConfigOrder() : axis == "ColumnCovar" ? heatMap.getColClassificationConfigOrder() : []; 
-		SRCH.getAxisSearchResults(axis).forEach( key => {
+		SRCHSTATE.getAxisSearchResults(axis).forEach( key => {
 			let selItem;
 			if (axis.includes("Covar")){
 				selItem = labels[key];
@@ -562,7 +590,7 @@ var linkoutsVersion = 'undefined';
 	//Check to see if we have selections
 	LNK.hasSelection = function (axis) {
 		// Check to see if clicked item is part of selected labels group
-		return SRCH.getAxisSearchResults(axis).length > 0;
+		return SRCHSTATE.getAxisSearchResults(axis).length > 0;
 	};
 
 	//adds the row linkouts and the column linkouts to the menus
@@ -729,7 +757,7 @@ var linkoutsVersion = 'undefined';
 			var add = false;
 			if ( linkout.labelType == "ColumnCovar"){
 				for (var i=0; i < linkout.reqAttributes.length; i++){
-					SRCH.getAxisSearchResults(axis).forEach( j => {
+					SRCHSTATE.getAxisSearchResults(axis).forEach( j => {
 						var name = heatMap.getColClassificationConfigOrder()[j];
 						if (heatMap.getColClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
 							add = true;
@@ -741,7 +769,7 @@ var linkoutsVersion = 'undefined';
 				}
 			} else if (linkout.labelType == "RowCovar"){
 				for (var i=0; i < linkout.reqAttributes.length; i++){
-					SRCH.getAxisSearchResults(axis).forEach( j => {
+					SRCHSTATE.getAxisSearchResults(axis).forEach( j => {
 						var name = heatMap.getRowClassificationConfigOrder()[j];
 						if (heatMap.getRowClassificationConfig()[name].data_type == linkout.reqAttributes[i]){
 							add = true;
@@ -804,8 +832,20 @@ var linkoutsVersion = 'undefined';
 		LNK.addLinkout("Copy bar data for selected labels", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
-		LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
+
+	// Return and clear a reference to the last canvas on which a label help menu was opened.
+	// Used to determine which detail map an operation chosen from that menu should apply to.
+	// e.g. which detail map should be zoomed in response to the user picking 'zoom to selection'.
+	LNK.getMenuOpenCanvas = function () {
+	    if (menuOpenCanvas == null) {
+		console.error ("Canvas on which the menu popup was opened is not set");
+		return null;
+	    }
+	    const retval = menuOpenCanvas;
+	    menuOpenCanvas = null;
+	    return retval;
+	};
 
 
 	//===================//
@@ -837,8 +877,8 @@ var linkoutsVersion = 'undefined';
 		const newWindow = window.open("","",'width=335,height=330,resizable=1');
 		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
-		const axisLabels = SRCH.getSearchLabelsByAxis(axis);
-		const labelIndex = SRCH.getAxisSearchResults(axis);
+		const axisLabels = SRCHSTATE.getSearchLabelsByAxis(axis);
+		const labelIndex = SRCHSTATE.getAxisSearchResults(axis);
 		const classBars = MMGR.getHeatMap().getAxisCovariateData(axis);
 		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
 		for (let i = 0; i < axisLabels.length; i++){
@@ -875,30 +915,8 @@ var linkoutsVersion = 'undefined';
 		document.body.removeChild(element);
 	}
 
-
-	//This matrix function allows users to create a special sub-ribbon view that matches
-	//the currently selected box in the detail panel.  It just uses the first
-	//row/col selected and last row/col selected so it will work well with a drag
-	//selected box but not with random selections all over the map.
-	LNK.setDetailView = function(searchLabels){
-		let selRows = SRCH.getAxisSearchResults("Row");
-		if (selRows.length === 0) {
-			selRows = LNK.getEntireAxisSearchItems(searchLabels,"Row");
-		}
-		let selCols = SRCH.getAxisSearchResults("Column");
-		if (selCols.length === 0) {
-			selCols = LNK.getEntireAxisSearchItems(searchLabels,"Column");
-		}
-		var startCol = parseInt(selCols[0])
-		var endCol = parseInt(selCols[selCols.length-1])
-		var startRow = parseInt(selRows[0])
-		var endRow = parseInt(selRows[selRows.length-1])
-
-		SUM.setSubRibbonView(startRow, endRow, startCol, endCol);
-	};
-
 	LNK.switchPaneToLinkouts = function switchPaneToLinkouts (loc) {
-		PANE.clearExistingGearDialog(loc.pane.id);
+		PANE.clearExistingDialogs(loc.pane.id);
 		const oldLinkoutPane = LNK.linkoutElement && PANE.findPaneLocation (LNK.linkoutElement);
 		if (oldLinkoutPane && oldLinkoutPane.paneTitle && oldLinkoutPane.paneTitle.innerText === 'Linkouts') {
 			PANE.setPaneTitle (oldLinkoutPane, 'Empty');
@@ -941,193 +959,13 @@ var linkoutsVersion = 'undefined';
 		};
 	})();
 
-	// Maintain a database of current plugin instances.
-	(function() {
-	    // Every plugin instance is identified by a unique nonce.
-	    // The following object maps nonces to plugin instances.
-	    const instances = {};
-
-	    // Class for a plugin instance.
-	    class PluginInstance {
-	        constructor ({ kind, nonce, source, plugin, params, iframe, config, dataFromPlugin} = {}) {
-	            if (kind === undefined) kind = "panel-plugin";
-	            if (["panel-plugin", "linkout-plugin", "hamburger-plugin"].indexOf(kind) === -1) { alert("Unknown plugin kind"); }
-	            Object.assign (this, { kind, nonce, source, plugin, params, iframe, config, dataFromPlugin});
-		}
-	    }
-
-	    LNK.getPluginInstance = function getPluginInstance (nonce) {
-	        return instances[nonce];
-	    };
-		LNK.getPluginInstances = function getPluginInstances() {
-			return instances;
-		}
-
-	    LNK.removePluginInstance = function removePluginInstance(nonceToRemove) {
-	    	delete instances[nonceToRemove];
-	    }
-
-	    LNK.getPluginInstanceByName = function getPluginInstanceByName (name) {
-		let p = 0;
-		const k = Object.keys(instances);
-		while (p < k.length && instances[k[p]].plugin.name !== name) p++;
-		return p === k.length ? null : instances[k[p]];
-	    };
-
-	    // Set the parameters for a panel plugin instance.
-	    // Element is a DOM element within the panel plugin.
-	    // Options contains the parameters to set.
-	    // Also sets the panel's title bar.
-	    LNK.setPanePluginOptions = function (element, options) {
-		const loc = PANE.findPaneLocation (element);
-		const iframe = loc.pane.getElementsByTagName('IFRAME')[0];
-		const nonce = iframe.dataset.nonce;
-		instances[nonce].params = options;
-		loc.paneTitle.innerText = instances[nonce].plugin.name + '. ' + options.plotTitle;
-		LNK.initializePanePlugin (nonce, options);
-	    };
-
-	    // Create a new, unique nonce.
-	    LNK.getNewNonce = function getNewNonce () {
-		const ta = new Uint8Array(16);
-		window.crypto.getRandomValues(ta);
-		return Array.from(ta).map(x => x.toString(16)).join("");
-	    };
-
-	    // Create a new instance of the specified plugin and return the
-	    // iframe associated with the new instance.  The caller is
-	    // responsible for inserting the iframe into the correct place
-	    // in the DOM.
-	    LNK.createPluginInstance = function createPluginInstance (kind, plugin) {
-		const nonce = LNK.getNewNonce();
-		const isBlob = /^blob:/.test(plugin.src);
-		const url = isBlob ? plugin.src : plugin.src + (plugin.src.indexOf('?') == -1 ? '?' : '&') + 'nonce=' + nonce;
-
-		const iframe = document.createElement('IFRAME');
-		iframe.dataset.nonce = nonce;
-		instances[nonce] = new PluginInstance ({ kind, nonce, plugin, params: {}, iframe, config: plugin.config });
-
-		iframe.setAttribute('title', plugin.name);
-		if (isBlob) {
-		    iframe.onload = function() {
-			LNK.sendMessageToPlugin ({ nonce, op: 'nonce' });
-		    };
-		}
-		iframe.setAttribute('src', url);
-
-	        return iframe;
-	    };
-
-	    // Send a Vanodi message to the plugin instance identified by msg.nonce.
-	    LNK.sendMessageToPlugin = function sendMessageToPlugin (msg) {
-		const src = instances[msg.nonce].source || instances[msg.nonce].iframe.contentWindow;
-		if (src !== null) {
-			src.postMessage({ vanodi: msg }, '*');
-		} else {
-			console.warn("Plugin with nonce "+msg.nonce+" does not exist");
-		}
-	    };
-
-	    /* Request data generated by plugin and required to recreate state of plugin
-	       (e.g. the zoom level on a scatter plot)
-	    */
-	    LNK.requestDataFromPlugins = function requestDataFromPlugins() {
-		let pluginInstances = LNK.getPluginInstances();
-		for (const nonce of Object.keys(pluginInstances)) {
-			LNK.sendMessageToPlugin ({ nonce, op: 'requestForPluginData'});
-		}
-	    }
-
-	    /* Check if all plugins have reported their data
-	    */
-	    LNK.havePluginData = function havePluginData() {
-		let pluginInstances = LNK.getPluginInstances();
-		let havePluginDataList = [];
-		Object.keys(pluginInstances).forEach(pi => {
-			if (typeof pluginInstances[pi]['dataFromPlugin'] != 'undefined') {
-				havePluginDataList.push(pluginInstances[pi]['nonce']);
-			}
-		})
-		if (JSON.stringify(havePluginDataList.sort()) === JSON.stringify(Object.keys(pluginInstances).sort())) {
-			return true;
-		} else {
-			return false;
-		}
-	    }
-
-	    /* Display warning message if some plugins did not provide their data
-	    */
-	    LNK.warnAboutMissingPluginData = function warnAboutMissingPluginData() {
-		if (LNK.havePluginData()) {
-			return false; // have all plugins' data...no need for warning message
-		}
-		let warningText = "Unable to save some data elements from the following plugins: <br>"
-		let pluginInstances = LNK.getPluginInstances();
-		Object.keys(pluginInstances).forEach(pi => {
-			if (typeof pluginInstances[pi]['dataFromPlugin'] == 'undefined') {
-				warningText += "<br>&nbsp;&nbsp;" + pluginInstances[pi]['plugin']['name'];
-			}
-		});
-		let dialog = document.getElementById('msgBox');
-		UHM.initMessageBox();
-		UHM.setMessageBoxHeader("Warning: Unable to save some plugin data");
-		UHM.setMessageBoxText(warningText);
-		UHM.setMessageBoxButton(1, UTIL.imageTable.okButton, 'OK Button');
-		UHM.displayMessageBox();
-		let okButton = dialog.querySelector('#msgBoxBtnImg_1');
-		okButton.addEventListener('click', function handleOkClick(e) {
-			okButton.removeEventListener('click', handleOkClick);
-			UHM.messageBoxCancel();
-		})
-	    }
-
-	    // Send a Vanodi message to all plugin instances except the one identified by srcNonce.
-	    LNK.sendMessageToAllOtherPlugins = function sendMessageToAllOtherPlugins (srcNonce, msg) {
-		const iframes = document.getElementsByTagName('iframe');
-		for (let i = 0; i < iframes.length; i++) {
-		    const nonce = iframes[i].dataset.nonce;
-		    if (nonce && nonce !== srcNonce ) {
-			LNK.sendMessageToPlugin (Object.assign ({}, msg, {nonce}));
-		    }
-		}
-	    };
-
-	    // Add a linkout or hamburger plugin.
-	    LNK.addLinkoutPlugin = function addLinkoutPlugin (kind, spec) {
-	       if ((kind === 'linkout-plugin' || kind === 'hamburger-plugin') && spec.src) {
-		   // Create an instance of the plugin.
-		   const iframe = LNK.createPluginInstance (kind, spec);
-		   iframe.classList.add('hide');
-		   document.body.append(iframe);
-
-		   // For each linkout, create a function that sends a Vanodi message to the instance.
-		   if (kind === 'linkout-plugin') {
-		       for (let idx = 0; idx < spec.linkouts.length; idx++) {
-			   spec.linkouts[idx].linkoutFn = ((spec, nonce) => function(labels) {
-			       LNK.sendMessageToPlugin ({ nonce, op: 'linkout', id: spec.messageId, labels });
-			   })(spec.linkouts[idx], iframe.dataset.nonce);
-		       }
-		       for (let idx = 0; idx < spec.matrixLinkouts.length; idx++) {
-			   spec.matrixLinkouts[idx].linkoutFn = ((spec, nonce) => function(labels) {
-			       LNK.sendMessageToPlugin({ nonce, op: 'matrixLinkout', id: spec.messageId, labels });
-			   })(spec.matrixLinkouts[idx], iframe.dataset.nonce);
-		       }
-		       linkouts.addPlugin(spec);
-		   } else {
-		       spec.action = ((spec, nonce) => function() {
-			   LNK.sendMessageToPlugin({ nonce, op: 'hamburgerLinkout', id: spec.messageId });
-		       })(spec, iframe.dataset.nonce);
-		       linkouts.addHamburgerLinkout(spec);
-		   }
-		   // Regenerate the linkout menus.
-		   CUST.definePluginLinkouts();
-	       }
-	    };
-	})();
-
 	// Switch the empty pane identified by PaneLocation loc to a new
 	// instance of the specified panel plugin.
-	LNK.switchPaneToPlugin = function (loc, plugin) {
+	LNK.switchPaneToPlugin = function (loc, plugin, restoreInfo) {
+	    if (restoreInfo) {
+		pluginRestoreInfo[loc.pane.id] = restoreInfo;
+	    }
+	    switchToPlugin (loc, plugin.name);
 	    MMGR.getHeatMap().setUnAppliedChanges(true);
 	    const params = plugin.params;
 	    if (!params) {
@@ -1142,7 +980,7 @@ var linkoutsVersion = 'undefined';
 	    loc.paneTitle.innerText = plugin.name;
 	    loc.pane.appendChild (linkoutElement);
 
-	    let pluginIframe = LNK.createPluginInstance('panel-plugin', plugin);
+	    let pluginIframe = PIM.createPluginInstance('panel-plugin', plugin);
 	    loc.pane.nonce = pluginIframe.dataset.nonce;
 	    linkoutElement.appendChild(pluginIframe);
 	};
@@ -1427,7 +1265,7 @@ var linkoutsVersion = 'undefined';
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
 			const fullLabels = heatMap.getAxisLabels(axis.axisName).labels;
-		        const searchItemsIdx = SRCH.getAxisSearchResults (axis.axisName);
+		        const searchItemsIdx = SRCHSTATE.getAxisSearchResults (axis.axisName);
 			let selectedLabels = []
 			for (let i=0; i<searchItemsIdx.length; i++) {
 				let selectedLabel = fullLabels[searchItemsIdx[i] - 1];
@@ -1449,7 +1287,7 @@ var linkoutsVersion = 'undefined';
 			}
 		}
 		heatMap.setUnAppliedChanges(true);
-		LNK.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
+		PIM.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
 		MMGR.saveDataSentToPluginToMapConfig(nonce, config, data);
 	}; // end of initializePanePlugin
 
@@ -1744,7 +1582,7 @@ var linkoutsVersion = 'undefined';
 
 		const iframe = loc.pane.getElementsByTagName('IFRAME')[0];
 		const nonce = iframe.dataset.nonce;
-		const { plugin, params } = LNK.getPluginInstance (nonce);
+		const { plugin, params } = PIM.getPluginInstance (nonce);
 		if (debug) console.log ({ m: 'newGearDialog', loc, plugin, params });
 
 		const config = plugin.config;
@@ -1763,7 +1601,7 @@ var linkoutsVersion = 'undefined';
 			const gears = document.getElementsByClassName('gearPanel');
 			for (let item of gears) {
 				const paneId = item.id.substring(0,item.id.indexOf("Gear"));
-				PANE.clearExistingGearDialog(paneId);
+				PANE.clearExistingDialogs(paneId);
 			}
 		}
 
@@ -1961,13 +1799,13 @@ var linkoutsVersion = 'undefined';
 
 					infoEl.children[1].onclick = function (e) {
 						if (debug) console.log ('GRAB');
-						const results = SRCH.getAxisSearchResults(otherAxis)
+						const results = SRCHSTATE.getAxisSearchResults(otherAxis)
 						if (results.length < 1) {
 							UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 							return;
 						}
 						sss[cid].grabbers.clearData();
-						sss[cid].data = SRCH.getAxisSearchResults(otherAxis);
+						sss[cid].data = SRCHSTATE.getAxisSearchResults(otherAxis);
 						if (debug) console.log ({ m: 'Grabbed', results: sss[cid].data });
 						sss[cid].grabbers.setSummary();
 					};
@@ -2114,13 +1952,13 @@ var linkoutsVersion = 'undefined';
 
 						function doGrab (e) {
 							if (debug) console.log ('GRAB');
-							if (SRCH.getAxisSearchResults(axisNameU).length < 1) {
+							if (SRCHSTATE.getAxisSearchResults(axisNameU).length < 1) {
 								UHM.systemMessage('Nothing to GRAB','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 								return;
 							}
 							clearData(idx);
 							let count = 0;
-							SRCH.getAxisSearchResults(axisNameU).forEach(si => {
+							SRCHSTATE.getAxisSearchResults(axisNameU).forEach(si => {
 								if (debug) console.log ({ m: 'Grabbed', si });
 								sss[cid].data[idx].push (si);
 								count++;
@@ -2810,7 +2648,7 @@ var linkoutsVersion = 'undefined';
 			};
 			var paramsOK = validateParams(plotParams); 
 			if (paramsOK) {
-				LNK.setPanePluginOptions (icon, plotParams);
+				PIM.setPanePluginOptions (icon, plotParams, LNK.initializePanePlugin);
 			}
 		}
 
@@ -2847,6 +2685,7 @@ var linkoutsVersion = 'undefined';
 		@option {String} testToRun Optional. String denoting tests to run. E.g. 'T-test'
 	*/
 	const vanodiMessageHandlers = {};
+	LNK.defineVanodiMessageHandler = defineVanodiMessageHandler;
 	function defineVanodiMessageHandler (op, fn) {
 	    vanodiMessageHandlers[op] = fn;
 	};
@@ -2858,22 +2697,136 @@ var linkoutsVersion = 'undefined';
 	}
 
 	defineVanodiMessageHandler ('register', function vanodiRegister (instance, msg) {
+		const paneId = getPaneIdFromInstance(instance);
 	        const loc = PANE.findPaneLocation (instance.iframe);
 		instance.plugin.config = { name: msg.name, axes: msg.axes, options: msg.options };
 		if (Object.entries(instance.params).length === 0) {
-		        LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'none' }); // Let plugin know we heard it.
-			PANE.switchToPlugin (loc, instance.plugin.name);
+		        PIM.sendMessageToPlugin ({ nonce: msg.nonce, op: 'none' }); // Let plugin know we heard it.
+			switchToPlugin (loc, instance.plugin.name);
 			MMGR.saveDataSentToPluginToMapConfig(msg.nonce, null, null);
 		} else {
 			loc.paneTitle.innerText = instance.plugin.name;
 			LNK.initializePanePlugin (msg.nonce, instance.params);
 		}
-		RECPANES.initializePluginWithMapConfigData(instance)
+		if (pluginRestoreInfo.hasOwnProperty(loc.pane.id)) {
+		    initializePluginWithMapConfigData (paneId, instance, pluginRestoreInfo[loc.pane.id]);
+		    delete pluginRestoreInfo[loc.pane.id];
+		}
 	});
+
+	function getPaneIdFromInstance(pluginInstance) {
+		let paneId = pluginInstance.iframe.parentElement.parentElement.id;
+		if (paneId == null) {
+			throw "No pane found for this plugin";
+		}
+		return paneId;
+	}
+
+	/**
+	* Send any existing data from mapConfig.json to plugin and close Gear Menu
+	*
+	* It's confusing because there are many things called 'data'. To hopefully help clarify:
+	*
+	*   paneInfo.config and paneInfo.data:
+	*      This is the data send to the plugin when user clicked 'APPLY' on the Gear Menu
+	*      before they saved the map. All plugins should have this data.
+	*
+	*      An annoying thing: if there are selected labels on the saved NGCHM that came from selecting points
+	*      on, say, a scatter plot, those selections are NOT saved in the pluginConfigData :-(.
+	*      So the current selectedLabels are re-generated and added below. TODO: modify the code
+	*      that saves what becomes the pluginConfigData to capture selections that came from the plugin.
+	*
+	*   dataFromPlugin:
+	*      This is the sort of data that is generated by the user's manupulation in the plugin,
+	*      and did not come from the NGCHM. Example: the zoom/pan state of the 3D Scatter Plot.
+	*      Some plugins have not yet been updated to send this data to the NGCHM when the user
+	*      saves the .ngchm file; these plugins will not have any dataFromPlugin.
+	*/
+	function initializePluginWithMapConfigData(paneId, pluginInstance, paneInfo) {
+		if (typeof paneInfo == 'undefined' || paneInfo.type != "plugin") {
+			return;
+		}
+		if (paneInfo) {
+			let nonce = pluginInstance.nonce;
+			let config = paneInfo.config;
+			let data = paneInfo.data;
+			if (config) {
+			    data.axes.forEach ((ax, idx) => {
+				if (config.axes[idx].axisName) {
+				    ax.selectedLabels = getSelectedLabels(config.axes[idx].axisName);
+				}
+			    });
+			    pluginInstance.params = config;
+			    if (data) {
+				PIM.sendMessageToPlugin({nonce, op: 'plot', config, data});
+				let dataFromPlugin = paneInfo.dataFromPlugin;
+				if (dataFromPlugin) PIM.sendMessageToPlugin({nonce, op: 'savedPluginData', dataFromPlugin});
+				PANE.removePopupNearIcon(document.getElementById(paneId+'Gear'), document.getElementById(paneId+'Icon'));
+			    }
+			}
+		} else {
+			return false;
+		}
+	}
+
+	function getSelectedLabels(axis) {
+		const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
+		const searchItems = SRCHSTATE.getAxisSearchResults(axis); // axis == 'Row' or 'Column'
+		let selectedLabels = [];
+		searchItems.forEach((si, idx) => {
+			let pointId = allLabels[si - 1];
+			pointId = pointId.indexOf("|") !== -1 ? pointId.substring(0, pointId.indexOf("!")) : pointId;
+			selectedLabels.push(pointId);
+		});
+		return selectedLabels;
+	}
+
+	function switchToPlugin (loc, title) {
+	    PANE.registerPaneEventHandler (loc.pane, 'empty', PIM.removePluginInstance);
+	    PANE.setPaneTitle (loc, title);
+	    const gearIcon = addGearIconToPane (loc);
+	    PANE.clearExistingDialogs (loc.pane.id);
+	    LNK.newGearDialog (gearIcon, loc.pane.id);
+	}
+
+	function addGearIconToPane (loc) {
+	    let gearIcon = loc.paneHeader.querySelector('IMG.gearIcon');
+	    if (!gearIcon) {
+		const paneid = loc.pane.id;
+		gearIcon = UTIL.newElement('IMG.gearIcon', {
+			src: 'images/gear.png',
+			alt: 'Open gear menu',
+			align: 'top',
+			id: paneid+"Icon"
+		});
+		gearIcon.dataset.popupName = paneid + "Gear";
+		initializeGearIconMenu (gearIcon);
+		PANE.addPanelIcons (loc, [gearIcon]);
+	    }
+	    return gearIcon;
+	}
+
+	// Initialize DOM IMG element icon to a gear menu.
+	function initializeGearIconMenu (icon) {
+		icon.onmouseout = function(e) {
+			icon.src = 'images/gear.png';
+			UHM.hlpC();
+		};
+		icon.onmouseover = function(e) {
+			icon.src = 'images/gearHover.png';
+			UHM.hlp(icon, 'Open gear menu', 120, 0);
+		};
+		icon.onclick = function(e) {
+			if (debug) console.log ({ m: 'paneGearIcon click', e });
+			e.stopPropagation();
+			let paneIdx = e.target.id.slice(0,-4) // e.g. 'pane2Gear'
+			LNK.newGearDialog (icon, paneIdx);
+		};
+	}
 
 	defineVanodiMessageHandler ('getLabels', function vanodiSendLabels (instance, msg) {
 		if (msg.axisName === 'row' || msg.axisName === 'column') {
-			LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'labels', labels: MMGR.getActualLabels(msg.axisName) });
+			PIM.sendMessageToPlugin ({ nonce: msg.nonce, op: 'labels', labels: MMGR.getActualLabels(msg.axisName) });
 		} else {
 			console.log ({ m: 'Malformed getLabels request', msg, detail: 'msg.axisName must equal row or column' });
 		}
@@ -2882,7 +2835,7 @@ var linkoutsVersion = 'undefined';
 	/* Message handler for when plugins send their data
 	*/
 	defineVanodiMessageHandler('sendingPluginData', function vanodiSaveData (instance, msg) {
-		let pluginInstances = LNK.getPluginInstances();
+		let pluginInstances = PIM.getPluginInstances();
 		pluginInstances[instance.nonce]['dataFromPlugin'] = msg.pluginData;
 		MMGR.saveDataFromPluginToMapConfig(instance.nonce, pluginInstances[instance.nonce]['dataFromPlugin']);
 	})
@@ -2906,7 +2859,7 @@ var linkoutsVersion = 'undefined';
 			console.error('Incoming message missing attribute "propertyName"')
 			return
 		}
-		LNK.sendMessageToPlugin ({
+		PIM.sendMessageToPlugin ({
 			nonce: msg.nonce,
 			op: 'property',
 			propertyName: msg.propertyName,
@@ -2950,84 +2903,8 @@ var linkoutsVersion = 'undefined';
 		} else {
 			var testData = await getAxisTestData(msg);
 			if (testData == false) {return;} // return if no data to send
-			LNK.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });
+			PIM.sendMessageToPlugin ({ nonce: msg.nonce, op: 'testData', data: testData });
 		}
-	});
-
-	/*
-		Function to post message to linkouts regarding selected labels.
-
-		@function postSelectionToLinkouts
-		@param {String} axis 'Column' (if column label clicked) or 'Row' (if row label clicked)
-		@parram {String} clickType Denotes type of click. Choices: 'standardClick' & 'ctrlClick'
-		@param {int} lastClickIndex Index of last-clicked label. Can be '0' (e.g. if clicked dendogram).
-		@param {String} srcNonce nonce for plugin
-		TODO: make this work with specific registered linkouts
-	*/
-	LNK.postSelectionToLinkouts = function(axis, clickType, lastClickIndex, srcNonce) {
-		const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-	        const searchItems = SRCH.getAxisSearchResults (axis);
-		const pointLabelNames = [];
-		for (let i=0; i<searchItems.length; i++) {
-			let pointId = allLabels[searchItems[i] - 1];
-			pointId = pointId.indexOf("|") !== -1 ? pointId.substring(0,pointId.indexOf("|")) : pointId;
-			pointLabelNames.push(pointId);
-		}
-		const lastClickText = lastClickIndex > 0 ? allLabels[lastClickIndex] : '';
-		LNK.sendMessageToAllOtherPlugins (srcNonce, {
-		    op: 'makeHiLite',
-		    data: { axis, pointIds:pointLabelNames, clickType, lastClickText }
-		});
-	};
-
-	/*
-		Process message from plugins to highlight points selected in plugin
-	*/
-	defineVanodiMessageHandler ('selectLabels', function vanodiSelectLabels(instance, msg) {
-		const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
-		const pluginLabels = msg.selection.pointIds.map(l => l.toUpperCase()) // labels from plugin
-		var heatMapAxisLabels;
-		if (pluginLabels.length > 0 && pluginLabels[0].indexOf('|') !== -1) {
-			// Plugin sent full labels
-			heatMapAxisLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-		} else {
-			// Plugin sent actual labels (or actual and full are identical).
-			heatMapAxisLabels = MMGR.getActualLabels(axis);
-		}
-		heatMapAxisLabels = heatMapAxisLabels.map(l => l.toUpperCase());
-		var setSelected = new Set(pluginLabels) // make a set for faster access below, and avoiding use of indexOf
-		SRCH.clearSearchItems(axis);
-		var indexes = []
-		for (var i=0; i<heatMapAxisLabels.length; i++) { // loop over all labels
-			if (setSelected.has(heatMapAxisLabels[i])) {  // if set of selected points has label, add index to array of indexes
-				indexes.push(i+1);  
-			}
-		}
-		if (indexes.length > 0) {
-		    SRCH.setAxisSearchResultsVec (axis, indexes);
-		    DET.labelLastClicked[axis] = indexes[indexes.length-1];
-		}
-		DET.updateDisplayedLabels();
-		SUM.redrawSelectionMarks();
-		DVW.updateSelections();
-		SRCH.showSearchResults();
-		LNK.postSelectionToLinkouts (axis, msg.selection.clickType, 0, msg.nonce);
-	});
-
-	/*
-		Process message from scatter plot to highlight single point under mouse on plot
-	*/
-	defineVanodiMessageHandler('mouseover', function vanodiMouseover(instance, msg) {
-		const axis = MMGR.isRow(msg.selection.axis) ? 'Row' : 'Column';
-		const allLabels = MMGR.getActualLabels(axis);
-		const pointId = msg.selection.pointId
-		const ptIdx = allLabels.indexOf(pointId) + 1;
-		SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
-		DET.labelLastClicked[axis] = ptIdx;
-		DET.updateDisplayedLabels();
-		DVW.updateSelections();
-		SRCH.showSearchResults();
-		SUM.redrawSelectionMarks();
 	});
 
 	// Listen for messages from plugins.
@@ -3043,7 +2920,7 @@ var linkoutsVersion = 'undefined';
 				if (msg.nonce == 'prompt' && msg.op == 'register') {
 					// Intercept special case: register message from a plugin instance that can't get a nonce automatically.
 					// Ask user for permission.
-					const instance = LNK.getPluginInstanceByName (msg.name);
+					const instance = PIM.getPluginInstanceByName (msg.name);
 					if (!instance) {
 						console.warn ('Vanodi registration message received for unknown plugin: name==' + msg.name);
 						return;
@@ -3058,7 +2935,7 @@ var linkoutsVersion = 'undefined';
 						return;
 					}
 				}
-				const instance = LNK.getPluginInstance (msg.nonce);
+				const instance = PIM.getPluginInstance (msg.nonce);
 				if (instance) {
 				    processVanodiMessage (instance, msg);
 				}
@@ -3077,15 +2954,23 @@ var linkoutsVersion = 'undefined';
 		    const loc = PANE.findPaneLocation(pane);
 		    const iframes = loc.pane.getElementsByTagName('IFRAME');
 		    const oldNonce = iframes.length > 0 ? iframes[0].dataset.nonce : false;
-		    const oldInstance = oldNonce ? LNK.getPluginInstance (oldNonce) : null;
+		    const oldInstance = oldNonce ? PIM.getPluginInstance (oldNonce) : null;
 		    PANE.emptyPaneLocation (loc);
 		    LNK.switchPaneToPlugin (loc, plugin);
-		    if (oldInstance) LNK.setPanePluginOptions (pane, oldInstance.params);
+		    if (oldInstance) PIM.setPanePluginOptions (pane, oldInstance.params, LNK.initializePanePlugin);
 		});
 	        UHM.hlp (document.getElementById('barMenu_btn'), 'Added panel plugin ' + spec.name, 150, false, 0);
 	        setTimeout (UHM.hlpC, 5000);
 	   } else {
-	        LNK.addLinkoutPlugin(kind, spec);
+	        addLinkoutPlugin(kind, spec);
 	   }
 	};
+
+    CUST.waitForPlugins(() => {
+	const panePlugins = LNK.getPanePlugins ();
+	panePlugins.forEach(plugin => {
+	    PANE.registerPaneExtraOption (plugin.name, () => !!plugin.params, LNK.switchPaneToPlugin, plugin );
+	});
+    });
+
 })(); // end of big IIFE

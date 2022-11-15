@@ -15,6 +15,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const DVW = NgChm.importNS('NgChm.DVW');
     const SUM = NgChm.importNS('NgChm.SUM');
+    const DEV = NgChm.importNS('NgChm.DEV');
     const DMM = NgChm.importNS('NgChm.DMM');
     const CMM = NgChm.importNS('NgChm.CMM');
     const COMPAT = NgChm.importNS('NgChm.CM');
@@ -183,7 +184,7 @@ UPM.editPreferences = function(e,errorMsg) {
 	errorMsg = null;
 	prefspanel.style.display= '';	
 	UPM.locatePrefsPanel();
-	SUM.redrawCanvases();
+	DEV.redrawCanvases();
 }
 
 /**********************************************************************************
@@ -476,7 +477,7 @@ UPM.prefsSuccess = function() {
 	UPM.bkpColorMaps = null;
 	SUM.redrawSummaryPanel();
 	DMM.resizeDetailMapCanvases ();
-	DVW.updateSelections(false); // Do not skip resize: covariate bar changes may require resize
+	DET.updateSelections(false); // Do not skip resize: covariate bar changes may require resize
 	UPM.applyDone = true;
 	UPM.setMessage("");
 }

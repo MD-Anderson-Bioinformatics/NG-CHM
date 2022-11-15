@@ -15,21 +15,6 @@
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
 
-    /*********************************************************************************************
-     * FUNCTION:  updateSelections - The purpose of this function is to call the updateSelection
-     * function for each detail map panel.
-     *********************************************************************************************/
-    DVW.updateSelections = function (noResize) {
-	    for (let i=0; i<DVW.detailMaps.length;i++ ) {
-		    if (typeof noResize !== 'undefined') {
-			    DVW.detailMaps[i].updateSelection(noResize)
-		    } else {
-			    DVW.detailMaps[i].updateSelection()
-		    }
-	    }
-	    MMGR.getHeatMap().setUnAppliedChanges(true);
-    };
-
     // DVW.detailMaps is an array of mapItems for all current
     // detailHeatMapViews.
     //

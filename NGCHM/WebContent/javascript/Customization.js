@@ -295,6 +295,10 @@
         script.onload = CUST.definePluginLinkouts;
         // Internet explorer:
         script.onreadystatechange = function() { if (this.readyState == 'complete') {     	CUST.definePluginLinkouts();   }   };  //Leave this as one line for filemode version app builder
+	script.onerror = function () {
+	    console.warn ("Loading of " + CFG.custom_script + " failed.");
+	    CUST.definePluginLinkouts();
+	};
 	head.appendChild(script);
     };
     
@@ -306,35 +310,15 @@
         head.appendChild(script);
         script.src = customJs;
         script.onload = CUST.definePluginLinkouts;
+	script.onerror = function () {
+	    console.warn ("Loading of " + customJS + " failed.");
+	    CUST.definePluginLinkouts();
+	};
         // Internet explorer:
         script.onreadystatechange = function() { if (this.readyState == 'complete') {     	CUST.definePluginLinkouts();   }   };  //Leave this as one line for filemode version app builder
     }
 
-    // Published interface.
-    // Define a subtype: any linkouts defined for the supertype will also be defined
-    // for the subtype.  No transformation will be applied to the labels.  For
-    // instance: addSubtype('bio.gene.hugo', 'bio.pubmed'): linkouts defined for bio.pubmed
-    // will also be defined for bio.gene.hugo.
-    linkouts.addSubtype = function (subtype, supertype) {
-        addSubtype (subtype, supertype);
-    };
+    CUST.addSubtype = addSubtype;
+    CUST.describeTypes = describeTypes;
 
-    // Published interface.
-    // Add the specified plugin.
-    linkouts.addPlugin = function ( plugin ) {
-	for (var i=0;i<CUST.customPlugins.length;i++) {
-		var currPlug = CUST.customPlugins[i];
-    		if (currPlug.name === plugin.name) {
-			CUST.customPlugins.splice(i, 1);
-    		}
-    	}
-        if (CUST.verbose) console.log( 'NgChm.CUST: adding plugin ' + plugin.name );
-        CUST.customPlugins.push( plugin );
-    };
-
-    // Published interface.
-    // Describe plugin types.
-    linkouts.describeTypes = function (typelist) {
-        describeTypes (typelist);
-    };
 })();
