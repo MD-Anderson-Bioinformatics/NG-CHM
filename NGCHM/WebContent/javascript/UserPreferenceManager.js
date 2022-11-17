@@ -15,6 +15,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const DVW = NgChm.importNS('NgChm.DVW');
     const SUM = NgChm.importNS('NgChm.SUM');
+    const DET = NgChm.importNS('NgChm.DET');
     const DEV = NgChm.importNS('NgChm.DEV');
     const DMM = NgChm.importNS('NgChm.DMM');
     const CMM = NgChm.importNS('NgChm.CMM');
