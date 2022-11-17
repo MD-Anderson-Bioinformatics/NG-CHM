@@ -38,7 +38,7 @@
 	    PIM.requestDataFromPlugins();
 	    var success = true;
 	    UHM.initMessageBox();
-	    if (MMGR.source === MMGR.WEB_SOURCE) {
+	    if (heatMap.source() === MMGR.WEB_SOURCE) {
 		    success = MMGR.zipMapProperties(JSON.stringify(mapConfig));
 		    zipSaveNotification(heatMap, false);
 	    } else {
@@ -61,7 +61,7 @@
 	    if (MMGR.embeddedMapName === null) {
 		    heatMap.setRowClassificationOrder();
 		    heatMap.setColClassificationOrder();
-		    if (MMGR.source !== MMGR.FILE_SOURCE) {
+		    if (heatMap.source() !== MMGR.FILE_SOURCE) {
 			// FIXME: BMB. Verify this does what it's required to do.
 			// This appears to only be saving mapConfig.
 			// What about mapData?
@@ -213,7 +213,7 @@
 
 	    CUST.addCustomJS();
 	    document.addEventListener ("keydown", keyNavigate);
-		if (MMGR.source === MMGR.FILE_SOURCE) {
+		if (heatMap.source() === MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (SUM.chmElement) {
 				PANE.emptyPaneLocation (PANE.findPaneLocation (SUM.chmElement));
@@ -646,7 +646,7 @@
 	    menu.style.top = parentTop + 'px';
 	    if (menu.style.display === 'none') {
 		    menu.style.display = '';
-		    if (MMGR.source !== MMGR.WEB_SOURCE) {
+		    if (MMGR.getHeatMap().source() !== MMGR.WEB_SOURCE) {
 			    document.getElementById('menuAbout').style.display = 'none';
 			    document.getElementById('menuSpaceAbout').style.display = 'none';
 		    }
@@ -1066,7 +1066,7 @@
 
     document.getElementById('menuHelp').onclick = () => {
 	UHM.closeMenu();
-	if (MMGR.source !== MMGR.WEB_SOURCE) {
+	if (MMGR.getHeatMap().source() !== MMGR.WEB_SOURCE) {
 	    UIMGR.widgetHelp();
 	} else {
 	    let url = location.origin+location.pathname;
