@@ -1728,11 +1728,11 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 	    // (This does not mean the viewer is not from a server, so this could be
 	    // refined further for that case i.e. the "api" condition might be more appropriate)
 	    // Use full URL, which must be complete!
-	    callServlet("POST", COMPAT.viewerAppUrl, false);
+	    callServlet("GET", COMPAT.viewerAppUrl, false);
 	} else {
 	    // Heat map came from a server.
 	    // Use server "api" + special endpoint name
-	    callServlet("POST", CFG.api + "ZipAppDownload", false);
+	    callServlet("GET", CFG.api + "ZipAppDownload", false);
 	}
     }
 
