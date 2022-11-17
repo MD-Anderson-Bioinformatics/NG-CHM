@@ -26,6 +26,10 @@
 	SRCHSTATE.setAxisSearchResultsVec(axis, vec);
     };
 
+    SRCH.clearSearchRange = function(axis, left, right) {
+	SRCHSTATE.clearSearchRange (axis, left, right);
+    };
+
     /**********************************************************************************
      * FUNCTION - clearAllSearchResults: This function initializes/resets all
      * search-related state variables.
@@ -805,7 +809,7 @@
     }
 
     /**********************************************************************************
-     * FUNCTION - clearSearchItems: The purpose of this function is to clear the search
+     * FUNCTION - clearSearchItems: The purpose of this function is to clear all search
      * items on a particular axis.
      ***********************************************************************************/
     SRCH.clearSearchItems = function (clickAxis) {

@@ -125,6 +125,25 @@ SUM.initSummaryData = function(callbacks) {
 		callbacks.callDetailDrawFunction(axis === 'Row' ? 'RIBBONV' : 'RIBBONH');
 
 	    },
+
+	    clearSearchItems: function (axis) {
+		// Clear axis search results,
+		// Don't redraw yet. Will be followed by
+		// call to setAxisSearchResults.
+		callbacks.clearSearchItems (axis);
+	    },
+	    setAxisSearchResults: function (axis, left, right) {
+		// Set axis search results and redraw.
+		// May or may not be preceeded by a call to clearSearchItems.
+		callbacks.setAxisSearchResults(axis, left, right);
+		callbacks.showSearchResults();
+	    },
+	    clearSearchRange: function (axis, left, right) {
+		// Clear range of search results and redraw
+		callbacks.clearSearchRange (axis, left, right);
+		callbacks.showSearchResults();
+	    },
+
 	    calcDetailDendrogramSize: function (axis, size, totalSize) {
 		// axis is 'row' or 'column'
 		// - For rows, calculate the dendrogram width.

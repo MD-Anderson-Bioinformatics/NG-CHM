@@ -270,8 +270,23 @@
 		    });
 		});
 		SUM.initSummaryData({
-		    clearSearchItems: SRCH.clearSearchItems,
-		    showSearchResults: SRCH.showSearchResults,
+		    clearSearchItems: function (axis) {
+			// Clear all search items on an axis. Does not redraw.
+			SRCH.clearSearchItems (axis);
+		    },
+		    clearSearchRange: function (axis, left, right) {
+			// Clear range of search items on an axis.  Does not redraw.
+			SRCH.clearSearchRange (axis, left, right);
+		    },
+		    setAxisSearchResults: function (axis, left, right) {
+			// Set range of search items on an axis.  Does not redraw.
+			SRCH.setAxisSearchResults (axis, left, right);
+		    },
+		    showSearchResults: function() {
+			// Redraw search results.
+			//SRCH.showSearchResults,
+			SRCH.redrawSearchResults ();
+		    },
 		    callDetailDrawFunction: DET.callDetailDrawFunction,
 		});
 		const initialLoc = PANE.initializePanes ();

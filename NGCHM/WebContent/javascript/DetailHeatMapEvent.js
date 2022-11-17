@@ -987,7 +987,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		SRCH.clearSearchItems(focusNode.dataset.axis);
 		searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
 		if (searchIndex ){
-		    SRCH.clearAxisSearchItems (axis, index, index);
+		    SRCH.clearSearchRange (axis, index, index);
 		} else {
 		    SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 		}
@@ -996,7 +996,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	} else if (e.ctrlKey || e.metaKey){ // ctrl or Mac key + click
 	    searchIndex = SRCHSTATE.labelIndexInSearch(axis, index);
 	    if (searchIndex){ // if already searched, remove from search items
-		SRCH.clearAxisSearchItems (axis, index, index);
+		SRCH.clearSearchRange (axis, index, index);
 	    } else {
 		SRCH.setAxisSearchResults (axis, index, index);
 	    }
@@ -1044,7 +1044,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	    SRCH.clearSearchItems(focusNode.dataset.axis);
 	    const searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
 	    if (searchIndex ){
-		SRCH.clearAxisSearchItems (axis, index, index);
+		SRCH.clearSearchRange (axis, index, index);
 	    } else {
 		SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 	    }
