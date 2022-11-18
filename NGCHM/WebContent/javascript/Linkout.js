@@ -1272,8 +1272,9 @@ var linkoutsVersion = 'undefined';
 		};
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
-			const fullLabels = heatMap.getAxisLabels(axis.axisName).labels;
-		        const searchItemsIdx = SRCHSTATE.getAxisSearchResults (axis.axisName);
+			const axisName = MMGR.isRow(axis.axisName) ? "Row" : "Column";
+			const fullLabels = heatMap.getAxisLabels(axisName).labels;
+		        const searchItemsIdx = SRCHSTATE.getAxisSearchResults (axisName);
 			let selectedLabels = []
 			for (let i=0; i<searchItemsIdx.length; i++) {
 				let selectedLabel = fullLabels[searchItemsIdx[i] - 1];
@@ -1284,7 +1285,7 @@ var linkoutsVersion = 'undefined';
 			fullLabels.forEach((value,index) => { if (value === "") gapIndices.push (index); });
 			data.axes.push({
 				fullLabels: filterGaps (fullLabels, gapIndices),
-				actualLabels: filterGaps (MMGR.getActualLabels(axis.axisName), gapIndices),
+				actualLabels: filterGaps (MMGR.getActualLabels(axisName), gapIndices),
 				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
@@ -2825,6 +2826,7 @@ var linkoutsVersion = 'undefined';
 			UHM.hlp(icon, 'Open gear menu', 120, 0);
 		};
 		icon.onclick = function(e) {
+			const debug = false;
 			if (debug) console.log ({ m: 'paneGearIcon click', e });
 			e.stopPropagation();
 			let paneIdx = e.target.id.slice(0,-4) // e.g. 'pane2Gear'
