@@ -858,6 +858,10 @@ var linkoutsVersion = 'undefined';
 
 	LNK.copyEntireClassBarToClipBoard = function(labels,covarAxis){
 		const newWindow = window.open("","",'width=335,height=330,resizable=1');
+		if (!newWindow) {
+		    console.error ("Error opening clipboard window");
+		    return;
+		}
 		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const heatMap = MMGR.getHeatMap();
@@ -875,6 +879,10 @@ var linkoutsVersion = 'undefined';
 
 	LNK.copyPartialClassBarToClipBoard = function(labels, covarAxis){
 		const newWindow = window.open("","",'width=335,height=330,resizable=1');
+		if (!newWindow) {
+		    console.error ("Error opening clipboard window");
+		    return;
+		}
 		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const axisLabels = SRCHSTATE.getSearchLabelsByAxis(axis);

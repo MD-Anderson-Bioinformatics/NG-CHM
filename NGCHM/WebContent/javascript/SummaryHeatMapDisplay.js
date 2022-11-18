@@ -1457,7 +1457,7 @@ SUM.drawSelectionMarks = function() {
 SUM.drawAxisSelectionMarks = function(axis) {
 	const heatMap = MMGR.getHeatMap();
 	const isRow = MMGR.isRow (axis);
-	const selection = SRCHSTATE.getAxisSearchResults(axis);
+	const selection = SRCHSTATE.getAxisSearchResults(isRow ? "Row" : "Column");
 	const canvas = document.getElementById (isRow ? "summary_row_select_canvas" : "summary_col_select_canvas");
 	if (canvas === null) { return;}
 	const limit = isRow ? canvas.height : canvas.width;

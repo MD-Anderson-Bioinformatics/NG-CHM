@@ -43,8 +43,8 @@
 
     SRCHSTATE.getSearchSaveState = function () {
 	const state = {};
-	state['row'] = SRCHSTATE.getAxisSearchResults('row');
-	state['col'] = SRCHSTATE.getAxisSearchResults('col');
+	state['row'] = SRCHSTATE.getAxisSearchResults('Row');
+	state['col'] = SRCHSTATE.getAxisSearchResults('Col');
 	return state;
     };
 
@@ -68,8 +68,6 @@
      * specified axis.
      ***********************************************************************************/
     SRCHSTATE.getAxisSearchResults = function (axis) {
-	// axis is capitalized in so many ways :-(.
-	axis = MMGR.isRow (axis) ? 'Row' : 'Column';
 	// Convert keys to integers so that callers don't have to.
 	return Object.keys(searchResults[axis]).map (val => +val);
     };
