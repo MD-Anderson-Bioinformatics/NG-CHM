@@ -44,7 +44,7 @@
     SRCHSTATE.getSearchSaveState = function () {
 	const state = {};
 	state['row'] = SRCHSTATE.getAxisSearchResults('Row');
-	state['col'] = SRCHSTATE.getAxisSearchResults('Col');
+	state['col'] = SRCHSTATE.getAxisSearchResults('Column');
 	return state;
     };
 
