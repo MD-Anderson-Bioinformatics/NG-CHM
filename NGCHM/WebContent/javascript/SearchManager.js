@@ -622,7 +622,7 @@
      ***********************************************************************************/
     function findPrevAxisSearchItem (axis, index) {
 	if (!axis) return -1;
-        const axisItems = searchResults[axis];
+        const axisItems = SRCHSTATE.getSearchResults(axis);
 	if (index == -1) {
 	    index = MMGR.getHeatMap().getAxisLabels(axis).labels.length + 1;
 	}
@@ -673,6 +673,7 @@
      ***********************************************************************************/
     function searchPrev () {
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 	const searchAxis = document.getElementById('search_target').value;
 	if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
 	    // Continue on current search axis if permitted.
