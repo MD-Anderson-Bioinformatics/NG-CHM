@@ -349,6 +349,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		    DET.callDetailDrawFunction('RIBBONV', mapItem);
 	    }
 	    mapItem.updateSelection(mapItem);
+	    SUM.drawSelectionMarks();
     }
 
 
