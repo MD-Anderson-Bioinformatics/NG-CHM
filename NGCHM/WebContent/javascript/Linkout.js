@@ -603,7 +603,7 @@ var linkoutsVersion = 'undefined';
 		//Arrays here are used to store linkouts by type (e.g. individual OR group)
 		var indLinkouts = [];
 		var grpLinkouts = [];
-		var itemInSelection = LNK.itemInSelection(axis);
+		var itemInSelection = axis !== "Matrix" && LNK.itemInSelection(axis);
 		for (var i = 0; i < labelType.length; i++){ // for every labeltype that the map has...
 			var type = labelType[i];
 			if (linkouts[type]){ // and for every linkout that the label type has, we add the linkout to the menu
@@ -742,7 +742,7 @@ var linkoutsVersion = 'undefined';
 				}
 				addedHeader = true;
 			}
-			if ((!LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection') && (axis !== 'Matrix')) {
+			if ((axis !== 'Matrix') && (!LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection')) {
 				return addedHeader;
 			} else {
 				var row = body.insertRow();
