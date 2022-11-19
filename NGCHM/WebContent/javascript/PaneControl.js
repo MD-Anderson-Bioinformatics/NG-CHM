@@ -756,6 +756,11 @@
 	function expandPane (paneLoc) {
 		if (debug) console.log ('expandPane', paneLoc);
 		paneLoc.pane.classList.remove('collapsed');
+		if (paneLoc.container.classList.contains('vertical')) {
+		    paneLoc.pane.style.width = paneLoc.container.style.width;
+		} else {
+		    paneLoc.pane.style.height = paneLoc.container.style.height;
+		}
 	}
 
 	const paneContentOptions = [];
