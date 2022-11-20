@@ -200,6 +200,8 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 		colBarHeights: heatMap.getCovariateBarHeights("column"),
 		rowBarTypes: heatMap.getCovariateBarTypes("row"),
 		colBarTypes: heatMap.getCovariateBarTypes("column"),
+		rowBarParams: heatMap.getCovariateBarParams("row"),
+		colBarParams: heatMap.getCovariateBarParams("column"),
 		rowDendroHeight: heatMap.getRowDendroConfig().height,
 		colDendroHeight: heatMap.getColDendroConfig().height,
 		searchRows: SRCHSTATE.getAxisSearchResults("Row"),

@@ -477,6 +477,22 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		.map(([key,config]) => config.show === 'Y' ? (config.bar_type) : 0)
 	}
 
+	// Return an array of the display parameters of all visible covariate bars on an axis.
+	// Hidden bars have no parameters.  The order of entries is fixed but not
+	// specified.
+	this.getCovariateBarParams = function (axis) {
+	    return Object.entries(this.getAxisCovariateConfig(axis))
+	    .map(([key,config]) => config.show === 'Y' ? barParams(config) : {})
+	};
+
+	function barParams (config) {
+	    if (config.bar_type == 'color_plot') {
+		return { color_map: config.color_map };
+	    } else {
+		return { bg_color: config.bg_color, fg_color: config.fg_color, low_bound: config.low_bound, high_bound: config.high_bound };
+	    }
+	}
+
 	// Return the total display height of all covariate bars on an axis.
 	this.calculateTotalClassBarHeight = function (axis) {
 		return this.getCovariateBarHeights(axis).reduce((t,h) => t+h, 0);
