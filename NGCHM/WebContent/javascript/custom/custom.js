@@ -948,15 +948,15 @@ linkouts.addPlugin({
 (function(linkouts) {
 
     function searchPubMedForOne(labels){
-	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels[0], "PubMed");
+	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels[0], "PubMed", { noframe: true });
     }
 
     function searchPubMedForAll(labels){
-	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"), "PubMed");
+	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"), "PubMed", { noframe: true });
     }
 
     function searchPubMedForAny(labels){
-	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"), "PubMed");
+	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"), "PubMed", { noframe: true });
     }
 
     linkouts.addPlugin({
