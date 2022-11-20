@@ -194,12 +194,12 @@ let	wS = `const debug = ${debug};`;
 			});
 		}
 		wS += getMapId.toString();
-		wS += 'getMapId();';
+		wS += getMapId.name + '();';
 	} else {
-		wS += 'getConfigAndData();';
+		wS += getConfigAndData.name + '();';
 	}
 
-	wS += `onmessage = handleMessage;`;
+	wS += `onmessage = ${handleMessage.name};`;
 	if (debug) wS += `console.log ({ m:'TileLoader loaded', t: performance.now() });`;
 
 	// Create blob and start worker.
