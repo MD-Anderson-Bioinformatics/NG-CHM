@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion('2022-04-07');
+linkouts.setVersion('2022-11-20');
 
 // 2D Scatter Plot plugin:
 linkouts.addPanePlugin ({
@@ -797,6 +797,11 @@ linkouts.addPlugin({
 	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" + aid, "NCBI");
     }
 
+    function searchClinicalTrialsForOne (labels) {
+	var gname = labels[0];
+	linkouts.openUrl("https://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials");
+    }
+
     function searchClinicalTrials (labels) {
 	var gname = labels.join("+AND+");
 	linkouts.openUrl("https://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials");
@@ -813,7 +818,8 @@ linkouts.addPlugin({
             { menuEntry: "View NCBI Gene", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openNCBIGenePage },
             { menuEntry: "View NCBI Entrez ID", typeName: "bio.gene.entrezid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openNCBIEntrezIDPage },
             { menuEntry: "Search NCBI Databases", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT,  linkoutFn: searchNCBIDatabases },
-            { menuEntry: "Search ClinicalTrials.gov", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchClinicalTrials },
+            { menuEntry: "Search ClinicalTrials.gov", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchClinicalTrialsForOne },
+            { menuEntry: "Search ClinicalTrials.gov for all", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchClinicalTrials },
 	    // linkouts for GEO Accession identifiers
 	    { menuEntry: "View GEO Accession", typeName: "bio.geo.acc", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGEOAccession }
 	]
