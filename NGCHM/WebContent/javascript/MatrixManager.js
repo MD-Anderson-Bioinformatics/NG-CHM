@@ -1315,7 +1315,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					configurePageHeader();
 					heatMap.configureFlick();
 					if (!mapConfig.hasOwnProperty('panel_configuration')) {
-					    UTIL.hideLoader();
+					    UTIL.hideLoader(true);
 					}
 					sendAllListeners(MMGR.Event_INITIALIZED);
 			}

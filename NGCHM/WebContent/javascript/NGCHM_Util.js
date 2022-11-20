@@ -935,12 +935,17 @@ UTIL.imageTable = {
     }
 
     // Replace loader screen with NgCHM.
-    function hideLoader () {
+    // If hideAll is true, hides every UI element marked with hide-on-load
+    // and shows every element marked with show-on-load.
+    // Otherwise, only the loader element itself is hidden.
+    function hideLoader (hideAll) {
 	const loader = document.getElementById('loader');
 	loader.classList.replace('fadeinslow', 'fadeout');
-	[...document.querySelectorAll('*[data-hide-on-load]')].forEach(e => e.classList.add('hide'));
-	UTIL.containerElement.classList.replace('faded', 'fadein');
-	[...document.querySelectorAll('*[data-show-on-load]')].forEach(e => e.classList.remove('hide'));
+	if (hideAll) {
+	    [...document.querySelectorAll('*[data-hide-on-load]')].forEach(e => e.classList.add('hide'));
+	    UTIL.containerElement.classList.replace('faded', 'fadein');
+	    [...document.querySelectorAll('*[data-show-on-load]')].forEach(e => e.classList.remove('hide'));
+	}
     }
 })();
 
