@@ -455,7 +455,7 @@ linkouts.addPlugin({
 //==============================================//
 (function(linkouts) {
     function openGTExPortal (ids) {
-	linkouts.openUrl("https://gtexportal.org/home/gene/" + ids[0]);
+	linkouts.openUrl("https://gtexportal.org/home/gene/" + ids[0], "GTEx", { noframe: true });
     }
     linkouts.addPlugin({
         name: "GTEx Portal",
