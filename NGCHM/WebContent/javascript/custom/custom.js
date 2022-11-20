@@ -51,6 +51,7 @@ linkouts.addPanePlugin ({
 	linkouts.addSubtype ("bio.gene.hugo", "bio.pubmed");
     linkouts.addSubtype ("bio.mirna", "bio.pubmed");
     linkouts.addSubtype ("bio.gene.entrez", "bio.gene.entrezid");
+    linkouts.addSubtype ("bio.pubmed", "search");
 
     linkouts.describeTypes([
 	{ typeName: "bio.genome.position",
@@ -436,12 +437,13 @@ linkouts.addPlugin({
 	logo: "https://scholar.google.com/intl/en/scholar/images/1x/googlelogo_color_270x104dp.png",
 	linkouts: [
 	    { menuEntry: "Search Google Scholar", typeName: "scholar", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchGoogleScholar },
-	    { menuEntry: "Search Google", typeName: "search", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchGoogle }
+	    { menuEntry: "Search Google", typeName: "search", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchGoogle },
+	    { menuEntry: "Search Google for all", typeName: "search", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchGoogle }
 	]
     });
 
     function searchGoogle(selection){
-	linkouts.openUrl("https://www.google.com/#q=" + selection.join("+"), { noframe: true });
+	linkouts.openUrl("https://google.com/search?q=" + selection.join("+"), "google", { noframe: true });
     }
 
     function searchGoogleScholar (labels) {
