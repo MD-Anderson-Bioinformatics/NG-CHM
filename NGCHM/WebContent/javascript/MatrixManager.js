@@ -819,40 +819,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return initialized;
 	}
 
-	this.configSearchCovars = function () {  //TODO Get rid of duplicates
-		var searchOn = document.getElementById('search_on');
-		const heatMap = MMGR.getHeatMap();
-		var classBarsConfig = heatMap.getColClassificationConfig();
-		var classBarConfigOrder = heatMap.getColClassificationOrder();
-		var classBarsData = heatMap.getColClassificationData();
-		var searchLength = searchOn.options.length;
-		//Clear all options if any exist
-		for (i = searchLength-1; i >= 1; i--) {
-			searchOn.remove(i);
-		}
-		for (var i = 0; i < classBarConfigOrder.length; i++) {
-			var key = classBarConfigOrder[i];
-			var currentClassBar = classBarsConfig[key];
-			// create new option element
-			var opt = document.createElement('option');
-			let covname = key.length > 20 ? key.substring(0,20) + "..." : key;
-			opt.appendChild( document.createTextNode(covname) );
-			opt.value = "col|" + key; 
-			// add opt to end of select box (sel)
-			searchOn.appendChild(opt); 
-		}
-		classBarsConfig = heatMap.getRowClassificationConfig();
-		classBarConfigOrder = heatMap.getRowClassificationOrder();
-		for (var i = 0; i < classBarConfigOrder.length; i++) {
-			var key = classBarConfigOrder[i];
-			var opt = document.createElement('option');
-			let covname = key.length > 20 ? key.substring(0,20) + "..." : key;
-			opt.appendChild( document.createTextNode(covname) );
-			opt.value = "row|" + key; 
-			searchOn.appendChild(opt); 
-		}
-	};
-
 	this.configureFlick = function(){
 		if (!flickInitialized) {
 			const dl = this.getDataLayers();
@@ -1348,7 +1314,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					initialized = 1;
 					configurePageHeader();
 					heatMap.configureFlick();
-					heatMap.configSearchCovars();
 					if (!mapConfig.hasOwnProperty('panel_configuration')) {
 					    UTIL.hideLoader();
 					}

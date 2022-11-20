@@ -31,11 +31,22 @@
     };
 
     /**********************************************************************************
-     * FUNCTION - clearAllSearchResults: This function initializes/resets all
-     * search-related state variables.
+     * FUNCTION - configSearchInterface: This function initializes/resets all
+     * search-related user interface elements.  It is called from the UI-Manager after the
+     * heatMap has initialized.
      **********************************************************************************/
-    SRCH.clearAllSearchResults = function() {
-	SRCHSTATE.clearAllSearchResults ();
+    SRCH.configSearchInterface = configSearchInterface;
+    function configSearchInterface (heatMap) {
+	const searchOn = document.getElementById('search_on');
+
+	// Clear any existing options after the first (Labels).
+	for (let i = searchOn.options.length-1; i >= 1; i--) {
+	    searchOn.remove(i);
+	}
+	// Add additional options for all covariate bars.
+	addCovariateOptions ('col', heatMap.getColClassificationOrder());
+	addCovariateOptions ('row', heatMap.getRowClassificationOrder());
+	searchOn.onchange = () => searchOnSel();
 
 	// Connect UI elements to onclick handlers.
 	let e = document.getElementById('next_btn');
@@ -47,9 +58,25 @@
 	e = document.getElementById('go_btn');
 	if (e) e.onclick = () => SRCH.detailSearch();
 
-	// Connect UI elements to onchange handlers.
-	e = document.getElementById('search_on');
-	if (e) e.onchange = () => searchOnSel();
+	function addCovariateOptions (axis, barOrder) {
+	    barOrder.forEach (key => {
+		// create new option element
+		const opt = document.createElement('option');
+		const covname = key.length > 20 ? key.substring(0,20) + "..." : key;
+		opt.appendChild( document.createTextNode(covname) );
+		opt.value = axis + "|" + key;
+		// add opt to end of select box
+		searchOn.appendChild(opt);
+	    });
+	}
+    };
+
+    /**********************************************************************************
+     * FUNCTION - clearAllSearchResults: This function initializes/resets all
+     * search-related state variables.
+     **********************************************************************************/
+    SRCH.clearAllSearchResults = function() {
+	SRCHSTATE.clearAllSearchResults ();
     };
 
     SRCH.doInitialSearch = function () {

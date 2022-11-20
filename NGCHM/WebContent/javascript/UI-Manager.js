@@ -209,7 +209,7 @@
 		    var success = autoSaveHeatMap(heatMap);
 	    }
 	    heatMap.setSelectionColors();
-
+	    SRCH.configSearchInterface (heatMap);
 
 	    CUST.addCustomJS();
 	    document.addEventListener ("keydown", keyNavigate);
