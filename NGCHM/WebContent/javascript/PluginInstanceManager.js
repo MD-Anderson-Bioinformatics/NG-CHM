@@ -32,7 +32,7 @@
     };
 
     PIM.removePluginInstance = function removePluginInstance (loc, elements) {
-	const nonceToRemove = loc.pane.nonce;
+	const nonceToRemove = elements[0].getElementsByTagName('IFRAME')[0].dataset.nonce;
 	delete instances[nonceToRemove];
     };
 

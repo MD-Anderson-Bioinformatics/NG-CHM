@@ -989,7 +989,6 @@ var linkoutsVersion = 'undefined';
 	    loc.pane.appendChild (linkoutElement);
 
 	    let pluginIframe = PIM.createPluginInstance('panel-plugin', plugin);
-	    loc.pane.nonce = pluginIframe.dataset.nonce;
 	    linkoutElement.appendChild(pluginIframe);
 	};
 
