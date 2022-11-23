@@ -67,7 +67,7 @@
 				    PANE.toggleScreenMode (expanded.id);
 				}
 				[...document.getElementsByClassName('pane')].forEach(PANE.resizePane);
-				UTIL.hideLoader();  // Hide loader screen, display NG-CHM.
+				UTIL.hideLoader(true);  // Hide loader screen, display NG-CHM.
 			}, 500);
 	    }
 	}

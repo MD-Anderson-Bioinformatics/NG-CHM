@@ -194,12 +194,12 @@ let	wS = `const debug = ${debug};`;
 			});
 		}
 		wS += getMapId.toString();
-		wS += 'getMapId();';
+		wS += getMapId.name + '();';
 	} else {
-		wS += 'getConfigAndData();';
+		wS += getConfigAndData.name + '();';
 	}
 
-	wS += `onmessage = handleMessage;`;
+	wS += `onmessage = ${handleMessage.name};`;
 	if (debug) wS += `console.log ({ m:'TileLoader loaded', t: performance.now() });`;
 
 	// Create blob and start worker.
@@ -475,6 +475,22 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	this.getCovariateBarTypes = function (axis) {
 		return Object.entries(this.getAxisCovariateConfig(axis))
 		.map(([key,config]) => config.show === 'Y' ? (config.bar_type) : 0)
+	}
+
+	// Return an array of the display parameters of all visible covariate bars on an axis.
+	// Hidden bars have no parameters.  The order of entries is fixed but not
+	// specified.
+	this.getCovariateBarParams = function (axis) {
+	    return Object.entries(this.getAxisCovariateConfig(axis))
+	    .map(([key,config]) => config.show === 'Y' ? barParams(config) : {})
+	};
+
+	function barParams (config) {
+	    if (config.bar_type == 'color_plot') {
+		return { color_map: config.color_map };
+	    } else {
+		return { bg_color: config.bg_color, fg_color: config.fg_color, low_bound: config.low_bound, high_bound: config.high_bound };
+	    }
 	}
 
 	// Return the total display height of all covariate bars on an axis.
@@ -818,40 +834,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	this.isInitialized = function() {
 		return initialized;
 	}
-
-	this.configSearchCovars = function () {  //TODO Get rid of duplicates
-		var searchOn = document.getElementById('search_on');
-		const heatMap = MMGR.getHeatMap();
-		var classBarsConfig = heatMap.getColClassificationConfig();
-		var classBarConfigOrder = heatMap.getColClassificationOrder();
-		var classBarsData = heatMap.getColClassificationData();
-		var searchLength = searchOn.options.length;
-		//Clear all options if any exist
-		for (i = searchLength-1; i >= 1; i--) {
-			searchOn.remove(i);
-		}
-		for (var i = 0; i < classBarConfigOrder.length; i++) {
-			var key = classBarConfigOrder[i];
-			var currentClassBar = classBarsConfig[key];
-			// create new option element
-			var opt = document.createElement('option');
-			let covname = key.length > 20 ? key.substring(0,20) + "..." : key;
-			opt.appendChild( document.createTextNode(covname) );
-			opt.value = "col|" + key; 
-			// add opt to end of select box (sel)
-			searchOn.appendChild(opt); 
-		}
-		classBarsConfig = heatMap.getRowClassificationConfig();
-		classBarConfigOrder = heatMap.getRowClassificationOrder();
-		for (var i = 0; i < classBarConfigOrder.length; i++) {
-			var key = classBarConfigOrder[i];
-			var opt = document.createElement('option');
-			let covname = key.length > 20 ? key.substring(0,20) + "..." : key;
-			opt.appendChild( document.createTextNode(covname) );
-			opt.value = "row|" + key; 
-			searchOn.appendChild(opt); 
-		}
-	};
 
 	this.configureFlick = function(){
 		if (!flickInitialized) {
@@ -1348,9 +1330,8 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					initialized = 1;
 					configurePageHeader();
 					heatMap.configureFlick();
-					heatMap.configSearchCovars();
 					if (!mapConfig.hasOwnProperty('panel_configuration')) {
-					    UTIL.hideLoader();
+					    UTIL.hideLoader(true);
 					}
 					sendAllListeners(MMGR.Event_INITIALIZED);
 			}

@@ -219,6 +219,7 @@ DMM.setPrimaryDetailMap = function (mapItem) {
 	mapItem.version = 'P';
 	DVW.primaryMap = mapItem;
 	document.getElementById('primary_btn'+mapItem.panelNbr).style.display = 'none';
+	SUM.drawLeftCanvasBox ();
 }
 
 /*********************************************************************************************
@@ -349,6 +350,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		    DET.callDetailDrawFunction('RIBBONV', mapItem);
 	    }
 	    mapItem.updateSelection(mapItem);
+	    SUM.drawSelectionMarks();
     }
 
 

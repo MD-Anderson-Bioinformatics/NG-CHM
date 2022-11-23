@@ -209,7 +209,7 @@
 		    var success = autoSaveHeatMap(heatMap);
 	    }
 	    heatMap.setSelectionColors();
-
+	    SRCH.configSearchInterface (heatMap);
 
 	    CUST.addCustomJS();
 	    document.addEventListener ("keydown", keyNavigate);
@@ -942,7 +942,7 @@
 		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
 		var pluginCtr = allLinksTbl.rows.length;
 		var headerpanel = document.getElementById('mdaServiceHeader');
-		UTIL.hideLoader();
+		UTIL.hideLoader(true);
 		linkBox.classList.add ('hide');
 		linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 		linkBox.style.right = "5%";

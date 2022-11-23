@@ -200,6 +200,8 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 		colBarHeights: heatMap.getCovariateBarHeights("column"),
 		rowBarTypes: heatMap.getCovariateBarTypes("row"),
 		colBarTypes: heatMap.getCovariateBarTypes("column"),
+		rowBarParams: heatMap.getCovariateBarParams("row"),
+		colBarParams: heatMap.getCovariateBarParams("column"),
 		rowDendroHeight: heatMap.getRowDendroConfig().height,
 		colDendroHeight: heatMap.getColDendroConfig().height,
 		searchRows: SRCHSTATE.getAxisSearchResults("Row"),
@@ -475,6 +477,9 @@ DET.getDetailSaveState = function (dm) {
 	    'type': 'detailMap',
 	    'version': dm.version,
 	    'versionNumber': dm.panelNbr,
+	    'subDendroMode': dm.subDendroMode,
+	    'selectedStart': dm.selectedStart,
+	    'selectedStop': dm.selectedStop,
 	};
 };
 
@@ -622,35 +627,35 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	const previousMode = mapItem.mode;
 	const prevWidth = mapItem.dataBoxWidth;
 	mapItem.saveCol = mapItem.currentCol;
-	DVW.setMode(mapItem,'RIBBONH');
+	if (!restoreInfo) DVW.setMode(mapItem,'RIBBONH');
 	mapItem.setButtons();
 
-	if (!restoreInfo) {
-	    if (previousMode=='FULL_MAP') {
-		DET.setDetailDataHeight(mapItem, DET.zoomBoxSizes[0]);
+	if (previousMode=='FULL_MAP') {
+	    DET.setDetailDataHeight(mapItem, DET.zoomBoxSizes[0]);
+	}
+	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
+	// and data size to 1.
+	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
+	    mapItem.dataViewWidth = heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
+	    let ddw = 1;
+	    while(2*mapItem.dataViewWidth < 500){ // make the width wider to prevent blurry/big dendros for smaller maps
+		ddw *=2;
+		mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
 	    }
-	    // If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
-	    // and data size to 1.
-	    if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
-		mapItem.dataViewWidth = heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
-		let ddw = 1;
-		while(2*mapItem.dataViewWidth < 500){ // make the width wider to prevent blurry/big dendros for smaller maps
-		    ddw *=2;
-		    mapItem.dataViewWidth = ddw*heatMap.getNumColumns(MAPREP.RIBBON_HOR_LEVEL) + DET.dataViewBorder;
-		}
-		DET.setDetailDataWidth(mapItem,ddw);
-		mapItem.currentCol = 1;
-	    } else {
-		mapItem.saveCol = mapItem.selectedStart;
-		let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
-		DET.clearModeHistory (mapItem);
-		mapItem.mode='RIBBONH_DETAIL'
-		const width = Math.max(1, Math.floor(500/selectionSize));
-		mapItem.dataViewWidth = (selectionSize * width) + DET.dataViewBorder;
-		DET.setDetailDataWidth(mapItem,width);
-		mapItem.currentCol = mapItem.selectedStart;
-	    }
+	    DET.setDetailDataWidth(mapItem,ddw);
+	    mapItem.currentCol = 1;
+	} else {
+	    mapItem.saveCol = mapItem.selectedStart;
+	    let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
+	    DET.clearModeHistory (mapItem);
+	    mapItem.mode='RIBBONH_DETAIL'
+	    const width = Math.max(1, Math.floor(500/selectionSize));
+	    mapItem.dataViewWidth = (selectionSize * width) + DET.dataViewBorder;
+	    DET.setDetailDataWidth(mapItem,width);
+	    mapItem.currentCol = mapItem.selectedStart;
+	}
 
+	if (!restoreInfo) {
 	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
 	    if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
 		if (previousMode == 'FULL_MAP') {
@@ -680,6 +685,14 @@ DET.setDetailDataHeight = function (mapItem, size) {
      * a given heat map panel to vertical ribbon view.  Note there is a standard full
      * ribbon view and also a sub-selection ribbon view if the user clicks on the dendrogram.
      * If a dendrogram selection is in effect, then selectedStart and selectedStop will be set.
+     *
+     * restoreInfo is set when restoring view from a saved state.  In this, the view's mode
+     * abd related state will be set to the desired values and the role of this function is
+     * to create the view in the correct mode.
+     *
+     * If restoreInfo is not set, we are changing from another mode.  We need to set the corrrect
+     * view mode and related state as well as switching the view to the correct mode.
+     *
      **********************************************************************************/
     DET.detailVRibbon = function (mapItem, restoreInfo) {
 	UHM.hlpC();
@@ -688,7 +701,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	const prevHeight = mapItem.dataBoxHeight;
 	mapItem.saveRow = mapItem.currentRow;
 
-	DVW.setMode(mapItem, 'RIBBONV');
+	if (!restoreInfo) DVW.setMode(mapItem, 'RIBBONV');
 	mapItem.setButtons();
 
 	// If normal (full) ribbon, set the width of the detail display to the size of the horizontal ribbon view
@@ -835,13 +848,18 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	mapItem.dataPerCol = savedState.dataPerCol;
 	mapItem.dataPerRow = savedState.dataPerRow;
 	mapItem.mode = savedState.mode;
+	mapItem.subDendroMode = savedState.subDendroMode || "none";
+	mapItem.selectedStart = savedState.selectedStart || 0;
+	mapItem.selectedStop = savedState.selectedStop || 0;
 	// RESTORE CANVAS SIZE
 	let zoomBoxSizeIdx = DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
 	switch (savedState.mode) {
 	    case "RIBBONV":
+	    case "RIBBONV_DETAIL":
 		DET.detailVRibbon(mapItem, {});
 		break;
 	    case "RIBBONH":
+	    case "RIBBONH_DETAIL":
 		DET.detailHRibbon(mapItem, {});
 		break;
 	    case "FULL_MAP":

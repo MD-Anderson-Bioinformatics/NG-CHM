@@ -756,6 +756,11 @@
 	function expandPane (paneLoc) {
 		if (debug) console.log ('expandPane', paneLoc);
 		paneLoc.pane.classList.remove('collapsed');
+		if (paneLoc.container.classList.contains('vertical')) {
+		    paneLoc.pane.style.width = paneLoc.container.style.width;
+		} else {
+		    paneLoc.pane.style.height = paneLoc.container.style.height;
+		}
 	}
 
 	const paneContentOptions = [];
@@ -1335,6 +1340,8 @@
 
 		if (MMGR.getHeatMap()) MMGR.getHeatMap().setUnAppliedChanges(true);
 
+		this.excessDrag = 0;
+
 		// Create and register listeners for pointer events while the divider is moving.
 		this.moveListener = (function(dc) {
 			return ((e) => dc.dividerMove(e));
@@ -1423,8 +1430,10 @@
 			// Vertical divider. Panes are side-by-side.
 			const w1 = bb1.width;
 			const w2 = bb2.width;
-			if (x < 0 && (w1+x) < 30) x = 0;
-			if (x > 0 && (w2-x) < 30) x = 0;
+			x += this.excessDrag;
+			this.excessDrag = 0;
+			if (x < 0 && (w1+x) < 30) { this.excessDrag = x; x = 0; };
+			if (x > 0 && (w2-x) < 30) { this.excessDrag = x; x = 0; };
 			if (x !== 0) {
 				change = true;
 				resizeEvent1 = new CustomEvent('paneresize', { detail: { what: 'width', amount: x }});
@@ -1434,8 +1443,10 @@
 			// Horizontal divider. Panes are one above the other.
 			const h1 = bb1.height;
 			const h2 = bb2.height;
-			if (y < 0 && (h1+y) < 30) y = 0;
-			if (y > 0 && (h2-y) < 30) y = 0;
+			y += this.excessDrag;
+			this.excessDrag = 0;
+			if (y < 0 && (h1+y) < 30) { this.excessDrag = y; y = 0; }
+			if (y > 0 && (h2-y) < 30) { this.excessDrag = y; y = 0; }
 			if (y !== 0) {
 				change = true;
 				resizeEvent1 = new CustomEvent('paneresize', { detail: { what: 'height', amount: y }});

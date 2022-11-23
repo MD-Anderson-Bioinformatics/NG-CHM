@@ -1178,9 +1178,9 @@ DEV.detailDataZoomIn = function (mapItem) {
 		let full_src= "full";
 		let ribbonH_src= "ribbonH";
 		let ribbonV_src= "ribbonV";
-		if (mapItem.mode=='RIBBONV')
+		if (mapItem.mode=='RIBBONV' || mapItem.mode == 'RIBBONV_DETAIL')
 			ribbonV_src += "_selected";
-		else if (mapItem.mode == "RIBBONH")
+		else if (mapItem.mode == "RIBBONH" || mapItem.mode == 'RIBBONH_DETAIL')
 			ribbonH_src += "_selected";
 		else
 			full_src += "_selected";

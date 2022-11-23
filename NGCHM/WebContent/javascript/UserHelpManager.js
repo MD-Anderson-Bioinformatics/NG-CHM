@@ -323,6 +323,7 @@ UHM.noWebGlContext = function(isDisabled) {
  * cannot be accessed.
  **********************************************************************************/
 UHM.mapNotFound = function(heatMapName) {
+	UTIL.hideLoader(false);
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Requested Heat Map Not Found");
 	UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you requested cannot be found OR connectivity to the Heat Map repository has been interrupted.<br><br>Please check the Heat Map name and try again.");
@@ -335,6 +336,7 @@ UHM.mapNotFound = function(heatMapName) {
  * cannot be loaded.
  **********************************************************************************/
 UHM.mapLoadError = function(heatMapName, details) {
+	UTIL.hideLoader(false);
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Requested Heat Map Not Loaded");
 	UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you selected cannot be loaded.<br><br>Reason: " + details);
@@ -378,9 +380,6 @@ UHM.invalidFileFormat = function() {
  * 5. messageBoxCancel - Closes the message box when a Cancel is requested.  
  **********************************************************************************/
 UHM.initMessageBox = function() {
-	var msgBox = document.getElementById('msgBox');
-	UTIL.hideLoader();
-	
 	document.getElementById('msgBox').style.display = 'none';
 	document.getElementById('msgBoxBtnImg_1').style.display = 'none';
 	document.getElementById('msgBoxBtnImg_2').style.display = 'none';
@@ -390,8 +389,7 @@ UHM.initMessageBox = function() {
 	document.getElementById('msgBoxBtnImg_2')['onclick'] = null;
 	document.getElementById('msgBoxBtnImg_3')['onclick'] = null;
 	document.getElementById('msgBoxBtnImg_4')['onclick'] = null;
-	var msgButton = document.getElementById('messageOpen_btn');
-    msgButton.style.display = 'none'; 
+	document.getElementById('messageOpen_btn').style.display = 'none';
 }
 
 UHM.setMessageBoxHeader = function(headerText) {

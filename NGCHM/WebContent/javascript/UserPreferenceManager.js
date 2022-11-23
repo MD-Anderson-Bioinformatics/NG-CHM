@@ -1612,7 +1612,6 @@ UPM.setupClassBreaks = function(e, key, barType, classBar) {
 		    return el;
 		});
 		UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Bar Type:", typeOptionsSelect]);
-		console.log('Added ' + typeOptionsId);
 	}
 	
 	

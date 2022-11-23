@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion('2022-04-07');
+linkouts.setVersion('2022-11-20');
 
 // 2D Scatter Plot plugin:
 linkouts.addPanePlugin ({
@@ -51,6 +51,7 @@ linkouts.addPanePlugin ({
 	linkouts.addSubtype ("bio.gene.hugo", "bio.pubmed");
     linkouts.addSubtype ("bio.mirna", "bio.pubmed");
     linkouts.addSubtype ("bio.gene.entrez", "bio.gene.entrezid");
+    linkouts.addSubtype ("bio.pubmed", "search");
 
     linkouts.describeTypes([
 	{ typeName: "bio.genome.position",
@@ -436,12 +437,13 @@ linkouts.addPlugin({
 	logo: "https://scholar.google.com/intl/en/scholar/images/1x/googlelogo_color_270x104dp.png",
 	linkouts: [
 	    { menuEntry: "Search Google Scholar", typeName: "scholar", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchGoogleScholar },
-	    { menuEntry: "Search Google", typeName: "search", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchGoogle }
+	    { menuEntry: "Search Google", typeName: "search", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchGoogle },
+	    { menuEntry: "Search Google for all", typeName: "search", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchGoogle }
 	]
     });
 
     function searchGoogle(selection){
-	linkouts.openUrl("https://www.google.com/#q=" + selection.join("+"), { noframe: true });
+	linkouts.openUrl("https://google.com/search?q=" + selection.join("+"), "google", { noframe: true });
     }
 
     function searchGoogleScholar (labels) {
@@ -455,7 +457,7 @@ linkouts.addPlugin({
 //==============================================//
 (function(linkouts) {
     function openGTExPortal (ids) {
-	linkouts.openUrl("https://gtexportal.org/home/gene/" + ids[0]);
+	linkouts.openUrl("https://gtexportal.org/home/gene/" + ids[0], "GTEx", { noframe: true });
     }
     linkouts.addPlugin({
         name: "GTEx Portal",
@@ -797,6 +799,11 @@ linkouts.addPlugin({
 	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=" + aid, "NCBI");
     }
 
+    function searchClinicalTrialsForOne (labels) {
+	var gname = labels[0];
+	linkouts.openUrl("https://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials");
+    }
+
     function searchClinicalTrials (labels) {
 	var gname = labels.join("+AND+");
 	linkouts.openUrl("https://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials");
@@ -813,7 +820,8 @@ linkouts.addPlugin({
             { menuEntry: "View NCBI Gene", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openNCBIGenePage },
             { menuEntry: "View NCBI Entrez ID", typeName: "bio.gene.entrezid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openNCBIEntrezIDPage },
             { menuEntry: "Search NCBI Databases", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT,  linkoutFn: searchNCBIDatabases },
-            { menuEntry: "Search ClinicalTrials.gov", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchClinicalTrials },
+            { menuEntry: "Search ClinicalTrials.gov", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchClinicalTrialsForOne },
+            { menuEntry: "Search ClinicalTrials.gov for all", typeName: "bio.gene.hugo", selectMode: linkouts.MULTI_SELECT, linkoutFn: searchClinicalTrials },
 	    // linkouts for GEO Accession identifiers
 	    { menuEntry: "View GEO Accession", typeName: "bio.geo.acc", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGEOAccession }
 	]
@@ -940,15 +948,15 @@ linkouts.addPlugin({
 (function(linkouts) {
 
     function searchPubMedForOne(labels){
-	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels[0], "PubMed");
+	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels[0], "PubMed", { noframe: true });
     }
 
     function searchPubMedForAll(labels){
-	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"), "PubMed");
+	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+AND+"), "PubMed", { noframe: true });
     }
 
     function searchPubMedForAny(labels){
-	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"), "PubMed");
+	linkouts.openUrl("https://www.ncbi.nlm.nih.gov/pubmed/?term=" + labels.join("+OR+"), "PubMed", { noframe: true });
     }
 
     linkouts.addPlugin({
