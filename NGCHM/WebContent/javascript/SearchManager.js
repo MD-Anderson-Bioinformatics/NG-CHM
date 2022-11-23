@@ -26,6 +26,10 @@
 	SRCHSTATE.setAxisSearchResultsVec(axis, vec);
     };
 
+    SRCH.clearSearchRange = function(axis, left, right) {
+	SRCHSTATE.clearSearchRange (axis, left, right);
+    };
+
     /**********************************************************************************
      * FUNCTION - clearAllSearchResults: This function initializes/resets all
      * search-related state variables.
@@ -618,7 +622,7 @@
      ***********************************************************************************/
     function findPrevAxisSearchItem (axis, index) {
 	if (!axis) return -1;
-        const axisItems = searchResults[axis];
+        const axisItems = SRCHSTATE.getSearchResults(axis);
 	if (index == -1) {
 	    index = MMGR.getHeatMap().getAxisLabels(axis).labels.length + 1;
 	}
@@ -669,6 +673,7 @@
      ***********************************************************************************/
     function searchPrev () {
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 	const searchAxis = document.getElementById('search_target').value;
 	if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
 	    // Continue on current search axis if permitted.
@@ -805,7 +810,7 @@
     }
 
     /**********************************************************************************
-     * FUNCTION - clearSearchItems: The purpose of this function is to clear the search
+     * FUNCTION - clearSearchItems: The purpose of this function is to clear all search
      * items on a particular axis.
      ***********************************************************************************/
     SRCH.clearSearchItems = function (clickAxis) {

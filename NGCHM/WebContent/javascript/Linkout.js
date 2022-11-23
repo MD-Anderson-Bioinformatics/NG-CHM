@@ -603,7 +603,7 @@ var linkoutsVersion = 'undefined';
 		//Arrays here are used to store linkouts by type (e.g. individual OR group)
 		var indLinkouts = [];
 		var grpLinkouts = [];
-		var itemInSelection = LNK.itemInSelection(axis);
+		var itemInSelection = axis !== "Matrix" && LNK.itemInSelection(axis);
 		for (var i = 0; i < labelType.length; i++){ // for every labeltype that the map has...
 			var type = labelType[i];
 			if (linkouts[type]){ // and for every linkout that the label type has, we add the linkout to the menu
@@ -742,7 +742,7 @@ var linkoutsVersion = 'undefined';
 				}
 				addedHeader = true;
 			}
-			if ((!LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection') && (axis !== 'Matrix')) {
+			if ((axis !== 'Matrix') && (!LNK.hasSelection(axis)) && (linkout.selectType === 'multiSelection')) {
 				return addedHeader;
 			} else {
 				var row = body.insertRow();
@@ -858,6 +858,10 @@ var linkoutsVersion = 'undefined';
 
 	LNK.copyEntireClassBarToClipBoard = function(labels,covarAxis){
 		const newWindow = window.open("","",'width=335,height=330,resizable=1');
+		if (!newWindow) {
+		    console.error ("Error opening clipboard window");
+		    return;
+		}
 		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const heatMap = MMGR.getHeatMap();
@@ -875,6 +879,10 @@ var linkoutsVersion = 'undefined';
 
 	LNK.copyPartialClassBarToClipBoard = function(labels, covarAxis){
 		const newWindow = window.open("","",'width=335,height=330,resizable=1');
+		if (!newWindow) {
+		    console.error ("Error opening clipboard window");
+		    return;
+		}
 		const newDoc = newWindow.document;
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const axisLabels = SRCHSTATE.getSearchLabelsByAxis(axis);
@@ -1264,8 +1272,9 @@ var linkoutsVersion = 'undefined';
 		};
 		for (let ai = 0; ai < config.axes.length; ai++) {
 			const axis = config.axes[ai];
-			const fullLabels = heatMap.getAxisLabels(axis.axisName).labels;
-		        const searchItemsIdx = SRCHSTATE.getAxisSearchResults (axis.axisName);
+			const axisName = MMGR.isRow(axis.axisName) ? "Row" : "Column";
+			const fullLabels = heatMap.getAxisLabels(axisName).labels;
+		        const searchItemsIdx = SRCHSTATE.getAxisSearchResults (axisName);
 			let selectedLabels = []
 			for (let i=0; i<searchItemsIdx.length; i++) {
 				let selectedLabel = fullLabels[searchItemsIdx[i] - 1];
@@ -1276,7 +1285,7 @@ var linkoutsVersion = 'undefined';
 			fullLabels.forEach((value,index) => { if (value === "") gapIndices.push (index); });
 			data.axes.push({
 				fullLabels: filterGaps (fullLabels, gapIndices),
-				actualLabels: filterGaps (MMGR.getActualLabels(axis.axisName), gapIndices),
+				actualLabels: filterGaps (MMGR.getActualLabels(axisName), gapIndices),
 				selectedLabels: selectedLabels 
 			});
 			for (let idx = 0; idx < axis.cocos.length; idx++) {
@@ -2817,6 +2826,7 @@ var linkoutsVersion = 'undefined';
 			UHM.hlp(icon, 'Open gear menu', 120, 0);
 		};
 		icon.onclick = function(e) {
+			const debug = false;
 			if (debug) console.log ({ m: 'paneGearIcon click', e });
 			e.stopPropagation();
 			let paneIdx = e.target.id.slice(0,-4) // e.g. 'pane2Gear'

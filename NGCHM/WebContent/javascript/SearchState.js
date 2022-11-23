@@ -43,8 +43,8 @@
 
     SRCHSTATE.getSearchSaveState = function () {
 	const state = {};
-	state['row'] = SRCHSTATE.getAxisSearchResults('row');
-	state['col'] = SRCHSTATE.getAxisSearchResults('col');
+	state['row'] = SRCHSTATE.getAxisSearchResults('Row');
+	state['col'] = SRCHSTATE.getAxisSearchResults('Column');
 	return state;
     };
 
@@ -68,8 +68,6 @@
      * specified axis.
      ***********************************************************************************/
     SRCHSTATE.getAxisSearchResults = function (axis) {
-	// axis is capitalized in so many ways :-(.
-	axis = MMGR.isRow (axis) ? 'Row' : 'Column';
 	// Convert keys to integers so that callers don't have to.
 	return Object.keys(searchResults[axis]).map (val => +val);
     };
@@ -192,10 +190,10 @@
     };
 
     /**********************************************************************************
-     * FUNCTION - clearAxisSearchItems: clear all search items from left to right (inclusive)
+     * FUNCTION - clearSearchRange: clear search items from left to right (inclusive)
      * on the specified axis.
      ***********************************************************************************/
-    SRCHSTATE.clearAxisSearchItems = function (axis, left, right) {
+    SRCHSTATE.clearSearchRange = function (axis, left, right) {
 	for (let j = +left; j < +right+1; j++) {
 	    delete searchResults[axis][j];
 	}

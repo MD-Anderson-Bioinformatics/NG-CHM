@@ -171,7 +171,8 @@
     // TODO: make this work with specific registered linkouts
     PIM.postSelectionToPlugins = function(axis, clickType, lastClickIndex, srcNonce) {
 	    const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-	    const searchItems = SRCHSTATE.getAxisSearchResults (axis);
+	    const searchAxis = MMGR.isRow(axis) ? "Row" : "Column";
+	    const searchItems = SRCHSTATE.getAxisSearchResults (searchAxis);
 	    const pointLabelNames = [];
 	    for (let i=0; i<searchItems.length; i++) {
 		    let pointId = allLabels[searchItems[i] - 1];

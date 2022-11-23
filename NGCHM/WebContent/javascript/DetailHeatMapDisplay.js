@@ -667,6 +667,8 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	    }
 	}
 
+	DVW.checkRow(mapItem);
+
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 	DET.detInitGl(mapItem);
@@ -732,6 +734,8 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 	    }
 	}
+
+	DVW.checkCol(mapItem);
 
 	mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));

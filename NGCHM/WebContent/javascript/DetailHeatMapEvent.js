@@ -109,7 +109,7 @@ DEV.addEvents = function (paneId) {
 					UHM.hlpC();
 					DEV.matrixRightClick(e);
 				} else if (timesince < 500 && diffMax < 20){
-					DEV.userHelpOpen();
+					DEV.userHelpOpen(mapItem);
 				}
 			}
 	    }
@@ -154,8 +154,11 @@ DEV.userHelpOpen = function(mapItem) {
     var orgW = window.innerWidth+window.pageXOffset;
     var orgH = window.innerHeight+window.pageYOffset;
     var helptext = UHM.getDivElement("helptext");
-    helptext.innerHTML=("<a align='left'>Copy To Clipboard</a><img id='redX_btn' src='images/redX.png' alt='Close Help' align='right'>");
-    helptext.children[0].onclick = UHM.pasteHelpContents;  // The <A> element.
+    helptext.innerHTML=("<a href align='left'>Copy To Clipboard</a><img id='redX_btn' src='images/redX.png' alt='Close Help' align='right'>");
+    helptext.children[0].onclick = function (ev) {
+	ev.preventDefault();
+	UHM.pasteHelpContents();  // The <A> element.
+    };
     helptext.onclick = function(event) { UHM.hlpC(); };
     helptext.style.position = "absolute";
     document.getElementsByTagName('body')[0].appendChild(helptext);
@@ -475,7 +478,7 @@ DEV.clickStart = function (e) {
 		if (DET.eventTimer != 0) {
 			clearTimeout(DET.eventTimer);
 		}
-		DET.eventTimer = setTimeout(DEV.userHelpOpen.bind('mapItem', mapItem), 500);
+		DET.eventTimer = setTimeout(DEV.userHelpOpen.bind(null, mapItem), 500);
 	}
 }
 
@@ -987,7 +990,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		SRCH.clearSearchItems(focusNode.dataset.axis);
 		searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
 		if (searchIndex ){
-		    SRCH.clearAxisSearchItems (axis, index, index);
+		    SRCH.clearSearchRange (axis, index, index);
 		} else {
 		    SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 		}
@@ -996,7 +999,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	} else if (e.ctrlKey || e.metaKey){ // ctrl or Mac key + click
 	    searchIndex = SRCHSTATE.labelIndexInSearch(axis, index);
 	    if (searchIndex){ // if already searched, remove from search items
-		SRCH.clearAxisSearchItems (axis, index, index);
+		SRCH.clearSearchRange (axis, index, index);
 	    } else {
 		SRCH.setAxisSearchResults (axis, index, index);
 	    }
@@ -1044,7 +1047,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	    SRCH.clearSearchItems(focusNode.dataset.axis);
 	    const searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
 	    if (searchIndex ){
-		SRCH.clearAxisSearchItems (axis, index, index);
+		SRCH.clearSearchRange (axis, index, index);
 	    } else {
 		SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
 	    }

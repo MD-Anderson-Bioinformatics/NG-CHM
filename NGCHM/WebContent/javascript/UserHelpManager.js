@@ -52,7 +52,6 @@
 	if (ev.target.dataset.hasOwnProperty('nohoverImg')) {
 	    ev.target.src = ev.target.dataset.nohoverImg;
 	}
-	UHM.hlpC();
     }
 
     function mouseover(ev) {

@@ -35,10 +35,25 @@ MMGR.FILE_SOURCE = 'F';
 MMGR.Event_INITIALIZED = 'Init';
 MMGR.Event_JSON = 'Json';
 MMGR.Event_NEWDATA = 'NewData';
-MMGR.source= null;
 MMGR.embeddedMapName= null;
 MMGR.localRepository= '/NGCHM';
 MMGR.latestReadWindow= null;
+
+    function callServlet (verb, url, data) {
+	const form = document.createElement("form");
+	form.action = url;
+	form.method = verb;
+	if (data) {
+	    const input = document.createElement("textarea");
+	    input.name = "configData";
+	    input.id = "configData";
+	    input.value = data;
+	    form.appendChild(input);
+	}
+	form.style.display = 'none';
+	document.body.appendChild(form);
+	form.submit();
+    }
 
 // Matrix Manager block.
 {
@@ -250,10 +265,14 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	const eventListeners = updateCallbacks.slice(0);  // Create a copy.
 	var flickInitialized = false;
 	var unAppliedChanges = false;
-	MMGR.source= fileSrc;
 	const jsonSetterFunctions = [];
 
 	const isRow = MMGR.isRow;
+
+	// Return the source of this heat map.
+	this.source = function() {
+	    return fileSrc;
+	};
 
 	// Functions for getting and setting the data layer of this heat map
 	// currently being displayed.
@@ -308,7 +327,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	};
 	
 	this.isFileMode = function () {
-		return MMGR.source === MMGR.FILE_SOURCE;
+	    return this.source() === MMGR.FILE_SOURCE;
 	};
 	
 	this.isReadOnly = function(){
@@ -692,15 +711,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	this.setReadOnly = function() {
 	    mapConfig.data_configuration.map_information.read_only = 'Y';
 	};
-
-	// Call download of NGCHM File Viewer application zip
-	function downloadFileApplication () {
-		if (typeof NgChm.galaxy !== 'undefined') { // FIXME: BMB: Use a better way to determine Galaxy embedding.
-			window.open("/plugins/visualizations/mda_heatmap_viz/static/ngChmApp.zip");
-		} else {
-			zipAppFileMode();
-		}	
-	}
 
 	//This function tells us if all files are in the cache.
 	this.allTilesAvailable = function() {
@@ -1121,41 +1131,12 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return success;
 	}
 
-	function zipAppFileMode() {
-		var name = "";
-		if (fileSrc === MMGR.FILE_SOURCE){	// data is a disk file, not from server
-			// (This does not mean the viewer is not from a server, so this could be
-			// refined further for that case i.e. the "api" condition might be more appropriate)
-			name += COMPAT.viewerAppUrl;		// use full URL, which must be complete!
-		} else {
-			name = CFG.api + "ZipAppDownload"; // use server "api" + special endpoint name
-		}
-		callServlet("POST", name, false);
-		return true;
-	}
-	
 	MMGR.zipMapProperties = zipMapProperties;
 	function zipMapProperties(jsonData) {
 		var success = "";
 		var name = CFG.api + "ZippedMap?map=" + heatMapName;
 		callServlet("POST", name, jsonData);
 		return true;
-	}
-	
-	function callServlet (verb, url, data) {
-		var form = document.createElement("form");
-		form.action = url;
-		form.method = verb;
-		if (data) { 
-			var input = document.createElement("textarea");
-			input.name = "configData";
-			input.id = "configData";
-			input.value = data;
-			form.appendChild(input);
-		}
-		form.style.display = 'none';
-		document.body.appendChild(form);
-		form.submit();
 	}
 	
 	//  Initialize the data layers once we know the tile structure.
@@ -1395,7 +1376,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 		const heatMap = MMGR.getHeatMap();
 		// Set document title if not a local file.
-		if (MMGR.source !== MMGR.LOCAL_SOURCE) {
+		if (heatMap.source() !== MMGR.LOCAL_SOURCE) {
 			document.title = heatMap.getMapInformation().name;
 		}
 
@@ -1726,14 +1707,33 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
     };
 
     /**********************************************************************************
-     * FUNCTION - zipAppDownload: This function calls the Matrix Manager to initiate
-     * the download of the NG-CHM File Viewer application.
+     * FUNCTION - zipAppDownload: The user clicked on the "Download Viewer" button.
+     * Hide the button and initiate download of the NG-CHM Viewer application.
      **********************************************************************************/
     MMGR.zipAppDownload = zipAppDownload;
     function zipAppDownload () {
-	    var dlButton = document.getElementById('msgBoxBtnImg_1');
-	    dlButton.style.display = 'none';
-	    downloadFileApplication();
+	const dlButton = document.getElementById('msgBoxBtnImg_1');
+	dlButton.style.display = 'none';
+	downloadFileApplication();
+    }
+
+    // Initiate download of NGCHM File Viewer application zip
+    function downloadFileApplication () {
+	if (typeof NgChm.galaxy !== 'undefined') {
+	    // Current viewer is embedded within Galaxy.
+	    // FIXME: BMB: Use a better way to determine Galaxy embedding.
+	    window.open("/plugins/visualizations/mda_heatmap_viz/static/ngChmApp.zip");
+	} else if (MMGR.getHeatMap().source() === MMGR.FILE_SOURCE) {
+	    // Heat map came from a disk file, not from a server.
+	    // (This does not mean the viewer is not from a server, so this could be
+	    // refined further for that case i.e. the "api" condition might be more appropriate)
+	    // Use full URL, which must be complete!
+	    callServlet("GET", COMPAT.viewerAppUrl, false);
+	} else {
+	    // Heat map came from a server.
+	    // Use server "api" + special endpoint name
+	    callServlet("GET", CFG.api + "ZipAppDownload", false);
+	}
     }
 
     /**********************************************************************************

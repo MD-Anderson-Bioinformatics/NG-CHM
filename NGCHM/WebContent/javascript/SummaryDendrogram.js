@@ -6,7 +6,6 @@
     const SUMDDR = NgChm.createNS('NgChm.SUMDDR');
 
     const DDR = NgChm.importNS('NgChm.DDR');
-    const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
 
     /*****************************************************************************
      *
@@ -229,8 +228,8 @@
 
 		// is it a standard click?
 		if (!shift && !ctrl){
-			SRCHSTATE.clearAllAxisSearchItems (this.axis);
-			SRCHSTATE.setAxisSearchResults(this.axis, selectLeft, selectRight);
+			callbacks.clearSearchItems (this.axis);
+			callbacks.setAxisSearchResults(this.axis, selectLeft, selectRight);
 			
 			this.selectedBars = [selectedBar];
 			return true;
@@ -244,7 +243,7 @@
 			if (bar.left >= left && bar.right <= right && bar.height-1 <= height){ // if the new selected bar is in the bounds of an older one... (-1 added to height since highlighted bars can cause issues without it)
 				deleteBar.push(i);
 				// remove all the search items that were selected by that old bar
-				SRCHSTATE.clearAxisSearchItems(this.axis, selectLeft, selectRight);
+				callbacks.clearSearchRange(this.axis, selectLeft, selectRight);
 				modified = true;
 				if (bar.right == selectedBar.right && bar.height == selectedBar.height){ // a bar that's already selected has been selected so we remove it
 					addBar = false;
@@ -261,7 +260,7 @@
 		if (addBar){
 			if (shift){
 				modified = true;
-				SRCHSTATE.setAxisSearchResults(this.axis, selectLeft, selectRight);
+				callbacks.setAxisSearchResults(this.axis, selectLeft, selectRight);
 				var numBars = this.selectedBars.length;
 				var startIndex = 0, endIndex = -1;
 				if (this.selectedBars[numBars-1]){
@@ -282,11 +281,11 @@
 					}
 				}
 				
-				SRCHSTATE.setAxisSearchResults(this.axis, startIndex, endIndex-1);
+				callbacks.setAxisSearchResults(this.axis, startIndex, endIndex-1);
 				this.selectedBars.push(selectedBar);
 			} else if (ctrl) {
 				modified = true;
-				SRCHSTATE.setAxisSearchResults(this.axis, selectLeft, selectRight);
+				callbacks.setAxisSearchResults(this.axis, selectLeft, selectRight);
 				this.selectedBars.push(selectedBar);
 			}
 		}
