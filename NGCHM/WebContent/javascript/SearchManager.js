@@ -702,7 +702,10 @@
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 	const searchAxis = document.getElementById('search_target').value;
-	if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
+	if (!currentSearchItem["index"] || !currentSearchItem["axis"]) {
+	    // No search result.
+	    return;
+	} else if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
 	    // Continue on current search axis if permitted.
 	    findPrevSearchItem(currentSearchItem["index"],currentSearchItem["axis"]);
 	} else {
