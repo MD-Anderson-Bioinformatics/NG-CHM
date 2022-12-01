@@ -248,7 +248,6 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		DET.setInitialDetailDisplaySize(mapItem);
 	}
 	LNK.createLabelMenus();
-	LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT, setSelectionAsDetailView, null, 0);
 	DET.setDendroShow(mapItem);
 	if (mapItem.canvas) {
 		mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
@@ -283,6 +282,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	}
 };
 
+    LNK.addLinkout("Set selection as detail view", "Matrix", linkouts.MULTI_SELECT, setSelectionAsDetailView, null, 0);
     function setSelectionAsDetailView (searchLabels, axis) {
 	const menuOpenCanvas = LNK.getMenuOpenCanvas();
 	if (menuOpenCanvas) {
