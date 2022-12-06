@@ -270,7 +270,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 
 	DVW.detailMaps.push(mapItem);
 	if (mapItem.version === 'P') {
-		DET.primaryMap = mapItem;
+		DVW.primaryMap = mapItem;
 	}
 	if (restoreInfo) {
 	    if (mapItem.rowDendro !== null) {
