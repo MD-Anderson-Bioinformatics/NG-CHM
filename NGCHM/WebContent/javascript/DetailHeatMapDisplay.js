@@ -154,7 +154,7 @@ DET.setInitialDetailDisplaySize = function (mapItem) {
  * function. It acts only on the Primary heat map pane.
  **********************************************************************************/
 DET.callDetailDrawFunction = function(modeVal, target) {
-    let mapItem = (typeof target !== 'undefined') ? target : DET.primaryMap;
+    let mapItem = (typeof target !== 'undefined') ? target : DVW.primaryMap;
     if (!mapItem) return;
     if (modeVal == 'RIBBONH' || modeVal == 'RIBBONH_DETAIL')
 	    DET.detailHRibbon(mapItem);

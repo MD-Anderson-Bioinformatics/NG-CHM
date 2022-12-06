@@ -311,7 +311,7 @@
         script.src = customJs;
         script.onload = CUST.definePluginLinkouts;
 	script.onerror = function () {
-	    console.warn ("Loading of " + customJS + " failed.");
+	    console.warn ("Loading of " + customJs + " failed.");
 	    CUST.definePluginLinkouts();
 	};
         // Internet explorer:
