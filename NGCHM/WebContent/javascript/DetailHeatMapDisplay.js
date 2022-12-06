@@ -806,7 +806,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 
 	DET.detInitGl(mapItem);
-	clearDendroSelection();
+	clearDendroSelection(mapItem);
 	mapItem.updateSelection();
 	try {
 	    document.getElementById("viewport").setAttribute("content", "height=device-height");
@@ -817,21 +817,28 @@ DET.setDetailDataHeight = function (mapItem, size) {
     };
 
     DET.clearDendroSelection = clearDendroSelection;
-    function clearDendroSelection () {
-	if (DVW.primaryMap && DVW.primaryMap.selectedStart != 0) {
-		DVW.primaryMap.selectedStart = 0;
-		DVW.primaryMap.selectedStop = 0;
+    /* Clear any dendrogram selection / restricted region for the
+     * specified mapItem.
+     * If mapItem is the current primary map, also clear any selection
+     * on the dendrograms of the summary map.
+     */
+    function clearDendroSelection (mapItem) {
+	if (mapItem.selectedStart != 0) {
+	    mapItem.selectedStart = 0;
+	    mapItem.selectedStop = 0;
+	    if (mapItem == DVW.primaryMap) {
 		SUM.rowDendro.clearSelectedRegion();
 		SUM.colDendro.clearSelectedRegion();
 		if (!DVW.isSub) {
-			const heatMap = MMGR.getHeatMap();
-			if (heatMap.showRowDendrogram("summary")) {
-				SUM.rowDendro.draw();
-			}
-			if (heatMap.showColDendrogram("summary")) {
-				SUM.colDendro.draw();
-			}
+		    const heatMap = MMGR.getHeatMap();
+		    if (heatMap.showRowDendrogram("summary")) {
+			    SUM.rowDendro.draw();
+		    }
+		    if (heatMap.showColDendrogram("summary")) {
+			    SUM.colDendro.draw();
+		    }
 		}
+	    }
 	}
     }
 

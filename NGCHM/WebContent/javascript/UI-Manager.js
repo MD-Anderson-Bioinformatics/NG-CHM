@@ -1186,7 +1186,7 @@
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
-					DET.clearDendroSelection();
+					DET.clearDendroSelection(mapItem);
 					switch(mapItem.mode){
 						case "RIBBONV": newMode = 'RIBBONH'; break;
 						case "RIBBONH": newMode = 'NORMAL'; break;
@@ -1201,7 +1201,7 @@
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
-					DET.clearDendroSelection();
+					DET.clearDendroSelection(mapItem);
 					switch(mapItem.mode){
 						case "NORMAL": newMode = 'RIBBONH'; break;
 						case "RIBBONH": newMode = 'RIBBONV'; break;
