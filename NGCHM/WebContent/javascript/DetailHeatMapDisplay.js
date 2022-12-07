@@ -480,6 +480,7 @@ DET.getDetailSaveState = function (dm) {
 	    'subDendroMode': dm.subDendroMode,
 	    'selectedStart': dm.selectedStart,
 	    'selectedStop': dm.selectedStop,
+	    'selectedIsDendrogram': dm.selectedIsDendrogram,
 	};
 };
 
@@ -826,6 +827,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	if (mapItem.selectedStart != 0) {
 	    mapItem.selectedStart = 0;
 	    mapItem.selectedStop = 0;
+	    mapItem.selectedIsDendrogram = false;
 	    if (mapItem == DVW.primaryMap) {
 		SUM.rowDendro.clearSelectedRegion();
 		SUM.colDendro.clearSelectedRegion();
@@ -858,6 +860,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	mapItem.subDendroMode = savedState.subDendroMode || "none";
 	mapItem.selectedStart = savedState.selectedStart || 0;
 	mapItem.selectedStop = savedState.selectedStop || 0;
+	mapItem.selectedIsDendrogram = savedState.selectedIsDendrogram || false;
 	// RESTORE CANVAS SIZE
 	let zoomBoxSizeIdx = DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
 	switch (savedState.mode) {

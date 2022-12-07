@@ -1140,6 +1140,51 @@
 	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout);
     }
 
+    function clearSelectedDendrogram (mapItem) {
+	if (mapItem.selectedIsDendrogram) {
+	    mapItem.selectedIsDendrogram = false;
+	    if (mapItem == DVW.primaryMap) {
+		const dendro = restoreInfo.mode.startsWith('RIBBONV') ? SUM.rowDendro : SUM.colDendro;
+		if (dendro) {
+		    dendro.clearSelectedRegion();
+		}
+	    }
+	    showRestoreDendrogramMessage(mapItem);
+	}
+    }
+
+    function showRestoreDendrogramMessage (mapItem) {
+	const debug = false;
+
+	UHM.initMessageBox();
+	UHM.setMessageBoxHeader("Dendrogram selection lost");
+	UHM.setMessageBoxText("<br>" + "The summary panel dendrogram selection was lost due to keyboard movement of the focus region. " +
+		"Click CANCEL to undo the keyboard movement and restore the dendrogram selection. " +
+		"Otherwise, click CLOSE to just close this dialog." );
+	const undoFunction = function undoFunction (restoreInfo) {
+	    if (debug) console.log ("Undoing keyboard movement and dendrogram selection loss.", restoreInfo);
+	    UHM.messageBoxCancel();
+	    restoreInfo.mapItem.selectedIsDendrogram = true;
+	    restoreInfo.mapItem.selectedStart = restoreInfo.selectedStart;
+	    restoreInfo.mapItem.selectedStop = restoreInfo.selectedStop;
+	    DET.callDetailDrawFunction(restoreInfo.mode, restoreInfo.mapItem);
+	    if (restoreInfo.mapItem == DVW.primaryMap) {
+		const dendro = restoreInfo.mode.startsWith('RIBBONV') ? SUM.rowDendro : SUM.colDendro;
+		if (dendro) {
+		    dendro.setRibbonModeBar(restoreInfo.selectedStart, restoreInfo.selectedStop);
+		}
+	    }
+	}.bind (null, {
+	    mapItem: mapItem,
+	    mode: mapItem.mode,
+	    selectedStart: mapItem.selectedStart,
+	    selectedStop: mapItem.selectedStop
+	});
+	UHM.setMessageBoxButton(1, UTIL.imageTable.prefCancel, "Cancel button", undoFunction);
+	UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Close button", UHM.messageBoxCancel);
+	UHM.displayMessageBox();
+    }
+
     /*********************************************************************************************
      * FUNCTION:  keyNavigate - The purpose of this function is to handle a user key press event.
      * As key presses are received at the document level, their detail processing will be routed to
@@ -1153,33 +1198,61 @@
 			case 37: // left key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
-					if (e.shiftKey){mapItem.currentCol -= mapItem.dataPerRow;}
-					else if (e.ctrlKey){mapItem.currentCol -= 1;mapItem.selectedStart -= 1;mapItem.selectedStop -= 1; DET.callDetailDrawFunction(mapItem.mode);}
-					else {mapItem.currentCol--;}
+					if (e.shiftKey) {
+					    mapItem.currentCol -= mapItem.dataPerRow;
+					} else if (e.ctrlKey) {
+					    mapItem.currentCol -= 1;
+					    clearSelectedDendrogram (mapItem);
+					    mapItem.selectedStart -= 1;
+					    mapItem.selectedStop -= 1;
+					    DET.callDetailDrawFunction(mapItem.mode);
+					} else {
+					    mapItem.currentCol--;
+					}
 				}
 				break;
 			case 38: // up key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
-					if (e.shiftKey){mapItem.currentRow -= mapItem.dataPerCol;}
-					else if (e.ctrlKey){mapItem.selectedStop += 1; DET.callDetailDrawFunction(mapItem.mode);}
-					else {mapItem.currentRow--;}
+					if (e.shiftKey) {
+					    mapItem.currentRow -= mapItem.dataPerCol;
+					} else if (e.ctrlKey) {
+					    clearSelectedDendrogram (mapItem);
+					    mapItem.selectedStop += 1;
+					    DET.callDetailDrawFunction(mapItem.mode);
+					} else {
+					    mapItem.currentRow--;
+					}
 				}
 				break;
 			case 39: // right key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
-					if (e.shiftKey){mapItem.currentCol += mapItem.dataPerRow;}
-					else if (e.ctrlKey){mapItem.currentCol += 1;mapItem.selectedStart += 1;mapItem.selectedStop += 1; DET.callDetailDrawFunction(mapItem.mode);}
-					else {mapItem.currentCol++;}
+					if (e.shiftKey) {
+					    mapItem.currentCol += mapItem.dataPerRow;
+					} else if (e.ctrlKey) {
+					    mapItem.currentCol += 1;
+					    clearSelectedDendrogram (mapItem);
+					    mapItem.selectedStart += 1;
+					    mapItem.selectedStop += 1;
+					    DET.callDetailDrawFunction(mapItem.mode);
+					} else {
+					    mapItem.currentCol++;
+					}
 				}
 				break;
 			case 40: // down key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
-					if (e.shiftKey){mapItem.currentRow += mapItem.dataPerCol;}
-					else if (e.ctrlKey){mapItem.selectedStop -= 1; DET.callDetailDrawFunction(mapItem.mode);}
-					else {mapItem.currentRow++;}
+					if (e.shiftKey) {
+					    mapItem.currentRow += mapItem.dataPerCol;
+					} else if (e.ctrlKey) {
+					    clearSelectedDendrogram (mapItem);
+					    mapItem.selectedStop -= 1;
+					    DET.callDetailDrawFunction(mapItem.mode);
+					} else {
+					    mapItem.currentRow++;
+					}
 				}
 				break;
 			case 33: // page up
