@@ -2239,7 +2239,6 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 	const fullWidth = mapItem.dataViewWidth + rowClassBarWidth;
 	const mapHeight = mapItem.dataViewHeight;
 	let pos = fullWidth*mapHeight*DRAW.BYTE_PER_RGBA;
-	pos += fullWidth*DET.paddingHeight*DRAW.BYTE_PER_RGBA;
 	const colorMapMgr = heatMap.getColorMapManager();
 	
 	for (let i=colClassBarConfigOrder.length-1; i>= 0;i--) {
