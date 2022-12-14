@@ -1266,7 +1266,7 @@ DET.calcRowClassBarLabels = function (mapItem) {
 	const containsLegend = DET.classLabelsContainLegend("row");
 	if (rowClassBarConfig != null && rowClassLength > 0) {
 		mapItem.rowClassLabelFont = DET.rowClassBarLabelFont(mapItem);
-		if ((mapItem.rowClassLabelFont > UTIL.minLabelSize)  && (mapItem.colClassLabelFont < DET.maxLabelSize)) {
+		if ((mapItem.rowClassLabelFont > UTIL.minLabelSize)  && (mapItem.rowClassLabelFont < DET.maxLabelSize)) {
 			for (let i=0;i< rowClassBarConfigOrder.length;i++) {
 				const key = rowClassBarConfigOrder[i];
 				const currentClassBar = rowClassBarConfig[rowClassBarConfigOrder[i]];
