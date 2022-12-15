@@ -450,13 +450,13 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		colLabels.setAttribute('id','colLabelDiv')
 		colLabels.setAttribute('data-axis','Column')
 		colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
-		colLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
+		colLabels.oncontextmenu = function(event) { DEV.labelRightClick(event); };
 		labels.appendChild(colLabels)
 		let rowLabels = document.createElement('div')
 		rowLabels.setAttribute('id','rowLabelDiv')
 		rowLabels.setAttribute('data-axis','Row')
 		rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
-		rowLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
+		rowLabels.oncontextmenu = function(event) { DEV.labelRightClick(event); };
 		labels.appendChild(rowLabels)
 		detailTemplate.appendChild(labels)
 		let templates = document.getElementById('templates')
