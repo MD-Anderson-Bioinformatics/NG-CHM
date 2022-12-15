@@ -1144,7 +1144,7 @@
 	if (mapItem.selectedIsDendrogram) {
 	    mapItem.selectedIsDendrogram = false;
 	    if (mapItem == DVW.primaryMap) {
-		const dendro = restoreInfo.mode.startsWith('RIBBONV') ? SUM.rowDendro : SUM.colDendro;
+		const dendro = mapItem.mode.startsWith('RIBBONV') ? SUM.rowDendro : SUM.colDendro;
 		if (dendro) {
 		    dendro.clearSelectedRegion();
 		}
