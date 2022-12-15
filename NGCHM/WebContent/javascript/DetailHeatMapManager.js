@@ -32,7 +32,9 @@ DMM.nextMapNumber = 1;
 	  dataViewWidth: 506, labelLastClicked: {}, dragOffsetX: null, dragOffsetY: null, rowLabelLen: 0, colLabelLen: 0,
 	  rowLabelFont: 0, colLabelFont: 0,colClassLabelFont: 0, rowClassLabelFont: 0, labelElements: {}, oldLabelElements: {}, tmpLabelSizeElements: [], 
 	  labelSizeWidthCalcPool: [], labelSizeCache: {},zoomOutNormal: null, zoomOutPos: null, subDendroMode: 'none',
-	  selectedIsDendrogram: false
+	  selectedIsDendrogram: false,
+	  colClassScale: 1.5,  // Allow the size of covariate bars in detail maps to vary relative to the size of the detail map.
+	  rowClassScale: 1.5,  // Constants for now. Should adjust so that absolute bar sizes do not vary excessively.
     };
 
     class DetailHeatMapView {
@@ -49,11 +51,43 @@ DMM.nextMapNumber = 1;
 	}
 
 	/*********************************************************************************************
+	 * GETTER:  heatMap - The heat map displayed in the mapItem.
+	 *********************************************************************************************/
+	get heatMap () {
+	    return MMGR.getHeatMap();
+	}
+
+	/*********************************************************************************************
 	 * FUNCTION:  isVisible - Return true if mapItem is visible (i.e. contained in a visible pane).
 	 *********************************************************************************************/
 	isVisible () {
 	    const loc = PANE.findPaneLocation (this.chm);
 	    return (!loc.pane.classList.contains('collapsed')) && (loc.pane.style.display !== 'none');
+	}
+
+	/*********************************************************************************************
+	 * FUNCTION:  getScaledVisibleCovariates - Return the scaled covariates for the specified axis.
+	 *********************************************************************************************/
+	getScaledVisibleCovariates (axis) {
+	    return this.heatMap.getScaledVisibleCovariates (axis, MMGR.isRow(axis) ? this.rowClassScale : this.colClassScale);
+	}
+
+	/*********************************************************************************************
+	 * FUNCTION:  getCovariateBarLabelFont - Return the font to use for covariate bars on the specified axis.
+	 *********************************************************************************************/
+	getCovariateBarLabelFont (axis) {
+	    return MMGR.isRow(axis) ? this.rowClassLabelFont : this.colClassLabelFont;
+	}
+
+	/*********************************************************************************************
+	 * FUNCTION:  setCovariateBarLabelFont - Set the font to use for covariate bars on the specified axis.
+	 *********************************************************************************************/
+	setCovariateBarLabelFont (axis, font) {
+	    if (MMGR.isRow(axis)) {
+		this.rowClassLabelFont = font;
+	    } else {
+		this.colClassLabelFont = font;
+	    }
 	}
 
 	/*********************************************************************************************
@@ -67,7 +101,7 @@ DMM.nextMapNumber = 1;
 	updateSelection (noResize) {
 	    //We have the summary heat map so redraw the yellow selection box.
 	    SUM.drawLeftCanvasBox();
-	    MMGR.getHeatMap().setReadWindow(DVW.getLevelFromMode(this, MAPREP.DETAIL_LEVEL),DVW.getCurrentDetRow(this),DVW.getCurrentDetCol(this),DVW.getCurrentDetDataPerCol(this),DVW.getCurrentDetDataPerRow(this));
+	    this.heatMap.setReadWindow(DVW.getLevelFromMode(this, MAPREP.DETAIL_LEVEL),DVW.getCurrentDetRow(this),DVW.getCurrentDetCol(this),DVW.getCurrentDetDataPerCol(this),DVW.getCurrentDetDataPerRow(this));
 	    DET.setDrawDetailTimeout (this, DET.redrawSelectionTimeout,noResize);
 	}
 
@@ -248,13 +282,7 @@ DMM.setPrimaryDetailMap = function (mapItem) {
  * potential size in change (such as changes to the covariate bars).
  *********************************************************************************************/
 DMM.resizeDetailMapCanvases = function resizeDetailMapCanvases () {
-	const rowBarsWidth = DET.calculateTotalClassBarHeight("row");
-	const colBarsHeight = DET.calculateTotalClassBarHeight("column");
-	for (let i=0; i<DVW.detailMaps.length; i++) {
-		const mapItem = DVW.detailMaps[i];
-		mapItem.canvas.width =  mapItem.dataViewWidth + rowBarsWidth;
-		mapItem.canvas.height = mapItem.dataViewHeight + colBarsHeight;
-	}
+    DVW.detailMaps.forEach (DET.setCanvasDimensions);
 };
 
 
@@ -271,8 +299,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	LNK.createLabelMenus();
 	DET.setDendroShow(mapItem);
 	if (mapItem.canvas) {
-		mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-		mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
+	    DET.setCanvasDimensions (mapItem);
 	}
 
 	setTimeout (function() {
@@ -355,7 +382,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		    DET.setDetailDataSize (mapItem, mapItem.dataBoxWidth);
 	    //If there are more rows than columns do a horizontal sub-ribbon view that fits the selection. 	
 	    } else if (selRows >= selCols) {
-		    var boxSize = DET.getNearestBoxHeight(mapItem, endRow - startRow + 1);
+		    var boxSize = DET.getNearestBoxSize(mapItem, "row", endRow - startRow + 1);
 		    DET.setDetailDataHeight(mapItem,boxSize);
 		    mapItem.selectedStart= startCol;
 		    mapItem.selectedStop=endCol;
@@ -363,7 +390,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		    DET.callDetailDrawFunction('RIBBONH', mapItem);
 	    } else {
 		    //More columns than rows, do a vertical sub-ribbon view that fits the selection.
-		    var boxSize = DET.getNearestBoxSize(mapItem, endCol - startCol + 1);
+		    var boxSize = DET.getNearestBoxSize(mapItem, "column", endCol - startCol + 1);
 		    DET.setDetailDataWidth(mapItem,boxSize);
 		    mapItem.selectedStart=startRow;
 		    mapItem.selectedStop=endRow;
@@ -532,8 +559,9 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	}
 
 	function resizeDetailPane (loc) {
-		DET.detailResize();
-		DET.setDrawDetailTimeout(DVW.getMapItemFromPane(loc.pane.id), DET.redrawSelectionTimeout, false);
+		const mapItem = DVW.getMapItemFromPane(loc.pane.id);
+		DET.resizeMapItem(mapItem);
+		DET.setDrawDetailTimeout(mapItem, DET.redrawSelectionTimeout, false);
 	}
 
 })();

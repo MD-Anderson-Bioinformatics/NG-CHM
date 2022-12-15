@@ -461,14 +461,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return mapConfig.col_configuration.classifications_order;
 	}
 	
-	// Return an array of the display heights of all covariate bars on an axis.
-	// Hidden bars have a height of zero.  The order of entries is fixed but not
-	// specified.
-	this.getCovariateBarHeights = function (axis) {
-		return Object.entries(this.getAxisCovariateConfig(axis))
-		.map(([key,config]) => config.show === 'Y' ? (config.height|0) : 0)
-	}
-
 	// Return an array of the display types of all covariate bars on an axis.
 	// Hidden bars have a height of zero.  The order of entries is fixed but not
 	// specified.
@@ -493,11 +485,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    }
 	}
 
-	// Return the total display height of all covariate bars on an axis.
-	this.calculateTotalClassBarHeight = function (axis) {
-		return this.getCovariateBarHeights(axis).reduce((t,h) => t+h, 0);
-	}
-	
 	this.getRowClassificationOrder = function(showOnly) {
 		var rowClassBarsOrder = mapConfig.row_configuration.classifications_order;
 		// If configuration not found, create order from classifications config
@@ -551,7 +538,51 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			return filterColClassBarsOrder;
 		}
 	}
+
+	/* Returns an array of the visible covariates on the specified axis of the heat map.
+	 * The height of each covariable is scaled by scale.
+	 *
+	 * The returned array has two additional methods:
+	 * - totalHeight, which returns the total height of all bars in the array
+	 * - containsLegend, which returns true iff there's a bar with a bar/scatter plot legend.
+	 */
+	this.getScaledVisibleCovariates = function (axis, scale) {
+	    const axisConfig = isRow (axis) ? mapConfig.row_configuration : mapConfig.col_configuration;
+	    const order = axisConfig.hasOwnProperty('classifications_order') ? axisConfig.classifications_order : Object.keys(axisConfig.classifications);
+	    const bars = order.map (key => {
+		const details = axisConfig.classifications[key];
+		return Object.assign({}, details, {
+		    label: key,
+		    height: (details.height * scale) | 0,
+		});
+	    }).filter (bar => bar.show === 'Y');
+	    Object.defineProperty (bars, 'totalHeight', {
+	        value: totalHeight,
+		enumerable: false
+	    });
+	    Object.defineProperty (bars, 'containsLegend', {
+	        value: containsLegend,
+		enumerable: false
+	    });
+	    return bars;
+
+	    function totalHeight () {
+		return this.map (bar => bar.height).reduce((t,h) => t+h, 0);
+	    }
+
+	    function containsLegend () {
+		return this.filter (bar => bar.bar_type !== 'color_plot').length > 0;
+	    }
+	};
 	
+	/* Returns true iff there are hidden covariates on the specified axis of the heat map.
+	 */
+	this.hasHiddenCovariates = function (axis) {
+	    const axisConfig = isRow (axis) ? mapConfig.row_configuration : mapConfig.col_configuration;
+	    const order = axisConfig.hasOwnProperty('classifications_order') ? axisConfig.classifications_order : Object.keys(axisConfig.classifications);
+	    return order.map (key => axisConfig.classifications[key].show).filter (show => show !== 'Y').length > 0;
+	};
+
 	this.setColClassificationOrder = function() {
 		if (mapConfig !== null) {mapConfig.col_configuration.classifications_order = this.getColClassificationOrder();}
 	}

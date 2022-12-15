@@ -296,7 +296,7 @@
 		if (typeof mapItem === 'undefined') {
 			return {};
 		} else if (mapItem.mode === 'FULL_MAP') {
-			return { startIdx: 1, numElements: MMGR.getHeatMap().getNumColumns(MAPREP.DETAIL_LEVEL) };
+			return { startIdx: 1, numElements: mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL) };
 		} else {
 			return { startIdx: mapItem.currentCol, numElements: mapItem.dataPerRow };
 		}
@@ -317,7 +317,7 @@
 		if (typeof mapItem === 'undefined') {
 			return {};
 		} else if (mapItem.mode === 'FULL_MAP') {
-			return { startIdx: 1, numElements: MMGR.getHeatMap().getNumRows(MAPREP.DETAIL_LEVEL) };
+			return { startIdx: 1, numElements: mapItem.heatMap.getNumRows(MAPREP.DETAIL_LEVEL) };
 		} else {
 			return { startIdx: mapItem.currentRow, numElements: mapItem.dataPerCol };
 		}

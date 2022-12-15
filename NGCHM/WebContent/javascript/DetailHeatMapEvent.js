@@ -460,13 +460,15 @@ DEV.clickStart = function (e) {
 		const divW = e.target.clientWidth;
 		const divH = e.target.clientHeight;
 		// texture space
-		const rowTotalW = mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row");
-		const colTotalH = mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column");
+		const rowBarW = mapItem.getScaledVisibleCovariates("row").totalHeight();
+		const rowTotalW = mapItem.dataViewWidth + rowBarW;
+		const colBarH = mapItem.getScaledVisibleCovariates("column").totalHeight();
+		const colTotalH = mapItem.dataViewHeight + colBarH;
 		// proportion space
 		const rowDendroW = mapItem.dendroWidth/rowTotalW;
 		const colDendroH = mapItem.dendroHeight/colTotalH;
-		const rowClassW = DET.calculateTotalClassBarHeight("row")/rowTotalW;
-		const colClassH = DET.calculateTotalClassBarHeight("column")/colTotalH;
+		const rowClassW = rowBarW / rowTotalW;
+		const colClassH = colBarH / colTotalH;
 		const mapW = mapItem.dataViewWidth/rowTotalW;
 		const mapH = mapItem.dataViewHeight/colTotalH;
 		const clickX = coords.x/divW;
@@ -844,9 +846,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
 				DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 			    }
-			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-			    mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-
+			    DET.setCanvasDimensions(mapItem);
 			    DET.detInitGl(mapItem);
 			} else if (current < DET.zoomBoxSizes.length - 1) {
 				DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current+1]);
@@ -874,9 +874,8 @@ DEV.detailDataZoomIn = function (mapItem) {
 			    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
 				DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 			    }
-			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-			    mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 
+			    DET.setCanvasDimensions (mapItem);
 			    DET.detInitGl(mapItem);
 			} else if (current < DET.zoomBoxSizes.length - 1) {
 			    DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[current+1]);
@@ -1228,8 +1227,8 @@ DEV.zoomAnimation = function (chm,destRow,destCol) {
 	// set proportion variables for heatmap canvas
 	const detViewW = mapItem.dataViewWidth;
 	const detViewH = mapItem.dataViewHeight;
-	const classBarW = DET.calculateTotalClassBarHeight("row");
-	const classBarH = DET.calculateTotalClassBarHeight("column");
+	const classBarW = mapItem.getScaledVisibleCovariates("row").totalHeight();
+	const classBarH = mapItem.getScaledVisibleCovariates("column").totalHeight();
 	const dendroW = mapItem.dendroWidth;
 	const dendroH = mapItem.dendroHeight;
 	const rowTotalW = detViewW + classBarW;

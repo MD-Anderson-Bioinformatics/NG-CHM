@@ -98,7 +98,7 @@ SUM.processSummaryMapUpdate = function(event, tile) {
 // a summary panel.  This function is called once the heatmap data
 // has been loaded, but before creating any view panels.
 SUM.initSummaryData = function(callbacks) {
-	
+
 	const ddrCallbacks = {
 	    clearSelectedRegion: function(axis) {
 		callbacks.callDetailDrawFunction('NORMAL');
@@ -216,7 +216,7 @@ SUM.redrawSummaryPanel = function() {
 
 	SUM.rCCanvas.width =  SUM.rowClassBarWidth;
 	SUM.cCCanvas.height = SUM.colClassBarHeight;
-	
+
 	setTimeout (function() {
 		SUM.initHeatMapGl();
 		SUM.calcSummaryLayout();
@@ -228,7 +228,7 @@ SUM.redrawSummaryPanel = function() {
 			SUM.buildColClassTexture();
 		}
 		SUM.drawLeftCanvasBox();
-	
+
 		SUM.setSelectionDivSize();
 		SUM.clearSelectionMarks();
 		SUM.drawSelectionMarks();
@@ -354,7 +354,7 @@ SUM.setSelectionDivSize = function(width, height){ // input params used for PDF 
 	colTI.style.left = SUM.canvas.style.left;
 	UTIL.setElementPositionSize (colTI, colSelVP, true);
 	colTI.height = 10;
-	
+
 	//Size and position Row Selection Canvas
 	const rowSelVP = {
 		top: SUM.canvas.offsetTop,
@@ -365,7 +365,7 @@ SUM.setSelectionDivSize = function(width, height){ // input params used for PDF 
 	UTIL.setElementPositionSize (rowSel, rowSelVP, true);
 	rowSel.width = 10;
 	rowSel.height = heatMap.getNumRows("d");
-	
+
 	//Size and position Row Top Items Canvas
 	UTIL.setElementPositionSize (rowTI, rowSelVP, true);
 	rowTI.width = 10;
@@ -576,40 +576,37 @@ SUM.buildRowClassTexture = function() {
 
 	SUM.texRc = DRAW.createRenderBuffer (SUM.rowClassBarWidth*SUM.widthScale, SUM.totalHeight, 1.0);
 	var dataBuffer = SUM.texRc.pixels;
-	var classBarsConfig = heatMap.getRowClassificationConfig();
-	var classBarConfigOrder = heatMap.getRowClassificationOrder();
 	var classBarsData = heatMap.getRowClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
-	DVW.removeLabels("missingSumRowClassBars");
 	var offset = 0;
-	for (var i = 0; i < classBarConfigOrder.length; i++) {
-		var remainingWidth = SUM.rowClassBarWidth;
-		var key = classBarConfigOrder[i];
-		var pos = 0 + offset;
-		var currentClassBar = classBarsConfig[key];
-		var height = SUM.getScaledHeight(currentClassBar.height, "row");
-		remainingWidth -= height;
-		if (currentClassBar.show === 'Y') {
-			var colorMap = colorMapMgr.getColorMap("row",key); // assign the proper color scheme...
-			var classBarValues = classBarsData[key].values;
-			var classBarLength = classBarValues.length;
-			if (typeof classBarsData[key].svalues != 'undefined') {
-				classBarValues = classBarsData[key].svalues;
-				classBarLength = classBarValues.length;
-			}
-			if (currentClassBar.bar_type === 'color_plot') {
-				pos = SUM.drawColorPlotRowClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, remainingWidth);
-			} else {
-				pos = SUM.drawScatterBarPlotRowClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth);
-			}
-			offset+= height*DRAW.BYTE_PER_RGBA;
-		} else {
-			if (!document.getElementById("missingSumRowClassBars")){
-				var x = SUM.canvas.offsetLeft;
-				var y = SUM.canvas.offsetTop + SUM.canvas.clientHeight + 2;
-				DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
-			}
-		}
+
+	const bars = heatMap.getScaledVisibleCovariates ("row", 1.0);
+	bars.forEach (currentClassBar => {
+	    var pos = 0 + offset;
+	    var height = SUM.getScaledHeight(currentClassBar.height, "row");
+	    const remainingWidth = SUM.rowClassBarWidth - height;
+	    var colorMap = colorMapMgr.getColorMap("row",currentClassBar.label); // assign the proper color scheme...
+	    var classBarValues = classBarsData[currentClassBar.label].values;
+	    var classBarLength = classBarValues.length;
+	    if (typeof classBarsData[currentClassBar.label].svalues != 'undefined') {
+		classBarValues = classBarsData[currentClassBar.label].svalues;
+		classBarLength = classBarValues.length;
+	    }
+	    if (currentClassBar.bar_type === 'color_plot') {
+		pos = SUM.drawColorPlotRowClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, remainingWidth);
+	    } else {
+		pos = SUM.drawScatterBarPlotRowClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth);
+	    }
+	    offset += height*DRAW.BYTE_PER_RGBA;
+	});
+
+	DVW.removeLabels("missingSumRowClassBars");
+	if (heatMap.hasHiddenCovariates("row")) {
+	    if (!document.getElementById("missingSumRowClassBars")){
+		const x = SUM.canvas.offsetLeft;
+		const y = SUM.canvas.offsetTop + SUM.canvas.clientHeight + 2;
+		DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
+	    }
 	}
 	SUM.drawRowClassBars();
 };
@@ -626,41 +623,39 @@ SUM.buildColClassTexture = function() {
 	const heatMap = MMGR.getHeatMap();
 	SUM.texCc = DRAW.createRenderBuffer (SUM.totalWidth*SUM.widthScale, SUM.colClassBarHeight*SUM.heightScale, 1.0);
 	var dataBuffer = SUM.texCc.pixels;
-	DVW.removeLabels("missingSumColClassBars");
-	var classBarsConfig = heatMap.getColClassificationConfig();
-	var classBarConfigOrder = heatMap.getColClassificationOrder();
 	var classBarsData = heatMap.getColClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
+	const bars = heatMap.getScaledVisibleCovariates("column", 1.0);
 	var pos = 0;
-	
+
 	//We reverse the order of the classBars before drawing because we draw from bottom up
-	for (var i = classBarConfigOrder.length -1; i >= 0; i--) {
-		var key = classBarConfigOrder[i];
-		var currentClassBar = classBarsConfig[key];
-		if (currentClassBar.show === 'Y') {
-			var height = SUM.getScaledHeight(currentClassBar.height, "col");
-			var colorMap = colorMapMgr.getColorMap("col",key); // assign the proper color scheme...
-			var classType = colorMap.getType();       
-			var classBarValues = classBarsData[key].values;
-			var classBarLength = classBarValues.length;
-			if (typeof classBarsData[key].svalues != 'undefined') {
-				classBarValues = classBarsData[key].svalues;
-				classBarLength = classBarValues.length;
-			}
-			pos += (SUM.totalWidth)*SUM.colClassPadding*DRAW.BYTE_PER_RGBA*SUM.widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
-			if (currentClassBar.bar_type === 'color_plot') {
-				pos = SUM.drawColorPlotColClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap);
-			} else {
-				pos = SUM.drawScatterBarPlotColClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar);
-			}
+	for (let i = bars.length -1; i >= 0; i--) {
+		const currentClassBar = bars[i];
+		const height = SUM.getScaledHeight(currentClassBar.height, "col");
+		const colorMap = colorMapMgr.getColorMap("col", currentClassBar.label); // assign the proper color scheme...
+		let classBarValues = classBarsData[currentClassBar.label].values;
+		let classBarLength = classBarValues.length;
+		if (typeof classBarsData[currentClassBar.label].svalues != 'undefined') {
+		    classBarValues = classBarsData[currentClassBar.label].svalues;
+		    classBarLength = classBarValues.length;
+		}
+		pos += SUM.totalWidth*SUM.colClassPadding*DRAW.BYTE_PER_RGBA*SUM.widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
+		if (currentClassBar.bar_type === 'color_plot') {
+			pos = SUM.drawColorPlotColClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap);
 		} else {
-			if (!document.getElementById("missingSumColClassBars")){
-				var x = SUM.canvas.offsetLeft + SUM.canvas.offsetWidth + 2;
-				var y = SUM.canvas.offsetTop + SUM.canvas.clientHeight/SUM.totalHeight - 10;
-				DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
-			}		
+			pos = SUM.drawScatterBarPlotColClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar);
 		}
 	}
+
+	DVW.removeLabels("missingSumColClassBars");
+	if (heatMap.hasHiddenCovariates("column")) {
+	    if (!document.getElementById("missingSumColClassBars")){
+		const x = SUM.canvas.offsetLeft + SUM.canvas.offsetWidth + 2;
+		const y = SUM.canvas.offsetTop + SUM.canvas.clientHeight/SUM.totalHeight - 10;
+		DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
+	    }
+	}
+
 	SUM.drawColClassBars();
 };
 
@@ -711,12 +706,12 @@ SUM.resetBoxCanvas = function() {
 	ctx.clearRect(0, 0, SUM.boxCanvas.width, SUM.boxCanvas.height);
 	ctx.lineWidth=1;
 	ctx.strokeStyle="#000000";
-	
+
 	// If no row or column cuts, draw the heat map border in black
 	if (MMGR.mapHasGaps() === false){
 		ctx.strokeRect(0,0,SUM.boxCanvas.width,SUM.boxCanvas.height);
 	}
-	
+
 	const heatMap = MMGR.getHeatMap();
 	const primaryMap = DVW.primaryMap;
 	if (primaryMap) {
@@ -798,7 +793,7 @@ SUM.drawLeftCanvasBox = function() {
 };
 
 //=====================//
-// 	CLASSBAR FUNCTIONS //
+//  CLASSBAR FUNCTIONS //
 //=====================//
 
 SUM.getScaledHeight = function(height, axis) {
@@ -842,7 +837,7 @@ SUM.drawScatterBarPlotColClassBar = function(dataBuffer, pos, height, classBarVa
 	var barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
 	var barCutColor = colorMap.getHexToRgba("#FFFFFF");
 	var matrix = SUM.buildScatterBarPlotMatrix(height*SUM.widthScale, classBarValues, 0, classBarLength, currentClassBar, MMGR.getHeatMap().getTotalCols(), true);
-	
+
 	for (var h = 0; h < matrix.length; h++) { 
 		var row = matrix[h];
 		for (var k = 0; k < row.length; k++) { 
@@ -1248,7 +1243,7 @@ SUM.buildScatterBarPlotMatrix = function(height, classBarValues, start, classBar
 						} 
 					} */
 				}
-			} 		
+			}
 		}
 		normalizedK++;
 	} 
@@ -1259,8 +1254,8 @@ SUM.buildScatterBarPlotMatrix = function(height, classBarValues, start, classBar
 //Hidden bars will have height zero.  The order of entries is fixed but
 //not specified.
 SUM.getSummaryCovariateBarHeights = function (axis) {
-	return MMGR.getHeatMap().getCovariateBarHeights(axis)
-	.map(h => h === 0 ? 0 : SUM.getScaledHeight(h,axis));
+	return MMGR.getHeatMap().getScaledVisibleCovariates(axis, 1.0)
+	.map(bar => SUM.getScaledHeight(bar.height,axis));
 }
 
 //Return the total scaled heights of all covariate bars on the specified axis.
@@ -1518,7 +1513,7 @@ SUM.clearSelectionMarks = function(searchTarget){
 		} else {
 			SUM.clearRowSelectionMarks();
 			SUM.clearColSelectionMarks();
-		}	
+		}
 	} else {
 		SUM.clearRowSelectionMarks();
 		SUM.clearColSelectionMarks();
@@ -1583,17 +1578,17 @@ SUM.drawTopItems = function(){
 	var rowLabels = heatMap.getRowLabels()["labels"];
 	var colTop = summaryCanvas.offsetTop + summaryCanvas.offsetHeight + colCanvas.offsetHeight;
 	var rowLeft = summaryCanvas.offsetLeft + summaryCanvas.offsetWidth + rowCanvas.offsetWidth;
-	
+
 	var matrixW = SUM.matrixWidth;
 	var matrixH = SUM.matrixHeight;
 	var colSumRatio = heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	var rowSumRatio = heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
-	
+
 	var referenceItem = document.createElement("Div"); // create a reference top item div to space the elements properly. removed at end
 	referenceItem.className = "topItems";
 	referenceItem.innerHTML = "SampleItem";
 	SUM.chmElement.appendChild(referenceItem);
-	
+
 	// draw the column top items
 	if (SUM.colTopItems){
 		for (var i = 0; i < SUM.colTopItems.length; i++){ // find the indices for each item to draw them later.
@@ -1621,7 +1616,7 @@ SUM.drawTopItems = function(){
 			}
 			var colAdjust = matrixW < 200 ? ((summaryCanvas.offsetWidth/matrixW)/2) : 0;
 			for (var i = 0; i < colTopItemsIndex.length;i++){ // check for rightside overlap. move overlapping items to the left
- 				var start = colTopItemsStart[i]+colAdjust;    
+				var start = colTopItemsStart[i]+colAdjust;
 				var moveTo = colPositionArray[colTopItemsIndex[i]]*colCanvas.width;
 				colCtx.moveTo(start,0);
 				colCtx.bezierCurveTo(start,5,moveTo,5,moveTo,10);
@@ -1629,7 +1624,7 @@ SUM.drawTopItems = function(){
 			}
 		}
 	}
-	
+
 	// draw row top items
 	if (SUM.rowTopItems){
 		for (var i = 0; i < SUM.rowTopItems.length; i++){ // find indices
@@ -1666,12 +1661,12 @@ SUM.drawTopItems = function(){
 			}
 		}
 	}
-	
-	
+
+
 	referenceItem.remove();
 	rowCtx.stroke();
 	colCtx.stroke();
-	
+
 	// Helper functions for top items
 
 	function eliminateDuplicates(arr) {
@@ -1697,16 +1692,16 @@ SUM.drawTopItems = function(){
 	function sortNumber(a,b) { // helper function to sort the indices properly
 	    return a - b;
 	}
-	
+
 	 //Find the optional position of a set of top items.  The index list of top items must be sorted.
     function topItemPositions(topItemsIndex, matrixSize, itemSize, canvasSize,summaryRatio) {
 	 if (canvasSize === 0 || itemSize === 0) { return;}
-    	
+
           //Array of possible top item positions is the size of the canvas divided by the size of each label.
           //Create a position array with initial value of -1
           var totalPositions = Math.round(canvasSize/itemSize)+1;
           if (totalPositions < topItemsIndex.length){
-        	  return false;
+	      return false;
           }
           var posList = Array.apply(null, Array(totalPositions)).map(Number.prototype.valueOf,-1)
          
@@ -1714,7 +1709,7 @@ SUM.drawTopItems = function(){
           for (var i = 0; i < topItemsIndex.length; i++) {
                 var index = Number(topItemsIndex[i]);
                 if (isNaN(index)){ // if the top item wasn't found in the labels array, it comes back as null
-                	continue;  // so you can't draw it.
+		    continue;  // so you can't draw it.
                 }
                 var bestPos = Math.min(Math.round(index * totalPositions / (summaryRatio * matrixSize)), posList.length-1);
                 if (posList[bestPos] == -1)
@@ -1770,7 +1765,7 @@ SUM.drawTopItems = function(){
           else
                 return -1;
     }
-	
+
 	function placeTopItemDiv(index, axis){
 		var isRow = axis.toLowerCase() == "row";
 		var topItemIndex = isRow ? rowTopItemsIndex:colTopItemsIndex;

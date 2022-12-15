@@ -556,15 +556,15 @@ PDF.genViewerHeatmapPDF = function() {
 	 * FUNCTION: setDetailHeatmapDimensions - This function calculates the proper PDF
 	 * display dimensions for the Detail Heat Map page.
 	 **********************************************************************************/
-	function setDetailHeatmapDimensions(rcw,cch,hmw,hmh) {
+	function setDetailHeatmapDimensions(mapItem,rcw,cch,hmw,hmh) {
 		var rowDendroPctg = rcw / (hmw + rcw);
 		var colDendroPctg = cch / (hmh + cch);
 		detMapW = detImgW*(1-rowDendroPctg);
 		detMapH = detImgH*(1-colDendroPctg);
 		detRowDendroWidth = detImgW * rowDendroPctg;
 		detColDendroHeight = detImgH * colDendroPctg;
-		detColClassHeight = detMapH*(DET.calculateTotalClassBarHeight("col")/hmh);
-		detRowClassWidth = detMapW*(DET.calculateTotalClassBarHeight("row")/hmw);
+		detColClassHeight = detMapH*(mapItem.getScaledVisibleCovariates("column").totalHeight()/hmh);
+		detRowClassWidth = detMapW*(mapItem.getScaledVisibleCovariates("row").totalHeight()/hmw);
 //		console.log ({ m: 'setDetailHeatmapDimensions', detMapW, detMapH, detRowDendroWidth, detColDendroHeight, detColClassHeight, detRowClassWidth, rcw, cch, hmw, hmh, rowDendroPctg, colDendroPctg });
 	}
 	
@@ -946,9 +946,11 @@ PDF.genViewerHeatmapPDF = function() {
 			let detMapH = detImgH*(1-colDendroPctg);
 			let detRowDendroWidth = detImgW * rowDendroPctg;
 			let detColDendroHeight = detImgH * colDendroPctg;
-			let detColClassHeight = detMapH*(DET.calculateTotalClassBarHeight("col")/hmh);
-			let detRowClassWidth = detMapW*(DET.calculateTotalClassBarHeight("row")/hmw);
-			setDetailHeatmapDimensions(rcw,cch,hmw,hmh)
+			const totalColClassBarHeight = mapItem.getScaledVisibleCovariates("column").totalHeight();
+			const totalRowClassBarWidth = mapItem.getScaledVisibleCovariates("row").totalHeight();
+			let detColClassHeight = detMapH*(totalColClassBarHeight/hmh);
+			let detRowClassWidth = detMapW*(totalRowClassBarWidth/hmw);
+			setDetailHeatmapDimensions(mapItem,rcw,cch,hmw,hmh)
 			let rowDendroLeft = paddingLeft;
 			let imgLeft = paddingLeft+detRowDendroWidth;
 			let colDendroTop = paddingTop;
@@ -956,13 +958,13 @@ PDF.genViewerHeatmapPDF = function() {
 			if (rowDendroConfig.show !== 'ALL') {
 				imgLeft = paddingLeft;
 				detMapW = detImgW;
-				detRowClassWidth = detMapW*(DET.calculateTotalClassBarHeight("row")/mapItem.canvas.width);
+				detRowClassWidth = detMapW*(totalRowClassBarWidth/mapItem.canvas.width);
 				detRowDendroWidth = 0;
 			}
 			if (colDendroConfig.show !== 'ALL') {
 				imgTop = paddingTop;
 				detMapH = detImgH;
-				detColClassHeight = detMapH*(DET.calculateTotalClassBarHeight("col")/mapItem.canvas.height);
+				detColClassHeight = detMapH*(totalColClassBarHeight/mapItem.canvas.height);
 				detColDendroHeight = 0;
 			}
 			resizeDetailDendroCanvases(mapItem,detMapW,detMapH,detRowDendroWidth,detColDendroHeight);
