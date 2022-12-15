@@ -36,7 +36,15 @@ DMM.nextMapNumber = 1;
 
     class DetailHeatMapView {
 	constructor (template) {
-	    Object.assign (this, template, { glManager: null, version: 'S', });
+	    Object.assign (this, template, {
+		glManager: null,
+		version: 'S',
+		labelElements: {},
+		oldLabelElements: {},
+		tmpLabelSizeElements: [],
+		labelSizeWidthCalcPool: [],
+		labelSizeCache: {},
+	    });
 	}
 
 	/*********************************************************************************************
