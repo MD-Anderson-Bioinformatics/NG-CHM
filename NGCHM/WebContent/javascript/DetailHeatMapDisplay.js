@@ -19,6 +19,9 @@ DET.labelLastClicked = {};
 DET.paddingHeight = 2;          // space between classification bars
 DET.SIZE_NORMAL_MODE = 506;
 DET.dataViewBorder = 2;
+// zoomBoxSizes are chosen such that they evenly divide SIZE_NORMAL_MODE - dataViewBorder = 504.
+// prime factors of 504 are 2,2,2,3,3,7
+// Thus, data element box sizes in a normal mode view will all have the same number of pixels.
 DET.zoomBoxSizes = [1,2,3,4,6,7,8,9,12,14,18,21,24,28,36,42,56,63,72,84,126,168,252];
 DET.eventTimer = 0; // Used to delay draw updates
 DET.maxLabelSize = 11;
@@ -36,6 +39,25 @@ DET.animating = false;
 DET.detailHeatMapCache = {};      // Last rendered detail heat map for each layer
 DET.detailHeatMapLevel = {};      // Level of last rendered heat map for each layer
 DET.detailHeatMapValidator = {};  // Encoded drawing parameters used to check heat map is current
+
+    /*********************************************************************************************
+     * FUNCTION:  setDataViewSize - Set the display size, in canvas units, of the specified axis
+     * of the detail map view shown in mapItem.
+     *
+     * We also multiply the covariate bar scale factor for that axis by the ratio of the new to
+     * old display sizes.  This preserves the relative sizes of the covariate bars and the heat
+     * map view.
+     *********************************************************************************************/
+    DET.setDataViewSize = setDataViewSize;
+    function setDataViewSize (mapItem, axis, size) {
+	if (MMGR.isRow (axis)) {
+	    mapItem.rowClassScale *= size / mapItem.dataViewWidth;
+	    mapItem.dataViewWidth = size|0;
+	} else {
+	    mapItem.colClassScale *= size / mapItem.dataViewHeight;
+	    mapItem.dataViewHeight = size|0;
+	}
+    }
 
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
@@ -488,7 +510,7 @@ DET.getDetailSaveState = function (dm) {
 DET.scaleViewWidth = function (mapItem) {
 	const numColumns = mapItem.heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL);
 	const scale = Math.max(Math.floor(500/numColumns), 1);
-	mapItem.dataViewWidth = (numColumns * scale) + DET.dataViewBorder;
+	setDataViewSize (mapItem, "row", (numColumns * scale) + DET.dataViewBorder);
 	DET.setDetailDataWidth (mapItem, scale);
 }
 
@@ -500,7 +522,7 @@ DET.scaleViewWidth = function (mapItem) {
 DET.scaleViewHeight = function (mapItem) {
 	const numRows = mapItem.heatMap.getNumRows (MAPREP.SUMMARY_LEVEL);
 	const scale = Math.max(Math.floor(500/numRows), 1);
-	mapItem.dataViewHeight = (numRows * scale) + DET.dataViewBorder;
+	setDataViewSize (mapItem, "column", (numRows * scale) + DET.dataViewBorder);
 	DET.setDetailDataHeight(mapItem, scale);
 }
 
@@ -619,27 +641,26 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	// and data size to 1.
 	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
 	    const numRibbonColumns = mapItem.heatMap.getNumColumns (MAPREP.RIBBON_HOR_LEVEL);
-	    mapItem.dataViewWidth = numRibbonColumns + DET.dataViewBorder;
 	    let ddw = 1;
-	    while (mapItem.dataViewWidth < 250) { // make the width wider to prevent blurry/big dendros for smaller maps
-		ddw *=2;
-		mapItem.dataViewWidth = ddw*numRibbonColumns + DET.dataViewBorder;
+	    while (ddw*numRibbonColumns < 250 - DET.dataViewBorder) { // make the width wider to prevent blurry/big dendros for smaller maps
+		ddw += ddw;
 	    }
-	    DET.setDetailDataWidth(mapItem,ddw);
+	    setDataViewSize (mapItem, "row", ddw*numRibbonColumns + DET.dataViewBorder);
+	    DET.setDetailDataWidth(mapItem, ddw);
 	    mapItem.currentCol = 1;
 	} else {
 	    mapItem.saveCol = mapItem.selectedStart;
-	    let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
+	    let numViewColumns = mapItem.selectedStop - mapItem.selectedStart + 1;
 	    DET.clearModeHistory (mapItem);
 	    mapItem.mode='RIBBONH_DETAIL'
-	    const width = Math.max(1, Math.floor(500/selectionSize));
-	    mapItem.dataViewWidth = (selectionSize * width) + DET.dataViewBorder;
-	    DET.setDetailDataWidth(mapItem,width);
+	    const scale = Math.max(1, Math.floor(500/numViewColumns));
+	    setDataViewSize (mapItem, "row", (numViewColumns * scale) + DET.dataViewBorder);
+	    DET.setDetailDataWidth(mapItem, scale);
 	    mapItem.currentCol = mapItem.selectedStart;
 	}
 
 	if (!restoreInfo) {
-	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
+	    setDataViewSize (mapItem, "column", DET.SIZE_NORMAL_MODE);
 	    if ((previousMode=='RIBBONV') || (previousMode == 'RIBBONV_DETAIL') || (previousMode == 'FULL_MAP')) {
 		if (previousMode == 'FULL_MAP') {
 		    DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[0]);
@@ -651,7 +672,8 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
 	    const numDetailRows = mapItem.heatMap.getNumRows (MAPREP.DETAIL_LEVEL);
-	    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > numDetailRows) {
+	    const dataViewSize = mapItem.dataViewHeight - DET.dataViewBorder;
+	    while (Math.floor(dataViewSize / DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > numDetailRows) {
 		DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 	    }
 	}
@@ -690,12 +712,11 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	// and data size to 1.
 	if (mapItem.selectedStart == null || mapItem.selectedStart == 0) {
 	    const numRibbonRows = mapItem.heatMap.getNumRows (MAPREP.RIBBON_VERT_LEVEL);
-	    mapItem.dataViewHeight = numRibbonRows + DET.dataViewBorder;
 	    let ddh = 1;
-	    while (mapItem.dataViewHeight < 250) { // make the height taller to prevent blurry/big dendros for smaller maps
-		ddh *=2;
-		mapItem.dataViewHeight = ddh*numRibbonRows + DET.dataViewBorder;
+	    while (ddh*numRibbonRows < 250 - DET.dataViewBorder) { // make the height taller to prevent blurry/big dendros for smaller maps
+		ddh += ddh;
 	    }
+	    DET.setDataViewSize (mapItem, "column", ddh*numRibbonRows + DET.dataViewBorder);
 	    DET.setDetailDataHeight(mapItem,ddh);
 	    mapItem.currentRow = 1;
 	} else {
@@ -709,13 +730,13 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		selectionSize = Math.floor(selectionSize / rvRate);
 	    }
 	    const height = Math.max(1, Math.floor(500/selectionSize));
-	    mapItem.dataViewHeight = (selectionSize * height) + DET.dataViewBorder;
+	    setDataViewSize (mapItem, "column", (selectionSize * height) + DET.dataViewBorder);
 	    DET.setDetailDataHeight(mapItem, height);
 	    mapItem.currentRow = mapItem.selectedStart;
 	}
 
 	if (!restoreInfo) {
-	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
+	    setDataViewSize (mapItem, "row", DET.SIZE_NORMAL_MODE);
 	    if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL') || (previousMode == 'FULL_MAP')) {
 		if (previousMode == 'FULL_MAP') {
 		    DET.setDetailDataWidth(mapItem, DET.zoomBoxSizes[0]);
@@ -756,8 +777,8 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	DVW.setMode(mapItem,'NORMAL');
 	mapItem.setButtons();
 	if (!restoreInfo) {
-	    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-	    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
+	    setDataViewSize (mapItem, "column", DET.SIZE_NORMAL_MODE);
+	    setDataViewSize (mapItem, "row", DET.SIZE_NORMAL_MODE);
 	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
 		DET.setDetailDataSize(mapItem, mapItem.dataBoxWidth);
 	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
@@ -831,8 +852,8 @@ DET.setDetailDataHeight = function (mapItem, size) {
     DET.restoreFromSavedState = function (mapItem, savedState) {
 	mapItem.currentCol = savedState.currentCol;
 	mapItem.currentRow = savedState.currentRow;
-	mapItem.dataViewWidth = savedState.dataViewWidth + DET.dataViewBorder;
-	mapItem.dataViewHeight = savedState.dataViewHeight + DET.dataViewBorder;
+	DET.setDataViewSize (mapItem, "row", savedState.dataViewWidth + DET.dataViewBorder);
+	DET.setDataViewSize (mapItem, "column", savedState.dataViewHeight + DET.dataViewBorder);
 	mapItem.dataBoxHeight = savedState.dataBoxHeight;
 	mapItem.dataBoxWidth = savedState.dataBoxWidth;
 	mapItem.dataPerCol = savedState.dataPerCol;

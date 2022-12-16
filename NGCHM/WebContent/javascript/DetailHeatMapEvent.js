@@ -840,10 +840,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 			if (current == -1) {
 			    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-			    const heatMap = MMGR.getHeatMap();
 			    mapItem.dataBoxHeight = DET.zoomBoxSizes[0];
-			    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-			    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
+			    DET.setDataViewSize (mapItem, "column", DET.SIZE_NORMAL_MODE);
+			    const numDetailRows = mapItem.heatMap.getNumRows (MAPREP.DETAIL_LEVEL);
+			    const viewSize = mapItem.dataViewHeight - DET.dataViewBorder;
+			    while (Math.floor(viewSize/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= numDetailRows) {
 				DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 			    }
 			    DET.setCanvasDimensions(mapItem);
@@ -868,10 +869,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 			if (current == -1) {
 			    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-			    const heatMap = MMGR.getHeatMap();
 			    mapItem.dataBoxWidth = DET.zoomBoxSizes[0];
-			    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
-			    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
+			    DET.setDataViewSize (mapItem, "row", DET.SIZE_NORMAL_MODE);
+			    const numDetailColumns = mapItem.heatMap.getNumColumns (MAPREP.DETAIL_LEVEL);
+			    const viewSize = mapItem.dataViewWidth - DET.dataViewBorder;
+			    while (Math.floor(viewSize/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= numDetailColumns) {
 				DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 			    }
 
