@@ -392,6 +392,11 @@ UHM.initMessageBox = function() {
 	document.getElementById('messageOpen_btn').style.display = 'none';
 }
 
+UHM.messageBoxIsVisible = function () {
+	const messageBox = document.getElementById('msgBox');
+	return messageBox && messageBox.style.display != 'none';
+};
+
 UHM.setMessageBoxHeader = function(headerText) {
 	var msgBoxHdr = document.getElementById('msgBoxHdr');
 	msgBoxHdr.innerHTML = headerText;

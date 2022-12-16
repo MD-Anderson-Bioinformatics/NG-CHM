@@ -1291,6 +1291,12 @@
 				    UIMGR.flickChange (FLICK.isFlickUp() ? "toggle2" : "toggle1");
 				}
 				break;
+			case 'Enter':
+				if (UHM.messageBoxIsVisible()) {
+				    e.preventDefault();
+				    UHM.messageBoxCancel();
+				}
+				break;
 			default:
 				return;
 		}
