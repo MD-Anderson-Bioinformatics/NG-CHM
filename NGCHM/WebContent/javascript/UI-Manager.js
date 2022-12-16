@@ -1194,8 +1194,9 @@
 	const mapItem = DVW.primaryMap;
 	UHM.hlpC();
 	if (e.target.type != "text" && e.target.type != "textarea") {
-		switch(e.keyCode){ // prevent default added redundantly to each case so that other key inputs won't get ignored
-			case 37: // left key
+		// console.log ({ m: 'KeyPress', keyCode: e.keyCode, key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, meta: e.metaKey, e });
+		switch(e.key){ // prevent default added redundantly to each case so that other key inputs won't get ignored
+			case 'ArrowLeft': // left key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
 					if (e.shiftKey) {
@@ -1211,7 +1212,7 @@
 					}
 				}
 				break;
-			case 38: // up key
+			case 'ArrowUp': // up key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
 					if (e.shiftKey) {
@@ -1225,7 +1226,7 @@
 					}
 				}
 				break;
-			case 39: // right key
+			case 'ArrowRight': // right key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
 					if (e.shiftKey) {
@@ -1241,7 +1242,7 @@
 					}
 				}
 				break;
-			case 40: // down key
+			case 'ArrowDown': // down key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
 					if (e.shiftKey) {
@@ -1255,7 +1256,7 @@
 					}
 				}
 				break;
-			case 33: // page up
+			case 'PageUp': // page up
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
@@ -1270,7 +1271,7 @@
 					DEV.zoomAnimation(mapItem.chm);
 				}
 				break;
-			case 34: // page down
+			case 'PageDown': // page down
 				e.preventDefault();
 				if (e.shiftKey){
 					let newMode;
@@ -1285,7 +1286,7 @@
 					DEV.detailDataZoomOut(mapItem.chm);
 				}
 				break;
-			case 113: // F2 key
+			case 'F2': // F2 key
 				if (FLICK.flickIsOn()) {
 				    UIMGR.flickChange (FLICK.isFlickUp() ? "toggle2" : "toggle1");
 				}
@@ -1297,7 +1298,7 @@
 		DVW.checkCol(mapItem);
 	    mapItem.updateSelection();
 	} else {
-	    if ((document.activeElement.id === "search_text") && (e.keyCode === 13)) {
+	    if ((document.activeElement.id === "search_text") && (e.key === 'Enter')) {
 		    SRCH.detailSearch();
 	    }
 	}
