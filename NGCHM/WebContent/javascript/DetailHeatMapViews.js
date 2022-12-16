@@ -186,13 +186,13 @@ DVW.getDetailWindow = function(mapItem) {
 DVW.getCurrentSumRow = function(mapItem) {
 	const currRow = mapItem.currentRow;
 	// Convert selected current row value to Summary level
-	const rowSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
+	const rowSummaryRatio = mapItem.heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	return  Math.round(currRow/rowSummaryRatio);
 }
 //Follow similar methodology for Column as is used in above row based function
 DVW.getCurrentSumCol = function(mapItem) {
 	const currCol =  mapItem.currentCol;
-	const colSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
+	const colSummaryRatio = mapItem.heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
 	return  Math.round(currCol/colSummaryRatio);
 }
 
@@ -205,7 +205,7 @@ DVW.getCurrentSumCol = function(mapItem) {
 DVW.getCurrentDetRow = function(mapItem) {
 	let detRow = mapItem.currentRow;
 	if ((mapItem.mode == 'RIBBONV') && (mapItem.selectedStart >= 1)) {
-		const rvRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
+		const rvRatio = mapItem.heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 		detRow = Math.round(mapItem.selectedStart/rvRatio);
 	}
 	return  detRow;
@@ -215,7 +215,7 @@ DVW.getCurrentDetRow = function(mapItem) {
 DVW.getCurrentDetCol = function(mapItem) {
 	let detCol = mapItem.currentCol;
 	if ((mapItem.mode == 'RIBBONH') && (mapItem.selectedStart >= 1)) {
-		const rhRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
+		const rhRatio = mapItem.heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 		detCol = Math.round(mapItem.selectedStart/rhRatio);
 	}
 	return  detCol;
@@ -230,7 +230,7 @@ DVW.getCurrentDetDataPerRow = function(mapItem) {
 	// make sure dataPerCol is the correct value. 
 	let	detDataPerRow = mapItem.dataPerRow;
 	if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
-		const rate = MMGR.getHeatMap().getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
+		const rate = mapItem.heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 		detDataPerRow = Math.ceil(detDataPerRow/rate);
 	} 
 	return detDataPerRow;
@@ -240,7 +240,7 @@ DVW.getCurrentDetDataPerCol = function(mapItem) {
 	// make sure dataPerCol is the correct value.  
 	let	detDataPerCol = mapItem.dataPerCol;
 	if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) {
-		const rate = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
+		const rate = mapItem.heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 		detDataPerCol = Math.ceil(detDataPerCol/rate);
 	} 
 	return detDataPerCol;
@@ -253,15 +253,15 @@ DVW.getCurrentDetDataPerCol = function(mapItem) {
  * leftCanvasBox on that side of the screen.
  **********************************************************************************/
 DVW.getCurrentSumDataPerRow = function(mapItem) {
-	const rowSummaryRatio = MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
-	// Summary data per row for  using the summary ration for that level
-	const	sumDataPerRow = Math.floor(mapItem.dataPerRow/rowSummaryRatio);
-	return sumDataPerRow;
+    const rowSummaryRatio = mapItem.heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
+    // Summary data per row for using the summary ratio for that level
+    const sumDataPerRow = Math.floor(mapItem.dataPerRow/rowSummaryRatio);
+    return sumDataPerRow;
 };
 
 // Follow similar methodology for Column as is used in above row based function
 DVW.getCurrentSumDataPerCol = function(mapItem) {
-    const colSummaryRatio = MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
+    const colSummaryRatio = mapItem.heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
     const sumDataPerCol = Math.floor(mapItem.dataPerCol/colSummaryRatio);
     return sumDataPerCol;
 };
@@ -271,36 +271,28 @@ DVW.getCurrentSumDataPerCol = function(mapItem) {
  * so sometimes in ribbon view this needs to be translated to full coordinates.
  **********************************************************************************/
 DVW.setDataPerRowFromDet = function(detDataPerRow, mapItem) {
-    const heatMap = MMGR.getHeatMap();
-    const isPrimary = mapItem.version === 'P';
+    const heatMap = mapItem.heatMap;
     mapItem.dataPerRow = detDataPerRow;
-    if (isPrimary) mapItem.dataPerRow = detDataPerRow;
     if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
 	if (mapItem.selectedStart==0) {
 	    mapItem.dataPerRow = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
-	    if (isPrimary) mapItem.dataPerRow = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
 	} else {
 	    const rate = heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 	    mapItem.dataPerRow = detDataPerRow * rate;
-	    if (isPrimary) mapItem.dataPerRow = detDataPerRow * rate;
 	}
     }
 };
 
 // Follow similar methodology for Column as is used in above row based function
 DVW.setDataPerColFromDet = function(detDataPerCol, mapItem) {
-    const heatMap = MMGR.getHeatMap();
-    const isPrimary = mapItem.version === 'P';
+    const heatMap = mapItem.heatMap;
     mapItem.dataPerCol = detDataPerCol;
-    if (isPrimary) mapItem.dataPerCol = detDataPerCol;
     if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) {
 	if (mapItem.selectedStart==0) {
 	    mapItem.dataPerCol = heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
-	    if (isPrimary) mapItem.dataPerCol = heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
 	} else {
 	    const rate = heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 	    mapItem.dataPerCol = detDataPerCol * rate;
-	    if (isPrimary) mapItem.dataPerCol = detDataPerCol * rate;
 	}
     }
 };
@@ -314,12 +306,13 @@ DVW.setDataPerColFromDet = function(detDataPerCol, mapItem) {
  **********************************************************************************/
 DVW.setCurrentRowFromSum = function(mapItem,sumRow) {
     // Up scale current summary row to detail equivalent
-    mapItem.currentRow = (sumRow*MMGR.getHeatMap().getRowSummaryRatio(MAPREP.SUMMARY_LEVEL));
+    mapItem.currentRow = sumRow*mapItem.heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
     DVW.checkRow(mapItem);
 };
 
 DVW.setCurrentColFromSum = function(mapItem,sumCol) {
-    mapItem.currentCol = (sumCol*MMGR.getHeatMap().getColSummaryRatio(MAPREP.SUMMARY_LEVEL));
+    // Up scale current summary column to detail equivalent
+    mapItem.currentCol = sumCol*mapItem.heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
     DVW.checkCol(mapItem);
 };
 
@@ -329,49 +322,35 @@ DVW.setCurrentColFromSum = function(mapItem,sumCol) {
  * just prior to calling UpdateSelection().
  **********************************************************************************/
 DVW.checkRow = function(mapItem) {
-    // FIXME: BMB: all three tests below actually do the same thing for both primary
-    // and secondary maps.  What was the original motivation for implementing all the
-    // tests and can we assume it didn't work out and can we remove the tests?
-    const isPrimary = mapItem.version === 'P';
-
     //Set column to one if off the row boundary when in ribbon vert view
     if ((mapItem.currentRow < 1) || ((mapItem.mode == 'RIBBONV') && (mapItem.selectedStart==0))) {
 	mapItem.currentRow = 1;
-	if (isPrimary) mapItem.currentRow = 1;
     }
     if (((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) && (mapItem.selectedStart != 0)) {
 	mapItem.currentRow = mapItem.selectedStart;
-	if (isPrimary) mapItem.currentRow = mapItem.selectedStart;
     }
-    //Check row against detail boundaries
-    const numRows = MMGR.getHeatMap().getNumRows(MAPREP.DETAIL_LEVEL);
-    if (mapItem.currentRow > ((numRows + 1) - mapItem.dataPerCol)) {
-	mapItem.currentRow = (numRows + 1) - mapItem.dataPerCol;
-	if (isPrimary) mapItem.currentRow = (numRows + 1) - mapItem.dataPerCol;
+    // Check row against detail boundaries
+    const numRows = mapItem.heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
+    const viewRowLimit = numRows + 1 - mapItem.dataPerCol;
+    if (mapItem.currentRow > viewRowLimit) {
+	mapItem.currentRow = viewRowLimit;
     }
 };
 
 DVW.checkCol = function(mapItem) {
-    // FIXME: BMB: all three tests below actually do the same thing for both primary
-    // and secondary maps.  What was the original motivation for implementing all the
-    // tests and can we assume it didn't work out and can we remove the tests?
-    const isPrimary = mapItem.version === 'P';
-
     //Set column to one if off the column boundary when in ribbon horiz view
     if ((mapItem.currentCol < 1) || ((mapItem.mode == 'RIBBONH') && mapItem.selectedStart==0)) {
     	mapItem.currentCol = 1;
-	if (isPrimary) mapItem.currentCol = 1;
     }
     if (((mapItem.mode == 'RIBBONH') || (mapItem.mode=='RIBBONH_DETAIL')) && mapItem.selectedStart!= 0) {
     	mapItem.currentCol = mapItem.selectedStart;
-	if (isPrimary) mapItem.currentCol = mapItem.selectedStart;
     }
 
     //Check column against detail boundaries
-    const numCols = MMGR.getHeatMap().getNumColumns(MAPREP.DETAIL_LEVEL);
-    if (mapItem.currentCol > ((numCols + 1) -mapItem.dataPerRow)) {
-    	mapItem.currentCol = (numCols + 1) - mapItem.dataPerRow;
-	if (isPrimary) mapItem.currentCol = (numCols + 1) - mapItem.dataPerRow;
+    const numCols = mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
+    const viewColLimit = numCols + 1 - mapItem.dataPerRow;
+    if (mapItem.currentCol > viewColLimit) {
+	mapItem.currentCol = viewColLimit;
     }
 };
 
