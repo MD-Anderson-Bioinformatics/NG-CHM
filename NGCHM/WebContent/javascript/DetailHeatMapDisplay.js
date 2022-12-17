@@ -1260,7 +1260,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	if (bars.length > 0) {
 	    const barLabelFont = calcCovariateBarLabelFont (mapItem, axis, bars);
 	    mapItem.setCovariateBarLabelFont (axis, barLabelFont);
-	    if ((barLabelFont > UTIL.minLabelSize)  && (barLabelFont < DET.maxLabelSize)) {
+	    if ((barLabelFont > 0)  && (barLabelFont < DET.maxLabelSize)) {
 		const otherAxis = MMGR.isRow (axis) ? "COL" : "ROW";
 		const legendText = bars.containsLegend() ? "XXX" : "";
 		bars.forEach (bar => {
@@ -1272,8 +1272,9 @@ DET.setDetailDataHeight = function (mapItem, size) {
     }
 
     /************************************************************************************************
-     * FUNCTION - calcCovariateBarLabelFont: This function calculates the appropriate font size for the
-     * covariate bar labels on the specified axis.
+     * FUNCTION - calcCovariateBarLabelFont: This function calculates the font size of the
+     * smallest visible covariate bar labels on the specified axis.  Returns 0 if none are
+     * visible.
      ************************************************************************************************/
     function calcCovariateBarLabelFont (mapItem, axis, bars) {
 	// For the specified axis, determine the scaling factor between the mapItem's canvas size in canvas
@@ -1295,7 +1296,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		minFont = fontSize;
 	    }
 	});
-	return minFont === 999 ? UTIL.minLabelSize : minFont;
+	return minFont === 999 ? 0 : minFont;
     }
 
     /************************************************************************************************
