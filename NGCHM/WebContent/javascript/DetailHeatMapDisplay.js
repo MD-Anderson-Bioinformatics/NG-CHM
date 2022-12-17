@@ -1255,13 +1255,13 @@ DET.setDetailDataHeight = function (mapItem, size) {
      * covariate bar labels on the specified axis.
      ************************************************************************************************/
     function calcCovariateBarLabelFont (mapItem, axis, bars) {
-	// For the specified axis, determine the scaling factor between the mapItem's size in canvas
-	// coordinates and the canvas element's size in CSS coordinates.
+	// For the specified axis, determine the scaling factor between the mapItem's canvas size in canvas
+	// coordinates and its size in CSS coordinates.
 	let scale;
 	if (MMGR.isRow(axis)) {
-	    scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + bars.totalHeight() + mapItem.dendroWidth);
+	    scale =  mapItem.canvas.clientWidth / (mapItem.dataViewWidth + bars.totalHeight());
 	} else {
-	    scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + bars.totalHeight() + mapItem.dendroHeight);
+	    scale =  mapItem.canvas.clientHeight / (mapItem.dataViewHeight + bars.totalHeight());
 	}
 
 	// For each bar, determine the largest font size that can be used for that bar.
@@ -1320,13 +1320,12 @@ DET.setDetailDataHeight = function (mapItem, size) {
      ************************************************************************************************/
     function calcAxisLabelsLen (mapItem, axis, fontSize) {
 	// Calculate the sizes (in canvas coordinates) of the dendrogram, covariate bars, and map.
-	const dendroSize = MMGR.isRow (axis) ? mapItem.dendroHeight : mapItem.dendroWidth;
 	const otherAxis = MMGR.isRow (axis) ? "column" : "row";
 	const barsHeight = mapItem.getScaledVisibleCovariates(otherAxis).totalHeight();
 	const mapSize = MMGR.isRow (axis) ? mapItem.dataViewHeight : mapItem.dataViewWidth;
 
-	// Determine the fraction of the window used by the map.
-	const mapFraction = mapSize / (mapSize + barsHeight + dendroSize);
+	// Determine the fraction of the canvas used by the map.
+	const mapFraction = mapSize / (mapSize + barsHeight);
 
 	// Determine the space available for each label by dividing the client size (in CSS coordinates) by the number
 	// of labels.
@@ -1401,12 +1400,11 @@ DET.setDetailDataHeight = function (mapItem, size) {
     function calcAxisLabelFontSize (mapItem, axis) {
 	// Determine the sizes of the three view components: data view, dendrogram, and covariate bars.
 	const dataViewSize = MMGR.isRow (axis) ? mapItem.dataViewHeight : mapItem.dataViewWidth;
-	const dendroSize = MMGR.isRow(axis) ? mapItem.dendroHeight : mapItem.dendroWidth;
 	const otherAxis = MMGR.isRow (axis) ? "column" : "row";
 	const barsHeight = mapItem.getScaledVisibleCovariates(otherAxis).totalHeight();
 
 	// Determine proportion of total space used just by the data view.
-	const mapFraction = dataViewSize / (dataViewSize + barsHeight + dendroSize);
+	const mapFraction = dataViewSize / (dataViewSize + barsHeight);
 
 	// Determine font size from CSS size of map, map fraction used by data view, and number of labels.
 	const numLabels = MMGR.isRow(axis) ? mapItem.dataPerCol : mapItem.dataPerRow;
