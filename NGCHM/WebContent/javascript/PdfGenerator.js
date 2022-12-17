@@ -108,9 +108,8 @@ PDF.pdfCancelButton = function() {
  * formatting to the string and downloads the resulting PDF file to the desktop.
  **********************************************************************************/
 PDF.getBuilderCreationLogPDF = function(name, text) {
-	var doc = new jsPDF("p","pt",[792,612]); 
-	doc.setFont("helvetica");
-	doc.setFontType("bold");
+	var doc = new jspdf.jsPDF("p","pt",[792,612]);
+	doc.setFont("helvetica", "bold");
 	doc.setFontSize(15);
 	var lineEndPos = text.indexOf("\n");
 	var headtx = text.substring(0, lineEndPos);
@@ -147,10 +146,10 @@ PDF.getBuilderCreationLogPDF = function(name, text) {
  **********************************************************************************/
 PDF.addBuilderLogPage = function (doc, headtx) {
 	doc.addPage();
-	doc.setFontType("bold");
+	doc.setFont(undefined, "bold");
 	doc.setFontSize(15);
 	doc.text(120,30,headtx);
-	doc.setFontType("normal");
+	doc.setFont(undefined, "normal");
 	doc.setFontSize(10);
 }
 
@@ -166,15 +165,15 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	}
 	var textHeader = temptx.substring(0,temptx.indexOf(":") + 1);
 	var textValue = temptx.substring(temptx.indexOf(":") + 2, temptx.length);
-	doc.setFontType("bold");  
+	doc.setFont(undefined, "bold");
 	doc.text(20,pos,textHeader);
 	if (isChanged === true) {
-		doc.setFontType("bolditalic"); 
+		doc.setFont(undefined, "bolditalic");
 	} else {
-		doc.setFontType("normal");
+		doc.setFont(undefined, "normal");
 	}
 	doc.text(165,pos,textValue);
-	doc.setFontType("normal");
+	doc.setFont(undefined, "normal");
 }
 
 /**********************************************************************************
@@ -445,7 +444,7 @@ PDF.genViewerHeatmapPDF = function() {
 		} else if (document.getElementById("pdfPaperSize").value == "A3") {
 			paperSize = [1224,792];
 		}
-		var newDoc = isChecked("pdfInputPortrait") ? new jsPDF("p","pt",paperSize) :new jsPDF("l","pt",paperSize); // landscape or portrait?  210 × 297  2.83465  595x842
+		var newDoc = isChecked("pdfInputPortrait") ? new jspdf.jsPDF("p","pt",paperSize) :new jspdf.jsPDF("l","pt",paperSize); // landscape or portrait?  210 × 297  2.83465  595x842
 		newDoc.setFont(document.getElementById("pdfFontStyle").value);
 		pageHeight = newDoc.internal.pageSize.height;
 		pageWidth = newDoc.internal.pageSize.width;
@@ -608,7 +607,7 @@ PDF.genViewerHeatmapPDF = function() {
 				doc.setFontSize(18);
 			}
 			doc.text(150, headerHeight - 10, fullTitle, null);
-			doc.setFontType("bold");
+			doc.setFont(undefined, "bold");
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
 			doc.rect(5, header.clientHeight+10, pageWidth-10, 2, "FD");
@@ -620,14 +619,14 @@ PDF.genViewerHeatmapPDF = function() {
 		} else {
 			// If widgetized viewer exclude MDA logo and show compressed hear
 			doc.setFontSize(8);
-			doc.setFontType("bold");
+			doc.setFont(undefined, "bold");
 			doc.text(10,10,"NG-CHM Heat Map: "+ heatMap.getMapInformation().name,null);
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
 			doc.rect(0, 15, pageWidth-10, 2, "FD");
 			doc.setFontSize(theFont);
 		}
-		doc.setFontType("normal");
+		doc.setFont(undefined, "normal");
 	}
 	
 	/**********************************************************************************
@@ -976,7 +975,7 @@ PDF.genViewerHeatmapPDF = function() {
 			const blankImgData = blankCanvas.toDataURL('image/png');
 			if (detImgData === blankImgData) {
 				doc.setFontSize(12);
-				doc.setFontType("bold");
+				doc.setFont(undefined, "bold");
 				doc.text(70, 90, "The image for this detail panel was not retrieved. Please try again.", null);
 			} else {
 				var detBoxImgData = mapItem.boxCanvas.toDataURL('image/png');  
@@ -1078,9 +1077,9 @@ PDF.genViewerHeatmapPDF = function() {
 		doc.addPage();
 		createHeader(theFont, null);
 		doc.setFontSize(classBarHeaderSize);
-		doc.setFontType("bold");
+		doc.setFont(undefined, "bold");
 		doc.text(10, paddingTop, sectionHeader , null);
-		doc.setFontType("normal");
+		doc.setFont(undefined, "normal");
 		getDataMatrixDistributionPlot();
 	}
 
@@ -1296,11 +1295,11 @@ PDF.genViewerHeatmapPDF = function() {
     		topOff = paddingTop + 15;
     	} else {
 			doc.setFontSize(classBarHeaderSize);
-			doc.setFontType("bold");
+			doc.setFont(undefined, "bold");
 			doc.text(10, topOff, sectionHeader , null);
     	}
 		doc.setFontSize(classBarTitleSize);
-		doc.setFontType("normal");
+		doc.setFont(undefined, "normal");
 		topOff += classBarTitleSize + 5;
 		leftOff = 20; // ...reset leftOff...
     }
@@ -1322,16 +1321,16 @@ PDF.genViewerHeatmapPDF = function() {
 		var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap(type, key);
 		var thresholds = colorMap.getThresholds();
 		if (isChecked("pdfInputPortrait") && (thresholds.length > 56)) {
-			doc.setFontType("bold");
+			doc.setFont(undefined, "bold");
 		    doc.text(leftOff, topOff, splitTitle);
-			doc.setFontType("normal");
+			doc.setFont(undefined, "normal");
 			doc.text(leftOff + 15, bartop + classBarLegendTextSize, "This discrete covariate bar contains too", null);
 			doc.text(leftOff +15, bartop + classBarLegendTextSize+12, "many categories to print.", null);
 			setClassBarFigureH(2,'discrete',0);   
 		} else if (isChecked("pdfInputLandscape") && (thresholds.length > 40)) {
-			doc.setFontType("bold");
+			doc.setFont(undefined, "bold");
 		    doc.text(leftOff, topOff, splitTitle);
-			doc.setFontType("normal");
+			doc.setFont(undefined, "normal");
 			doc.text(leftOff +15, bartop + classBarLegendTextSize,    "This discrete covariate bar contains too", null);
 			doc.text(leftOff +15, bartop + classBarLegendTextSize+12, "many categories to print. You may try", null);
 			doc.text(leftOff +15, bartop + classBarLegendTextSize+24, "printing in portrait mode.", null);
@@ -1352,9 +1351,9 @@ PDF.genViewerHeatmapPDF = function() {
 			if(splitTitle.length > 1) {
 				classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  
 			}
-			doc.setFontType("bold");
+			doc.setFont(undefined, "bold");
 		    doc.text(leftOff, topOff, splitTitle);
-			doc.setFontType("normal");
+			doc.setFont(undefined, "normal");
 		    
 			var classBarConfig = rowClassBarConfig[key];
 			var classBarData = rowClassBarData[key];
@@ -1453,9 +1452,9 @@ PDF.genViewerHeatmapPDF = function() {
 			topOff = paddingTop + 15;
 			leftOff = 20; // ...reset leftOff...
 		}  
-		doc.setFontType("bold");
+		doc.setFont(undefined, "bold");
 		doc.text(leftOff, topOff, splitTitle);
-		doc.setFontType("normal");
+		doc.setFont(undefined, "normal");
 		const heatMap = MMGR.getHeatMap();
 		var classBars = heatMap.getColClassificationConfig();
 		if (type === 'row') {
