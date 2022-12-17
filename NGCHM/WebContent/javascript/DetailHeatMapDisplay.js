@@ -2331,6 +2331,8 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
     function resizeMapItem (mapItem) {
 	DET.rowDendroResize(mapItem);
 	DET.colDendroResize(mapItem);
+	calculateCovariateBarScale (mapItem, "row");
+	calculateCovariateBarScale (mapItem, "column");
 	sizeCanvasForLabels(mapItem);
 	//Done twice because changing canvas size affects fonts selected for drawing labels
 	sizeCanvasForLabels(mapItem);
@@ -2340,6 +2342,51 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	DET.colDendroResize(mapItem);
     }
 
+    function calculateCovariateBarScale (mapItem, axis) {
+	const debug = false;
+	const origScale = Math.max (1.0, MMGR.isRow (axis) ? mapItem.rowClassScale : mapItem.colClassScale);
+	let bars = mapItem.heatMap.getScaledVisibleCovariates (axis, origScale);
+	if (bars.length === 0) return;
+
+	const clientSize = MMGR.isRow (axis) ? mapItem.canvas.clientWidth : mapItem.canvas.clientHeight;
+	const dataViewSize = MMGR.isRow (axis) ? mapItem.dataViewWidth : mapItem.dataViewHeight;
+
+	if (debug) console.log ({ m: '> calculateCovariateBarScale', clientSize, dataViewSize, });
+	let loops = 0;
+	let totalBarHeight = 0;
+	let scale = origScale;
+	for (;;) {
+	    totalBarHeight = Math.max (bars.totalHeight(), bars.length * (DET.paddingHeight + 1));
+	    let fontScale = clientSize / (dataViewSize + totalBarHeight);
+	    let minFont = 999;
+	    let maxFont = 0;
+	    bars.forEach (bar => {
+		const fontSize = Math.max (bar.height - DET.paddingHeight, 1) * fontScale;
+		if (fontSize < minFont) minFont = fontSize;
+		if (fontSize > maxFont) maxFont = fontSize;
+	    });
+	    let midFont = (minFont + maxFont) / 2;
+	    const scaleRatio = 7.5 / (minFont - 1);
+	    if (debug) console.log ({ scale, totalBarHeight, fontScale, minFont, maxFont, midFont, scaleRatio, });
+	    loops++;
+	    if (Math.abs(scaleRatio-1) < 0.1 || loops >= 10) break;
+	    scale = Math.max (scale*scaleRatio, 1e-5);
+	    bars = mapItem.heatMap.getScaledVisibleCovariates (axis, scale);
+	}
+	// Don't let the covariates grow to more than a third of the map size.
+	if (3.0 * totalBarHeight >= dataViewSize) {
+	    scale *= dataViewSize / (totalBarHeight * 3.0);
+	}
+	const scaleRatio = scale/origScale;
+	if (scaleRatio <= 0.9 || scaleRatio >= 1.1) {
+	    if (MMGR.isRow(axis)) {
+		mapItem.rowClassScale = scale;
+	    } else {
+		mapItem.colClassScale = scale;
+	    }
+	    setCanvasDimensions (mapItem);
+	}
+    }
 
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
