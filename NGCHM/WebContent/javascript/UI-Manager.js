@@ -516,9 +516,6 @@
 	    SUM.colTopItemsWidth = 0;
 	    SUM.rowTopItemsHeight = 0;
 	    DMM.nextMapNumber = 1;
-	    DET.detailHeatMapCache = {};
-	    DET.detailHeatMapLevel = {};
-	    DET.detailHeatMapValidator = {};
 	    DEV.setMouseDown (false);
 	    MMGR.initAxisLabels();
 	    UTIL.removeElementsByClass("DynamicLabel");

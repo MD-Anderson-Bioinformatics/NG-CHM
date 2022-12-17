@@ -36,11 +36,24 @@ DMM.nextMapNumber = 1;
 	  selectedIsDendrogram: false,
 	  colClassScale: 1.5,  // Allow the size of covariate bars in detail maps to vary relative to the size of the detail map.
 	  rowClassScale: 1.5,  // Constants for now. Should adjust so that absolute bar sizes do not vary excessively.
+
+	  //We keep a copy of the last rendered detail heat map for each layer.
+	  //This enables quickly redrawing the heatmap when flicking between layers, which
+	  //needs to be nearly instant to be effective.
+	  //The copy will be invalidated and require drawing if any parameter affecting
+	  //drawing of that heat map is changed or if a new tile that could affect it
+	  //is received.
+	  detailHeatMapCache: {},      // Last rendered detail heat map for each layer
+	  detailHeatMapLevel: {},      // Level of last rendered heat map for each layer
+	  detailHeatMapValidator: {},  // Encoded drawing parameters used to check heat map is current
+
     };
 
     class DetailHeatMapView {
 	constructor (template) {
 	    Object.assign (this, template, {
+		// When creating a new detail heat map view, the following fields must be
+		// reset to their given values.
 		glManager: null,
 		version: 'S',
 		labelElements: {},
@@ -48,6 +61,9 @@ DMM.nextMapNumber = 1;
 		tmpLabelSizeElements: [],
 		labelSizeWidthCalcPool: [],
 		labelSizeCache: {},
+		detailHeatMapCache: {},
+		detailHeatMapLevel: {},
+		detailHeatMapValidator: {},
 	    });
 	}
 

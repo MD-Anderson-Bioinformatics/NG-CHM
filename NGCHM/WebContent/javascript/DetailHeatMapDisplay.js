@@ -30,16 +30,6 @@ DET.redrawUpdateTimeout = 10;	// Drawing delay in ms after a tile update (if nee
 DET.minPixelsForGrid = 20;	// minimum element size for grid lines to display
 DET.animating = false;
 
-//We keep a copy of the last rendered detail heat map for each layer.
-//This enables quickly redrawing the heatmap when flicking between layers, which
-//needs to be nearly instant to be effective.
-//The copy will be invalidated and require drawing if any parameter affecting
-//drawing of that heat map is changed or if a new tile that could affect it
-//is received.
-DET.detailHeatMapCache = {};      // Last rendered detail heat map for each layer
-DET.detailHeatMapLevel = {};      // Level of last rendered heat map for each layer
-DET.detailHeatMapValidator = {};  // Encoded drawing parameters used to check heat map is current
-
     /*********************************************************************************************
      * FUNCTION:  setDataViewSize - Set the display size, in canvas units, of the specified axis
      * of the detail map view shown in mapItem.
@@ -139,15 +129,16 @@ DET.flushDrawingCache = function (tile) {
 	// and summary) are fully prefetched at initialization.
 	// In any case, data for the drawing window's level should also arrive soon
 	// and the heat map would be redrawn then.
-	if (DET.detailHeatMapCache.hasOwnProperty (tile.layer) &&
-	    DET.detailHeatMapLevel[tile.layer] === tile.level) {
-		const heatMap = MMGR.getHeatMap();
-		DET.detailHeatMapValidator[tile.layer] = '';
-		if (tile.layer === heatMap.getCurrentDL()) {
-			// Redraw 'now' if the tile is for the currently displayed layer.
-			DET.setDrawDetailsTimeout (DET.redrawUpdateTimeout, false);
-		}
-	}
+	DVW.detailMaps.forEach (mapItem => {
+	    if (mapItem.detailHeatMapCache.hasOwnProperty (tile.layer) &&
+		mapItem.detailHeatMapLevel[tile.layer] === tile.level) {
+		    mapItem.detailHeatMapValidator[tile.layer] = '';
+		    if (tile.layer === mapItem.heatMap.getCurrentDL()) {
+			// Redraw 'now', without resizing, if the tile is for the currently displayed layer.
+			DET.setDrawDetailTimeout(mapItem, DET.redrawUpdateTimeout, true);
+		    }
+	    }
+	});
 }
 
 /*********************************************************************************************
@@ -268,9 +259,10 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
 	const layer = drawWin.layer;
 	const paramCheck = JSON.stringify({ drawWin, params });
-	if (DET.detailHeatMapValidator[layer] === paramCheck) {
+
+	if (mapItem.detailHeatMapValidator[layer] === paramCheck) {
 		//Cached image exactly matches what we need.
-		return DET.detailHeatMapCache[layer];
+		return mapItem.detailHeatMapCache[layer];
 	}
 
 	// Determine size of required image.
@@ -279,16 +271,16 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	const texWidth = params.mapWidth + rowClassBarWidth;
 	const texHeight = params.mapHeight + colClassBarHeight;
 
-	if (DET.detailHeatMapCache.hasOwnProperty(layer)) {
+	if (mapItem.detailHeatMapCache.hasOwnProperty(layer)) {
 		// Resize the existing renderBuffer if needed.
-		DET.detailHeatMapCache[layer].resize (texWidth, texHeight);
+		mapItem.detailHeatMapCache[layer].resize (texWidth, texHeight);
 	} else {
 		// Or create a new one if needed.
-		DET.detailHeatMapCache[layer] = DRAW.createRenderBuffer (texWidth, texHeight, 1.0);
+		mapItem.detailHeatMapCache[layer] = DRAW.createRenderBuffer (texWidth, texHeight, 1.0);
 	}
 	// Save data needed for determining if the heat map image will match the next request.
-	DET.detailHeatMapValidator[layer] = paramCheck;
-	DET.detailHeatMapLevel[layer] = drawWin.level;
+	mapItem.detailHeatMapValidator[layer] = paramCheck;
+	mapItem.detailHeatMapLevel[layer] = drawWin.level;
 
 	// create these variables now to prevent having to call them in the for-loop
 	const currDetRow = drawWin.firstRow;
@@ -298,7 +290,7 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
 	// Define a function for outputting reps copy of line
 	// to the renderBuffer for this layer.
-	const renderBuffer = DET.detailHeatMapCache[layer];
+	const renderBuffer = mapItem.detailHeatMapCache[layer];
 	const emitLines = (function() {
 		// Start outputting data to the renderBuffer after one line
 		// of blank space.
