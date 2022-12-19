@@ -154,6 +154,27 @@
 	    this.draw();
 	};
 
+	// Set ribbon mode
+	this.setRibbonModeBar = function setRibbonModeBar (start, stop) {
+	    if (this.ribbonModeBar != -1) {
+		console.error ('Setting ribbon mode bar when it is already set');
+		return;
+	    }
+	    for (let idx = 0; idx < this.bars.length; idx++) {
+		const regionStart = Math.round(this.bars[idx].leftBoundary / pointsPerLeaf);
+		if (start != regionStart) {
+		    continue;
+		}
+		const regionStop = Math.round(this.bars[idx].rightBoundary / pointsPerLeaf);
+		if (stop == regionStop) {
+		    this.ribbonModeBar = idx;
+		    this.draw();
+		    return;
+		}
+	    }
+	    console.warn ('Unable to set ribbon bar');
+	};
+
 	// Enter/leave ribbon mode.  Called when the user has clicked near
 	// a bar in the dendrogram.
 	this.setSelectedBar = function (barIndex) {

@@ -120,6 +120,7 @@ SUM.initSummaryData = function(callbacks) {
 		    DVW.primaryMap.subDendroMode = axis;
 		    DVW.primaryMap.selectedStart = regionStart;
 		    DVW.primaryMap.selectedStop = regionStop;
+		    DVW.primaryMap.selectedIsDendrogram = true;
 		}
 		callbacks.showSearchResults();
 		callbacks.callDetailDrawFunction(axis === 'Row' ? 'RIBBONV' : 'RIBBONH');
@@ -777,16 +778,15 @@ SUM.drawLeftCanvasBox = function() {
         if (!SUM.chmElement) return;
 	// Reset the canvas (drawing borders and sub-dendro selections)
 	const ctx = SUM.resetBoxCanvas(SUM.boxCanvas);
+	const heatMap = MMGR.getHeatMap();
+	const dataLayers = heatMap.getDataLayers();
 	DVW.detailMaps.forEach(mapItem => {
 		// Draw the View Box using user-defined defined selection color 
 		const boxX = ((((DVW.getCurrentSumCol(mapItem)-1) * SUM.widthScale) / SUM.canvas.width) * SUM.boxCanvas.width);
 		const boxY = ((((DVW.getCurrentSumRow(mapItem)-1) * SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height);
 		const boxW = (DVW.getCurrentSumDataPerRow(mapItem)*SUM.widthScale / SUM.canvas.width) * SUM.boxCanvas.width - 2;
 		const boxH = (DVW.getCurrentSumDataPerCol(mapItem)*SUM.heightScale / SUM.canvas.height) * SUM.boxCanvas.height - 2;
-		const heatMap = MMGR.getHeatMap();
-		const dataLayers = heatMap.getDataLayers();
 		const dataLayer = dataLayers[mapItem.currentDl];
-		ctx.strokeStyle=dataLayer.selection_color;
 		ctx.strokeStyle=dataLayer.selection_color;
 		if (mapItem.version === 'P') {
 			ctx.lineWidth=4;
