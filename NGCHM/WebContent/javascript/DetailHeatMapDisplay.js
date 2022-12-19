@@ -216,8 +216,8 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 		const showGrid = dataLayer.grid_show === 'Y';
 		const detWidth = + mapItem.boxCanvas.style.width.replace("px","");
 		const detHeight = + mapItem.boxCanvas.style.height.replace("px","");
-		params.showVerticalGrid = showGrid && params.dataBoxWidth > mapItem.minLabelSize && DET.minPixelsForGrid*drawWin.numCols <= detWidth;
-		params.showHorizontalGrid = showGrid && params.dataBoxHeight > mapItem.minLabelSize && DET.minPixelsForGrid*drawWin.numRows <= detHeight;
+		params.showVerticalGrid = showGrid && params.dataBoxWidth > UTIL.minLabelSize && DET.minPixelsForGrid*drawWin.numCols <= detWidth;
+		params.showHorizontalGrid = showGrid && params.dataBoxHeight > UTIL.minLabelSize && DET.minPixelsForGrid*drawWin.numRows <= detHeight;
 		params.grid_color = dataLayer.grid_color;
 		params.selection_color = dataLayer.selection_color;
 		params.cuts_color = dataLayer.cuts_color;
@@ -1235,13 +1235,13 @@ DET.calcRowAndColLabels = function (mapItem) {
 	mapItem.rowLabelFont = DET.getRowLabelFontSize(mapItem);
 	mapItem.colLabelFont = DET.getColLabelFontSize(mapItem);
 	let fontSize;
-	if (mapItem.rowLabelFont >= mapItem.minLabelSize && mapItem.colLabelFont >= mapItem.minLabelSize){
+	if (mapItem.rowLabelFont >= UTIL.minLabelSize && mapItem.colLabelFont >= UTIL.minLabelSize){
 		fontSize = Math.min(mapItem.colLabelFont,mapItem.rowLabelFont);
 		DET.calcColLabels(mapItem, fontSize);
 		DET.calcRowLabels(mapItem, fontSize);
-	} else if (mapItem.rowLabelFont >= mapItem.minLabelSize){
+	} else if (mapItem.rowLabelFont >= UTIL.minLabelSize){
 		DET.calcRowLabels(mapItem, mapItem.rowLabelFont);
-	} else if (mapItem.colLabelFont >= mapItem.minLabelSize){
+	} else if (mapItem.colLabelFont >= UTIL.minLabelSize){
 		DET.calcColLabels(mapItem, mapItem.colLabelFont);
 	}
 }
@@ -1269,7 +1269,7 @@ DET.calcRowClassBarLabels = function (mapItem) {
 	const containsLegend = DET.classLabelsContainLegend("row");
 	if (rowClassBarConfig != null && rowClassLength > 0) {
 		mapItem.rowClassLabelFont = DET.rowClassBarLabelFont(mapItem);
-		if ((mapItem.rowClassLabelFont > mapItem.minLabelSize)  && (mapItem.colClassLabelFont < DET.maxLabelSize)) {
+		if ((mapItem.rowClassLabelFont > UTIL.minLabelSize)  && (mapItem.rowClassLabelFont < DET.maxLabelSize)) {
 			for (let i=0;i< rowClassBarConfigOrder.length;i++) {
 				const key = rowClassBarConfigOrder[i];
 				const currentClassBar = rowClassBarConfig[rowClassBarConfigOrder[i]];
@@ -1301,7 +1301,7 @@ DET.calcColClassBarLabels = function (mapItem) {
 	const containsLegend = DET.classLabelsContainLegend("col");
 	if (colClassBarConfig != null && colClassLength > 0) {
 		mapItem.colClassLabelFont = DET.colClassBarLabelFont(mapItem);
-		if ((mapItem.colClassLabelFont > mapItem.minLabelSize) && (mapItem.colClassLabelFont < DET.maxLabelSize)){
+		if ((mapItem.colClassLabelFont > UTIL.minLabelSize) && (mapItem.colClassLabelFont < DET.maxLabelSize)){
 			for (let i=0;i< colClassBarConfigOrder.length;i++) {
 				const key = colClassBarConfigOrder[i];
 				const currentClassBar = colClassBarConfig[key];
@@ -1413,11 +1413,11 @@ DET.getClassBarLabelFontSize = function (mapItem, classBarConfig,scale) {
 	for (let key in classBarConfig) {
 		const classBar = classBarConfig[key];
 		const fontSize = Math.min(((classBar.height - DET.paddingHeight) * scale) - 1, 10);
-		if ((fontSize > mapItem.minLabelSize) && (fontSize < minFont)) {
+		if ((fontSize > UTIL.minLabelSize) && (fontSize < minFont)) {
 			minFont = fontSize;
 		}
 	}
-	return minFont === 999 ? mapItem.minLabelSize : minFont;
+	return minFont === 999 ? UTIL.minLabelSize : minFont;
 }
 
 /************************************************************************************************
@@ -1431,7 +1431,7 @@ DET.calcRowLabels = function (mapItem, fontSize) {
 		headerSize = mapItem.canvas.clientHeight * (colHeight / (mapItem.dataViewHeight + colHeight));
 	}
 	const skip = (mapItem.canvas.clientHeight - headerSize) / mapItem.dataPerCol;
-	if (skip > mapItem.minLabelSize) {
+	if (skip > UTIL.minLabelSize) {
 		const shownLabels = MMGR.getShownLabels('ROW');
 		for (let i = mapItem.currentRow; i < mapItem.currentRow + mapItem.dataPerCol; i++) {
 			DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
@@ -1451,7 +1451,7 @@ DET.calcColLabels = function (mapItem, fontSize) {
 		headerSize = mapItem.canvas.clientWidth * (rowHeight / (mapItem.dataViewWidth + rowHeight));
 	}
 	const skip = (mapItem.canvas.clientWidth - headerSize) / mapItem.dataPerRow;
-	if (skip > mapItem.minLabelSize) {
+	if (skip > UTIL.minLabelSize) {
 		const shownLabels = MMGR.getShownLabels('COLUMN');
 		for (let i = mapItem.currentCol; i < mapItem.currentCol + mapItem.dataPerRow; i++) {
 			DET.addTmpLabelForSizeCalc(mapItem, shownLabels[i-1], fontSize);
@@ -1584,13 +1584,13 @@ DET.updateDisplayedLabels = function () {
  ************************************************************************************************/
 DET.drawRowAndColLabels = function (mapItem) {
 	let fontSize;
-	if (mapItem.rowLabelFont >= mapItem.minLabelSize && mapItem.colLabelFont >= mapItem.minLabelSize){
+	if (mapItem.rowLabelFont >= UTIL.minLabelSize && mapItem.colLabelFont >= UTIL.minLabelSize){
 		fontSize = Math.min(mapItem.colLabelFont,mapItem.rowLabelFont);
 		DET.drawRowLabels(mapItem,fontSize);
 		DET.drawColLabels(mapItem,fontSize);
-	} else if (mapItem.rowLabelFont >= mapItem.minLabelSize){
+	} else if (mapItem.rowLabelFont >= UTIL.minLabelSize){
 		DET.drawRowLabels(mapItem,mapItem.rowLabelFont);
-	} else if (mapItem.colLabelFont >= mapItem.minLabelSize){
+	} else if (mapItem.colLabelFont >= UTIL.minLabelSize){
 		DET.drawColLabels(mapItem,mapItem.colLabelFont);
 	}
 }
@@ -1607,7 +1607,7 @@ DET.drawRowLabels = function (mapItem, fontSize) {
 	const skip = (mapItem.canvas.clientHeight - headerSize) / mapItem.dataPerCol;
 	const start = Math.max((skip - fontSize)/2, 0) + headerSize-2;
 	
-	if (skip > mapItem.minLabelSize) {
+	if (skip > UTIL.minLabelSize) {
 		const actualLabels = MMGR.getActualLabels('ROW');
 		const shownLabels = MMGR.getShownLabels('ROW');
 		const xPos = mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth + 3;
@@ -1632,7 +1632,7 @@ DET.drawColLabels = function (mapItem, fontSize) {
 	const skip = (mapItem.canvas.clientWidth - headerSize) / mapItem.dataPerRow;
 	const start = headerSize + fontSize + Math.max((skip - fontSize)/2, 0) + 3;
 
-	if (skip > mapItem.minLabelSize) {
+	if (skip > UTIL.minLabelSize) {
 		const actualLabels = MMGR.getActualLabels('COLUMN');
 		const shownLabels = MMGR.getShownLabels('COLUMN');
 		const yPos = mapItem.canvas.offsetTop + mapItem.canvas.clientHeight + 3;
@@ -1672,7 +1672,7 @@ DET.detailDrawRowClassBarLabels = function (mapItem) {
 	const containsLegend = DET.classLabelsContainLegend("row");
 	if (rowClassBarConfig != null && rowClassLength > 0) {
 		let startingPoint = mapItem.canvas.offsetLeft + mapItem.rowClassLabelFont + 2;
-		if (mapItem.rowClassLabelFont > mapItem.minLabelSize) {
+		if (mapItem.rowClassLabelFont > UTIL.minLabelSize) {
 			let prevClassBarHeight = 0;
 			for (let i=0;i< rowClassBarConfigOrder.length;i++) {
 				const key = rowClassBarConfigOrder[i];
@@ -1727,7 +1727,7 @@ DET.detailDrawColClassBarLabels = function (mapItem) {
 	const colClassLength = Object.keys(colClassBarConfig).length;
 	const containsLegend = DET.classLabelsContainLegend("col");
 	if (colClassBarConfig != null && colClassLength > 0) {
-		if (mapItem.colClassLabelFont > mapItem.minLabelSize) {
+		if (mapItem.colClassLabelFont > UTIL.minLabelSize) {
 			let yPos = mapItem.canvas.offsetTop;
 			for (let i=0;i< colClassBarConfigOrder.length;i++) {
 				let xPos = mapItem.canvas.offsetLeft + mapItem.canvas.clientWidth + 3;
@@ -2242,7 +2242,6 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 	const fullWidth = mapItem.dataViewWidth + rowClassBarWidth;
 	const mapHeight = mapItem.dataViewHeight;
 	let pos = fullWidth*mapHeight*DRAW.BYTE_PER_RGBA;
-	pos += fullWidth*DET.paddingHeight*DRAW.BYTE_PER_RGBA;
 	const colorMapMgr = heatMap.getColorMapManager();
 	
 	for (let i=colClassBarConfigOrder.length-1; i>= 0;i--) {

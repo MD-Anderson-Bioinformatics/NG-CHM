@@ -29,7 +29,7 @@ DMM.nextMapNumber = 1;
 	  rowLabelDiv: null, colLabelDiv: null, gl: null, uScale: null, uTranslate: null, canvasScaleArray: new Float32Array([1.0, 1.0]), canvasTranslateArray: new Float32Array([0, 0]),
 	  oldMousePos: [0, 0], offsetX: 0, offsetY: 0, pageX: 0, pageY: 0, latestTap: null, latestDoubleTap: null, latestPinchDistance: null, latestTapLocation: null,
 	  saveRow: null, saveCol: null, dataBoxHeight: null, dataBoxWidth: null, rowDendro: null, colDendro: null, dendroHeight: 105, dendroWidth: 105, dataViewHeight: 506,
-	  dataViewWidth: 506, minLabelSize: 5, labelLastClicked: {}, dragOffsetX: null, dragOffsetY: null, rowLabelLen: 0, colLabelLen: 0,
+	  dataViewWidth: 506, labelLastClicked: {}, dragOffsetX: null, dragOffsetY: null, rowLabelLen: 0, colLabelLen: 0,
 	  rowLabelFont: 0, colLabelFont: 0,colClassLabelFont: 0, rowClassLabelFont: 0, labelElements: {}, oldLabelElements: {}, tmpLabelSizeElements: [], 
 	  labelSizeWidthCalcPool: [], labelSizeCache: {},zoomOutNormal: null, zoomOutPos: null, subDendroMode: 'none',
 	  selectedIsDendrogram: false
@@ -37,7 +37,15 @@ DMM.nextMapNumber = 1;
 
     class DetailHeatMapView {
 	constructor (template) {
-	    Object.assign (this, template, { glManager: null, version: 'S', });
+	    Object.assign (this, template, {
+		glManager: null,
+		version: 'S',
+		labelElements: {},
+		oldLabelElements: {},
+		tmpLabelSizeElements: [],
+		labelSizeWidthCalcPool: [],
+		labelSizeCache: {},
+	    });
 	}
 
 	/*********************************************************************************************
@@ -463,13 +471,13 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		colLabels.setAttribute('id','colLabelDiv')
 		colLabels.setAttribute('data-axis','Column')
 		colLabels.setAttribute('style','display: inline-block; position: absolute; right: 0px;')
-		colLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
+		colLabels.oncontextmenu = function(event) { DEV.labelRightClick(event); };
 		labels.appendChild(colLabels)
 		let rowLabels = document.createElement('div')
 		rowLabels.setAttribute('id','rowLabelDiv')
 		rowLabels.setAttribute('data-axis','Row')
 		rowLabels.setAttribute('style','display: inline-block; position: absolute; bottom: 0px;')
-		rowLabels.oncontextmenu = function(event) { DET.labelRightClick(event); };
+		rowLabels.oncontextmenu = function(event) { DEV.labelRightClick(event); };
 		labels.appendChild(rowLabels)
 		detailTemplate.appendChild(labels)
 		let templates = document.getElementById('templates')
