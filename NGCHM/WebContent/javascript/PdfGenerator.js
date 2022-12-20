@@ -590,31 +590,61 @@ PDF.genViewerHeatmapPDF = function() {
 	 * of the PDF pages.  It makes the MDAnderson logo, the HM name, and the red divider 
 	 * line at the top of each page
 	 **********************************************************************************/
-	function createHeader(theFont, titleText, contText) {
+	function createHeader(titleText, options = {}) {
+	    const logoLeft = 5;
+	    const logoTop = 5;
+	    const pageWidth = doc.getPageWidth();
+	    const originalFontSize = doc.getFontSize();
+
 		//If standard viewer version OR file viewer version show MDA logo 
 		if ((PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined')) {
-			doc.addImage(PDF.mdaLogo, 'PNG',5,5,header.clientWidth,header.clientHeight);
+			doc.addImage(PDF.mdaLogo, 'PNG', logoLeft, logoTop, header.clientWidth, header.clientHeight);
 			// Center Heat Map name in header whitespace to left of logo and step down the font if excessively long.
 			let fullTitle = "";
 			if (titleText !== null) {
 				fullTitle = titleText + ": ";
 			}
 			const heatMap = MMGR.getHeatMap();
-			fullTitle = fullTitle + heatMap.getMapInformation().name
-			if (heatMap.getMapInformation().name.length > 60) {
-				doc.setFontSize(12);
-			} else {
-				doc.setFontSize(18);
+			/* top - y coordinate specifies the top of the text.  Small gap to text.
+			 * hanging - y coordinate specifies just below the top of the text.  Intersects top stroke of text.
+			 * middle - y coordinate specifies the middle of the text (excluding descenders)
+			 * ideographic/default - y coordinate specifies the baseline of the text.
+			 * bottom - y coordinate specifies the bottom of the descenders.
+			 */
+			fullTitle = fullTitle + heatMap.getMapInformation().name;
+			let titlePositionY = headerHeight - 10;
+			let fontSize = 18;
+			doc.setFontSize(fontSize);
+			let titleWidth = doc.getTextWidth (fullTitle);
+			while (fontSize > 10 && titleWidth > pageWidth - 200) {
+			    doc.setFontSize(-- fontSize);
+			    titleWidth = doc.getTextWidth (fullTitle);
 			}
-			doc.text(150, headerHeight - 10, fullTitle, null);
+			if (options.hasOwnProperty ("subTitle")) {
+			    let subTitleFontSize = fontSize - 2;
+			    let subTitle = options.subTitle;
+			    let subTitleWidth = doc.getTextWidth (subTitle);
+			    while (subTitleFontSize > 8 && subTitleWidth > pageWidth - 200) {
+				doc.setFontSize(-- subTitleFontSize);
+				titleWidth = doc.getTextWidth (subTitle);
+			    }
+			    if (titleWidth > pageWidth - 200) {
+				subTitle = doc.splitTextToSize (subTitle, pageWidth - 200);
+			    } else {
+				subTitle = [ subTitle ];
+			    }
+			    titlePositionY -= subTitle.length * subTitleFontSize + 10;
+			    doc.text (150, titlePositionY + fontSize, subTitle, null );
+			}
+			doc.setFontSize (fontSize);
+			doc.text (150, titlePositionY, fullTitle, null );
 			doc.setFont(undefined, "bold");
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
 			doc.rect(5, header.clientHeight+10, pageWidth-10, 2, "FD");
-			doc.setFontSize(theFont);
-			if (typeof contText !== 'undefined') {
+			if (options.hasOwnProperty ("contText")) {
 				doc.setFontSize(classBarHeaderSize);
-				doc.text(10, paddingTop, contText, null);
+				doc.text(10, paddingTop, options.contText, null);
 			}
 		} else {
 			// If widgetized viewer exclude MDA logo and show compressed hear
@@ -624,9 +654,9 @@ PDF.genViewerHeatmapPDF = function() {
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
 			doc.rect(0, 15, pageWidth-10, 2, "FD");
-			doc.setFontSize(theFont);
 		}
 		doc.setFont(undefined, "normal");
+		doc.setFontSize(originalFontSize);
 	}
 	
 	/**********************************************************************************
@@ -681,7 +711,7 @@ PDF.genViewerHeatmapPDF = function() {
 			var nextClassBarFigureH = getNextLineClassBarFigureH(key,type);
 			if (topOff + classBarHeaderHeight + nextClassBarFigureH > pageHeight && !isLastClassBarToBeDrawn(key,type)){ // if the next class bar goes off the page vertically...
 				doc.addPage(); // ... make a new page and reset topOff
-				createHeader(theFont, null, sectionHeader + " (continued)");
+				createHeader(null, { contText: sectionHeader + " (continued)" });
 				topOff = paddingTop + 15;
 			}
 			classBarFigureH = 0;   
@@ -838,7 +868,12 @@ PDF.genViewerHeatmapPDF = function() {
 	 * onto the summary heat map PDF page.
 	 **********************************************************************************/
 	function drawSummaryHeatMapPage(theFont) {
-		createHeader(theFont, "Summary");
+		const mapInfo = MMGR.getHeatMap().getMapInformation();
+		const headerOptions = {};
+		if (mapInfo.attributes.hasOwnProperty('chm.info.caption')) {
+		    headerOptions.subTitle = mapInfo.attributes['chm.info.caption'];
+		}
+		createHeader("Summary", headerOptions);
 		// Draw the Summary Top Items on the Summary Page
 		drawSummaryTopItems();
 		var rowDendroLeft = paddingLeft;
@@ -934,7 +969,7 @@ PDF.genViewerHeatmapPDF = function() {
 			if (mapItem.version === 'S') {
 				detVer = "Ver " + mapItem.panelNbr;
 			}
-			createHeader(theFont, "Detail - " + detVer);
+			createHeader("Detail - " + detVer);
 			const rcw = + mapItem.rowDendroCanvas.clientWidth;
 			const cch = + mapItem.colDendroCanvas.clientHeight;
 			const hmw = + mapItem.canvas.width;
@@ -1075,7 +1110,7 @@ PDF.genViewerHeatmapPDF = function() {
 	function drawDataDistributionPlot() {
 		sectionHeader = "Data Matrix Distribution"
 		doc.addPage();
-		createHeader(theFont, null);
+		createHeader(null);
 		doc.setFontSize(classBarHeaderSize);
 		doc.setFont(undefined, "bold");
 		doc.text(10, paddingTop, sectionHeader , null);
@@ -1291,7 +1326,7 @@ PDF.genViewerHeatmapPDF = function() {
 		}
     	if ((topOff + classBarHeaderHeight + (categories*13) > pageHeight)) {
     		doc.addPage(); // ... make a new page and reset topOff
-    		createHeader(theFont, null, sectionHeader);
+		createHeader(null, { contText: sectionHeader });
     		topOff = paddingTop + 15;
     	} else {
 			doc.setFontSize(classBarHeaderSize);
@@ -1342,7 +1377,7 @@ PDF.genViewerHeatmapPDF = function() {
 			}
 			if ((topOff + classBarHeaderHeight + (thresholds.length*13) > pageHeight) && !isLastClassBarToBeDrawn(key,type)) {
 				doc.addPage(); // ... make a new page and reset topOff
-				createHeader(theFont, null, sectionHeader + " (continued)");
+				createHeader(null, { contText: sectionHeader + " (continued)"});
 				topOff = paddingTop + 15;
 				leftOff = 20; // ...reset leftOff...
 			}  
@@ -1448,7 +1483,7 @@ PDF.genViewerHeatmapPDF = function() {
 		}
 		if ((topOff + classBarHeaderHeight + 130) > pageHeight) {
 			doc.addPage(); // ... make a new page and reset topOff
-			createHeader(theFont, null, sectionHeader + " (continued)");
+			createHeader(null, { contText: sectionHeader + " (continued)" });
 			topOff = paddingTop + 15;
 			leftOff = 20; // ...reset leftOff...
 		}  
