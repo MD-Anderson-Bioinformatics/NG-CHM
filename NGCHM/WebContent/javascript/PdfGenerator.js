@@ -1565,7 +1565,7 @@ PDF.genViewerHeatmapPDF = function() {
 		// find the longest label length
 		for (var val in counts){
 			maxCount = Math.max(maxCount, counts[val]);
-			maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val.length)*classBarLegendTextSize);
+			maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(''+val.length)*classBarLegendTextSize);
 		}
 		
 		var bartop = topOff+5 + (splitTitle.length-1)*classBarLegendTextSize*2;
