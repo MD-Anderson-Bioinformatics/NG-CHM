@@ -37,7 +37,6 @@ MMGR.Event_JSON = 'Json';
 MMGR.Event_NEWDATA = 'NewData';
 MMGR.embeddedMapName= null;
 MMGR.localRepository= '/NGCHM';
-MMGR.latestReadWindow= null;
 
     function callServlet (verb, url, data) {
 	const form = document.createElement("form");
@@ -274,6 +273,12 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    return fileSrc;
 	};
 
+	// Method used to register another callback function for a user that wants to be notifed
+	// of updates to the status of heat map data.
+	this.addEventListener = function(callback) {
+	    eventListeners.push(callback.bind (this));
+	};
+
 	// Functions for getting and setting the data layer of this heat map
 	// currently being displayed.
 	// Set in the application by the user when, for exanple, flick views are toggled.
@@ -407,7 +412,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Get a data value in a given row / column
 	this.getValue = function(level, row, column) {
-		return datalevels[level].getValue(row,column);
+		return datalevels[level].getLayerValue(this._currentDl,row,column);
 	}
 	
 	// Retrieve color map Manager for this heat map.
@@ -759,108 +764,156 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    mapConfig.data_configuration.map_information.read_only = 'Y';
 	};
 
-	//This function tells us if all files are in the cache.
-	this.allTilesAvailable = function() {
-		const details = MMGR.latestReadWindow;
-		if (hasDetailTiles() === false) {
-			return true;
-		} else {
-		const currentDl = this.getCurrentDL();
-	    	for (var i = details.startRowTile; i <= details.endRowTile; i++) {
-	    		for (var j = details.startColTile; j <= details.endColTile; j++) {
-				var tileCacheName=currentDl + "." + MAPREP.DETAIL_LEVEL + "." + i + "." + j;
-	    			if (getTileCacheData(tileCacheName) === null) {
-	     				//Do not yet have tile in cache return false
-	    				return false;
-	    			}
-	    		}
-	    	}
+	// Array of TileWindow onready functions waiting for all tiles in the
+	// window to load.
+	this.tileWindowListeners = [];
+
+	// Listen for tile load notifications.  For each, check each TileWindow
+	// listener to see if all required tiles have been received.
+	//
+	// This approach uses a single permanent event listener for the entire
+	// heatMap.  Currently there is no way to remove 'transient' event
+	// listeners, such as TileWindow listeners.
+	this.addEventListener(function (event, tile) {
+	    if (event == MMGR.Event_NEWDATA) {
+		let i = 0;
+		while (i < this.tileWindowListeners.length) {
+		    const entry = this.tileWindowListeners[i];
+		    // Check if all tiles in the window are now available
+		    // and the listener's onready promise has been resolved.
+		    if (entry.checkReady(entry.tileWindow, tile)) {
+			// If so, delete the entry.
+			this.tileWindowListeners.splice (i, 1);
+		    } else {
+			// Otherwise, advance to next entry.
+			i ++;
+		    }
+		}
+	    }
+	});
+
+
+	// A helper class for the tiles required by an access window.
+	class TileWindow {
+	    constructor (heatMap, layer, level, startRowTile, endRowTile, startColTile, endColTile) {
+		this.heatMap = heatMap;
+		this.layer = layer;
+		this.level = level;
+		this.startRowTile = startRowTile;
+		this.endRowTile = endRowTile;
+		this.startColTile = startColTile;
+		this.endColTile = endColTile;
+	    }
+
+	    fetchTiles () {
+		for (let i = this.startRowTile; i <= this.endRowTile; i++) {
+		    for (let j = this.startColTile; j <= this.endColTile; j++) {
+			getTile(this.layer, this.level, i, j);
+		    }
+		}
+	    }
+
+	    allTilesAvailable () {
+		for (let i = this.startRowTile; i <= this.endRowTile; i++) {
+		    for (let j = this.startColTile; j <= this.endColTile; j++) {
+			const tileCacheName = this.layer + "." + this.level + "." + i + "." + j;
+			if (getTileCacheData(tileCacheName) === null) {
+			    return false;
+			}
+		    }
 		}
 		return true;
-	};
-	
-	//This function is used to set a read window for high resolution data layers.
-	//Calling setReadWindow will cause the HeatMap object to retrieve tiles needed
-	//for reading this area if the tiles are not already in the cache.
-	this.setReadWindow = function(level, row, column, numRows, numColumns) {
-		MMGR.latestReadWindow = null;
-		let details;
-		//Thumb nail and summary level are always kept in the cache.  Don't do fetch for them.
-		if (level != MAPREP.THUMBNAIL_LEVEL && level != MAPREP.SUMMARY_LEVEL) {
-			details = datalevels[level].setReadWindow(row, column, numRows, numColumns);
-		}
-		MMGR.latestReadWindow = details;
-		return details;
-	};
+	    }
 
-	/*
-		Similar to setReadWindow. However this function returns a promise
-		that resolves when the needed tiles are ready in cache.
-	*/
-	this.setReadWindowPromise = function(level, row, column, numRows, numColumns) {
-		return new Promise((resolve, reject) => {
-			if (level != MAPREP.THUMBNAIL_LEVEL && level != MAPREP.SUMMARY_LEVEL) {
-				datalevels[level].setReadWindowPromise(row, column, numRows, numColumns)
-					.then((result) => {
-						resolve(result)
-					})
-					.catch((error) => {
-						reject(error)
-					})
-			} else {
-				resolve(null)
+	    // This method waits until all tiles in the tilewindow are available.
+	    //
+	    // If callback is undefined, onready returns a promise that
+	    // resolves when all tiles in the TileWindow are available.
+	    //
+	    // If callback is defined, onready returns undefined and calls callback
+	    // when all tiles in the TileWindow are available.
+	    //
+	    // The TileWindow is passed to callback or is the result of the Promise.
+	    //
+	    // NB: Currently, tiles are never expunged from the cache.
+	    // If they ever can be, there will need to be a way to prevent
+	    // tiles from being expunged while a TileWindow is interested in them.
+	    // Perhaps something as simple as preventing expunging while
+	    // the tileWindowListeners array is non-empty.
+	    onready (callback) {
+		const p = new Promise((resolve, reject) => {
+		    if (this.allTilesAvailable()) {
+			resolve(this);
+		    } else {
+			this.heatMap.tileWindowListeners.push ({ tileWindow: this, checkReady: checkReady, });
+		    }
+
+		    function checkReady (tileWindow, tile) {
+			// First two conditions below are optimizations: only tiles for tileWindow's layer & level can
+			// affect its allTilesAvailable.  Saves a potentially large nested loop.
+			if (tile.layer == tileWindow.layer && tile.level == tileWindow.level && tileWindow.allTilesAvailable()) {
+			    // Resolve promise and remove entry from
+			    // tileWindowListeners.
+			    resolve(tileWindow);
+			    return true;
 			}
-		})
+			// Keep listening.
+			return false;
+		    }
+		});
+		if (callback) {
+		    // Callback provided: call it when the Promise resolves.
+		    p.then(callback);
+		} else {
+		    // No callback: return Promise.
+		    return p;
+		}
+	    }
 	}
 
-	// This function is used to set a read window for high resolution data layers.
-	// Calling getAccessWindow will cause the HeatMap object to retrieve tiles needed
-	// for reading this area if the tiles are not already in the cache.
-	// It will return an object containing methods for accessing values within
-	// the specified window.  (See comment on getAccessWindow method below for details.)
-	this.getAccessWindow = function(win) {
-		// Dummy implementation for now.
-		this.setReadWindow (win.level, win.firstRow, win.firstCol, win.numRows, win.numCols);
-		return {
-		    getValue: getGetValue(win.level)
-		}
-		function getGetValue (level) {
-			return function (row, column) {
-				return datalevels[level].getValue(row, column);
-			};
-		}
+	// Create a TileWindow for the specified heatMap and view window.
+	function getTileWindow (heatMap, win) {
+	    return datalevels[win.level].getTileAccessWindow (win.firstRow, win.firstCol, win.numRows, win.numCols, (level, startRowTile, endRowTile, startColTile, endColTile) => {
+		return new TileWindow (heatMap, win.layer, level, startRowTile, endRowTile, startColTile, endColTile);
+	    });
 	};
 
-	/*
-		Similar to getAccessWindow. However this function returns a promise that resolves
-		when all the tiles of the read window are available in cache.
-	*/
-	this.getAccessWindowPromise = function(win) {
-		return new Promise((resolve,reject) => {
-			this.setReadWindowPromise(win.level, win.firstRow, win.firstCol, win.numRows, win.numCols)
-			.then((result) => {
-				let resultsObject = {
-					getValue: getGetValue(win.level),
-					win: win
-				}
-				function getGetValue(level) {
-					return function(row, column) {
-						return datalevels[level].getValue(row, column)
-					}
-				}
-				resolve(resultsObject)
-			}).catch((error) => {
-				reject (error)
-			});
-		})
-	};
-	
-	//Method used to register another callback function for a user that wants to be notifed
-	//of updates to the status of heat map data.
-	this.addEventListener = function(callback) {
-		eventListeners.push(callback);
+	class AccessWindow {
+	    constructor (heatMap, win) {
+		this.heatMap = heatMap;
+		this.win = { layer: win.layer, level: win.level, firstRow: win.firstRow|0, firstCol: win.firstCol|0, numRows: win.numRows|0, numCols: win.numCols|0 };
+		this.tileWindow = getTileWindow (heatMap, this.win);
+		this.tileWindow.fetchTiles();
+		this.datalevel = datalevels[this.win.level];
+	    }
+
+	    getValue (row, column) {
+		return this.datalevel.getLayerValue (this.win.layer, row|0, column|0);
+	    }
+
+	    onready (callback) {
+		const p = this.tileWindow.onready();
+		if (callback) {
+		    p.then(() => callback (this));
+		} else {
+		    return p.then(() => this);
+		}
+	    }
 	}
-	
+
+	/* Obtain an access window for the specified view window.
+	 * The access window contains three entries:
+	 * - win: The view window.
+	 * - getValue (row, column) Function to return the value at row, column in heatMap coordinates.
+	 * - onready (callback) When all data ready, call callback if specified with the access window as its parameter or return a promise for the access window.  
+	 *
+	 * The returned access window will have its data tiles requested, but they may not be available immediately.
+	 * Use the onready method to request a promise/callback when all tiles in the access window are ready.
+	 */
+	this.getNewAccessWindow = function (win) {
+	    return new AccessWindow (this, win);
+	};
+
 	//Is the heat map ready for business 
 	this.isInitialized = function() {
 		return initialized;
@@ -1546,6 +1599,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 //Internal object for traversing the data at a given zoom level.
 MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile, waitForTileCacheReady) {
+	this.level = level;
 	this.totalRows = jsonData.total_rows;
 	this.totalColumns = jsonData.total_cols;
     var numTileRows = jsonData.tile_rows;
@@ -1559,11 +1613,11 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 	
 	//Get a value for a row / column.  If the tile with that value is not available, get the down sampled value from
 	//the lower data level.
-	this.getValue = function(row, column) {
+	this.getLayerValue = function(layer, row, column) {
 		//Calculate which tile holds the row / column we are looking for.
 		var tileRow = Math.floor((row-1)/rowsPerTile) + 1;
 		var tileCol = Math.floor((column-1)/colsPerTile) + 1;
-		var arrayData = getTileCacheData(MMGR.getHeatMap().getCurrentDL()+"."+level+"."+tileRow+"."+tileCol);
+		var arrayData = getTileCacheData(layer+"."+level+"."+tileRow+"."+tileCol);
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {
@@ -1572,57 +1626,22 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 			//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
 	    	return arrayData[(row-1)%rowsPerTile * thisTileColsPerRow + (column-1)%colsPerTile];
 	    } else if (lowerLevel != null) {
-	    	return lowerLevel.getValue(Math.floor(row/rowToLower) + 1, Math.floor(column/colToLower) + 1);
+		return lowerLevel.getLayerValue(layer, Math.floor(row/rowToLower) + 1, Math.floor(column/colToLower) + 1);
 	    } else {
 	    	return 0;
 	    }	
 	};
 
-	// External user of the matrix data lets us know where they plan to read.
-	// Pull tiles for that area if we don't already have them.
-    this.setReadWindow = function(row, column, numRows, numColumns) {
-    	var startRowTile = Math.floor(row/rowsPerTile) + 1;
-    	var startColTile = Math.floor(column/colsPerTile) + 1;
-    	var endRowCalc = (row+(numRows-1))/rowsPerTile;
-    	var endColCalc = (column+(numColumns-1))/colsPerTile;
-		var endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
-		var endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
-    	
-	const currentDl = MMGR.getHeatMap().getCurrentDL();
-    	for (var i = startRowTile; i <= endRowTile; i++) {
-    		for (var j = startColTile; j <= endColTile; j++) {
-			getTile(currentDl, level, i, j);
-    		}
-    	}
-    	return {startRowTile: startRowTile, endRowTile: endRowTile, startColTile: startColTile, endColTile: endColTile}
-    }
+    this.getTileAccessWindow = function(row, column, numRows, numColumns, getTileWindow) {
+	const startRowTile = Math.floor(row/rowsPerTile) + 1;
+	const startColTile = Math.floor(column/colsPerTile) + 1;
+	const endRowCalc = (row+(numRows-1))/rowsPerTile;
+	const endColCalc = (column+(numColumns-1))/colsPerTile;
+	const endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
+	const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
 
-	/*
-		Similar to setReadWindow. However this function returns a Promise that
-		resolves when all needed tiles are available in cache.
-	*/
-	this.setReadWindowPromise = function(row, column, numRows, numColumns) {
-		let startRowTile = Math.floor(row/rowsPerTile) + 1;
-		let startColTile = Math.floor(column/colsPerTile) + 1;
-		let endRowCalc = (row+(numRows-1))/rowsPerTile;
-		let endColCalc = (column+(numColumns-1))/colsPerTile;
-		let endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
-		let endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
-		const currentDl = MMGR.getHeatMap().getCurrentDL();
-		var ensureTilesInCache = []
-		for (var i = startRowTile; i <= endRowTile; i++) {
-			for (var j = startColTile; j <= endColTile; j++) {
-				ensureTilesInCache.push(waitForTileCacheReady(currentDl, level, i, j));
-			}
-		}
-		return new Promise((resolve, reject) => {
-			Promise.all(ensureTilesInCache).then(tilesInCache => {
-				resolve(tilesInCache)
-			}).catch(error => {
-				reject(error)
-			})
-		})
-	}
+	return getTileWindow (this.level, startRowTile, endRowTile, startColTile, endColTile);
+    };
 
 	// External user of the matrix data lets us know where they plan to read.
 	// Pull tiles for that area if we don't already have them.

@@ -349,34 +349,20 @@ var linkoutsVersion = 'undefined';
 
 	LNK.createMatrixData = function(searchLabels) {
 		//console.log ({ m: 'LNK.createMatrixData', searchLabels});
-		let tilesReady = false;
 		const heatMap = MMGR.getHeatMap();
-		if (SRCHSTATE.getAxisSearchResults("Row").length === 0) {
-		    heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
-		    tilesReady = heatMap.allTilesAvailable();
-		} else if (SRCHSTATE.getAxisSearchResults("Column").length === 0) {
-		    heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
-		    tilesReady = heatMap.allTilesAvailable();
-		} else {
-			return LNK.createMatrixDataTsv(searchLabels);
-		} 
-		if (tilesReady === true) {
-			LNK.createMatrixDataTsv(searchLabels);
-		} else {
-			heatMap.addEventListener(LNK.matrixDataReady.bind('payload', searchLabels));
-		}
+		const win = heatMap.getNewAccessWindow({
+		    layer: heatMap.getCurrentDL(),
+		    level: DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),
+		    firstRow: 1,
+		    firstCol: 1,
+		    numRows: heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
+		    numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
+		});
+		win.onready((win) => {
+		    LNK.createMatrixDataTsv(searchLabels);
+		});
 	};
 
-	//This function gets called asynchronously if tiles need to be loaded in order
-	//to satisfy the matrix data tsv request.
-	LNK.matrixDataReady = function(searchLabels, event, tile) {
-	    let tilesReady = MMGR.getHeatMap().allTilesAvailable();
-	    if (tilesReady === true) {
-		MMGR.latestReadWindow= null;
-		LNK.createMatrixDataTsv(searchLabels);
-	    }
-	}
-	
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
 	LNK.createMatrixDataTsv = function(searchLabels) {
@@ -1074,7 +1060,7 @@ var linkoutsVersion = 'undefined';
 				rawCounts.push(0);
 			}
 		}
-		let getAccessWindowPromises = []
+		let accessWindowPromises = []
 		for (let dd = 0; dd < idx.length; dd++) {
 			let win = {
 				layer: heatMap.getCurrentDL(),
@@ -1085,10 +1071,10 @@ var linkoutsVersion = 'undefined';
 				numCols: numCols
 			};
 			if (isRow) win.firstRow = idx[dd]; else win.firstCol = idx[dd];
-			getAccessWindowPromises.push(heatMap.getAccessWindowPromise(win))
+			accessWindowPromises.push(heatMap.getNewAccessWindow(win).onready())
 		}
 		return new Promise((resolve, reject) => {
-			Promise.all(getAccessWindowPromises).then(accessWindows => {
+			Promise.all(accessWindowPromises).then(accessWindows => {
 				try {
 					accessWindows.forEach(accessWindow => {
 						for (let j = 0; j < accessWindow.win.numRows; j++) {
@@ -1140,7 +1126,7 @@ var linkoutsVersion = 'undefined';
 		const values = [];
 		// Both axisIdx and groupIdx can be disjoint.
 		// TODO: Improve efficiency by grouping adjacent indices.
-		let getAccessWindowPromises = []
+		let accessWindowPromises = []
 		for (let i=0; i<axisIdx.length; i++) {
 			// Get access window for each axisIdx (one vector per iteration)
 			const win = {
@@ -1151,10 +1137,10 @@ var linkoutsVersion = 'undefined';
 				numRows: isRow ? 1 : heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
 				numCols: isRow ? heatMap.getNumColumns(MAPREP.DETAIL_LEVEL) : 1
 			};
-			getAccessWindowPromises.push(heatMap.getAccessWindowPromise(win))
+			accessWindowPromises.push(heatMap.getNewAccessWindow(win).onready());
 		}
 		return new Promise((resolve, reject) => {
-			Promise.all(getAccessWindowPromises).then(accessWindows => {
+			Promise.all(accessWindowPromises).then(accessWindows => {
 				accessWindows.forEach(accessWindow => {
 					const thisVec = []
 					// Iterate over groupIdx to get vector of values from heatmap for summarization.

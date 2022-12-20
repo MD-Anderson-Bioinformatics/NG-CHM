@@ -98,6 +98,7 @@ PDF.pdfCancelButton = function() {
 	document.getElementById('pdfErrorMessage').style.display="none";
 	var prefspanel = document.getElementById('pdfPrefs');
 	prefspanel.classList.add ('hide');
+	document.body.style.cursor = 'default';
 	DVW.primaryMap.canvas.focus();
 }
 
@@ -183,30 +184,18 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
  * for the process to complete, and then calls the "get" functioon to create the PDF.
  **********************************************************************************/
 PDF.callViewerHeatmapPDF = function() {
-	document.body.style.cursor = 'wait';
+    document.body.style.cursor = 'wait';
     const heatMap = MMGR.getHeatMap();
-    const details = heatMap.setReadWindow(DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),1,1,heatMap.getNumRows(MAPREP.DETAIL_LEVEL),heatMap.getNumColumns(MAPREP.DETAIL_LEVEL));
-    let tilesReady = heatMap.allTilesAvailable();
-    if (tilesReady === true) {
-	 PDF.getViewerHeatmapPDF();
-    } else {
-	heatMap.addEventListener(PDF.pdfDataReady);
-    }
-}
-
-/**********************************************************************************
- * FUNCTION - pdfDataReady: This function is called when the PDF creation process
- * cannot continue until all the necessary tiles are loaded into the cache. In this 
- * case the processing of the PDF awaits an asynchronous load of data tiles.
- **********************************************************************************/
-PDF.pdfDataReady = function(event, tile) {
-    const heatMap = MMGR.getHeatMap();
-    let tilesReady = heatMap.allTilesAvailable();
-    if (tilesReady === true) {
-	MMGR.latestReadWindow= null;
-	PDF.getViewerHeatmapPDF();
-    }
-}
+    const win = heatMap.getNewAccessWindow({
+	layer: heatMap.getCurrentDL(),
+	level: DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),
+	firstRow: 1,
+	firstCol: 1,
+	numRows: heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
+	numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
+    });
+    win.onready().then(PDF.getViewerHeatmapPDF);
+};
 
 /**********************************************************************************
  * FUNCTION - getViewerHeatmapPDF: This function is called when the "create pdf" 

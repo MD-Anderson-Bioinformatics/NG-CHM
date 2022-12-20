@@ -118,8 +118,15 @@ DMM.nextMapNumber = 1;
 	updateSelection (noResize) {
 	    //We have the summary heat map so redraw the yellow selection box.
 	    SUM.drawLeftCanvasBox();
-	    this.heatMap.setReadWindow(DVW.getLevelFromMode(this, MAPREP.DETAIL_LEVEL),DVW.getCurrentDetRow(this),DVW.getCurrentDetCol(this),DVW.getCurrentDetDataPerCol(this),DVW.getCurrentDetDataPerRow(this));
-	    DET.setDrawDetailTimeout (this, DET.redrawSelectionTimeout,noResize);
+	    const win = this.heatMap.getNewAccessWindow ({
+		layer: this.heatMap.getCurrentDL(),
+		level: DVW.getLevelFromMode(this, MAPREP.DETAIL_LEVEL),
+		firstRow: DVW.getCurrentDetRow(this),
+		firstCol: DVW.getCurrentDetCol(this),
+		numRows: DVW.getCurrentDetDataPerCol(this),
+		numCols: DVW.getCurrentDetDataPerRow(this),
+	    });
+	    DET.setDrawDetailTimeout (this, DET.redrawSelectionTimeout, noResize);
 	}
 
 	removeLabel (label) {
