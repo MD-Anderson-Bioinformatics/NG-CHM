@@ -207,7 +207,18 @@ PDF.callViewerHeatmapPDF = function() {
  **********************************************************************************/
 PDF.getViewerHeatmapPDF = function() {
 	DET.updateSelections(true);
-	setTimeout(function(){ PDF.genViewerHeatmapPDF(); }, 1500);
+	setTimeout(function(){
+	    try {
+		PDF.genViewerHeatmapPDF();
+	    } catch (error) {
+		console.error (error);
+		const reportStr = `<P>Please consider making or contributing to a bug report on our
+		    <A href='https://github.com/MD-Anderson-Bioinformatics/NG-CHM/issues?q=is%3Aissue+is%3Aopen+pdf+-label%3Aenhancement' target='_blank'>NG-CHM issues page</A>.
+		    </P>`;
+		UHM.systemMessage("NG-CHM PDF Generator", "Unknown error detected during PDF generation." + reportStr);
+		PDF.pdfCancelButton ();
+	    }
+	}, 1500);
 }
 
 PDF.genViewerHeatmapPDF = function() {
