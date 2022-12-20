@@ -955,6 +955,7 @@ PDF.genViewerHeatmapPDF = function() {
 	 * onto the detail heat map PDF page.
 	 **********************************************************************************/
 	function drawDetailHeatMapPages(theFont) {
+	    const origFontSize = doc.getFontSize();
 		for (let i=0; i<DVW.detailMaps.length;i++ ) {
 			const mapItem = DVW.detailMaps[i];
 			const loc = PANE.findPaneLocation (mapItem.chm);
@@ -1013,6 +1014,7 @@ PDF.genViewerHeatmapPDF = function() {
 				doc.setFont(undefined, "bold");
 				doc.text(70, 90, "The image for this detail panel was not retrieved. Please try again.", null);
 			} else {
+				doc.setFontSize (0.95 * Math.min (mapItem.rowLabelFont, mapItem.colLabelFont));
 				var detBoxImgData = mapItem.boxCanvas.toDataURL('image/png');  
 				if (rowDendroConfig.show === 'ALL') {
 					doc.addImage(detRowDendroData, 'PNG', rowDendroLeft, imgTop+detColClassHeight, detRowDendroWidth, detMapH-detColClassHeight);
@@ -1025,6 +1027,7 @@ PDF.genViewerHeatmapPDF = function() {
 				drawDetailSelectionsAndLabels(mapItem);  
 			}
 		}
+		doc.setFontSize (origFontSize);
 	}
 
 	function getBlankCanvas(canvas) {  
