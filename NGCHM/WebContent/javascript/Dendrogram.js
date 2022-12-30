@@ -157,8 +157,8 @@ DDR.ColumnDendrogram = function() {
 		jsdoc.setDrawColor (0); // Black.
 		const ctx = jsdoc.context2d;
 		ctx.save();
-		ctx.setLineCap ('square');
-		ctx.setLineJoin ('square');
+		jsdoc.setLineCap ('square');
+		jsdoc.setLineJoin ('square');
 		const f = Math.floor;
 		// Increase resolution over the jsdoc coordinate space (which defaults to 72-dpi)
 		// by this factor:
@@ -207,18 +207,22 @@ DDR.ColumnDendrogram = function() {
 		// So, we draw all bars of each type as a group.
 
 		// Draw all thin bars.
-		ctx.beginPath();
-		ctx.setLineWidth (0);
 		const thinBars = vv.filter(v => v.thickness === 1);
-		thinBars.forEach(drawBar);
-		ctx.stroke();
+		if (thinBars.length > 0) {
+		    ctx.beginPath();
+		    ctx.lineWidth = 0;
+		    thinBars.forEach(drawBar);
+		    ctx.stroke();
+		}
 
 		// Draw all thick bars.
-		ctx.beginPath();
-		ctx.setLineWidth (1);
 		const thickBars = vv.filter(v => v.thickness === 2);
-		thickBars.forEach(drawBar);
-		ctx.stroke();
+		if (thickBars.length > 0) {
+		    ctx.beginPath();
+		    ctx.lineWidth = resScale;  // Translates to 1. Anything smaller is the same as 0.
+		    thickBars.forEach(drawBar);
+		    ctx.stroke();
+		}
 
 		if (debug) console.log ('Thin bars: ' + thinBars.length + ', thick bars: ' + thickBars.length);
 		ctx.restore();
@@ -288,8 +292,8 @@ DDR.RowDendrogram = function() {
 		jsdoc.setDrawColor (0); // Black.
 		const ctx = jsdoc.context2d;
 		ctx.save();
-		ctx.setLineCap ('square');
-		ctx.setLineJoin ('square');
+		jsdoc.setLineCap ('square');
+		jsdoc.setLineJoin ('square');
 		const resScale = 100;
 
 		ctx.translate (vp.left, vp.top);
@@ -328,17 +332,21 @@ DDR.RowDendrogram = function() {
 
 		// Draw all thin bars.
 		const thinBars = vv.filter(v => v.thickness === 1);
-		ctx.beginPath();
-		ctx.setLineWidth (0);
-		thinBars.forEach( drawBar );
-		ctx.stroke();
+		if (thinBars.length > 0) {
+		    ctx.beginPath();
+		    jsdoc.setLineWidth (0);
+		    thinBars.forEach( drawBar );
+		    ctx.stroke();
+		}
 
 		// Draw all thick bars.
-		ctx.beginPath();
-		ctx.setLineWidth (1);
 		const thickBars = vv.filter(v => v.thickness === 2);
-		thickBars.forEach( drawBar );
-		ctx.stroke();
+		if (thickBars.length > 0) {
+		    ctx.beginPath();
+		    jsdoc.setLineWidth (resScale);
+		    thickBars.forEach( drawBar );
+		    ctx.stroke();
+		}
 
 		ctx.restore();
 	};

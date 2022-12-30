@@ -303,7 +303,6 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 	var rowTICanvas; var colTICanvas;
 	var sumImgData; var sumBoxImgData;
 	var sumRowClassData; var sumColClassData;
-	var sumRowDendroData; var sumColDendroData;
 	var sumRowTopItemsData; var sumColTopItemsData;
 	if (includeSummaryMap) {
 		// Scale summary dendro canvases for PDF page size and Redraw because otherwise they can show up blank
@@ -336,8 +335,6 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		sumImgData = sumMapCanvas.toDataURL('image/png');
 		sumRowClassData = rowClassCanvas.toDataURL('image/png');
 		sumColClassData = colClassCanvas.toDataURL('image/png');
-		sumRowDendroData = document.getElementById("row_dendro_canvas").toDataURL('image/png');
-		sumColDendroData = document.getElementById("column_dendro_canvas").toDataURL('image/png');
 		sumRowTopItemsData = rowTICanvas.toDataURL('image/png');
 		sumColTopItemsData = colTICanvas.toDataURL('image/png');
 		sumBoxImgData = sumBoxCanvas.toDataURL('image/png');
@@ -882,13 +879,13 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		if (rowDendroConfig.show === 'NONE') {
 			imgLeft = paddingLeft;
 		} else {
-			doc.addImage(sumRowDendroData, 'PNG', rowDendroLeft, imgTop, rowDendroWidth, sumMapH);
+			SUM.rowDendro.drawPDF (doc, { left: rowDendroLeft, top: imgTop, width: rowDendroWidth, height: sumMapH });
 		}
 		doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
 		if (colDendroConfig.show === 'NONE') {
 			imgTop = paddingTop;
 		} else {
-			doc.addImage(sumColDendroData, 'PNG', imgLeft, colDendroTop, sumMapW, colDendroHeight);
+			SUM.colDendro.drawPDF (doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight });
 		}
 		doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
 		doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW,sumMapH);
