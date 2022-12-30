@@ -221,7 +221,7 @@ PDF.getViewerHeatmapPDF = function() {
 	}, 1500);
 }
 
-PDF.genViewerHeatmapPDF = function() {
+PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 	//Validate User-entered font size
 	if (validateInputFont() === false) {
 		document.body.style.cursor = 'default';
@@ -604,7 +604,6 @@ PDF.genViewerHeatmapPDF = function() {
 			if (titleText !== null) {
 				fullTitle = titleText + ": ";
 			}
-			const heatMap = MMGR.getHeatMap();
 			/* top - y coordinate specifies the top of the text.  Small gap to text.
 			 * hanging - y coordinate specifies just below the top of the text.  Intersects top stroke of text.
 			 * middle - y coordinate specifies the middle of the text (excluding descenders)
@@ -726,7 +725,6 @@ PDF.genViewerHeatmapPDF = function() {
 	function getNextLineClassBarFigureH(key,type){
 		var minLabelLength = doc.getStringUnitWidth("Missing Value")*classBarLegendTextSize;
 		var classBarsToDraw = type == "col" ? colBarsToDraw : rowBarsToDraw;
-		const heatMap = MMGR.getHeatMap();
 		var classBars = type == "col" ? heatMap.getColClassificationConfig(): heatMap.getRowClassificationConfig();
 		var index = classBarsToDraw.indexOf(key);
 		var classW = classBarFigureW;
@@ -780,7 +778,6 @@ PDF.genViewerHeatmapPDF = function() {
 	 **********************************************************************************/
 	function isLastClassBarToBeDrawn(classBar,type){
 		var isItLast = false;
-		const heatMap = MMGR.getHeatMap();
 		if (isChecked('pdfInputColumn')) {
 			var colBars = heatMap.getColClassificationOrder("show");
 			if ((type === 'col') && (classBar === colBars[colBars.length - 1])) {
@@ -868,7 +865,7 @@ PDF.genViewerHeatmapPDF = function() {
 	 * onto the summary heat map PDF page.
 	 **********************************************************************************/
 	function drawSummaryHeatMapPage(theFont) {
-		const mapInfo = MMGR.getHeatMap().getMapInformation();
+		const mapInfo = heatMap.getMapInformation();
 		const headerOptions = {};
 		if (mapInfo.attributes.hasOwnProperty('chm.info.caption')) {
 		    headerOptions.subTitle = mapInfo.attributes['chm.info.caption'];
@@ -929,7 +926,7 @@ PDF.genViewerHeatmapPDF = function() {
 			rowAdj += 10;
 			colAdj -= 10;
 		}
-		var sumPct = MMGR.getHeatMap().getDividerPref();
+		var sumPct = heatMap.getDividerPref();
 		var sumDiff = (50 - sumPct) * .7;
 //		var sumDiff = 0;
 		for (var i = 0; i < topItems.length; i++){
@@ -1055,7 +1052,6 @@ PDF.genViewerHeatmapPDF = function() {
 	 * boxes and selected label boxes onto the detail heat map page.
 	 **********************************************************************************/
 	function drawDetailSelectionBoxes(mapItem,detClient2PdfWRatio,detClient2PdfHRatio,selectedColor) {
-		const heatMap = MMGR.getHeatMap();
 		var colorMap = heatMap.getCurrentColorMap();
 		const mapLabels = mapItem.labelElements;
 		// Draw selection boxes first (this way they will not overlap text)
@@ -1126,7 +1122,6 @@ PDF.genViewerHeatmapPDF = function() {
 	 * plot for the legend page.
 	 **********************************************************************************/
 	function getDataMatrixDistributionPlot(){
-		const heatMap = MMGR.getHeatMap();
 		// function ripped from UPM used in the gear panel
 		var currentDl = heatMap.getCurrentDL();
 		var cm = heatMap.getColorMapManager().getColorMap("data",currentDl);
@@ -1264,7 +1259,7 @@ PDF.genViewerHeatmapPDF = function() {
 			topOff += classBarTitleSize + 5;
 			for (var i = 0; i < rowBarsToDraw.length;i++){
 				var key = rowBarsToDraw[i];
-				var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap("row", key);
+				var colorMap = heatMap.getColorMapManager().getColorMap("row", key);
 				doc.setFontSize(classBarTitleSize);
 				var isDiscrete = rowClassBarConfig[key].color_map.type === 'discrete';
 				var colorCount = 10;
@@ -1356,7 +1351,7 @@ PDF.genViewerHeatmapPDF = function() {
 			covTitleRows = splitTitle.length;
 		}
 		var bartop = topOff+5 + (splitTitle.length-1)*classBarLegendTextSize*2;
-		var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap(type, key);
+		var colorMap = heatMap.getColorMapManager().getColorMap(type, key);
 		var thresholds = colorMap.getThresholds();
 		if (isChecked("pdfInputPortrait") && (thresholds.length > 56)) {
 			doc.setFont(undefined, "bold");
@@ -1493,7 +1488,6 @@ PDF.genViewerHeatmapPDF = function() {
 		doc.setFont(undefined, "bold");
 		doc.text(leftOff, topOff, splitTitle);
 		doc.setFont(undefined, "normal");
-		const heatMap = MMGR.getHeatMap();
 		var classBars = heatMap.getColClassificationConfig();
 		if (type === 'row') {
 			classBars = heatMap.getRowClassificationConfig();
