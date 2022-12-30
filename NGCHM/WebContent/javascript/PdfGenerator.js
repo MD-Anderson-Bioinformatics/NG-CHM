@@ -869,31 +869,45 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		    headerOptions.subTitle = mapInfo.attributes['chm.info.caption'];
 		}
 		createHeader("Summary", headerOptions);
-		// Draw the Summary Top Items on the Summary Page
-		drawSummaryTopItems();
+
+		// Determine left edge of row dendrogram, row class bars, and heat map.
 		var rowDendroLeft = paddingLeft;
+		var rowClassLeft = paddingLeft;
+		imgLeft = paddingLeft + rowClassWidth;
+		if (rowDendroConfig.show !== 'NONE') {
+		    rowClassLeft += rowDendroWidth;
+		    imgLeft += rowDendroWidth;
+		}
+
+		// Determine top edge of column dendrogram, column class bars, and heat map.
 		var colDendroTop = paddingTop;
-		var rowClassLeft = rowDendroLeft+rowDendroWidth;
-		var colClassTop = colDendroTop+colDendroHeight;
-		imgLeft = paddingLeft+rowDendroWidth+rowClassWidth;
-		imgTop = paddingTop+colDendroHeight+colClassHeight;
-		if (rowDendroConfig.show === 'NONE') {
-			imgLeft = paddingLeft;
-		} else {
-			SUM.rowDendro.drawPDF (doc, { left: rowDendroLeft, top: imgTop, width: rowDendroWidth, height: sumMapH });
+		var colClassTop = paddingTop;
+		imgTop = paddingTop+colClassHeight;
+		if (colDendroConfig.show !== 'NONE') {
+		    colClassTop += colDendroHeight;
+		    imgTop += colDendroHeight;
+		}
+
+
+		if (rowDendroConfig.show !== 'NONE') {
+		    SUM.rowDendro.drawPDF (doc, { left: paddingLeft, top: imgTop, width: rowDendroWidth, height: sumMapH });
 		}
 		doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
-		if (colDendroConfig.show === 'NONE') {
-			imgTop = paddingTop;
-		} else {
+
+		if (colDendroConfig.show !== 'NONE') {
 			SUM.colDendro.drawPDF (doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight });
 		}
 		doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
+
 		doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW,sumMapH);
 		
 		// Add top item marks
-		doc.addImage(sumRowTopItemsData, 'PNG', imgLeft + sumMapW, imgTop, topItemsWidth,sumMapH); 
-		doc.addImage(sumColTopItemsData, 'PNG', imgLeft, imgTop + sumMapH, sumMapW,topItemsHeight);
+		doc.addImage(sumRowTopItemsData, 'PNG', imgLeft + sumMapW, imgTop, topItemsWidth, sumMapH);
+		doc.addImage(sumColTopItemsData, 'PNG', imgLeft, imgTop + sumMapH, sumMapW, topItemsHeight);
+
+		// Draw the Summary Top Items on the Summary Page
+		drawSummaryTopItems("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
+		drawSummaryTopItems("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
 	}
 	
 	/**********************************************************************************
@@ -913,36 +927,40 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 	}
 	
 	/**********************************************************************************
-	 * FUNCTION - drawSummaryTopItems: This function draws the labels for Summary Top
-	 * Items on the Summary page.
+	 * FUNCTION - drawSummaryTopItems: This function draws the labels for the top
+	 * items on the specific axis of the summary page.
 	 **********************************************************************************/
-	function drawSummaryTopItems(){
-		var topItems = document.getElementsByClassName("topItems");
-		var rowAdj = 0;
-		var colAdj = 0;
-		if (isChecked("pdfInputPortrait")) {
-			rowAdj += 10;
-			colAdj -= 10;
-		}
-		var sumPct = heatMap.getDividerPref();
-		var sumDiff = (50 - sumPct) * .7;
-//		var sumDiff = 0;
-		for (var i = 0; i < topItems.length; i++){
-			var item = topItems[i];
-			if (item.axis == "row"){
-				var left = paddingLeft+rowDendroWidth + rowClassWidth + sumMapW+topItemsWidth + 2;
-				var topOffPct = item.offsetTop / document.getElementById("summary_chm").clientHeight;
-				var topAdj = topOffPct > .5 ? 2 : 0;
-				var topPos = (sumImgH * topOffPct) + 2;
-				doc.text(left, paddingTop + topPos + rowAdj + topAdj, item.innerHTML);
-			} else {
-				var top = paddingTop + colDendroHeight + sumMapH + colClassHeight+ topItemsHeight +2;
-				var leftOffsetPct = item.offsetLeft / document.getElementById("summary_chm").clientWidth;
-				var lftAdj = leftOffsetPct > .6 ? 7 : 0;
-				var leftPos = (sumImgW * leftOffsetPct) + 25;
-				doc.text(leftPos+paddingLeft+colAdj+lftAdj+sumDiff, top, item.innerHTML, null, 270);
-			}
-		}
+	function drawSummaryTopItems(axis, vp) {
+	    const debug = false;
+	    const origFontSize = doc.getFontSize();
+	    const labelFontSize = 5;  // Use a small font for top items.
+	    doc.setFontSize(labelFontSize);
+	    const topItems = [...document.getElementsByClassName("topItems")].filter(ti => ti.axis === axis);
+	    if (debug) {
+		console.log ('Drawing ' + topItems.length + ' ' + axis + ' top items');
+	    }
+	    const chmCanvas = document.getElementById("summary_canvas");
+	    const canvasRect = chmCanvas.getBoundingClientRect();
+	    if (axis === "row") {
+		topItems.forEach(item => {
+		    const rect = item.getBoundingClientRect();
+		    const relPosn = (rect.y - canvasRect.y) / canvasRect.height;
+		    doc.text(vp.left, vp.top + vp.height * relPosn + labelFontSize * 0.75, item.innerHTML);
+		    if (debug) {
+			console.log ('Drew row label ' + item.innerHTML, { x: vp.left, y: vp.top + vp.height * relPosn + labelFontSize, relPosn: relPosn, rect });
+		    }
+		});
+	    } else {
+		topItems.forEach(item => {
+		    const rect = item.getBoundingClientRect();
+		    const relPosn = (rect.x - canvasRect.x) / canvasRect.width;
+		    doc.text(vp.left + vp.width * relPosn + labelFontSize/2, vp.top, item.innerHTML, null, 270);
+		    if (debug) {
+			console.log ('Drew col label ' + item.innerHTML, { x: vp.left+vp.width*relPosn + labelFontSize/2, y: vp.top, relPosn: relPosn, rect });
+		    }
+		});
+	    }
+	    doc.setFontSize (origFontSize);
 	}
 	
 	/**********************************************************************************
