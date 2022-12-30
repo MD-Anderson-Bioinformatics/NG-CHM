@@ -1225,7 +1225,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 									datalayers,
 									lowerLevelId ? datalevels[lowerLevelId] : null,
 									getTileCacheData,
-									getTile, waitForTileCacheReady);
+									getTile);
 				} else if (altLevelId) {
 					datalevels[levelId] = datalevels[altLevelId];
 					// Record all levels for which altLevelId is serving as an immediate alternate.
@@ -1521,39 +1521,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 	}
 
-	/*
-		Calls getTile, and returns a promise that resolves when the tile is ready in cache
-	*/
-	function waitForTileCacheReady(layer, level, tileRow, tileColumn) {
-		getTile(layer, level, tileRow, tileColumn)
-		let maxWaitsForTile = 30;
-		let tileCacheName=layer + "." +level + "." + tileRow + "." + tileColumn;
-		function isTileReadyInCache() {
-			if (tileCache.hasOwnProperty(tileCacheName) && tileCache[tileCacheName].state == 'ready') {
-				return true;
-			} else { 
-				throw 'Tile not ready in cache';
-			}
-		}
-		function waitToCheckAgain(reason) {
-			return new Promise((resolve, reject) => {
-				setTimeout(reject.bind(null,reason), 200)
-			})
-		}
-		let haveTile = Promise.reject();
-		return new Promise((resolve, reject) => {
-			for (let i=0; i<maxWaitsForTile; i++) {
-				haveTile = haveTile.catch(isTileReadyInCache).catch(waitToCheckAgain);
-			}
-			haveTile.then((result) => {
-				resolve('Tile '+tileCacheName+' ready in cache')
-			}).catch((err) => {
-				reject('Exceeded max waiting time for tile '+tileCacheName+' to be in cache.')
-			})
-		})
-	}
-
-
 	//Fetch a JSON file from server.
 	//Specify which file to get and what function to call when it arrives.
 	//Request is passed to the web loader so that it
@@ -1598,7 +1565,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 
 //Internal object for traversing the data at a given zoom level.
-MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile, waitForTileCacheReady) {
+MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile) {
 	this.level = level;
 	this.totalRows = jsonData.total_rows;
 	this.totalColumns = jsonData.total_cols;
