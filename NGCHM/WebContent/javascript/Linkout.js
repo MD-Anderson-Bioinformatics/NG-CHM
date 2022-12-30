@@ -352,7 +352,7 @@ var linkoutsVersion = 'undefined';
 		const heatMap = MMGR.getHeatMap();
 		const win = heatMap.getNewAccessWindow({
 		    layer: heatMap.getCurrentDL(),
-		    level: DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),
+		    level: MAPREP.DETAIL_LEVEL,
 		    firstRow: 1,
 		    firstCol: 1,
 		    numRows: heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
