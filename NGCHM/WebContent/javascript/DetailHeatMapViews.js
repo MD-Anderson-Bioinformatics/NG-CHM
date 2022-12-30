@@ -146,7 +146,7 @@ DVW.getLevelFromMode = function(mapItem, lvl) {
 }
 
 /**********************************************************************************
- * FUNCTION - getLevelFromMode: This function sets the mode for the mapItem passed
+ * FUNCTION - setMode: This function sets the mode for the mapItem passed
  * in.
  **********************************************************************************/
 DVW.setMode = function(mapItem, newMode) {
