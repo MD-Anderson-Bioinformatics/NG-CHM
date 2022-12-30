@@ -1502,7 +1502,9 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			if (typeof entry === 'undefined') {
 				entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.bin'];
 			}
-			if (typeof entry !== "undefined") {
+			if (typeof entry === "undefined") {
+				console.error ('Request for unknown tile');
+			} else {
 				entry.getData(new zip.BlobWriter(), function(blob) {
 					var fr = new FileReader();
 					
