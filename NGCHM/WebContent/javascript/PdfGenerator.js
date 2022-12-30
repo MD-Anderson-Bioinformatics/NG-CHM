@@ -186,13 +186,14 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 PDF.callViewerHeatmapPDF = function() {
     document.body.style.cursor = 'wait';
     const heatMap = MMGR.getHeatMap();
+    const level = DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL);
     const win = heatMap.getNewAccessWindow({
 	layer: heatMap.getCurrentDL(),
-	level: DVW.getLevelFromMode(DVW.primaryMap, MAPREP.DETAIL_LEVEL),
+	level: level,
 	firstRow: 1,
 	firstCol: 1,
-	numRows: heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
-	numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
+	numRows: heatMap.getNumRows(level),
+	numCols: heatMap.getNumColumns(level),
     });
     win.onready().then(PDF.getViewerHeatmapPDF);
 };
