@@ -882,12 +882,12 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 
 
 		if (rowDendroConfig.show !== 'NONE') {
-		    SUM.rowDendro.drawPDF (doc, { left: paddingLeft, top: imgTop, width: rowDendroWidth, height: sumMapH });
+		    SUM.rowDendro.drawPDF (doc, { left: paddingLeft, top: imgTop, width: rowDendroWidth-1, height: sumMapH });
 		}
 		doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
 
 		if (colDendroConfig.show !== 'NONE') {
-		    SUM.colDendro.drawPDF (doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight });
+		    SUM.colDendro.drawPDF (doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight-1 });
 		}
 		doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
 
