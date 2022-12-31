@@ -1595,7 +1595,7 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 			//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
 	    	return arrayData[(row-1)%rowsPerTile * thisTileColsPerRow + (column-1)%colsPerTile];
 	    } else if (lowerLevel != null) {
-		return lowerLevel.getLayerValue(layer, Math.floor(row/rowToLower) + 1, Math.floor(column/colToLower) + 1);
+		return lowerLevel.getLayerValue(layer, Math.floor((row-1)/rowToLower) + 1, Math.floor((column-1)/colToLower) + 1);
 	    } else {
 	    	return 0;
 	    }	
