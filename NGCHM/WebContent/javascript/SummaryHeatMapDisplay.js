@@ -405,6 +405,7 @@ SUM.setSelectionDivSize = function(width, height){ // input params used for PDF 
     };
 
     // Create a GL manager that uses the summary map vertex and fragment shaders.
+    SUM.createSummaryGlManager = createSummaryGlManager;
     function createSummaryGlManager (canvas, onRestore) {
 	    return DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader, onRestore, SUM.widthScale, SUM.heightScale);
     }
@@ -443,8 +444,9 @@ SUM.setSelectionDivSize = function(width, height){ // input params used for PDF 
     }
 
     // (Re-)initialize a summary GL context.
+    SUM.initSummaryGlContext = initSummaryGlContext;
     function initSummaryGlContext (manager, ctx, program) {
-	ctx.viewport(0, 0, ctx.drawingBufferWidth*SUM.widthScale, ctx.drawingBufferHeight*SUM.heightScale);
+	ctx.viewport(0, 0, ctx.drawingBufferWidth*manager._widthScale, ctx.drawingBufferHeight*manager._heightScale);
 	ctx.clear(ctx.COLOR_BUFFER_BIT);
 
 	manager.setClipRegion (DRAW.GL.fullClipSpace);
@@ -506,7 +508,7 @@ SUM.buildSummaryTexture = function() {
 
 	// Render
 	if (validator !== SUM.summaryHeatMapValidator[currentDl]) {
-		SUM.renderSummaryHeatmap(renderBuffer);
+		renderSummaryHeatMap(renderBuffer, SUM.widthScale, SUM.heightScale);
 		if (debug) console.log('Rendering summary heatmap finished at ' + performance.now());
 		SUM.summaryHeatMapValidator[currentDl] = validator;
 	}
@@ -524,27 +526,37 @@ SUM.drawHeatMap = function() {
 	}
 };
 
-// Renders the Summary Heat Map for the current data layer into the specified renderBuffer.
-SUM.renderSummaryHeatmap = function (renderBuffer) {
+    SUM.renderHeatMapToPDF = renderHeatMapToPDF;
+    function renderHeatMapToPDF (glMan) {
+	const widthScale = 2;
+	const heightScale = 2;
+	const renderBuffer = DRAW.createRenderBuffer (SUM.totalWidth*widthScale, SUM.totalHeight*heightScale, 1.0);
+	renderSummaryHeatMap (renderBuffer, widthScale, heightScale);
+	glMan.setTextureFromRenderBuffer (renderBuffer);
+	glMan.drawTexture ();
+    }
+
+    // Renders the Summary Heat Map for the current data layer into the specified renderBuffer.
+    function renderSummaryHeatMap (renderBuffer, widthScale, heightScale) {
 	const heatMap = MMGR.getHeatMap();
 	const currentDl = heatMap.getCurrentDL();
-	var colorMap = heatMap.getColorMapManager().getColorMap("data",currentDl);
-	var colors = colorMap.getColors();
-	var missing = colorMap.getMissingColor();
-	var pos = 0;
+	const colorMap = heatMap.getColorMapManager().getColorMap("data",currentDl);
 	//Setup texture to draw on canvas.
 	//Needs to go backward because WebGL draws bottom up.
+	const numRows = heatMap.getNumRows (MAPREP.SUMMARY_LEVEL);
+	const numColumns = heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL);
+	const line = new Array(numColumns*widthScale*DRAW.BYTE_PER_RGBA);
+	let pos = 0;
 	SUM.avgValue[currentDl] = 0;
-	for (var i = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL); i > 0; i--) {
-		var line = new Array(heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL)*SUM.widthScale*DRAW.BYTE_PER_RGBA);
-		var linepos = 0;
-		for (var j = 1; j <= heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL); j++) { // draw the heatmap
-			var val = heatMap.getValue(MAPREP.SUMMARY_LEVEL, i, j);
+	for (let i = numRows; i > 0; i--) {
+		let linepos = 0;
+		for (let j = 1; j <= numColumns; j++) { // draw the heatmap
+			const val = heatMap.getValue(MAPREP.SUMMARY_LEVEL, i, j);
 			if ((val < MAPREP.maxValues) && (val > MAPREP.minValues)) {
 				SUM.avgValue[currentDl] += val;
 			}
-			var color = colorMap.getColor(val);
-			for (var k = 0; k < SUM.widthScale; k++){
+			const color = colorMap.getColor(val);
+			for (let k = 0; k < widthScale; k++){
 				line[linepos] = color['r'];
 				line[linepos + 1] = color['g'];
 				line[linepos + 2] = color['b'];
@@ -552,15 +564,15 @@ SUM.renderSummaryHeatmap = function (renderBuffer) {
 				linepos+= DRAW.BYTE_PER_RGBA;
 			}
 		}
-		for (var j = 0; j < SUM.heightScale*SUM.widthScale; j++) { // why is this heightScale * widthScale? why can't it just be heightScale??
-			for (var k = 0; k < line.length; k++){
+		for (let j = 0; j < heightScale; j++) {
+			for (let k = 0; k < line.length; k++){
 				renderBuffer.pixels[pos] = line[k];
 				pos++;
 			}
 		}
 	}
-	SUM.avgValue[currentDl] = (SUM.avgValue[currentDl] / (heatMap.getNumRows(MAPREP.SUMMARY_LEVEL) * heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL)));
-};
+	SUM.avgValue[currentDl] = SUM.avgValue[currentDl] / (numRows * numColumns);
+    }
 
 //WebGL code to draw the Summary Heat Map.
 SUM.drawHeatMapRenderBuffer = function(renderBuffer) {
@@ -620,9 +632,24 @@ SUM.drawRowClassBars = function() {
 
 //Draws Column Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
 SUM.buildColClassTexture = function() {
+    const heatMap = MMGR.getHeatMap();
+    SUM.texCc = SUM.buildColCovariateRenderBuffer (SUM.widthScale, SUM.heightScale);
+    DVW.removeLabels("missingSumColClassBars");
+    if (heatMap.hasHiddenCovariates("column")) {
+	if (!document.getElementById("missingSumColClassBars")){
+	    const x = SUM.canvas.offsetLeft + SUM.canvas.offsetWidth + 2;
+	    const y = SUM.canvas.offsetTop + SUM.canvas.clientHeight/SUM.totalHeight - 10;
+	    DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
+	}
+    }
+
+    SUM.drawColClassBars();
+};
+
+SUM.buildColCovariateRenderBuffer = function (widthScale, heightScale) {
 	const heatMap = MMGR.getHeatMap();
-	SUM.texCc = DRAW.createRenderBuffer (SUM.totalWidth*SUM.widthScale, SUM.colClassBarHeight*SUM.heightScale, 1.0);
-	var dataBuffer = SUM.texCc.pixels;
+	const renderBuffer = DRAW.createRenderBuffer (SUM.totalWidth*widthScale, SUM.colClassBarHeight*heightScale, 1.0);
+	var dataBuffer = renderBuffer.pixels;
 	var classBarsData = heatMap.getColClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
 	const bars = heatMap.getScaledVisibleCovariates("column", 1.0);
@@ -639,24 +666,16 @@ SUM.buildColClassTexture = function() {
 		    classBarValues = classBarsData[currentClassBar.label].svalues;
 		    classBarLength = classBarValues.length;
 		}
-		pos += SUM.totalWidth*SUM.colClassPadding*DRAW.BYTE_PER_RGBA*SUM.widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
+		const end = pos + SUM.totalWidth*SUM.colClassPadding*DRAW.BYTE_PER_RGBA*widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
+		while (pos !== end) { dataBuffer[pos++] = 0; }
 		if (currentClassBar.bar_type === 'color_plot') {
-			pos = SUM.drawColorPlotColClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap);
+			pos = SUM.drawColorPlotColClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, widthScale);
 		} else {
 			pos = SUM.drawScatterBarPlotColClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar);
 		}
 	}
 
-	DVW.removeLabels("missingSumColClassBars");
-	if (heatMap.hasHiddenCovariates("column")) {
-	    if (!document.getElementById("missingSumColClassBars")){
-		const x = SUM.canvas.offsetLeft + SUM.canvas.offsetWidth + 2;
-		const y = SUM.canvas.offsetTop + SUM.canvas.clientHeight/SUM.totalHeight - 10;
-		DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumColClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "F", null,"Column");
-	    }
-	}
-
-	SUM.drawColClassBars();
+	return renderBuffer;
 };
 
 //WebGL code to draw the Column Class Bars.
@@ -806,8 +825,8 @@ SUM.getScaledHeight = function(height, axis) {
 	return scaledHeight;
 }
 
-SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap) {
-	var line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA * SUM.widthScale)); // save a copy of the class bar
+SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, widthScale) {
+	const line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA * widthScale)); // save one row of the covariate bar
 	var loc = 0;
 	for (var k = 0; k < classBarLength; k++) { 
 		var val = classBarValues[k];
@@ -815,7 +834,7 @@ SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues,
 		if (val == "null") {
 			color = colorMap.getHexToRgba(colorMap.getMissingColor());
 		}
-		for (var i = 0; i < SUM.widthScale; i++){
+		for (let i = 0; i < widthScale; i++){
 			line[loc] = color['r'];
 			line[loc + 1] = color['g'];
 			line[loc + 2] = color['b'];
@@ -823,7 +842,8 @@ SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues,
 			loc += DRAW.BYTE_PER_RGBA;
 		}
 	}
-	for (var j = 0; j < (height-SUM.colClassPadding)*SUM.widthScale; j++){ // draw the class bar into the dataBuffer  ***not 100% sure why the widthscale is used as a factor here, but it works...
+	// Copy the covariate bar line the required number of times into the dataBuffer.
+	for (let j = 0; j < (height-SUM.colClassPadding); j++) {
 		for (var k = 0; k < line.length; k++) { 
 			dataBuffer[pos] = line[k];
 			pos++;

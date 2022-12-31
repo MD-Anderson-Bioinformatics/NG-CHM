@@ -265,8 +265,10 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 	// Set up PDF Page Dimension variables (These are the variables that we will be using repeatedly to place items)
 	var paddingLeft = 10;
 	var paddingTop = headerHeight+15; 
+
 	var sumImgW = pageWidth - 2*paddingLeft  //width of available space for heatmap, class bars, and dendro
 	var sumImgH = pageHeight - paddingTop - paddingLeft; //height of available space for heatmap, class bars, and dendro
+
 	var detImgH = pageHeight - paddingTop - longestColLabelUnits - 2*paddingLeft;
 	var detImgW = pageWidth - longestRowLabelUnits - 2*paddingLeft;
 	var detImgL = paddingLeft;
@@ -310,7 +312,11 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		resizeSummaryDendroCanvases(sumMapW, sumMapH, rowDendroWidth, colDendroHeight);
 
 		sumMapCanvas = document.createElement('canvas');
-		configureCanvas(sumMapCanvas, SUM.canvas, sumMapW*2, sumMapH*2);
+		sumMapCanvas.width = sumMapW * 4;
+		sumMapCanvas.height = sumMapH * 4;
+		const glMan = SUM.createSummaryGlManager ( sumMapCanvas, () => {} );
+		glMan.check(SUM.initSummaryGlContext);
+		SUM.renderHeatMapToPDF (glMan);
 
 		rowClassCanvas = document.createElement('canvas');
 		if (SUM.rCCanvas.width > 0) {
@@ -319,7 +325,13 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 
 		colClassCanvas = document.createElement('canvas');
 		if (SUM.cCCanvas.height > 0) {
-			configureCanvas(colClassCanvas, SUM.cCCanvas, sumMapW*2, colClassHeight*2);
+			colClassCanvas.width = sumMapW*2;
+			colClassCanvas.height = colClassHeight*10;
+			const renderBuffer = SUM.buildColCovariateRenderBuffer (10, 1);
+			const glMan = SUM.createSummaryGlManager ( colClassCanvas, () => {} );
+			glMan.check(SUM.initSummaryGlContext);
+			glMan.setTextureFromRenderBuffer (renderBuffer);
+			glMan.drawTexture ();
 		}
 
 		rowTICanvas = document.createElement('canvas');
