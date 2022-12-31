@@ -105,12 +105,28 @@ DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
 	if (!noResize) mapItem.resizeOnNextDraw = true;
 	if (!mapItem.isVisible()) { return false }
 
-	const drawWin = DVW.getDetailWindow(mapItem);
+	const drawWin = getDetailWindow(mapItem);
 	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
 		if (mapItem.chm) {
-			DET.drawDetailHeatMap(mapItem, drawWin);
+			DET.drawDetailHeatMap(mapItem, drawWin.win);
 		}
 	}, ms);
+
+	/*********************************************************************************************
+	 * FUNCTION:  getDetailWindow - The purpose of this function is to return an object containing
+	 * selection information for a given detail heat map window.
+	 *********************************************************************************************/
+	function getDetailWindow (mapItem) {
+		return mapItem.heatMap.getNewAccessWindow ({
+			layer: mapItem.currentDl,
+			level: DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),
+			firstRow: DVW.getCurrentDetRow(mapItem),
+			firstCol: DVW.getCurrentDetCol(mapItem),
+			numRows: DVW.getCurrentDetDataPerCol(mapItem),
+			numCols: DVW.getCurrentDetDataPerRow(mapItem)
+		});
+	};
+
 };
 
 /*********************************************************************************************
