@@ -299,10 +299,10 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 	var theFont = maxFontSize;
 	doc.setFontSize(maxFontSize);
 
-	var sumMapCanvas; var sumBoxCanvas;
+	var sumMapCanvas;
 	var rowClassCanvas; var colClassCanvas;
 	var rowTICanvas; var colTICanvas;
-	var sumImgData; var sumBoxImgData;
+	var sumImgData;
 	var sumRowClassData; var sumColClassData;
 	var sumRowTopItemsData; var sumColTopItemsData;
 	if (includeSummaryMap) {
@@ -311,9 +311,6 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 
 		sumMapCanvas = document.createElement('canvas');
 		configureCanvas(sumMapCanvas, SUM.canvas, sumMapW*2, sumMapH*2);
-
-		sumBoxCanvas = document.createElement('canvas');
-		configureCanvas(sumBoxCanvas, SUM.boxCanvas, sumMapW*2, sumMapH*2);
 
 		rowClassCanvas = document.createElement('canvas');
 		if (SUM.rCCanvas.width > 0) {
@@ -338,29 +335,24 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		sumColClassData = colClassCanvas.toDataURL('image/png');
 		sumRowTopItemsData = rowTICanvas.toDataURL('image/png');
 		sumColTopItemsData = colTICanvas.toDataURL('image/png');
-		sumBoxImgData = sumBoxCanvas.toDataURL('image/png');
 		//Put the dendro canvases back the way we found them.
 		restoreSummaryDendroCanvases();
 	}
 
-	if (mapsToShow == "D") {
-		drawDetailHeatMapPages(theFont)
+	if (mapsToShow == "B") {
+	    // Showing both sum and det:
+	    // - add the summary image with detail view boundaries,
+	    // - start a new page, and
+	    // - output the detail map images.
+	    drawSummaryHeatMapPage(theFont, true);
+	    doc.addPage();
+	    drawDetailHeatMapPages(theFont);
+	} else if (mapsToShow == "D") {
+	    // Draw the detail map images only.
+	    drawDetailHeatMapPages(theFont);
 	} else {
-		var imgLeft, imgTop;
-		drawSummaryHeatMapPage(theFont);
-		if (mapsToShow === 'B') {
-			// If showing both sum and det, add the box to the summary image, add a page, print the header, and add the detail image to the PDF
-			doc.addImage(sumBoxImgData, 'PNG', imgLeft, imgTop, sumMapW,sumMapH);
-			doc.addPage();
-			drawDetailHeatMapPages(theFont)
-		} else {
-			// If showing ONLY summary, Clear the box canvas and draw it 'empty' on the summary page (we do this just for the border w/o selection box)
-			SUM.resetBoxCanvas();
-			sumBoxImgData = SUM.boxCanvas.toDataURL('image/png');
-			doc.addImage(sumBoxImgData, 'PNG', imgLeft, imgTop, sumMapW,sumMapH);
-			SUM.drawLeftCanvasBox();
-		}
-
+	    // Draw the summary map only (without detail view boundaries).
+	    drawSummaryHeatMapPage(theFont, false);
 	}
 	var colorMap = heatMap.getCurrentColorMap();
 
@@ -862,7 +854,7 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 	 * FUNCTION:  drawSummaryHeatMapPage - This function draws the various summary canvases
 	 * onto the summary heat map PDF page.
 	 **********************************************************************************/
-	function drawSummaryHeatMapPage(theFont) {
+	function drawSummaryHeatMapPage(theFont, showDetailViewBounds) {
 		const mapInfo = heatMap.getMapInformation();
 		const headerOptions = {};
 		if (mapInfo.attributes.hasOwnProperty('chm.info.caption')) {
@@ -871,18 +863,18 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		createHeader("Summary", headerOptions);
 
 		// Determine left edge of row dendrogram, row class bars, and heat map.
-		var rowDendroLeft = paddingLeft;
-		var rowClassLeft = paddingLeft;
-		imgLeft = paddingLeft + rowClassWidth;
+		const rowDendroLeft = paddingLeft;
+		let rowClassLeft = paddingLeft;
+		let imgLeft = paddingLeft + rowClassWidth;
 		if (rowDendroConfig.show !== 'NONE') {
 		    rowClassLeft += rowDendroWidth;
 		    imgLeft += rowDendroWidth;
 		}
 
 		// Determine top edge of column dendrogram, column class bars, and heat map.
-		var colDendroTop = paddingTop;
-		var colClassTop = paddingTop;
-		imgTop = paddingTop+colClassHeight;
+		const colDendroTop = paddingTop;
+		let colClassTop = paddingTop;
+		let imgTop = paddingTop+colClassHeight;
 		if (colDendroConfig.show !== 'NONE') {
 		    colClassTop += colDendroHeight;
 		    imgTop += colDendroHeight;
@@ -895,11 +887,11 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
 
 		if (colDendroConfig.show !== 'NONE') {
-			SUM.colDendro.drawPDF (doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight });
+		    SUM.colDendro.drawPDF (doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight });
 		}
 		doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
 
-		doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW,sumMapH);
+		doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW, sumMapH);
 		
 		// Add top item marks
 		doc.addImage(sumRowTopItemsData, 'PNG', imgLeft + sumMapW, imgTop, topItemsWidth, sumMapH);
@@ -908,6 +900,26 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		// Draw the Summary Top Items on the Summary Page
 		drawSummaryTopItems("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
 		drawSummaryTopItems("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
+
+		// Draw black border around summary view.
+		const ctx = doc.context2d;
+		ctx.lineWidth = 1;
+		ctx.strokeRect(imgLeft,imgTop,sumMapW,sumMapH);
+
+		if (showDetailViewBounds) {
+		    const color = heatMap.getCurrentDataLayer().selection_color;
+		    doc.setDrawColor (color);
+		    const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
+		    const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
+		    DVW.detailMaps.forEach (mapItem => {
+			const left = (mapItem.currentCol-1) * xScale;
+			const top = (mapItem.currentRow-1) * yScale;
+			const width = mapItem.dataPerRow * xScale;
+			const height = mapItem.dataPerCol * yScale;
+			ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
+			ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
+		    });
+		}
 	}
 	
 	/**********************************************************************************
