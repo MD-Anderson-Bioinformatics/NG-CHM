@@ -658,16 +658,18 @@ SUM.buildColClassTexture = function() {
 SUM.buildColCovariateRenderBuffer = function (widthScale, heightScale) {
 	const heatMap = MMGR.getHeatMap();
 	const renderBuffer = DRAW.createRenderBuffer (SUM.totalWidth*widthScale, SUM.colClassBarHeight*heightScale, 1.0);
-	var dataBuffer = renderBuffer.pixels;
+	renderBuffer.pixels.fill(0);
 	var classBarsData = heatMap.getColClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
 	const bars = heatMap.getScaledVisibleCovariates("column", 1.0);
+	// Determine padding between class bars in bytes.
+	// Need to multiply totalWidth by widthScale and lines of padding by heightScale.
+	const paddingSkip = SUM.totalWidth * widthScale * SUM.colClassPadding * heightScale * DRAW.BYTE_PER_RGBA;
 	var pos = 0;
 
 	//We reverse the order of the classBars before drawing because we draw from bottom up
 	for (let i = bars.length -1; i >= 0; i--) {
 		const currentClassBar = bars[i];
-		const height = SUM.getScaledHeight(currentClassBar.height, "col");
 		const colorMap = colorMapMgr.getColorMap("col", currentClassBar.label); // assign the proper color scheme...
 		let classBarValues = classBarsData[currentClassBar.label].values;
 		let classBarLength = classBarValues.length;
@@ -675,12 +677,13 @@ SUM.buildColCovariateRenderBuffer = function (widthScale, heightScale) {
 		    classBarValues = classBarsData[currentClassBar.label].svalues;
 		    classBarLength = classBarValues.length;
 		}
-		const end = pos + SUM.totalWidth*SUM.colClassPadding*DRAW.BYTE_PER_RGBA*widthScale; // draw padding between class bars  ***not 100% sure why the widthscale is used as a factor here, but it works...
-		while (pos !== end) { dataBuffer[pos++] = 0; }
+		pos += paddingSkip; // advance over padding before each bar
+		const barHeight = SUM.getScaledHeight(currentClassBar.height, "col");
 		if (currentClassBar.bar_type === 'color_plot') {
-			pos = SUM.drawColorPlotColClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, widthScale);
+			pos = SUM.drawColorPlotColClassBar(renderBuffer, pos, barHeight-SUM.colClassPadding, classBarValues, classBarLength, colorMap, widthScale, heightScale);
 		} else {
-			pos = SUM.drawScatterBarPlotColClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar);
+			const dataBuffer = renderBuffer.pixels;
+			pos = SUM.drawScatterBarPlotColClassBar(dataBuffer, pos, barHeight-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar);
 		}
 	}
 
@@ -834,8 +837,10 @@ SUM.getScaledHeight = function(height, axis) {
 	return scaledHeight;
 }
 
-SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, widthScale) {
-	const line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA * widthScale)); // save one row of the covariate bar
+    SUM.drawColorPlotColClassBar = drawColorPlotColClassBar;
+    function drawColorPlotColClassBar (renderBuffer, pos, height, classBarValues, classBarLength, colorMap, widthScale, heightScale) {
+	// Create one row of the color values for the covariate bar.
+	const line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA * widthScale));
 	var loc = 0;
 	for (var k = 0; k < classBarLength; k++) { 
 		var val = classBarValues[k];
@@ -851,15 +856,17 @@ SUM.drawColorPlotColClassBar = function(dataBuffer, pos, height, classBarValues,
 			loc += DRAW.BYTE_PER_RGBA;
 		}
 	}
-	// Copy the covariate bar line the required number of times into the dataBuffer.
-	for (let j = 0; j < (height-SUM.colClassPadding); j++) {
-		for (var k = 0; k < line.length; k++) { 
+	// Copy the covariate bar color row the required number of times into the dataBuffer.
+	const dataBuffer = renderBuffer.pixels;
+	const numLines = height * heightScale;
+	for (let j = 0; j < numLines; j++) {
+		for (let k = 0; k < line.length; k++) {
 			dataBuffer[pos] = line[k];
 			pos++;
 		}
 	}
 	return pos;
-}
+    }
 
 SUM.drawScatterBarPlotColClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, currentClassBar) {
 	var barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
