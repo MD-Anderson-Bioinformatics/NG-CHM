@@ -583,20 +583,36 @@ SUM.drawHeatMapRenderBuffer = function(renderBuffer) {
 };
 
 //Draws Row Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
-SUM.buildRowClassTexture = function() {
+SUM.buildRowClassTexture = function buildRowClassTexture () {
+    const heatMap = MMGR.getHeatMap();
+    SUM.texRc = buildRowCovariateRenderBuffer (SUM.widthScale, SUM.heightScale);
+
+    DVW.removeLabels("missingSumRowClassBars");
+    if (heatMap.hasHiddenCovariates("row")) {
+	if (!document.getElementById("missingSumRowClassBars")){
+	    const x = SUM.canvas.offsetLeft;
+	    const y = SUM.canvas.offsetTop + SUM.canvas.clientHeight + 2;
+	    DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
+	}
+    }
+    SUM.drawRowClassBars();
+};
+
+    SUM.buildRowCovariateRenderBuffer = buildRowCovariateRenderBuffer;
+    function buildRowCovariateRenderBuffer (widthScale, heightScale) {
 	const heatMap = MMGR.getHeatMap();
 
-	SUM.texRc = DRAW.createRenderBuffer (SUM.rowClassBarWidth*SUM.widthScale, SUM.totalHeight, 1.0);
-	var dataBuffer = SUM.texRc.pixels;
+	const renderBuffer = DRAW.createRenderBuffer (SUM.rowClassBarWidth*widthScale, SUM.matrixHeight * heightScale, 1.0);
+	var dataBuffer = renderBuffer.pixels;
+	dataBuffer.fill(0);
 	var classBarsData = heatMap.getRowClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
 	var offset = 0;
 
 	const bars = heatMap.getScaledVisibleCovariates ("row", 1.0);
 	bars.forEach (currentClassBar => {
-	    var pos = 0 + offset;
-	    var height = SUM.getScaledHeight(currentClassBar.height, "row");
-	    const remainingWidth = SUM.rowClassBarWidth - height;
+	    let pos = 0 + offset;
+	    const barWidth = SUM.getScaledHeight(currentClassBar.height, "row");
 	    var colorMap = colorMapMgr.getColorMap("row",currentClassBar.label); // assign the proper color scheme...
 	    var classBarValues = classBarsData[currentClassBar.label].values;
 	    var classBarLength = classBarValues.length;
@@ -605,23 +621,16 @@ SUM.buildRowClassTexture = function() {
 		classBarLength = classBarValues.length;
 	    }
 	    if (currentClassBar.bar_type === 'color_plot') {
-		pos = SUM.drawColorPlotRowClassBar(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, remainingWidth);
+		pos = SUM.drawColorPlotRowClassBar(renderBuffer, pos, barWidth, classBarValues, classBarLength, colorMap, widthScale, heightScale);
 	    } else {
-		pos = SUM.drawScatterBarPlotRowClassBar(dataBuffer, pos, height-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth);
+		const remainingWidth = SUM.rowClassBarWidth * widthScale - barWidth;
+		pos = SUM.drawScatterBarPlotRowClassBar(dataBuffer, pos, barWidth-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth);
 	    }
-	    offset += height*DRAW.BYTE_PER_RGBA;
+	    offset += barWidth*DRAW.BYTE_PER_RGBA;
 	});
 
-	DVW.removeLabels("missingSumRowClassBars");
-	if (heatMap.hasHiddenCovariates("row")) {
-	    if (!document.getElementById("missingSumRowClassBars")){
-		const x = SUM.canvas.offsetLeft;
-		const y = SUM.canvas.offsetTop + SUM.canvas.clientHeight + 2;
-		DVW.addLabelDivs(document.getElementById('sumlabelDiv'), "missingSumRowClassBars", "ClassBar MarkLabel", "...", "...", x, y, 10, "T", null,"Row");
-	    }
-	}
-	SUM.drawRowClassBars();
-};
+	return renderBuffer;
+    }
 
 SUM.drawRowClassBars = function() {
 	if (SUM.texRc && SUM.initRowClassGl()) {
@@ -1085,26 +1094,33 @@ SUM.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalHeight,
 
 
 
-SUM.drawColorPlotRowClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, remainingWidth) {
-	for (var j = classBarLength; j > 0; j--){
-		var val = classBarValues[j-1];
-		var color = colorMap.getClassificationColor(val);
+    SUM.drawColorPlotRowClassBar = function drawColorPlotRowClassBar (renderBuffer, pos, barWidth, classBarValues, classBarLength, colorMap, widthScale, heightScale) {
+	const dataBuffer = renderBuffer.pixels;
+	const pixelsToDraw = (barWidth - SUM.rowClassPadding) * widthScale;
+	const rowSkip = (renderBuffer.width - pixelsToDraw) * DRAW.BYTE_PER_RGBA;
+	for (let j = classBarLength; j > 0; j--){
+		// Determine color of the current element.
+		let val = classBarValues[j-1];
+		let color = colorMap.getClassificationColor(val);
 		if (val == "null") {
 			color = colorMap.getHexToRgba(colorMap.getMissingColor());
 		}
-		for (var i = 0; i < SUM.widthScale; i++){
-			for (var k = 0; k < (height-SUM.rowClassPadding); k++){
+		// Output heightScale rows of the element's color.
+		for (let i = 0; i < heightScale; i++) {
+			// Output barWidth copies of color.
+			for (let k = 0; k < pixelsToDraw; k++){
 				dataBuffer[pos] = color['r'];
 				dataBuffer[pos + 1] = color['g'];  
 				dataBuffer[pos + 2] = color['b'];
 				dataBuffer[pos + 3] = color['a'];
 				pos+=DRAW.BYTE_PER_RGBA;	// 4 bytes per color
 			}
-			pos+=SUM.rowClassPadding*DRAW.BYTE_PER_RGBA+(remainingWidth*DRAW.BYTE_PER_RGBA);
+			// Skip to start of bar in next output row.
+			pos += rowSkip;
 		}
 	}
 	return pos;
-}
+    };
 
 SUM.drawScatterBarPlotRowClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth) {
 	const heatMap = MMGR.getHeatMap();

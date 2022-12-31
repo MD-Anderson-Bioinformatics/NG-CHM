@@ -320,7 +320,13 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 
 		rowClassCanvas = document.createElement('canvas');
 		if (SUM.rCCanvas.width > 0) {
-			configureCanvas(rowClassCanvas, SUM.rCCanvas, rowClassWidth*2, sumMapH*2)
+			rowClassCanvas.width = rowClassWidth * 2;
+			rowClassCanvas.height = sumMapH * 2;
+			const renderBuffer = SUM.buildRowCovariateRenderBuffer (4, 4);
+			const glMan = SUM.createSummaryGlManager ( rowClassCanvas, () => {} );
+			glMan.check(SUM.initSummaryGlContext);
+			glMan.setTextureFromRenderBuffer (renderBuffer);
+			glMan.drawTexture ();
 		}
 
 		colClassCanvas = document.createElement('canvas');
