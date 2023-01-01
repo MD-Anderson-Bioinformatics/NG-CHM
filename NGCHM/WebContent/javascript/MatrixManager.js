@@ -1498,11 +1498,13 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Fetch a data tile if needed.
 	function getTile(layer, level, tileRow, tileColumn) {
+		const debug = false;
 		var tileCacheName=layer + "." +level + "." + tileRow + "." + tileColumn;
 		if (tileCache.hasOwnProperty(tileCacheName)) {
 			//Already have tile in cache - do nothing.
 			return;
 		}
+		if (debug) console.log('Creating tileCacheEntry for ' + tileCacheName);
 		createTileCacheEntry(tileCacheName);
 		var tileName=level + "." + tileRow + "." + tileColumn;  
 
@@ -1513,19 +1515,23 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			MMGR.webLoader.postMessage({ op: 'loadTile', job: { tileCacheName, layer, level, tileName} });
 		} else {
 			//File fileSrc - get tile from zip
-			var entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.tile'];
+			const baseName = heatMapName + "/" + layer + "/"+ level + "/" + tileName;
+			var entry = zipFiles[baseName + '.tile'];
 			if (typeof entry === 'undefined') {
-				entry = zipFiles[heatMapName + "/" + layer + "/"+ level + "/" + tileName + '.bin'];
+				entry = zipFiles[baseName + '.bin'];
 			}
 			if (typeof entry === "undefined") {
 				console.error ('Request for unknown tile');
 			} else {
+				if (debug) console.log('Got zip entry for tile ' + baseName);
 				entry.getData(new zip.BlobWriter(), function(blob) {
+					if (debug) console.log('Got blob for tile ' + baseName);
 					var fr = new FileReader();
 					
 					fr.onload = function(e) {
 				        var arrayBuffer = fr.result;
 				        var far32 = new Float32Array(arrayBuffer);
+					if (debug) console.log('Got array buffer for tile ' + baseName);
 				    	  
 				        setTileCacheEntry(tileCacheName, far32);
 				     }
