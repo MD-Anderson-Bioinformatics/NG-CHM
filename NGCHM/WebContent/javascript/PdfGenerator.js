@@ -899,7 +899,7 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		}
 		createHeader("Summary", headerOptions);
 
-		// Determine left edge of row dendrogram, row class bars, and heat map.
+		// Determine the left edge of the row dendrogram, row class bars, and heat map.
 		const rowDendroLeft = paddingLeft;
 		let rowClassLeft = paddingLeft;
 		let imgLeft = paddingLeft + rowClassWidth;
@@ -908,7 +908,7 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		    imgLeft += rowDendroWidth;
 		}
 
-		// Determine top edge of column dendrogram, column class bars, and heat map.
+		// Determine the top edge of the column dendrogram, column class bars, and heat map.
 		const colDendroTop = paddingTop;
 		let colClassTop = paddingTop;
 		let imgTop = paddingTop+colClassHeight;
@@ -921,16 +921,19 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		}
 
 
+		// Add the row dendrogram and row covariate bars.
 		if (rowDendroConfig.show !== 'NONE') {
 		    SUM.rowDendro.drawPDF (doc, { left: paddingLeft, top: imgTop, width: rowDendroWidth-1, height: sumMapH });
 		}
 		doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
 
+		// Add the column dendrogram and column covariate bars.
 		if (colDendroConfig.show !== 'NONE') {
 		    SUM.colDendro.drawPDF (doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight-1 });
 		}
 		doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
 
+		// Add the heat map.
 		doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW, sumMapH);
 		
 		// Add top item marks
@@ -941,11 +944,13 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		drawSummaryTopItems("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
 		drawSummaryTopItems("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
 
-		// Draw black border around summary view.
+		// Draw the black border around the summary view.
 		const ctx = doc.context2d;
+		ctx.save();
 		ctx.lineWidth = 1;
 		ctx.strokeRect(imgLeft,imgTop,sumMapW,sumMapH);
 
+		// Draw the 'green' boundary rectangles that outline the detail map views.
 		if (showDetailViewBounds) {
 		    const color = heatMap.getCurrentDataLayer().selection_color;
 		    doc.setDrawColor (color);
@@ -960,6 +965,7 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 			ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
 		    });
 		}
+		ctx.restore();
 	}
 	
 	/**********************************************************************************
