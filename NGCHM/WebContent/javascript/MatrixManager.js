@@ -1671,7 +1671,7 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 	MMGR.initAxisLabels();
 
 	MMGR.getActualLabels = function (axis) {
-		axis = axis.toUpperCase();
+		axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
 		if (!actualAxisLabels.hasOwnProperty(axis)) {
 			const labels = MMGR.getHeatMap().getAxisLabels(axis)["labels"];
 			actualAxisLabels[axis] = labels.map(text => {
@@ -1681,7 +1681,7 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
 		return actualAxisLabels[axis];
 	};
 	MMGR.getShownLabels = function (axis) {
-		axis = axis.toUpperCase();
+		axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
 		const config = MMGR.getHeatMap().getAxisConfig(axis);
 		// Recalculate shown labels if parameters affecting them have changed.
 		if (shownAxisLabelParams[axis].label_display_length !== config.label_display_length ||
