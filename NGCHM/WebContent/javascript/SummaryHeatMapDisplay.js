@@ -407,7 +407,7 @@ SUM.setSelectionDivSize = function(width, height){ // input params used for PDF 
     // Create a GL manager that uses the summary map vertex and fragment shaders.
     SUM.createSummaryGlManager = createSummaryGlManager;
     function createSummaryGlManager (canvas, onRestore) {
-	    return DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader, onRestore, SUM.widthScale, SUM.heightScale);
+	    return DRAW.GL.createGlManager (canvas, getVertexShader, getFragmentShader, onRestore, 1, 1);
     }
 
     // Vertex shader for summary heat maps.
@@ -466,7 +466,7 @@ SUM.flushDrawingCache = function(tile) {
 
 //Create a summary heat map for the current data layer and display it.
 SUM.buildSummaryTexture = function() {
-	const debug = false;
+	const debug = true;
 
 	const heatMap = MMGR.getHeatMap();
 	const currentDl = heatMap.getCurrentDL();
@@ -474,7 +474,8 @@ SUM.buildSummaryTexture = function() {
 	if (SUM.summaryHeatMapCache.hasOwnProperty(currentDl)) {
 		renderBuffer = SUM.summaryHeatMapCache[currentDl];
 	} else {
-		renderBuffer = DRAW.createRenderBuffer (SUM.totalWidth*SUM.widthScale, SUM.totalHeight*SUM.heightScale, 1.0);
+		//renderBuffer = DRAW.createRenderBuffer (SUM.matrixWidth*SUM.widthScale, SUM.matrixHeight*SUM.heightScale, 1.0);
+		renderBuffer = DRAW.createRenderBuffer (SUM.matrixWidth, SUM.matrixHeight, 1.0);
 		SUM.summaryHeatMapCache[currentDl] = renderBuffer;
 		SUM.summaryHeatMapValidator[currentDl] = '';
 	}
@@ -493,8 +494,8 @@ SUM.buildSummaryTexture = function() {
 		dataLayer: currentDl,
 		width: renderBuffer.width,
 		height: renderBuffer.height,
-		widthScale: SUM.widthScale,
-		heightScale: SUM.heightScale,
+		//widthScale: SUM.widthScale,
+		//heightScale: SUM.heightScale,
 		colorScheme: pixelColorScheme
 	};
 	const validator = JSON.stringify(summaryProps);
@@ -508,12 +509,13 @@ SUM.buildSummaryTexture = function() {
 
 	// Render
 	if (validator !== SUM.summaryHeatMapValidator[currentDl]) {
-		renderSummaryHeatMap(renderBuffer, SUM.widthScale, SUM.heightScale);
+		//renderSummaryHeatMap(renderBuffer, SUM.widthScale, SUM.heightScale);
+		renderSummaryHeatMap(renderBuffer, 1, 1);
 		if (debug) console.log('Rendering summary heatmap finished at ' + performance.now());
 		SUM.summaryHeatMapValidator[currentDl] = validator;
 	}
 	if (renderBuffer !== undefined) {
-		SUM.drawHeatMapRenderBuffer(renderBuffer);
+		drawHeatMapRenderBuffer(renderBuffer);
 	}
 };
 
@@ -522,18 +524,15 @@ SUM.drawHeatMap = function() {
 	const heatMap = MMGR.getHeatMap();
 	const currentDl = heatMap.getCurrentDL();
 	if (SUM.summaryHeatMapCache[currentDl] !== undefined) {
-		SUM.drawHeatMapRenderBuffer (SUM.summaryHeatMapCache[currentDl]);
+		drawHeatMapRenderBuffer (SUM.summaryHeatMapCache[currentDl]);
 	}
 };
 
-    SUM.renderHeatMapToPDF = renderHeatMapToPDF;
-    function renderHeatMapToPDF (glMan) {
-	const widthScale = 2;
-	const heightScale = 2;
-	const renderBuffer = DRAW.createRenderBuffer (SUM.totalWidth*widthScale, SUM.totalHeight*heightScale, 1.0);
+    SUM.renderHeatMapToRenderBuffer = renderHeatMapToRenderBuffer;
+    function renderHeatMapToRenderBuffer (widthScale, heightScale) {
+	const renderBuffer = DRAW.createRenderBuffer (SUM.matrixWidth*widthScale, SUM.matrixHeight*heightScale, 1.0);
 	renderSummaryHeatMap (renderBuffer, widthScale, heightScale);
-	glMan.setTextureFromRenderBuffer (renderBuffer);
-	glMan.drawTexture ();
+	return renderBuffer;
     }
 
     // Renders the Summary Heat Map for the current data layer into the specified renderBuffer.
@@ -572,15 +571,19 @@ SUM.drawHeatMap = function() {
 		}
 	}
 	SUM.avgValue[currentDl] = SUM.avgValue[currentDl] / (numRows * numColumns);
+	if (pos !== renderBuffer.pixels.length) {
+	    console.error ('renderSummaryHeatMap did not end properly', { pos, renderBuffer });
+	}
     }
 
-//WebGL code to draw the Summary Heat Map.
-SUM.drawHeatMapRenderBuffer = function(renderBuffer) {
+    // Draw the summary map render in renderBuffer to the summary map canvas
+    // using WebGL.
+    function drawHeatMapRenderBuffer (renderBuffer) {
 	if (SUM.chmElement && SUM.initHeatMapGl ()) {
 	    SUM.mapGlManager.setTextureFromRenderBuffer (renderBuffer);
 	    SUM.mapGlManager.drawTexture ();
 	}
-};
+    }
 
 //Draws Row Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
 SUM.buildRowClassTexture = function buildRowClassTexture () {
@@ -1348,7 +1351,7 @@ SUM.isVisible = function isVisible () {
 								height: SUM.canvas.style.height,
 								width: SUM.canvas.style.width });
 					}
-					SUM.buildSummaryTexture(SUM.canvas)
+					SUM.buildSummaryTexture()
 					SUM.drawLeftCanvasBox();
 					SUM.setSelectionDivSize();
 					SUM.drawSelectionMarks();

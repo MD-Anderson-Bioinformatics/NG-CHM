@@ -317,18 +317,28 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		// Scale summary dendro canvases for PDF page size and Redraw because otherwise they can show up blank
 		resizeSummaryDendroCanvases(sumMapW, sumMapH, rowDendroWidth, colDendroHeight);
 
+		const minDPI = 600;
+		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
+		const mapHeightScale = Math.max (2, Math.ceil (minDPI/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
+		console.log ('Generating summary map', { mapWidthScale, mapHeightScale });
+		const renderBuffer = SUM.renderHeatMapToRenderBuffer (mapWidthScale, mapHeightScale);
 		sumMapCanvas = document.createElement('canvas');
-		sumMapCanvas.width = sumMapW * 4;
-		sumMapCanvas.height = sumMapH * 4;
+		sumMapCanvas.width = renderBuffer.width;
+		sumMapCanvas.height = renderBuffer.height;
+		console.log ('Render heat map', { oW: sumMapW*4, oH: sumMapH*4, nW: renderBuffer.width, nh: renderBuffer.height });
 		const glMan = SUM.createSummaryGlManager ( sumMapCanvas, () => {} );
 		glMan.check(SUM.initSummaryGlContext);
-		SUM.renderHeatMapToPDF (glMan);
+		glMan.setTextureFromRenderBuffer (renderBuffer);
+		glMan.drawTexture ();
 
 		rowClassCanvas = document.createElement('canvas');
 		if (SUM.rCCanvas.width > 0) {
-			rowClassCanvas.width = rowClassWidth * 2;
-			rowClassCanvas.height = sumMapH * 2;
-			const renderBuffer = SUM.buildRowCovariateRenderBuffer (4, 4);
+			const rowCovBarSize = heatMap.getScaledVisibleCovariates('row', 1.0).totalHeight();
+			const rowCovWidthScale = Math.max (2, Math.ceil (minDPI/72 * rowClassWidth / rowCovBarSize));
+			const renderBuffer = SUM.buildRowCovariateRenderBuffer (rowCovWidthScale, mapHeightScale);
+			rowClassCanvas.width = renderBuffer.width;
+			rowClassCanvas.height = renderBuffer.height;
+			console.log ('Render row covs', { oW: rowClassWidth*2, oH: sumMapH*2, nW: renderBuffer.width, nh: renderBuffer.height, rowCovWidthScale });
 			const glMan = SUM.createSummaryGlManager ( rowClassCanvas, () => {} );
 			glMan.check(SUM.initSummaryGlContext);
 			glMan.setTextureFromRenderBuffer (renderBuffer);
@@ -337,9 +347,12 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 
 		colClassCanvas = document.createElement('canvas');
 		if (SUM.cCCanvas.height > 0) {
-			colClassCanvas.width = sumMapW*2;
-			colClassCanvas.height = colClassHeight*10;
-			const renderBuffer = SUM.buildColCovariateRenderBuffer (10, 1);
+			const colCovBarSize = heatMap.getScaledVisibleCovariates('column', 1.0).totalHeight();
+			const colCovWidthScale = Math.max (2, Math.ceil (minDPI/72 * colClassHeight / colCovBarSize));
+			const renderBuffer = SUM.buildColCovariateRenderBuffer (mapWidthScale, colCovWidthScale);
+			colClassCanvas.width = renderBuffer.width;
+			colClassCanvas.height = renderBuffer.height;
+			console.log ('Render col covs', { oW: sumMapW*2, oH: colClassHeight*2, nW: renderBuffer.width, nh: renderBuffer.height, colCovWidthScale });
 			const glMan = SUM.createSummaryGlManager ( colClassCanvas, () => {} );
 			glMan.check(SUM.initSummaryGlContext);
 			glMan.setTextureFromRenderBuffer (renderBuffer);
