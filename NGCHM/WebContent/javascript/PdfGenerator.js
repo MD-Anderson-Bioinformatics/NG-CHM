@@ -893,6 +893,9 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		const colDendroTop = paddingTop;
 		let colClassTop = paddingTop;
 		let imgTop = paddingTop+colClassHeight;
+		if (SUM.cCCanvas.height > 0) {
+		    imgTop++;
+		}
 		if (colDendroConfig.show !== 'NONE') {
 		    colClassTop += colDendroHeight;
 		    imgTop += colDendroHeight;
