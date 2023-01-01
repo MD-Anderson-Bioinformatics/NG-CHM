@@ -1059,8 +1059,6 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 			}
 			resizeDetailDendroCanvases(mapItem,detMapW,detMapH,detRowDendroWidth,detColDendroHeight);
 			
-			var detRowDendroData = mapItem.rowDendroCanvas.toDataURL('image/png');
-			var detColDendroData = mapItem.colDendroCanvas.toDataURL('image/png');
 			var detImgData = mapItem.canvas.toDataURL('image/png'); 
 			const blankCanvas = getBlankCanvas(mapItem.canvas);
 			const blankImgData = blankCanvas.toDataURL('image/png');
@@ -1072,10 +1070,10 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 				doc.setFontSize (0.95 * Math.min (mapItem.rowLabelFont, mapItem.colLabelFont));
 				var detBoxImgData = mapItem.boxCanvas.toDataURL('image/png');  
 				if (rowDendroConfig.show === 'ALL') {
-					doc.addImage(detRowDendroData, 'PNG', rowDendroLeft, imgTop+detColClassHeight, detRowDendroWidth, detMapH-detColClassHeight);
+					mapItem.rowDendro.drawPDF (doc, { left: rowDendroLeft, top: imgTop + detColClassHeight, width: detRowDendroWidth-1, height: detMapH - detColClassHeight });
 				}
 				if (colDendroConfig.show === 'ALL') {
-					doc.addImage(detColDendroData, 'PNG',imgLeft+detRowClassWidth, colDendroTop, detMapW-detRowClassWidth,detColDendroHeight);
+					mapItem.colDendro.drawPDF(doc, { left: imgLeft+detRowClassWidth, top: colDendroTop, width: detMapW-detRowClassWidth, height: detColDendroHeight });
 				}
 				doc.addImage(detImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
 				doc.addImage(detBoxImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
