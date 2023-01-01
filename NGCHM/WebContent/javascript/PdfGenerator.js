@@ -207,6 +207,7 @@ PDF.callViewerHeatmapPDF = function() {
  * https://mrrio.github.io/jsPDF/doc/symbols/jsPDF.html#setLineCap
  **********************************************************************************/
 PDF.getViewerHeatmapPDF = function() {
+    console.log ('Called getViewerHeatmapPDF');
 	DET.updateSelections(true);
 	setTimeout(function(){
 	    try {
@@ -223,6 +224,11 @@ PDF.getViewerHeatmapPDF = function() {
 }
 
 PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
+
+    if (PDF.generateFakeError) {
+	console.log (foobat);
+    }
+
 	//Validate User-entered font size
 	if (validateInputFont() === false) {
 		document.body.style.cursor = 'default';
