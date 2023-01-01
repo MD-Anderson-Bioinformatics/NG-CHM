@@ -37,12 +37,13 @@ SUM.paddingHeight = 2;
 
 SUM.colDendro = null;
 SUM.rowDendro = null;
+
 SUM.colTopItems = null;
 SUM.rowTopItems = null;
-SUM.colTopItemsIndex = null;
-SUM.rowTopItemsIndex = null;
 SUM.colTopItemsWidth = 0;
 SUM.rowTopItemsHeight = 0;
+SUM.colTopItemPosns = [];
+SUM.rowTopItemPosns = [];
 
 SUM.rowClassPadding = 2;          // space between classification bars
 SUM.colClassPadding = 2;          // space between classification bars
@@ -272,60 +273,6 @@ SUM.setMinimumSummaryWidth = function(minSumWidth) {
 
 	return sumPct;
 };
-
-SUM.setTopItemsSize = function (){
-	const heatMap = MMGR.getHeatMap();
-	var colLabels = heatMap.getColLabels()["labels"];
-	var rowLabels = heatMap.getRowLabels()["labels"];
-	var colTopItemsIndex = [];
-	SUM.colTopItemsIndex = colTopItemsIndex;
-	var rowTopItemsIndex = [];
-	SUM.rowTopItemsIndex = rowTopItemsIndex;
-	SUM.colTopItemsWidth = 0;
-	if (SUM.colTopItems){
-		for (let i = 0; i < SUM.colTopItems.length; i++){
-			let foundLabel = false;
-			let p = document.createElement("p");
-			p.innerText = MMGR.getLabelText(SUM.colTopItems[i].split("|")[0],"col");
-			p.className = "topItems";
-			SUM.chmElement.appendChild(p);
-			for (let j = 0; j < colLabels.length; j++){
-				if (SUM.colTopItems[i] == colLabels[j].split("|")[0] && colTopItemsIndex.length < 10){ // limit 10 items per axis
-					foundLabel = true;
-					colTopItemsIndex.push(j);
-				} else if (colTopItemsIndex.length >= 10){
-					break;
-				}
-			}
-			if (foundLabel && (p.clientWidth+10) > SUM.colTopItemsWidth){
-				SUM.colTopItemsWidth = p.clientWidth+10; // + 5 to add a margin in case of overlap
-			}
-			SUM.chmElement.removeChild(p);
-		}
-	}
-	SUM.rowTopItemsHeight = 0;
-	if (SUM.rowTopItems){
-		for (let i = 0; i < SUM.rowTopItems.length; i++){
-			let foundLabel = false;
-			let p = document.createElement("p");
-			p.innerText = MMGR.getLabelText(SUM.rowTopItems[i].split("|")[0],"row");
-			p.className = "topItems";
-			SUM.chmElement.appendChild(p);
-			for (let j = 0; j < rowLabels.length; j++){
-				if (SUM.rowTopItems[i] == rowLabels[j].split("|")[0] && rowTopItemsIndex.length < 10){ // limit 10 items per axis
-					foundLabel = true;
-					rowTopItemsIndex.push(j);
-				} else if (rowTopItemsIndex.length >= 10){
-					break;
-				}
-			}
-			if (foundLabel && (p.clientWidth+10) > SUM.rowTopItemsHeight){
-				SUM.rowTopItemsHeight = p.clientWidth+10; // + 5 to add a margin in case of overlap
-			}
-			SUM.chmElement.removeChild(p);
-		}
-	}
-}
 
 //Set the variables for the total size of the summary heat map - used to set canvas, WebGL texture, and viewport size.
 SUM.calcTotalSize = function() {
@@ -1576,253 +1523,306 @@ SUM.clearColSelectionMarks = function() {
 	}
 }
 
-SUM.clearTopItems = function(){
-	var oldMarks = document.getElementsByClassName("topItems");
+/******************************************************************************
+ *
+ * TopItem Related Functions
+ *
+ */
+{
+    SUM.clearTopItems = function(){
+	const oldMarks = document.getElementsByClassName("topItems");
 	while (oldMarks.length > 0) {
 		oldMarks[0].remove();
 	}
-	var colSel = document.getElementById("summary_col_top_items_canvas");
+	const colSel = document.getElementById("summary_col_top_items_canvas");
 	if (colSel) {
-		var colCtx = colSel.getContext('2d');
+		const colCtx = colSel.getContext('2d');
 		colCtx.clearRect(0,0,colSel.width,colSel.height);
 	}
-	var rowSel = document.getElementById("summary_row_top_items_canvas");
+	const rowSel = document.getElementById("summary_row_top_items_canvas");
 	if (rowSel) {
-		var rowCtx = rowSel.getContext('2d');
+		const rowCtx = rowSel.getContext('2d');
 		rowCtx.clearRect(0,0,rowSel.width,rowSel.height);
 	}
-}
+    };
 
-SUM.drawTopItems = function(){
+    // Set the size required for the row and column top items.
+    SUM.setTopItemsSize = function () {
+
+	SUM.colTopItemsWidth = 0;
+	SUM.rowTopItemsHeight = 0;
+
+	if (SUM.colTopItems || SUM.rowTopItems) {
+	    // Create temporary element for measuring text properties.
+	    const p = UTIL.newElement("p.topItems");
+	    SUM.chmElement.appendChild(p);
+
+	    if (SUM.colTopItems) {
+		SUM.colTopItemsWidth = calcTopItemsMaxWidth ("column");
+	    }
+	    if (SUM.rowTopItems) {
+		SUM.rowTopItemsHeight = calcTopItemsMaxWidth ("row");
+	    }
+
+	    // Remove temporary measuring element.
+	    SUM.chmElement.removeChild(p);
+
+	    // Helper function. Determine maximum width of top items on the specified axis.
+	    function calcTopItemsMaxWidth (axis) {
+		const shownLabels = MMGR.getShownLabels (axis);
+		const topItems = getTopItemLabelIndices (axis);
+		let maxWidth = 0;
+		topItems.forEach (ti => {
+		    p.innerText = shownLabels[ti];
+		    maxWidth = Math.max (maxWidth, p.clientWidth + 10); // Include a small margin in case of overlap.
+		});
+		return maxWidth;
+	    }
+	}
+    };
+
+    // Draw the top items on the summary panel.
+    SUM.drawTopItems = function () {
+	// Remove/clear any existing top items.
+	SUM.clearTopItems();
+	SUM.colTopItemPosns = [];
+	SUM.rowTopItemPosns = [];
+
         // Cannot draw top items if no summary panel.
         if (!SUM.chmElement) return;
-	SUM.clearTopItems();
-	var summaryCanvas = document.getElementById("summary_canvas");
-	var colCanvas = document.getElementById("summary_col_top_items_canvas");
-	var rowCanvas = document.getElementById("summary_row_top_items_canvas");
-	if (summaryCanvas == null || rowCanvas == null || colCanvas == null) {
-		return;
+
+	const summaryCanvas = document.getElementById("summary_canvas");
+	if (summaryCanvas == null) {
+	    return;
 	}
+
 	const heatMap = MMGR.getHeatMap();
-	var colTopItemsIndex = [];
-	var rowTopItemsIndex = [];
-	var colCtx = colCanvas.getContext("2d");
-	var rowCtx = rowCanvas.getContext("2d");
-	colCtx.clearRect(0,0,colCanvas.width,colCanvas.height);
-	rowCtx.clearRect(0,0,rowCanvas.width,rowCanvas.height);
-	var colLabels = heatMap.getColLabels()["labels"];
-	var rowLabels = heatMap.getRowLabels()["labels"];
-	var colTop = summaryCanvas.offsetTop + summaryCanvas.offsetHeight + colCanvas.offsetHeight;
-	var rowLeft = summaryCanvas.offsetLeft + summaryCanvas.offsetWidth + rowCanvas.offsetWidth;
 
-	var matrixW = SUM.matrixWidth;
-	var matrixH = SUM.matrixHeight;
-	var colSumRatio = heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
-	var rowSumRatio = heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
+	if (SUM.colTopItems || SUM.rowTopItems) {
+	    // create a reference top item div to space the elements properly. removed at end
+	    const referenceItem = UTIL.newElement("div.topItems");
+	    referenceItem.innerText = "SampleItem";
+	    SUM.chmElement.appendChild(referenceItem);
 
-	var referenceItem = document.createElement("Div"); // create a reference top item div to space the elements properly. removed at end
-	referenceItem.className = "topItems";
-	referenceItem.innerHTML = "SampleItem";
-	SUM.chmElement.appendChild(referenceItem);
+	    // draw the column top items
+	    if (SUM.colTopItems) {
+		const colCanvas = document.getElementById("summary_col_top_items_canvas");
+		if (colCanvas != null) {
+		    const labelIndices = getTopItemLabelIndices ('column');
+		    const matrixW = SUM.matrixWidth;
+		    const colSumRatio = heatMap.getColSummaryRatio(MAPREP.SUMMARY_LEVEL);
+		    SUM.colTopItemPosns = topItemPositions(labelIndices, matrixW, referenceItem.offsetHeight, colCanvas.width, colSumRatio);
 
-	// draw the column top items
-	if (SUM.colTopItems){
-		for (var i = 0; i < SUM.colTopItems.length; i++){ // find the indices for each item to draw them later.
-			var topItem = SUM.colTopItems[i].trim();
-			if (topItem == ""){
-				continue;
-			}
-			for (var j = 0; j < colLabels.length; j++){
-				var foundLabel = false;
-				if (topItem == colLabels[j].split("|")[0] && colTopItemsIndex.length < 10){ // limit 10 items per axis
-					foundLabel = true;
-					colTopItemsIndex.push(j);
-				} else if (colTopItemsIndex.length >= 10){
-					break;
-				}
-			}
+		    // Draw curves from the top item map positions to the label positions.
+		    const colAdjust = matrixW < 200 ? ((summaryCanvas.offsetWidth/matrixW)/2) : 0;
+		    const colCtx = colCanvas.getContext('2d');
+		    colCtx.beginPath();
+		    SUM.colTopItemPosns.forEach (tip => {
+			const start = Math.round(tip.itemFrac*colCanvas.width) + colAdjust;
+			const moveTo = tip.labelFrac * colCanvas.width;
+			colCtx.moveTo(start,0);
+			colCtx.bezierCurveTo(start,5,moveTo,5,moveTo,10);
+		    });
+		    colCtx.stroke();
+
+		    // Determine top position of the column top items.
+		    const colTop = summaryCanvas.offsetTop + summaryCanvas.offsetHeight + colCanvas.offsetHeight;
+		    placeTopItemLabels(colCanvas, SUM.colTopItemPosns, "col", colTop);
 		}
-		colTopItemsIndex = eliminateDuplicates(colTopItemsIndex.sort(sortNumber));
-		SUM.colTopItemsIndex = colTopItemsIndex;
-		var colPositionArray = topItemPositions(colTopItemsIndex, matrixW, referenceItem.offsetHeight, colCanvas.width, colSumRatio);
-		if (colPositionArray){
-			var colTopItemsStart = Array(colTopItemsIndex.length);
-			for (var i = 0; i < colTopItemsIndex.length; i++){ // fill in the proper start point for each item
-				colTopItemsStart[i] = Math.round(colTopItemsIndex[i]/(colSumRatio*matrixW)*colCanvas.width);
-			}
-			var colAdjust = matrixW < 200 ? ((summaryCanvas.offsetWidth/matrixW)/2) : 0;
-			for (var i = 0; i < colTopItemsIndex.length;i++){ // check for rightside overlap. move overlapping items to the left
-				var start = colTopItemsStart[i]+colAdjust;
-				var moveTo = colPositionArray[colTopItemsIndex[i]]*colCanvas.width;
-				colCtx.moveTo(start,0);
-				colCtx.bezierCurveTo(start,5,moveTo,5,moveTo,10);
-				placeTopItemDiv(i, "col");
-			}
+	    }
+
+	    // draw the row top items
+	    if (SUM.rowTopItems) {
+		const rowCanvas = document.getElementById("summary_row_top_items_canvas");
+		if (rowCanvas != null) {
+		    const labelIndices = getTopItemLabelIndices ('row');
+		    const matrixH = SUM.matrixHeight;
+		    const rowSumRatio = heatMap.getRowSummaryRatio(MAPREP.SUMMARY_LEVEL);
+		    SUM.rowTopItemPosns = topItemPositions(labelIndices, matrixH, referenceItem.offsetHeight, rowCanvas.height, rowSumRatio);
+
+		    // Draw curves from the top item map positions to the label positions.
+		    const rowAdjust = matrixH < 200 ? ((summaryCanvas.offsetHeight/matrixH)/2) : 0;
+		    const rowCtx = rowCanvas.getContext('2d');
+		    rowCtx.beginPath();
+		    SUM.rowTopItemPosns.forEach (tip => {
+			const start = Math.round(tip.itemFrac*rowCanvas.height) + rowAdjust;
+			const moveTo = tip.labelFrac * rowCanvas.height;
+			rowCtx.moveTo(0,start);
+			rowCtx.bezierCurveTo(5,start,5,moveTo,10,moveTo);
+		    });
+		    rowCtx.stroke();
+
+		    // Determine left position of the row top items.
+		    const rowLeft = summaryCanvas.offsetLeft + summaryCanvas.offsetWidth + rowCanvas.offsetWidth;
+		    placeTopItemLabels(rowCanvas, SUM.rowTopItemPosns, "row", rowLeft);
 		}
+	    }
+	    referenceItem.remove();
 	}
-
-	// draw row top items
-	if (SUM.rowTopItems){
-		for (var i = 0; i < SUM.rowTopItems.length; i++){ // find indices
-			var foundLabel = false;
-			var topItem = SUM.rowTopItems[i].trim();
-			if (topItem == ""){
-				continue;
-			}
-			for (var j = 0; j < rowLabels.length; j++){
-				if (topItem == rowLabels[j].split("|")[0] && rowTopItemsIndex.length < 10){ // limit 10 items per axis
-					rowTopItemsIndex.push(j);
-					foundLabel = true;
-					break;
-				} else if (rowTopItemsIndex.length >= 10){
-					break;
-				}
-			}
-		}
-		rowTopItemsIndex = eliminateDuplicates(rowTopItemsIndex.sort(sortNumber));
-		SUM.rowTopItemsIndex = rowTopItemsIndex;
-		var rowPositionArray = topItemPositions(rowTopItemsIndex, matrixH, referenceItem.offsetHeight, rowCanvas.height, rowSumRatio);
-		if (rowPositionArray){
-			var rowTopItemsStart = Array(rowTopItemsIndex.length);
-			for (var i = 0; i < rowTopItemsIndex.length; i++){ // fill in the proper start point for each item
-				rowTopItemsStart[i] = Math.round(rowTopItemsIndex[i]/(rowSumRatio*matrixH)*rowCanvas.height);
-			}
-			var rowAdjust = matrixH < 200 ? ((summaryCanvas.offsetHeight/matrixH)/2) : 0;
-			for (var i = 0; i < rowTopItemsIndex.length;i++){ // draw the lines and the labels
-				var start = rowTopItemsStart[i]+rowAdjust;
-				var moveTo = rowPositionArray[rowTopItemsIndex[i]]*rowCanvas.height;
-				rowCtx.moveTo(0,start);
-				rowCtx.bezierCurveTo(5,start,5,moveTo,10,moveTo);
-				placeTopItemDiv(i, "row");
-			}
-		}
-	}
-
-
-	referenceItem.remove();
-	rowCtx.stroke();
-	colCtx.stroke();
 
 	// Helper functions for top items
 
-	function eliminateDuplicates(arr) {
-	  var i,
-	      len=arr.length,
-	      out=[],
-	      obj={},
-	      dupe=false;
+	// Find the optional positions of a set of top items.
+	//
+	// Parameters:
+	// - topItemsIndex: array of label indices. Must be a sorted array of non-negative integers.
+	// - matrixSize   : number of rows/columns in the summary level matrix
+	// - itemSize     : pixel width/height of each label along the label axis
+	// - canvasSize   : width/height of the top item's label canvas
+	// - summaryRatio : ratio between summary and detail matrices along the label axis
+	//
+	// Returns an array of top item positions.  Each element is an object containing
+	// - labelIndex : index of the label for this top item
+	// - itemFrac   : fraction of way along the canvas axis for this top item
+	// - labelFrac  : fraction of way along the canvas axis for this top item's label
+	//
+	// The returned array may not contain entries for all top items in topItemsIndex.
+	// In particular, it can be empty if no top items can be placed.
+	//
+	function topItemPositions(topItemsIndex, matrixSize, itemSize, canvasSize, summaryRatio) {
+	    if (!topItemsIndex || canvasSize === 0 || itemSize === 0) { return []; }
 
-	  for (i=0;i<len;i++) {
-		  if (obj[arr[i]] == 0){
-			  dupe=true;
-		  }
-	    obj[arr[i]]=0;
-	  }
-	  for (i in obj) {
-	    out.push(i);
-	  }
-	  out.dupe=dupe;
-	  return out;
-	}
+	    // We divide the label axis into a fixed number of non-overlapping positions.
+	    // totalPositions is the number of such positions available, based on the canvas size
+	    // and the size of each label.
+	    const totalPositions = Math.round(canvasSize/itemSize)+1;
+	    if (totalPositions < topItemsIndex.length) {
+		return [];
+	    }
 
-	function sortNumber(a,b) { // helper function to sort the indices properly
-	    return a - b;
-	}
+	    // posList is an array of the top item in each possible top item position.
+	    // Create it with each element set to -1 (no top item in that position).
+	    const posList = Array.from ({ length: totalPositions }, () => -1);
 
-	 //Find the optional position of a set of top items.  The index list of top items must be sorted.
-    function topItemPositions(topItemsIndex, matrixSize, itemSize, canvasSize,summaryRatio) {
-	 if (canvasSize === 0 || itemSize === 0) { return;}
+	    // Determine the position of each top item.
+	    topItemsIndex.forEach (index => {
+		// Start with best position.
+		let bestPos = Math.min(Math.round(index * totalPositions / (summaryRatio * matrixSize)), posList.length-1);
+		if (posList[bestPos] != -1) {
+		    // bestPos is occupied.
 
-          //Array of possible top item positions is the size of the canvas divided by the size of each label.
-          //Create a position array with initial value of -1
-          var totalPositions = Math.round(canvasSize/itemSize)+1;
-          if (totalPositions < topItemsIndex.length){
-	      return false;
-          }
-          var posList = Array.apply(null, Array(totalPositions)).map(Number.prototype.valueOf,-1)
-         
-          //Loop through the index position of each of the top items.
-          for (var i = 0; i < topItemsIndex.length; i++) {
-                var index = Number(topItemsIndex[i]);
-                if (isNaN(index)){ // if the top item wasn't found in the labels array, it comes back as null
-		    continue;  // so you can't draw it.
-                }
-                var bestPos = Math.min(Math.round(index * totalPositions / (summaryRatio * matrixSize)), posList.length-1);
-                if (posList[bestPos] == -1)
-                      posList[bestPos] = index;
-                else {
-                      //If position is occupied and there are an even number of items clumped here,
-                      //shift them all to the left if possible to balance the label positions.
-                      var edge = clumpEdge(posList, bestPos);
-                      if (edge > -1) {
-                            while (posList[edge] != -1 && edge <= posList.length-1){
-                                  posList[edge-1] = posList[edge];
-                                  edge++;
-                            }
-                            posList[edge-1]=-1;
-                      }
-                     
-                      //Put this label in the next available slot
-                      while (posList[bestPos] != -1)
-                            bestPos++
-                     
-                      posList[bestPos] = index;    
-                }
-          }
-         
-          var relativePos = {}
-          for (var i = 0; i < posList.length; i++) {
-                if (posList[i] != -1) {
-                      relativePos[posList[i]] = i/posList.length;
-                }
-          }
-          return relativePos;    
-    }
-   
-    //If there is a set of labels together in the position array and the number of labels in the
-    //clump is even and it is not up against the left edge of the map, return the left most position
-    //of the clump so it can then be shifted left.
-    function clumpEdge (posList, position) {
-          var rightEdge = position;
-          var leftEdge = position;
-         
-          //First move to the right edge of the clump
-          while (rightEdge < posList.length-1 && posList[rightEdge+1]!=-1) {
-                rightEdge++
-          }    
-         
-          //Now move to the left edge of the clump
-          while (leftEdge > 0 && posList[leftEdge-1] != -1)
-                leftEdge--;
-         
-          //If the clump should be shifted left, return the edge.
-          if ((rightEdge==posList.length-1) || ((rightEdge - leftEdge + 1) % 2 == 0 && leftEdge > 0))
-                return leftEdge;
-          else
-                return -1;
-    }
+		    // Determine if the clump of items here should be shifted left.
+		    let edge = clumpEdge(posList, bestPos);
+		    if (edge > -1) {
+			// Move the clump one position to the left.
+			// N.B. We know edge > 0 and posList[edge-1] is empty.
+			//
+			// Move posList[edge] to posList[edge-1] and advance edge
+			// until we come to end of the clump (either the end of the
+			// array or an unoccupied position).
+			while (edge < posList.length && posList[edge] != -1) {
+			    posList[edge-1] = posList[edge];
+			    edge++;
+			}
+			// Indicate that the last position we moved is now empty.
+			posList[edge-1] = -1;
+		    }
 
-	function placeTopItemDiv(index, axis){
-		var isRow = axis.toLowerCase() == "row";
-		var topItemIndex = isRow ? rowTopItemsIndex:colTopItemsIndex;
-		var labels = isRow ? rowLabels : colLabels;
-		var positionArray = isRow? rowPositionArray:colPositionArray;
-		var item = document.createElement("Div"); // place middle/topmost item
-		if (topItemIndex[index] == "null"){
-			return;
+		    // Find the next available slot (we know it must exist).
+		    // Since we are adding top items in increasing order, the
+		    // first available slot after the current clump is the
+		    // best available position.
+		    while (posList[bestPos] != -1) {
+			bestPos++
+		    }
+
 		}
+		// Put this top item into the position.
+		posList[bestPos] = index;
+	    });
+
+	    // Construct a mapping from top items to their relative position
+	    // in the posList array.
+	    const relativePos = {};
+	    posList.forEach((v,i) => {
+		if (v !== -1) relativePos[v] = i/posList.length;
+	    });
+
+	    return topItemsIndex.map (ii => ({
+		labelIndex: ii,
+		itemFrac: ii/(summaryRatio*matrixSize),
+		labelFrac: relativePos[ii],
+	    }));
+	}
+   
+	// Determine if the clump of adjacent labels in the position array
+	// should be moved one position to the left.  Position is the index
+	// of any label in the clump (i.e. posList[position] != -1).
+	//
+	// Returns the index of the leftmost label in the clump if it should
+	// be shifted or -1 otherwise.
+	//
+	// The clump should be shifted if:
+	// - the clump is up against the right edge of posList, OR
+	// - the clump contains an even number of labels AND
+	//   the clump is NOT up against the left edge of posList.
+	//
+	// The first and third conditions above are necessary for correctness.
+	// The second condition aims to keep clumps of labels roughly
+	// centered around their ideal positions.
+	function clumpEdge (posList, position) {
+         
+	    // Determine the right edge of the clump.
+	    let rightEdge = position;
+	    while (rightEdge < posList.length-1 && posList[rightEdge+1]!=-1) {
+		rightEdge++
+	    }
+         
+	    // Determine the left edge of the clump.
+	    let leftEdge = position;
+	    while (leftEdge > 0 && posList[leftEdge-1] != -1) {
+		leftEdge--;
+	    }
+         
+            // If the clump should be shifted left, return the left edge.
+	    if ((rightEdge==posList.length-1) || ((rightEdge - leftEdge + 1) % 2 == 0 && leftEdge > 0)) {
+		return leftEdge;
+	    } else {
+		return -1;
+	    }
+	}
+
+	// Add a topItem label to SUM.chmElement for each topItem in
+	// the topItemPosns array (returned from the topItemPosns
+	// function above).
+	function placeTopItemLabels (canvas, topItemPosns, axis, otherAxisPosn) {
+	    const isRow = MMGR.isRow(axis);
+	    const shownLabels = MMGR.getShownLabels (axis);
+	    topItemPosns.forEach (tip => {
+		const item = document.createElement("Div");
+		item.classList.add ("topItems");
 		item.axis = axis;
-		item.index = topItemIndex[index];
-		item.className = "topItems";
-		item.innerHTML = MMGR.getLabelText(labels[topItemIndex[index]].split("|")[0],axis);
+		item.index = tip.labelIndex;
+		item.innerText = shownLabels[tip.labelIndex];
 		if (!isRow){
-			item.style.transform = "rotate(90deg)";
+		    item.style.transform = "rotate(90deg)";
 		}
 		SUM.chmElement.appendChild(item);
-		item.style.top = (isRow ? rowCanvas.offsetTop + positionArray[topItemIndex[index]]*rowCanvas.clientHeight - item.offsetHeight/2 : colTop + item.offsetWidth/2) + 'px';
-		item.style.left = (isRow ? rowLeft: colCanvas.offsetLeft+ positionArray[topItemIndex[index]]*colCanvas.clientWidth - item.offsetWidth/2) + 'px';
-		return item;
+		if (isRow) {
+		    item.style.top = (canvas.offsetTop + tip.labelFrac*canvas.clientHeight - item.offsetHeight/2) + 'px';
+		    item.style.left = otherAxisPosn + 'px';
+		} else {
+		    item.style.top = (otherAxisPosn + item.offsetWidth/2) + 'px';
+		    item.style.left = (canvas.offsetLeft + tip.labelFrac*canvas.clientWidth - item.offsetWidth/2) + 'px';
+		}
+	    });
 	}
-}
+    }
+
+    // Return an array of the label indices of the top items on the specified axis.
+    function getTopItemLabelIndices (axis) {
+	const topItems = MMGR.isRow (axis) ? SUM.rowTopItems : SUM.colTopItems;
+	const mapLabels = MMGR.getActualLabels (axis);
+	// Trim top items, filter out empty items, uniqify.
+	const uniqTopItems = topItems.map(l=>l.trim()).filter(l => l!="").filter((v,i,a) => a.indexOf(v) === i);
+	// Determine label indices of top items. Remove any top items that aren't labels.
+	const labelIndices = uniqTopItems.map(ti => mapLabels.indexOf(ti)).filter(idx => idx >= 0);
+	if (labelIndices.length > 10) labelIndices.splice(10); // Keep at most ten.
+	// Sort remaining indices into increasing numerical order.
+	labelIndices.sort ((a,b) => a-b);
+	return labelIndices;
+    }
+
+} // END TopItems submodule.
 
 })();

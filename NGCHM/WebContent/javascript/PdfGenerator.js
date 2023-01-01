@@ -936,13 +936,57 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		// Add the heat map.
 		doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW, sumMapH);
 		
-		// Add top item marks
-		doc.addImage(sumRowTopItemsData, 'PNG', imgLeft + sumMapW, imgTop, topItemsWidth, sumMapH);
-		doc.addImage(sumColTopItemsData, 'PNG', imgLeft, imgTop + sumMapH, sumMapW, topItemsHeight);
-
-		// Draw the Summary Top Items on the Summary Page
-		drawSummaryTopItems("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
-		drawSummaryTopItems("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
+		// Add the top item marks and labels.
+		if (SUM.rowTopItemPosns.length > 0 || SUM.colTopItemPosns.length > 0) {
+		    const ctx = doc.context2d;
+		    const resScale = 100;
+		    ctx.save();
+		    ctx.scale (1.0/resScale, 1.0/resScale);
+		    ctx.lineWidth = 1;
+		    if (SUM.rowTopItemPosns.length > 0) {
+			// Each top item mark is drawn as a bezier curve from an origin point
+			// (the item position) through two intermediate control points to a
+			// destination point (the label position).
+			// For all row top items, the X coordinates of these control points
+			// are the same.
+			const X1 = (imgLeft + sumMapW + 1) * resScale;
+			const X2 = (imgLeft + sumMapW + 4) * resScale;
+			const X3 = (imgLeft + sumMapW + topItemsWidth - 3) * resScale;
+			const X4 = (imgLeft + sumMapW + topItemsWidth) * resScale;
+			ctx.beginPath();
+			SUM.rowTopItemPosns.forEach(tip => {
+			    // Compute Y coordinates for start and end of the curve.
+			    const Y1 = (imgTop + tip.itemFrac * sumMapH) * resScale;
+			    const Y2 = (imgTop + tip.labelFrac * sumMapH) * resScale;
+			    // Draw the curve.
+			    ctx.moveTo (X1, Y1);
+			    ctx.bezierCurveTo (X2, Y1, X3, Y2, X4, Y2);
+			});
+			ctx.stroke();
+		    }
+		    if (SUM.colTopItemPosns.length > 0) {
+			// For all column top items, the Y coordinates of all control points
+			// are the same.
+			const Y1 = (imgTop + sumMapH + 1) * resScale;
+			const Y2 = (imgTop + sumMapH + 4) * resScale;
+			const Y3 = (imgTop + sumMapH + topItemsHeight - 3) * resScale;
+			const Y4 = (imgTop + sumMapH + topItemsHeight) * resScale;
+			ctx.beginPath();
+			SUM.colTopItemPosns.forEach(tip => {
+			    // Compute X coordinates for start and end of the curve.
+			    const X1 = (imgLeft + tip.itemFrac * sumMapW) * resScale;
+			    const X2 = (imgLeft + tip.labelFrac * sumMapW) * resScale;
+			    // Draw the curve.
+			    ctx.moveTo (X1, Y1);
+			    ctx.bezierCurveTo (X1, Y2, X2, Y3, X2, Y4);
+			});
+			ctx.stroke();
+		    }
+		    ctx.restore();
+		    // Draw the top item labels.
+		    drawSummaryTopItemLabels("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
+		    drawSummaryTopItemLabels("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
+		}
 
 		// Draw the black border around the summary view.
 		const ctx = doc.context2d;
@@ -985,10 +1029,10 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 	}
 	
 	/**********************************************************************************
-	 * FUNCTION - drawSummaryTopItems: This function draws the labels for the top
+	 * FUNCTION - drawSummaryTopItemLabels: This function draws the labels for the top
 	 * items on the specific axis of the summary page.
 	 **********************************************************************************/
-	function drawSummaryTopItems(axis, vp) {
+	function drawSummaryTopItemLabels(axis, vp) {
 	    const debug = false;
 	    const origFontSize = doc.getFontSize();
 	    const labelFontSize = 5;  // Use a small font for top items.
