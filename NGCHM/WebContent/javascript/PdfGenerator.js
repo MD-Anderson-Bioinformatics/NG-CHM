@@ -309,10 +309,8 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 
 	var sumMapCanvas;
 	var rowClassCanvas; var colClassCanvas;
-	var rowTICanvas; var colTICanvas;
 	var sumImgData;
 	var sumRowClassData; var sumColClassData;
-	var sumRowTopItemsData; var sumColTopItemsData;
 	if (includeSummaryMap) {
 		const minDPI = 600;
 		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
@@ -356,19 +354,11 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 			glMan.drawTexture ();
 		}
 
-		rowTICanvas = document.createElement('canvas');
-		configureCanvas(rowTICanvas, document.getElementById("summary_row_top_items_canvas"), 20, sumMapH*2)
-
-		colTICanvas = document.createElement('canvas');
-		configureCanvas(colTICanvas, document.getElementById("summary_col_top_items_canvas"), sumMapW*2, 20);
-
 		// Canvas elements need to be converted to DataUrl to be loaded into PDF
 			// Summary Canvases
 		sumImgData = sumMapCanvas.toDataURL('image/png');
 		sumRowClassData = rowClassCanvas.toDataURL('image/png');
 		sumColClassData = colClassCanvas.toDataURL('image/png');
-		sumRowTopItemsData = rowTICanvas.toDataURL('image/png');
-		sumColTopItemsData = colTICanvas.toDataURL('image/png');
 	}
 
 	if (mapsToShow == "B") {
