@@ -544,6 +544,27 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 	}
 
+	const transparent = { 'r': 0, 'g': 0, 'b': 0, 'a': 0 };
+	const white = CMM.hexToRgba("#FFFFFF");
+	class VisibleCovariateBar {
+
+	    constructor (key, details, scale) {
+		Object.assign (this, details, { label: key, height: (details.height * scale) | 0 });
+	    }
+
+	    // Return an array of colors to use when creating scatter or bar plots.
+	    // The order of the colors matches the matrix values produced by SUM.buildScatterBarPlotMatrix.
+	    // Specifically:
+	    // [0] Background color
+	    // [1] Foreground color
+	    // [2] Cuts color
+	    getScatterBarPlotColors () {
+		const fgColor = CMM.hexToRgba (this.fg_color);
+		const bgColor = this.subBgColor === "#FFFFFF" ? transparent : CMM.hexToRgba(this.bg_color);
+		return [ bgColor, fgColor, white ];
+	    }
+	}
+
 	/* Returns an array of the visible covariates on the specified axis of the heat map.
 	 * The height of each covariable is scaled by scale.
 	 *
@@ -554,13 +575,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	this.getScaledVisibleCovariates = function (axis, scale) {
 	    const axisConfig = isRow (axis) ? mapConfig.row_configuration : mapConfig.col_configuration;
 	    const order = axisConfig.hasOwnProperty('classifications_order') ? axisConfig.classifications_order : Object.keys(axisConfig.classifications);
-	    const bars = order.map (key => {
-		const details = axisConfig.classifications[key];
-		return Object.assign({}, details, {
-		    label: key,
-		    height: (details.height * scale) | 0,
-		});
-	    }).filter (bar => bar.show === 'Y');
+	    const bars = order.map (key => new VisibleCovariateBar (key, axisConfig.classifications[key], scale)).filter (bar => bar.show === 'Y');
 	    Object.defineProperty (bars, 'totalHeight', {
 	        value: totalHeight,
 		enumerable: false

@@ -383,41 +383,46 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
 	//Needs to go backward because WebGL draws bottom up.
 	for (let i = detDataPerCol-1; i >= 0; i--) {
-		let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
-		//If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the
-		// preceding line are "cut values" mark the current line as as a horizontal cut
-		const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
-		linePos+=DRAW.BYTE_PER_RGBA;
-		for (let j = 0; j < detDataPerRow; j++) { // for every data point...
-			let val = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j);
-	        let nextVal = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1);
-	        if (val !== undefined) {
-	            const color = colorMap.getColor(val);
+	    let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
+	    //If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the
+	    // preceding line are "cut values" mark the current line as as a horizontal cut
+	    const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
+	    linePos+=DRAW.BYTE_PER_RGBA;
+	    for (let j = 0; j < detDataPerRow; j++) { // for every data point...
+		let val = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j);
+		let nextVal = j < detDataPerRow-1 ? heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1) : undefined;
+		if (val === undefined) {
+		    console.error ('heatMap.getValue returned undefined', { level: drawWin.level, row: currDetRow+i, col: currDetCol+j });
+		} else {
+		    const { r, g, b, a } = colorMap.getColor(val);
 
-				//For each data point, write it several times to get correct data point width.
-				for (let k = 0; k < mapItem.dataBoxWidth; k++) {
-					if (params.showVerticalGrid && k===mapItem.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
-						if (j < detDataPerRow-1) {
-							//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
-							if ((val <= MAPREP.minValues) && (nextVal <= MAPREP.minValues)) {
-								line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
-							} else {
-								line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
-							}
-						}
-					} else {
-						line[linePos] = color['r'];	line[linePos + 1] = color['g'];	line[linePos + 2] = color['b'];	line[linePos + 3] = color['a'];
-					}
-					linePos += DRAW.BYTE_PER_RGBA;
+		    //For each data point, write it several times to get correct data point width.
+		    for (let k = 0; k < mapItem.dataBoxWidth; k++) {
+			if (params.showVerticalGrid && k===mapItem.dataBoxWidth-1 && j < detDataPerRow-1 ){ // should the grid line be drawn?
+			    if (j < detDataPerRow-1) {
+				//If current value being drawn into the line is a cut value, draw a transparent white position for the grid
+				if ((val <= MAPREP.minValues) && (nextVal <= MAPREP.minValues)) {
+					line[linePos] = cutsColor.r; line[linePos+1] = cutsColor.g; line[linePos+2] = cutsColor.b;	line[linePos+3] = cutsColor.a;
+				} else {
+					line[linePos] = regularGridColor[0]; line[linePos+1] = regularGridColor[1]; line[linePos+2] = regularGridColor[2];	line[linePos+3] = 255;
 				}
-	        }
+			    }
+			} else {
+				line[linePos]     = r;
+				line[linePos + 1] = g;
+				line[linePos + 2] = b;
+				line[linePos + 3] = a;
+			}
+			linePos += DRAW.BYTE_PER_RGBA;
+		    }
 		}
-		linePos+=DRAW.BYTE_PER_RGBA;
-		
-		//Write each line several times to get correct data point height.
-		const numGridLines = params.showHorizontalGrid && i > 0 ? 1 : 0;
-		emitLines (line, mapItem.dataBoxHeight - numGridLines)
-		emitLines (isHorizCut ? cutsLine : gridLine, numGridLines);
+	    }
+	    linePos+=DRAW.BYTE_PER_RGBA;
+
+	    //Write each line several times to get correct data point height.
+	    const numGridLines = params.showHorizontalGrid && i > 0 ? 1 : 0;
+	    emitLines (line, mapItem.dataBoxHeight - numGridLines)
+	    emitLines (isHorizCut ? cutsLine : gridLine, numGridLines);
 	}
 
 	//Draw covariate bars.
@@ -2185,44 +2190,28 @@ DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, 
  * bar and scatter plot class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, classBarValues, start, length, currentClassBar, colorMap) {
-	const barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
-	const barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
-	const barCutColor = colorMap.getHexToRgba("#FFFFFF");
-	const matrix = SUM.buildScatterBarPlotMatrix(height, classBarValues, start-1, length, currentClassBar, 100, false);
+	const colors = currentClassBar.getScatterBarPlotColors ();
+	const matrix = SUM.buildScatterBarPlotMatrix(height, 1, classBarValues.slice (start-1, start-1+length), currentClassBar);
 	const rowClassBarWidth = mapItem.getScaledVisibleCovariates("row").totalHeight();
 
 	//offset value for width of row class bars
 	let offset = (rowClassBarWidth + 2)*DRAW.BYTE_PER_RGBA;
 	for (let h = 0; h < matrix.length; h++) {
 		pos += offset;
-		let row = matrix[h];
+		const row = matrix[h];
 		for (let k = 0; k < row.length; k++) {
-			let posVal = row[k];
+			const { r, g, b, a } = colors[row[k]];
 			for (let j = 0; j < mapItem.dataBoxWidth; j++) {
-				if (posVal == 1) {
-					pixels[pos] = barFgColor['r'];
-					pixels[pos+1] = barFgColor['g'];
-					pixels[pos+2] = barFgColor['b'];
-					pixels[pos+3] = barFgColor['a'];
-				} else if (posVal == 2) {
-					pixels[pos] = barCutColor['r'];
-					pixels[pos+1] = barCutColor['g'];
-					pixels[pos+2] = barCutColor['b'];
-					pixels[pos+3] = barCutColor['a'];
-				} else {
-					if (currentClassBar.subBgColor !== "#FFFFFF") {
-						pixels[pos] = barBgColor['r'];
-						pixels[pos+1] = barBgColor['g'];
-						pixels[pos+2] = barBgColor['b'];
-						pixels[pos+3] = barBgColor['a'];
-					}
-				}
-				pos+=DRAW.BYTE_PER_RGBA;
+			    pixels[pos]   = r;
+			    pixels[pos+1] = g;
+			    pixels[pos+2] = b;
+			    pixels[pos+3] = a;
+			    pos+=DRAW.BYTE_PER_RGBA;
 			}
 		}
 	}
 	return pos;
-}
+};
 
 /**********************************************************************************
  * FUNCTION - detailDrawRowClassBars: The purpose of this function is to row
@@ -2267,13 +2256,13 @@ DET.detailDrawRowClassBars = function (mapItem, pixels) {
 DET.drawColorPlotRowClassBar = function(mapItem, pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap) {
 	for (let j = start + length - 1; j >= start; j--){ // for each row shown in the detail panel
 		const val = classBarValues[j-1];
-		const color = colorMap.getClassificationColor(val);
+		const { r, g, b, a } = colorMap.getClassificationColor(val);
 		for (let boxRows = 0; boxRows < mapItem.dataBoxHeight; boxRows++) { // draw this color to the proper height
 			for (let k = 0; k < currentClassBar.height-DET.paddingHeight; k++){ // draw this however thick it needs to be
-				pixels[pos] = color['r'];
-				pixels[pos + 1] = color['g'];
-				pixels[pos + 2] = color['b'];
-				pixels[pos + 3] = color['a'];
+				pixels[pos]     = r;
+				pixels[pos + 1] = g;
+				pixels[pos + 2] = b;
+				pixels[pos + 3] = a;
 				pos+=DRAW.BYTE_PER_RGBA;	// 4 bytes per color
 			}
 			// padding between class bars
@@ -2290,34 +2279,17 @@ DET.drawColorPlotRowClassBar = function(mapItem, pixels, pos, start, length, cur
  **********************************************************************************/
 DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length, currentClassBar, classBarValues, mapWidth, colorMap) {
 	const height = currentClassBar.height - DET.paddingHeight;
-	const barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
-	const barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
-	const barCutColor = colorMap.getHexToRgba("#FFFFFF");
-	const matrix = SUM.buildScatterBarPlotMatrix(height, classBarValues, start-1, length, currentClassBar, mapItem.heatMap.getTotalRows(), false);
+	const colors = currentClassBar.getScatterBarPlotColors ();
+	const matrix = SUM.buildScatterBarPlotMatrix(height, 1, classBarValues.slice (start-1, start-1+length), currentClassBar);
 	for (let h = matrix[0].length-1; h >= 0 ; h--) {
 		for (let j = 0; j < mapItem.dataBoxHeight; j++) {
 			for (let i = 0; i < height;i++) {
-				const row = matrix[i];
-				const posVal = row[h];
-				if (posVal == 1) {
-					pixels[pos] = barFgColor['r'];
-					pixels[pos+1] = barFgColor['g'];
-					pixels[pos+2] = barFgColor['b'];
-					pixels[pos+3] = barFgColor['a'];
-				} else if (posVal == 2) {
-					pixels[pos] = barCutColor['r'];
-					pixels[pos+1] = barCutColor['g'];
-					pixels[pos+2] = barCutColor['b'];
-					pixels[pos+3] = barCutColor['a'];
-				} else {
-					if (currentClassBar.subBgColor !== "#FFFFFF") {
-						pixels[pos] = barBgColor['r'];
-						pixels[pos+1] = barBgColor['g'];
-						pixels[pos+2] = barBgColor['b'];
-						pixels[pos+3] = barBgColor['a'];
-					}
-				}
-				pos+=DRAW.BYTE_PER_RGBA;
+			    const { r, g, b, a } = colors[matrix[i][h]];
+			    pixels[pos]   = r;
+			    pixels[pos+1] = g;
+			    pixels[pos+2] = b;
+			    pixels[pos+3] = a;
+			    pos+=DRAW.BYTE_PER_RGBA;
 			}
 			// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row
 			// padding between class bars

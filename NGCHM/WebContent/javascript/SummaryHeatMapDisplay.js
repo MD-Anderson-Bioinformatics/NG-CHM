@@ -624,7 +624,7 @@ SUM.buildRowClassTexture = function buildRowClassTexture () {
 		pos = SUM.drawColorPlotRowClassBar(renderBuffer, pos, barWidth, classBarValues, classBarLength, colorMap, widthScale, heightScale);
 	    } else {
 		const remainingWidth = SUM.rowClassBarWidth * widthScale - barWidth;
-		pos = SUM.drawScatterBarPlotRowClassBar(dataBuffer, pos, barWidth-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth);
+		pos = SUM.drawScatterBarPlotRowClassBar(renderBuffer, pos, barWidth-SUM.colClassPadding, classBarValues, currentClassBar, remainingWidth, widthScale, heightScale);
 	    }
 	    offset += barWidth*DRAW.BYTE_PER_RGBA;
 	});
@@ -682,8 +682,7 @@ SUM.buildColCovariateRenderBuffer = function (widthScale, heightScale) {
 		if (currentClassBar.bar_type === 'color_plot') {
 			pos = SUM.drawColorPlotColClassBar(renderBuffer, pos, barHeight-SUM.colClassPadding, classBarValues, classBarLength, colorMap, widthScale, heightScale);
 		} else {
-			const dataBuffer = renderBuffer.pixels;
-			pos = SUM.drawScatterBarPlotColClassBar(dataBuffer, pos, barHeight-SUM.colClassPadding, classBarValues, classBarLength, colorMap, currentClassBar);
+			pos = SUM.drawScatterBarPlotColClassBar(renderBuffer, pos, barHeight-SUM.colClassPadding, classBarValues, currentClassBar, widthScale, heightScale);
 		}
 	}
 
@@ -868,41 +867,39 @@ SUM.getScaledHeight = function(height, axis) {
 	return pos;
     }
 
-SUM.drawScatterBarPlotColClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, currentClassBar) {
-	var barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
-	var barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color);
-	var barCutColor = colorMap.getHexToRgba("#FFFFFF");
-	var matrix = SUM.buildScatterBarPlotMatrix(height*SUM.widthScale, classBarValues, 0, classBarLength, currentClassBar, MMGR.getHeatMap().getTotalCols(), true);
+    // Copy a column scatter/bar plot for the specified covariateBar into renderBuffer.
+    // The copied covariateBar will have one entry for each value in the barValues array. Each entry will be widthScale pixels wide.
+    // The copied covariateBar will be height*heightScale pixels high.
+    // pos is the starting position within renderBuffer at which to write the covariateBar.
+    // (Consequently, renderBuffer must be at least pos+height*heightScale*barValues.length*widthScale*DRAW.BYTE_PER_RGBA in length.)
+    //
+    // The function returns the next writing position within renderBuffer (if you don't want any gap between bars).
+    //
+    SUM.drawScatterBarPlotColClassBar = function(renderBuffer, pos, height, barValues, covariateBar, widthScale, heightScale) {
+	// Get matrix of scatter/bar plot color index values.
+	// The matrix height is scaled by heightScale to allow better resolution.
+	const matrix = SUM.buildScatterBarPlotMatrix(height, heightScale, barValues, covariateBar);
+	// Get colors to use in this bar.
+	const colors = covariateBar.getScatterBarPlotColors();
 
-	for (var h = 0; h < matrix.length; h++) { 
-		var row = matrix[h];
-		for (var k = 0; k < row.length; k++) { 
-			var posVal = row[k];
-				for(var i=0;i<SUM.widthScale;i++){
-					if (posVal == 1) {
-						dataBuffer[pos] = barFgColor['r'];
-						dataBuffer[pos+1] = barFgColor['g'];
-						dataBuffer[pos+2] = barFgColor['b'];
-						dataBuffer[pos+3] = barFgColor['a'];
-					} else if (posVal == 2) {
-						dataBuffer[pos] = barCutColor['r'];
-						dataBuffer[pos+1] = barCutColor['g'];
-						dataBuffer[pos+2] = barCutColor['b'];
-						dataBuffer[pos+3] = barCutColor['a'];
-					} else {
-						if (currentClassBar.subBgColor !== "#FFFFFF") {
-							dataBuffer[pos] = barBgColor['r'];
-							dataBuffer[pos+1] = barBgColor['g'];
-							dataBuffer[pos+2] = barBgColor['b'];
-							dataBuffer[pos+3] = barBgColor['a'];
-						}
-					}
-					pos+=DRAW.BYTE_PER_RGBA;
-				}
+	// Copy colors corresponding to the color index values into the renderBuffer.
+	// Each matrix column is replicated widthScale times.
+	const dataBuffer = renderBuffer.pixels;
+	for (let h = 0; h < matrix.length; h++) {
+	    const row = matrix[h];
+	    for (let k = 0; k < row.length; k++) {
+		const {r, g, b, a} = colors[row[k]];
+		for (let i=0; i < widthScale; i++) {
+		    dataBuffer[pos]   = r;
+		    dataBuffer[pos+1] = g;
+		    dataBuffer[pos+2] = b;
+		    dataBuffer[pos+3] = a;
+		    pos += DRAW.BYTE_PER_RGBA;
 		}
+	    }
 	}
 	return pos;
-}
+    };
 
 SUM.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalHeight, fewClasses) {
 	//calculate where covariate bars end and heatmap begins by using the top items canvas (which is lined up with the heatmap)
@@ -1129,43 +1126,39 @@ SUM.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalHeight,
 	return pos;
     };
 
-SUM.drawScatterBarPlotRowClassBar = function(dataBuffer, pos, height, classBarValues, classBarLength, colorMap, currentClassBar, remainingWidth) {
-	const heatMap = MMGR.getHeatMap();
-	var barFgColor = colorMap.getHexToRgba(currentClassBar.fg_color);
-	var barBgColor = colorMap.getHexToRgba(currentClassBar.bg_color); 
-	var barCutColor = colorMap.getHexToRgba("#FFFFFF");
-	var matrix = SUM.buildScatterBarPlotMatrix( height, classBarValues, 0, classBarLength, currentClassBar, heatMap.getTotalRows(), true);
-	for (var h = (matrix[0].length-1); h >= 0 ; h--) { 
-		for (var a=0; a<SUM.heightScale;a++){
-			for (var i = 0; i < height;i++) {
-				var row = matrix[i];
-				var posVal = row[h];
-				if (posVal == 1) {
-					dataBuffer[pos] = barFgColor['r'];
-					dataBuffer[pos+1] = barFgColor['g'];
-					dataBuffer[pos+2] = barFgColor['b'];
-					dataBuffer[pos+3] = barFgColor['a'];
-				} else if (posVal == 2) {
-					dataBuffer[pos] = barCutColor['r'];
-					dataBuffer[pos+1] = barCutColor['g'];
-					dataBuffer[pos+2] = barCutColor['b'];
-					dataBuffer[pos+3] = barCutColor['a'];
-				} else {
-					if (currentClassBar.subBgColor !== "#FFFFFF") {
-						dataBuffer[pos] = barBgColor['r'];
-						dataBuffer[pos+1] = barBgColor['g'];
-						dataBuffer[pos+2] = barBgColor['b'];
-						dataBuffer[pos+3] = barBgColor['a'];
-					}
-				}
-				pos+=DRAW.BYTE_PER_RGBA;
-			}
-			// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row 
-			pos+=SUM.rowClassPadding*DRAW.BYTE_PER_RGBA+(remainingWidth*DRAW.BYTE_PER_RGBA);
+SUM.drawScatterBarPlotRowClassBar = function(renderBuffer, pos, height, classBarValues, covariateBar, remainingWidth, widthScale, heightScale) {
+	const matrix = SUM.buildScatterBarPlotMatrix( height, widthScale, classBarValues, covariateBar);
+	const colors = covariateBar.getScatterBarPlotColors();
+	const dataBuffer = renderBuffer.pixels;
+	// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row 
+	const oldSkipToNextRow = SUM.rowClassPadding*DRAW.BYTE_PER_RGBA+(remainingWidth*DRAW.BYTE_PER_RGBA);
+	const skipToNextRow = renderBuffer.width - height * DRAW.BYTE_PER_RGBA;
+	console.log ('drawScatterBarPlotRowClassBar', { oldSkipToNextRow, skipToNextRow });
+	for (let h = (matrix[0].length-1); h >= 0 ; h--) {
+	    // Output one row
+	    const firstRowPos = pos;
+	    for (let i = 0; i < matrix.length; i++) {
+		const { r, g, b, a } = colors[matrix[i][h]];
+		dataBuffer[pos]   = r;
+		dataBuffer[pos+1] = g;
+		dataBuffer[pos+2] = b;
+		dataBuffer[pos+3] = a;
+		pos += DRAW.BYTE_PER_RGBA;
+	    }
+	    // Advance to next row in renderBuffer.
+	    pos += skipToNextRow;
+	    // Duplicate the first row if needed.
+	    if (heightScale > 1) {
+		for (let rep=1; rep < heightScale;rep++){
+		    for (let i = 0; i < matrix.length * DRAW.BYTE_PER_RGBA; i++) {
+			dataBuffer[pos+i] = dataBuffer[firstRowPos+i];
+		    }
+		    pos += renderBuffer.width;
 		}
+	    }
 	}
 	return pos;
-}
+};
 
 //THIS FUNCTION NOT CURRENTLY FOR THE SUMMARY PANEL CALLED BUT MAY BE ADDED BACK IN IN THE FUTURE
 SUM.drawRowClassBarLegends = function () {
@@ -1242,56 +1235,53 @@ SUM.setLegendDivElement = function (itemId,boundVal,topVal,leftVal,isRowVal) {
 	itemElem.style.left = leftVal + 'px';
 }
 
-SUM.buildScatterBarPlotMatrix = function(height, classBarValues, start, classBarLength, currentClassBar, barSize, isSummary) {
-	var matrix = new Array(height);
-	var isBarPlot = currentClassBar.bar_type === 'scatter_plot' ? false : true;
-	for (var j = 0; j < height; j++) {
-		matrix[j] = new Uint8Array(classBarLength);
+    // Return a matrix for drawing a scatter or bar plot for barValues and covariateBar.
+    //
+    // The returned matrix:
+    // - contains values: 0 (bg color index), 1 (fg color index), or 2 (cut color index).
+    // - has height*heightScale rows and barValues.length columns.
+    //
+    // The matrix orientation corresponds to column covariate bars.  It will need to be
+    // 'transposed' for row covariate bars.
+    //
+    // Rendering of the scatter/bar plot is determined by the covariateBar properties
+    // bar_type, low_bound, and high_bound.
+    //
+    SUM.buildScatterBarPlotMatrix = function(height, heightScale, barValues, covariateBar) {
+	const matrix = new Array(height * heightScale);
+	const isBarPlot = covariateBar.bar_type !== 'scatter_plot';
+	for (let j = 0; j < matrix.length; j++) {
+	    matrix[j] = new Uint8Array(barValues.length);
 	}
-	var highVal = parseFloat(currentClassBar.high_bound);
-	var lowVal = parseFloat(currentClassBar.low_bound);
-	var scaleVal = highVal - lowVal;
-	var normalizedK = 0;
-	for (var k = start; k < start+classBarLength; k++) { 
-		var origVal = classBarValues[k];
-		if (origVal === "!CUT!") {
-			for (var l = 0; l < height; l++) {
-				matrix[l][normalizedK] = 2;
-			}
-		} else {
-			//For when the range is exclusive: Set for values out side range so that lower values register as the lowest value in the range
-			//and higher values register as the highest value in the range. (Per Bradley Broom)
-			if (origVal < lowVal) origVal = lowVal;
-			if (origVal >= highVal) origVal = highVal;
-			var adjVal = origVal-lowVal;
-			var valScale = adjVal/scaleVal;
-			var valHeight = Math.round(height*valScale) == height ? Math.round(height*valScale)-1 : Math.round(height*valScale);
-			if ((origVal >= lowVal) && (origVal <= highVal)) {
-				if (isBarPlot) {
-					//select from the lower bound UP TO the current position in the matrix
-					for (var l = 0; l <= valHeight; l++) {
-						matrix[l][normalizedK] = 1;
-					}
-				} else {
-					//select just the current position in the matrix
-					matrix[valHeight][normalizedK] = 1;
-					//if rows/cols large, select around the current position in the matrix
-	/*				if ((isSummary) && (barSize > 500)) {
-						matrix[valHeight][k+1] = 1;
-						if (typeof matrix[valHeight+1] != 'undefined') {
-							matrix[valHeight+1][k] = 1;
-							if (typeof matrix[valHeight+1][k+1] != 'undefined') {
-								matrix[valHeight+1][k+1] = 1;
-							}
-						} 
-					} */
-				}
-			}
+	const highVal = parseFloat(covariateBar.high_bound);
+	const lowVal = parseFloat(covariateBar.low_bound);
+	const scaleVal = highVal - lowVal;
+	for (let k = 0; k < barValues.length; k++) {
+	    let origVal = barValues[k];
+	    if (origVal === "!CUT!") {
+		for (let l = 0; l < matrix.length; l++) {
+		    matrix[l][k] = 2;
 		}
-		normalizedK++;
+	    } else {
+		//For when the range is exclusive: Set for values out side range so that lower values register as the lowest value in the range
+		//and higher values register as the highest value in the range. (Per Bradley Broom)
+		if (origVal < lowVal) origVal = lowVal;
+		if (origVal >= highVal) origVal = highVal;
+		const adjVal = origVal-lowVal;
+		const valScale = adjVal/scaleVal;
+		const valHeight = Math.min (Math.round(matrix.length*valScale), matrix.length-1);
+		if ((origVal >= lowVal) && (origVal <= highVal)) {
+		    // Start BarPlots at 0
+		    //       ScatterPlots from heightScale rows below the calculated height
+		    const lo = isBarPlot ? 0 : Math.max (0, valHeight - heightScale + 1);
+		    for (let l = lo; l <= valHeight; l++) {
+			matrix[l][k] = 1;
+		    }
+		}
+	    }
 	} 
 	return matrix;
-}
+    };
 
 //Return the scaled heights of all covariate bars on the specified axis.
 //Hidden bars will have height zero.  The order of entries is fixed but
