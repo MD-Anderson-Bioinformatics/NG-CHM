@@ -314,9 +314,6 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 	var sumRowClassData; var sumColClassData;
 	var sumRowTopItemsData; var sumColTopItemsData;
 	if (includeSummaryMap) {
-		// Scale summary dendro canvases for PDF page size and Redraw because otherwise they can show up blank
-		resizeSummaryDendroCanvases(sumMapW, sumMapH, rowDendroWidth, colDendroHeight);
-
 		const minDPI = 600;
 		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
 		const mapHeightScale = Math.max (2, Math.ceil (minDPI/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
@@ -372,8 +369,6 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		sumColClassData = colClassCanvas.toDataURL('image/png');
 		sumRowTopItemsData = rowTICanvas.toDataURL('image/png');
 		sumColTopItemsData = colTICanvas.toDataURL('image/png');
-		//Put the dendro canvases back the way we found them.
-		restoreSummaryDendroCanvases();
 	}
 
 	if (mapsToShow == "B") {
@@ -820,51 +815,6 @@ PDF.genViewerHeatmapPDF = function genViewerHeatmapPDF () {
 		return isItLast;
 	}
 	
-	/**********************************************************************************
-	 * FUNCTION:  resizeSummaryDendroCanvases - This page resizes the summary canvases 
-	 * prior to their use in constructing PDF pages.  The summary box canvas and summary 
-	 * dendro canvases are sized based on the size of the browser so  that the lines drawn 
-	 * in them are the correct width.  We are going to draw these canvases on a PDF  
-	 * page so temporarily resize these canvases to the correct size for a normal page.
-	 **********************************************************************************/
-	function resizeSummaryDendroCanvases (sumMapW, sumMapH, rowDendroWidth, colDendroHeight, rowClassWidth, colClassHeight) {
-		//Save the current settings.
-		PDF.rowDendoWidth = document.getElementById('row_dendro_canvas').width;
-		PDF.rowDendroHeight = document.getElementById('row_dendro_canvas').height;
-		PDF.colDendroWidth = document.getElementById('column_dendro_canvas').width;
-		PDF.colDendroHeight = document.getElementById('column_dendro_canvas').height;
-
-		//Set canvas sizes to new sizes
-		document.getElementById('row_dendro_canvas').width = rowDendroWidth;
-		document.getElementById('row_dendro_canvas').height = sumMapH;
-		document.getElementById('column_dendro_canvas').width = sumMapW;
-		document.getElementById('column_dendro_canvas').height = colDendroHeight;
-
-		//Redraw the summary canvases so that they may be used in creating PDF images
-		SUM.drawHeatMap();
-		SUM.drawTopItems();
-		SUM.colDendro.draw();
-		SUM.rowDendro.draw();
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION:  restoreSummaryDendroCanvases - This page resizes the summary canvases back
-	 * to their original sizes after creating the images used for these canvases on the PDF.
-	 * This is required so that the Summary side of the viewer screen is redrawn 
-	 * correctly after PDF creation.
-	 **********************************************************************************/
-	function restoreSummaryDendroCanvases () {
-		//Restore saved height/width settings and redraw.
-		document.getElementById('row_dendro_canvas').width = PDF.rowDendoWidth;
-		document.getElementById('row_dendro_canvas').height = PDF.rowDendroHeight;
-		document.getElementById('column_dendro_canvas').width = PDF.colDendroWidth;
-		document.getElementById('column_dendro_canvas').height = PDF.colDendroHeight;
-		SUM.drawHeatMap();
-		SUM.drawTopItems();
-		SUM.colDendro.draw();
-		SUM.rowDendro.draw();
-	}
-
 	/**********************************************************************************
 	 * FUNCTION:  resizeDetailDendroCanvases - This page resizes the detail dendroram
 	 * canvases for the PDF and redraws them.  
