@@ -154,6 +154,22 @@ DVW.setMode = function(mapItem, newMode) {
 	mapItem.mode = newMode;
 }
 
+    /*********************************************************************************************
+     * FUNCTION:  getDetailWindow - The purpose of this function is to return an object containing
+     * selection information for a given detail heat map window.
+     *********************************************************************************************/
+    DVW.getDetailWindow = getDetailWindow;
+    function getDetailWindow (mapItem) {
+	    return mapItem.heatMap.getNewAccessWindow ({
+		    layer: mapItem.currentDl,
+		    level: DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),
+		    firstRow: DVW.getCurrentDetRow(mapItem),
+		    firstCol: DVW.getCurrentDetCol(mapItem),
+		    numRows: DVW.getCurrentDetDataPerCol(mapItem),
+		    numCols: DVW.getCurrentDetDataPerRow(mapItem)
+	    });
+    }
+
 /*==============================================================================================
  * 
  * HEATMAP POSITIONING FUNCTIONS
