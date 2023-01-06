@@ -903,11 +903,36 @@ DET.setDetailDataHeight = function (mapItem, size) {
     const mapItemVars = {}; /* Variables that depend on the current map item. */
 
     DET.drawSelections = function drawSelections () {
-	DVW.detailMaps.forEach (drawMapItemSelections);
+	DVW.detailMaps.forEach (DET.drawMapItemSelectionsOnScreen);
     };
 
-    DET.drawMapItemSelections = drawMapItemSelections;
-    function drawMapItemSelections (mapItem) {
+    // Need to export outside the IIFE.
+    // The function draws the detail map selections on the mapItem's boxCanvas.
+    DET.drawMapItemSelectionsOnScreen = drawMapItemSelectionsOnScreen;
+    function drawMapItemSelectionsOnScreen (mapItem) {
+	drawMapItemSelectionsOnTarget (mapItem, {
+	    // Width and height of the target:
+	    width: mapItem.boxCanvas.width,
+	    height: mapItem.boxCanvas.height,
+	    // Scaling to apply to mapItem
+	    widthScale: 1,
+	    heightScale: 1,
+	    // Context-like output device.
+	    ctx: mapItem.boxCanvas.getContext("2d"),
+	});
+    }
+
+    /* This function draws a thin black line around the entire detail map
+     * and thicker selection color lines around any selection rectangles
+     * visible in that detail map.
+     *
+     * The second parameter specifies the canvas-like target onto which
+     * the rectangles are drawn as well as some additional properties
+     * associated with it.
+     */
+    DET.drawMapItemSelectionsOnTarget = drawMapItemSelectionsOnTarget;
+    function drawMapItemSelectionsOnTarget (mapItem, target) {
+
 	// Retrieve contiguous row and column search arrays
 	const searchRows = SRCHSTATE.getAxisSearchResults("Row");
 	const rowRanges = UTIL.getContigRanges(searchRows);
@@ -920,53 +945,55 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	const mapNumCols = mapItem.heatMap.getNumColumns('d');
 
 	// Get total row and column bar "heights".
-	const totalColBarHeight = mapItem.getScaledVisibleCovariates("column").totalHeight();
-	const totalRowBarHeight = mapItem.getScaledVisibleCovariates("row").totalHeight();
 
-	mapItemVars.ctx = mapItem.boxCanvas.getContext("2d");
-	calcMapItemVariables (mapItem, totalRowBarHeight, totalColBarHeight);
+	mapItemVars.ctx = target.ctx;
+	calcMapItemVariables (mapItem, target);
 
-	// Clear entire box canvas.
-	mapItemVars.ctx.clearRect(0, 0, mapItem.boxCanvas.width, mapItem.boxCanvas.height);
+	// Clear entire target canvas.
+	target.ctx.clearRect(0, 0, target.width, target.height);
 
-	//Draw the border
+	// Draw the border
 	if (MMGR.mapHasGaps() === false) {
-		const canH = mapItem.dataViewHeight + totalColBarHeight;
-		const canW = mapItem.dataViewWidth + totalRowBarHeight;
-		const boxX = (totalRowBarHeight / canW) * mapItem.boxCanvas.width;
-		const boxY = (totalColBarHeight / canH) * mapItem.boxCanvas.height;
-		const boxW = mapItem.boxCanvas.width-boxX;
-		const boxH = mapItem.boxCanvas.height-boxY;
-		mapItemVars.ctx.lineWidth=1;
-		mapItemVars.ctx.strokeStyle="#000000";
-		mapItemVars.ctx.strokeRect(boxX,boxY,boxW,boxH);
+	    // Determine total width and height of map and covariate bars in canvas coordinates.
+	    const canH = mapItem.dataViewHeight + mapItemVars.totalColBarHeight;
+	    const canW = mapItem.dataViewWidth + mapItemVars.totalRowBarHeight;
+	    // Determine top-left of map only in target coordinates.
+	    const boxX = (mapItemVars.totalRowBarHeight / canW) * target.width;
+	    const boxY = (mapItemVars.totalColBarHeight / canH) * target.height;
+	    // Determine width and height of map only in target coordinates.
+	    const boxW = target.width-boxX;
+	    const boxH = target.height-boxY;
+	    // Draw the map border.
+	    target.ctx.lineWidth= Math.min (target.widthScale, target.heightScale);
+	    target.ctx.strokeStyle="#000000";
+	    target.ctx.strokeRect(boxX,boxY,boxW,boxH);
 	}
 	
-	// Retrieve selection color for and set ctx for coloring search boxes.
-	const dataLayer = dataLayers[mapItem.currentDl];
-	mapItemVars.ctx.lineWidth=3;
-	mapItemVars.ctx.strokeStyle=dataLayer.selection_color;
-
 	if (rowRanges.length > 0 || colRanges.length > 0) {
+		// Retrieve the selection color for and set the context for coloring the selection boxes.
+		const dataLayer = dataLayers[mapItem.currentDl];
+		mapItemVars.ctx.lineWidth = 3 * Math.min (target.widthScale, target.heightScale);
+		mapItemVars.ctx.strokeStyle = dataLayer.selection_color;
+
 		if (rowRanges.length === 0) {
 			//Draw vertical lines across entire heatMap
 			const topY = mapItemVars.topY;
-			const bottom = mapItemVars.boxCanvasHeight;
-			calcVisColRanges (colRanges, mapItem).forEach(([left, right]) => {
+			const bottom = target.height;
+			calcVisColRanges (colRanges, target.widthScale, mapItem).forEach(([left, right]) => {
 				drawSearchBox(mapItem, topY, bottom, left, right);
 			});
 		} else if (colRanges.length === 0) {
 			//Draw horizontal lines across entire heatMap
 			const left = mapItemVars.topX;
-			const right = mapItemVars.boxCanvasWidth;
-			calcVisRowRanges (rowRanges, mapItem).forEach(([topY,bottom]) => {
+			const right = target.width;
+			calcVisRowRanges (rowRanges, target.heightScale, mapItem).forEach(([topY,bottom]) => {
 				drawSearchBox(mapItem, topY, bottom, left, right);
 			});
 		} else {
 			//Draw discrete selection boxes on heatMap
-			const visColRanges = calcVisColRanges (colRanges, mapItem);
+			const visColRanges = calcVisColRanges (colRanges, target.widthScale, mapItem);
 			if (visColRanges.length > 0) {
-				calcVisRowRanges (rowRanges, mapItem).forEach(([topY,bottom]) => {
+				calcVisRowRanges (rowRanges, target.heightScale, mapItem).forEach(([topY,bottom]) => {
 					visColRanges.forEach(([left, right]) => {
 						drawSearchBox(mapItem,topY,bottom,left,right);
 					});
@@ -978,39 +1005,50 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		const elapsedTime = Math.round(10*(performance.now() - mapItemVars.start))/10;
 		console.log ("Detail map ", k+1, ": Drew ", mapItemVars.strokes, " boxes in ", elapsedTime, " ms.");
 	}
-	mapItemVars.ctx = null;   // Remove reference to the context.
+	delete mapItemVars.ctx;   // Remove reference to the context.
+	return mapItemVars;
     }
 
     /**********************************************************************************
      * FUNCTION calcMapItemVariables. Calculate variables that depend on the mapItem but
      * not the current search box.
      **********************************************************************************/
-    function calcMapItemVariables (mapItem, totalRowBarHeight, totalColBarHeight) {
+    function calcMapItemVariables (mapItem, target) {
+
+	mapItemVars.target = target;
+	mapItemVars.ctx = target.ctx;
+
+	// in mapItem coordinates:
+	mapItemVars.totalRowBarHeight = mapItem.getScaledVisibleCovariates("row").totalHeight();
+	mapItemVars.totalColBarHeight = mapItem.getScaledVisibleCovariates("column").totalHeight();
 
 	//top-left corner of visible area
-	mapItemVars.topX = ((totalRowBarHeight / mapItem.canvas.width) * mapItem.boxCanvas.width);
-	mapItemVars.topY = ((totalColBarHeight / mapItem.canvas.height) * mapItem.boxCanvas.height);
+	// in target coordinates:
+	mapItemVars.topX = ((mapItemVars.totalRowBarHeight / mapItem.canvas.width) * target.width);
+	mapItemVars.topY = ((mapItemVars.totalColBarHeight / mapItem.canvas.height) * target.height);
 	
 	//height/width of heat map rectangle in pixels
-	mapItemVars.mapXWidth = mapItem.boxCanvas.width - mapItemVars.topX;
-	mapItemVars.mapYHeight = mapItem.boxCanvas.height - mapItemVars.topY;
+	// in target coordinates:
+	mapItemVars.mapXWidth = target.width - mapItemVars.topX;
+	mapItemVars.mapYHeight = target.height - mapItemVars.topY;
 
 	// width of a data cell in pixels
+	// in target coordinates:
 	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONV') {
-		mapItemVars.cellWidth = mapItemVars.mapXWidth/DVW.getCurrentDetDataPerRow(mapItem);
+		mapItemVars.cellWidth = mapItemVars.mapXWidth / (DVW.getCurrentDetDataPerRow(mapItem) * target.widthScale);
 	} else {
-		mapItemVars.cellWidth = mapItemVars.mapXWidth/mapItem.dataPerRow;
+		mapItemVars.cellWidth = mapItemVars.mapXWidth / (mapItem.dataPerRow * target.widthScale);
 	}
-	// height of a data cell in pixels
-	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONH') {
-		mapItemVars.cellHeight = mapItemVars.mapYHeight/DVW.getCurrentDetDataPerCol(mapItem);
-	} else {
-		mapItemVars.cellHeight = mapItemVars.mapYHeight/mapItem.dataPerCol;
-	}
+	mapItemVars.maxColFontSize = 0.95 * mapItemVars.cellWidth;
 
-	// Save a copy of these in case querying boxCanvas a lot is expensive.
-	mapItemVars.boxCanvasWidth = mapItem.boxCanvas.width;
-	mapItemVars.boxCanvasHeight = mapItem.boxCanvas.height;
+	// height of a data cell in pixels
+	// in target coordinates:
+	if (mapItem.mode === 'NORMAL' || mapItem.mode === 'RIBBONH') {
+		mapItemVars.cellHeight = mapItemVars.mapYHeight / (DVW.getCurrentDetDataPerCol(mapItem) * target.heightScale);
+	} else {
+		mapItemVars.cellHeight = mapItemVars.mapYHeight / (mapItem.dataPerCol * target.heightScale);
+	}
+	mapItemVars.maxRowFontSize = 0.95 * mapItemVars.cellHeight;
 
 	if (debug) {
 		mapItemVars.strokes = 0;
@@ -1025,21 +1063,23 @@ DET.setDetailDataHeight = function (mapItem, size) {
      * axis : the axis concerned
      * ranges : an array of selectionRanges
      * currentPosn : start coordinate of the current view for the specified axis
+     *
+     * These three in target coordinates:
      * viewportStart : top/left pixel of the viewport
      * viewportEnd : bottom/right pixel of the viewport
      * cellSize : number of pixels in a cell
      *
      * Output:
-     * an array of visible pixel ranges (each an array of two pixel coordinate values)
+     * an array of visible pixel ranges (each an array of two target coordinate values)
      *
      * Only at least partially visible ranges are included in the output array.
      *
      **********************************************************************************/
-    function calcVisRanges (axis, ranges, currentPosn, viewportStart, viewportEnd, cellSize) {
+    function calcVisRanges (axis, ranges, currentPosn, viewScale, viewportStart, viewportEnd, cellSize) {
 	const visRanges = [];
 	ranges.forEach (([selStart,selEnd]) => {
-	    const adjustedStart = (selStart - currentPosn)*cellSize;
-	    const adjustedEnd = ((selEnd - selStart)+1)*cellSize;
+	    const adjustedStart = (selStart - currentPosn)*cellSize*viewScale;
+	    const adjustedEnd = ((selEnd - selStart)+1)*cellSize*viewScale;
 	    const boxStart = viewportStart+adjustedStart;
 	    const boxEnd = boxStart+adjustedEnd;
 	    if (boxStart < viewportEnd && boxEnd > viewportStart) {
@@ -1053,15 +1093,15 @@ DET.setDetailDataHeight = function (mapItem, size) {
     /**********************************************************************************
      * FUNCTION - calcVisColRanges: Convert column selectionRanges into column visibleRanges
      */
-    function calcVisColRanges (ranges, mapItem) {
-	return calcVisRanges ("column", ranges, mapItem.currentCol, mapItemVars.topX, mapItemVars.boxCanvasWidth, mapItemVars.cellWidth);
+    function calcVisColRanges (ranges, widthScale, mapItem) {
+	return calcVisRanges ("column", ranges, mapItem.currentCol, widthScale, mapItemVars.topX, mapItemVars.target.width, mapItemVars.cellWidth);
     }
 
     /**********************************************************************************
      * FUNCTION - calcVisRowRanges: Convert row selectionRanges into row visibleRanges
      */
-    function calcVisRowRanges (ranges, mapItem) {
-	return calcVisRanges ("row", ranges, mapItem.currentRow, mapItemVars.topY, mapItemVars.boxCanvasHeight, mapItemVars.cellHeight);
+    function calcVisRowRanges (ranges, heightScale, mapItem) {
+	return calcVisRanges ("row", ranges, mapItem.currentRow, heightScale, mapItemVars.topY, mapItemVars.target.height, mapItemVars.cellHeight);
     }
 
     /**********************************************************************************
@@ -1105,11 +1145,11 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	 * visible in the detail viewport.
 	 *********************************************************************************************/
 	function isHorizLineVisible (boxY) {
-	    return (boxY >= mapItemVars.topY) && (boxY <= mapItemVars.boxCanvasHeight);
+	    return (boxY >= mapItemVars.topY) && (boxY <= mapItemVars.target.height);
 	}
 
 	function isVertLineVisible (boxX) {
-	    return (boxX >= mapItemVars.topX) && (boxX <= mapItemVars.boxCanvasWidth);
+	    return (boxX >= mapItemVars.topX) && (boxX <= mapItemVars.target.width);
 	}
 
 	/**********************************************************************************
@@ -1139,11 +1179,10 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	}
 
 	/**********************************************************************************
-	 * FUNCTION - drawVertLine: The purpose of this function is to draw a line
-	 * on a given heat map canvas.
+	 * FUNCTION - strokeLine: This function draws a line on the target.
 	 **********************************************************************************/
 	function strokeLine (fromX, fromY, toX, toY) {
-	    mapItemVars.ctx.moveTo(fromX,fromY);
+	    mapItemVars.ctx.moveTo(fromX, fromY);
 	    mapItemVars.ctx.lineTo(toX, toY);
 	}
     }
@@ -2303,7 +2342,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	//Done twice because changing canvas size affects fonts selected for drawing labels
 	sizeCanvasForLabels(mapItem);
 	updateMapItemLabels(mapItem);
-	DET.drawMapItemSelections(mapItem);
+	DET.drawMapItemSelectionsOnScreen(mapItem);
 	DET.rowDendroResize(mapItem);
 	DET.colDendroResize(mapItem);
     }
