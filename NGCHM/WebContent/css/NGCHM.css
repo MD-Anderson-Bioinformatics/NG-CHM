@@ -127,6 +127,15 @@ div.pane canvas {
 	position: absolute;
 }
 
+#prefCreate_btn {
+    background: transparent;
+    border: none;
+}
+
+#prefCreate_btn:disabled {
+    opacity: 25%;
+}
+
 /* #content contains everything between the page header and footer.
  * Initially it contains the splash screen.
  * Once loading commences it's replaced by the loading screen.

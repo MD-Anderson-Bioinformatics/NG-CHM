@@ -259,8 +259,17 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 
 	const layer = drawWin.layer;
-	const paramCheck = JSON.stringify({ drawWin, params });
 
+	// Update detailHeatMapParams to indicate the desired view.
+	{
+	    const { level, firstRow, firstCol, numRows, numCols } = drawWin;
+	    mapItem.detailHeatMapParams[layer] = {
+		drawWin: { layer, level, firstRow, firstCol, numRows, numCols },  // Just the window params.
+		params: params,
+	    };
+	}
+
+	const paramCheck = JSON.stringify(mapItem.detailHeatMapParams[layer]);
 	if (mapItem.detailHeatMapValidator[layer] === paramCheck) {
 		//Cached image exactly matches what we need.
 		return mapItem.detailHeatMapCache[layer];

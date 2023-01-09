@@ -46,6 +46,7 @@ DMM.nextMapNumber = 1;
 	  detailHeatMapCache: {},      // Last rendered detail heat map for each layer
 	  detailHeatMapLevel: {},      // Level of last rendered heat map for each layer
 	  detailHeatMapValidator: {},  // Encoded drawing parameters used to check heat map is current
+	  detailHeatMapParams: {},     // Drawing parameters for this detail view (used by PDF generator)
 
     };
 
@@ -64,6 +65,7 @@ DMM.nextMapNumber = 1;
 		detailHeatMapCache: {},
 		detailHeatMapLevel: {},
 		detailHeatMapValidator: {},
+		detailHeatMapParams: {},
 	    });
 	}
 
