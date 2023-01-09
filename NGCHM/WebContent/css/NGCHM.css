@@ -905,6 +905,12 @@ th.breakpointContainer {
     box-sizing: border-box;
     text-align: left;
 }
+
+#pdfProgressBar {
+    width: 100%;
+    margin-top: 0.5em;
+}
+
 #msgBoxTxt {
     box-sizing: border-box
 }

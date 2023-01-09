@@ -193,6 +193,8 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	// until PDF generation completes.
 	document.body.style.cursor = 'wait';
 	document.getElementById ('prefCreate_btn').disabled = true;
+	document.getElementById ('pdfProgressBarDiv').style.display = '';
+	document.getElementById ('pdfProgressBar').value = 0;
 
 	var removePdfDialog = true;
 
@@ -231,6 +233,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	    console.log ('getViewerHeatmapPDF completed');
 	    if (removePdfDialog) PDF.pdfCancelButton();
 	    document.getElementById ('prefCreate_btn').disabled = false;
+	    document.getElementById ('pdfProgressBarDiv').style.display = 'none';
 	    document.body.style.cursor = 'default';
 	});
     }
@@ -358,8 +361,16 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	    'legends': addLegendPages,
 	};
 
+	const totalJobs = 1 + drawJobs.length;  // One for work done above.
+
+	function updateProgress() {
+	    const progress = (totalJobs - drawJobs.length) / totalJobs;
+	    document.getElementById ('pdfProgressBar').value = progress;
+	}
+
 	// Execute the first job.  setTimeout allows the UI to update
 	// before starting the job.
+	updateProgress ();
 	setTimeout (doNextJob);
 
 	function doNextJob () {
@@ -373,7 +384,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		const { job, mapItem } = drawJobs.shift();
 		jobFuncs[job](mapItem)
 		    .catch (error => { reject (error); })
-		    .then(() => setTimeout(doNextJob));
+		    .then(() => { updateProgress(); setTimeout(doNextJob); });
 	    }
 	}
 
