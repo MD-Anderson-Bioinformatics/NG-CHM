@@ -792,6 +792,17 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	// listeners, such as TileWindow listeners.
 	this.addEventListener(function (event, tile) {
 	    if (event == MMGR.Event_NEWDATA) {
+		// Iterate over all the tileWindowRefs, remove any that have been reclaimed,
+		// and check all others for tile updates.
+		this.tileWindowRefs.forEach ((value, key) => {
+		    const tileWin = value.deref();
+		    if (tileWin) {
+			tileWin.checkTile (tile);
+		    } else {
+			console.log ('Removing garbage collected tileWindow', key);
+			this.tileWindowRefs.delete(key);
+		    }
+		});
 		// Iterate over all the tileWindowListeners.
 		let i = 0;
 		while (i < this.tileWindowListeners.length) {
@@ -806,20 +817,14 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			i ++;
 		    }
 		}
-		// Iterate over all the tileWindowRefs and remove any that have been reclaimed.
-		this.tileWindowRefs.forEach ((value, key) => {
-		    const tileWin = value.deref();
-		    if (!tileWin) {
-			console.log ('Removing garbage collected tileWindow', key);
-			this.tileWindowRefs.delete(key);
-		    }
-		});
 	    }
 	});
 
 
 	// A helper class for the tiles required by an access window.
 	class TileWindow {
+	    #allTilesAvailable;
+	    #tileStatusValid;
 	    constructor (heatMap, layer, level, startRowTile, endRowTile, startColTile, endColTile) {
 		this.heatMap = heatMap;
 		this.layer = layer;
@@ -828,6 +833,18 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		this.endRowTile = endRowTile;
 		this.startColTile = startColTile;
 		this.endColTile = endColTile;
+
+		this.#allTilesAvailable = false;
+		this.#tileStatusValid = false;
+	    }
+
+	    checkTile (tile) {
+		if (tile.layer === this.layer && tile.level === this.level &&
+			tile.row >= this.startRowTile && tile.row <= this.endRowTile &&
+			tile.col >= this.startColTile && tile.col <= this.endColTile) {
+		    console.log ('checkTile: tile in TileWindow', tile);
+		    this.#tileStatusValid = false;
+		}
 	    }
 
 	    fetchTiles () {
@@ -839,14 +856,21 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    }
 
 	    allTilesAvailable () {
+		if (this.#tileStatusValid) {
+		    return this.#allTilesAvailable;
+		}
 		for (let i = this.startRowTile; i <= this.endRowTile; i++) {
 		    for (let j = this.startColTile; j <= this.endColTile; j++) {
 			const tileCacheName = this.layer + "." + this.level + "." + i + "." + j;
 			if (getTileCacheData(tileCacheName) === null) {
+			    this.#allTilesAvailable = false;
+			    this.#tileStatusValid = true;
 			    return false;
 			}
 		    }
 		}
+		this.#allTilesAvailable = true;
+		this.#tileStatusValid = true;
 		return true;
 	    }
 
