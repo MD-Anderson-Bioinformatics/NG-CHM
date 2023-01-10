@@ -353,6 +353,15 @@ div.paneHeader img {
 	display: contents;
 }
 
+.buttonBox {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#msgBoxButtons .default {
+    filter: brightness(1.5) hue-rotate(310deg);
+}
+
 .gearPanel .buttonBox {
 	display: flex;
 	margin-bottom: 1em;
@@ -896,6 +905,13 @@ th.breakpointContainer {
     box-sizing: border-box;
     text-align: left;
 }
+
+#msgBoxButtons button {
+    border: none;
+    vertical-align: top;
+    background: transparent;
+}
+
 #msgBoxTxt {
     box-sizing: border-box
 }

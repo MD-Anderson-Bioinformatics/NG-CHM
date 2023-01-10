@@ -1693,8 +1693,6 @@ MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel
      **********************************************************************************/
     MMGR.zipAppDownload = zipAppDownload;
     function zipAppDownload () {
-	const dlButton = document.getElementById('msgBoxBtnImg_1');
-	dlButton.style.display = 'none';
 	downloadFileApplication();
     }
 
