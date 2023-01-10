@@ -172,7 +172,11 @@
 		    });
 	    }
 	    UHM.setMessageBoxText(text);
-	    UHM.setMessageBoxButton(3, UTIL.imageTable.cancelSmall, "Cancel button", UHM.messageBoxCancel);
+	    UHM.setMessageBoxButton(
+		'cancel',
+		{ type: 'image', src: UTIL.imageTable.cancelSmall, default: true },
+		"Cancel button",
+		UHM.messageBoxCancel);
 	    UHM.displayMessageBox();
     }
 
@@ -706,30 +710,42 @@
 				    text = "<br>You have elected to save changes made to this NG-CHM heat map file.<br><br>You may save them to a new NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 			    }
 			    UHM.setMessageBoxText(text);
-			    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", saveHeatMapToNgchm);
-			    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+			    addSaveToNgchmButton();
+			    addCancelSaveButton();
 		    } else {
 			    // If so, is read only?
 			    if (heatMap.isReadOnly()) {
 				    text = "<br>You have elected to save changes made to this READ-ONLY heat map. READ-ONLY heat maps cannot be updated.<br><br>However, you may save these changes to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				    UHM.setMessageBoxText(text);
-				    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", saveHeatMapToNgchm);
-				    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+				    addSaveToNgchmButton();
+				    addCancelSaveButton();
 			    } else {
 				    text = "<br>You have elected to save changes made to this heat map.<br><br>You have the option to save these changes to the original map OR to save them to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				    UHM.setMessageBoxText(text);
-				    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", saveHeatMapToNgchm);
+				    addSaveToNgchmButton();
 				    UHM.setMessageBoxButton(2, "images/saveOriginal.png", "Save Original Heat Map", saveHeatMapToServer);
-				    UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+				    addCancelSaveButton();
 			    }
 		    }
 	    } else {
 		    text = "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 		    UHM.setMessageBoxText(text);
-		    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save To NG-CHM File", saveHeatMapToNgchm);
-		    UHM.setMessageBoxButton(4, UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+		    addSaveToNgchmButton();
+		    addCancelSaveButton();
 	    }
 	    UHM.displayMessageBox();
+
+	    function addSaveToNgchmButton() {
+		UHM.setMessageBoxButton(
+		    'saveToNgchm',
+		    { type: 'image', src: UTIL.imageTable.saveNgchm, default: true },
+		    "Save To NG-CHM File",
+		    saveHeatMapToNgchm);
+	    }
+
+	    function addCancelSaveButton() {
+		UHM.setMessageBoxButton('cancelSave', UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
+	    }
     }
 
     const hamburgerButton = document.getElementById('barMenu_btn');
@@ -1297,7 +1313,12 @@
 			case 'Enter':
 				if (UHM.messageBoxIsVisible()) {
 				    e.preventDefault();
-				    UHM.messageBoxCancel();
+				    const defaultButton = document.querySelector('#msgBoxButtons button.default');
+				    if (defaultButton) {
+					defaultButton.onclick();
+				    } else {
+					UHM.messageBoxCancel();
+				    }
 				}
 				break;
 			default:
