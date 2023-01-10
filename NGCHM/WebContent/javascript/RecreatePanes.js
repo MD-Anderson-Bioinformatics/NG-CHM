@@ -32,7 +32,7 @@
 	 * This is a hack.
 	 * TODO: Understand the NGCHM initialization code well enough to not need this hack.
 	 */
-	function reconstructPanelsFromMapConfig(initialLoc, savedState, callbacks) {
+	function reconstructPanelsFromMapConfig(initialLoc, savedState) {
 
 	    if (debug) console.log("Reconstructing panes");
 	    RECPANES.mapConfigPanelConfiguration = Object.assign({}, savedState);
@@ -54,7 +54,6 @@
 	    function populatePluginPanels () {
 			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
-			setFlickState(callbacks.setFlickState);
 			setSelections();  // Set saved results, if any.
 			SRCH.doInitialSearch();  // Will override saved results, if requested.
 			PANE.resizeNGCHM();
@@ -330,19 +329,6 @@
 				throw error;
 			}
 		}
-	}
-
-	/*
-	 * Set the 'flick' control and data layer
-	*/
-	function setFlickState(setFlick) {
-		if (!RECPANES.mapConfigPanelConfiguration.hasOwnProperty('flickInfo')) {
-			return;
-		}
-		if (Object.keys(MMGR.getHeatMap().getDataLayers()).length == 1) {
-			return;
-		}
-		setFlick (RECPANES.mapConfigPanelConfiguration.flickInfo['flick_btn_state']);
 	}
 })();
 

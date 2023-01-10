@@ -283,8 +283,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	// currently being displayed.
 	// Set in the application by the user when, for exanple, flick views are toggled.
 	{
-	    this._currentDl = "dl1"; // Set default to Data Layer 1.
-
 	    this.setCurrentDL = function (dl) {
 		// Set the current data layer to dl.
 		// If the current data layer changes, the colors used for
@@ -373,10 +371,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	//Return the total number of detail rows
 	this.getTotalRows = function(){
 		return datalevels[MAPREP.DETAIL_LEVEL].totalRows;
-	}
-	
-	this.setFlickInitialized = function(value){
-		flickInitialized = value;
 	}
 	
 	//Return the total number of detail rows
@@ -981,12 +975,17 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return initialized;
 	}
 
+	/*
+	 * Set the 'flick' control and data layer
+	*/
 	this.configureFlick = function(){
 		if (!flickInitialized) {
 			const dl = this.getDataLayers();
 			const numLayers = Object.keys(dl).length;
 			let maxDisplay = 0;
 			if (numLayers > 1) {
+				const panelConfig = this.getPanelConfiguration();
+				const flickInfo = panelConfig ? panelConfig.flickInfo : null;
 				const dls = new Array(numLayers);
 				const orderedKeys = new Array(numLayers);
 				for (let key in dl){
@@ -1001,7 +1000,14 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 					}
 					dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
 				}
-				FLICK.enableFlicks (dls.join(""), this.getCurrentDL(), orderedKeys[1]);
+				if (flickInfo) {
+				    FLICK.enableFlicks (dls.join(""), flickInfo.flick1 || 'dl1', flickInfo.flick2 || 'dl1');
+				    const layer = FLICK.setFlickState (flickInfo.flick_btn_state);
+				    this.setCurrentDL(layer);
+				} else {
+				    FLICK.enableFlicks (dls.join(""), "dl1", orderedKeys[1]);
+				    this.setCurrentDL("dl1");
+				}
 			} else {
 				this.setCurrentDL("dl1");
 				FLICK.disableFlicks();
@@ -1321,8 +1327,9 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 		const heatMap = MMGR.getHeatMap();
 		heatMap.mapConfig = mc;
-		sendCallBack(MMGR.Event_JSON);
 		addDataLayers(mc);
+		heatMap.configureFlick();
+		sendCallBack(MMGR.Event_JSON);
 	}
 	
 	MMGR.mapUpdatedOnLoad = function() {
@@ -1466,7 +1473,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 				 (initialized == 0)) {
 					initialized = 1;
 					configurePageHeader();
-					heatMap.configureFlick();
 					if (!heatMap.mapConfig.hasOwnProperty('panel_configuration')) {
 					    UTIL.hideLoader(true);
 					}
