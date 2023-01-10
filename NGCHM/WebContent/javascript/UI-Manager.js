@@ -38,21 +38,25 @@
 	    const heatMap = MMGR.getHeatMap();
 	    PIM.requestDataFromPlugins();
 	    var success = true;
-	    UHM.initMessageBox();
 	    if (heatMap.source() === MMGR.WEB_SOURCE) {
-		    success = MMGR.zipMapProperties(JSON.stringify(mapConfig));
-		    zipSaveNotification(heatMap, false);
+		    success = MMGR.zipMapProperties(heatMap, JSON.stringify(heatMap.mapConfig));
+		    showViewerSaveNotification(heatMap);
+		    UHM.messageBoxCancel();
 	    } else {
+		    UHM.showMsgBoxProgressBar();
 		    let waitForPluginDataCount = 0;
 		    let awaitingPluginData = setInterval(function() {
 			    waitForPluginDataCount = waitForPluginDataCount + 1; // only wait so long
 			    if (PIM.havePluginData() || waitForPluginDataCount > 3) {
 				    clearInterval(awaitingPluginData);
 				    PIM.warnAboutMissingPluginData();
-				    heatMap.zipSaveMapProperties(addSaveStateToMapConfig());
+				    MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
+				    .then(() => {
+					UHM.messageBoxCancel();
+					showViewerSaveNotification(heatMap);
+				    });
 			    }
 		    }, 1000);
-		    zipSaveNotification(heatMap, false);
 	    }
 	    heatMap.setUnAppliedChanges(false);
     }
@@ -66,9 +70,9 @@
 			// FIXME: BMB. Verify this does what it's required to do.
 			// This appears to only be saving mapConfig.
 			// What about mapData?
-			success = MMGR.webSaveMapProperties(JSON.stringify(heatMap.getMapConfig()));
+			success = MMGR.webSaveMapProperties(heatMap);
 		    } else {
-			zipSaveNotification(heatMap, true);
+			zipSaveOutdated(heatMap);
 		    }
 	    }
 	    return success;
@@ -151,41 +155,47 @@
     }
 
     /**********************************************************************************
-     * FUNCTION - zipSaveNotification: This function handles all of the tasks necessary
+     * FUNCTION - zipSaveOutdated: This function handles all of the tasks necessary
+     * display a modal window for saving a zip file is being saved. The textId passed in
+     * instructs the code to display either the startup save OR preferences save message.
+     **********************************************************************************/
+    function zipSaveOutdated (heatMap) {
+	    const text = "<br>This NG-CHM contains an outdated heat map configuration. It has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>To avoid this notice in the future, replace your original file with the version now being displayed.<br><br>";
+	    UHM.initMessageBox();
+	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
+	    UHM.setMessageBoxText(text);
+	    UHM.setMessageBoxButton('save',
+		    { type: 'image', src: UTIL.imageTable.saveNgchm, alt: "Save NG-CHM button", disableOnClick: true, default: true },
+		    () => {
+		UHM.showMsgBoxProgressBar();
+		MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
+		.then(() => {
+		    UHM.messageBoxCancel();
+		    showViewerSaveNotification(heatMap);
+		});
+	    });
+	    UHM.setMessageBoxButton(
+		'cancel',
+		{ type: 'image', src: UTIL.imageTable.cancelSmall, alt: "Cancel button" }
+	    );
+	    UHM.displayMessageBox();
+    }
+
+    /**********************************************************************************
+     * FUNCTION - showViewerSaveNotification: This function handles all of the tasks necessary
      * display a modal window whenever a zip file is being saved. The textId passed in
      * instructs the code to display either the startup save OR preferences save message.
      **********************************************************************************/
-    function zipSaveNotification (heatMap, autoSave) {
-	    var text;
-	    UHM.initMessageBox();
-	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
-	    if (autoSave) {
-		    text = "<br>This NG-CHM archive file contains an out dated heat map configuration that has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>In order to upgrade the NG-CHM and avoid this notice in the future, you will want to replace your original file with the version now being displayed.<br><br>";
-		    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save NG-CHM button", () => {
-			heatMap.zipSaveMapProperties(addSaveStateToMapConfig());
-			UHM.messageBoxCancel();
-		    });
-	    } else {
-		    text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
-		    UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", () => {
-			MMGR.zipAppDownload();
-			UHM.messageBoxCancel();
-		    });
-	    }
-	    UHM.setMessageBoxText(text);
-	    UHM.setMessageBoxButton(
-		'cancel',
-		{ type: 'image', src: UTIL.imageTable.cancelSmall, default: true },
-		"Cancel button",
-		UHM.messageBoxCancel);
-	    UHM.displayMessageBox();
+    function showViewerSaveNotification (heatMap) {
+	    const title = "NG-CHM File Viewer";
+	    const text = "<br>You have just saved a heat map as a NG-CHM file.  To open this new file you will need the NG-CHM File Viewer application.  To get the lastest version, press the Download Viewer button.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you can run the application by double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
+            MMGR.showDownloadViewerNotification (title, text);
     }
 
     function saveHeatMapToServer () {
 	    const heatMap = MMGR.getHeatMap();
-	    const mapConfig = heatMap.getMapConfig();
 	    UHM.initMessageBox();
-	    const success = MMGR.webSaveMapProperties(JSON.stringify(mapConfig));
+	    const success = MMGR.webSaveMapProperties(heatMap);
 	    if (success !== "false") {
 		    heatMap.setUnAppliedChanges(false);
 	    } else {
@@ -724,7 +734,7 @@
 	    text = text + "<p><b>Citation:</b> Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a></p>";
 	    text = text + "<p>The NG-CHM Viewer is also available for a variety of other platforms.</p>";
 	    UHM.setMessageBoxText(text);
-	    UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Close button", UHM.messageBoxCancel);
+	    UHM.setMessageBoxButton('close', { type: 'image', src: UTIL.imageTable.closeButton, alt: "Close button", default: true });
 	    UHM.displayMessageBox();
     };
 
@@ -805,8 +815,7 @@
 	    function addSaveToNgchmButton() {
 		UHM.setMessageBoxButton(
 		    'saveToNgchm',
-		    { type: 'image', src: UTIL.imageTable.saveNgchm, default: true },
-		    "Save To NG-CHM File",
+		    { type: 'image', src: UTIL.imageTable.saveNgchm, alt: "Save to NG-CHM file", disableOnClick: true, default: true },
 		    saveHeatMapToNgchm);
 	    }
 
@@ -1352,6 +1361,9 @@
 				    } else {
 					UHM.messageBoxCancel();
 				    }
+				}
+				if (!document.getElementById('linkBox').classList.contains('hide')) {
+				    document.querySelector('#linkBox button.default').onclick();
 				}
 				break;
 			default:

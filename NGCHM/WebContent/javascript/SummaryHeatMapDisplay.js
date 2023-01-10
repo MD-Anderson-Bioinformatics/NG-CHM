@@ -690,12 +690,13 @@ SUM.resetBoxCanvas = function() {
 	ctx.lineWidth=1;
 	ctx.strokeStyle="#000000";
 
+	const heatMap = MMGR.getHeatMap();
+
 	// If no row or column cuts, draw the heat map border in black
-	if (MMGR.mapHasGaps() === false){
-		ctx.strokeRect(0,0,SUM.boxCanvas.width,SUM.boxCanvas.height);
+	if (!heatMap.hasGaps()){
+	    ctx.strokeRect(0, 0, SUM.boxCanvas.width, SUM.boxCanvas.height);
 	}
 
-	const heatMap = MMGR.getHeatMap();
 	const primaryMap = DVW.primaryMap;
 	if (primaryMap) {
 	    //If in sub-dendro mode, draw rectangles outside of selected range.

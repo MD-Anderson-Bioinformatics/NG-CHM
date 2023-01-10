@@ -54,26 +54,6 @@ MMGR.localRepository= '/NGCHM';
 	form.submit();
     }
 
-// Matrix Manager block.
-{
-    var heatMap = null;
-
-    //Main function of the matrix manager - retrieve a heat map object.
-    //mapFile parameter is only used for local file based heat maps.
-    //This function is called from a number of places:
-    //It is called from UIMGR.onLoadCHM when displaying a map in the NG-CHM Viewer and for embedded NG-CHM maps
-    //It is called from displayFileModeCHM (in UIMGR) when displaying a map in the stand-alone NG-CHM Viewer
-    //It is called in script in the mda_heatmap_viz.mako file when displaying a map in the Galaxy NG-CHM Viewer
-    MMGR.createHeatMap = function createHeatMap (fileSrc, heatMapName, updateCallbacks, mapFile) {
-	    heatMap = new MMGR.HeatMap(heatMapName, updateCallbacks, fileSrc, mapFile);
-    };
-
-    // Return the current heat map.
-    MMGR.getHeatMap = function getHeatMap() {
-	return heatMap;
-    };
-}
-
 //Create a worker thread to request/receive json data and tiles.  Using a separate
 //thread allows the large I/O to overlap extended periods of heavy computation.
 MMGR.createWebLoader = function (fileSrc) {
@@ -243,67 +223,301 @@ let	wS = `const debug = ${debug};`;
 	}
 };
 
-MMGR.isRow = function isRow (axis) {
+    // Handle replies from tileio worker.
+    function connectWebLoader (heatMap, addMapConfig, addMapData) {
+	const debug = false;
+	const jsonSetterFunctions = { mapConfig: addMapConfig, mapData: addMapData };
+	MMGR.webLoader.setMessageHandler (function(e) {
+	    if (debug) console.log({ m: 'Received message from webLoader', e });
+	    if (e.data.op === 'tileLoaded') {
+		const tiledata = new Float32Array(e.data.buffer);
+		heatMap.tileCache.setTileCacheEntry (e.data.job.tileCacheName, tiledata);
+	    } else if (e.data.op === 'tileLoadFailed') {
+		heatMap.tileCache.removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
+	    } else if (e.data.op === 'jsonLoaded') {
+		if (!jsonSetterFunctions.hasOwnProperty(e.data.name)) {
+		    console.log({ m: 'connectWebLoader: unknown JSON request', e });
+		    return;
+		}
+		jsonSetterFunctions[e.data.name] (heatMap, e.data.json);
+	    } else if (e.data.op === 'jsonLoadFailed') {
+		console.error(`Failed to get JSON file ${e.data.name} for ${heatMap.mapName} from server`);
+		UHM.mapNotFound(heatMap.mapName);
+	    } else {
+		console.log({ m: 'connectWebLoader: unknown op', e });
+	    }
+	});
+    };
+
+    MMGR.isRow = isRow;
+    function isRow (axis) {
 	return axis && axis.toLowerCase() === 'row';
-};
+    }
 
-//HeatMap Object - holds heat map properties and a tile cache
-//Used to get HeatMapLevel object.
-//ToDo switch from using heat map name to blob key?
-MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
-	//This holds the various zoom levels of data.
-	this.mapConfig = null;
-	var mapData = null;
-	var mapUpdatedOnLoad = false; // Set to true if map updated on load.
-	var datalevels = {};
-	const alternateLevels = {};	
-	var tileCache = {};
-	var zipFiles = {};
-	var colorMapMgr;
-	var initialized = 0;
-	const eventListeners = updateCallbacks.slice(0);  // Create a copy.
-	var flickInitialized = false;
-	var unAppliedChanges = false;
-	const jsonSetterFunctions = [];
+    // TileWindow objects hold hard references to all the tiles
+    // required by an access window.
+    class TileWindow {
 
-	const isRow = MMGR.isRow;
+	constructor (heatMap, layer, level, startRowTile, endRowTile, startColTile, endColTile) {
+	    this.heatMap = heatMap;
+	    this.layer = layer;
+	    this.level = level;
+	    this.startRowTile = startRowTile;
+	    this.endRowTile = endRowTile;
+	    this.startColTile = startColTile;
+	    this.endColTile = endColTile;
 
-	// Return the source of this heat map.
-	this.source = function() {
-	    return fileSrc;
-	};
+	    this._allTilesAvailable = false;
+	    this.tileStatusValid = false;
+	}
 
-	// Method used to register another callback function for a user that wants to be notifed
-	// of updates to the status of heat map data.
-	this.addEventListener = function(callback) {
-	    eventListeners.push(callback.bind (this));
-	};
+	checkTile (tile) {
+	    // Determines if a tile update applies to one of the tiles in this
+	    // TileWindow.  If so, it invalidates the status of _allTilesAvailable.
+	    if (tile.layer === this.layer && tile.level === this.level &&
+		    tile.row >= this.startRowTile && tile.row <= this.endRowTile &&
+		    tile.col >= this.startColTile && tile.col <= this.endColTile) {
+		console.log ('checkTile: tile in TileWindow', tile);
+		this.tileStatusValid = false;
+	    }
+	}
+
+	fetchTiles () {
+	    // Initiates fetches for all tiles in the TileWindow.
+	    for (let i = this.startRowTile; i <= this.endRowTile; i++) {
+		for (let j = this.startColTile; j <= this.endColTile; j++) {
+		    this.heatMap.tileCache.getTile(this.layer, this.level, i, j);
+		}
+	    }
+	}
+
+	allTilesAvailable () {
+	    // Returns true iff all tiles in this TileWindow are in the heatMap's
+	    // tileCache.  Memoizes the result until invalidated by a tile
+	    // within the window becoming available.  Particularly helpful once
+	    // _allTilesAvailable becomes true.
+	    if (this.tileStatusValid) {
+		return this._allTilesAvailable;
+	    }
+	    for (let i = this.startRowTile; i <= this.endRowTile; i++) {
+		for (let j = this.startColTile; j <= this.endColTile; j++) {
+		    const tileCacheName = this.layer + "." + this.level + "." + i + "." + j;
+		    if (this.heatMap.tileCache.getTileCacheData(tileCacheName) === null) {
+			this._allTilesAvailable = false;
+			this.tileStatusValid = true;
+			return false;
+		    }
+		}
+	    }
+	    this._allTilesAvailable = true;
+	    this.tileStatusValid = true;
+	    return true;
+	}
+
+	// This method waits until all tiles in the tilewindow are available.
+	//
+	// If callback is undefined, onready returns a promise that
+	// resolves when all tiles in the TileWindow are available.
+	//
+	// If callback is defined, onready returns undefined and calls callback
+	// when all tiles in the TileWindow are available.
+	//
+	// The TileWindow is passed to callback or is the result of the Promise.
+	//
+	// NB: Currently, tiles are never expunged from the cache.
+	// If they ever can be, there will need to be a way to prevent
+	// tiles from being expunged while a TileWindow is interested in them.
+	// Perhaps something as simple as preventing expunging while
+	// the tileWindowListeners array is non-empty.
+	onready (callback) {
+	    const tileWindow = this;
+	    const p = new Promise((resolve, reject) => {
+		if (tileWindow.allTilesAvailable()) {
+		    resolve(tileWindow);
+		} else {
+		    tileWindow.heatMap.tileWindowListeners.push ({ tileWindow: tileWindow, checkReady: checkReady, });
+		}
+
+		function checkReady (tileWindow, tile) {
+		    // First two conditions below are optimizations: only tiles for tileWindow's layer & level can
+		    // affect its allTilesAvailable.  Saves a potentially large nested loop.
+		    if (tile.layer == tileWindow.layer && tile.level == tileWindow.level && tileWindow.allTilesAvailable()) {
+			// Resolve promise and remove entry from
+			// tileWindowListeners.
+			resolve(tileWindow);
+			return true;
+		    }
+		    // Keep listening.
+		    return false;
+		}
+	    });
+	    if (callback) {
+		// Callback provided: call it when the Promise resolves.
+		p.then(callback);
+	    } else {
+		// No callback: return Promise.
+		return p;
+	    }
+	}
+    }
+    // END of the TileWindow class.
+
+    // BEGIN class TileCache.
+    //
+    class TileCache {
+
+	// Construct a TileCache for the specified heatMap.
+	constructor (heatMap) {
+	    this.heatMap = heatMap;
+	    this.cacheEntries = {};
+	}
+
+	// Create the specified cache entry.
+	createTileCacheEntry (tileCacheName) {
+	    const [ layer, level, row, col ] = tileCacheName.split('.');
+	    return this.cacheEntries[tileCacheName] = {
+		    state: 'new',
+		    data: null,
+		    props: { layer, level, row: row|0, col: col|0 },
+		    fetchTime: performance.now(),
+		    loadTime: 0.0	// Placeholder
+	    };
+	}
+
+	// Return true iff the specified tile has completed loading into the tile cache.
+	haveTileData (tileCacheName) {
+	    const td = this.cacheEntries[tileCacheName];
+	    return td && td.state === 'ready';
+	}
+
+	// Fetch the data tile specified by layer, level, tileRow, and tileColumn, if needed.
+	//
+	// Returns nothing.
+	// The specified data tile should appear in the tile cache at some later time.
+	// When it does so, an Event_NEWDATA will be posted to heatmap listeners.
+	//
+	getTile (layer, level, tileRow, tileColumn) {
+	    const debug = false;
+	    const tileCacheName = layer + "." +level + "." + tileRow + "." + tileColumn;
+	    if (this.cacheEntries.hasOwnProperty(tileCacheName)) {
+		//Already have tile in cache - do nothing.
+		return;
+	    }
+
+	    // Not present. Create cache entry and request tile from source.
+	    if (debug) console.log('Creating tileCacheEntry for ' + tileCacheName);
+	    this.createTileCacheEntry(tileCacheName);
+
+	    //ToDo: need to limit the number of tiles retrieved.
+	    //ToDo: need to remove items from the cache if it is maxed out. - don't get rid of thumb nail or summary.
+
+	    const tileName = level + "." + tileRow + "." + tileColumn;
+	    if ((this.heatMap.source() == MMGR.WEB_SOURCE) || (this.heatMap.source() == MMGR.LOCAL_SOURCE)) {
+		// Heat map came from the web.
+		MMGR.webLoader.postMessage({ op: 'loadTile', job: { tileCacheName, layer, level, tileName} });
+	    } else {
+		// Heat map came from a zip file
+		const baseName = this.heatMap.mapName + "/" + layer + "/"+ level + "/" + tileName;
+		loadZipTile (this.heatMap, baseName, tileCacheName, (tileCacheName, far32) => {
+		    this.setTileCacheEntry(tileCacheName, far32);
+		});
+	    }
+	}
+
+	// Display statistics about each loaded tile cache entry.
+	showTileCacheStats () {
+	    for (let tileCacheName in this.cacheEntries) {
+		const e = this.cacheEntries[tileCacheName];
+		if (e.state === 'ready') {
+		    const loadTime = e.loadTime - e.fetchTime;
+		    const loadTimePerKByte = loadTime / e.data.length * 1024;
+		    console.log ({ tileCacheName, KBytes: e.data.length / 1024, loadTime, loadTimePerKByte });
+		}
+	    }
+	}
+
+	// Remove a tile cache entry.
+	removeTileCacheEntry (tileCacheName) {
+	    delete this.cacheEntries[tileCacheName];
+	}
+
+	// Get the data for a tile, if it's loaded.
+	getTileCacheData (tileCacheName) {
+	    const entry = this.cacheEntries[tileCacheName];
+	    if (entry && entry.state === 'ready') {
+		return entry.data;
+	    } else {
+		return null;
+	    }
+	}
+
+	// Set the data for the specified tile.
+	// Also broadcasts a message that the tile has been received.
+	setTileCacheEntry (tileCacheName, arrayData) {
+	    const entry = this.cacheEntries[tileCacheName];
+	    entry.loadTime = performance.now();
+	    entry.data = arrayData;
+
+	    entry.state = 'ready';
+	    this.heatMap.sendCallBack(MMGR.Event_NEWDATA, Object.assign({},entry.props));
+	}
+
+    } // END class TileCache.
+
+    // BEGIN class AccessWindow
+    class AccessWindow {
+	constructor (heatMap, win) {
+	    this.heatMap = heatMap;
+	    this.win = { layer: win.layer, level: win.level, firstRow: win.firstRow|0, firstCol: win.firstCol|0, numRows: win.numRows|0, numCols: win.numCols|0 };
+	    this.tileWindow = heatMap.getTileWindow (this.win);
+	    this.tileWindow.fetchTiles();
+	    this.datalevel = heatMap.datalevels[this.win.level];
+	}
+
+	getValue (row, column) {
+	    return this.datalevel.getLayerValue (this.win.layer, row|0, column|0);
+	}
+
+	onready (callback) {
+	    const p = this.tileWindow.onready();
+	    if (callback) {
+		p.then(() => callback (this));
+	    } else {
+		return p.then(() => this);
+	    }
+	}
+    } // END class AccessWindow
+
+    /********************************************************************************************
+     *
+     * Prototype methods for HeatMap "class".
+     *
+     ********************************************************************************************/
+    {
 
 	// Functions for getting and setting the data layer of this heat map
 	// currently being displayed.
 	// Set in the application by the user when, for exanple, flick views are toggled.
-	{
-	    this.setCurrentDL = function (dl) {
-		// Set the current data layer to dl.
-		// If the current data layer changes, the colors used for
-		// highlighting labels etc. will be automatically
-		// updated.  The colors of heat map views etc. will
-		// not be updated here.
-		if (this._currentDl != dl) {
-		    this._currentDl = dl;
-		    this.setSelectionColors();
-		}
-	    };
+	HeatMap.prototype.setCurrentDL = function (dl) {
+	    // Set the current data layer to dl.
+	    // If the current data layer changes, the colors used for
+	    // highlighting labels etc. will be automatically
+	    // updated.  The colors of heat map views etc. will
+	    // not be updated here.
+	    if (this._currentDl != dl) {
+		this._currentDl = dl;
+		this.setSelectionColors();
+	    }
+	};
 
-	    this.getCurrentDL = function (dl) {
-		return this._currentDl;
-	    };
-	}
+	HeatMap.prototype.getCurrentDL = function (dl) {
+	    return this._currentDl;
+	};
 
 	/********************************************************************************************
 	 * FUNCTION:  getCurrentColorMap - Get the color map for the heat map's current data layer.
 	 ********************************************************************************************/
-	this.getCurrentColorMap = function () {
+	HeatMap.prototype.getCurrentColorMap = function () {
 	    return this.getColorMapManager().getColorMap("data", this.getCurrentDL());
 	};
 
@@ -311,7 +525,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	 * FUNCTION:  setSelectionColors - Set the colors for selected labels based on the
 	 * current layer's color scheme.
 	 *********************************************************************************************/
-	this.setSelectionColors = function () {
+	HeatMap.prototype.setSelectionColors = function () {
 	    const colorMap = this.getColorMapManager().getColorMap("data",this._currentDl);
 	    const dataLayer = this.getDataLayers()[this._currentDl];
 	    const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
@@ -321,149 +535,62 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    root.style.setProperty('--in-selection-background-color', dataLayer.selection_color);
 	};
 
-	this.getMapConfig = function() {
+	HeatMap.prototype.getMapConfig = function() {
 	    return this.mapConfig;
 	};
 
-	this.isMapLoaded = function () {
+	HeatMap.prototype.isMapLoaded = function () {
 		return this.mapConfig !== null;
 	};
-	
-	this.isFileMode = function () {
+
+	HeatMap.prototype.isFileMode = function () {
 	    return this.source() === MMGR.FILE_SOURCE;
 	};
-	
-	this.isReadOnly = function(){
+
+	HeatMap.prototype.isReadOnly = function(){
 		return this.mapConfig.data_configuration.map_information.read_only === 'Y';
 	};
-	
-	this.setUnAppliedChanges = function(value){
-		unAppliedChanges = value;
-		return;
-	}
-	
-	this.getUnAppliedChanges = function(){
-		return unAppliedChanges;
-	}
-	
-	//Return the total number of detail rows
-	this.getTotalRows = function(){
-		return datalevels[MAPREP.DETAIL_LEVEL].totalRows;
-	}
-	
-	//Return the summary row ratio
-	this.getSummaryRowRatio = function(){
-		if (datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
-			return datalevels[MAPREP.SUMMARY_LEVEL].rowSummaryRatio;
-		} else {
-			return datalevels[MAPREP.THUMBNAIL_LEVEL].rowSummaryRatio;
-		}
-	}
-	
-	//Return the summary row ratio
-	this.getSummaryColRatio = function(){
-		if (datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
-			return datalevels[MAPREP.SUMMARY_LEVEL].colSummaryRatio;
-		} else {
-			return datalevels[MAPREP.THUMBNAIL_LEVEL].col_summaryRatio;
-		}
-	}
-	//Return the total number of detail rows
-	this.getTotalRows = function(){
-		return datalevels[MAPREP.DETAIL_LEVEL].totalRows;
-	}
-	
-	//Return the total number of detail rows
-	this.getTotalCols = function(){
-		return datalevels[MAPREP.DETAIL_LEVEL].totalColumns;
-	}
-	
-	//Return the total number of rows/columns on the specified axis.
-	this.getTotalElementsForAxis = function(axis) {
-		const level = datalevels[MAPREP.DETAIL_LEVEL];
-		return isRow(axis) ? level.totalRows : level.totalColumns;
+
+	HeatMap.prototype.getAxisConfig = function(axis) {
+		return isRow (axis) ? this.getRowConfig() : this.getColConfig();
 	};
 
-	//Return the number of rows for a given level
-	this.getNumRows = function(level){
-		return datalevels[level].totalRows;
-	}
-	
-	//Return the number of columns for a given level
-	this.getNumColumns = function(level){
-		return datalevels[level].totalColumns;
-	}
-	
-	//Return the row summary ratio for a given level
-	this.getRowSummaryRatio = function(level){
-		return datalevels[level].rowSummaryRatio;
-	}
-	
-	//Return the column summary ratio for a given level
-	this.getColSummaryRatio = function(level){
-		return datalevels[level].colSummaryRatio;
-	}
-	
-	//Get a data value in a given row / column
-	this.getValue = function(level, row, column) {
-		return datalevels[level].getLayerValue(this._currentDl,row,column);
-	}
-	
-	// Retrieve color map Manager for this heat map.
-	this.getColorMapManager = function() {
-		if (this.mapConfig == null)
-			return null;
-		
-		if (colorMapMgr == null ) {
-			colorMapMgr = new CMM.ColorMapManager(this);
-		}
-		return colorMapMgr;
-	}
-	
-	this.getAxisConfig = function(axis) {
-		return axis.toUpperCase() === "ROW" ? this.getRowConfig() : this.getColConfig();
-	};
-
-	this.getRowConfig = function() {
+	HeatMap.prototype.getRowConfig = function() {
 		return this.mapConfig.row_configuration;
 	}
-	
-	this.getColConfig = function() {
+
+	HeatMap.prototype.getColConfig = function() {
 		return this.mapConfig.col_configuration;
 	}
-	
-	this.getAxisCovariateConfig = function (axis) {
+
+	HeatMap.prototype.getAxisCovariateConfig = function (axis) {
 		return this.getAxisConfig(axis).classifications;
 	}
 
-	this.getAxisCovariateOrder = function (axis) {
+	HeatMap.prototype.getAxisCovariateOrder = function (axis) {
 		return isRow(axis) ? this.getRowClassificationOrder() : this.getColClassificationOrder();
 	};
 
-	this.getAxisCovariateData = function (axis) {
-		return isRow(axis) ? mapData.row_data.classifications : mapData.col_data.classifications;
-	};
-	
-	this.getRowClassificationConfig = function() {
+	HeatMap.prototype.getRowClassificationConfig = function() {
 		return this.mapConfig.row_configuration.classifications;
 	}
 	
-	this.getRowClassificationConfigOrder = function() {
+	HeatMap.prototype.getRowClassificationConfigOrder = function() {
 		return this.mapConfig.row_configuration.classifications_order;
 	}
 	
-	this.getColClassificationConfig = function() {
+	HeatMap.prototype.getColClassificationConfig = function() {
 		return this.mapConfig.col_configuration.classifications;
 	}
 	
-	this.getColClassificationConfigOrder = function() {
+	HeatMap.prototype.getColClassificationConfigOrder = function() {
 		return this.mapConfig.col_configuration.classifications_order;
 	}
 	
 	// Return an array of the display types of all covariate bars on an axis.
 	// Hidden bars have a height of zero.  The order of entries is fixed but not
 	// specified.
-	this.getCovariateBarTypes = function (axis) {
+	HeatMap.prototype.getCovariateBarTypes = function (axis) {
 		return Object.entries(this.getAxisCovariateConfig(axis))
 		.map(([key,config]) => config.show === 'Y' ? (config.bar_type) : 0)
 	}
@@ -471,7 +598,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	// Return an array of the display parameters of all visible covariate bars on an axis.
 	// Hidden bars have no parameters.  The order of entries is fixed but not
 	// specified.
-	this.getCovariateBarParams = function (axis) {
+	HeatMap.prototype.getCovariateBarParams = function (axis) {
 	    return Object.entries(this.getAxisCovariateConfig(axis))
 	    .map(([key,config]) => config.show === 'Y' ? barParams(config) : {})
 	};
@@ -484,7 +611,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    }
 	}
 
-	this.getRowClassificationOrder = function(showOnly) {
+	HeatMap.prototype.getRowClassificationOrder = function(showOnly) {
 		var rowClassBarsOrder = this.mapConfig.row_configuration.classifications_order;
 		// If configuration not found, create order from classifications config
 		if (typeof rowClassBarsOrder === 'undefined') {
@@ -509,11 +636,11 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 	}
 	
-	this.setRowClassificationOrder = function() {
+	HeatMap.prototype.setRowClassificationOrder = function() {
 		if (this.mapConfig !== null) {this.mapConfig.row_configuration.classifications_order = this.getRowClassificationOrder();}
 	}
 	
-	this.getColClassificationOrder = function(showOnly){
+	HeatMap.prototype.getColClassificationOrder = function(showOnly){
 		var colClassBarsOrder = this.mapConfig.col_configuration.classifications_order;
 		// If configuration not found, create order from classifications config
 		if (typeof colClassBarsOrder === 'undefined') {
@@ -566,7 +693,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	 * - totalHeight, which returns the total height of all bars in the array
 	 * - containsLegend, which returns true iff there's a bar with a bar/scatter plot legend.
 	 */
-	this.getScaledVisibleCovariates = function (axis, scale) {
+	HeatMap.prototype.getScaledVisibleCovariates = function (axis, scale) {
 	    const axisConfig = isRow (axis) ? this.mapConfig.row_configuration : this.mapConfig.col_configuration;
 	    const order = axisConfig.hasOwnProperty('classifications_order') ? axisConfig.classifications_order : Object.keys(axisConfig.classifications);
 	    const bars = order.map (key => new VisibleCovariateBar (key, axisConfig.classifications[key], scale)).filter (bar => bar.show === 'Y');
@@ -591,41 +718,33 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	/* Returns true iff there are hidden covariates on the specified axis of the heat map.
 	 */
-	this.hasHiddenCovariates = function (axis) {
+	HeatMap.prototype.hasHiddenCovariates = function (axis) {
 	    const axisConfig = isRow (axis) ? this.mapConfig.row_configuration : this.mapConfig.col_configuration;
 	    const order = axisConfig.hasOwnProperty('classifications_order') ? axisConfig.classifications_order : Object.keys(axisConfig.classifications);
 	    return order.map (key => axisConfig.classifications[key].show).filter (show => show !== 'Y').length > 0;
 	};
 
-	this.setColClassificationOrder = function() {
+	HeatMap.prototype.setColClassificationOrder = function() {
 		if (this.mapConfig !== null) {this.mapConfig.col_configuration.classifications_order = this.getColClassificationOrder();}
 	}
-	
-	this.getRowClassificationData = function() {
-		return mapData.row_data.classifications;
-	}
-	
-	this.getColClassificationData = function() {
-		return mapData.col_data.classifications;
-	}
-	
-	this.getMapInformation = function() {
+
+	HeatMap.prototype.getMapInformation = function() {
 		return this.mapConfig.data_configuration.map_information;
 	}
 	
-	this.getDataLayers = function() {
+	HeatMap.prototype.getDataLayers = function() {
 		return this.mapConfig.data_configuration.map_information.data_layer;
 	}
 
-	this.getCurrentDataLayer = function() {
+	HeatMap.prototype.getCurrentDataLayer = function() {
 		return this.getDataLayers()[this.getCurrentDL()];
 	};
 
-	this.getDividerPref = function() {
+	HeatMap.prototype.getDividerPref = function() {
 		return this.mapConfig.data_configuration.map_information.summary_width;
 	}
 
-	this.setDividerPref = function(sumSize) {
+	HeatMap.prototype.setDividerPref = function(sumSize) {
 		var sumPercent = 50;
 		if (sumSize === undefined) {
 			var container = document.getElementById('ngChmContainer');
@@ -638,8 +757,8 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		this.mapConfig.data_configuration.map_information.detail_width = 100 - sumPercent;
 	}
 	
-	this.setClassificationPrefs = function(classname, type, showVal, heightVal) {
-		if (type === "row") {
+	HeatMap.prototype.setClassificationPrefs = function(classname, axis, showVal, heightVal) {
+		if (isRow (axis)) {
 			this.mapConfig.row_configuration.classifications[classname].show = showVal ? 'Y' : 'N';
 			this.mapConfig.row_configuration.classifications[classname].height = parseInt(heightVal);
 		} else {
@@ -647,9 +766,9 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			this.mapConfig.col_configuration.classifications[classname].height = parseInt(heightVal);
 		}
 	}
-	
-	this.setClassBarScatterPrefs = function(classname, type, barType, lowBound, highBound, fgColorVal, bgColorVal) {
-		if (type === "row") {
+
+	HeatMap.prototype.setClassBarScatterPrefs = function(classname, axis, barType, lowBound, highBound, fgColorVal, bgColorVal) {
+		if (isRow (axis)) {
 			this.mapConfig.row_configuration.classifications[classname].bar_type = barType;
 			if (typeof lowBound !== 'undefined') {
 				this.mapConfig.row_configuration.classifications[classname].low_bound = lowBound;
@@ -668,7 +787,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 	}
 
-	this.setLayerGridPrefs = function(key, showVal, gridColorVal, selectionColorVal, gapColorVal) {
+	HeatMap.prototype.setLayerGridPrefs = function(key, showVal, gridColorVal, selectionColorVal, gapColorVal) {
 		this.mapConfig.data_configuration.map_information.data_layer[key].grid_show = showVal ? 'Y' : 'N';
 		this.mapConfig.data_configuration.map_information.data_layer[key].grid_color = gridColorVal;
 		this.mapConfig.data_configuration.map_information.data_layer[key].cuts_color = gapColorVal;
@@ -679,73 +798,50 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 	
 	//Get Row Organization
-	this.getRowOrganization = function() {
+	HeatMap.prototype.getRowOrganization = function() {
 		return this.mapConfig.row_configuration.organization;
 	}
 	
-	//Get Axis Labels
-	this.getAxisLabels = function(axis) {
-		return axis.toUpperCase() === 'ROW' ? mapData.row_data.label : mapData.col_data.label;
-	};
-
-	//Get Row Labels
-	this.getRowLabels = function() {
-		return mapData.row_data.label;
-	}
-	
 	//Get Column Organization
-	this.getColOrganization = function() {
+	HeatMap.prototype.getColOrganization = function() {
 		return this.mapConfig.col_configuration.organization;
 	}
-	
-	//Get Column Labels
-	this.getColLabels = function() {
-		return mapData.col_data.label;
-	}
-	
+
 	//Get map information config data
-	this.getMapInformation = function() {
+	HeatMap.prototype.getMapInformation = function() {
 		return this.mapConfig.data_configuration.map_information;
 	}
 
 	// Get panel configuration from mapConfig.json
-	this.getPanelConfiguration = function() {
+	HeatMap.prototype.getPanelConfiguration = function() {
 		return this.mapConfig.panel_configuration;
 	}
 
-	this.getRowDendroConfig = function() {
+	HeatMap.prototype.getRowDendroConfig = function() {
 		return this.mapConfig.row_configuration.dendrogram;
 	}
 	
-	this.getColDendroConfig = function() {
+	HeatMap.prototype.getColDendroConfig = function() {
 		return this.mapConfig.col_configuration.dendrogram;
 	}
 	
-	this.getRowDendroData = function() {
-		return parseDendroData (mapData.row_data.dendrogram);
-	}
-	
-	this.getColDendroData = function() {
-		return parseDendroData (mapData.col_data.dendrogram);
-	}
-	
-	this.setRowDendrogramShow = function(value) {
+	HeatMap.prototype.setRowDendrogramShow = function(value) {
 		this.mapConfig.row_configuration.dendrogram.show = value;
 	}
 	
-	this.setColDendrogramShow = function(value) {
+	HeatMap.prototype.setColDendrogramShow = function(value) {
 		this.mapConfig.col_configuration.dendrogram.show = value;
 	}
 	
-	this.setRowDendrogramHeight = function(value) {
+	HeatMap.prototype.setRowDendrogramHeight = function(value) {
 		this.mapConfig.row_configuration.dendrogram.height = value;
 	}
 	
-	this.setColDendrogramHeight = function(value) {
+	HeatMap.prototype.setColDendrogramHeight = function(value) {
 		this.mapConfig.col_configuration.dendrogram.col_dendro_height = value;
 	}
 	
-	this.showRowDendrogram = function(layer) {
+	HeatMap.prototype.showRowDendrogram = function(layer) {
 		var showDendro = true;
 		var showVal = this.mapConfig.row_configuration.dendrogram.show;
 		if ((showVal === 'NONE') || (showVal === 'NA')) {
@@ -757,7 +853,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return showDendro;
 	}
 
-	this.showColDendrogram = function(layer) {
+	HeatMap.prototype.showColDendrogram = function(layer) {
 		var showDendro = true;
 		var showVal = this.mapConfig.col_configuration.dendrogram.show;
 		if ((showVal === 'NONE') || (showVal === 'NA')) {
@@ -769,336 +865,14 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return showDendro;
 	}
 
-	this.setReadOnly = function() {
+	HeatMap.prototype.setReadOnly = function() {
 	    this.mapConfig.data_configuration.map_information.read_only = 'Y';
 	};
 
-	// Array of TileWindow onready functions waiting for all tiles in the
-	// window to load.
-	this.tileWindowListeners = [];
-	this.tileWindowRefs = new Map();
-
-	// Listen for tile load notifications.  For each, check each TileWindow
-	// listener to see if all required tiles have been received.
-	//
-	// This approach uses a single permanent event listener for the entire
-	// heatMap.  Currently there is no way to remove 'transient' event
-	// listeners, such as TileWindow listeners.
-	this.addEventListener(function (event, tile) {
-	    if (event == MMGR.Event_NEWDATA) {
-		// Iterate over all the tileWindowRefs, remove any that have been reclaimed,
-		// and check all others for tile updates.
-		this.tileWindowRefs.forEach ((value, key) => {
-		    const tileWin = value.deref();
-		    if (tileWin) {
-			tileWin.checkTile (tile);
-		    } else {
-			console.log ('Removing garbage collected tileWindow', key);
-			this.tileWindowRefs.delete(key);
-		    }
-		});
-		// Iterate over all the tileWindowListeners.
-		let i = 0;
-		while (i < this.tileWindowListeners.length) {
-		    const entry = this.tileWindowListeners[i];
-		    // Check if all tiles in the window are now available
-		    // and the listener's onready promise has been resolved.
-		    if (entry.checkReady(entry.tileWindow, tile)) {
-			// If so, delete the entry.
-			this.tileWindowListeners.splice (i, 1);
-		    } else {
-			// Otherwise, advance to next entry.
-			i ++;
-		    }
-		}
-	    }
-	});
-
-
-	// A helper class for the tiles required by an access window.
-	class TileWindow {
-	    #allTilesAvailable;
-	    #tileStatusValid;
-	    constructor (heatMap, layer, level, startRowTile, endRowTile, startColTile, endColTile) {
-		this.heatMap = heatMap;
-		this.layer = layer;
-		this.level = level;
-		this.startRowTile = startRowTile;
-		this.endRowTile = endRowTile;
-		this.startColTile = startColTile;
-		this.endColTile = endColTile;
-
-		this.#allTilesAvailable = false;
-		this.#tileStatusValid = false;
-	    }
-
-	    checkTile (tile) {
-		if (tile.layer === this.layer && tile.level === this.level &&
-			tile.row >= this.startRowTile && tile.row <= this.endRowTile &&
-			tile.col >= this.startColTile && tile.col <= this.endColTile) {
-		    console.log ('checkTile: tile in TileWindow', tile);
-		    this.#tileStatusValid = false;
-		}
-	    }
-
-	    fetchTiles () {
-		for (let i = this.startRowTile; i <= this.endRowTile; i++) {
-		    for (let j = this.startColTile; j <= this.endColTile; j++) {
-			getTile(this.layer, this.level, i, j);
-		    }
-		}
-	    }
-
-	    allTilesAvailable () {
-		if (this.#tileStatusValid) {
-		    return this.#allTilesAvailable;
-		}
-		for (let i = this.startRowTile; i <= this.endRowTile; i++) {
-		    for (let j = this.startColTile; j <= this.endColTile; j++) {
-			const tileCacheName = this.layer + "." + this.level + "." + i + "." + j;
-			if (getTileCacheData(tileCacheName) === null) {
-			    this.#allTilesAvailable = false;
-			    this.#tileStatusValid = true;
-			    return false;
-			}
-		    }
-		}
-		this.#allTilesAvailable = true;
-		this.#tileStatusValid = true;
-		return true;
-	    }
-
-	    // This method waits until all tiles in the tilewindow are available.
-	    //
-	    // If callback is undefined, onready returns a promise that
-	    // resolves when all tiles in the TileWindow are available.
-	    //
-	    // If callback is defined, onready returns undefined and calls callback
-	    // when all tiles in the TileWindow are available.
-	    //
-	    // The TileWindow is passed to callback or is the result of the Promise.
-	    //
-	    // NB: Currently, tiles are never expunged from the cache.
-	    // If they ever can be, there will need to be a way to prevent
-	    // tiles from being expunged while a TileWindow is interested in them.
-	    // Perhaps something as simple as preventing expunging while
-	    // the tileWindowListeners array is non-empty.
-	    onready (callback) {
-		const p = new Promise((resolve, reject) => {
-		    if (this.allTilesAvailable()) {
-			resolve(this);
-		    } else {
-			this.heatMap.tileWindowListeners.push ({ tileWindow: this, checkReady: checkReady, });
-		    }
-
-		    function checkReady (tileWindow, tile) {
-			// First two conditions below are optimizations: only tiles for tileWindow's layer & level can
-			// affect its allTilesAvailable.  Saves a potentially large nested loop.
-			if (tile.layer == tileWindow.layer && tile.level == tileWindow.level && tileWindow.allTilesAvailable()) {
-			    // Resolve promise and remove entry from
-			    // tileWindowListeners.
-			    resolve(tileWindow);
-			    return true;
-			}
-			// Keep listening.
-			return false;
-		    }
-		});
-		if (callback) {
-		    // Callback provided: call it when the Promise resolves.
-		    p.then(callback);
-		} else {
-		    // No callback: return Promise.
-		    return p;
-		}
-	    }
-	}
-
-	// Create a TileWindow for the specified heatMap and view window.
-	function getTileWindow (heatMap, win) {
-	    return datalevels[win.level].getTileAccessWindow (win.firstRow, win.firstCol, win.numRows, win.numCols, (level, startRowTile, endRowTile, startColTile, endColTile) => {
-		const tileKey = JSON.stringify({ layer: win.layer, level, startRowTile, endRowTile, startColTile, endColTile });
-		if (heatMap.tileWindowRefs.has (tileKey)) {
-		    const tileRef = heatMap.tileWindowRefs.get(tileKey).deref();
-		    if (tileRef) {
-			//console.log ('Found existing tileWindow for ', tileKey);
-			return tileRef;
-		    }
-		    console.log ('Encountered garbage collected tileWindow for ', tileKey);
-		}
-		// Create a new tileWindow and keep a weak reference to it.
-		//console.log ('Creating new tileWindow for ', tileKey);
-		const tileRef = new TileWindow (heatMap, win.layer, level, startRowTile, endRowTile, startColTile, endColTile);
-		heatMap.tileWindowRefs.set (tileKey, new WeakRef(tileRef));
-		return tileRef;
-	    });
-	};
-
-	class AccessWindow {
-	    constructor (heatMap, win) {
-		this.heatMap = heatMap;
-		this.win = { layer: win.layer, level: win.level, firstRow: win.firstRow|0, firstCol: win.firstCol|0, numRows: win.numRows|0, numCols: win.numCols|0 };
-		this.tileWindow = getTileWindow (heatMap, this.win);
-		this.tileWindow.fetchTiles();
-		this.datalevel = datalevels[this.win.level];
-	    }
-
-	    getValue (row, column) {
-		return this.datalevel.getLayerValue (this.win.layer, row|0, column|0);
-	    }
-
-	    onready (callback) {
-		const p = this.tileWindow.onready();
-		if (callback) {
-		    p.then(() => callback (this));
-		} else {
-		    return p.then(() => this);
-		}
-	    }
-	}
-
-	/* Obtain an access window for the specified view window.
-	 * The access window contains three entries:
-	 * - win: The view window.
-	 * - getValue (row, column) Function to return the value at row, column in heatMap coordinates.
-	 * - onready (callback) When all data ready, call callback if specified with the access window as its parameter or return a promise for the access window.  
-	 *
-	 * The returned access window will have its data tiles requested, but they may not be available immediately.
-	 * Use the onready method to request a promise/callback when all tiles in the access window are ready.
-	 */
-	this.getNewAccessWindow = function (win) {
-	    return new AccessWindow (this, win);
-	};
-
-	//Is the heat map ready for business 
-	this.isInitialized = function() {
-		return initialized;
-	}
-
-	/*
-	 * Set the 'flick' control and data layer
-	*/
-	this.configureFlick = function(){
-		if (!flickInitialized) {
-			const dl = this.getDataLayers();
-			const numLayers = Object.keys(dl).length;
-			let maxDisplay = 0;
-			if (numLayers > 1) {
-				const panelConfig = this.getPanelConfiguration();
-				const flickInfo = panelConfig ? panelConfig.flickInfo : null;
-				const dls = new Array(numLayers);
-				const orderedKeys = new Array(numLayers);
-				for (let key in dl){
-					const dlNext = +key.substring(2, key.length);
-					orderedKeys[dlNext-1] = key;
-					let displayName = dl[key].name;
-					if (displayName.length > maxDisplay) {
-						maxDisplay = displayName.length;
-					}
-					if (displayName.length > 20) {
-						displayName = displayName.substring(0,17) + "...";
-					}
-					dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
-				}
-				if (flickInfo) {
-				    FLICK.enableFlicks (dls.join(""), flickInfo.flick1 || 'dl1', flickInfo.flick2 || 'dl1');
-				    const layer = FLICK.setFlickState (flickInfo.flick_btn_state);
-				    this.setCurrentDL(layer);
-				} else {
-				    FLICK.enableFlicks (dls.join(""), "dl1", orderedKeys[1]);
-				    this.setCurrentDL("dl1");
-				}
-			} else {
-				this.setCurrentDL("dl1");
-				FLICK.disableFlicks();
-			}
-			flickInitialized = true;
-
-			var gearBtnPanel = document.getElementById("pdf_gear");
-			if (maxDisplay > 15) {
-				gearBtnPanel.style.minWidth = '320px';
-			} else if (maxDisplay === 0) {
-				gearBtnPanel.style.minWidth = '80px';
-			} else {	
-				gearBtnPanel.style.minWidth = '250px';
-			}
-			
-		}
-	}
-
-	
-	//************************************************************************************************************
-	//
-	// Internal Heat Map Functions.  Users of the heat map object don't need to use / understand these.
-	//
-	//************************************************************************************************************
-	
-	//Initialization - this code is run once when the map is created.
-	
-	if (fileSrc !== MMGR.FILE_SOURCE) {
-		if (fileSrc !== MMGR.WEB_SOURCE) createWebLoader(fileSrc);
-		connectWebLoader(fileSrc);
-	} else {
-		//Check file mode viewer software version (excepting when using embedded widget)
-		if (typeof embedDiv === 'undefined') {
-			fileModeFetchVersion();
-		}
-		if (chmFile.size === 0) {
-			UHM.mapLoadError (chmFile.name, "File is empty (zero bytes)");
-			return;
-		}
-		//fileSrc is file so get the JSON files from the zip file.
-		//First create a dictionary of all the files in the zip.
-		var zipBR = new zip.BlobReader(chmFile);
-		zip.createReader(zipBR, function(reader) {
-			// get all entries from the zip
-			reader.getEntries(function(entries) {
-				//Inspect the first entry path to grab the true heatMapName.
-				//The user may have renamed the zip file OR it was downloaded
-				//as a second+ generation of a file by the same name (e.g. with a " (1)" 
-				//in the name).
-			        if (entries.length == 0) {
-				    UHM.mapLoadError (chmFile.name, "Empty zip file");
-				    return;
-				}
-				const entryName = entries[0].filename;
-				const slashIdx = entryName.indexOf("/");
-				if (slashIdx < 0) {
-				    UHM.mapLoadError (chmFile.name, "File format not recognized");
-				    return;
-				}
-				heatMapName = entryName.substring(0,slashIdx);
-				for (var i = 0; i < entries.length; i++) {
-					zipFiles[entries[i].filename] = entries[i];
-				}
-				const mapConfigName = heatMapName + "/mapConfig.json";
-				const mapDataName = heatMapName + "/mapData.json";
-				if ((mapConfigName in zipFiles) && (mapDataName in zipFiles)) {
-				    zipFetchJson(zipFiles[mapConfigName], addMapConfig);
-				    zipFetchJson(zipFiles[mapDataName], addMapData);
-				} else {
-				    UHM.mapLoadError (chmFile.name, "Missing NGCHM content");
-				}
-			});
-		}, function(error) {
-			console.log('Zip file read error ' + error);
-			UHM.mapLoadError (chmFile.name, error);
-		});	
-	}
-	
-	// Parse dendrogram data.
-	function parseDendroData (data) {
-		return (data || [])
-		.map(entry => {
-			const tokes = entry.split(",");
-			return { left: Number(tokes[0]), right: Number(tokes[1]), height: Number(tokes[2]) };
-		});
-	}
-	
 	/**
 	* Save data sent to plugin to mapConfig 
 	*/
-	this.saveDataSentToPluginToMapConfig = function(nonce, postedConfig, postedData) {
+	HeatMap.prototype.saveDataSentToPluginToMapConfig = function(nonce, postedConfig, postedData) {
 		try {
 			var pane = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement
 		} catch(err) {
@@ -1118,7 +892,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		this.mapConfig.panel_configuration[paneId].pluginName = pane.dataset.pluginName;
 	}
 
-	this.removePaneInfoFromMapConfig = function(paneid) {
+	HeatMap.prototype.removePaneInfoFromMapConfig = function(paneid) {
 		if (this.mapConfig.hasOwnProperty('panel_configuration')) {
 			this.mapConfig.panel_configuration[paneid] = null;
 		}
@@ -1127,7 +901,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	/**
 	* Save linkout pane data to mapConfig
 	*/
-	this.saveLinkoutPaneToMapConfig = function(paneid, url, paneTitle) {
+	HeatMap.prototype.saveLinkoutPaneToMapConfig = function(paneid, url, paneTitle) {
 		if (!this.mapConfig.hasOwnProperty('panel_configuration')) {
 			this.mapConfig['panel_configuration'] = {};
 		}
@@ -1141,7 +915,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	/*
 	  Saves data from plugin to mapConfig--this is data that did NOT originally come from the NGCHM.
 	*/
-	this.saveDataFromPluginToMapConfig = function (nonce, dataFromPlugin) {
+	HeatMap.prototype.saveDataFromPluginToMapConfig = function (nonce, dataFromPlugin) {
 		try {
 			var paneId = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement.id;
 		} catch(err) {
@@ -1157,469 +931,401 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		this.mapConfig.panel_configuration[paneId].dataFromPlugin = dataFromPlugin;
 	};
 
-	this.zipSaveMapProperties = zipSaveMapProperties;
-	function zipSaveMapProperties(mapConf) {
+	/***********  Methods for accessing mapData ****************/
 
-		  function onProgress(a, b) {
-			  // For debug use - console.log("current", a, "end", b);
-		  }
-
-		  var zipper = (function buildZipFile() {
-		    var zipWriter;
-
-		    return {
-		      addTexts : function addEntriesToZipFile(callback) {
-					// Loop thru all entries in zipFiles, adding them to the new zip file.
-			    	function add(fileIndex) {
-						var zipLen = Object.keys(zipFiles).length;
-						var keyVal = Object.keys(zipFiles)[fileIndex];
-						var entry = zipFiles[keyVal];
-						if (fileIndex < zipLen) {
-							if ((keyVal.indexOf('bin') < 0) && (keyVal.indexOf('tile') < 0)) {
-								// Directly add all text zip entries directly to the new zip file
-								// except for mapConfig.  For this entry, add the modified config data.
-								if (keyVal.indexOf('mapConfig') > -1) {
-									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConf || this.mapConfig));
-								} else {
-									zipFetchText(entry, fileIndex, addTextContents);
-								}
-							} else {
-								// Directly add all binary zip entries directly to the new zip file
-								zipFetchBin(entry, fileIndex, addBinContents);
-							}
-						} else {
-						  callback() /* [2] no more files to add: callback is called */;
-						}
-			        }
-					// Get the text data for a given zip entry and execute the 
-					// callback to add that data to the zip file.
-					function zipFetchText(entry, fileIndex, setterFunction) {
-						entry.getData(new zip.TextWriter(), function(text) {
-							// got the json, now call the appropriate setter
-							setterFunction(entry.filename, fileIndex, text);
-						}, function(current, total) {
-							// onprogress callback
-						});
-					}
-					// Get the binary data for a given zip entry and execute the 
-					// callback to add that data to the zip file.
-			    	function zipFetchBin(entry, fileIndex, setterFunction) {
-						entry.getData(new zip.BlobWriter(), function(blob) {
-			    			setterFunction(entry.filename, fileIndex, blob);
-						}, function(current, total) {
-							// onprogress callback
-						});		
-			    	}
-					// Add text contents to the zip file and call the add function 
-					// to process the next zip entry stored in zipFiles.
-			        function addTextContents(name, fileIndex, contents) {
-		                zipWriter.add(name, new zip.TextReader(contents), function() {
-			                add(fileIndex + 1); /* [1] add the next file */
-			              }, onProgress);
-			        }
-					// Add binary contents to the zip file and call the add function 
-					// to process the next zip entry stored in zipFiles.
-			        function addBinContents(name, fileIndex, contents) {
-		                zipWriter.add(name, new zip.BlobReader(contents), function() {
-			                add(fileIndex + 1); /* [1] add the next file */
-			              }, onProgress);
-			        }
-			      // Start the zip file creation process by instantiating a writer
-			      // and calling the add function for the first entry in zipFiles.
-		          zip.createWriter(new zip.BlobWriter(), function(writer) {
-		            zipWriter = writer;
-		            add(0); /* [1] add the first file */
-		          });
-		      },
-		      getBlob : function(callback) {
-		        zipWriter.close(callback);
-		      }
-		    };
-		  })();
-
-		  zipper.addTexts(function addTextsCallback() {
-		    zipper.getBlob(function getBlobCallback(blob) {
-		      saveAs(blob, heatMapName+".ngchm");   
-		    });
-		  });  
-		}
+	HeatMap.prototype.getAxisCovariateData = function (axis) {
+		return isRow(axis) ? this.mapData.row_data.classifications : this.mapData.col_data.classifications;
+	};
 	
-	MMGR.webSaveMapRoperties = webSaveMapProperties;
-	function webSaveMapProperties(jsonData) {
-		var success = "false";
-		var name = CFG.api + "SaveMapProperties?map=" + heatMapName;
-		var req = new XMLHttpRequest();
-		req.open("POST", name, false);
-		req.setRequestHeader("Content-Type", "application/json");
-		req.onreadystatechange = function () {
-			if (req.readyState == req.DONE) {
-				if (req.status != 200) {
-					console.log('Failed in call to save propeties from server: ' + req.status);
-					success = "false";
-				} else {
-					success = req.response;
-				}
-			}
-		};	
-		req.send(jsonData);
-		return success;
+	HeatMap.prototype.getRowClassificationData = function() {
+		return this.mapData.row_data.classifications;
 	}
 
-	MMGR.zipMapProperties = zipMapProperties;
-	function zipMapProperties(jsonData) {
-		var success = "";
-		var name = CFG.api + "ZippedMap?map=" + heatMapName;
-		callServlet("POST", name, jsonData);
-		return true;
+	HeatMap.prototype.getColClassificationData = function() {
+		return this.mapData.col_data.classifications;
 	}
 	
-	//  Initialize the data layers once we know the tile structure.
-		//  JSON structure object describing available data layers passed in.
-		function addDataLayers(heatMap, mapConfig) {
-			//Create heat map data objects for each data level.  All maps should have thumb nail and full level.
-			//Each data layer keeps a pointer to the next lower level data layer.
-			const levelsConf = mapConfig.data_configuration.map_information.levels;
-			const datalayers = mapConfig.data_configuration.map_information.data_layer
-
-			// Create a HeatMapLevel object for level levelId if it's defined in the map configuration.
-			// Set the level's lower level to the HeatMapLevel object for lowerLevelId (if it's defined).
-			// If levelId is not defined in the map configuration, create an alias to the
-			// HeatMapLevel object for altLevelId (if it's defined).
-			function createLevel (levelId, lowerLevelId, altLevelId) {
-				if (levelsConf.hasOwnProperty (levelId)) {
-					datalevels[levelId] = new HeatMapLevel(
-									levelId,
-									levelsConf[levelId],
-									datalayers,
-									lowerLevelId ? datalevels[lowerLevelId] : null,
-									getTileCacheData,
-									getTile);
-				} else if (altLevelId) {
-					datalevels[levelId] = datalevels[altLevelId];
-					// Record all levels for which altLevelId is serving as an immediate alternate.
-					if (!alternateLevels.hasOwnProperty(altLevelId)) {
-						alternateLevels[altLevelId] = [];
-					}
-					alternateLevels[altLevelId].push (levelId);				}
-			}
-
-			createLevel (MAPREP.THUMBNAIL_LEVEL);
-			createLevel (MAPREP.SUMMARY_LEVEL, MAPREP.THUMBNAIL_LEVEL, MAPREP.THUMBNAIL_LEVEL);
-			createLevel (MAPREP.DETAIL_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.SUMMARY_LEVEL);
-			createLevel (MAPREP.RIBBON_VERT_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.DETAIL_LEVEL);
-			createLevel (MAPREP.RIBBON_HOR_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.DETAIL_LEVEL);
-
-			prefetchInitialTiles(heatMap, datalayers);
-			sendCallBack(MMGR.Event_INITIALIZED);
-	}
-	
-	function addMapData(md) {
-		mapData = md;
-		if (COMPAT.mapDataCompatibility(mapData)) {
-		    mapUpdatedOnLoad = true;
-		}
-		sendCallBack(MMGR.Event_JSON);
-	}
-	
-	function addMapConfig(mc) {
-		if (COMPAT.CompatibilityManager(mc)) {
-		    mapUpdatedOnLoad = true;
-		}
-		const heatMap = MMGR.getHeatMap();
-		heatMap.mapConfig = mc;
-		addDataLayers(heatMap, mc);
-		heatMap.configureFlick();
-		sendCallBack(MMGR.Event_JSON);
-	}
-	
-	MMGR.mapUpdatedOnLoad = function() {
-		return mapUpdatedOnLoad;
+	//Get Axis Labels
+	HeatMap.prototype.getAxisLabels = function(axis) {
+		return isRow (axis) ? this.mapData.row_data.label : this.mapData.col_data.label;
 	};
 
-	// Permanently associate an AccessWindow for the thumbnail level
-	// of every layer with the heatMap.
-	//
-	// Has the effect of prefetching and preserving the thumbnail
-	// level tiles for all layers.
-	function prefetchInitialTiles(heatMap, datalayers) {
-	    heatMap.thumbnailWindowRefs =
-		Object.keys(datalayers).map (layer =>
-		    heatMap.getNewAccessWindow ({
-			layer: layer,
-			level: MAPREP.THUMBNAIL_LEVEL,
-			firstRow: 1,
-			firstCol: 1,
-			numRows: heatMap.getNumRows(MAPREP.THUMBNAIL_LEVEL),
-			numCols: heatMap.getNumColumns(MAPREP.THUMBNAIL_LEVEL),
-		    })
-		);
+	//Get Row Labels
+	HeatMap.prototype.getRowLabels = function() {
+		return this.mapData.row_data.label;
 	}
 
-	// Return the tile cache (For debugging.)
-	MMGR.getTileCache = function getTileCache () {
-		return tileCache;
-	};
-
-	// Display statistics about each loaded tile cache entry.
-	MMGR.showTileCacheStats = function () {
-		for (let tileCacheName in tileCache) {
-			const e = tileCache[tileCacheName];
-			if (e.state === 'ready') {
-				const loadTime = e.loadTime - e.fetchTime;
-				const loadTimePerKByte = loadTime / e.data.length * 1024;
-				console.log ({ tileCacheName, KBytes: e.data.length / 1024, loadTime, loadTimePerKByte });
-			}
-		}
-	};
-
-	// Remove a tile cache entry.
-	function removeTileCacheEntry (tileCacheName) {
-		delete tileCache[tileCacheName];
+	//Get Column Labels
+	HeatMap.prototype.getColLabels = function() {
+		return this.mapData.col_data.label;
 	}
 
-	// Get the data for a tile, if it's loaded.
-	function getTileCacheData (tileCacheName) {
-		const entry = tileCache[tileCacheName];
-		if (entry && entry.state === 'ready') {
-			return entry.data;
+	HeatMap.prototype.getDendrogramData = function(axis) {
+	    const data = isRow(axis) ? this.mapData.row_data.dendrogram : this.mapData.col_data.dendrogram;
+	    return (data || [])
+	    .map(entry => {
+		const tokes = entry.split(",");
+		return { left: Number(tokes[0]), right: Number(tokes[1]), height: Number(tokes[2]) };
+	    });
+	}
+
+	/***********  Methods for accessing datalevels ****************/
+
+	//Return the total number of detail rows
+	HeatMap.prototype.getTotalRows = function(){
+		return this.datalevels[MAPREP.DETAIL_LEVEL].totalRows;
+	}
+	
+	//Return the summary row ratio
+	HeatMap.prototype.getSummaryRowRatio = function(){
+		if (this.datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
+			return this.datalevels[MAPREP.SUMMARY_LEVEL].rowSummaryRatio;
 		} else {
-			return null;
+			return this.datalevels[MAPREP.THUMBNAIL_LEVEL].rowSummaryRatio;
 		}
 	}
-
-	// Set the data for the specified tile.
-	// Also broadcasts a message that the tile has been received.
-	function setTileCacheEntry (tileCacheName, arrayData) {
-		const entry = tileCache[tileCacheName];
-		entry.loadTime = performance.now();
-		entry.data = arrayData;
-
-		entry.state = 'ready';
-		sendCallBack(MMGR.Event_NEWDATA, Object.assign({},entry.props));
+	
+	//Return the summary row ratio
+	HeatMap.prototype.getSummaryColRatio = function(){
+		if (this.datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
+			return this.datalevels[MAPREP.SUMMARY_LEVEL].colSummaryRatio;
+		} else {
+			return this.datalevels[MAPREP.THUMBNAIL_LEVEL].col_summaryRatio;
+		}
+	}
+	//Return the total number of detail rows
+	HeatMap.prototype.getTotalRows = function(){
+		return this.datalevels[MAPREP.DETAIL_LEVEL].totalRows;
 	}
 	
-	// Handle replies from tileio worker.
-	function connectWebLoader () {
-		const debug = false;
-		jsonSetterFunctions.mapConfig = addMapConfig;
-		jsonSetterFunctions.mapData = addMapData;
-		MMGR.webLoader.setMessageHandler (function(e) {
-			if (debug) console.log({ m: 'Received message from webLoader', e });
-			if (e.data.op === 'tileLoaded') {
-				const tiledata = new Float32Array(e.data.buffer);
-				setTileCacheEntry (e.data.job.tileCacheName, tiledata);
-			} else if (e.data.op === 'tileLoadFailed') {
-				removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
-			} else if (e.data.op === 'jsonLoaded') {
-				if (!jsonSetterFunctions.hasOwnProperty(e.data.name)) {
-					console.log({ m: 'connectWebLoader: unknown JSON request', e });
-					return;
-				}
-				jsonSetterFunctions[e.data.name] (e.data.json);
-			} else if (e.data.op === 'jsonLoadFailed') {
-				console.error(`Failed to get JSON file ${e.data.name} for ${heatMapName} from server`);
-				UHM.mapNotFound(heatMapName);
-			} else {
-				console.log({ m: 'connectWebLoader: unknown op', e });
-			}
-		});
+	//Return the total number of detail rows
+	HeatMap.prototype.getTotalCols = function(){
+		return this.datalevels[MAPREP.DETAIL_LEVEL].totalColumns;
+	}
+
+	//Return the total number of rows/columns on the specified axis.
+	HeatMap.prototype.getTotalElementsForAxis = function(axis) {
+		const level = this.datalevels[MAPREP.DETAIL_LEVEL];
+		return isRow(axis) ? level.totalRows : level.totalColumns;
 	};
 
-	// Create the specified cache entry.
-	function createTileCacheEntry (tileCacheName) {
-		const [ layer, level, row, col ] = tileCacheName.split('.');
-		return tileCache[tileCacheName] = {
-			state: 'new',
-			data: null,
-			props: { layer, level, row: row|0, col: col|0 },
-			fetchTime: performance.now(),
-			loadTime: 0.0	// Placeholder
-		};
+	//Return the number of rows for a given level
+	HeatMap.prototype.getNumRows = function(level){
+		return this.datalevels[level].totalRows;
+	};
+
+	//Return the number of columns for a given level
+	HeatMap.prototype.getNumColumns = function(level){
+		return this.datalevels[level].totalColumns;
+	};
+
+	//Return the row summary ratio for a given level
+	HeatMap.prototype.getRowSummaryRatio = function(level){
+		return this.datalevels[level].rowSummaryRatio;
 	}
 	
-	// Return true iff the specified tile has completed loading into the tile cache.
-	function haveTileData (tileCacheName) {
-		const td = tileCache[tileCacheName];
-		return td && td.state === 'ready';
+	//Return the column summary ratio for a given level
+	HeatMap.prototype.getColSummaryRatio = function(level){
+		return this.datalevels[level].colSummaryRatio;
 	}
 	
-	//Call the users call back function to let them know the chm is initialized or updated.
-	function sendCallBack(event, tile) {
-
-		const heatMap = MMGR.getHeatMap();
-		//Initialize event
-		if ((event === MMGR.Event_INITIALIZED) || (event === MMGR.Event_JSON) ||
-			((event === MMGR.Event_NEWDATA) && (tile.level === MAPREP.THUMBNAIL_LEVEL))) {
-			//Only send initialized status if several conditions are met: need all summary JSON and thumb nail.
-			if ((mapData != null) &&
-				(heatMap.mapConfig != null) &&
-				(Object.keys(datalevels).length > 0) &&
-				(haveTileData(heatMap.getCurrentDL()+"."+MAPREP.THUMBNAIL_LEVEL+".1.1")) &&
-				 (initialized == 0)) {
-					initialized = 1;
-					configurePageHeader();
-					if (!heatMap.mapConfig.hasOwnProperty('panel_configuration')) {
-					    UTIL.hideLoader(true);
-					}
-					sendAllListeners(MMGR.Event_INITIALIZED);
-			}
-			//Unlikely, but possible to get init finished after all the summary tiles.
-			//As a back stop, if we already have the top left summary tile, send a data update event too.
-			if (haveTileData(heatMap.getCurrentDL()+"."+MAPREP.SUMMARY_LEVEL+".1.1")) {
-				sendAllListeners(MMGR.Event_NEWDATA, { layer: heatMap.getCurrentDL(), level: MAPREP.SUMMARY_LEVEL, row: 1, col: 1});
-			}
-		} else	if ((event === MMGR.Event_NEWDATA) && (initialized === 1)) {
-			sendAllListeners(event, tile);
-		}
-	}	
-
-	// Configure elements of the page header and top bar that depend on the
-	// loaded NGCHM.
-	function configurePageHeader() {
-		// Show back button if collectionHome specified.
-		const backButton = document.getElementById("back_btn");
-		const url = UTIL.getURLParameter("collectionHome");
-		if (url !== "") {
-			backButton.style.display = '';
-		}
-
-		const heatMap = MMGR.getHeatMap();
-		// Set document title if not a local file.
-		if (heatMap.source() !== MMGR.LOCAL_SOURCE) {
-			document.title = heatMap.getMapInformation().name;
-		}
-
-		// Populate the header's nameDiv.
-		const nameDiv = document.getElementById("mapName");  
-		let mapName = heatMap.getMapInformation().name;
-		if (mapName.length > 30){
-			mapName = mapName.substring(0,27) + "...";
-		}
-		nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
-	}
-
-	//send to all event listeners
-	function sendAllListeners(event, tile){
-		sendAll (event, tile);
-		if (event === MMGR.Event_NEWDATA) {
-			// Also broadcast NEWDATA events to all layers for which tile.level is an alternate.
-			const { layer, level: mylevel, row, col } = tile;
-			const alts = getAllAlternateLevels (mylevel);
-			while (alts.length > 0) {
-				const level = alts.shift();
-				sendAll (MMGR.Event_NEWDATA, {layer, level, row, col});
-			}
-		}
-
-		function sendAll (event, tile) {
-			for (var i = 0; i < eventListeners.length; i++) {
-				eventListeners[i](event, tile);
-			}
-		}
+	//Get a data value in a given row / column
+	HeatMap.prototype.getValue = function(level, row, column) {
+		return this.datalevels[level].getLayerValue(this._currentDl,row,column);
 	}
 
 	// Recursively determine all levels for which level is an alternate.
-	function getAllAlternateLevels (level) {
+	HeatMap.prototype.getAllAlternateLevels = function (level) {
+	    const alternateLevels = this.alternateLevels;
+	    return getAlternates (level);
+
+	    function getAlternates (level) {
 		const altlevs = alternateLevels.hasOwnProperty (level) ? alternateLevels[level] : [];
-		const pal = altlevs.map(lev => getAllAlternateLevels(lev));
+		const pal = altlevs.map(lev => getAlternates(lev));
 		return [...new Set(pal.concat(altlevs).flat())];  // Use [...Set] to ensure uniqueness
+	    }
 	}	
-	
-	//Fetch a data tile if needed.
-	function getTile(layer, level, tileRow, tileColumn) {
-		const debug = false;
-		var tileCacheName=layer + "." +level + "." + tileRow + "." + tileColumn;
-		if (tileCache.hasOwnProperty(tileCacheName)) {
-			//Already have tile in cache - do nothing.
-			return;
-		}
-		if (debug) console.log('Creating tileCacheEntry for ' + tileCacheName);
-		createTileCacheEntry(tileCacheName);
-		var tileName=level + "." + tileRow + "." + tileColumn;  
 
-  	//ToDo: need to limit the number of tiles retrieved.
-  	//ToDo: need to remove items from the cache if it is maxed out. - don't get rid of thumb nail or summary.
+	/***********  EventListener Methods ****************/
 
-		if ((fileSrc == MMGR.WEB_SOURCE) || (fileSrc == MMGR.LOCAL_SOURCE)) {
-			MMGR.webLoader.postMessage({ op: 'loadTile', job: { tileCacheName, layer, level, tileName} });
-		} else {
-			//File fileSrc - get tile from zip
-			const baseName = heatMapName + "/" + layer + "/"+ level + "/" + tileName;
-			var entry = zipFiles[baseName + '.tile'];
-			if (typeof entry === 'undefined') {
-				entry = zipFiles[baseName + '.bin'];
+	Object.assign (HeatMap.prototype, {
+	    initEventListeners: function initEventListeners (updateCallbacks) {
+		this.eventListeners = updateCallbacks.slice(0);  // Create a copy.
+	    },
+
+	    // Register another callback function for a user that wants to be notifed
+	    // of updates to the status of heat map data.
+	    addEventListener: function addEventListener (callback) {
+		this.eventListeners.push(callback.bind (this));
+	    },
+
+	    // Send event to all listeners.
+	    sendAllListeners: function sendAllListeners (event, tile){
+		// Send the event to all listeners.
+		this.eventListeners.forEach(callback => callback(event, tile));
+		if (event === MMGR.Event_NEWDATA) {
+			// Also broadcast NEWDATA events to all levels for which tile.level is an alternate.
+			const { layer, level: mylevel, row, col } = tile;
+			const alts = this.getAllAlternateLevels (mylevel);
+			while (alts.length > 0) {
+				const altTile = { layer, level: alts.shift(), row, col };
+				this.eventListeners.forEach(callback => callback(event, altTile));
 			}
-			if (typeof entry === "undefined") {
-				console.error ('Request for unknown tile');
+		}
+	    },
+	});
+
+	// Retrieve color map Manager for this heat map.
+	HeatMap.prototype.getColorMapManager = function() {
+		if (this.mapConfig == null)
+			return null;
+
+		if (this.colorMapMgr == null) {
+			this.colorMapMgr = new CMM.ColorMapManager(this);
+		}
+		return this.colorMapMgr;
+	};
+
+	HeatMap.prototype.initTileWindows = function () {
+	    // Array of TileWindow onready functions waiting for all tiles in the
+	    // window to load.
+	    this.tileWindowListeners = [];
+	    this.tileWindowRefs = new Map();
+
+	    // Listen for tile load notifications.  For each, check each TileWindow
+	    // listener to see if all required tiles have been received.
+	    //
+	    // This approach uses a single permanent event listener for the entire
+	    // heatMap.  Currently there is no way to remove 'transient' event
+	    // listeners, such as TileWindow listeners.
+	    this.addEventListener(function (event, tile) {
+		if (event == MMGR.Event_NEWDATA) {
+		    // Iterate over all the tileWindowRefs, remove any that have been reclaimed,
+		    // and check all others for tile updates.
+		    this.tileWindowRefs.forEach ((value, key) => {
+			const tileWin = value.deref();
+			if (tileWin) {
+			    tileWin.checkTile (tile);
 			} else {
-				if (debug) console.log('Got zip entry for tile ' + baseName);
-				entry.getData(new zip.BlobWriter(), function(blob) {
-					if (debug) console.log('Got blob for tile ' + baseName);
-					var fr = new FileReader();
-					
-					fr.onload = function(e) {
-				        var arrayBuffer = fr.result;
-				        var far32 = new Float32Array(arrayBuffer);
-					if (debug) console.log('Got array buffer for tile ' + baseName);
-				    	  
-				        setTileCacheEntry(tileCacheName, far32);
-				     }
-	
-				     fr.readAsArrayBuffer(blob);		
-				}, function(current, total) {
-					// onprogress callback
-				});		
+			    console.log ('Removing garbage collected tileWindow', key);
+			    this.tileWindowRefs.delete(key);
 			}
+		    });
+		    // Iterate over all the tileWindowListeners.
+		    let i = 0;
+		    while (i < this.tileWindowListeners.length) {
+			const entry = this.tileWindowListeners[i];
+			// Check if all tiles in the window are now available
+			// and the listener's onready promise has been resolved.
+			if (entry.checkReady(entry.tileWindow, tile)) {
+			    // If so, delete the entry.
+			    this.tileWindowListeners.splice (i, 1);
+			} else {
+			    // Otherwise, advance to next entry.
+			    i ++;
+			}
+		    }
 		}
+	    });
+	};
+
+	/**********************************************************************************
+	 * FUNCTION - hasGaps: Returns true iff the heatMap has gaps, otherwise false.
+	 **********************************************************************************/
+	HeatMap.prototype.hasGaps = function () {
+	    return this.getMapInformation().map_cut_rows+this.getMapInformation().map_cut_cols != 0;
+	};
+
+	// Return the source of this heat map.
+	HeatMap.prototype.source = function() {
+	    return this.fileSrc;
+	};
+
+	// unAppliedChanges is true iff the map has been changed
+	// but not saved.
+	//
+	// setUnAppliedChanges (true) is called when something
+	// changes the map configuration.
+	//
+	// setUnAppliedChanges (false) is called when something
+	// saves or resets the map configuration.
+	HeatMap.prototype.setUnAppliedChanges = function(value) {
+	    this.unAppliedChanges = value;
 	}
 
-	//Fetch a JSON file from server.
-	//Specify which file to get and what function to call when it arrives.
-	//Request is passed to the web loader so that it
-	//can be processed concurrently with the main thread.
-	function webFetchJson(jsonFile) {
-		MMGR.webLoader.postMessage({ op: 'loadJSON', name: jsonFile });
+	// Return the current value of unAppliedChanges.
+	HeatMap.prototype.getUnAppliedChanges = function(){
+	    return this.unAppliedChanges;
 	}
-	
-	//Helper function to fetch a json file from server.  
-	//Specify which file to get and what function to call when it arrives.
-	function fileModeFetchVersion() {
-		var req = new XMLHttpRequest();
-		req.open("GET", COMPAT.versionCheckUrl+COMPAT.version , true);
-		req.onreadystatechange = function () {
-			if (req.readyState == req.DONE) {
-		        if (req.status != 200) {
-		        	//Log failure, otherwise, do nothing.
-		            console.log('Failed to get software version: ' + req.status);
-		        } else {
-		        	var latestVersion = req.response;
-				// FIXME.
-				if ((latestVersion > COMPAT.version) && (typeof NgChm.galaxy === 'undefined') && (MMGR.embeddedMapName === null) && (fileSrc == MMGR.WEB_SOURCE)) {
-				    viewerAppVersionExpiredNotification(COMPAT.version, latestVersion);
-		        	}
-			    } 
-			}
-		};
-		req.send();
+
+	// Call the users call back function to let them know the chm is initialized or updated.
+	HeatMap.prototype.sendCallBack = function sendCallBack(event, tile) {
+	    //Initialize event
+	    if ((event === MMGR.Event_INITIALIZED) || (event === MMGR.Event_JSON) ||
+		    ((event === MMGR.Event_NEWDATA) && (tile.level === MAPREP.THUMBNAIL_LEVEL))) {
+		    //Only send initialized status if several conditions are met: need all summary JSON and thumb nail.
+		    if ((this.mapData != null) &&
+			    (this.mapConfig != null) &&
+			    (Object.keys(this.datalevels).length > 0) &&
+			    (this.tileCache.haveTileData(this.getCurrentDL()+"."+MAPREP.THUMBNAIL_LEVEL+".1.1")) &&
+			     !this.initialized) {
+				    this.initialized = true;
+				    configurePageHeader(this);
+				    if (!this.mapConfig.hasOwnProperty('panel_configuration')) {
+					UTIL.hideLoader(true);
+				    }
+				    this.sendAllListeners(MMGR.Event_INITIALIZED);
+		    }
+		    //Unlikely, but possible to get init finished after all the summary tiles.
+		    //As a back stop, if we already have the top left summary tile, send a data update event too.
+		    if (this.tileCache.haveTileData(this.getCurrentDL()+"."+MAPREP.SUMMARY_LEVEL+".1.1")) {
+			    this.sendAllListeners(MMGR.Event_NEWDATA, { layer: this.getCurrentDL(), level: MAPREP.SUMMARY_LEVEL, row: 1, col: 1});
+		    }
+	    } else	if ((event === MMGR.Event_NEWDATA) && this.initialized) {
+		    this.sendAllListeners(event, tile);
+	    }
+	};
+
+	// Create a TileWindow for the specified heatMap and view window.
+	HeatMap.prototype.getTileWindow = function (win) {
+	    return this.datalevels[win.level].getTileAccessWindow (win.firstRow, win.firstCol, win.numRows, win.numCols, (level, startRowTile, endRowTile, startColTile, endColTile) => {
+		const tileKey = JSON.stringify({ layer: win.layer, level, startRowTile, endRowTile, startColTile, endColTile });
+		if (this.tileWindowRefs.has (tileKey)) {
+		    const tileRef = this.tileWindowRefs.get(tileKey).deref();
+		    if (tileRef) {
+			//console.log ('Found existing tileWindow for ', tileKey);
+			return tileRef;
+		    }
+		    console.log ('Encountered garbage collected tileWindow for ', tileKey);
+		}
+		// Create a new tileWindow and keep a weak reference to it.
+		//console.log ('Creating new tileWindow for ', tileKey);
+		const tileRef = new TileWindow (this, win.layer, level, startRowTile, endRowTile, startColTile, endColTile);
+		this.tileWindowRefs.set (tileKey, new WeakRef(tileRef));
+		return tileRef;
+	    });
+	};
+
+	/* Obtain an access window for the specified view window.
+	 * The access window contains three entries:
+	 * - win: The view window.
+	 * - getValue (row, column) Function to return the value at row, column in heatMap coordinates.
+	 * - onready (callback) When all data ready, call callback if specified with the access window as its parameter or return a promise for the access window.  
+	 *
+	 * The returned access window will have its data tiles requested, but they may not be available immediately.
+	 * Use the onready method to request a promise/callback when all tiles in the access window are ready.
+	 */
+	HeatMap.prototype.getNewAccessWindow = function (win) {
+	    return new AccessWindow (this, win);
+	};
+
+    }
+    /********************************************************************************************
+     *
+     * End of prototype methods for HeatMap "class".
+     *
+     ********************************************************************************************/
+
+    // HeatMap class - holds heat map properties and a tile cache
+    // Used to get HeatMapLevel object.
+    // ToDo switch from using heat map name to blob key?
+    function HeatMap (heatMapName, updateCallbacks, fileSrc, chmFile, compat) {
+	this.initialized = false;	// True once the minimum components have loaded.
+	this.unAppliedChanges = false;	// True iff map has unsaved changes.
+	this.mapName = heatMapName;	// Name of the map.
+	this.mapConfig = null;		// Map configuration.
+	this.mapData = null;		// Map data (excluding tiles).
+	this.datalevels = {};		// HeatMapLevels for tile data at each level.
+	this.alternateLevels = {};	// Alternate level to use for unloaded data.
+	this.colorMapMgr = null;	// The heatMap's color map manager.
+	this.fileSrc = fileSrc;		// The source of the map (Web, File, etc.)
+	this.chmFile = chmFile;		// Reference to zip file (for NGCHMs from files only)
+	this.zipFiles = {};		// Index of files inside the zip file (").
+
+	this.initEventListeners (updateCallbacks);  // Initialize this.eventListeners
+	this.initTileWindows ();	// Initialize this.tileWindowListeners and this.tileWindowRefs
+	this.tileCache = new TileCache(this); // Initialize this.tileCache.
+
+	//Initialization - this code is run once when the map is created.
+
+	if (this.source() !== MMGR.FILE_SOURCE) {
+	    // WEB_SOURCE created the WebLoader on module initialization.
+	    if (this.source() !== MMGR.WEB_SOURCE) createWebLoader(this.source());
+	    connectWebLoader(this, compat.addMapConfig, compat.addMapData);
+	} else {
+		//Check file mode viewer software version (excepting when using embedded widget)
+		if (typeof embedDiv === 'undefined') {
+			checkViewerVersion(this);
+		}
+		loadNgChmFromZip (this, compat.addMapConfig, compat.addMapData);
 	}
-	
-	//Helper function to fetch a json file from zip file using a zip file entry.  
-	function zipFetchJson(entry, setterFunction) {
-		entry.getData(new zip.TextWriter(), function(text) {
-			// got the json, now call the appropriate setter
-			setterFunction(JSON.parse(text));
-		}, function(current, total) {
-			// onprogress callback
-		});
+    }
+
+    //  Helper function to initialize the data levels once we know the tile structure.
+    //  heatMap.mapConfig must be set.
+    //
+    function addDataLayers(heatMap) {
+	const mapConfig = heatMap.mapConfig;
+
+	// Each data level keeps a pointer to the next lower level.
+	const levelsConf = mapConfig.data_configuration.map_information.levels;
+
+	// Create a HeatMapLevel object for level levelId if it's defined in the map configuration.
+	// Set the level's lower level to the HeatMapLevel object for lowerLevelId (if it's defined).
+	// If levelId is not defined in the map configuration, create an alias to the
+	// HeatMapLevel object for altLevelId (if it's defined).
+	function createLevel (levelId, lowerLevelId, altLevelId) {
+	    if (levelsConf.hasOwnProperty (levelId)) {
+		heatMap.datalevels[levelId] = new HeatMapLevel(heatMap.tileCache,
+						levelId,
+						levelsConf[levelId],
+						lowerLevelId ? heatMap.datalevels[lowerLevelId] : null);
+	    } else if (altLevelId) {
+		heatMap.datalevels[levelId] = heatMap.datalevels[altLevelId];
+		// Record all levels for which altLevelId is serving as an immediate alternate.
+		if (!heatMap.alternateLevels.hasOwnProperty(altLevelId)) {
+		    heatMap.alternateLevels[altLevelId] = [];
+		}
+		heatMap.alternateLevels[altLevelId].push (levelId);
+	    }
 	}
-	
-};
+
+	createLevel (MAPREP.THUMBNAIL_LEVEL);
+	createLevel (MAPREP.SUMMARY_LEVEL, MAPREP.THUMBNAIL_LEVEL, MAPREP.THUMBNAIL_LEVEL);
+	createLevel (MAPREP.DETAIL_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.SUMMARY_LEVEL);
+	createLevel (MAPREP.RIBBON_VERT_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.DETAIL_LEVEL);
+	createLevel (MAPREP.RIBBON_HOR_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.DETAIL_LEVEL);
+
+	prefetchInitialTiles(heatMap);
+	heatMap.sendCallBack(MMGR.Event_INITIALIZED);
+    }
+
+    // Helper function to permanently associate an AccessWindow for
+    // the thumbnail level of every layer with the heatMap.
+    //
+    // Has the effect of prefetching and preserving the thumbnail
+    // level tiles for all layers.
+    function prefetchInitialTiles(heatMap) {
+	const datalayers = heatMap.mapConfig.data_configuration.map_information.data_layer;
+	heatMap.thumbnailWindowRefs =
+	    Object.keys(datalayers).map (layer =>
+		heatMap.getNewAccessWindow ({
+		    layer: layer,
+		    level: MAPREP.THUMBNAIL_LEVEL,
+		    firstRow: 1,
+		    firstCol: 1,
+		    numRows: heatMap.getNumRows(MAPREP.THUMBNAIL_LEVEL),
+		    numCols: heatMap.getNumColumns(MAPREP.THUMBNAIL_LEVEL),
+		})
+	    );
+    }
 
 
     //Internal object for traversing the data at a given zoom level.
     class HeatMapLevel {
 
-	constructor (level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile) {
+	constructor (tileCache, level, jsonData, lowerLevel) {
+	    this.tileCache = tileCache;
 	    this.level = level;
 	    this.totalRows = jsonData.total_rows;
 	    this.totalColumns = jsonData.total_cols;
@@ -1632,8 +1338,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    this.lowerLevel = lowerLevel;
 	    this.rowToLower = (lowerLevel === null ? null : this.totalRows/lowerLevel.totalRows);
 	    this.colToLower = (lowerLevel === null ? null : this.totalColumns/lowerLevel.totalColumns);
-	    this.getTile = getTile;
-	    this.getTileCacheData = getTileCacheData;
 	}
 	
 	//Get a value for a row / column.  If the tile with that value is not available, get the down sampled value from
@@ -1642,7 +1346,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    //Calculate which tile holds the row / column we are looking for.
 	    const tileRow = Math.floor((row-1)/this.rowsPerTile) + 1;
 	    const tileCol = Math.floor((column-1)/this.colsPerTile) + 1;
-	    const arrayData = this.getTileCacheData(layer+"."+this.level+"."+tileRow+"."+tileCol);
+	    const arrayData = this.tileCache.getTileCacheData(layer+"."+this.level+"."+tileRow+"."+tileCol);
 
 	    //If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {
@@ -1669,15 +1373,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    return getTileWindow (this.level, startRowTile, endRowTile, startColTile, endColTile);
 	}
     }
-
-    /**********************************************************************************
-     * FUNCTION - mapHasGaps: The purpose of this function indicate true/false whether
-     * a given heat map contains gaps.
-     **********************************************************************************/
-    MMGR.mapHasGaps = function () {
-	    const heatMap = MMGR.getHeatMap();
-	    return heatMap.getMapInformation().map_cut_rows+heatMap.getMapInformation().map_cut_cols != 0;
-    };
 
     /* Submodule for caching Actual/Shown labels.
      */
@@ -1784,12 +1479,410 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
      * has been superceded and a new version of the file application should be downloaded.
      **********************************************************************************/
     function viewerAppVersionExpiredNotification (oldVersion, newVersion) {
+	    const title = "New NG-CHM File Viewer Version Available";
+	    const text = "<br>The version of the NG-CHM File Viewer application that you are running ("+oldVersion+") has been superceded by a newer version ("+newVersion+"). You will be able to view all pre-existing heat maps with this new backward-compatible version. However, you may wish to download the latest version of the viewer.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
+	    showDownloadViewerNotification (title, text);
+    }
+
+    MMGR.showDownloadViewerNotification = showDownloadViewerNotification;
+    function showDownloadViewerNotification (title, bodyText) {
 	    UHM.initMessageBox();
-	    UHM.setMessageBoxHeader("New NG-CHM File Viewer Version Available");
-	    UHM.setMessageBoxText("<br>The version of the NG-CHM File Viewer application that you are running ("+oldVersion+") has been superceded by a newer version ("+newVersion+"). You will be able to view all pre-existing heat maps with this new backward-compatible version. However, you may wish to download the latest version of the viewer.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>");
-	    UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", zipAppDownload);
-	    UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Cancel button", UHM.messageBoxCancel);
+	    UHM.setMessageBoxHeader(title);
+	    UHM.setMessageBoxText(bodyText);
+	    UHM.setMessageBoxButton('download', "images/downloadViewer.png", "Download NG-CHM Viewer App", () => {
+		MMGR.zipAppDownload();
+		UHM.messageBoxCancel();
+	    });
+	    UHM.setMessageBoxButton(
+		'cancel',
+		{ type: 'image', src: UTIL.imageTable.cancelSmall, default: true },
+		"Cancel button",
+		UHM.messageBoxCancel);
 	    UHM.displayMessageBox();
+    }
+
+    // Compare the version of this NG-CHM viewer to the one recent available.
+    // Notify the user if they're using a standalone viewer and it is out of date.
+    //
+    function checkViewerVersion(heatMap) {
+	    const debug = false;
+	    const req = new XMLHttpRequest();
+	    const baseVersion = COMPAT.version.replace(/-.*$/, '');
+	    req.open("GET", COMPAT.versionCheckUrl+baseVersion , true);
+	    req.onreadystatechange = function () {
+		    if (req.readyState == req.DONE) {
+		    if (req.status != 200) {
+			//Log failure, otherwise, do nothing.
+			console.log('Failed to get software version: ' + req.status);
+		    } else {
+			    const latestVersion = req.response;
+			    if (debug) console.log ('Compare versions', { latestVersion, thisVersion: COMPAT.version, newer: newer(latestVersion,baseVersion) });
+			    if (newer (latestVersion, baseVersion) && (typeof NgChm.galaxy === 'undefined') && (MMGR.embeddedMapName === null) && (heatMap.source() != MMGR.WEB_SOURCE)) {
+				viewerAppVersionExpiredNotification(COMPAT.version, latestVersion);
+			    }
+			}
+		    }
+	    };
+	    req.send();
+
+	    // v1 and v2 are version numbers consisting of integers separated by periods.
+	    // This function returns true if v1 is greater than v2.
+	    function newer (v1, v2) {
+		// Split each into fields and convert each field to integer.
+		v1 = v1.split('.').map(v => v|0);
+		v2 = v2.split('.').map(v => v|0);
+		for (let i = 0; ; i++) {
+		    if (i == v1.length && i == v2.length) return false;   // Reached end of both with no differences.
+		    if (i == v2.length) return true;  // Exhausted v2 (we treat 2.21.0 > 2.21)
+		    if (i == v1.length) return false; // Exhausted v1.
+		    if (v1[i] > v2[i]) return true;
+		    if (v1[i] < v2[i]) return false;
+		}
+	    }
+    }
+
+    // Load the JSON files from the heatMap's zip file.
+    // First constructs an index of the zip file entries in heatMap.zipFiles.
+    // Then loads the mapConfig and mapData json files and calls
+    // addMapConfig and addMapData respectively to load them into
+    // the heatMap.
+    function loadNgChmFromZip (heatMap, addMapConfig, addMapData) {
+	if (heatMap.chmFile.size === 0) {
+		UHM.mapLoadError (heatMap.chmFile.name, "File is empty (zero bytes)");
+		return;
+	}
+	const zipBR = new zip.BlobReader(heatMap.chmFile);
+	zip.createReader(zipBR, function(reader) {
+		// get all entries from the zip
+		reader.getEntries(function(entries) {
+			//Inspect the first entry path to grab the true heatMapName.
+			//The user may have renamed the zip file OR it was downloaded
+			//as a second+ generation of a file by the same name (e.g. with a " (1)"
+			//in the name).
+			if (entries.length == 0) {
+			    UHM.mapLoadError (heatMap.chmFile.name, "Empty zip file");
+			    return;
+			}
+			const entryName = entries[0].filename;
+			const slashIdx = entryName.indexOf("/");
+			if (slashIdx < 0) {
+			    UHM.mapLoadError (heatMap.chmFile.name, "File format not recognized");
+			    return;
+			}
+			heatMap.mapName = entryName.substring(0,slashIdx);
+			for (let i = 0; i < entries.length; i++) {
+			    heatMap.zipFiles[entries[i].filename] = entries[i];
+			}
+			const mapConfigName = heatMap.mapName + "/mapConfig.json";
+			const mapDataName = heatMap.mapName + "/mapData.json";
+			if ((mapConfigName in heatMap.zipFiles) && (mapDataName in heatMap.zipFiles)) {
+			    zipFetchJson(heatMap, heatMap.zipFiles[mapConfigName], addMapConfig);
+			    zipFetchJson(heatMap, heatMap.zipFiles[mapDataName], addMapData);
+			} else {
+			    UHM.mapLoadError (heatMap.chmFile.name, "Missing NGCHM content");
+			}
+		});
+	}, function(error) {
+		console.log('Zip file read error ' + error);
+		UHM.mapLoadError (heatMap.chmFile.name, error);
+	});
+
+	//Helper function to fetch a json file from zip file using a zip file entry.
+	function zipFetchJson(heatMap, entry, setterFunction) {
+		entry.getData(new zip.TextWriter(), function(text) {
+			// got the json, now call the appropriate setter
+			setterFunction(heatMap, JSON.parse(text));
+		}, function(current, total) {
+			// onprogress callback
+		});
+	}
+    }
+
+    /* Load the tile with the specified baseName from the heatMap's zipFile.
+     *
+     * On success, calls callback (tileId, tileData), where
+     * tileData is the Float32Array containing the tile's data that was
+     * read from the heatMap's zip file.
+     */
+    function loadZipTile (heatMap, baseName, tileId, callback) {
+	const debug = false;
+	let entry = heatMap.zipFiles[baseName + '.tile'];
+	if (typeof entry === 'undefined') {
+	    // Tiles in ancient NG-CHMs had a .bin extension.
+	    entry = heatMap.zipFiles[baseName + '.bin'];
+	}
+	if (typeof entry === "undefined") {
+	    console.error ('Request for unknown tile');
+	} else {
+	    if (debug) console.log('Got zip entry for tile ' + baseName);
+	    entry.getData(new zip.BlobWriter(), function(blob) {
+		if (debug) console.log('Got blob for tile ' + baseName);
+		const fr = new FileReader();
+
+		fr.onload = function(e) {
+		    const arrayBuffer = fr.result;
+		    const far32 = new Float32Array(arrayBuffer);
+		    if (debug) console.log('Got array buffer for tile ' + baseName);
+		    callback(tileId, far32);
+		 };
+		 fr.readAsArrayBuffer(blob);
+	    }, function(current, total) {
+		// onprogress callback
+	    });
+	}
+    }
+
+    MMGR.zipSaveMapProperties = zipSaveMapProperties;
+    function zipSaveMapProperties(heatMap, mapConf, progressMeter) {
+
+	return new Promise ((resolve, reject) => {
+
+	function onProgress(a, b) {
+	    // For debug use - console.log("current", a, "end", b);
+	}
+
+        const zipper = (function buildZipFile() {
+	    var zipWriter;
+
+	    return {
+		addTexts : function addEntriesToZipFile(callback) {
+				// Loop thru all entries in zipFiles, adding them to the new zip file.
+			const zipKeys = Object.keys(heatMap.zipFiles);
+			function add(fileIndex) {
+			    const progress = (1 + fileIndex) / (1 + zipKeys.length);
+			    if (progressMeter) progressMeter (progress);
+			    setTimeout (() => {
+				if (fileIndex < zipKeys.length) {
+				    const keyVal = zipKeys[fileIndex];
+				    const entry = heatMap.zipFiles[keyVal];
+				    if ((keyVal.indexOf('bin') < 0) && (keyVal.indexOf('tile') < 0)) {
+					// Directly add all text zip entries directly to the new zip file
+					// except for mapConfig.  For this entry, add the modified config data.
+					if (keyVal.indexOf('mapConfig') > -1) {
+					    addTextContents(entry.filename, fileIndex, JSON.stringify(mapConf || heatMap.mapConfig));
+					} else {
+					    zipFetchText(entry, fileIndex, addTextContents);
+					}
+				    } else {
+					// Directly add all binary zip entries directly to the new zip file
+					zipFetchBin(entry, fileIndex, addBinContents);
+				    }
+				} else {
+				  callback() /* [2] no more files to add: callback is called */;
+				}
+			    });
+			}
+
+			// Get the text data for a given zip entry and execute the
+			// callback to add that data to the zip file.
+			function zipFetchText(entry, fileIndex, setterFunction) {
+			    entry.getData(new zip.TextWriter(), function(text) {
+				// got the json, now call the appropriate setter
+				setterFunction(entry.filename, fileIndex, text);
+			    }, function(current, total) {
+				// onprogress callback
+			    });
+			}
+
+			// Get the binary data for a given zip entry and execute the
+			// callback to add that data to the zip file.
+			function zipFetchBin(entry, fileIndex, setterFunction) {
+			    entry.getData(new zip.BlobWriter(), function(blob) {
+				setterFunction(entry.filename, fileIndex, blob);
+			    }, function(current, total) {
+				// onprogress callback
+			    });
+			}
+
+			// Add text contents to the zip file and call the add function 
+			// to process the next zip entry stored in zipFiles.
+			function addTextContents(name, fileIndex, contents) {
+			    zipWriter.add(name, new zip.TextReader(contents), function() {
+				    add(fileIndex + 1); /* [1] add the next file */
+				}, onProgress);
+			}
+
+			// Add binary contents to the zip file and call the add function
+			// to process the next zip entry stored in zipFiles.
+			function addBinContents(name, fileIndex, contents) {
+			    zipWriter.add(name, new zip.BlobReader(contents), function() {
+				    add(fileIndex + 1); /* [1] add the next file */
+				}, onProgress);
+			}
+		      // Start the zip file creation process by instantiating a writer
+		      // and calling the add function for the first entry in zipFiles.
+		      zip.createWriter(new zip.BlobWriter(), function(writer) {
+			zipWriter = writer;
+			add(0); /* [1] add the first file */
+		      });
+		},
+
+		getBlob : function(callback) {
+		    zipWriter.close(callback);
+		}
+	    };
+	})();
+
+	zipper.addTexts(function addTextsCallback() {
+	    zipper.getBlob(function getBlobCallback(blob) {
+		saveAs(blob, heatMap.mapName+".ngchm");
+		resolve();
+	    });
+	});
+
+	});
+    }
+
+    MMGR.webSaveMapProperties = webSaveMapProperties;
+    function webSaveMapProperties(heatMap) {
+	    const jsonData = JSON.stringify(heatMap.getMapConfig());
+	    var success = "false";
+	    var name = CFG.api + "SaveMapProperties?map=" + heatMap.mapName;
+	    var req = new XMLHttpRequest();
+	    req.open("POST", name, false);
+	    req.setRequestHeader("Content-Type", "application/json");
+	    req.onreadystatechange = function () {
+		    if (req.readyState == req.DONE) {
+			    if (req.status != 200) {
+				    console.log('Failed in call to save propeties from server: ' + req.status);
+				    success = "false";
+			    } else {
+				    success = req.response;
+			    }
+		    }
+	    };
+	    req.send(jsonData);
+	    return success;
+    }
+
+    MMGR.zipMapProperties = zipMapProperties;
+    function zipMapProperties(heatMap, jsonData) {
+	    var success = "";
+	    var name = CFG.api + "ZippedMap?map=" + heatMap.mapName;
+	    callServlet("POST", name, jsonData);
+	    return true;
+    }
+
+
+// Matrix Manager block.
+{
+    var heatMap = null;
+    var mapUpdatedOnLoad = false;
+    var flickInitialized = false;
+
+    const compat = { addMapConfig, addMapData };
+
+    function addMapData(heatMap, md) {
+	heatMap.mapData = md;
+	if (COMPAT.mapDataCompatibility(heatMap.mapData)) {
+	    mapUpdatedOnLoad = true;
+	}
+	heatMap.sendCallBack(MMGR.Event_JSON);
+    }
+
+    function addMapConfig(heatMap, mc) {
+	if (COMPAT.CompatibilityManager(mc)) {
+	    mapUpdatedOnLoad = true;
+	}
+	heatMap.mapConfig = mc;
+	addDataLayers(heatMap);
+	configureFlick(heatMap);
+	heatMap.sendCallBack(MMGR.Event_JSON);
+    }
+
+    MMGR.mapUpdatedOnLoad = function() {
+	return mapUpdatedOnLoad;
+    };
+
+    //Main function of the matrix manager - retrieve a heat map object.
+    //mapFile parameter is only used for local file based heat maps.
+    //This function is called from a number of places:
+    //It is called from UIMGR.onLoadCHM when displaying a map in the NG-CHM Viewer and for embedded NG-CHM maps
+    //It is called from displayFileModeCHM (in UIMGR) when displaying a map in the stand-alone NG-CHM Viewer
+    //It is called in script in the mda_heatmap_viz.mako file when displaying a map in the Galaxy NG-CHM Viewer
+    MMGR.createHeatMap = function createHeatMap (fileSrc, heatMapName, updateCallbacks, mapFile) {
+	heatMap = new HeatMap(heatMapName, updateCallbacks, fileSrc, mapFile, compat);
+    };
+
+    // Return the current heat map.
+    MMGR.getHeatMap = function getHeatMap() {
+	return heatMap;
+    };
+
+    /*
+     * Set the 'flick' control and data layer
+    */
+    function configureFlick (heatMap) {
+	if (!flickInitialized) {
+	    const dl = heatMap.getDataLayers();
+	    const numLayers = Object.keys(dl).length;
+	    let maxDisplay = 0;
+	    if (numLayers > 1) {
+		const panelConfig = heatMap.getPanelConfiguration();
+		const flickInfo = panelConfig ? panelConfig.flickInfo : null;
+		const dls = new Array(numLayers);
+		const orderedKeys = new Array(numLayers);
+		for (let key in dl){
+		    const dlNext = +key.substring(2, key.length);
+		    orderedKeys[dlNext-1] = key;
+		    let displayName = dl[key].name;
+		    if (displayName.length > maxDisplay) {
+			maxDisplay = displayName.length;
+		    }
+		    if (displayName.length > 20) {
+			displayName = displayName.substring(0,17) + "...";
+		    }
+		    dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
+		}
+		if (flickInfo) {
+		    FLICK.enableFlicks (dls.join(""), flickInfo.flick1 || 'dl1', flickInfo.flick2 || 'dl1');
+		    const layer = FLICK.setFlickState (flickInfo.flick_btn_state);
+		    heatMap.setCurrentDL(layer);
+		} else {
+		    FLICK.enableFlicks (dls.join(""), "dl1", orderedKeys[1]);
+		    heatMap.setCurrentDL("dl1");
+		}
+	    } else {
+		    heatMap.setCurrentDL("dl1");
+		    FLICK.disableFlicks();
+	    }
+	    flickInitialized = true;
+
+	    var gearBtnPanel = document.getElementById("pdf_gear");
+	    if (maxDisplay > 15) {
+		    gearBtnPanel.style.minWidth = '320px';
+	    } else if (maxDisplay === 0) {
+		    gearBtnPanel.style.minWidth = '80px';
+	    } else {
+		    gearBtnPanel.style.minWidth = '250px';
+	    }
+	}
+    }
+
+}
+
+    // Configure elements of the page header and top bar that depend on the
+    // loaded NGCHM.
+    function configurePageHeader(heatMap) {
+	    // Show back button if collectionHome specified.
+	    const backButton = document.getElementById("back_btn");
+	    const url = UTIL.getURLParameter("collectionHome");
+	    if (url !== "") {
+		    backButton.style.display = '';
+	    }
+
+	    // Set document title if not a local file.
+	    if (heatMap.source() !== MMGR.LOCAL_SOURCE) {
+		    document.title = heatMap.getMapInformation().name;
+	    }
+
+	    // Populate the header's nameDiv.
+	    const nameDiv = document.getElementById("mapName");
+	    let mapName = heatMap.getMapInformation().name;
+	    if (mapName.length > 30){
+		    mapName = mapName.substring(0,27) + "...";
+	    }
+	    nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
     }
 
 /**********************************************************************************

@@ -127,12 +127,20 @@ div.pane canvas {
 	position: absolute;
 }
 
-#prefCreate_btn {
+#pref_buttons {
+    margin-bottom: 0.5em;
+}
+
+#pref_buttons button {
     background: transparent;
     border: none;
 }
 
-#prefCreate_btn:disabled {
+#pref_buttons button:first-child  {
+    margin-left: 0.5em;
+}
+
+#pref_buttons button:disabled {
     opacity: 25%;
 }
 
@@ -944,6 +952,7 @@ th.breakpointContainer {
     margin-top: 0.5em;
 }
 
+#linkBoxFoot button,
 #msgBoxButtons button {
     border: none;
     vertical-align: top;

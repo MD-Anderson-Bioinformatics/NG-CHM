@@ -973,7 +973,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	target.ctx.clearRect(0, 0, target.width, target.height);
 
 	// Draw the border
-	if (MMGR.mapHasGaps() === false) {
+	if (!mapItem.heatMap.hasGaps()) {
 	    // Determine total width and height of map and covariate bars in canvas coordinates.
 	    const canH = mapItem.dataViewHeight + mapItemVars.totalColBarHeight;
 	    const canW = mapItem.dataViewWidth + mapItemVars.totalRowBarHeight;
