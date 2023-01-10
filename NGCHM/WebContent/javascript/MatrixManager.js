@@ -792,6 +792,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	// listeners, such as TileWindow listeners.
 	this.addEventListener(function (event, tile) {
 	    if (event == MMGR.Event_NEWDATA) {
+		// Iterate over all the tileWindowListeners.
 		let i = 0;
 		while (i < this.tileWindowListeners.length) {
 		    const entry = this.tileWindowListeners[i];
@@ -805,6 +806,14 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			i ++;
 		    }
 		}
+		// Iterate over all the tileWindowRefs and remove any that have been reclaimed.
+		this.tileWindowRefs.forEach ((value, key) => {
+		    const tileWin = value.deref();
+		    if (!tileWin) {
+			console.log ('Removing garbage collected tileWindow', key);
+			this.tileWindowRefs.delete(key);
+		    }
+		});
 	    }
 	});
 
