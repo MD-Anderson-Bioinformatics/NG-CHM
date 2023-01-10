@@ -6,7 +6,7 @@
 // data is available at different 'zoom' levels - Summary, Ribbon Vertical, Ribbon
 // Horizontal, and Full.  To use this code, create MatrixManger by calling the 
 // MatrixManager function.  The MatrixManager lets you retrieve a HeatmapData object
-// given a heat map name and summary level.  The HeatMapData object has various
+// given a heat map name and summary level.  The HeatMapLevel object has various
 // attributes of the map including the size an number of tiles the map is broken up 
 // into.  getTile() is called on the HeatmapData to get each tile of the data.  Tile
 // retrieval is asynchronous so you need to provide a callback that is triggered when
@@ -248,7 +248,7 @@ MMGR.isRow = function isRow (axis) {
 };
 
 //HeatMap Object - holds heat map properties and a tile cache
-//Used to get HeatMapData object.
+//Used to get HeatMapLevel object.
 //ToDo switch from using heat map name to blob key?
 MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	//This holds the various zoom levels of data.
@@ -1275,13 +1275,13 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			const levelsConf = mapConfig.data_configuration.map_information.levels;
 			const datalayers = mapConfig.data_configuration.map_information.data_layer
 
-			// Create a HeatMapData object for level levelId if it's defined in the map configuration.
-			// Set the level's lower level to the HeatMapData object for lowerLevelId (if it's defined).
+			// Create a HeatMapLevel object for level levelId if it's defined in the map configuration.
+			// Set the level's lower level to the HeatMapLevel object for lowerLevelId (if it's defined).
 			// If levelId is not defined in the map configuration, create an alias to the
-			// HeatMapData object for altLevelId (if it's defined).
+			// HeatMapLevel object for altLevelId (if it's defined).
 			function createLevel (levelId, lowerLevelId, altLevelId) {
 				if (levelsConf.hasOwnProperty (levelId)) {
-					datalevels[levelId] = new MMGR.HeatMapData(heatMapName,
+					datalevels[levelId] = new HeatMapLevel(
 									levelId,
 									levelsConf[levelId],
 									datalayers,
@@ -1634,65 +1634,69 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 };
 
 
-//Internal object for traversing the data at a given zoom level.
-MMGR.HeatMapData = function(heatMapName, level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile) {
+    //Internal object for traversing the data at a given zoom level.
+    class HeatMapLevel {
+
+	constructor (level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile) {
 	this.level = level;
 	this.totalRows = jsonData.total_rows;
 	this.totalColumns = jsonData.total_cols;
-    var numTileRows = jsonData.tile_rows;
-    var numTileColumns = jsonData.tile_cols;
-    var rowsPerTile = jsonData.rows_per_tile;
-    var colsPerTile = jsonData.cols_per_tile;
-    this.rowSummaryRatio = jsonData.row_summary_ratio;
-    this.colSummaryRatio = jsonData.col_summary_ratio;
-	var rowToLower = (lowerLevel === null ? null : this.totalRows/lowerLevel.totalRows);
-	var colToLower = (lowerLevel === null ? null : this.totalColumns/lowerLevel.totalColumns);
+	this.numTileColumns = jsonData.tile_cols;
+	this.rowsPerTile = jsonData.rows_per_tile;
+	this.colsPerTile = jsonData.cols_per_tile;
+	this.rowSummaryRatio = jsonData.row_summary_ratio;
+	this.colSummaryRatio = jsonData.col_summary_ratio;
+	this.lowerLevel = lowerLevel;
+	this.rowToLower = (lowerLevel === null ? null : this.totalRows/lowerLevel.totalRows);
+	this.colToLower = (lowerLevel === null ? null : this.totalColumns/lowerLevel.totalColumns);
+	this.getTile = getTile;
+	this.getTileCacheData = getTileCacheData;
+	}
 	
 	//Get a value for a row / column.  If the tile with that value is not available, get the down sampled value from
 	//the lower data level.
-	this.getLayerValue = function(layer, row, column) {
+	getLayerValue (layer, row, column) {
 		//Calculate which tile holds the row / column we are looking for.
-		var tileRow = Math.floor((row-1)/rowsPerTile) + 1;
-		var tileCol = Math.floor((column-1)/colsPerTile) + 1;
-		var arrayData = getTileCacheData(layer+"."+level+"."+tileRow+"."+tileCol);
+		var tileRow = Math.floor((row-1)/this.rowsPerTile) + 1;
+		var tileCol = Math.floor((column-1)/this.colsPerTile) + 1;
+		var arrayData = this.getTileCacheData(layer+"."+this.level+"."+tileRow+"."+tileCol);
 
 		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {
-	    	//for end tiles, the # of columns can be less than the colsPerTile - figure out the correct num columns.
-			var thisTileColsPerRow = tileCol == numTileColumns ? ((this.totalColumns % colsPerTile) == 0 ? colsPerTile : this.totalColumns % colsPerTile) : colsPerTile; 
+		//for end tiles, the # of columns can be less than the this.colsPerTile - figure out the correct num columns.
+			var thisTileColsPerRow = tileCol == this.numTileColumns ? ((this.totalColumns % this.colsPerTile) == 0 ? this.colsPerTile : this.totalColumns % this.colsPerTile) : this.colsPerTile; 
 			//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
-	    	return arrayData[(row-1)%rowsPerTile * thisTileColsPerRow + (column-1)%colsPerTile];
-	    } else if (lowerLevel != null) {
-		return lowerLevel.getLayerValue(layer, Math.floor((row-1)/rowToLower) + 1, Math.floor((column-1)/colToLower) + 1);
+		return arrayData[(row-1)%this.rowsPerTile * thisTileColsPerRow + (column-1)%this.colsPerTile];
+	    } else if (this.lowerLevel != null) {
+		return this.lowerLevel.getLayerValue(layer, Math.floor((row-1)/this.rowToLower) + 1, Math.floor((column-1)/this.colToLower) + 1);
 	    } else {
 	    	return 0;
 	    }	
-	};
+	}
 
-    this.getTileAccessWindow = function(row, column, numRows, numColumns, getTileWindow) {
-	const startRowTile = Math.floor(row/rowsPerTile) + 1;
-	const startColTile = Math.floor(column/colsPerTile) + 1;
-	const endRowCalc = (row+(numRows-1))/rowsPerTile;
-	const endColCalc = (column+(numColumns-1))/colsPerTile;
+	getTileAccessWindow (row, column, numRows, numColumns, getTileWindow) {
+	const startRowTile = Math.floor(row/this.rowsPerTile) + 1;
+	const startColTile = Math.floor(column/this.colsPerTile) + 1;
+	const endRowCalc = (row+(numRows-1))/this.rowsPerTile;
+	const endColCalc = (column+(numColumns-1))/this.colsPerTile;
 	const endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
 	const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
 
 	return getTileWindow (this.level, startRowTile, endRowTile, startColTile, endColTile);
-    };
+	}
 
 	// External user of the matrix data lets us know where they plan to read.
 	// Pull tiles for that area if we don't already have them.
-    this.loadTiles = function(datalayers, rowTiles, colTiles) {
+	loadTiles (datalayers, rowTiles, colTiles) {
 		datalayers.forEach(dlayer => {
 			for (let i = 1; i <= rowTiles; i++) {
 				for (let j = 1; j <= colTiles; j++) {
-					getTile(dlayer, level, i, j);
+					this.getTile(dlayer, this.level, i, j);
 				}
 			}
 		});
+	}
     }
-
-};
 
     /**********************************************************************************
      * FUNCTION - mapHasGaps: The purpose of this function indicate true/false whether
