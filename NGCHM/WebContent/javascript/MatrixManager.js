@@ -782,6 +782,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	// Array of TileWindow onready functions waiting for all tiles in the
 	// window to load.
 	this.tileWindowListeners = [];
+	this.tileWindowRefs = new Map();
 
 	// Listen for tile load notifications.  For each, check each TileWindow
 	// listener to see if all required tiles have been received.
@@ -889,7 +890,20 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	// Create a TileWindow for the specified heatMap and view window.
 	function getTileWindow (heatMap, win) {
 	    return datalevels[win.level].getTileAccessWindow (win.firstRow, win.firstCol, win.numRows, win.numCols, (level, startRowTile, endRowTile, startColTile, endColTile) => {
-		return new TileWindow (heatMap, win.layer, level, startRowTile, endRowTile, startColTile, endColTile);
+		const tileKey = JSON.stringify({ layer: win.layer, level, startRowTile, endRowTile, startColTile, endColTile });
+		if (heatMap.tileWindowRefs.has (tileKey)) {
+		    const tileRef = heatMap.tileWindowRefs.get(tileKey).deref();
+		    if (tileRef) {
+			//console.log ('Found existing tileWindow for ', tileKey);
+			return tileRef;
+		    }
+		    console.log ('Encountered garbage collected tileWindow for ', tileKey);
+		}
+		// Create a new tileWindow and keep a weak reference to it.
+		//console.log ('Creating new tileWindow for ', tileKey);
+		const tileRef = new TileWindow (heatMap, win.layer, level, startRowTile, endRowTile, startColTile, endColTile);
+		heatMap.tileWindowRefs.set (tileKey, new WeakRef(tileRef));
+		return tileRef;
 	    });
 	};
 
