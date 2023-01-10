@@ -47,7 +47,7 @@ DMM.nextMapNumber = 1;
 	  detailHeatMapLevel: {},      // Level of last rendered heat map for each layer
 	  detailHeatMapValidator: {},  // Encoded drawing parameters used to check heat map is current
 	  detailHeatMapParams: {},     // Drawing parameters for this detail view (used by PDF generator)
-
+	  detailHeatMapAccessWindow: null, // Last used access window (for preventing tileWindow garbage collection)
     };
 
     class DetailHeatMapView {
@@ -66,6 +66,7 @@ DMM.nextMapNumber = 1;
 		detailHeatMapLevel: {},
 		detailHeatMapValidator: {},
 		detailHeatMapParams: {},
+		detailHeatMapAccessWindow: null,
 	    });
 	}
 
@@ -128,6 +129,9 @@ DMM.nextMapNumber = 1;
 		numRows: DVW.getCurrentDetDataPerCol(this),
 		numCols: DVW.getCurrentDetDataPerRow(this),
 	    });
+	    // Keep reference to last access window to prevent garbage collection
+	    // of active tileWindows.
+	    this.detailHeatMapAccessWindow = win;
 	    DET.setDrawDetailTimeout (this, DET.redrawSelectionTimeout, noResize);
 	}
 
