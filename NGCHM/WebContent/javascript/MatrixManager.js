@@ -1638,34 +1638,36 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
     class HeatMapLevel {
 
 	constructor (level, jsonData, datalayers, lowerLevel, getTileCacheData, getTile) {
-	this.level = level;
-	this.totalRows = jsonData.total_rows;
-	this.totalColumns = jsonData.total_cols;
-	this.numTileColumns = jsonData.tile_cols;
-	this.rowsPerTile = jsonData.rows_per_tile;
-	this.colsPerTile = jsonData.cols_per_tile;
-	this.rowSummaryRatio = jsonData.row_summary_ratio;
-	this.colSummaryRatio = jsonData.col_summary_ratio;
-	this.lowerLevel = lowerLevel;
-	this.rowToLower = (lowerLevel === null ? null : this.totalRows/lowerLevel.totalRows);
-	this.colToLower = (lowerLevel === null ? null : this.totalColumns/lowerLevel.totalColumns);
-	this.getTile = getTile;
-	this.getTileCacheData = getTileCacheData;
+	    this.level = level;
+	    this.totalRows = jsonData.total_rows;
+	    this.totalColumns = jsonData.total_cols;
+	    this.numTileRows = jsonData.tile_rows;
+	    this.numTileColumns = jsonData.tile_cols;
+	    this.rowsPerTile = jsonData.rows_per_tile;
+	    this.colsPerTile = jsonData.cols_per_tile;
+	    this.rowSummaryRatio = jsonData.row_summary_ratio;
+	    this.colSummaryRatio = jsonData.col_summary_ratio;
+	    this.lowerLevel = lowerLevel;
+	    this.rowToLower = (lowerLevel === null ? null : this.totalRows/lowerLevel.totalRows);
+	    this.colToLower = (lowerLevel === null ? null : this.totalColumns/lowerLevel.totalColumns);
+	    this.getTile = getTile;
+	    this.getTileCacheData = getTileCacheData;
 	}
 	
 	//Get a value for a row / column.  If the tile with that value is not available, get the down sampled value from
 	//the lower data level.
 	getLayerValue (layer, row, column) {
-		//Calculate which tile holds the row / column we are looking for.
-		var tileRow = Math.floor((row-1)/this.rowsPerTile) + 1;
-		var tileCol = Math.floor((column-1)/this.colsPerTile) + 1;
-		var arrayData = this.getTileCacheData(layer+"."+this.level+"."+tileRow+"."+tileCol);
+	    //Calculate which tile holds the row / column we are looking for.
+	    const tileRow = Math.floor((row-1)/this.rowsPerTile) + 1;
+	    const tileCol = Math.floor((column-1)/this.colsPerTile) + 1;
+	    const arrayData = this.getTileCacheData(layer+"."+this.level+"."+tileRow+"."+tileCol);
 
-		//If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
+	    //If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData != undefined) {
-		//for end tiles, the # of columns can be less than the this.colsPerTile - figure out the correct num columns.
-			var thisTileColsPerRow = tileCol == this.numTileColumns ? ((this.totalColumns % this.colsPerTile) == 0 ? this.colsPerTile : this.totalColumns % this.colsPerTile) : this.colsPerTile; 
-			//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
+		//for end tiles, the # of columns can be less than the this.colsPerTile -
+		//figure out the correct num columns.
+		const thisTileColsPerRow = tileCol == this.numTileColumns ? ((this.totalColumns % this.colsPerTile) == 0 ? this.colsPerTile : this.totalColumns % this.colsPerTile) : this.colsPerTile; 
+		//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
 		return arrayData[(row-1)%this.rowsPerTile * thisTileColsPerRow + (column-1)%this.colsPerTile];
 	    } else if (this.lowerLevel != null) {
 		return this.lowerLevel.getLayerValue(layer, Math.floor((row-1)/this.rowToLower) + 1, Math.floor((column-1)/this.colToLower) + 1);
@@ -1675,26 +1677,26 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 
 	getTileAccessWindow (row, column, numRows, numColumns, getTileWindow) {
-	const startRowTile = Math.floor(row/this.rowsPerTile) + 1;
-	const startColTile = Math.floor(column/this.colsPerTile) + 1;
-	const endRowCalc = (row+(numRows-1))/this.rowsPerTile;
-	const endColCalc = (column+(numColumns-1))/this.colsPerTile;
-	const endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
-	const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
+	    const startRowTile = Math.floor(row/this.rowsPerTile) + 1;
+	    const startColTile = Math.floor(column/this.colsPerTile) + 1;
+	    const endRowCalc = (row+(numRows-1))/this.rowsPerTile;
+	    const endColCalc = (column+(numColumns-1))/this.colsPerTile;
+	    const endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
+	    const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
 
-	return getTileWindow (this.level, startRowTile, endRowTile, startColTile, endColTile);
+	    return getTileWindow (this.level, startRowTile, endRowTile, startColTile, endColTile);
 	}
 
 	// External user of the matrix data lets us know where they plan to read.
 	// Pull tiles for that area if we don't already have them.
 	loadTiles (datalayers, rowTiles, colTiles) {
-		datalayers.forEach(dlayer => {
-			for (let i = 1; i <= rowTiles; i++) {
-				for (let j = 1; j <= colTiles; j++) {
-					this.getTile(dlayer, this.level, i, j);
-				}
-			}
-		});
+	    datalayers.forEach(dlayer => {
+		for (let i = 1; i <= rowTiles; i++) {
+		    for (let j = 1; j <= colTiles; j++) {
+			this.getTile(dlayer, this.level, i, j);
+		    }
+		}
+	    });
 	}
     }
 
