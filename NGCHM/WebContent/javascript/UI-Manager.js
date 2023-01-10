@@ -210,6 +210,9 @@
 		return;
 	    }
 
+	    const flickState = FLICK.getFlickState();
+	    console.log ('Check initial flick layers', flickState);
+
 	    //If any new configs were added to the heatmap's config, save the config file.
 	    const heatMap = MMGR.getHeatMap();
 	    if (MMGR.mapUpdatedOnLoad() && heatMap.getMapInformation().read_only !== "Y") {
@@ -1130,14 +1133,15 @@
      * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown.
      * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
      ***********************************************************************************************/
-    UIMGR.flickChange = function(fromList) {
-	const newDataLayer = FLICK.toggleFlickState (fromList);
-	setDataLayer (newDataLayer);
+    UIMGR.flickChange = function(change) {
+	console.log ('flickChange', change);
+	if (change.redrawRequired) {
+	    setDataLayer (change.layer);
+	}
     };
     FLICK.setFlickHandler (UIMGR.flickChange);
 
     function setDataLayer (newDataLayer) {
-	if (!newDataLayer) return;
 
 	const heatMap = MMGR.getHeatMap();
 	heatMap.setCurrentDL (newDataLayer);
@@ -1296,7 +1300,7 @@
 				break;
 			case 'F2': // F2 key
 				if (FLICK.flickIsOn()) {
-				    UIMGR.flickChange (FLICK.isFlickUp() ? "toggle2" : "toggle1");
+				    UIMGR.flickChange(FLICK.toggleFlickState ("toggle"));
 				}
 				break;
 			case 'Enter':

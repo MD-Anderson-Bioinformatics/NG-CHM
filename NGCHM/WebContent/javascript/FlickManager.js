@@ -14,6 +14,7 @@
 	disableFlicks,
 	flickIsOn,
 	isFlickUp,
+	getFlickState,
 	setFlickState,
 	toggleFlickState,
 	setFlickHandler,
@@ -100,51 +101,65 @@
     //
     // Used by UI Manager.flickChange().  You should call that function
     // if you want to changethe flick state.
-    function toggleFlickState (fromList) {
-	let newstate = null;
+    function toggleFlickState (flickElement) {
+	let togglePosition = flickBtn.dataset.state;
+	let layer = (togglePosition === 'flickUp' ? flickDrop1.value : flickDrop2.value) || "dl1";
+	let redrawRequired = false;
 
-	if (typeof fromList === 'undefined' || fromList === null) {
-	    newstate = flickBtn.dataset.state === 'flickUp' ? 'flickDown' : 'flickUp';
+	if (flickElement === 'toggle') {
+	    // Toggle is a pseudo-element.
+	    // Toggle the flick element.
+	    flickElement = togglePosition === 'flickUp' ? 'flick2' : 'flick1';  // Switch active flick element.
+	    const newLayer = setFlickState (flickElement);
+	    // Redraw if new layer is different.
+	    if (layer !== newLayer) {
+		layer = newLayer;
+		redrawRequired = true;
+	    }
 	} else {
-	    if ((fromList === "flick1") && (flickBtn.dataset.state === 'flickUp')) {
-		newstate = 'flickUp';
-	    } else if ((fromList === "flick2") && (flickBtn.dataset.state === 'flickDown')) {
-		newstate = 'flickDown';
-	    } else if ((fromList === "toggle1") && (flickBtn.dataset.state === 'flickDown')) {
-		newstate = 'flickUp';
-	    } else if ((fromList === "toggle2") && (flickBtn.dataset.state === 'flickUp')) {
-		newstate = 'flickDown';
+	    if ((flickElement === "flick1") && (togglePosition === 'flickUp')) {
+		// Active flick1 changed.
+		redrawRequired = true;
+	    } else if ((flickElement === "flick2") && (togglePosition === 'flickDown')) {
+		// Active flick2 changed.
+		redrawRequired = true;
 	    } else {
-		return null;
+		// Inactive flick element possibly changed.
+		// No redraw required.
+		layer = (flickElement === 'flick1' ? flickDrop1.value : flickDrop2.value) || "dl1";
 	    }
 	}
-	return setFlickState (newstate);
+	return { flickElement, layer, redrawRequired };
     }
 
-    // Set the flickState to state, update the flickColors, return the value
-    // associated with the state (or "dl1" if no associated value).
-    function setFlickState (state) {
-	if (state !== 'flickUp' && state !== 'flickDown') {
-	    console.error ('Invalid attempt to set flick state to ' + state);
-	    return "dl1";
+    // Set the flickState to the position of flickElement, update the flickColors, return the value
+    // associated with the flickElement (or "dl1" if no associated value).
+    function setFlickState (flickElement) {
+	flickBtn.dataset.state = flickElement === 'flick1' ? 'flickUp' : 'flickDown';
+	flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
+	setFlickColors();
+	return (flickElement === 'flick1' ? flickDrop1.value : flickDrop2.value) || "dl1";
+    }
+
+    function getFlickState () {
+	const f1 = { element: 'flick1', layer: flickDrop1.value };
+	if (flicksElement.style.display == 'none') {
+	    return [f1];
+	} else {
+	    const f2 = { element: 'flick2', layer: flickDrop2.value };
+	    return flickBtn.dataset.state === 'flickUp' ? [f1,f2] : [f2,f1];
 	}
-	if (flickBtn.dataset.state !== state) {
-	    flickBtn.dataset.state = state;
-	    flickBtn.setAttribute('src', toggleButtons[state]);
-	    setFlickColors();
-	}
-	return (state === 'flickUp' ? flickDrop1.value : flickDrop2.value) || "dl1";
     }
 
     function setFlickHandler (flickHandler) {
 	document.getElementById('flick_btn').onclick = function (event) {
-	    flickHandler();
+	    flickHandler(toggleFlickState('toggle'));
 	};
 	document.getElementById('flick1').onchange = function (event) {
-	    flickHandler('flick1');
+	    flickHandler(toggleFlickState('flick1'));
 	};
 	document.getElementById('flick2').onchange = function (event) {
-	    flickHandler('flick2');
+	    flickHandler(toggleFlickState('flick2'));
 	};
     }
 
