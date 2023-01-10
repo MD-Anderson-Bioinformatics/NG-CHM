@@ -287,10 +287,11 @@ CMM.darkenHexColorIfNeeded = darkenHexColorIfNeeded;
 }
 		
     // All color maps and current color maps are stored here.
-    CMM.ColorMapManager = function(heatMap, mapConfig) {
+    CMM.ColorMapManager = function(heatMap) {
 	
 	this.heatMap = heatMap;
 
+	const mapConfig = heatMap.mapConfig;
 	const colorMapCollection = [mapConfig.data_configuration.map_information.data_layer,mapConfig.row_configuration.classifications,mapConfig.col_configuration.classifications];
 	
 	this.getColorMap = function(type, colorMapName){

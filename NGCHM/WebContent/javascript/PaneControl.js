@@ -1248,7 +1248,7 @@
 		setPaneTitle (loc, 'empty');
 		removePanelMenuGroupIcons (loc);
 		PANE.setPaneClientIcons (loc, []);
-		MMGR.removePaneInfoFromMapConfig(loc.pane.id)
+		MMGR.getHeatMap().removePaneInfoFromMapConfig(loc.pane.id)
 		// Return remaining client elements to caller.
 		return clientElements;
 	}

@@ -252,7 +252,7 @@ MMGR.isRow = function isRow (axis) {
 //ToDo switch from using heat map name to blob key?
 MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	//This holds the various zoom levels of data.
-	var mapConfig = null;
+	this.mapConfig = null;
 	var mapData = null;
 	var mapUpdatedOnLoad = false; // Set to true if map updated on load.
 	var datalevels = {};
@@ -324,11 +324,11 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	};
 
 	this.getMapConfig = function() {
-	    return mapConfig;
+	    return this.mapConfig;
 	};
 
 	this.isMapLoaded = function () {
-		return mapConfig !== null;
+		return this.mapConfig !== null;
 	};
 	
 	this.isFileMode = function () {
@@ -336,7 +336,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	};
 	
 	this.isReadOnly = function(){
-		return mapConfig.data_configuration.map_information.read_only === 'Y';
+		return this.mapConfig.data_configuration.map_information.read_only === 'Y';
 	};
 	
 	this.setUnAppliedChanges = function(value){
@@ -417,11 +417,11 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	// Retrieve color map Manager for this heat map.
 	this.getColorMapManager = function() {
-		if (mapConfig == null)
+		if (this.mapConfig == null)
 			return null;
 		
 		if (colorMapMgr == null ) {
-			colorMapMgr = new CMM.ColorMapManager(this, mapConfig);
+			colorMapMgr = new CMM.ColorMapManager(this);
 		}
 		return colorMapMgr;
 	}
@@ -431,11 +431,11 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	};
 
 	this.getRowConfig = function() {
-		return mapConfig.row_configuration;
+		return this.mapConfig.row_configuration;
 	}
 	
 	this.getColConfig = function() {
-		return mapConfig.col_configuration;
+		return this.mapConfig.col_configuration;
 	}
 	
 	this.getAxisCovariateConfig = function (axis) {
@@ -451,19 +451,19 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	};
 	
 	this.getRowClassificationConfig = function() {
-		return mapConfig.row_configuration.classifications;
+		return this.mapConfig.row_configuration.classifications;
 	}
 	
 	this.getRowClassificationConfigOrder = function() {
-		return mapConfig.row_configuration.classifications_order;
+		return this.mapConfig.row_configuration.classifications_order;
 	}
 	
 	this.getColClassificationConfig = function() {
-		return mapConfig.col_configuration.classifications;
+		return this.mapConfig.col_configuration.classifications;
 	}
 	
 	this.getColClassificationConfigOrder = function() {
-		return mapConfig.col_configuration.classifications_order;
+		return this.mapConfig.col_configuration.classifications_order;
 	}
 	
 	// Return an array of the display types of all covariate bars on an axis.
@@ -491,11 +491,11 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 
 	this.getRowClassificationOrder = function(showOnly) {
-		var rowClassBarsOrder = mapConfig.row_configuration.classifications_order;
+		var rowClassBarsOrder = this.mapConfig.row_configuration.classifications_order;
 		// If configuration not found, create order from classifications config
 		if (typeof rowClassBarsOrder === 'undefined') {
 			rowClassBarsOrder = [];
-			for (key in mapConfig.row_configuration.classifications) {
+			for (key in this.mapConfig.row_configuration.classifications) {
 				rowClassBarsOrder.push(key);
 			}
 		}
@@ -506,7 +506,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			const filterRowClassBarsOrder = [];
 			for (var i = 0; i < rowClassBarsOrder.length; i++) {
 				var newKey = rowClassBarsOrder[i];
-				var currConfig = mapConfig.row_configuration.classifications[newKey];
+				var currConfig = this.mapConfig.row_configuration.classifications[newKey];
 				if (currConfig.show == "Y") {
 					filterRowClassBarsOrder.push(newKey);
 				}
@@ -516,15 +516,15 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 	
 	this.setRowClassificationOrder = function() {
-		if (mapConfig !== null) {mapConfig.row_configuration.classifications_order = this.getRowClassificationOrder();}
+		if (this.mapConfig !== null) {this.mapConfig.row_configuration.classifications_order = this.getRowClassificationOrder();}
 	}
 	
 	this.getColClassificationOrder = function(showOnly){
-		var colClassBarsOrder = mapConfig.col_configuration.classifications_order;
+		var colClassBarsOrder = this.mapConfig.col_configuration.classifications_order;
 		// If configuration not found, create order from classifications config
 		if (typeof colClassBarsOrder === 'undefined') {
 			colClassBarsOrder = [];
-			for (key in mapConfig.col_configuration.classifications) {
+			for (key in this.mapConfig.col_configuration.classifications) {
 				colClassBarsOrder.push(key);
 			}
 		}
@@ -535,7 +535,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			const filterColClassBarsOrder = [];
 			for (var i = 0; i < colClassBarsOrder.length; i++) {
 				var newKey = colClassBarsOrder[i];
-				var currConfig = mapConfig.col_configuration.classifications[newKey];
+				var currConfig = this.mapConfig.col_configuration.classifications[newKey];
 				if (currConfig.show == "Y") {
 					filterColClassBarsOrder.push(newKey);
 				}
@@ -573,7 +573,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	 * - containsLegend, which returns true iff there's a bar with a bar/scatter plot legend.
 	 */
 	this.getScaledVisibleCovariates = function (axis, scale) {
-	    const axisConfig = isRow (axis) ? mapConfig.row_configuration : mapConfig.col_configuration;
+	    const axisConfig = isRow (axis) ? this.mapConfig.row_configuration : this.mapConfig.col_configuration;
 	    const order = axisConfig.hasOwnProperty('classifications_order') ? axisConfig.classifications_order : Object.keys(axisConfig.classifications);
 	    const bars = order.map (key => new VisibleCovariateBar (key, axisConfig.classifications[key], scale)).filter (bar => bar.show === 'Y');
 	    Object.defineProperty (bars, 'totalHeight', {
@@ -598,13 +598,13 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	/* Returns true iff there are hidden covariates on the specified axis of the heat map.
 	 */
 	this.hasHiddenCovariates = function (axis) {
-	    const axisConfig = isRow (axis) ? mapConfig.row_configuration : mapConfig.col_configuration;
+	    const axisConfig = isRow (axis) ? this.mapConfig.row_configuration : this.mapConfig.col_configuration;
 	    const order = axisConfig.hasOwnProperty('classifications_order') ? axisConfig.classifications_order : Object.keys(axisConfig.classifications);
 	    return order.map (key => axisConfig.classifications[key].show).filter (show => show !== 'Y').length > 0;
 	};
 
 	this.setColClassificationOrder = function() {
-		if (mapConfig !== null) {mapConfig.col_configuration.classifications_order = this.getColClassificationOrder();}
+		if (this.mapConfig !== null) {this.mapConfig.col_configuration.classifications_order = this.getColClassificationOrder();}
 	}
 	
 	this.getRowClassificationData = function() {
@@ -616,11 +616,11 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 	
 	this.getMapInformation = function() {
-		return mapConfig.data_configuration.map_information;
+		return this.mapConfig.data_configuration.map_information;
 	}
 	
 	this.getDataLayers = function() {
-		return mapConfig.data_configuration.map_information.data_layer;
+		return this.mapConfig.data_configuration.map_information.data_layer;
 	}
 
 	this.getCurrentDataLayer = function() {
@@ -628,7 +628,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	};
 
 	this.getDividerPref = function() {
-		return mapConfig.data_configuration.map_information.summary_width;
+		return this.mapConfig.data_configuration.map_information.summary_width;
 	}
 
 	this.setDividerPref = function(sumSize) {
@@ -640,45 +640,45 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		} else {
 			sumPercent = sumSize;
 		}
-		mapConfig.data_configuration.map_information.summary_width = sumPercent;
-		mapConfig.data_configuration.map_information.detail_width = 100 - sumPercent;
+		this.mapConfig.data_configuration.map_information.summary_width = sumPercent;
+		this.mapConfig.data_configuration.map_information.detail_width = 100 - sumPercent;
 	}
 	
 	this.setClassificationPrefs = function(classname, type, showVal, heightVal) {
 		if (type === "row") {
-			mapConfig.row_configuration.classifications[classname].show = showVal ? 'Y' : 'N';
-			mapConfig.row_configuration.classifications[classname].height = parseInt(heightVal);
+			this.mapConfig.row_configuration.classifications[classname].show = showVal ? 'Y' : 'N';
+			this.mapConfig.row_configuration.classifications[classname].height = parseInt(heightVal);
 		} else {
-			mapConfig.col_configuration.classifications[classname].show = showVal ? 'Y' : 'N';
-			mapConfig.col_configuration.classifications[classname].height = parseInt(heightVal);
+			this.mapConfig.col_configuration.classifications[classname].show = showVal ? 'Y' : 'N';
+			this.mapConfig.col_configuration.classifications[classname].height = parseInt(heightVal);
 		}
 	}
 	
 	this.setClassBarScatterPrefs = function(classname, type, barType, lowBound, highBound, fgColorVal, bgColorVal) {
 		if (type === "row") {
-			mapConfig.row_configuration.classifications[classname].bar_type = barType;
+			this.mapConfig.row_configuration.classifications[classname].bar_type = barType;
 			if (typeof lowBound !== 'undefined') {
-				mapConfig.row_configuration.classifications[classname].low_bound = lowBound;
-				mapConfig.row_configuration.classifications[classname].high_bound = highBound;
-				mapConfig.row_configuration.classifications[classname].fg_color = fgColorVal;
-				mapConfig.row_configuration.classifications[classname].bg_color = bgColorVal;
+				this.mapConfig.row_configuration.classifications[classname].low_bound = lowBound;
+				this.mapConfig.row_configuration.classifications[classname].high_bound = highBound;
+				this.mapConfig.row_configuration.classifications[classname].fg_color = fgColorVal;
+				this.mapConfig.row_configuration.classifications[classname].bg_color = bgColorVal;
 			}
 		} else {
-			mapConfig.col_configuration.classifications[classname].bar_type = barType;
+			this.mapConfig.col_configuration.classifications[classname].bar_type = barType;
 			if (typeof lowBound !== 'undefined') {
-				mapConfig.col_configuration.classifications[classname].low_bound = lowBound;
-				mapConfig.col_configuration.classifications[classname].high_bound = highBound;
-				mapConfig.col_configuration.classifications[classname].fg_color = fgColorVal;
-				mapConfig.col_configuration.classifications[classname].bg_color = bgColorVal;
+				this.mapConfig.col_configuration.classifications[classname].low_bound = lowBound;
+				this.mapConfig.col_configuration.classifications[classname].high_bound = highBound;
+				this.mapConfig.col_configuration.classifications[classname].fg_color = fgColorVal;
+				this.mapConfig.col_configuration.classifications[classname].bg_color = bgColorVal;
 			}
 		}
 	}
 
 	this.setLayerGridPrefs = function(key, showVal, gridColorVal, selectionColorVal, gapColorVal) {
-		mapConfig.data_configuration.map_information.data_layer[key].grid_show = showVal ? 'Y' : 'N';
-		mapConfig.data_configuration.map_information.data_layer[key].grid_color = gridColorVal;
-		mapConfig.data_configuration.map_information.data_layer[key].cuts_color = gapColorVal;
-		mapConfig.data_configuration.map_information.data_layer[key].selection_color = selectionColorVal;
+		this.mapConfig.data_configuration.map_information.data_layer[key].grid_show = showVal ? 'Y' : 'N';
+		this.mapConfig.data_configuration.map_information.data_layer[key].grid_color = gridColorVal;
+		this.mapConfig.data_configuration.map_information.data_layer[key].cuts_color = gapColorVal;
+		this.mapConfig.data_configuration.map_information.data_layer[key].selection_color = selectionColorVal;
 		if (key == this.getCurrentDL()) {
 		    this.setSelectionColors ();
 		}
@@ -686,7 +686,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Get Row Organization
 	this.getRowOrganization = function() {
-		return mapConfig.row_configuration.organization;
+		return this.mapConfig.row_configuration.organization;
 	}
 	
 	//Get Axis Labels
@@ -701,7 +701,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Get Column Organization
 	this.getColOrganization = function() {
-		return mapConfig.col_configuration.organization;
+		return this.mapConfig.col_configuration.organization;
 	}
 	
 	//Get Column Labels
@@ -711,20 +711,20 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//Get map information config data
 	this.getMapInformation = function() {
-		return mapConfig.data_configuration.map_information; 
+		return this.mapConfig.data_configuration.map_information;
 	}
 
 	// Get panel configuration from mapConfig.json
 	this.getPanelConfiguration = function() {
-		return mapConfig.panel_configuration;
+		return this.mapConfig.panel_configuration;
 	}
 
 	this.getRowDendroConfig = function() {
-		return mapConfig.row_configuration.dendrogram;
+		return this.mapConfig.row_configuration.dendrogram;
 	}
 	
 	this.getColDendroConfig = function() {
-		return mapConfig.col_configuration.dendrogram;
+		return this.mapConfig.col_configuration.dendrogram;
 	}
 	
 	this.getRowDendroData = function() {
@@ -736,24 +736,24 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 	
 	this.setRowDendrogramShow = function(value) {
-		mapConfig.row_configuration.dendrogram.show = value;
+		this.mapConfig.row_configuration.dendrogram.show = value;
 	}
 	
 	this.setColDendrogramShow = function(value) {
-		mapConfig.col_configuration.dendrogram.show = value;
+		this.mapConfig.col_configuration.dendrogram.show = value;
 	}
 	
 	this.setRowDendrogramHeight = function(value) {
-		mapConfig.row_configuration.dendrogram.height = value;
+		this.mapConfig.row_configuration.dendrogram.height = value;
 	}
 	
 	this.setColDendrogramHeight = function(value) {
-		mapConfig.col_configuration.dendrogram.col_dendro_height = value;
+		this.mapConfig.col_configuration.dendrogram.col_dendro_height = value;
 	}
 	
 	this.showRowDendrogram = function(layer) {
 		var showDendro = true;
-		var showVal = mapConfig.row_configuration.dendrogram.show;
+		var showVal = this.mapConfig.row_configuration.dendrogram.show;
 		if ((showVal === 'NONE') || (showVal === 'NA')) {
 			showDendro = false;
 		}
@@ -765,7 +765,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 
 	this.showColDendrogram = function(layer) {
 		var showDendro = true;
-		var showVal = mapConfig.col_configuration.dendrogram.show;
+		var showVal = this.mapConfig.col_configuration.dendrogram.show;
 		if ((showVal === 'NONE') || (showVal === 'NA')) {
 			showDendro = false;
 		}
@@ -776,7 +776,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	}
 
 	this.setReadOnly = function() {
-	    mapConfig.data_configuration.map_information.read_only = 'Y';
+	    this.mapConfig.data_configuration.map_information.read_only = 'Y';
 	};
 
 	// Array of TileWindow onready functions waiting for all tiles in the
@@ -1092,7 +1092,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	/**
 	* Save data sent to plugin to mapConfig 
 	*/
-	MMGR.saveDataSentToPluginToMapConfig = function(nonce, postedConfig, postedData) {
+	this.saveDataSentToPluginToMapConfig = function(nonce, postedConfig, postedData) {
 		try {
 			var pane = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement
 		} catch(err) {
@@ -1100,56 +1100,56 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			return false
 		}
 		const paneId = pane.id;
-		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
-			mapConfig['panel_configuration'] = {} 
+		if (!this.mapConfig.hasOwnProperty('panel_configuration')) {
+			this.mapConfig['panel_configuration'] = {};
 		}
-		if (!mapConfig.panel_configuration.hasOwnProperty(paneId) || mapConfig.panel_configuration[paneId] == null) { 
-			mapConfig.panel_configuration[paneId] = {} 
+		if (!this.mapConfig.panel_configuration.hasOwnProperty(paneId) || this.mapConfig.panel_configuration[paneId] == null) {
+			this.mapConfig.panel_configuration[paneId] = {};
 		}
-		if (postedConfig) mapConfig.panel_configuration[paneId].config = postedConfig;
-		if (postedData) mapConfig.panel_configuration[paneId].data = postedData;
-		mapConfig.panel_configuration[paneId].type = 'plugin';
-		mapConfig.panel_configuration[paneId].pluginName = pane.dataset.pluginName;
+		if (postedConfig) this.mapConfig.panel_configuration[paneId].config = postedConfig;
+		if (postedData) this.mapConfig.panel_configuration[paneId].data = postedData;
+		this.mapConfig.panel_configuration[paneId].type = 'plugin';
+		this.mapConfig.panel_configuration[paneId].pluginName = pane.dataset.pluginName;
 	}
 
-	MMGR.removePaneInfoFromMapConfig = function(paneid) {
-		if (mapConfig.hasOwnProperty('panel_configuration')) {
-			mapConfig.panel_configuration[paneid] = null;
+	this.removePaneInfoFromMapConfig = function(paneid) {
+		if (this.mapConfig.hasOwnProperty('panel_configuration')) {
+			this.mapConfig.panel_configuration[paneid] = null;
 		}
-	}
+	};
 
 	/**
 	* Save linkout pane data to mapConfig
 	*/
-	MMGR.saveLinkoutPaneToMapConfig = function(paneid, url, paneTitle) {
-		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
-			mapConfig['panel_configuration'] = {} 
+	this.saveLinkoutPaneToMapConfig = function(paneid, url, paneTitle) {
+		if (!this.mapConfig.hasOwnProperty('panel_configuration')) {
+			this.mapConfig['panel_configuration'] = {};
 		}
-		mapConfig.panel_configuration[paneid] = {
+		this.mapConfig.panel_configuration[paneid] = {
 			'type': 'linkout',
 			'url': url,
 			'paneTitle': paneTitle
 		} 
-	}
+	};
 
 	/*
 	  Saves data from plugin to mapConfig--this is data that did NOT originally come from the NGCHM.
 	*/
-	MMGR.saveDataFromPluginToMapConfig = function(nonce, dataFromPlugin) {
+	this.saveDataFromPluginToMapConfig = function (nonce, dataFromPlugin) {
 		try {
 			var paneId = document.querySelectorAll('[data-nonce="'+nonce+'"]')[0].parentElement.parentElement.id;
 		} catch(err) {
 			throw "Cannot determine pane for given nonce";
 			return false;
 		}
-		if (!mapConfig.hasOwnProperty('panel_configuration')) { 
-			mapConfig['panel_configuration'] = {};
+		if (!this.mapConfig.hasOwnProperty('panel_configuration')) {
+			this.mapConfig['panel_configuration'] = {};
 		}
-		if (!mapConfig.panel_configuration.hasOwnProperty(paneId) || mapConfig.panel_configuration[paneId] == null) { 
-			mapConfig.panel_configuration[paneId] = {};
+		if (!this.mapConfig.panel_configuration.hasOwnProperty(paneId) || this.mapConfig.panel_configuration[paneId] == null) {
+			this.mapConfig.panel_configuration[paneId] = {};
 		}
-		mapConfig.panel_configuration[paneId].dataFromPlugin = dataFromPlugin;
-	}
+		this.mapConfig.panel_configuration[paneId].dataFromPlugin = dataFromPlugin;
+	};
 
 	this.zipSaveMapProperties = zipSaveMapProperties;
 	function zipSaveMapProperties(mapConf) {
@@ -1173,7 +1173,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 								// Directly add all text zip entries directly to the new zip file
 								// except for mapConfig.  For this entry, add the modified config data.
 								if (keyVal.indexOf('mapConfig') > -1) {
-									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConf || mapConfig));
+									addTextContents(entry.filename, fileIndex, JSON.stringify(mapConf || this.mapConfig));
 								} else {
 									zipFetchText(entry, fileIndex, addTextContents);
 								}
@@ -1319,7 +1319,8 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		if (COMPAT.CompatibilityManager(mc)) {
 		    mapUpdatedOnLoad = true;
 		}
-		mapConfig = mc;
+		const heatMap = MMGR.getHeatMap();
+		heatMap.mapConfig = mc;
 		sendCallBack(MMGR.Event_JSON);
 		addDataLayers(mc);
 	}
@@ -1359,16 +1360,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			datalevels[MAPREP.SUMMARY_LEVEL].loadTiles(otherLayers, levels.s.tile_rows, levels.s.tile_cols);
 		}
 			}, 0);
-		}
-	}
-	
-	// Returns true if map contains detail tiles.  Small maps have only tn and summary
-	function hasDetailTiles() {
-		const levels = mapConfig.data_configuration.map_information.levels;
-		if (levels.d !== undefined) {
-			return true;
-		} else {
-			return false;
 		}
 	}
 	
@@ -1469,14 +1460,14 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			((event === MMGR.Event_NEWDATA) && (tile.level === MAPREP.THUMBNAIL_LEVEL))) {
 			//Only send initialized status if several conditions are met: need all summary JSON and thumb nail.
 			if ((mapData != null) &&
-				(mapConfig != null) &&
+				(heatMap.mapConfig != null) &&
 				(Object.keys(datalevels).length > 0) &&
 				(haveTileData(heatMap.getCurrentDL()+"."+MAPREP.THUMBNAIL_LEVEL+".1.1")) &&
 				 (initialized == 0)) {
 					initialized = 1;
 					configurePageHeader();
 					heatMap.configureFlick();
-					if (!mapConfig.hasOwnProperty('panel_configuration')) {
+					if (!heatMap.mapConfig.hasOwnProperty('panel_configuration')) {
 					    UTIL.hideLoader(true);
 					}
 					sendAllListeners(MMGR.Event_INITIALIZED);
