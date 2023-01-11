@@ -12,6 +12,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const COMPAT = NgChm.importNS('NgChm.CM');
     const FLICK = NgChm.importNS('NgChm.FLICK');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const SUM = NgChm.importNS('NgChm.SUM');
     const SMM = NgChm.importNS('NgChm.SMM');
     const PDF = NgChm.importNS('NgChm.PDF');
@@ -196,6 +197,73 @@
     // End of map save functions.
 
 
+    (function() {
+
+	// Cache of access windows for the summary data corresponding to the flick1 and flick2 controls.
+	// Used to ensure the summary level for the (up to) two data layers shown in the flick control
+	// are kept available.
+	const summaryWindows = {};
+
+	// For debugging.
+	UIMGR.getSummaryAccessWindows = function () {
+	    return summaryWindows;
+	};
+
+	/************************************************************************************************
+	 * FUNCTION: changeDataLayer - Responds to a change in a selected data layer.  All of these actions
+	 * depend upon the flick control being visible (i.e. active) There are 3 types of changes:
+	 * (1) User clicks on the toggle control.
+	 * (2) User changes the value of one of the 2 dropdowns AND the toggle control is on that dropdown.
+	 * (3) The user presses the one or two key, corresponding
+	 * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown.
+	 * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
+	 *
+	 * change is an object containing three fields:
+	 * - element Either flick1 or flick2. The flick control that changed.
+	 * - layer The heat map layer now associated with element.
+	 * - redrawRequired element is the active control AND layer is different from the last layer
+	 *   selected (irrespective of which element it was associated with).
+	 ***********************************************************************************************/
+	UIMGR.changeDataLayer = function changeDataLayer (change) {
+	    const heatMap = MMGR.getHeatMap();
+	    // Associated the flick element with an AccessWindow for the summary level for this layer.
+	    summaryWindows[change.flickElement] = getSummaryAccessWindow(heatMap, change.layer);
+	    // Redraw the UI if the currently visible layer changed.
+	    if (change.redrawRequired) {
+		heatMap.setCurrentDL (change.layer);
+		SUM.buildSummaryTexture();
+		SUM.drawLeftCanvasBox();
+		SUM.drawSelectionMarks();
+		DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout);
+	    }
+	};
+	FLICK.setFlickHandler (UIMGR.changeDataLayer);
+
+	UIMGR.initializeSummaryWindows = function () {
+	    const flickState = FLICK.getFlickState();
+	    console.log ('Check initial flick layers', flickState);
+	    const first = flickState.shift();
+	    const heatMap = MMGR.getHeatMap();
+	    summaryWindows[first.element] = getSummaryAccessWindow(heatMap, first.layer);
+	    setTimeout (() => {
+		flickState.forEach (alt => {
+		    summaryWindows[alt.element] = getSummaryAccessWindow(heatMap, alt.layer);
+		});
+	    });
+	};
+
+	function getSummaryAccessWindow (heatMap, layer) {
+	    return heatMap.getNewAccessWindow ({
+		layer: layer,
+		level: MAPREP.SUMMARY_LEVEL,
+		firstRow: 1,
+		firstCol: 1,
+		numRows: heatMap.getNumRows(MAPREP.SUMMARY_LEVEL),
+		numCols: heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL),
+	    });
+	}
+    })();
+
     // Function configurePanelInterface must called once immediately after the HeatMap is loaded.
     // It configures the initial Panel user interface according to the heat map preferences and
     // the interface configuration parameters.
@@ -210,8 +278,7 @@
 		return;
 	    }
 
-	    const flickState = FLICK.getFlickState();
-	    console.log ('Check initial flick layers', flickState);
+	    UIMGR.initializeSummaryWindows();
 
 	    //If any new configs were added to the heatmap's config, save the config file.
 	    const heatMap = MMGR.getHeatMap();
@@ -1125,33 +1192,6 @@
 	openFileToggle();
     };
 
-    /************************************************************************************************
-     * FUNCTION: flickChange - Responds to a change in the flick view control.  All of these actions
-     * depend upon the flick control being visible (i.e. active) There are 3 types of changes
-     * (1) User clicks on the toggle control. (2) User changes the value of one of the 2 dropdowns
-     * AND the toggle control is on that dropdown. (3) The user presses the one or two key, corresponding
-     * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown.
-     * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
-     ***********************************************************************************************/
-    UIMGR.flickChange = function(change) {
-	console.log ('flickChange', change);
-	if (change.redrawRequired) {
-	    setDataLayer (change.layer);
-	}
-    };
-    FLICK.setFlickHandler (UIMGR.flickChange);
-
-    function setDataLayer (newDataLayer) {
-
-	const heatMap = MMGR.getHeatMap();
-	heatMap.setCurrentDL (newDataLayer);
-
-	SUM.buildSummaryTexture();
-	SUM.drawLeftCanvasBox();
-	SUM.drawSelectionMarks();
-	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout);
-    }
-
     function clearSelectedDendrogram (mapItem) {
 	if (mapItem.selectedIsDendrogram) {
 	    mapItem.selectedIsDendrogram = false;
@@ -1300,7 +1340,7 @@
 				break;
 			case 'F2': // F2 key
 				if (FLICK.flickIsOn()) {
-				    UIMGR.flickChange(FLICK.toggleFlickState ("toggle"));
+				    UIMGR.changeDataLayer(FLICK.toggleFlickState ("toggle"));
 				}
 				break;
 			case 'Enter':

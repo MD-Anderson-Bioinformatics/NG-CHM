@@ -1275,7 +1275,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	
 	//  Initialize the data layers once we know the tile structure.
 		//  JSON structure object describing available data layers passed in.
-		function addDataLayers(mapConfig) {
+		function addDataLayers(heatMap, mapConfig) {
 			//Create heat map data objects for each data level.  All maps should have thumb nail and full level.
 			//Each data layer keeps a pointer to the next lower level data layer.
 			const levelsConf = mapConfig.data_configuration.map_information.levels;
@@ -1309,7 +1309,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 			createLevel (MAPREP.RIBBON_VERT_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.DETAIL_LEVEL);
 			createLevel (MAPREP.RIBBON_HOR_LEVEL, MAPREP.SUMMARY_LEVEL, MAPREP.DETAIL_LEVEL);
 
-			prefetchInitialTiles(datalayers, datalevels, levelsConf);
+			prefetchInitialTiles(heatMap, datalayers);
 			sendCallBack(MMGR.Event_INITIALIZED);
 	}
 	
@@ -1327,7 +1327,7 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		}
 		const heatMap = MMGR.getHeatMap();
 		heatMap.mapConfig = mc;
-		addDataLayers(mc);
+		addDataLayers(heatMap, mc);
 		heatMap.configureFlick();
 		sendCallBack(MMGR.Event_JSON);
 	}
@@ -1336,40 +1336,25 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 		return mapUpdatedOnLoad;
 	};
 
-	function prefetchInitialTiles(datalayers, datalevels, levels) {
-		const layerNames = Object.keys(datalayers);
-		const layers1 = [layerNames[0]];
-		const otherLayers = layerNames.slice(1);
-
-		// Prefetch tiles for initial (first) layer.
-		if (levels.tn !== undefined) {
-			//Kickoff retrieve of thumb nail data tile.
-			datalevels[MAPREP.THUMBNAIL_LEVEL].loadTiles(layers1, levels.tn.tile_rows, levels.tn.tile_cols);
-		}
-		if (levels.d !== undefined) {
-			// Initial tile for detail pane only. (Assume top-left tile.)
-			datalevels[MAPREP.DETAIL_LEVEL].loadTiles(layers1, 1, 1);
-		}
-		if (levels.s !== undefined) {
-			//Kickoff retrieve of summary data tiles.
-			datalevels[MAPREP.SUMMARY_LEVEL].loadTiles(layers1, levels.s.tile_rows, levels.s.tile_cols);
-		}
-
-		if (otherLayers.length > 0) {
-			setTimeout (function prefetchOtherLayers() {
-		// Prefetch tiles for other layers.
-		if (levels.tn !== undefined) {
-			//Kickoff retrieve of thumb nail data tile.
-			datalevels[MAPREP.THUMBNAIL_LEVEL].loadTiles(otherLayers, levels.tn.tile_rows, levels.tn.tile_cols);
-		}
-		if (levels.s !== undefined) {
-			//Kickoff retrieve of summary data tiles.
-			datalevels[MAPREP.SUMMARY_LEVEL].loadTiles(otherLayers, levels.s.tile_rows, levels.s.tile_cols);
-		}
-			}, 0);
-		}
+	// Permanently associate an AccessWindow for the thumbnail level
+	// of every layer with the heatMap.
+	//
+	// Has the effect of prefetching and preserving the thumbnail
+	// level tiles for all layers.
+	function prefetchInitialTiles(heatMap, datalayers) {
+	    heatMap.thumbnailWindowRefs =
+		Object.keys(datalayers).map (layer =>
+		    heatMap.getNewAccessWindow ({
+			layer: layer,
+			level: MAPREP.THUMBNAIL_LEVEL,
+			firstRow: 1,
+			firstCol: 1,
+			numRows: heatMap.getNumRows(MAPREP.THUMBNAIL_LEVEL),
+			numCols: heatMap.getNumColumns(MAPREP.THUMBNAIL_LEVEL),
+		    })
+		);
 	}
-	
+
 	// Return the tile cache (For debugging.)
 	MMGR.getTileCache = function getTileCache () {
 		return tileCache;
@@ -1682,18 +1667,6 @@ MMGR.HeatMap = function(heatMapName, updateCallbacks, fileSrc, chmFile) {
 	    const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
 
 	    return getTileWindow (this.level, startRowTile, endRowTile, startColTile, endColTile);
-	}
-
-	// External user of the matrix data lets us know where they plan to read.
-	// Pull tiles for that area if we don't already have them.
-	loadTiles (datalayers, rowTiles, colTiles) {
-	    datalayers.forEach(dlayer => {
-		for (let i = 1; i <= rowTiles; i++) {
-		    for (let j = 1; j <= colTiles; j++) {
-			this.getTile(dlayer, this.level, i, j);
-		    }
-		}
-	    });
 	}
     }
 

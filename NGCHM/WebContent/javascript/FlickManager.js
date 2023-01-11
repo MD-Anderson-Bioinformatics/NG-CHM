@@ -142,7 +142,7 @@
     }
 
     function getFlickState () {
-	const f1 = { element: 'flick1', layer: flickDrop1.value };
+	const f1 = { element: 'flick1', layer: flickDrop1.value || 'dl1' };
 	if (flicksElement.style.display == 'none') {
 	    return [f1];
 	} else {
