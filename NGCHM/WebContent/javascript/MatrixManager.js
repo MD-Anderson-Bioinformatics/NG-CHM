@@ -266,27 +266,53 @@ let	wS = `const debug = ${debug};`;
 	    this.endRowTile = endRowTile;
 	    this.startColTile = startColTile;
 	    this.endColTile = endColTile;
+	    this.numColumnTiles = endColTile - startColTile + 1;
+	    this.totalTiles = (endRowTile - startRowTile + 1) * this.numColumnTiles;
+	    this.tiles = new Array({ length: this.totalTiles });
 
-	    this._allTilesAvailable = false;
-	    this.tileStatusValid = false;
+	    // Get hard references to tile data if it's already in the TileCache.
+	    // Set _allTilesAvailable to false if any tile's data is not available.
+	    this._allTilesAvailable = true;
+	    let idx = 0;
+	    for (let row = this.startRowTile; row <= this.endRowTile; row++) {
+		for (let col = this.startColTile; col <= this.endColTile; col++) {
+		    const tileCacheName = this.layer + "." + this.level + "." + row + "." + col;
+		    this.tiles[idx] = this.heatMap.tileCache.getTileCacheData(tileCacheName);
+		    if (!this.tiles[idx]) {
+			this._allTilesAvailable = false;
+		    }
+		    idx++;
+		}
+	    }
+	    this.tileStatusValid = true;
 	}
 
 	checkTile (tile) {
+	    if (!tile.hasOwnProperty('data')) {
+		console.error ('NEWDATA message has no data field', tile);
+	    }
 	    // Determines if a tile update applies to one of the tiles in this
 	    // TileWindow.  If so, it invalidates the status of _allTilesAvailable.
 	    if (tile.layer === this.layer && tile.level === this.level &&
 		    tile.row >= this.startRowTile && tile.row <= this.endRowTile &&
 		    tile.col >= this.startColTile && tile.col <= this.endColTile) {
 		console.log ('checkTile: tile in TileWindow', tile);
+		const idx = (tile.row - this.startRowTile) * this.numColumnTiles + tile.col - this.startColTile;
+		if (idx >= this.totalTiles) console.error ('Tile idx out of range', { idx, tile, tileWindow: this });
+		this.tiles[idx] = tile.data;
 		this.tileStatusValid = false;
 	    }
 	}
 
 	fetchTiles () {
-	    // Initiates fetches for all tiles in the TileWindow.
-	    for (let i = this.startRowTile; i <= this.endRowTile; i++) {
-		for (let j = this.startColTile; j <= this.endColTile; j++) {
-		    this.heatMap.tileCache.getTile(this.layer, this.level, i, j);
+	    // Initiates fetches for any tiles without data in the TileWindow.
+	    let idx = 0;
+	    for (let row = this.startRowTile; row <= this.endRowTile; row++) {
+		for (let col = this.startColTile; col <= this.endColTile; col++) {
+		    if (!this.tiles[idx]) {
+			this.heatMap.tileCache.getTile(this.layer, this.level, row, col);
+		    }
+		    idx++;
 		}
 	    }
 	}
@@ -299,14 +325,11 @@ let	wS = `const debug = ${debug};`;
 	    if (this.tileStatusValid) {
 		return this._allTilesAvailable;
 	    }
-	    for (let i = this.startRowTile; i <= this.endRowTile; i++) {
-		for (let j = this.startColTile; j <= this.endColTile; j++) {
-		    const tileCacheName = this.layer + "." + this.level + "." + i + "." + j;
-		    if (this.heatMap.tileCache.getTileCacheData(tileCacheName) === null) {
-			this._allTilesAvailable = false;
-			this.tileStatusValid = true;
-			return false;
-		    }
+	    for (let idx = 0; idx < this.totalTiles; idx++) {
+		if (!this.tiles[idx]) {
+		    this._allTilesAvailable = false;
+		    this.tileStatusValid = true;
+		    return false;
 		}
 	    }
 	    this._allTilesAvailable = true;
@@ -459,7 +482,7 @@ let	wS = `const debug = ${debug};`;
 	    entry.data = arrayData;
 
 	    entry.state = 'ready';
-	    this.heatMap.sendCallBack(MMGR.Event_NEWDATA, Object.assign({},entry.props));
+	    this.heatMap.sendCallBack(MMGR.Event_NEWDATA, Object.assign({},entry.props, { data: arrayData }));
 	}
 
     } // END class TileCache.
@@ -1065,10 +1088,10 @@ let	wS = `const debug = ${debug};`;
 		this.eventListeners.forEach(callback => callback(event, tile));
 		if (event === MMGR.Event_NEWDATA) {
 			// Also broadcast NEWDATA events to all levels for which tile.level is an alternate.
-			const { layer, level: mylevel, row, col } = tile;
+			const { layer, level: mylevel, row, col, data } = tile;
 			const alts = this.getAllAlternateLevels (mylevel);
 			while (alts.length > 0) {
-				const altTile = { layer, level: alts.shift(), row, col };
+				const altTile = { layer, level: alts.shift(), row, col, data };
 				this.eventListeners.forEach(callback => callback(event, altTile));
 			}
 		}
@@ -1178,10 +1201,11 @@ let	wS = `const debug = ${debug};`;
 		    }
 		    //Unlikely, but possible to get init finished after all the summary tiles.
 		    //As a back stop, if we already have the top left summary tile, send a data update event too.
-		    if (this.tileCache.haveTileData(this.getCurrentDL()+"."+MAPREP.SUMMARY_LEVEL+".1.1")) {
-			    this.sendAllListeners(MMGR.Event_NEWDATA, { layer: this.getCurrentDL(), level: MAPREP.SUMMARY_LEVEL, row: 1, col: 1});
+		    const data = this.tileCache.getTileCacheData(this.getCurrentDL()+"."+MAPREP.SUMMARY_LEVEL+".1.1");
+		    if (data) {
+			    this.sendAllListeners(MMGR.Event_NEWDATA, { layer: this.getCurrentDL(), level: MAPREP.SUMMARY_LEVEL, row: 1, col: 1, data });
 		    }
-	    } else	if ((event === MMGR.Event_NEWDATA) && this.initialized) {
+	    } else if ((event === MMGR.Event_NEWDATA) && this.initialized) {
 		    this.sendAllListeners(event, tile);
 	    }
 	};
