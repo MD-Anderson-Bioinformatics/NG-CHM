@@ -136,6 +136,14 @@ div.pane canvas {
     opacity: 25%;
 }
 
+#msgBox button:disabled {
+    opacity: 25%;
+}
+
+#msgBoxProgressBar {
+    width: 100%;
+}
+
 /* #content contains everything between the page header and footer.
  * Initially it contains the splash screen.
  * Once loading commences it's replaced by the loading screen.
