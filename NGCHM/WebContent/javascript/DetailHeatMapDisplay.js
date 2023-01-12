@@ -330,6 +330,10 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	const regularGridColor = [dataGridColor.r, dataGridColor.g, dataGridColor.b];
 	const cutsColor = colorMap.getHexToRgba(params.cuts_color);
 
+	// Create and keep reference to access window (the latter to prevent garbage collection
+	// of active tileWindows).
+	const accessWindow = heatMap.getNewAccessWindow (drawWin);
+	mapItem.detailHeatMapAccessWindow = accessWindow;
 
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
 	const linelen = texWidth * DRAW.BYTE_PER_RGBA;
@@ -349,8 +353,8 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 		linePos+=DRAW.BYTE_PER_RGBA;
 		for (let j = 0; j < detDataPerRow; j++) {
 			//When building grid line check for vertical cuts by grabbing value of currentRow (any row really) and column being iterated to
-			const val = heatMap.getValue(drawWin.level, currDetRow, currDetCol+j);
-			const nextVal = heatMap.getValue(drawWin.level, currDetRow, currDetCol+j+1);
+			const val = accessWindow.getValue(currDetRow, currDetCol+j);
+			const nextVal = accessWindow.getValue(currDetRow, currDetCol+j+1);
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
@@ -383,10 +387,10 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	    const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
 	    linePos+=DRAW.BYTE_PER_RGBA;
 	    for (let j = 0; j < detDataPerRow; j++) { // for every data point...
-		let val = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j);
-		let nextVal = j < detDataPerRow-1 ? heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1) : undefined;
+		let val = accessWindow.getValue(currDetRow+i, currDetCol+j);
+		let nextVal = j < detDataPerRow-1 ? accessWindow.getValue(currDetRow+i, currDetCol+j+1) : undefined;
 		if (val === undefined) {
-		    console.error ('heatMap.getValue returned undefined', { level: drawWin.level, row: currDetRow+i, col: currDetCol+j });
+		    console.error ('accessWindow.getValue returned undefined', { accessWindow, row: currDetRow+i, col: currDetCol+j });
 		} else {
 		    const { r, g, b, a } = colorMap.getColor(val);
 
@@ -435,10 +439,20 @@ DET.isLineACut = function (mapItem, row) {
 	const heatMap = mapItem.heatMap;
 	const level = DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL);
 	const currDetRow = DVW.getCurrentDetRow(mapItem);
+	if (currDetRow+row < 1) return false;
 	const currDetCol = DVW.getCurrentDetCol(mapItem);
 	const detDataPerRow = DVW.getCurrentDetDataPerRow(mapItem);
+	// Get a temporary access window for this row.
+	const accessWindow = heatMap.getNewAccessWindow ({
+	    layer: heatMap.getCurrentDL(),
+	    level: level,
+	    firstRow: currDetRow+row,
+	    firstCol: currDetCol,
+	    numRows: 1,
+	    numCols: detDataPerRow,
+	});
 	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
-		const val = heatMap.getValue(level, currDetRow+row, currDetCol+x);
+		const val = accessWindow.getValue(currDetRow+row, currDetCol+x);
 		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
 		if (val > MAPREP.minValues) {
 			return false;

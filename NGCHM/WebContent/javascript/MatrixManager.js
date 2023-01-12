@@ -258,7 +258,8 @@ let	wS = `const debug = ${debug};`;
     // required by an access window.
     class TileWindow {
 
-	constructor (heatMap, layer, level, startRowTile, endRowTile, startColTile, endColTile) {
+	constructor (heatMap, tileSpec) {
+	    const { layer, level, startRowTile, endRowTile, startColTile, endColTile } = tileSpec;
 	    this.heatMap = heatMap;
 	    this.layer = layer;
 	    this.level = level;
@@ -296,12 +297,21 @@ let	wS = `const debug = ${debug};`;
 	    if (tile.layer === this.layer && tile.level === this.level &&
 		    tile.row >= this.startRowTile && tile.row <= this.endRowTile &&
 		    tile.col >= this.startColTile && tile.col <= this.endColTile) {
-		console.log ('checkTile: tile in TileWindow', tile);
 		const idx = (tile.row - this.startRowTile) * this.numColumnTiles + tile.col - this.startColTile;
 		if (idx >= this.totalTiles) console.error ('Tile idx out of range', { idx, tile, tileWindow: this });
 		this.tiles[idx] = tile.data;
 		this.tileStatusValid = false;
 	    }
+	}
+
+	getTileData (tileRow, tileCol) {
+	    if (tileRow >= this.startRowTile && tileRow <= this.endRowTile &&
+	        tileCol >= this.startColTile && tileCol <= this.endColTile) {
+		const idx = (tileRow - this.startRowTile) * this.numColumnTiles + tileCol - this.startColTile;
+		return this.tiles[idx];
+	    }
+	    console.error ('getTileData out of limits', { tileRow, tileCol, tileWindow: this });
+	    return null;
 	}
 
 	fetchTiles () {
@@ -498,7 +508,7 @@ let	wS = `const debug = ${debug};`;
 	}
 
 	getValue (row, column) {
-	    return this.datalevel.getLayerValue (this.win.layer, row|0, column|0);
+	    return this.datalevel.getLayerValue (this.win.layer, this.tileWindow, row|0, column|0);
 	}
 
 	onready (callback) {
@@ -1052,9 +1062,19 @@ let	wS = `const debug = ${debug};`;
 		return this.datalevels[level].colSummaryRatio;
 	}
 	
-	//Get a data value in a given row / column
+	// Get a data value in a given row / column
+	// This is very inefficient.  Consider creating and using an
+	// AccessWindow if possible.
 	HeatMap.prototype.getValue = function(level, row, column) {
-		return this.datalevels[level].getLayerValue(this._currentDl,row,column);
+		const accessWindow = this.getNewAccessWindow ({
+		    layer: this._currentDl,
+		    level: level,
+		    firstRow: row,
+		    firstCol: column,
+		    numRows: 1,
+		    numCols: 1,
+		});
+		return accessWindow.getValue(row,column);
 	}
 
 	// Recursively determine all levels for which level is an alternate.
@@ -1122,6 +1142,7 @@ let	wS = `const debug = ${debug};`;
 	    // heatMap.  Currently there is no way to remove 'transient' event
 	    // listeners, such as TileWindow listeners.
 	    this.addEventListener(function (event, tile) {
+		const debug = false;
 		if (event == MMGR.Event_NEWDATA) {
 		    // Iterate over all the tileWindowRefs, remove any that have been reclaimed,
 		    // and check all others for tile updates.
@@ -1130,7 +1151,7 @@ let	wS = `const debug = ${debug};`;
 			if (tileWin) {
 			    tileWin.checkTile (tile);
 			} else {
-			    console.log ('Removing garbage collected tileWindow', key);
+			    if (debug) console.log ('Removing garbage collected tileWindow', key);
 			    this.tileWindowRefs.delete(key);
 			}
 		    });
@@ -1205,29 +1226,35 @@ let	wS = `const debug = ${debug};`;
 		    if (data) {
 			    this.sendAllListeners(MMGR.Event_NEWDATA, { layer: this.getCurrentDL(), level: MAPREP.SUMMARY_LEVEL, row: 1, col: 1, data });
 		    }
-	    } else if ((event === MMGR.Event_NEWDATA) && this.initialized) {
+	    }
+	    if ((event === MMGR.Event_NEWDATA) && this.initialized) {
 		    this.sendAllListeners(event, tile);
 	    }
 	};
 
+	HeatMap.prototype.getNewTileWindow = function (tileSpec) {
+	    // layer, level, startRowTile, endRowTile, startColTile, endColTile
+	    const tileKey = [tileSpec.layer, tileSpec.level, tileSpec.startRowTile, tileSpec.endRowTile,
+		tileSpec.startColTile, tileSpec.endColTile].join('.');
+	    if (this.tileWindowRefs.has (tileKey)) {
+		const tileRef = this.tileWindowRefs.get(tileKey).deref();
+		if (tileRef) {
+		    //console.log ('Found existing tileWindow for ', tileKey);
+		    return tileRef;
+		}
+		console.log ('Encountered garbage collected tileWindow for ', tileKey);
+	    }
+	    // Create a new tileWindow and keep a weak reference to it.
+	    //console.log ('Creating new tileWindow for ', tileKey);
+	    const tileRef = new TileWindow (this, tileSpec);
+	    this.tileWindowRefs.set (tileKey, new WeakRef(tileRef));
+	    return tileRef;
+	};
+
 	// Create a TileWindow for the specified heatMap and view window.
 	HeatMap.prototype.getTileWindow = function (win) {
-	    return this.datalevels[win.level].getTileAccessWindow (win.firstRow, win.firstCol, win.numRows, win.numCols, (level, startRowTile, endRowTile, startColTile, endColTile) => {
-		const tileKey = JSON.stringify({ layer: win.layer, level, startRowTile, endRowTile, startColTile, endColTile });
-		if (this.tileWindowRefs.has (tileKey)) {
-		    const tileRef = this.tileWindowRefs.get(tileKey).deref();
-		    if (tileRef) {
-			//console.log ('Found existing tileWindow for ', tileKey);
-			return tileRef;
-		    }
-		    console.log ('Encountered garbage collected tileWindow for ', tileKey);
-		}
-		// Create a new tileWindow and keep a weak reference to it.
-		//console.log ('Creating new tileWindow for ', tileKey);
-		const tileRef = new TileWindow (this, win.layer, level, startRowTile, endRowTile, startColTile, endColTile);
-		this.tileWindowRefs.set (tileKey, new WeakRef(tileRef));
-		return tileRef;
-	    });
+	    return this.datalevels[win.level].getTileAccessWindow (win.layer, win.firstRow, win.firstCol, win.numRows, win.numCols,
+		    tileSpec => this.getNewTileWindow(tileSpec));
 	};
 
 	/* Obtain an access window for the specified view window.
@@ -1362,39 +1389,60 @@ let	wS = `const debug = ${debug};`;
 	    this.lowerLevel = lowerLevel;
 	    this.rowToLower = (lowerLevel === null ? null : this.totalRows/lowerLevel.totalRows);
 	    this.colToLower = (lowerLevel === null ? null : this.totalColumns/lowerLevel.totalColumns);
+	    this.lastTileWindow = null;
 	}
 	
 	//Get a value for a row / column.  If the tile with that value is not available, get the down sampled value from
 	//the lower data level.
-	getLayerValue (layer, row, column) {
+	getLayerValue (layer, tileWindow, row, column) {
 	    //Calculate which tile holds the row / column we are looking for.
 	    const tileRow = Math.floor((row-1)/this.rowsPerTile) + 1;
 	    const tileCol = Math.floor((column-1)/this.colsPerTile) + 1;
-	    const arrayData = this.tileCache.getTileCacheData(layer+"."+this.level+"."+tileRow+"."+tileCol);
+	    if (!tileWindow && this.lastTileWindow && this.lastTileWindow.layer == layer &&
+		tileRow >= this.lastTileWindow.startRowTile && tileRow <= this.lastTileWindow.endRowTile &&
+		tileCol >= this.lastTileWindow.startColTile && tileCol <= this.lastTileWindow.endColTile) {
+		tileWindow = this.lastTileWindow;
+	    } else if (!tileWindow) {
+		const tileSpec = {
+		    layer,
+		    level: this.level,
+		    startRowTile: tileRow,
+		    endRowTile: this.numTileRows,
+		    startColTile: 1,
+		    endColTile: this.numTileColumns,
+		};
+		tileWindow = this.tileCache.heatMap.getNewTileWindow (tileSpec);
+		this.lastTileWindow = tileWindow;
+	    }
+	    const arrayData = tileWindow.getTileData (tileRow, tileCol);
+	    //const arrayData = this.tileCache.getTileCacheData(layer+"."+this.level+"."+tileRow+"."+tileCol);
 
 	    //If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
-	    if (arrayData != undefined) {
+	    if (arrayData) {
 		//for end tiles, the # of columns can be less than the this.colsPerTile -
 		//figure out the correct num columns.
 		const thisTileColsPerRow = tileCol == this.numTileColumns ? ((this.totalColumns % this.colsPerTile) == 0 ? this.colsPerTile : this.totalColumns % this.colsPerTile) : this.colsPerTile; 
 		//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
 		return arrayData[(row-1)%this.rowsPerTile * thisTileColsPerRow + (column-1)%this.colsPerTile];
 	    } else if (this.lowerLevel != null) {
-		return this.lowerLevel.getLayerValue(layer, Math.floor((row-1)/this.rowToLower) + 1, Math.floor((column-1)/this.colToLower) + 1);
+		return this.lowerLevel.getLayerValue(layer, null, Math.floor((row-1)/this.rowToLower) + 1, Math.floor((column-1)/this.colToLower) + 1);
 	    } else {
 	    	return 0;
 	    }	
 	}
 
-	getTileAccessWindow (row, column, numRows, numColumns, getTileWindow) {
+	getTileAccessWindow (layer, row, column, numRows, numColumns, getTileWindow) {
 	    const startRowTile = Math.floor(row/this.rowsPerTile) + 1;
 	    const startColTile = Math.floor(column/this.colsPerTile) + 1;
 	    const endRowCalc = (row+(numRows-1))/this.rowsPerTile;
 	    const endColCalc = (column+(numColumns-1))/this.colsPerTile;
 	    const endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
 	    const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
-
-	    return getTileWindow (this.level, startRowTile, endRowTile, startColTile, endColTile);
+	    if (endRowTile == 0) {
+		console.log ('error');
+	    }
+	    const tileSpec = { layer, level: this.level, startRowTile, endRowTile, startColTile, endColTile };
+	    return getTileWindow (tileSpec);
 	}
     }
 

@@ -251,7 +251,6 @@
 
 	UIMGR.initializeSummaryWindows = function () {
 	    const flickState = FLICK.getFlickState();
-	    console.log ('Check initial flick layers', flickState);
 	    const first = flickState.shift();
 	    const heatMap = MMGR.getHeatMap();
 	    summaryWindows[first.element] = getSummaryAccessWindow(heatMap, first.layer);

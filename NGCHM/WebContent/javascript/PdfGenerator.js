@@ -327,6 +327,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	    const legends = new CovariateBarLegends (pdfDoc);
 	    return legends.addLegendPages ();
 	}
+
     });
     }
 
@@ -563,6 +564,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	    addLegendPages,
 	});
 
+	const classBarHeaderSize = 12; // these are font sizes
 
 	function addLegendPages () {
 	    const pdfDoc = this.pdfDoc;
@@ -603,16 +605,17 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		barsInfo.sectionHeader = 'undefined';
 
 		// adding the data matrix distribution plot to legend page
-		drawDataDistributionPlot(pdfDoc, barsInfo);
+		drawDataDistributionPlot(pdfDoc, barsInfo).then(() => {;
+		    // add all row covariate bars to legend page
+		    drawRowClassLegends(pdfDoc, barsInfo);
 
-		// adding all row covariate bars to legend page
-		drawRowClassLegends(pdfDoc, barsInfo);
+		    // add all column covariate bars to legend page
+		    barsInfo.leftOff = 20; // ...reset leftOff...
+		    drawColClassLegends(pdfDoc, barsInfo, barsInfo.classBarTitleSize);
 
-		// adding all column covariate bars to legend page
-		barsInfo.leftOff = 20; // ...reset leftOff...
-		drawColClassLegends(pdfDoc, barsInfo, barsInfo.classBarTitleSize);
-
-		resolve();
+		    // Complete this task.
+		    resolve();
+		});
 	    });
 	}
 
@@ -628,7 +631,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		pdfDoc.doc.setFont(undefined, "bold");
 		pdfDoc.doc.text(10, pdfDoc.paddingTop, barsInfo.sectionHeader , null);
 		pdfDoc.doc.setFont(undefined, "normal");
-		getDataMatrixDistributionPlot(pdfDoc, barsInfo);
+		return getDataMatrixDistributionPlot(pdfDoc, barsInfo);
 	}
 
 	/**********************************************************************************
@@ -655,12 +658,19 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		}
 		var numCol = heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
 		var numRow = heatMap.getNumRows(MAPREP.DETAIL_LEVEL)
-		var count = 0;
-		var nan=0;
-		for (var i=1; i<numCol+1;i++){
+		const accessWindow = heatMap.getNewAccessWindow ({
+		    layer: currentDl,
+		    level: MAPREP.DETAIL_LEVEL,
+		    firstRow: 1,
+		    firstCol: 1,
+		    numRows: numRow,
+		    numCols: numCol,
+		});
+		return accessWindow.onready().then (win => {
+		    var nan=0;
+		    for (var i=1; i<numCol+1;i++){
 			for(var j=1;j<numRow+1;j++){
-				count++;
-				var val = Number(Math.round(heatMap.getValue(MAPREP.DETAIL_LEVEL,j,i)+'e4')+'e-4')
+				var val = Number(Math.round(win.getValue(j,i)+'e4')+'e-4')  // BMB: WTF?
 				if (isNaN(val) || val>=MAPREP.maxValues){ // is it Missing value?
 					nan++;
 				} else if (val <= MAPREP.minValues){ // is it a cut location?
@@ -680,83 +690,84 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 					}
 				}
 			}
-		}
-		var total = 0;
-		var binMax = nan;
-		for (var i=0;i<bins.length;i++){
-			if (bins[i]>binMax)
-				binMax=bins[i];
-			total+=bins[i];
-		}
+		    }
+		    var total = 0;
+		    var binMax = nan;
+		    for (var i=0;i<bins.length;i++){
+			    if (bins[i]>binMax)
+				    binMax=bins[i];
+			    total+=bins[i];
+		    }
 		
-		var leftOff = 20;
-		var bartop = barsInfo.topOff+5;
-		var threshMaxLen = getThreshMaxLength(thresholds,barsInfo.classBarLegendTextSize);
-		var missingCount=0;
-		
-		var barHeight = barsInfo.classBarLegendTextSize + 3;
-		for (var j = 0; j < breaks.length; j++){ // draw all the bars within the break points
-			var rgb = cm.getColor(breaks[j]);
-			doc.setFillColor(rgb.r,rgb.g,rgb.b);
-			doc.setDrawColor(0,0,0);
-			let value = bins[j];
-			if (isNaN(value) || value == undefined){
-				value = 0;
-			}
-			if (barsInfo.options.condenseClassBars){ // square
-				var barW = 10;
-				doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the square
-				doc.rect(leftOff + threshMaxLen-2, bartop+barHeight, 2, 1, "FD"); // make break bar
-				doc.setFontSize(barsInfo.classBarLegendTextSize);
-				doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth(breaks[j].toString())*barsInfo.classBarLegendTextSize - 4, bartop + barsInfo.classBarLegendTextSize + barHeight/2, breaks[j].toString() , null);
-				doc.text(leftOff +barW + threshMaxLen + 10, bartop + barsInfo.classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
-			} else { // histogram
-				var barW = (value/binMax*barsInfo.classBarFigureW)*.65;  //scale bars to fit page
-				doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the histo bar
-				doc.rect(leftOff + threshMaxLen-2, bartop+barHeight, 2, 1, "FD"); // make break bar
-				doc.setFontSize(barsInfo.classBarLegendTextSize);
-				doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth(breaks[j].toString())*barsInfo.classBarLegendTextSize - 4, bartop + barsInfo.classBarLegendTextSize + barHeight/2, breaks[j].toString() , null);
-				doc.text(leftOff + threshMaxLen +barW + 5, bartop + barsInfo.classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
-			}
-			missingCount -= value; 
-			bartop+=barHeight; // adjust top position for the next bar
-		}
-		// draw the last bar in the color plot
-		var rgb = cm.getColor(breaks[breaks.length-1]);
-		doc.setFillColor(rgb.r,rgb.g,rgb.b);
-		doc.setDrawColor(0,0,0);
-		let value = bins[bins.length-1];
-		if (isNaN(value) || value == undefined){
-			value = 0;
-		}
-		if (barsInfo.options.condenseClassBars){ // square
-			var barW = 10;
-			doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the square
-			doc.setFontSize(barsInfo.classBarLegendTextSize);
-			doc.text(leftOff +barW + threshMaxLen + 10, bartop + barsInfo.classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
-		} else { // histogram
-			var barW = (value/binMax*barsInfo.classBarFigureW)*.65;  //scale bars to fit page
-			doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the histo bar
-			doc.setFontSize(barsInfo.classBarLegendTextSize);
-			doc.text(leftOff + threshMaxLen +barW + 5, bartop + barsInfo.classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
-		}
-		missingCount -= value; 
-		bartop+=barHeight; // adjust top position for the next bar
-		// Draw missing values bar IF missing values > 0
-		missingCount = Math.max(0,nan); // just in case missingCount goes negative...
-		if (missingCount > 0) {
-			foundMissing = 1;
-			const rgb = cm.getColor("Missing");
-			doc.setFillColor(rgb.r,rgb.g,rgb.b);
-			doc.setDrawColor(0,0,0);
-			const barW = barsInfo.options.condenseClassBars ? 10 : missingCount/binMax*barsInfo.classBarFigureW;
-			doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD");
-			doc.setFontSize(barsInfo.classBarLegendTextSize);
-			doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth("Missing Value")*barsInfo.classBarLegendTextSize - 4, bartop + barsInfo.classBarLegendTextSize, "Missing Value" , null);
-			doc.text(leftOff + threshMaxLen +barW + 5, bartop + barsInfo.classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/total*100).toFixed(2) + "%)" , null);
-		}
-		var foundMissing = 0;
-		setClassBarFigureH(barsInfo, 10,'discrete',barsInfo.classBarLegendTextSize,false);
+		    var leftOff = 20;
+		    var bartop = barsInfo.topOff+5;
+		    var threshMaxLen = getThreshMaxLength(thresholds,barsInfo.classBarLegendTextSize);
+		    var missingCount=0;
+
+		    var barHeight = barsInfo.classBarLegendTextSize + 3;
+		    for (var j = 0; j < breaks.length; j++){ // draw all the bars within the break points
+			    var rgb = cm.getColor(breaks[j]);
+			    doc.setFillColor(rgb.r,rgb.g,rgb.b);
+			    doc.setDrawColor(0,0,0);
+			    let value = bins[j];
+			    if (isNaN(value) || value == undefined){
+				    value = 0;
+			    }
+			    if (barsInfo.options.condenseClassBars){ // square
+				    var barW = 10;
+				    doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the square
+				    doc.rect(leftOff + threshMaxLen-2, bartop+barHeight, 2, 1, "FD"); // make break bar
+				    doc.setFontSize(barsInfo.classBarLegendTextSize);
+				    doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth(breaks[j].toString())*barsInfo.classBarLegendTextSize - 4, bartop + barsInfo.classBarLegendTextSize + barHeight/2, breaks[j].toString() , null);
+				    doc.text(leftOff +barW + threshMaxLen + 10, bartop + barsInfo.classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
+			    } else { // histogram
+				    var barW = (value/binMax*barsInfo.classBarFigureW)*.65;  //scale bars to fit page
+				    doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the histo bar
+				    doc.rect(leftOff + threshMaxLen-2, bartop+barHeight, 2, 1, "FD"); // make break bar
+				    doc.setFontSize(barsInfo.classBarLegendTextSize);
+				    doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth(breaks[j].toString())*barsInfo.classBarLegendTextSize - 4, bartop + barsInfo.classBarLegendTextSize + barHeight/2, breaks[j].toString() , null);
+				    doc.text(leftOff + threshMaxLen +barW + 5, bartop + barsInfo.classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
+			    }
+			    missingCount -= value;
+			    bartop+=barHeight; // adjust top position for the next bar
+		    }
+		    // draw the last bar in the color plot
+		    var rgb = cm.getColor(breaks[breaks.length-1]);
+		    doc.setFillColor(rgb.r,rgb.g,rgb.b);
+		    doc.setDrawColor(0,0,0);
+		    let value = bins[bins.length-1];
+		    if (isNaN(value) || value == undefined){
+			    value = 0;
+		    }
+		    if (barsInfo.options.condenseClassBars){ // square
+			    var barW = 10;
+			    doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the square
+			    doc.setFontSize(barsInfo.classBarLegendTextSize);
+			    doc.text(leftOff +barW + threshMaxLen + 10, bartop + barsInfo.classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
+		    } else { // histogram
+			    var barW = (value/binMax*barsInfo.classBarFigureW)*.65;  //scale bars to fit page
+			    doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD"); // make the histo bar
+			    doc.setFontSize(barsInfo.classBarLegendTextSize);
+			    doc.text(leftOff + threshMaxLen +barW + 5, bartop + barsInfo.classBarLegendTextSize, "n = " + value + " (" + (value/total*100).toFixed(2) + "%)" , null);
+		    }
+		    missingCount -= value;
+		    bartop+=barHeight; // adjust top position for the next bar
+		    // Draw missing values bar IF missing values > 0
+		    missingCount = Math.max(0,nan); // just in case missingCount goes negative...
+		    if (missingCount > 0) {
+			    foundMissing = 1;
+			    const rgb = cm.getColor("Missing");
+			    doc.setFillColor(rgb.r,rgb.g,rgb.b);
+			    doc.setDrawColor(0,0,0);
+			    const barW = barsInfo.options.condenseClassBars ? 10 : missingCount/binMax*barsInfo.classBarFigureW;
+			    doc.rect(leftOff + threshMaxLen, bartop, barW, barHeight, "FD");
+			    doc.setFontSize(barsInfo.classBarLegendTextSize);
+			    doc.text(leftOff + threshMaxLen - doc.getStringUnitWidth("Missing Value")*barsInfo.classBarLegendTextSize - 4, bartop + barsInfo.classBarLegendTextSize, "Missing Value" , null);
+			    doc.text(leftOff + threshMaxLen +barW + 5, bartop + barsInfo.classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/total*100).toFixed(2) + "%)" , null);
+		    }
+		    var foundMissing = 0;
+		    setClassBarFigureH(barsInfo, 10,'discrete',barsInfo.classBarLegendTextSize,false);
+		});
 	}
 	
 	/**********************************************************************************

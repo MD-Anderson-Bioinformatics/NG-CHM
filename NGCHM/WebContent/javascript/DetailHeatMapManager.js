@@ -121,17 +121,6 @@ DMM.nextMapNumber = 1;
 	updateSelection (noResize) {
 	    //We have the summary heat map so redraw the yellow selection box.
 	    SUM.drawLeftCanvasBox();
-	    const win = this.heatMap.getNewAccessWindow ({
-		layer: this.heatMap.getCurrentDL(),
-		level: DVW.getLevelFromMode(this, MAPREP.DETAIL_LEVEL),
-		firstRow: DVW.getCurrentDetRow(this),
-		firstCol: DVW.getCurrentDetCol(this),
-		numRows: DVW.getCurrentDetDataPerCol(this),
-		numCols: DVW.getCurrentDetDataPerRow(this),
-	    });
-	    // Keep reference to last access window to prevent garbage collection
-	    // of active tileWindows.
-	    this.detailHeatMapAccessWindow = win;
 	    DET.setDrawDetailTimeout (this, DET.redrawSelectionTimeout, noResize);
 	}
 

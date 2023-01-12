@@ -494,13 +494,21 @@ SUM.drawHeatMap = function() {
 	//Needs to go backward because WebGL draws bottom up.
 	const numRows = heatMap.getNumRows (MAPREP.SUMMARY_LEVEL);
 	const numColumns = heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL);
+	const accessWindow = heatMap.getNewAccessWindow ({
+	    layer: currentDl,
+	    level: MAPREP.SUMMARY_LEVEL,
+	    firstRow: 1,
+	    firstCol: 1,
+	    numRows: numRows,
+	    numCols: numColumns,
+	});
 	const line = new Array(numColumns*widthScale*DRAW.BYTE_PER_RGBA);
 	let pos = 0;
 	SUM.avgValue[currentDl] = 0;
 	for (let i = numRows; i > 0; i--) {
 		let linepos = 0;
 		for (let j = 1; j <= numColumns; j++) { // draw the heatmap
-			const val = heatMap.getValue(MAPREP.SUMMARY_LEVEL, i, j);
+			const val = accessWindow.getValue(i, j);
 			if ((val < MAPREP.maxValues) && (val > MAPREP.minValues)) {
 				SUM.avgValue[currentDl] += val;
 			}

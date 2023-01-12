@@ -359,13 +359,13 @@ var linkoutsVersion = 'undefined';
 		    numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
 		});
 		win.onready((win) => {
-		    LNK.createMatrixDataTsv(searchLabels);
+		    createMatrixDataTsv(win, searchLabels);
 		});
 	};
 
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
-	LNK.createMatrixDataTsv = function(searchLabels) {
+	function createMatrixDataTsv (accessWindow, searchLabels) {
 		var matrix = new Array();
 
 		let rowSearchItems = SRCHSTATE.getAxisSearchResults("Row");
@@ -403,7 +403,7 @@ var linkoutsVersion = 'undefined';
 		var dataMatrix = new Array();
 		rowSearchItems.forEach( x => {
 			colSearchItems.forEach( y => {
-				let matrixValue = heatMap.getValue(MAPREP.DETAIL_LEVEL,x,y);
+				let matrixValue = accessWindow.getValue(x,y);
 				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
 				if (matrixValue !== MAPREP.minValues-1) {
 					dataMatrix.push(matrixValue);
