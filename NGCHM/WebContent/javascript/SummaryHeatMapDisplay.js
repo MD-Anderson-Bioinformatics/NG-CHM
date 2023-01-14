@@ -502,6 +502,7 @@ SUM.drawHeatMap = function() {
 	    numRows: numRows,
 	    numCols: numColumns,
 	});
+	const contColorMap = colorMap.getContColorMap ();
 	const line = new Array(numColumns*widthScale*DRAW.BYTE_PER_RGBA);
 	let pos = 0;
 	SUM.avgValue[currentDl] = 0;
@@ -511,7 +512,7 @@ SUM.drawHeatMap = function() {
 			if ((value < MAPREP.maxValues) && (value > MAPREP.minValues)) {
 				SUM.avgValue[currentDl] += value;
 			}
-			const { r, g, b, a } = colorMap.getColor(value);
+			const { r, g, b, a } = contColorMap.getColor(value);
 			for (let k = 0; k < widthScale; k++){
 				line[linepos] = r;
 				line[linepos + 1] = g;
@@ -806,7 +807,7 @@ SUM.getScaledHeight = function(height, axis) {
 		var val = classBarValues[k];
 		var color = colorMap.getClassificationColor(val);
 		if (val == "null") {
-			color = colorMap.getHexToRgba(colorMap.getMissingColor());
+			color = CMM.hexToRgba(colorMap.getMissingColor());
 		}
 		for (let i = 0; i < widthScale; i++){
 			line[loc] = color['r'];
@@ -1068,7 +1069,7 @@ SUM.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalHeight,
 		let val = classBarValues[j-1];
 		let color = colorMap.getClassificationColor(val);
 		if (val == "null") {
-			color = colorMap.getHexToRgba(colorMap.getMissingColor());
+			color = CMM.hexToRgba(colorMap.getMissingColor());
 		}
 		// Output heightScale rows of the element's color.
 		for (let i = 0; i < heightScale; i++) {

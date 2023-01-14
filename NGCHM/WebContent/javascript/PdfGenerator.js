@@ -8,6 +8,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
+    const CMM = NgChm.importNS('NgChm.CMM');
     const UHM = NgChm.importNS('NgChm.UHM');
     const SUM = NgChm.importNS('NgChm.SUM');
     const DVW = NgChm.importNS('NgChm.DVW');
@@ -1651,7 +1652,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		// Draw selection boxes first (this way they will not overlap text)
 		// Get selection color for current datalayer to be used in highlighting selected labels
 		const layer = mapItem.heatMap.getCurrentDataLayer();
-		const selectedColor = mapItem.heatMap.getCurrentColorMap().getHexToRgba(layer.selection_color);
+		const selectedColor = CMM.hexToRgba(layer.selection_color);
 		doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
 		// Get row and column labels.
 		const mapLabelDivs = Object.entries(mapItem.labelElements).map (([id, label]) => label.div);

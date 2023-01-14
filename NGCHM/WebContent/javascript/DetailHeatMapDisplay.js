@@ -7,6 +7,7 @@
 
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
+    const CMM = NgChm.importNS('NgChm.CMM');
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SUM = NgChm.importNS('NgChm.SUM');
     const DVW = NgChm.importNS('NgChm.DVW');
@@ -322,13 +323,13 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	})();
 
 	const heatMap = mapItem.heatMap;
-	const colorMap = heatMap.getColorMapManager().getColorMap("data",layer);
+	const colorMap = heatMap.getColorMapManager().getColorMap("data",layer).getContColorMap();
 
-	const dataGridColor = colorMap.getHexToRgba(params.grid_color);
-	const dataSelectionColorRGB = colorMap.getHexToRgba(params.selection_color);
+	const dataGridColor = CMM.hexToRgba(params.grid_color);
+	const dataSelectionColorRGB = CMM.hexToRgba(params.selection_color);
 	const dataSelectionColor = [dataSelectionColorRGB.r/255, dataSelectionColorRGB.g/255, dataSelectionColorRGB.b/255, 1];
 	const regularGridColor = [dataGridColor.r, dataGridColor.g, dataGridColor.b];
-	const cutsColor = colorMap.getHexToRgba(params.cuts_color);
+	const cutsColor = CMM.hexToRgba(params.cuts_color);
 
 	// Create and keep reference to access window (the latter to prevent garbage collection
 	// of active tileWindows).

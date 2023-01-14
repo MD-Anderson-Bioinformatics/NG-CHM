@@ -583,7 +583,7 @@ let	wS = `const debug = ${debug};`;
 	HeatMap.prototype.setSelectionColors = function () {
 	    const colorMap = this.getColorMapManager().getColorMap("data",this._currentDl);
 	    const dataLayer = this.getDataLayers()[this._currentDl];
-	    const selColor = colorMap.getHexToRgba(dataLayer.selection_color);
+	    const selColor = CMM.hexToRgba(dataLayer.selection_color);
 	    const textColor = colorMap.isColorDark(selColor) ? "#000000" : "#FFFFFF";
 	    const root = document.documentElement;
 	    root.style.setProperty('--in-selection-color', textColor);
