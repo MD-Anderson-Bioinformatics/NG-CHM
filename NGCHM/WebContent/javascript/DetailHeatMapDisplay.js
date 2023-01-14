@@ -351,10 +351,16 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	if (params.showHorizontalGrid) {
 		let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
 		linePos+=DRAW.BYTE_PER_RGBA;
+		// Get value generator for this row.
+		const valueGen = accessWindow.getRowValues(currDetRow)[Symbol.iterator]();
+		// We need to lookahead one column when checking for vertical cuts.
+		// Get lookahead for column 0.
+		let nextVal = valueGen.next().value?.value;
 		for (let j = 0; j < detDataPerRow; j++) {
-			//When building grid line check for vertical cuts by grabbing value of currentRow (any row really) and column being iterated to
-			const val = accessWindow.getValue(currDetRow, currDetCol+j);
-			const nextVal = accessWindow.getValue(currDetRow, currDetCol+j+1);
+			// Advance to column j and get lookahead to column j+1.
+			const val = nextVal;
+			nextVal = valueGen.next().value?.value;
+
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
@@ -386,11 +392,18 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	    // preceding line are "cut values" mark the current line as as a horizontal cut
 	    const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
 	    linePos+=DRAW.BYTE_PER_RGBA;
+	    // Get value generator for this row.
+	    const valueGen = accessWindow.getRowValues(currDetRow+i)[Symbol.iterator]();
+	    // We need to lookahead one column when checking for cuts.
+	    // Get lookahead for column 0.
+	    let nextVal = valueGen.next().value?.value;
 	    for (let j = 0; j < detDataPerRow; j++) { // for every data point...
-		let val = accessWindow.getValue(currDetRow+i, currDetCol+j);
-		let nextVal = j < detDataPerRow-1 ? accessWindow.getValue(currDetRow+i, currDetCol+j+1) : undefined;
+		// Advance to column j.  Get lookahead for column j+1.
+		const val = nextVal;
+		nextVal = valueGen.next().value?.value;
+
 		if (val === undefined) {
-		    console.error ('accessWindow.getValue returned undefined', { accessWindow, row: currDetRow+i, col: currDetCol+j });
+		    console.error ('accessWindow value generator returned undefined', { accessWindow, row: currDetRow+i, col: currDetCol+j, detDataPerRow });
 		} else {
 		    const { r, g, b, a } = colorMap.getColor(val);
 
@@ -435,7 +448,6 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
  * row line is a cut (or gap) line and return a true/false boolean.
  **********************************************************************************/
 DET.isLineACut = function (mapItem, row) {
-	let lineIsCut = true;
 	const heatMap = mapItem.heatMap;
 	const level = DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL);
 	const currDetRow = DVW.getCurrentDetRow(mapItem);
@@ -451,13 +463,15 @@ DET.isLineACut = function (mapItem, row) {
 	    numRows: 1,
 	    numCols: detDataPerRow,
 	});
-	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
-		const val = accessWindow.getValue(currDetRow+row, currDetCol+x);
-		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
-		if (val > MAPREP.minValues) {
-			return false;
-		}
+	// Get value iterator for this row.
+	const valueIter = accessWindow.getRowValues(currDetRow+row);
+	// If any value on the row is not a cut value, then the line is not a cut.
+	for (let {value} of valueIter) {
+	    if (value > MAPREP.minValues) {
+		return false;
+	    }
 	}
+	// All values on the line are cuts, so the line is too.
 	return true;
 }
 

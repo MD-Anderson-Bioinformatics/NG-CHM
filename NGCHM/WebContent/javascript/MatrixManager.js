@@ -511,6 +511,26 @@ let	wS = `const debug = ${debug};`;
 	    return this.datalevel.getLayerValue (this.win.layer, this.tileWindow, row|0, column|0);
 	}
 
+	// Return an iterator for the numCols values starting from firstCol
+	// on row row.
+	// row and firstCol through firstCol+numCols-1 must be within the
+	// AccessWindow.
+	//
+	// If firstCol is omitted, it defaults to the first column in the AccessWindow.
+	// If numCols is omitted, it defaults to the number of columns until the end of the AccessWindow.
+	// Thus getRowValues (row) returns an iterator for all columns within the AccessWindow.
+	//
+	// The value of each iteration is an object { i, col, value } where i is a zero-based index,
+	// col is the value's column (i.e. i + firstCol), and value is the datavalue at (row, col).
+	//
+	// Example use: for (let { i, col, value } of accessWindow.getRowValues (row)) { ... }
+	//
+	getRowValues (row, firstCol, numCols) {
+	    if (!firstCol) firstCol = this.win.firstCol;
+	    if (!numCols) numCols = this.win.firstCol + this.win.numCols - firstCol;
+	    return this.datalevel.getRowValues (this.tileWindow, row, firstCol, numCols);
+	}
+
 	onready (callback) {
 	    const p = this.tileWindow.onready();
 	    if (callback) {
@@ -1390,8 +1410,28 @@ let	wS = `const debug = ${debug};`;
 	    this.rowToLower = (lowerLevel === null ? null : this.totalRows/lowerLevel.totalRows);
 	    this.colToLower = (lowerLevel === null ? null : this.totalColumns/lowerLevel.totalColumns);
 	    this.lastTileWindow = null;
+
+	    // Determine the number of columns in the last tile column.
+	    this.colsInLastTile = this.totalColumns % this.colsPerTile;
+	    if (this.colsInLastTile == 0) this.colsInLastTile = this.colsPerTile;
+
+	    // Determine the number of rows in the last tile row.
+	    this.rowsInLastTile = this.totalRows % this.rowsPerTile;
+	    if (this.rowsInLastTile == 0) this.rowsInLastTile = this.rowsPerTile;
 	}
-	
+
+	// Determine the number of rows per tile in the specified tile row.
+	// Normally it is this.rowsPerTile, but there may be less in the last row of tiles.
+	numRowsInTile (tileRow) {
+	    return tileRow < this.numTileRows ? this.rowsPerTile : this.rowsInLastTile;
+	}
+
+	// Determine the number of columns per tile in the specified tile column.
+	// Normally it is this.colsPerTile, but there may be less in the last column of tiles.
+	numColsInTile (tileCol) {
+	    return tileCol < this.numTileColumns ? this.colsPerTile : this.colsInLastTile;
+	}
+
 	//Get a value for a row / column.  If the tile with that value is not available, get the down sampled value from
 	//the lower data level.
 	getLayerValue (layer, tileWindow, row, column) {
@@ -1415,13 +1455,10 @@ let	wS = `const debug = ${debug};`;
 		this.lastTileWindow = tileWindow;
 	    }
 	    const arrayData = tileWindow.getTileData (tileRow, tileCol);
-	    //const arrayData = this.tileCache.getTileCacheData(layer+"."+this.level+"."+tileRow+"."+tileCol);
 
-	    //If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
+	    // If we have the tile, use it.  Otherwise, use a lower resolution tile to provide a value.
 	    if (arrayData) {
-		//for end tiles, the # of columns can be less than the this.colsPerTile -
-		//figure out the correct num columns.
-		const thisTileColsPerRow = tileCol == this.numTileColumns ? ((this.totalColumns % this.colsPerTile) == 0 ? this.colsPerTile : this.totalColumns % this.colsPerTile) : this.colsPerTile; 
+		const thisTileColsPerRow = this.numColsInTile (tileCol);
 		//Tile data is in one long list of numbers.  Calculate which position maps to the row/column we want.
 		return arrayData[(row-1)%this.rowsPerTile * thisTileColsPerRow + (column-1)%this.colsPerTile];
 	    } else if (this.lowerLevel != null) {
@@ -1431,14 +1468,79 @@ let	wS = `const debug = ${debug};`;
 	    }	
 	}
 
+	getRowValues (tileWindow, row, firstCol, numCols) {
+	    const layer = tileWindow.layer;
+	    row = row|0;
+	    firstCol = firstCol|0;
+	    const tileRow = Math.floor((row-1)/this.rowsPerTile) + 1;
+	    const rowIndexInTile = (row-1) % this.rowsPerTile;
+	    const myIterable = {};
+	    const thisLevel = this;
+	    const lowerLevel = this.lowerLevel;
+	    const colsPerTile = this.colsPerTile;
+	    const lowerRow = (((row-1)/this.rowToLower)|0) + 1;
+	    const colToLower = this.colToLower;
+	    const invColToLower = 1.0 / this.colToLower;
+	    myIterable[Symbol.iterator] = function* () {
+		for (let nextCol = 0; nextCol < numCols; ) {
+		    const tileCol = (((firstCol+nextCol-1)/colsPerTile)|0) + 1;
+		    const thisTileColsPerRow = thisLevel.numColsInTile (tileCol);
+		    const arrayData = tileWindow.getTileData (tileRow, tileCol);
+		    const colsLeftInTile = Math.min (tileCol * colsPerTile - firstCol - nextCol + 1, numCols - nextCol);
+		    let i = nextCol;
+		    if (arrayData) {
+			const idx = rowIndexInTile * thisTileColsPerRow + (firstCol+nextCol-1) % colsPerTile;
+			for (let j = 0; j < colsLeftInTile; j++) {
+			    yield { i, col: firstCol+i, value: arrayData[idx+j] };
+			    i++;
+			}
+		    } else if (lowerLevel) {
+			const firstLowerCol = (((firstCol+nextCol-1) * invColToLower)|0) + 1;
+			const lastLowerCol = (((firstCol+nextCol+colsLeftInTile-2) * invColToLower)|0) + 1;
+			const lowerAW = lowerLevel.tileCache.heatMap.getNewAccessWindow ({
+			    layer: layer,
+			    level: lowerLevel.level,
+			    firstRow: lowerRow,
+			    firstCol: firstLowerCol,
+			    numRows: 1,
+			    numCols: lastLowerCol - firstLowerCol + 1,
+			});
+			const lowerVals = lowerAW.getRowValues(lowerRow);
+			let j = 0;
+			for (let { i: lowI, col: lowCol, value } of lowerVals) {
+			    const endOfUpperPixel = Math.min (((lowI+1)*colToLower)|0, colsLeftInTile);
+			    while (j < endOfUpperPixel) {
+				const col = firstCol+i;
+				yield { i, col, value };
+				i++;
+				j++;
+			    }
+			}
+			// Sometimes colToLower expansion ratio can be one short.
+			while (j < colsLeftInTile) {
+			    yield { i: j, col: firstCol+i, value: 0 };
+			    j++;
+			}
+		    } else {
+			for (let j = 0; j < colsLeftInTile; j++) {
+			    yield { i, col: firstCol+i, value: 0 };
+			    i++;
+			}
+		    }
+		    nextCol += colsLeftInTile;
+		}
+	    };
+	    return myIterable;
+	}
+
 	getTileAccessWindow (layer, row, column, numRows, numColumns, getTileWindow) {
-	    const startRowTile = Math.floor(row/this.rowsPerTile) + 1;
-	    const startColTile = Math.floor(column/this.colsPerTile) + 1;
-	    const endRowCalc = (row+(numRows-1))/this.rowsPerTile;
-	    const endColCalc = (column+(numColumns-1))/this.colsPerTile;
+	    const startRowTile = Math.floor((row-1)/this.rowsPerTile) + 1;
+	    const startColTile = Math.floor((column-1)/this.colsPerTile) + 1;
+	    const endRowCalc = (row+numRows-1)/this.rowsPerTile;
+	    const endColCalc = (column+numColumns-1)/this.colsPerTile;
 	    const endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
 	    const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
-	    if (endRowTile == 0) {
+	    if (endRowTile < startRowTile) {
 		console.log ('error');
 	    }
 	    const tileSpec = { layer, level: this.level, startRowTile, endRowTile, startColTile, endColTile };

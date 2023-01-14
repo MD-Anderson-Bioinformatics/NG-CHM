@@ -507,17 +507,16 @@ SUM.drawHeatMap = function() {
 	SUM.avgValue[currentDl] = 0;
 	for (let i = numRows; i > 0; i--) {
 		let linepos = 0;
-		for (let j = 1; j <= numColumns; j++) { // draw the heatmap
-			const val = accessWindow.getValue(i, j);
-			if ((val < MAPREP.maxValues) && (val > MAPREP.minValues)) {
-				SUM.avgValue[currentDl] += val;
+		for (let {value} of accessWindow.getRowValues(i)) {
+			if ((value < MAPREP.maxValues) && (value > MAPREP.minValues)) {
+				SUM.avgValue[currentDl] += value;
 			}
-			const color = colorMap.getColor(val);
+			const { r, g, b, a } = colorMap.getColor(value);
 			for (let k = 0; k < widthScale; k++){
-				line[linepos] = color['r'];
-				line[linepos + 1] = color['g'];
-				line[linepos + 2] = color['b'];
-				line[linepos + 3] = color['a'];
+				line[linepos] = r;
+				line[linepos + 1] = g;
+				line[linepos + 2] = b;
+				line[linepos + 3] = a;
 				linepos+= DRAW.BYTE_PER_RGBA;
 			}
 		}
