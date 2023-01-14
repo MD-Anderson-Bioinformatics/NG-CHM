@@ -451,8 +451,10 @@ let	wS = `const debug = ${debug};`;
 	    } else {
 		// Heat map came from a zip file
 		const baseName = this.heatMap.mapName + "/" + layer + "/"+ level + "/" + tileName;
-		loadZipTile (this.heatMap, baseName, tileCacheName, (tileCacheName, far32) => {
-		    this.setTileCacheEntry(tileCacheName, far32);
+		setTimeout (() => {
+		    loadZipTile (this.heatMap, baseName, tileCacheName, (tileCacheName, far32) => {
+			this.setTileCacheEntry(tileCacheName, far32);
+		    });
 		});
 	    }
 	}
@@ -1750,8 +1752,12 @@ let	wS = `const debug = ${debug};`;
 			const mapConfigName = heatMap.mapName + "/mapConfig.json";
 			const mapDataName = heatMap.mapName + "/mapData.json";
 			if ((mapConfigName in heatMap.zipFiles) && (mapDataName in heatMap.zipFiles)) {
-			    zipFetchJson(heatMap, heatMap.zipFiles[mapConfigName], addMapConfig);
-			    zipFetchJson(heatMap, heatMap.zipFiles[mapDataName], addMapData);
+			    setTimeout (() => {
+				zipFetchJson(heatMap, heatMap.zipFiles[mapConfigName], addMapConfig);
+			    });
+			    setTimeout (() => {
+				zipFetchJson(heatMap, heatMap.zipFiles[mapDataName], addMapData);
+			    });
 			} else {
 			    UHM.mapLoadError (heatMap.chmFile.name, "Missing NGCHM content");
 			}
