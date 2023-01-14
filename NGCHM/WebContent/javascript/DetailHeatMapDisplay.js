@@ -188,7 +188,7 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 	const heatMap = mapItem.heatMap;
 	DET.setDendroShow(mapItem);
 	if (mapItem.resizeOnNextDraw) {
-		DET.detailResize();
+		DET.resizeMapItem(mapItem);
 		mapItem.resizeOnNextDraw = false;
 	}
 	setViewPort(mapItem);
