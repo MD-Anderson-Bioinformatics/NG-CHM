@@ -185,7 +185,6 @@ UPM.editPreferences = function(e,errorMsg) {
 	errorMsg = null;
 	prefspanel.style.display= '';	
 	UPM.locatePrefsPanel();
-	DEV.redrawCanvases();
 }
 
 /**********************************************************************************
