@@ -2084,9 +2084,10 @@ DET.colDendroResize = function(mapItem, drawIt) {
 			let height = parseInt (dendroCanvas.style.height, 10) | 0;
 			height = mapItem.colDendro.summaryDendrogram.callbacks.calcDetailDendrogramSize ('column', height, totalDetHeight);
 			dendroCanvas.style.height = height + 'px';
-			dendroCanvas.height = Math.round(height);
 			dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/canW)) + 'px';
-			dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
+			mapItem.colDendro.setCanvasSize (
+			    Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width)),
+			    Math.round(height));
 			if (drawIt) mapItem.colDendro.draw();
 		} else {
 			dendroCanvas.style.height = '0px';
@@ -2111,12 +2112,10 @@ DET.rowDendroResize = function(mapItem, drawIt) {
 
 			width = mapItem.rowDendro.summaryDendrogram.callbacks.calcDetailDendrogramSize ('row', width, totalDetWidth);
 			dendroCanvas.style.width = width + 'px';
-			dendroCanvas.width = Math.round(width);
 
 			const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
 			dendroCanvas.style.height = (height-2) + 'px';
-			dendroCanvas.height = Math.round(height);
-
+			mapItem.rowDendro.setCanvasSize (Math.round(width), Math.round(height));
 			if (drawIt) mapItem.rowDendro.draw();
 		} else {
 			dendroCanvas.style.width = '0px';

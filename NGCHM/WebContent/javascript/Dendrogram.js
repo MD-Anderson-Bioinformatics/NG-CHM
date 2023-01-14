@@ -124,6 +124,23 @@ DDR.Dendrogram = function(canvas) {
 			onhit (bestIdx);
 		}
 	};
+
+	this.setCanvasSize = function (width, height) {
+	    this.dendroCanvas.width = width;
+	    this.dendroCanvas.height = height;
+	};
+
+	// Draw the dendrogram into the canvas.
+	this.timeout = null;
+	this.drawView = function() {
+	    if (this.timeout == null && this.debouncedDraw) {
+		setTimeout (() => {
+		    this.debouncedDraw();
+		    this.timeout = null;
+		});
+	    }
+	};
+
 };
 
 
@@ -228,8 +245,8 @@ DDR.ColumnDendrogram = function() {
 		ctx.restore();
 	};
 
-	// Draw the dendrogram into the canvas.
-	this.drawView = function() {
+	// Do not call directly. Use drawView on base Dendrogram class.
+	this.debouncedDraw = function() {
 		if (debug) console.log('> ColumnDendrogram.drawView');
 		const f = Math.floor;
 		const ctx = this.dendroCanvas.getContext("2d");
@@ -351,8 +368,9 @@ DDR.RowDendrogram = function() {
 		ctx.restore();
 	};
 
+	// Do not call directly. Use drawView on base Dendrogram class.
 	// Draw the dendrogram into the canvas, rotating by 90 degrees.
-	this.drawView = function() {
+	this.debouncedDraw = function() {
 		if (debug) console.log(`> RowDendrogram.drawView ${this.dendroCanvas.width}x${this.dendroCanvas.height}`);
 		const f = Math.floor;
 		const ctx = this.dendroCanvas.getContext("2d");
