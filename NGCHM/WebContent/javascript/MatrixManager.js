@@ -2,15 +2,19 @@
     'use strict';
     NgChm.markFile();
 
-// MatrixManager is responsible for retrieving clustered heat map data.  Heat map
-// data is available at different 'zoom' levels - Summary, Ribbon Vertical, Ribbon
-// Horizontal, and Full.  To use this code, create MatrixManger by calling the 
-// MatrixManager function.  The MatrixManager lets you retrieve a HeatmapData object
-// given a heat map name and summary level.  The HeatMapLevel object has various
-// attributes of the map including the size an number of tiles the map is broken up 
-// into.  getTile() is called on the HeatmapData to get each tile of the data.  Tile
-// retrieval is asynchronous so you need to provide a callback that is triggered when
-// the tile is retrieved.
+// MatrixManager is responsible for retrieving clustered heat maps.  Currently the
+// system supports only a single HeatMap at a time.  Create it by calling 
+// MMGR.createHeatMap and retrieve it at a later time by calling MMGR.getHeatMap.
+//
+// HeatMaps provide a vast number of methods for accessing map configuration,
+// covariate data, and other data.
+//
+// HeatMaps optionally contain data for multiple layers at a variety of summarization
+// levels.  Clients can access HeatMap data via one or more AccessWindows. An
+// AccessWindow describes the data layer, level, and rows and columns that the
+// client wants access to.  AccessWindows are the basis for managing asynchronous
+// data retrieval and caching.  See the class AccessWindow below for an in depth
+// description of the system's data caching architecture.
 //
 
     // Define Namespace for NgChm MatrixManager
@@ -233,7 +237,7 @@ let	wS = `const debug = ${debug};`;
 		const tiledata = new Float32Array(e.data.buffer);
 		heatMap.tileCache.setTileCacheEntry (e.data.job.tileCacheName, tiledata);
 	    } else if (e.data.op === 'tileLoadFailed') {
-		heatMap.tileCache.removeTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
+		heatMap.tileCache.resetTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
 	    } else if (e.data.op === 'jsonLoaded') {
 		if (!jsonSetterFunctions.hasOwnProperty(e.data.name)) {
 		    console.log({ m: 'connectWebLoader: unknown JSON request', e });
@@ -254,8 +258,24 @@ let	wS = `const debug = ${debug};`;
 	return axis && axis.toLowerCase() === 'row';
     }
 
-    // TileWindow objects hold hard references to all the tiles
-    // required by an access window.
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // BEGIN class TileWindow.
+    //
+    // TileWindows are the middle level of the system's data management
+    // hierarchy.  See the class AccessWindow below for an in depth description
+    // of the system's data caching architecture.
+    //
+    // Briefly, one or more AccessWindows can contain a hard reference to a
+    // TileWindow, which will contain hard references to any tile data in
+    // the system for the tiles concerned.  These hard references are the
+    // primary tile data caching mechanism.
+    //
+    // A HeatMap also contains weak references to all of its TileWindows.  These
+    // weak references are used to find an existing TileWindow, if any, that meets
+    // the needs of a new AccessWindow.  It is also used to detect when unused
+    // TileWindows are garbage collected by the system.
+    //
     class TileWindow {
 
 	constructor (heatMap, tileSpec) {
@@ -395,7 +415,20 @@ let	wS = `const debug = ${debug};`;
     }
     // END of the TileWindow class.
 
+    ///////////////////////////////////////////////////////////////////////////
+    //
     // BEGIN class TileCache.
+    //
+    // The TileCache is the lowest level of the system's data management
+    // hierarchy.  See the class AccessWindow below for an in depth description
+    // of the system's data caching architecture.
+    //
+    // Briefly, the TileCache contains an entry for every tile accessed by the
+    // system.  TileCache entries may also contain a weak reference to the
+    // tile's data.  These weak references are used to quickly determine if
+    // the system has a copy of the tile's data.  The primary mechanism for
+    // maintaining the tile's data in the system is the hard links to the tile
+    // data in the TileWindows (which are referenced by the AccessWindows).
     //
     class TileCache {
 
@@ -403,24 +436,29 @@ let	wS = `const debug = ${debug};`;
 	constructor (heatMap) {
 	    this.heatMap = heatMap;
 	    this.cacheEntries = {};
+	    this.longestLoadTime = 0.0;
 	}
 
 	// Create the specified cache entry.
+	//
+	// These entries are permanent, but the WeakRef to data is not.
+	//
 	createTileCacheEntry (tileCacheName) {
 	    const [ layer, level, row, col ] = tileCacheName.split('.');
 	    return this.cacheEntries[tileCacheName] = {
-		    state: 'new',
-		    data: null,
 		    props: { layer, level, row: row|0, col: col|0 },
-		    fetchTime: performance.now(),
-		    loadTime: 0.0	// Placeholder
+		    data: null,		// WeakRef to this tile's data.
+		    fetchTime: 0.0,	// Placeholder : start time of last fetch
+		    loadTime: 0.0,	// Placeholder : end time of last fetch
+		    fetches: 0,		// Number of times we've fetched the tile.
+		    failedFetches: 0,	// Number of times we've failed to fetch the tile.
+		    dataSize: 0,	// Placeholder : size of data in last fetch
 	    };
 	}
 
 	// Return true iff the specified tile has completed loading into the tile cache.
 	haveTileData (tileCacheName) {
-	    const td = this.cacheEntries[tileCacheName];
-	    return td && td.state === 'ready';
+	    return this.getTileCacheData (tileCacheName) != null;
 	}
 
 	// Fetch the data tile specified by layer, level, tileRow, and tileColumn, if needed.
@@ -428,22 +466,37 @@ let	wS = `const debug = ${debug};`;
 	// Returns nothing.
 	// The specified data tile should appear in the tile cache at some later time.
 	// When it does so, an Event_NEWDATA will be posted to heatmap listeners.
+	// No event will be posted if the data is already in the cache.
 	//
 	getTile (layer, level, tileRow, tileColumn) {
 	    const debug = false;
 	    const tileCacheName = layer + "." +level + "." + tileRow + "." + tileColumn;
-	    if (this.cacheEntries.hasOwnProperty(tileCacheName)) {
-		//Already have tile in cache - do nothing.
-		return;
+	    let entry = this.cacheEntries[tileCacheName];
+	    if (entry) {
+		if (this.getEntryData(entry)) {
+		    // Already have tile data in cache - do nothing.
+		    return;
+		}
+		if (entry.fetchTime > 0.0) {
+		    // Outstanding request for tile.
+		    if (performance.now() - entry.fetchTime < Math.max(3000, 1.25 * this.longestLoadTime)) {
+			// Hasn't been too long.
+			return;
+		    }
+		    // The previous fetch has been outstanding for at least three
+		    // seconds and at least 25% longer than the slowest successfull
+		    // send up until now.  Consider the previous fetch to have failed.
+		    entry.failedFetches++;
+		}
+	    } else {
+		// No cache entry present. Create cache entry.
+		if (debug) console.log('Creating tileCacheEntry for ' + tileCacheName);
+		entry = this.createTileCacheEntry(tileCacheName);
 	    }
 
-	    // Not present. Create cache entry and request tile from source.
-	    if (debug) console.log('Creating tileCacheEntry for ' + tileCacheName);
-	    this.createTileCacheEntry(tileCacheName);
-
-	    //ToDo: need to limit the number of tiles retrieved.
-	    //ToDo: need to remove items from the cache if it is maxed out. - don't get rid of thumb nail or summary.
-
+	    // Request tile from source.
+	    entry.fetches++;
+	    entry.fetchTime = performance.now();
 	    const tileName = level + "." + tileRow + "." + tileColumn;
 	    if ((this.heatMap.source() == MMGR.WEB_SOURCE) || (this.heatMap.source() == MMGR.LOCAL_SOURCE)) {
 		// Heat map came from the web.
@@ -463,43 +516,130 @@ let	wS = `const debug = ${debug};`;
 	showTileCacheStats () {
 	    for (let tileCacheName in this.cacheEntries) {
 		const e = this.cacheEntries[tileCacheName];
-		if (e.state === 'ready') {
+		if (e.data) {
 		    const loadTime = e.loadTime - e.fetchTime;
-		    const loadTimePerKByte = loadTime / e.data.length * 1024;
-		    console.log ({ tileCacheName, KBytes: e.data.length / 1024, loadTime, loadTimePerKByte });
+		    const loadTimePerKByte = loadTime / e.dataSize * 1024;
+		    console.log ({ tileCacheName, fetches: e.fetches, KBytes: e.dataSize / 1024, loadTime, loadTimePerKByte });
 		}
 	    }
+	    console.log ('Longest load time: ' + this.longestLoadTime);
 	}
 
-	// Remove a tile cache entry.
-	removeTileCacheEntry (tileCacheName) {
-	    delete this.cacheEntries[tileCacheName];
+	// Reset a tile cache entry.
+	resetTileCacheEntry (tileCacheName) {
+	    const entry = this.cacheEntries[tileCacheName];
+	    if (entry) {
+		const data = this.getEntryData (entry);  // For clearing garbage collected data.
+		entry.fetchTime = 0.0;
+		if (!data) {
+		    entry.failedFetches++;
+		}
+	    }
 	}
 
 	// Get the data for a tile, if it's loaded.
 	getTileCacheData (tileCacheName) {
 	    const entry = this.cacheEntries[tileCacheName];
-	    if (entry && entry.state === 'ready') {
-		return entry.data;
-	    } else {
-		return null;
-	    }
+	    return entry ? this.getEntryData (entry) : null;
 	}
 
-	// Set the data for the specified tile.
-	// Also broadcasts a message that the tile has been received.
+	// Returns the data for the cache entry, if it is loaded
+	// and has not been garbage collected.
+	getEntryData (entry) {
+	    if (entry.data === null) {
+		// Data has never been received or we've previously determined
+		// that it's been garbage collected.
+		return null;
+	    }
+	    // Determine if we still have access to the data.
+	    const data = entry.data.deref();
+	    if (data == null) {
+		// We had the data, but it's been garbage collected.
+		entry.data = null;
+	    }
+	    // We still have the data.  Return a hard reference to it.
+	    return data;
+	}
+
+	// Called when the data for the specified tile has arrived.
+	// Saves a WeakRef to the data in the tile's cache entry.
+	// Maintains various statistics about this request.
+	//
+	// Finally, it broadcasts a message to all of the HeatMap's
+	// event listeners that the tile's data has been received.
+	// The message includes a hard link to the data to ensure
+	// it's not garbage collected before all listeners have
+	// been informed of its arrival.
+	//
 	setTileCacheEntry (tileCacheName, arrayData) {
 	    const entry = this.cacheEntries[tileCacheName];
 	    entry.loadTime = performance.now();
-	    entry.data = arrayData;
+	    const loadTime = entry.loadTime - entry.fetchTime;
+	    if (loadTime > this.longestLoadTime) {
+		this.longestLoadTime = loadTime;
+	    }
+	    entry.data = new WeakRef(arrayData);
+	    entry.dataSize = arrayData.length;
 
-	    entry.state = 'ready';
-	    this.heatMap.sendCallBack(MMGR.Event_NEWDATA, Object.assign({},entry.props, { data: arrayData }));
+	    this.heatMap.updateTileWindows (Object.assign ({}, entry.props, { data: arrayData }));
 	}
 
-    } // END class TileCache.
+    }
+    // END class TileCache.
 
+    ///////////////////////////////////////////////////////////////////////////
+    //
     // BEGIN class AccessWindow
+    //
+    // AccessWindows are the highest level of the system's three-tiered data
+    // management hierarchy: AccessWindows, TileWindows, and the TileCache.
+    //
+    // All client access to HeatMap data goes through an AccessWindow.  The
+    // AccessWindow specifies what region of a HeatMap the client wants to
+    // access, including its data layer, level, and rows and columns.
+    //
+    // When an AccessWindow is created, it automatically initiates requests
+    // for any unavailable data tiles needed by the AccessWindow.  But it does
+    // not wait for them by default.  Clients can use the onready method to
+    // wait for all outstanding tiles to be loaded.
+    //
+    // AccessWindows are relatively light-weight objects that can be created
+    // and discarded easily.  But they ultimately determine what data tiles
+    // are cached by the system.
+    //
+    // When an AccessWindow is created, it obtains a hard reference to either
+    // an existing or a new TileWindow that contains exactly those tiles needed
+    // by the AccessWindow.  Multiple AccessWindows can reference the same
+    // TileWindow.  For example, many AccessWindows for default size detail
+    // views (42x42) can all reference the same TileWindow for a large
+    // 1000x1000 data tile.
+    //
+    // The TileWindows contain hard references to any data the system has for
+    // the tiles in the TileWindow.  When all AccessWindows that reference
+    // a TileWindow have been garbage collected, the TileWindow can also be
+    // garbage collected.  When all TileWindows that reference a specific
+    // data tile have been garbage collected, that tile's data can also be
+    // garbage collected.
+    //
+    // Experiments with Chrome indicate that it is relatively aggressive with
+    // garbage collecting unreferenced Objects, as expected.  To prevent
+    // tile data from being garbage collected too early, the system holds on to
+    // AccessWindows that reference the needed data.  For instance, the
+    // flick system keeps AccessWindows for the entirety of the summary levels
+    // for the (up to) two layers in the flick control.  And DetailWindows
+    // keep the AccessWindow last used to draw the detail view.  This
+    // prevents the detail tiles beneath the current view from being garbage
+    // collected.
+    //
+    // The HeatMap also maintains WeakReferences to all of the TileWindows
+    // and the TileCache maintains WeakReferences to the tile data.  These
+    // are used for quickly obtaining a reference to objects strongly held
+    // by other objects (AccessWindows and TileWindows, respectively) without
+    // having to maintain and search through complex systems for keeping
+    // track of these objects.  Occasionally, we may also reacquire a hard
+    // reference to a previously no-longer-referenced object, but this is
+    // of marginal utility.
+    //
     class AccessWindow {
 	constructor (heatMap, win) {
 	    this.heatMap = heatMap;
@@ -509,12 +649,16 @@ let	wS = `const debug = ${debug};`;
 	    this.datalevel = heatMap.datalevels[this.win.level];
 	}
 
+	// Return the value of a data element within the AccessWindow.
+	// row and column are specified in HeatMap coordinates but must be
+	// within the range of the rows and columns specified when the
+	// AccessWindow was created.
 	getValue (row, column) {
 	    return this.datalevel.getLayerValue (this.win.layer, this.tileWindow, row|0, column|0);
 	}
 
 	// Return an iterator for the numCols values starting from firstCol
-	// on row row.
+	// on row row.  Firstcol and row are in HeatMap coordinates.
 	// row and firstCol through firstCol+numCols-1 must be within the
 	// AccessWindow.
 	//
@@ -541,13 +685,16 @@ let	wS = `const debug = ${debug};`;
 		return p.then(() => this);
 	    }
 	}
-    } // END class AccessWindow
+    }
+    // END class AccessWindow
 
-    /********************************************************************************************
-     *
-     * Prototype methods for HeatMap "class".
-     *
-     ********************************************************************************************/
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // BEGIN class HeatMap
+    //
+    // Class HeatMap is currently implemented using the prototype mechanism.
+    //
+    //
     {
 
 	// Functions for getting and setting the data layer of this heat map
@@ -1156,43 +1303,43 @@ let	wS = `const debug = ${debug};`;
 	    // window to load.
 	    this.tileWindowListeners = [];
 	    this.tileWindowRefs = new Map();
+	};
 
-	    // Listen for tile load notifications.  For each, check each TileWindow
-	    // listener to see if all required tiles have been received.
-	    //
-	    // This approach uses a single permanent event listener for the entire
-	    // heatMap.  Currently there is no way to remove 'transient' event
-	    // listeners, such as TileWindow listeners.
-	    this.addEventListener(function (event, tile) {
-		const debug = false;
-		if (event == MMGR.Event_NEWDATA) {
-		    // Iterate over all the tileWindowRefs, remove any that have been reclaimed,
-		    // and check all others for tile updates.
-		    this.tileWindowRefs.forEach ((value, key) => {
-			const tileWin = value.deref();
-			if (tileWin) {
-			    tileWin.checkTile (tile);
-			} else {
-			    if (debug) console.log ('Removing garbage collected tileWindow', key);
-			    this.tileWindowRefs.delete(key);
-			}
-		    });
-		    // Iterate over all the tileWindowListeners.
-		    let i = 0;
-		    while (i < this.tileWindowListeners.length) {
-			const entry = this.tileWindowListeners[i];
-			// Check if all tiles in the window are now available
-			// and the listener's onready promise has been resolved.
-			if (entry.checkReady(entry.tileWindow, tile)) {
-			    // If so, delete the entry.
-			    this.tileWindowListeners.splice (i, 1);
-			} else {
-			    // Otherwise, advance to next entry.
-			    i ++;
-			}
-		    }
+	// Listen for tile load notifications.  For each, check each TileWindow
+	// listener to see if all required tiles have been received.
+	//
+	// This approach uses a single permanent event listener for the entire
+	// heatMap.  Currently there is no way to remove 'transient' event
+	// listeners, such as TileWindow listeners.
+	HeatMap.prototype.updateTileWindows = function (tile) {
+	    const debug = false;
+	    // Iterate over all the tileWindowRefs, remove any that have been reclaimed,
+	    // and check all others for tile updates.
+	    this.tileWindowRefs.forEach ((value, key) => {
+		const tileWin = value.deref();
+		if (tileWin) {
+		    tileWin.checkTile (tile);
+		} else {
+		    if (debug) console.log ('Removing garbage collected tileWindow', key);
+		    this.tileWindowRefs.delete(key);
 		}
 	    });
+	    // Iterate over all the tileWindowListeners.
+	    let i = 0;
+	    while (i < this.tileWindowListeners.length) {
+		const entry = this.tileWindowListeners[i];
+		// Check if all tiles in the window are now available
+		// and the listener's onready promise has been resolved.
+		if (entry.checkReady(entry.tileWindow, tile)) {
+		    // If so, delete the entry.
+		    this.tileWindowListeners.splice (i, 1);
+		} else {
+		    // Otherwise, advance to next entry.
+		    i ++;
+		}
+	    }
+
+	    this.sendCallBack(MMGR.Event_NEWDATA, tile);
 	};
 
 	/**********************************************************************************
@@ -1254,35 +1401,49 @@ let	wS = `const debug = ${debug};`;
 	    }
 	};
 
+	// Private method used to obtain a new or existing TileWindow
+	// given a tileSpec.
+	//
 	HeatMap.prototype.getNewTileWindow = function (tileSpec) {
-	    // layer, level, startRowTile, endRowTile, startColTile, endColTile
+	    const debug = false;
 	    const tileKey = [tileSpec.layer, tileSpec.level, tileSpec.startRowTile, tileSpec.endRowTile,
 		tileSpec.startColTile, tileSpec.endColTile].join('.');
 	    if (this.tileWindowRefs.has (tileKey)) {
 		const tileRef = this.tileWindowRefs.get(tileKey).deref();
 		if (tileRef) {
-		    //console.log ('Found existing tileWindow for ', tileKey);
 		    return tileRef;
 		}
-		console.log ('Encountered garbage collected tileWindow for ', tileKey);
+		if (debug) {
+		    console.log ('Encountered garbage collected tileWindow for ', tileKey);
+		}
 	    }
 	    // Create a new tileWindow and keep a weak reference to it.
-	    //console.log ('Creating new tileWindow for ', tileKey);
+	    if (debug) {
+		console.log ('Creating new tileWindow for ', tileKey);
+	    }
 	    const tileRef = new TileWindow (this, tileSpec);
 	    this.tileWindowRefs.set (tileKey, new WeakRef(tileRef));
 	    return tileRef;
 	};
 
-	// Create a TileWindow for the specified heatMap and view window.
+	// Private method used to obtain a TileWindow for a new AccessWindow.
+	//
 	HeatMap.prototype.getTileWindow = function (win) {
+	    // Call getTileAccessWindow from the appropriate data level to determine
+	    // the tileSpec for the desired TileWindow, then call
+	    // this.getNewTileWindow to obtain either an existing or a new
+	    // TileWindow for that tileSpec.
+	    //
 	    return this.datalevels[win.level].getTileAccessWindow (win.layer, win.firstRow, win.firstCol, win.numRows, win.numCols,
 		    tileSpec => this.getNewTileWindow(tileSpec));
 	};
 
 	/* Obtain an access window for the specified view window.
-	 * The access window contains three entries:
+	 * The access window contains four entries:
 	 * - win: The view window.
 	 * - getValue (row, column) Function to return the value at row, column in heatMap coordinates.
+	 * - getRowValues (row, firstCol, numCols)  Returns an iterator over the values (row, firstCol...firstCol+numCols-1).
+	 *   Each iteration produces a tuple { i, col, value }, where i is a zero-based index and col = firstCol+i.
 	 * - onready (callback) When all data ready, call callback if specified with the access window as its parameter or return a promise for the access window.  
 	 *
 	 * The returned access window will have its data tiles requested, but they may not be available immediately.
@@ -1299,9 +1460,10 @@ let	wS = `const debug = ${debug};`;
      *
      ********************************************************************************************/
 
+    // Creator function for HeatMap class.
+    //
     // HeatMap class - holds heat map properties and a tile cache
     // Used to get HeatMapLevel object.
-    // ToDo switch from using heat map name to blob key?
     function HeatMap (heatMapName, updateCallbacks, fileSrc, chmFile, compat) {
 	this.initialized = false;	// True once the minimum components have loaded.
 	this.unAppliedChanges = false;	// True iff map has unsaved changes.
@@ -1333,11 +1495,12 @@ let	wS = `const debug = ${debug};`;
 		loadNgChmFromZip (this, compat.addMapConfig, compat.addMapData);
 	}
     }
+    // End class HeatMap
 
     //  Helper function to initialize the data levels once we know the tile structure.
     //  heatMap.mapConfig must be set.
     //
-    function addDataLayers(heatMap) {
+    function addDataLayers (heatMap) {
 	const mapConfig = heatMap.mapConfig;
 
 	// Each data level keeps a pointer to the next lower level.
@@ -1394,7 +1557,15 @@ let	wS = `const debug = ${debug};`;
     }
 
 
-    //Internal object for traversing the data at a given zoom level.
+    ///////////////////////////////////////////////////////////////////////////
+    //
+    // BEGIN class HeatMapLevel
+    //
+    // HeatMapLevel implements support for accessing the HeatMap's data at a
+    // specific summarization level.  It is primarily concerned with
+    // computing the differences in scales and indices between the different
+    // levels.
+    //
     class HeatMapLevel {
 
 	constructor (tileCache, level, jsonData, lowerLevel) {
@@ -1549,6 +1720,7 @@ let	wS = `const debug = ${debug};`;
 	    return getTileWindow (tileSpec);
 	}
     }
+    // END class HeatMapLevel
 
     /* Submodule for caching Actual/Shown labels.
      */

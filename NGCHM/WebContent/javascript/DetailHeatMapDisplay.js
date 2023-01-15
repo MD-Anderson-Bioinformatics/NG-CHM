@@ -137,6 +137,8 @@ DET.flushDrawingCache = function (tile) {
 		    mapItem.detailHeatMapValidator[tile.layer] = '';
 		    if (tile.layer === mapItem.heatMap.getCurrentDL()) {
 			// Redraw 'now', without resizing, if the tile is for the currently displayed layer.
+			// FIXME BMB - Forces mapItems to redraw even if the tile is outside their tileWindow.
+			console.log('Tile update queueing redraw for detail panel ' + mapItem.pane);
 			DET.setDrawDetailTimeout(mapItem, DET.redrawUpdateTimeout, true);
 		    }
 	    }
@@ -186,6 +188,7 @@ DET.callDetailDrawFunction = function(modeVal, target) {
  * NGCHM specified by drawWin to a detail heat map pane.
  *********************************************************************************************/
 DET.drawDetailHeatMap = function (mapItem, drawWin) {
+    console.log('Considering redrawing detail panel ' + mapItem.pane);
 	const heatMap = mapItem.heatMap;
 	DET.setDendroShow(mapItem);
 	if (mapItem.resizeOnNextDraw) {
