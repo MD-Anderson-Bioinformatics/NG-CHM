@@ -448,10 +448,11 @@ UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
 	    newImage.alt = altText;
 	    newButton.appendChild (newImage);
 	} else {
-	    const newText = document.createElement('span');
-	    newText.classList.add('button');
+	    const newText = UTIL.newElement('span.button');
 	    newText.innerText = buttonSpec.text;
-	    newButton.appendChild (newText);
+	    const newWrapper = UTIL.newElement('span.spanbuttonwrapper');
+	    newWrapper.appendChild (newText);
+	    newButton.appendChild (newWrapper);
 	}
 	if (buttonSpec.default) {
 	    newButton.classList.add('default');

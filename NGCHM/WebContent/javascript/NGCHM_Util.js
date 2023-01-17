@@ -49,7 +49,7 @@ UTIL.capitalize = function capitalize (str) {
 // Load the dynamic script file.
 UTIL.addScript = function(src, callback) {
 	const head = document.getElementsByTagName('head')[0];
-	const script = UTIL.newEl('script', { type: 'text/javascript', src });
+	const script = UTIL.newElement('script', { type: 'text/javascript', src });
 	head.appendChild(script);
 	// Most browsers:   NOTE: The next 2 lines of code are replaced when building ngchmApp.html and ngchmWidget-min.js (the "file mode" and "widget" versions of the application)
 	script.onload = callback;

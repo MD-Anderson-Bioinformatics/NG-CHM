@@ -358,8 +358,25 @@ div.paneHeader img {
     margin-bottom: 0.5em;
 }
 
-#msgBoxButtons .default {
-    filter: brightness(1.5) hue-rotate(310deg);
+#msgBoxButtons img {
+    padding: 0.2em;
+    border: 2px solid #e6f0ff;
+    border-radius: 1em;
+}
+
+.spanbuttonwrapper {
+    padding: 0.4em 0.2em;
+    margin-left: 1em;
+}
+
+#msgBoxButtons .default img {
+    border: 2px solid #3377b4;
+    border-radius: 1em;
+}
+
+#msgBoxButtons .default > span {
+    border: 2px solid #3757be;
+    border-radius: 1em;
 }
 
 .gearPanel .buttonBox {
@@ -405,7 +422,6 @@ span.button {
 	border-radius: 1em;
 	font-weight: bold;
 	font-size: 0.8rem;
-	margin-left: 1em;
 	cursor: pointer;
 }
 span.button.positive {
