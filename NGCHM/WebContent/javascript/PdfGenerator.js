@@ -1425,7 +1425,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	function getBarGraphForDiscreteClassBar(key, type, barsInfo, classBarConfig, classBarData){
 		var barScale = isChecked("pdfInputPortrait") ? .50 : .65;
 		var foundMissing = 0;
-    	var truncTitle = key.length > 40 ? key.substring(0,40) + "..." : key;
+		var truncTitle = key.length > 40 ? key.substring(0,40) + "..." : key;
 		var splitTitle = doc.splitTextToSize(truncTitle, barsInfo.classBarFigureW);
 		if (covTitleRows === 1) {
 			covTitleRows = splitTitle.length;
@@ -1433,16 +1433,17 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		var bartop = barsInfo.topOff+5 + (splitTitle.length-1)*barsInfo.classBarLegendTextSize*2;
 		var colorMap = heatMap.getColorMapManager().getColorMap(type, key);
 		var thresholds = colorMap.getThresholds();
+		var maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*barsInfo.classBarLegendTextSize;
 		if (isChecked("pdfInputPortrait") && (thresholds.length > 56)) {
 			doc.setFont(undefined, "bold");
-		    doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
+			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
 			doc.setFont(undefined, "normal");
 			doc.text(barsInfo.leftOff + 15, bartop + barsInfo.classBarLegendTextSize, "This discrete covariate bar contains too", null);
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize+12, "many categories to print.", null);
 			setClassBarFigureH(barsInfo, 2,'discrete',0);
 		} else if (isChecked("pdfInputLandscape") && (thresholds.length > 40)) {
 			doc.setFont(undefined, "bold");
-		    doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
+			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
 			doc.setFont(undefined, "normal");
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize,    "This discrete covariate bar contains too", null);
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize+12, "many categories to print. You may try", null);
@@ -1465,12 +1466,12 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 				barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  
 			}
 			doc.setFont(undefined, "bold");
-		    doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
+			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
 			doc.setFont(undefined, "normal");
 		    
 			var barHeight = barsInfo.classBarLegendTextSize + 3;
-            var counts = {}, maxCount = 0;
-		    var maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*barsInfo.classBarLegendTextSize;
+			var counts = {}, maxCount = 0;
+			maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*barsInfo.classBarLegendTextSize;
 			// get the number N in each threshold
 			var cutValues = 0;
 			for(var i = 0; i< classBarData.values.length; i++) {
@@ -1483,7 +1484,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			}
 			for (var val in counts){
 				maxCount = Math.max(maxCount, counts[val]);
-				maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val,barsInfo.classBarLegendTextSize)*barsInfo.classBarLegendTextSize);
+				maxLabelLength = Math.max(maxLabelLength, doc.getStringUnitWidth(val)*barsInfo.classBarLegendTextSize);
 			}
 				
 			// NOTE: missingCount will contain all elements that are not accounted for in the thresholds
