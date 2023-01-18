@@ -165,8 +165,8 @@ DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
 	if (isPrimary) {
 	    DMM.setPrimaryDetailMap (newMapObj);
 	} else {
-	    DET.rowDendroResize(newMapObj);
-	    DET.colDendroResize(newMapObj);
+	    DET.rowDendroResize(newMapObj, true);
+	    DET.colDendroResize(newMapObj, true);
 	}
 	return newMapObj;
 };
@@ -484,7 +484,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		}
 		PANE.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		PANE.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
-		DET.setDrawDetailTimeout (mapItem, 0, true);
+		DET.setDrawDetailTimeout (mapItem, 0, false);
 	}
 
 	/*

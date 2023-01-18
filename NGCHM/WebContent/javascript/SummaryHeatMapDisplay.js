@@ -84,6 +84,9 @@ SUM.initSummaryDisplay = function() {
 SUM.processSummaryMapUpdate = function(event, tile) {
 
 	if (event === MMGR.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL){
+		if (!MMGR.getHeatMap().initialized) {
+		    return;
+		}
 		//Summary tile - wait a bit to see if we get another tile quickly, then draw
 		if (SUM.eventTimer != 0) {
 			//New tile arrived - reset timer

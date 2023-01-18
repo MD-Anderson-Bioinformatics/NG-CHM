@@ -299,8 +299,10 @@
 			const s = PANE.splitPane (false, initialLoc);
 			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
 			SMM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
-			DMM.switchPaneToDetail (PANE.findPaneLocation(s.child2));
-			SRCH.doInitialSearch();
+			setTimeout (() => {
+			    DMM.switchPaneToDetail (PANE.findPaneLocation(s.child2));
+			    SRCH.doInitialSearch();
+			}, 32);
 		} else if (UTIL.showSummaryPane) {
 			SMM.switchPaneToSummary (initialLoc);
 			SRCH.doInitialSearch();

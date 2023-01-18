@@ -2061,7 +2061,7 @@ DET.setDendroShow = function (mapItem) {
  * FUNCTION - colDendroResize: This function resizes the column dendrogram of the specified detail
  * heat map panel instance.
  ************************************************************************************************/
-DET.colDendroResize = function(mapItem) {
+DET.colDendroResize = function(mapItem, drawIt) {
 	if (mapItem.colDendroCanvas !== null) {
 		const dendroCanvas = mapItem.colDendroCanvas;
 		const left = mapItem.canvas.offsetLeft;
@@ -2076,7 +2076,7 @@ DET.colDendroResize = function(mapItem) {
 			dendroCanvas.height = Math.round(height);
 			dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/canW)) + 'px';
 			dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
-			mapItem.colDendro.draw();
+			if (drawIt) mapItem.colDendro.draw();
 		} else {
 			dendroCanvas.style.height = '0px';
 		}
@@ -2087,7 +2087,7 @@ DET.colDendroResize = function(mapItem) {
  * FUNCTION - rowDendroResize: This function resizes the row dendrogram of the specified detail
  * heat map panel instance.
  ************************************************************************************************/
-DET.rowDendroResize = function(mapItem) {
+DET.rowDendroResize = function(mapItem, drawIt) {
 	if (mapItem.rowDendroCanvas !== null) {
 		const dendroCanvas = mapItem.rowDendroCanvas;
 		const top = mapItem.colDendro.getDivHeight() + DET.paddingHeight;
@@ -2106,7 +2106,7 @@ DET.rowDendroResize = function(mapItem) {
 			dendroCanvas.style.height = (height-2) + 'px';
 			dendroCanvas.height = Math.round(height);
 
-			mapItem.rowDendro.draw();
+			if (drawIt) mapItem.rowDendro.draw();
 		} else {
 			dendroCanvas.style.width = '0px';
 		}
@@ -2343,8 +2343,8 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 
     DET.resizeMapItem = resizeMapItem;
     function resizeMapItem (mapItem) {
-	DET.rowDendroResize(mapItem);
-	DET.colDendroResize(mapItem);
+	DET.rowDendroResize(mapItem, false);
+	DET.colDendroResize(mapItem, false);
 	calculateCovariateBarScale (mapItem, "row");
 	calculateCovariateBarScale (mapItem, "column");
 	sizeCanvasForLabels(mapItem);
@@ -2352,8 +2352,8 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	sizeCanvasForLabels(mapItem);
 	updateMapItemLabels(mapItem);
 	DET.drawMapItemSelectionsOnScreen(mapItem);
-	DET.rowDendroResize(mapItem);
-	DET.colDendroResize(mapItem);
+	DET.rowDendroResize(mapItem, true);
+	DET.colDendroResize(mapItem, true);
     }
 
     function calculateCovariateBarScale (mapItem, axis) {

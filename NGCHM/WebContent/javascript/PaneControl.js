@@ -226,6 +226,7 @@
 		if (!panesInitialized) {
 			PANE.resizeNGCHM = resizeNGCHM;
 			window.onresize = resizeNGCHM;
+			resizeNGCHM();
 		}
 
 		// Remove previous contents, if any.
@@ -257,6 +258,9 @@
 				}
 				const hdrbb = document.getElementById("mdaServiceHeader").getBoundingClientRect();
 				const ch = topContainer.firstElementChild;
+				if (!ch) {
+				    return;
+				}
 				if (typeof ch.getBoundingClientRect != "function") {
 					console.error ({ m: 'getBoundingClientRect', ch });
 				}
