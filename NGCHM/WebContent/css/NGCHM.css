@@ -353,6 +353,32 @@ div.paneHeader img {
 	display: contents;
 }
 
+.buttonBox {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#msgBoxButtons img {
+    padding: 0.2em;
+    border: 2px solid #e6f0ff;
+    border-radius: 1em;
+}
+
+.spanbuttonwrapper {
+    padding: 0.4em 0.2em;
+    margin-left: 1em;
+}
+
+#msgBoxButtons .default img {
+    border: 2px solid #3377b4;
+    border-radius: 1em;
+}
+
+#msgBoxButtons .default > span {
+    border: 2px solid #3757be;
+    border-radius: 1em;
+}
+
 .gearPanel .buttonBox {
 	display: flex;
 	margin-bottom: 1em;
@@ -396,7 +422,6 @@ span.button {
 	border-radius: 1em;
 	font-weight: bold;
 	font-size: 0.8rem;
-	margin-left: 1em;
 	cursor: pointer;
 }
 span.button.positive {
@@ -896,6 +921,13 @@ th.breakpointContainer {
     box-sizing: border-box;
     text-align: left;
 }
+
+#msgBoxButtons button {
+    border: none;
+    vertical-align: top;
+    background: transparent;
+}
+
 #msgBoxTxt {
     box-sizing: border-box
 }
