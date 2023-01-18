@@ -883,7 +883,6 @@ UTIL.imageTable = {
     closeButton: 'images/closeButton.png',
     okButton: 'images/okButton.png',
     prefCancel: 'images/prefCancel.png',
-    saveNgchm: 'images/saveNgchm.png',
     openMapHover: 'images/openMapHover.png',
     goHover: 'images/goHover.png',
     prevHover: 'images/prevHover.png',

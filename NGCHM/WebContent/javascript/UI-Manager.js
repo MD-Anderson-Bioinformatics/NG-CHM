@@ -164,9 +164,7 @@
 	    UHM.initMessageBox();
 	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
 	    UHM.setMessageBoxText(text);
-	    UHM.setMessageBoxButton('save',
-		    { type: 'image', src: UTIL.imageTable.saveNgchm, alt: "Save NG-CHM button", disableOnClick: true, default: true },
-		    () => {
+	    addSaveToNgchmButton(() => {
 		UHM.showMsgBoxProgressBar();
 		MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
 		.then(() => {
@@ -174,10 +172,7 @@
 		    showViewerSaveNotification(heatMap);
 		});
 	    });
-	    UHM.setMessageBoxButton(
-		'cancel',
-		{ type: 'image', src: UTIL.imageTable.cancelSmall, alt: "Cancel button" }
-	    );
+	    addCancelSaveButton();
 	    UHM.displayMessageBox();
     }
 
@@ -810,17 +805,27 @@
 		    addCancelSaveButton();
 	    }
 	    UHM.displayMessageBox();
+    }
 
-	    function addSaveToNgchmButton() {
-		UHM.setMessageBoxButton(
-		    'saveToNgchm',
-		    { type: 'image', src: UTIL.imageTable.saveNgchm, alt: "Save to NG-CHM file", disableOnClick: true, default: true },
-		    saveHeatMapToNgchm);
-	    }
+    // Adds a "Save to .ngchm" button to an initialized UHM dialog.
+    //
+    // Executes saveHeatMapToNgchm when clicked by default.  If saveFunc
+    // is supplied, executes that instead.
+    function addSaveToNgchmButton(saveFunc) {
+	UHM.setMessageBoxButton(
+	    'saveToNgchm',
+	    { type: 'text', text: 'Save to .ngchm', disableOnClick: true, default: true },
+	    saveFunc || saveHeatMapToNgchm);
+    }
 
-	    function addCancelSaveButton() {
-		UHM.setMessageBoxButton('cancelSave', UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
-	    }
+    // Adds a "Cancel" button to an initialized UHM dialog.
+    //
+    // Executes UHM.messageBoxCancel when clicked by default.  If cancelFunc
+    // is supplied, executes that instead.
+    function addCancelSaveButton(cancelFunc) {
+	UHM.setMessageBoxButton('cancelSave',
+	    { type: 'text', text: 'Cancel', },
+	    cancelFunc || UHM.messageBoxCancel);
     }
 
     const hamburgerButton = document.getElementById('barMenu_btn');
