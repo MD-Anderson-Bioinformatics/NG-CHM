@@ -235,9 +235,9 @@ let	wS = `const debug = ${debug};`;
 	    if (debug) console.log({ m: 'Received message from webLoader', e });
 	    if (e.data.op === 'tileLoaded') {
 		const tiledata = new Float32Array(e.data.buffer);
-		heatMap.tileCache.setTileCacheEntry (e.data.job.tileCacheName, tiledata);
+		heatMap.tileRequestComplete (e.data.job.tileCacheName, tiledata);
 	    } else if (e.data.op === 'tileLoadFailed') {
-		heatMap.tileCache.resetTileCacheEntry (e.data.job.tileCacheName);  // Allow another fetch attempt.
+		heatMap.tileRequestComplete (e.data.job.tileCacheName, null);
 	    } else if (e.data.op === 'jsonLoaded') {
 		if (!jsonSetterFunctions.hasOwnProperty(e.data.name)) {
 		    console.log({ m: 'connectWebLoader: unknown JSON request', e });
@@ -251,7 +251,7 @@ let	wS = `const debug = ${debug};`;
 		console.log({ m: 'connectWebLoader: unknown op', e });
 	    }
 	});
-    };
+    }
 
     MMGR.isRow = isRow;
     function isRow (axis) {
@@ -308,15 +308,23 @@ let	wS = `const debug = ${debug};`;
 	    this.tileStatusValid = true;
 	}
 
+	myKey () {
+	    return [ this.layer, this.level, this.startRowTile, this.endRowTile, this.startColTile, this.endColTile, ] .join('.');
+	}
+
+	isTileInWindow (tile) {
+	    return (tile.layer === this.layer && tile.level === this.level &&
+		    tile.row >= this.startRowTile && tile.row <= this.endRowTile &&
+		    tile.col >= this.startColTile && tile.col <= this.endColTile);
+	}
+
 	checkTile (tile) {
 	    if (!tile.hasOwnProperty('data')) {
 		console.error ('NEWDATA message has no data field', tile);
 	    }
 	    // Determines if a tile update applies to one of the tiles in this
 	    // TileWindow.  If so, it invalidates the status of _allTilesAvailable.
-	    if (tile.layer === this.layer && tile.level === this.level &&
-		    tile.row >= this.startRowTile && tile.row <= this.endRowTile &&
-		    tile.col >= this.startColTile && tile.col <= this.endColTile) {
+	    if (this.isTileInWindow (tile)) {
 		const idx = (tile.row - this.startRowTile) * this.numColumnTiles + tile.col - this.startColTile;
 		if (idx >= this.totalTiles) console.error ('Tile idx out of range', { idx, tile, tileWindow: this });
 		this.tiles[idx] = tile.data;
@@ -340,7 +348,11 @@ let	wS = `const debug = ${debug};`;
 	    for (let row = this.startRowTile; row <= this.endRowTile; row++) {
 		for (let col = this.startColTile; col <= this.endColTile; col++) {
 		    if (!this.tiles[idx]) {
-			this.heatMap.tileCache.getTile(this.layer, this.level, row, col);
+			const tileCacheName = this.layer + "." + this.level + "." + row + "." + col;
+			this.tiles[idx] = this.heatMap.tileCache.getTileCacheData(tileCacheName);
+			if (!this.tiles[idx]) {
+			    this.tiles[idx] = this.heatMap.tileCache.getTile(this.layer, this.level, row, col);
+			}
 		    }
 		    idx++;
 		}
@@ -463,30 +475,39 @@ let	wS = `const debug = ${debug};`;
 
 	// Fetch the data tile specified by layer, level, tileRow, and tileColumn, if needed.
 	//
-	// Returns nothing.
-	// The specified data tile should appear in the tile cache at some later time.
+	// Returns the tile's data if it's already in the TileCache, otherwise null.
+	//
+	// In the latter case, the specified data tile may appear in the tile cache
+	// at some later time (depending on whether there's still a TileWindow that
+	// wants it).
+	//
 	// When it does so, an Event_NEWDATA will be posted to heatmap listeners.
 	// No event will be posted if the data is already in the cache.
 	//
 	getTile (layer, level, tileRow, tileColumn) {
 	    const debug = false;
 	    const tileCacheName = layer + "." +level + "." + tileRow + "." + tileColumn;
+	    let setFetchTime = true;
 	    let entry = this.cacheEntries[tileCacheName];
 	    if (entry) {
-		if (this.getEntryData(entry)) {
+		const data = this.getEntryData(tileCacheName, entry);
+		if (data) {
 		    // Already have tile data in cache - do nothing.
-		    return;
+		    return data;
 		}
 		if (entry.fetchTime > 0.0) {
 		    // Outstanding request for tile.
 		    if (performance.now() - entry.fetchTime < Math.max(3000, 1.25 * this.longestLoadTime)) {
 			// Hasn't been too long.
-			return;
+			// Just need to ensure fetcher still has an outstanding request.
+			setFetchTime = false;
 		    }
-		    // The previous fetch has been outstanding for at least three
-		    // seconds and at least 25% longer than the slowest successfull
-		    // send up until now.  Consider the previous fetch to have failed.
-		    entry.failedFetches++;
+		    else {
+			// The previous fetch has been outstanding for at least three
+			// seconds and at least 25% longer than the slowest successfull
+			// send up until now.  Consider the previous fetch to have failed.
+			entry.failedFetches++;
+		    }
 		}
 	    } else {
 		// No cache entry present. Create cache entry.
@@ -495,21 +516,14 @@ let	wS = `const debug = ${debug};`;
 	    }
 
 	    // Request tile from source.
-	    entry.fetches++;
-	    entry.fetchTime = performance.now();
-	    const tileName = level + "." + tileRow + "." + tileColumn;
-	    if ((this.heatMap.source() == MMGR.WEB_SOURCE) || (this.heatMap.source() == MMGR.LOCAL_SOURCE)) {
-		// Heat map came from the web.
-		MMGR.webLoader.postMessage({ op: 'loadTile', job: { tileCacheName, layer, level, tileName} });
-	    } else {
-		// Heat map came from a zip file
-		const baseName = this.heatMap.mapName + "/" + layer + "/"+ level + "/" + tileName;
-		setTimeout (() => {
-		    loadZipTile (this.heatMap, baseName, tileCacheName, (tileCacheName, far32) => {
-			this.setTileCacheEntry(tileCacheName, far32);
-		    });
-		});
+	    if (setFetchTime) {
+		entry.fetches++;
+		entry.fetchTime = performance.now();
 	    }
+	    const tileName = level + "." + tileRow + "." + tileColumn;
+	    this.heatMap.loadHeatMapTile ({ tileCacheName, layer, level, tileName });
+
+	    return null;
 	}
 
 	// Display statistics about each loaded tile cache entry.
@@ -529,7 +543,7 @@ let	wS = `const debug = ${debug};`;
 	resetTileCacheEntry (tileCacheName) {
 	    const entry = this.cacheEntries[tileCacheName];
 	    if (entry) {
-		const data = this.getEntryData (entry);  // For clearing garbage collected data.
+		const data = this.getEntryData (tileCacheName, entry);  // For clearing garbage collected data.
 		entry.fetchTime = 0.0;
 		if (!data) {
 		    entry.failedFetches++;
@@ -540,12 +554,12 @@ let	wS = `const debug = ${debug};`;
 	// Get the data for a tile, if it's loaded.
 	getTileCacheData (tileCacheName) {
 	    const entry = this.cacheEntries[tileCacheName];
-	    return entry ? this.getEntryData (entry) : null;
+	    return entry ? this.getEntryData (tileCacheName, entry) : null;
 	}
 
 	// Returns the data for the cache entry, if it is loaded
 	// and has not been garbage collected.
-	getEntryData (entry) {
+	getEntryData (tileCacheName, entry) {
 	    if (entry.data === null) {
 		// Data has never been received or we've previously determined
 		// that it's been garbage collected.
@@ -684,6 +698,10 @@ let	wS = `const debug = ${debug};`;
 	    } else {
 		return p.then(() => this);
 	    }
+	}
+
+	isTileInWindow (tile) {
+	    return this.tileWindow.isTileInWindow (tile);
 	}
     }
     // END class AccessWindow
@@ -1342,6 +1360,20 @@ let	wS = `const debug = ${debug};`;
 	    this.sendCallBack(MMGR.Event_NEWDATA, tile);
 	};
 
+	HeatMap.prototype.tileIdReferenced = function (tileId) {
+	    const [ layer, level, row, col ] = tileId.split('.');
+	    var referenced = false;
+	    this.tileWindowRefs.forEach ((value, key) => {
+		const [ tlayer, tlevel, firstRow, lastRow, firstCol, lastCol ] = key.split('.');
+		if (tlayer == layer && tlevel == level &&
+		    (row|0) >= (firstRow|0) && (row|0) <= (lastRow|0) &&
+		    (col|0) >= (firstCol|0) && (col|0) <= (lastCol|0)) {
+		    referenced = true;
+		}
+	    });
+	    return referenced;
+	};
+
 	/**********************************************************************************
 	 * FUNCTION - hasGaps: Returns true iff the heatMap has gaps, otherwise false.
 	 **********************************************************************************/
@@ -1411,6 +1443,9 @@ let	wS = `const debug = ${debug};`;
 	    if (this.tileWindowRefs.has (tileKey)) {
 		const tileRef = this.tileWindowRefs.get(tileKey).deref();
 		if (tileRef) {
+		    if (debug) {
+			console.log ('Found existing tileWindow for ', tileKey);
+		    }
 		    return tileRef;
 		}
 		if (debug) {
@@ -1476,6 +1511,8 @@ let	wS = `const debug = ${debug};`;
 	this.fileSrc = fileSrc;		// The source of the map (Web, File, etc.)
 	this.chmFile = chmFile;		// Reference to zip file (for NGCHMs from files only)
 	this.zipFiles = {};		// Index of files inside the zip file (").
+	this.currentTileRequests = [];	// Tiles we are currently reading
+	this.pendingTileRequests = [];	// Tiles we want to read
 
 	this.initEventListeners (updateCallbacks);  // Initialize this.eventListeners
 	this.initTileWindows ();	// Initialize this.tileWindowListeners and this.tileWindowRefs
@@ -1950,37 +1987,158 @@ let	wS = `const debug = ${debug};`;
 	}
     }
 
-    /* Load the tile with the specified baseName from the heatMap's zipFile.
+    /* Load the specified tile from the heatMap.
      *
-     * On success, calls callback (tileId, tileData), where
+     * On success, calls heatMap.setTileCacheData (tileCacheName, tileData), where
      * tileData is the Float32Array containing the tile's data that was
-     * read from the heatMap's zip file.
+     * read from the heatMap.
      */
-    function loadZipTile (heatMap, baseName, tileId, callback) {
+    HeatMap.prototype.loadHeatMapTile = function loadHeatMapTile (job) {
 	const debug = false;
+	const tileCacheName = job.tileCacheName;
+	const cacheData = this.tileCache.getTileCacheData(tileCacheName);
+	if (cacheData) {
+	    if (debug) console.log ('Request for tile currently in cache: ', { tileCacheName });
+	    return;
+	}
+	if (debug) console.log ('Request for tile', { tileCacheName, pending: this.pendingTileRequests.length, current: this.currentTileRequests.length });
+	if (this.currentTileRequests.includes(tileCacheName)) {
+	    if (debug) console.log ('Request for tile we are currently reading: ' + tileCacheName);
+	    return;
+	}
+	let idx = this.pendingTileRequests.map(p => p.tileCacheName).indexOf(tileCacheName);
+	if (idx >= 0) {
+	    // Remove it so we can put it on the end.
+	    if (debug) console.log ('Request for tile in pending queue: ' + tileCacheName);
+	    this.pendingTileRequests.splice (idx, 1);
+	}
+	this.pendingTileRequests.push (job);
+
+	if (debug) {
+	    // Validate that there are no duplicates in pendingZipTile + currentTileRequests.
+	    const pendingBaseNames = this.pendingTileRequests.map (p => p.tileCacheName);
+	    for (let i = 0; i < pendingBaseNames.length; i++) {
+		const idx = pendingBaseNames.indexOf (pendingBaseNames[i]);
+		if (idx !== i) {
+		    console.error ('Duplicate pending tileCachenames', { i, idx, ei: this.pendingTileRequests[i], eidx: this.pendingTileRequests[idx] });
+		}
+		const cidx = this.currentTileRequests.indexOf (pendingBaseNames[i]);
+		if (cidx !== -1) {
+		    console.error ('Pending tileCachename in current tileCacheNames', { i, cidx, ei: this.pendingTileRequests[i], tileCacheName: this.currentTileRequests[cidx] });
+		}
+	    }
+	}
+
+	// Tradeoff. More concurrent jobs allows readers to do more in parallel.
+	// Too many concurrent jobs can overwhelm readers and provides fewer
+	// oppportunities to cancel requests for no longer needed tiles.
+	if (this.currentTileRequests.length > 10) {
+	    if (debug) console.log ('Too many tiles being read: ' + this.currentTileRequests.length);
+	    return;
+	}
+	this.submitFirstPendingTileRequest ();
+    }
+
+    // HeatMap tile readers call tileRequestComplete when the request for the
+    // tile specified by tileCacheName has completed.
+    //
+    // This function removes the tile from the list of current tile requests
+    // and starts a new tile request (to replace the one that just finished).
+    //
+    // If tileData is not null, it adds the new tile data to the TileCache.
+    //
+    // tileData equal to null signifies that an error occurred and the tile data
+    // cannot be obtained.
+    HeatMap.prototype.tileRequestComplete = function tileRequestComplete (tileCacheName, tileData) {
+	const debug = false;
+	const idx = this.currentTileRequests.indexOf (tileCacheName);
+	if (idx < 0) {
+	    console.error ('Tile has disappeared from currentTileRequests', { tileCacheName, currentTileRequests: this.currentTileRequests });
+	} else {
+	    if (debug) {
+		const mesg = 'Got ' + (tileData ? 'data' : 'error') + ' for tile ';
+		console.log (mesg, { tileCacheName, pendingJobs: this.pendingTileRequests.length });
+	    }
+	    this.currentTileRequests.splice (idx, 1);
+	    this.submitFirstPendingTileRequest ();
+	}
+	if (tileData) {
+	    this.tileCache.setTileCacheEntry (tileCacheName, tileData);
+	} else {
+	    this.tileCache.resetTileCacheEntry (tileCacheName);  // Allow additional fetch attempts.
+	}
+    };
+
+    // This function submits a pending TileRequest.
+    //
+    // The most recent TileRequest is removed from the pending request queue, added to the
+    // current request list, and the appropriate tile loader is called.
+    //
+    // Requests for tiles that are no longer needed by any current TileWindow are simply
+    // discarded.
+    //
+    HeatMap.prototype.submitFirstPendingTileRequest = function submitFirstPendingTileRequest () {
+	const debug = false;
+
+	// Read most recent non-abandoned tile request first. More likely to be needed.
+	let job = this.pendingTileRequests.length == 0 ? null : this.pendingTileRequests.pop();
+	while (job && !this.tileIdReferenced(job.tileCacheName)) {
+	    if (debug) console.log ('Abandoning request for unreferenced tile: ' + job.tileCacheName);
+	    job = this.pendingTileRequests.length == 0 ? null : this.pendingTileRequests.pop();
+	}
+	if (!job) {
+	    return;
+	}
+
+	if (debug && this.currentTileRequests.indexOf (job.tileCacheName) != -1) {
+	    console.log ('Starting duplicate fetch of', { tileCacheName: job.tileCacheName, job });
+	}
+	this.currentTileRequests.push (job.tileCacheName);
+
+	if ((this.source() == MMGR.WEB_SOURCE) || (this.source() == MMGR.LOCAL_SOURCE)) {
+	    // Heat map came from the web.
+	    MMGR.webLoader.postMessage({ op: 'loadTile', job });
+	} else {
+	    // Heat map came from a zip file
+	    zipFetchTile (this, job);
+	}
+    };
+
+    // Read the tile specified by job from the HeatMap's zip file.
+    //
+    // Calls heatMap.tileRequestComplete when done.
+    //
+    function zipFetchTile (heatMap, job) {
+	const debug = false;
+	const baseName = heatMap.mapName + "/" + job.layer + "/"+ job.level + "/" + job.tileName;
 	let entry = heatMap.zipFiles[baseName + '.tile'];
 	if (typeof entry === 'undefined') {
 	    // Tiles in ancient NG-CHMs had a .bin extension.
 	    entry = heatMap.zipFiles[baseName + '.bin'];
 	}
 	if (typeof entry === "undefined") {
-	    console.error ('Request for unknown tile');
+	    console.error ('Request for unknown zip tile: ' + baseName);
+	    heatMap.tileRequestComplete (job.tileCacheName, null);
 	} else {
-	    if (debug) console.log('Got zip entry for tile ' + baseName);
-	    entry.getData(new zip.BlobWriter(), function(blob) {
-		if (debug) console.log('Got blob for tile ' + baseName);
-		const fr = new FileReader();
+	    setTimeout (function getEntryData () {
+		entry.getData(new zip.BlobWriter(), function(blob) {
+		    if (debug) console.log('Got blob for tile ' + job.tileCacheName);
+		    const fr = new FileReader();
 
-		fr.onload = function(e) {
-		    const arrayBuffer = fr.result;
-		    const far32 = new Float32Array(arrayBuffer);
-		    if (debug) console.log('Got array buffer for tile ' + baseName);
-		    callback(tileId, far32);
-		 };
-		 fr.readAsArrayBuffer(blob);
-	    }, function(current, total) {
-		// onprogress callback
-	    });
+		    fr.onerror = function() {
+			console.error ('Error in zip file reader', fr.error);
+			heatMap.tileRequestComplete (job.tileCacheName, null);
+		    }
+		    fr.onload = function(e) {
+			const arrayBuffer = fr.result;
+			const far32 = new Float32Array(arrayBuffer);
+			heatMap.tileRequestComplete (job.tileCacheName, far32);
+		     };
+		     fr.readAsArrayBuffer(blob);
+		    }, function(current, total) {
+			// onprogress callback
+		    });
+	    }, 1);
 	}
     }
 

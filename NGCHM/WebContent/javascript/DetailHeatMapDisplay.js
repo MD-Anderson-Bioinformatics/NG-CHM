@@ -100,19 +100,35 @@ DET.setDrawDetailsTimeout = function (ms, noResize) {
  * the resize routine will be skipped on the next redraw.
  *********************************************************************************************/
 DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
-	if (mapItem.drawEventTimer) {
-		clearTimeout (mapItem.drawEventTimer);
-	}
 	if (!noResize) mapItem.resizeOnNextDraw = true;
 	if (!mapItem.isVisible()) { return false }
+	mapItem.nextDrawWindow = DVW.getDetailWindow(mapItem);
 
-	const drawWin = DVW.getDetailWindow(mapItem);
+	const now = performance.now();
+	const redrawDelayLimit = 100; // ms
+
+	if (mapItem.drawEventTimer) {
+	    const redrawDelay = now - mapItem.drawTimeoutStartTime;
+	    if (redrawDelay < redrawDelayLimit) {
+		// redraw has not waited too long.
+		// replace previous redraw with the latest one.
+		clearTimeout (mapItem.drawEventTimer);
+	    } else {
+		// Allow existing redraw to proceed, but
+		// also start a new one with latest view.
+		mapItem.drawTimeoutStartTime = now;
+	    }
+	} else {
+	    mapItem.drawTimeoutStartTime = now;
+	}
 	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
-		if (mapItem.chm) {
+		mapItem.drawEventTimer = 0;
+		if (mapItem.nextDrawWindow != null && mapItem.chm && mapItem.isVisible()) {
+			const drawWin = mapItem.nextDrawWindow;
+			mapItem.nextDrawWindow = null;
 			DET.drawDetailHeatMap(mapItem, drawWin.win);
 		}
 	}, ms);
-
 };
 
 /*********************************************************************************************
@@ -132,15 +148,11 @@ DET.flushDrawingCache = function (tile) {
 	// In any case, data for the drawing window's level should also arrive soon
 	// and the heat map would be redrawn then.
 	DVW.detailMaps.forEach (mapItem => {
-	    if (mapItem.detailHeatMapCache.hasOwnProperty (tile.layer) &&
-		mapItem.detailHeatMapLevel[tile.layer] === tile.level) {
-		    mapItem.detailHeatMapValidator[tile.layer] = '';
-		    if (tile.layer === mapItem.heatMap.getCurrentDL()) {
-			// Redraw 'now', without resizing, if the tile is for the currently displayed layer.
-			// FIXME BMB - Forces mapItems to redraw even if the tile is outside their tileWindow.
-			console.log('Tile update queueing redraw for detail panel ' + mapItem.pane);
-			DET.setDrawDetailTimeout(mapItem, DET.redrawUpdateTimeout, true);
-		    }
+	    const aw = mapItem.detailHeatMapAccessWindow;
+	    if (!aw || aw.isTileInWindow (tile)) {
+		mapItem.detailHeatMapValidator[tile.layer] = '';
+		// Redraw 'now', without resizing, if the tile is for the currently displayed layer.
+		DET.setDrawDetailTimeout(mapItem, DET.redrawUpdateTimeout, true);
 	    }
 	});
 }
@@ -188,7 +200,6 @@ DET.callDetailDrawFunction = function(modeVal, target) {
  * NGCHM specified by drawWin to a detail heat map pane.
  *********************************************************************************************/
 DET.drawDetailHeatMap = function (mapItem, drawWin) {
-    console.log('Considering redrawing detail panel ' + mapItem.pane);
 	const heatMap = mapItem.heatMap;
 	DET.setDendroShow(mapItem);
 	if (mapItem.resizeOnNextDraw) {
