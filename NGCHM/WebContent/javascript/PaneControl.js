@@ -616,36 +616,29 @@
 				This function was created to warn user about resetting the PathwayMapper pane.
 			*/
 			function promisePrompt(vertical, loc) {
-				let dialog = document.getElementById('msgBox')
+			    return new Promise(function(resolve, reject) {
 				UHM.initMessageBox();
 				UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 				UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
-				UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button')
-				UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button')
-				dialog.style.display = '';
-				return new Promise(function(resolve, reject) {
-					let okButton = dialog.querySelector('#msgBoxBtnImg_2')
-					let cancelButton = dialog.querySelector('#msgBoxBtnImg_1')
-					dialog.addEventListener('click', function handleButtonClick(e) {
-						if (e.target.tagName !== 'IMG') {return;}
-						dialog.removeEventListener('click', handleButtonClick)
-						if (e.target === okButton) {
-							resolve();
-						} else {
-							reject();
-						}
-					})
-				})
+				UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button', () => {
+				    reject(false);
+				});
+				UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button', () => {
+				    resolve();
+				});
+				UHM.displayMessageBox();
+			    });
 			}
 			promisePrompt(vertical, loc)
 				.then(function() {  // promise resolved, split pane
-					UHM.messageBoxCancel();
-					splitPane(vertical, loc)
+				    splitPane(vertical, loc)
 				})
-				.catch(function() {  // promise rejected, do not split pane
-					UHM.messageBoxCancel();
-					return;
+				.catch(function(error) {  // promise rejected, do not split pane
+				    if (error) console.log (error);
 				})
+				.finally(() => {
+				    UHM.messageBoxCancel();
+				});
 		} else { // pane division can proceed w/o any loss of PathwayMapper state
 			splitPane(vertical, loc)
 		}
@@ -1043,44 +1036,40 @@
 						This function was created to warn user about resetting the PathwayMapper pane.
 					*/
 					function promisePrompt(paneLoc) {
-						let dialog = document.getElementById('msgBox');
+					    return new Promise(function(resolve, reject) {
 						UHM.initMessageBox();
 						UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 						UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
-						UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button')
-						UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button')
-						dialog.style.display = '';
-						return new Promise(function(resolve, reject) {
-							let okButton = dialog.querySelector('#msgBoxBtnImg_2')
-							let cancelButton = dialog.querySelector('#msgBoxBtnImg_1')
-							dialog.addEventListener('click', function handleButtonClick(e) {
-								if (e.target.tagName !== 'IMG') {return;}
-								dialog.removeEventListener('click', handleButtonClick)
-								if (e.target === okButton) {
-									resolve();
-								} else { 
-									reject();
-								}
-							})
-						})
+						UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button', () => {
+						    reject(false);
+						});
+						UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button', () => {
+						    resolve();
+						});
+						UHM.displayMessageBox();
+					    });
 					}  // end function promisePrompt
+
 					// If user is attempting to close a pane that will result in resetting PathwayMapper, offer them the chance to cancel:
 					if (paneLoc.container.textContent.indexOf('PathwayMapper') > -1 && c.length < 4) {
 						promisePrompt(paneLoc)
-							.then(function() { // promise resolved, continue pane manipulation
-								UHM.messageBoxCancel()
-								removePaneAndAdjacentDivider();
-								if (paneLoc.container.children.length === 1) {
-									replaceContainerWithOnlyChild()
-								} else {
-									// Redistribute space among remaining children.
-									if (target) redistributeContainer (paneLoc.container, target);
-								}
-							})
-		       				.catch(function() { // promise rejected, do NOT continue pane manipulation
-								UHM.messageBoxCancel()
-								return;
-							})
+						.then(function() { // promise resolved, continue pane manipulation
+						    removePaneAndAdjacentDivider();
+						    if (paneLoc.container.children.length === 1) {
+							replaceContainerWithOnlyChild()
+						    } else {
+							// Redistribute space among remaining children.
+							if (target) redistributeContainer (paneLoc.container, target);
+						    }
+						})
+						.catch(function(error) { // promise rejected, do NOT continue pane manipulation
+						    if (error) {
+							console.error (error);
+						    }
+						})
+						.finally(() => {
+						    UHM.messageBoxCancel()
+						});
 					} else { // PathwayMapper pane unaffected, OK to close
 						removePaneAndAdjacentDivider();
 						if (paneLoc.container.children.length === 1) {

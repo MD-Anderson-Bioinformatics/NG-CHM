@@ -381,14 +381,10 @@ UHM.invalidFileFormat = function() {
  **********************************************************************************/
 UHM.initMessageBox = function() {
 	document.getElementById('msgBox').style.display = 'none';
-	document.getElementById('msgBoxBtnImg_1').style.display = 'none';
-	document.getElementById('msgBoxBtnImg_2').style.display = 'none';
-	document.getElementById('msgBoxBtnImg_3').style.display = 'none';
-	document.getElementById('msgBoxBtnImg_4').style.display = 'none';
-	document.getElementById('msgBoxBtnImg_1')['onclick'] = null;
-	document.getElementById('msgBoxBtnImg_2')['onclick'] = null;
-	document.getElementById('msgBoxBtnImg_3')['onclick'] = null;
-	document.getElementById('msgBoxBtnImg_4')['onclick'] = null;
+	const msgBoxButtons = document.getElementById ('msgBoxButtons');
+	while (msgBoxButtons.firstChild) {
+	    msgBoxButtons.removeChild (msgBoxButtons.firstChild);
+	}
 	document.getElementById('messageOpen_btn').style.display = 'none';
 }
 
@@ -417,15 +413,57 @@ UHM.displayMessageBox = function() {
 	msgBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 }
 
-UHM.setMessageBoxButton = function(buttonId, imageSrc, altText, onClick) {
-	var buttonImg = document.getElementById('msgBoxBtnImg_'+buttonId);
-	buttonImg.style.display = '';
-	buttonImg.src = imageSrc;
-	buttonImg.alt = altText;
-	if (onClick != undefined) {
-		buttonImg.onclick = function() { onClick(); };
+/* Add a button to the message box.
+ *
+ * buttonId is an id specific to this button within the message box.
+ * Note: on initialization/finalization all buttons are removed from
+ * the message box.
+ *
+ * buttonSpec describes the button to insert.
+ * Deprecated usage: a string that identifies the image source of the button.
+ * New usage: an object that describes the button.  Fields are:
+ * - type: 'image' or 'text'
+ * - src: if type == 'image' source of the button image
+ * - text: if type == 'text' content of the button
+ * - default: if true class default added to the button element.
+ *
+ * altText: added to 'alt' attribute of img buttons.
+ *
+ * onClick: function called when the user clicks on the button.  Defaults
+ * to UHM.messageBoxCancel.
+ */
+UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
+	const msgBoxButtons = document.getElementById ('msgBoxButtons');
+	const newButton = document.createElement('button');
+	newButton.id = 'msgBoxBtn_'+buttonId;
+	if (typeof buttonSpec != 'object') {
+	    buttonSpec = {
+		type: 'image',
+		src: buttonSpec,
+	    };
 	}
-}
+	if (buttonSpec.type == 'image') {
+	    const newImage = document.createElement('img');
+	    newImage.src = buttonSpec.src;
+	    newImage.alt = altText;
+	    newButton.appendChild (newImage);
+	} else {
+	    const newText = UTIL.newElement('span.button');
+	    newText.innerText = buttonSpec.text;
+	    const newWrapper = UTIL.newElement('span.spanbuttonwrapper');
+	    newWrapper.appendChild (newText);
+	    newButton.appendChild (newWrapper);
+	}
+	if (buttonSpec.default) {
+	    newButton.classList.add('default');
+	}
+	if (onClick == undefined) {
+	    newButton.onclick = UHM.messageBoxCancel;
+	} else {
+	    newButton.onclick = function() { onClick(); };
+	}
+	msgBoxButtons.appendChild (newButton);
+};
 
 UHM.messageBoxCancel = function() {
 	UHM.initMessageBox();

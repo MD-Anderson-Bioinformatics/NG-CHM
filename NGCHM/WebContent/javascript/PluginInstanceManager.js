@@ -143,11 +143,6 @@
 	UHM.setMessageBoxText(warningText);
 	UHM.setMessageBoxButton(1, UTIL.imageTable.okButton, 'OK Button');
 	UHM.displayMessageBox();
-	let okButton = dialog.querySelector('#msgBoxBtnImg_1');
-	okButton.addEventListener('click', function handleOkClick(e) {
-		okButton.removeEventListener('click', handleOkClick);
-		UHM.messageBoxCancel();
-	})
     };
 
     // Send a Vanodi message to all plugin instances except the one identified by srcNonce.
