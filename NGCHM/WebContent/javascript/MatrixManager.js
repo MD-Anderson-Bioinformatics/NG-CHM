@@ -1942,54 +1942,52 @@ let	wS = `const debug = ${debug};`;
 		UHM.mapLoadError (heatMap.chmFile.name, "File is empty (zero bytes)");
 		return;
 	}
-	const zipBR = new zip.BlobReader(heatMap.chmFile);
-	zip.createReader(zipBR, function(reader) {
-		// get all entries from the zip
-		reader.getEntries(function(entries) {
-			//Inspect the first entry path to grab the true heatMapName.
-			//The user may have renamed the zip file OR it was downloaded
-			//as a second+ generation of a file by the same name (e.g. with a " (1)"
-			//in the name).
-			if (entries.length == 0) {
-			    UHM.mapLoadError (heatMap.chmFile.name, "Empty zip file");
-			    return;
-			}
-			const entryName = entries[0].filename;
-			const slashIdx = entryName.indexOf("/");
-			if (slashIdx < 0) {
-			    UHM.mapLoadError (heatMap.chmFile.name, "File format not recognized");
-			    return;
-			}
-			heatMap.mapName = entryName.substring(0,slashIdx);
-			for (let i = 0; i < entries.length; i++) {
-			    heatMap.zipFiles[entries[i].filename] = entries[i];
-			}
-			const mapConfigName = heatMap.mapName + "/mapConfig.json";
-			const mapDataName = heatMap.mapName + "/mapData.json";
-			if ((mapConfigName in heatMap.zipFiles) && (mapDataName in heatMap.zipFiles)) {
-			    setTimeout (() => {
-				zipFetchJson(heatMap, heatMap.zipFiles[mapConfigName], addMapConfig);
-			    });
-			    setTimeout (() => {
-				zipFetchJson(heatMap, heatMap.zipFiles[mapDataName], addMapData);
-			    });
-			} else {
-			    UHM.mapLoadError (heatMap.chmFile.name, "Missing NGCHM content");
-			}
+	const reader = new zip.ZipReader (new zip.BlobReader(heatMap.chmFile));
+	// get all entries from the zip
+	reader.getEntries()
+	.then (function (entries) {
+	    //Inspect the first entry path to grab the true heatMapName.
+	    //The user may have renamed the zip file OR it was downloaded
+	    //as a second+ generation of a file by the same name (e.g. with a " (1)"
+	    //in the name).
+	    if (entries.length == 0) {
+		UHM.mapLoadError (heatMap.chmFile.name, "Empty zip file");
+		return;
+	    }
+	    const entryName = entries[0].filename;
+	    const slashIdx = entryName.indexOf("/");
+	    if (slashIdx < 0) {
+		UHM.mapLoadError (heatMap.chmFile.name, "File format not recognized");
+		return;
+	    }
+	    heatMap.mapName = entryName.substring(0,slashIdx);
+	    for (let i = 0; i < entries.length; i++) {
+		heatMap.zipFiles[entries[i].filename] = entries[i];
+	    }
+	    const mapConfigName = heatMap.mapName + "/mapConfig.json";
+	    const mapDataName = heatMap.mapName + "/mapData.json";
+	    if ((mapConfigName in heatMap.zipFiles) && (mapDataName in heatMap.zipFiles)) {
+		setTimeout (() => {
+		    zipFetchJson(heatMap, heatMap.zipFiles[mapConfigName], addMapConfig);
 		});
-	}, function(error) {
+		setTimeout (() => {
+		    zipFetchJson(heatMap, heatMap.zipFiles[mapDataName], addMapData);
+		});
+	    } else {
+		UHM.mapLoadError (heatMap.chmFile.name, "Missing NGCHM content");
+	    }
+	})
+	.catch (function (error) {
 		console.log('Zip file read error ' + error);
 		UHM.mapLoadError (heatMap.chmFile.name, error);
 	});
 
-	//Helper function to fetch a json file from zip file using a zip file entry.
+	// Helper function to fetch a json file from zip file using a zip file entry.
 	function zipFetchJson(heatMap, entry, setterFunction) {
-		entry.getData(new zip.TextWriter(), function(text) {
-			// got the json, now call the appropriate setter
-			setterFunction(heatMap, JSON.parse(text));
-		}, function(current, total) {
-			// onprogress callback
-		});
+	    entry.getData (new zip.TextWriter(), {})
+	    .then((text) => {
+		setterFunction(heatMap, JSON.parse(text));
+	    });
 	}
     }
 
@@ -2127,7 +2125,8 @@ let	wS = `const debug = ${debug};`;
 	    heatMap.tileRequestComplete (job.tileCacheName, null);
 	} else {
 	    setTimeout (function getEntryData () {
-		entry.getData(new zip.BlobWriter(), function(blob) {
+		entry.getData(new zip.BlobWriter())
+	       .then (function(blob) {
 		    if (debug) console.log('Got blob for tile ' + job.tileCacheName);
 		    const fr = new FileReader();
 
@@ -2141,9 +2140,10 @@ let	wS = `const debug = ${debug};`;
 			heatMap.tileRequestComplete (job.tileCacheName, far32);
 		     };
 		     fr.readAsArrayBuffer(blob);
-		    }, function(current, total) {
-			// onprogress callback
-		    });
+		})
+		.catch (error => {
+		    console.error ('Error getting zip tile data', error);
+		});
 	    }, 1);
 	}
     }
@@ -2151,102 +2151,89 @@ let	wS = `const debug = ${debug};`;
     MMGR.zipSaveMapProperties = zipSaveMapProperties;
     function zipSaveMapProperties(heatMap, mapConf, progressMeter) {
 
+	// Start the zip file creation process by instantiating a
+	// zipWriter.
 	return new Promise ((resolve, reject) => {
+	    resolve (new zip.ZipWriter(new zip.BlobWriter()));
+	})
+        .then (zipWriter => addAllZipEntries (zipWriter))
+	.then (zipWriter => {
+	    // Convert zipWriter contents into a blob.
+	    return zipWriter.close();
+	})
+	.then (blob => {
+	    saveAs(blob, heatMap.mapName+".ngchm");
+	});
 
-	function onProgress(a, b) {
-	    // For debug use - console.log("current", a, "end", b);
-	}
+	// Returns a promise to add all the entries in heatMap.zipFiles
+	// to the zipWriter.
+	function addAllZipEntries (zipWriter) {
+	    return new Promise ((resolve, reject) => {
+		const zipKeys = Object.keys(heatMap.zipFiles);
 
-        const zipper = (function buildZipFile() {
-	    var zipWriter;
+	        // Add the first entry in zipFiles.  It will add
+		// the next entry when it completes and so on,
+		// until all have been added.
+		addEntry (0);
 
-	    return {
-		addTexts : function addEntriesToZipFile(callback) {
-				// Loop thru all entries in zipFiles, adding them to the new zip file.
-			const zipKeys = Object.keys(heatMap.zipFiles);
-			function add(fileIndex) {
-			    const progress = (1 + fileIndex) / (1 + zipKeys.length);
-			    if (progressMeter) progressMeter (progress);
-			    setTimeout (() => {
-				if (fileIndex < zipKeys.length) {
-				    const keyVal = zipKeys[fileIndex];
-				    const entry = heatMap.zipFiles[keyVal];
-				    if ((keyVal.indexOf('bin') < 0) && (keyVal.indexOf('tile') < 0)) {
-					// Directly add all text zip entries directly to the new zip file
-					// except for mapConfig.  For this entry, add the modified config data.
-					if (keyVal.indexOf('mapConfig') > -1) {
-					    addTextContents(entry.filename, fileIndex, JSON.stringify(mapConf || heatMap.mapConfig));
-					} else {
-					    zipFetchText(entry, fileIndex, addTextContents);
-					}
-				    } else {
-					// Directly add all binary zip entries directly to the new zip file
-					zipFetchBin(entry, fileIndex, addBinContents);
-				    }
-				} else {
-				  callback() /* [2] no more files to add: callback is called */;
-				}
-			    });
+		// Add the next entry from zipKeys.
+		// Resolve the promise when done.
+		function addEntry (fileIndex) {
+		    // Update the progressMeter.
+		    const progress = (1 + fileIndex) / (1 + zipKeys.length);
+		    if (progressMeter) progressMeter (progress);
+
+		    if (fileIndex == zipKeys.length) {
+		      resolve (zipWriter);  /* No more files to add: resolve promise */;
+		    } else {
+			// Get a promise to add the zip entry depending on its type.
+			const keyVal = zipKeys[fileIndex];
+			const entry = heatMap.zipFiles[keyVal];
+			let promise;
+			if ((keyVal.indexOf('bin') >= 0) || (keyVal.indexOf('tile') >= 0)) {
+			    // Directly add all binary zip entries directly to the new zip file
+			    promise = zipCopyBin(entry);
+			} else if (keyVal.indexOf('mapConfig') >= 0) {
+			    // For mapConfig, add the modified config data.
+			    promise = addTextContents(entry.filename, JSON.stringify(mapConf || heatMap.mapConfig));
+			} else {
+			    // Directly add all other text zip entries to the new zip file.
+			    promise = zipCopyText(entry);
 			}
-
-			// Get the text data for a given zip entry and execute the
-			// callback to add that data to the zip file.
-			function zipFetchText(entry, fileIndex, setterFunction) {
-			    entry.getData(new zip.TextWriter(), function(text) {
-				// got the json, now call the appropriate setter
-				setterFunction(entry.filename, fileIndex, text);
-			    }, function(current, total) {
-				// onprogress callback
-			    });
-			}
-
-			// Get the binary data for a given zip entry and execute the
-			// callback to add that data to the zip file.
-			function zipFetchBin(entry, fileIndex, setterFunction) {
-			    entry.getData(new zip.BlobWriter(), function(blob) {
-				setterFunction(entry.filename, fileIndex, blob);
-			    }, function(current, total) {
-				// onprogress callback
-			    });
-			}
-
-			// Add text contents to the zip file and call the add function 
-			// to process the next zip entry stored in zipFiles.
-			function addTextContents(name, fileIndex, contents) {
-			    zipWriter.add(name, new zip.TextReader(contents), function() {
-				    add(fileIndex + 1); /* [1] add the next file */
-				}, onProgress);
-			}
-
-			// Add binary contents to the zip file and call the add function
-			// to process the next zip entry stored in zipFiles.
-			function addBinContents(name, fileIndex, contents) {
-			    zipWriter.add(name, new zip.BlobReader(contents), function() {
-				    add(fileIndex + 1); /* [1] add the next file */
-				}, onProgress);
-			}
-		      // Start the zip file creation process by instantiating a writer
-		      // and calling the add function for the first entry in zipFiles.
-		      zip.createWriter(new zip.BlobWriter(), function(writer) {
-			zipWriter = writer;
-			add(0); /* [1] add the first file */
-		      });
-		},
-
-		getBlob : function(callback) {
-		    zipWriter.close(callback);
+			// When the promise resolves, advance to the next entry.
+			promise.then (() => addEntry (fileIndex+1));
+		    }
 		}
-	    };
-	})();
-
-	zipper.addTexts(function addTextsCallback() {
-	    zipper.getBlob(function getBlobCallback(blob) {
-		saveAs(blob, heatMap.mapName+".ngchm");
-		resolve();
 	    });
-	});
 
-	});
+	    // Return a promise to copy the text zip entry
+	    // to the new zip file.
+	    function zipCopyText(entry) {
+		return entry.getData(new zip.TextWriter())
+		   .then (text => {
+			return addTextContents(entry.filename, text);
+		   });
+	    }
+
+	    // Return a promise to copy a binary zip entry
+	    // to the new zip file.
+	    function zipCopyBin(entry) {
+		return entry.getData(new zip.BlobWriter())
+	        .then (blob => {
+		    return addBinContents (entry.filename, blob);
+		});
+	    }
+
+	    // Return a promise to add text contents to the zip file.
+	    function addTextContents(name, contents) {
+		return zipWriter.add(name, new zip.TextReader(contents));
+	    }
+
+	    // Return a promise to add binary contents to the zip file.
+	    function addBinContents(name, contents) {
+		return zipWriter.add(name, new zip.BlobReader(contents));
+	    }
+	}
     }
 
     MMGR.webSaveMapProperties = webSaveMapProperties;

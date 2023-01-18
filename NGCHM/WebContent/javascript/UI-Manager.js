@@ -542,7 +542,6 @@
      * stand-alone and widgetized "file" versions of the application.
      **********************************************************************************/
     function displayFileModeCHM (chmFile, sizeBuilderView) {
-	    zip.useWebWorkers = false;
 	    resetCHM();
 	initDisplayVars();
 	MMGR.createHeatMap(MMGR.FILE_SOURCE, "",  [
