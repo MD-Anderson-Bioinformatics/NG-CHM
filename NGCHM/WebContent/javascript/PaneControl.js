@@ -226,7 +226,6 @@
 		if (!panesInitialized) {
 			PANE.resizeNGCHM = resizeNGCHM;
 			window.onresize = resizeNGCHM;
-			resizeNGCHM();
 		}
 
 		// Remove previous contents, if any.

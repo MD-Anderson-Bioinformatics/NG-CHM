@@ -416,7 +416,7 @@ SUM.flushDrawingCache = function(tile) {
 
 //Create a summary heat map for the current data layer and display it.
 SUM.buildSummaryTexture = function() {
-	const debug = true;
+	const debug = false;
 
 	const heatMap = MMGR.getHeatMap();
 	const currentDl = heatMap.getCurrentDL();
