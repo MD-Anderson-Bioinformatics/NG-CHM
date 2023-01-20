@@ -405,7 +405,7 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	    let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
 	    //If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the
 	    // preceding line are "cut values" mark the current line as as a horizontal cut
-	    const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
+	    const isHorizCut = isLineACut(accessWindow,i) && isLineACut(accessWindow,i-1);
 	    linePos+=DRAW.BYTE_PER_RGBA;
 	    // Get value generator for this row.
 	    const valueGen = accessWindow.getRowValues(currDetRow+i)[Symbol.iterator]();
@@ -458,37 +458,58 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	return renderBuffer;
 }
 
-/**********************************************************************************
- * FUNCTION - isLineACut: The purpose of this function is to determine if a given
- * row line is a cut (or gap) line and return a true/false boolean.
- **********************************************************************************/
-DET.isLineACut = function (mapItem, row) {
-	const heatMap = mapItem.heatMap;
-	const level = DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL);
-	const currDetRow = DVW.getCurrentDetRow(mapItem);
-	if (currDetRow+row < 1) return false;
-	const currDetCol = DVW.getCurrentDetCol(mapItem);
-	const detDataPerRow = DVW.getCurrentDetDataPerRow(mapItem);
-	// Get a temporary access window for this row.
-	const accessWindow = heatMap.getNewAccessWindow ({
-	    layer: heatMap.getCurrentDL(),
-	    level: level,
-	    firstRow: currDetRow+row,
-	    firstCol: currDetCol,
-	    numRows: 1,
-	    numCols: detDataPerRow,
-	});
-	// Get value iterator for this row.
-	const valueIter = accessWindow.getRowValues(currDetRow+row);
-	// If any value on the row is not a cut value, then the line is not a cut.
-	for (let {value} of valueIter) {
-	    if (value > MAPREP.minValues) {
-		return false;
-	    }
+    /**********************************************************************************
+     * FUNCTION - isLineACut: Return true iff the given row/line is a cut (or gap) line.
+     *
+     * row is a zero-based index within the accessWindow.
+     *
+     * To improve efficiency, memoise the results of the test if possible.  Although the
+     * heat map data itself is constant, it's possible one or more data tiles are not
+     * yet available.  In that case, just compute a temporary answer for now.
+     *
+     **********************************************************************************/
+    function isLineACut (accessWindow, row) {
+
+	// Catch attempt to check row before accessWindow.
+	if (row < 0) return false;
+
+	const baseRowIdx = accessWindow.win.firstRow - 1;  // Convert to 0-based row index.
+	const resultsMemo = accessWindow.heatMap.datalevels[accessWindow.win.level].isLineACut;
+
+	// If we already have a memoized answer, return it.
+	if (resultsMemo[baseRowIdx+row] !== undefined) {
+	    return resultsMemo[baseRowIdx+row];
 	}
-	// All values on the line are cuts, so the line is too.
-	return true;
-}
+
+	if (accessWindow.allTilesAvailable()) {
+	    // Compute and memoize answers for all rows in the accessWindow.
+	    for (let rr = 0; rr < accessWindow.win.numRows; rr++) {
+		if (resultsMemo[baseRowIdx+rr] == undefined) {
+		    resultsMemo[baseRowIdx+rr] = isRowACut (baseRowIdx+rr);
+		}
+	    }
+	    // Return result for the desired row.
+	    return resultsMemo[baseRowIdx+row];
+	} else {
+	    // At least one tile is missing.
+	    // Return a temporary answer for the desired row.
+	    return isRowACut (baseRowIdx+row);
+	}
+
+	function isRowACut (row) {
+	    // Get value iterator for the row.
+	    // N.B. getRowValues requires a 1-based row index.
+	    const valueIter = accessWindow.getRowValues(row+1);
+	    // If any value on the row is not a cut value, then the row is not a cut.
+	    for (let {value} of valueIter) {
+		if (value > MAPREP.minValues) {
+		    return false;
+		}
+	    }
+	    // All values on the row are cuts, so the row is too.
+	    return true;
+	}
+    }
 
 /*********************************************************************************************
  * FUNCTION:  setDetBoxCanvasSize - The purpose of this function is to set the size of the

@@ -691,6 +691,10 @@ let	wS = `const debug = ${debug};`;
 	    return this.datalevel.getRowValues (this.tileWindow, row, firstCol, numCols);
 	}
 
+	allTilesAvailable () {
+	    return this.tileWindow.allTilesAvailable();
+	}
+
 	onready (callback) {
 	    const p = this.tileWindow.onready();
 	    if (callback) {
@@ -1620,6 +1624,8 @@ let	wS = `const debug = ${debug};`;
 	    this.rowToLower = (lowerLevel === null ? null : this.totalRows/lowerLevel.totalRows);
 	    this.colToLower = (lowerLevel === null ? null : this.totalColumns/lowerLevel.totalColumns);
 	    this.lastTileWindow = null;
+	    // For memoizing whether heat map rows are cuts.  See DetailHeatMapDisplay.
+	    this.isLineACut = Array(this.totalRows);
 
 	    // Determine the number of columns in the last tile column.
 	    this.colsInLastTile = this.totalColumns % this.colsPerTile;
