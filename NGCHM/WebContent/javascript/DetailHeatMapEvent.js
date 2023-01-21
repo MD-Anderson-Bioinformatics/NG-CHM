@@ -801,21 +801,41 @@ DEV.detailDataZoomIn = function (mapItem) {
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	if (mapItem.mode == 'FULL_MAP') {
 	        let mode = mapItem.mode, row=1, col=1;
+		let selectedStart = 0, selectedStop = 0;
 		if (mapItem.modeHistory.length > 0) {
-		        ({ mode, row, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		        ({ mode, row, col, selectedStart, selectedStop } = mapItem.modeHistory.pop());
 		}
 		if ((mode == 'RIBBONH') || (mode == 'RIBBONH_DETAIL')) {
 			mapItem.currentRow = row;
-			DEV.detailHRibbonButton(mapItem);
+			if (mode == 'RIBBONH_DETAIL') {
+			    mapItem.selectedStart = selectedStart;
+			    mapItem.selectedStop = selectedStop;
+			}
+			DET.detailHRibbon(mapItem);
+			if (mode == 'RIBBONH_DETAIL') {
+			    // Go back into 'full ribbon' mode
+			    DEV.detailDataZoomOut (mapItem.chm);
+			    // Remove unwanted mode history
+			    mapItem.modeHistory.pop();
+			}
 		} else if  ((mode == 'RIBBONV') || (mode == 'RIBBONV_DETAIL')) {
 			mapItem.currentCol = col;
-			DEV.detailVRibbonButton(mapItem);
+			if (mode == 'RIBBONV_DETAIL') {
+			    mapItem.selectedStart = selectedStart;
+			    mapItem.selectedStop = selectedStop;
+			}
+			DET.detailVRibbon(mapItem);
+			if (mode == 'RIBBONV_DETAIL') {
+			    // Go back into 'full ribbon' mode
+			    DEV.detailDataZoomOut (mapItem.chm);
+			    // Remove unwanted mode history
+			    mapItem.modeHistory.pop();
+			}
 		} else {
 			mapItem.saveRow = row;
 			mapItem.saveCol = col;
 			DET.detailNormal(mapItem);
 		}
-		mapItem.modeHistory.pop();
 	} else if (mapItem.mode == 'NORMAL') {
 		if (mapItem.modeHistory.length > 0) {
 		        mapItem.modeHistory = [];
@@ -827,9 +847,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 		}
 		mapItem.updateSelection(false);
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
-	        let mode = mapItem.mode, col;
+	        let mode = mapItem.mode, col = 1, row = 1;
 		if (mapItem.modeHistory.length > 0) {
-		    ({ mode, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    ({ mode, row, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    mapItem.saveRow = row;
+		    mapItem.currentRow = row;
 		    if (mode == 'NORMAL') {
 		        mapItem.saveCol = col;
 		    }
@@ -856,9 +878,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 		}
 		mapItem.modeHistory.pop();
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
-	        let mode = mapItem.mode, row;
+	        let mode = mapItem.mode, row, col;
 		if (mapItem.modeHistory.length > 0) {
-		    ({ mode, row } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    ({ mode, row, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    mapItem.saveCol = col;
+		    mapItem.currentCol = col;
 		    if (mode == 'NORMAL') {
 		        mapItem.saveRow = row;
 		    }
@@ -902,7 +926,10 @@ DEV.detailDataZoomIn = function (mapItem) {
 	UHM.hlpC();
 	LNK.labelHelpCloseAll();
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
-	mapItem.modeHistory.push ({ mode: mapItem.mode, row: mapItem.currentRow, col: mapItem.currentCol });
+	mapItem.modeHistory.push ({ mode: mapItem.mode, row: mapItem.currentRow, col: mapItem.currentCol,
+	   selectedStart: mapItem.selectedStart,
+	   selectedStop: mapItem.selectedStop,
+	});
 	if (mapItem.mode == 'NORMAL') {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
@@ -953,6 +980,7 @@ DEV.detailDataZoomIn = function (mapItem) {
      **********************************************************************************/
     DEV.detailHRibbonButton = function (mapItem) {
 	DET.clearDendroSelection(mapItem);
+	DET.clearModeHistory (mapItem);
 	DET.detailHRibbon(mapItem);
     };
 
@@ -962,6 +990,7 @@ DEV.detailDataZoomIn = function (mapItem) {
      **********************************************************************************/
     DEV.detailVRibbonButton = function (mapItem) {
 	DET.clearDendroSelection(mapItem);
+	DET.clearModeHistory (mapItem);
 	DET.detailVRibbon(mapItem);
     };
 

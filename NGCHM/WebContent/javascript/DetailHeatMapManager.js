@@ -387,6 +387,8 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 	    var startRow = parseInt(selRows[0])
 	    var endRow = parseInt(selRows[selRows.length-1])
 
+	    SUM.rowDendro.clearSelectedRegion();
+	    SUM.colDendro.clearSelectedRegion();
 	    setSubRibbonView(mapItem, startRow, endRow, startCol, endCol);
     };
 
@@ -399,8 +401,8 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 
 	    //In case there was a previous dendo selection - clear it.
 	    SUM.clearSelectionMarks();
-	    SUM.colDendro.draw();
-	    SUM.rowDendro.draw();
+	    SUM.rowDendro.clearSelectedRegion();
+	    SUM.colDendro.clearSelectedRegion();
 
 	    if (!mapItem) return;
 	    //If tiny tiny box was selected, discard and go back to previous selection size
@@ -413,6 +415,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		    mapItem.selectedStart= startCol;
 		    mapItem.selectedStop=endCol;
 		    mapItem.currentRow = startRow;
+		    mapItem.saveRow = startRow;
 		    DET.callDetailDrawFunction('RIBBONH', mapItem);
 	    } else {
 		    //More columns than rows, do a vertical sub-ribbon view that fits the selection.
@@ -421,6 +424,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		    mapItem.selectedStart=startRow;
 		    mapItem.selectedStop=endRow;
 		    mapItem.currentCol = startCol;
+		    mapItem.saveCol = startCol;
 		    DET.callDetailDrawFunction('RIBBONV', mapItem);
 	    }
 	    mapItem.updateSelection(mapItem);

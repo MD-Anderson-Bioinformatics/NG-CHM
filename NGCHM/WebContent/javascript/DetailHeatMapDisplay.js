@@ -600,14 +600,27 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	UHM.hlpC();
 	mapItem.saveRow = mapItem.currentRow;
 	mapItem.saveCol = mapItem.currentCol;
+	let setFullMap = false;
 
 	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more
 	//than 1 pixel, scale calculates the appropriate height/width.
-	if (mapItem.subDendroMode === 'Column') {
-	    DET.scaleViewHeight(mapItem);
-	} else if (mapItem.subDendroMode === 'Row') {
-	    DET.scaleViewWidth(mapItem);
+	if (mapItem.mode == 'RIBBONH_DETAIL') { // mapItem.subDendroMode === 'Row') {
+	    if (mapItem.currentRow == 1 && mapItem.dataPerCol == mapItem.heatMap.getTotalRows()) {
+		setFullMap = true;
+	    } else {
+		DET.scaleViewHeight(mapItem);
+	    }
+	} else if (mapItem.mode == 'RIBBONV_DETAIL') { // subDendroMode === 'Column') {
+	    if (mapItem.currentCol == 1 && mapItem.dataPerRow == mapItem.heatMap.getTotalCols()) {
+		setFullMap = true;
+	    } else {
+		DET.scaleViewWidth(mapItem);
+	    }
 	} else {
+	    setFullMap = true;
+	}
+
+	if (setFullMap) {
 	    DVW.setMode(mapItem, 'FULL_MAP');
 	    DET.scaleViewHeight(mapItem);
 	    DET.scaleViewWidth(mapItem);
@@ -658,7 +671,6 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	} else {
 	    mapItem.saveCol = mapItem.selectedStart;
 	    let numViewColumns = mapItem.selectedStop - mapItem.selectedStart + 1;
-	    DET.clearModeHistory (mapItem);
 	    mapItem.mode='RIBBONH_DETAIL'
 	    const scale = Math.max(1, Math.floor(500/numViewColumns));
 	    setDataViewSize (mapItem, "row", (numViewColumns * scale) + DET.dataViewBorder);
@@ -730,7 +742,6 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	    mapItem.saveRow = mapItem.selectedStart;
 	    let selectionSize = mapItem.selectedStop - mapItem.selectedStart + 1;
 	    if (selectionSize < 500) {
-		DET.clearModeHistory (mapItem);
 		DVW.setMode(mapItem, 'RIBBONV_DETAIL');
 	    } else {
 		const rvRate = mapItem.heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);

@@ -136,6 +136,7 @@
 			    var startCol = Math.max(Math.min(clickStartCol,clickEndCol)+1,1);
 			    var endRow = Math.max(clickStartRow,clickEndRow);
 			    var endCol = Math.max(clickStartCol,clickEndCol);
+			    DVW.primaryMap.selectedIsDendrogram = false;
 			    DMM.setSubRibbonView(DVW.primaryMap, startRow, endRow, startCol, endCol);
 		    } else {
 			    var xPos = SUM.getCanvasX(sumOffsetX);
