@@ -113,14 +113,27 @@ embedNGCHM.setParameters = function setParameters (params = {}) {
 embedNGCHM.setUpFrame = function setUpFrame (iframeName) {
     const frame = window.frames[iframeName];  
     const info = iframeInfo[iframeName];
+    if (frame.NgChm == undefined) {
+	console.error ('NgChm not found on iframe');
+	return;
+    }
+    const API = frame.NgChm.API || frame.NgChm.UTIL;
+    if (!frame.NgChm.API) {
+	if (frame.NgChm.UTIL) {
+	    console.warn ('Using deprecated NG-CHM widget interface. Please upgrade.');
+	} else {
+	    console.error ('Cannot find NG-CHM widget interface');
+	    return;
+	}
+    }
     if (info.srcType === 'blob') {
-        frame.NgChm.API.embedCHM(info.srcSpec);
+        API.embedCHM(info.srcSpec);
     } else if (info.srcType === 'base64') {
-        frame.NgChm.API.embedCHM(frame.NgChm.API.b64toBlob(info.srcSpec));
+        API.embedCHM(API.b64toBlob(info.srcSpec));
     } else if (info.srcType === 'fileName') {
-        frame.NgChm.API.embedCHM(info.srcSpec);
+        API.embedCHM(info.srcSpec);
     } else if (info.srcType === 'url') {
-        frame.NgChm.API.embedCHM(info.srcSpec);
+        API.embedCHM(info.srcSpec);
    } else {
         alert ('Unknown type of embedded NGCHM: ' + info.srcType);
     }
