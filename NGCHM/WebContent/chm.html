@@ -124,72 +124,70 @@
 						<div><span id="search_display_text" style="margin-left:15em;font-size: 10px; vertical-align: top;"></span></div>
 					</div>
 				  </div>
-		<!--  	    </div>	-->
-				    <div id="pdf_gear" style="text-align: right;" class="farRightButton"
-					data-title='Layer controller'
-					data-intro='Click the layers icon to open the controller. Use the toggle to switch between two data layers. Select the layers using the drop-down menus.'
-				    >
-						<div id="flicks" style="display: none;">
-						    <div id="noFlickViews" style="display: none;">
-							<table><tr><td><img id='flickOff' src='images/layersOff.png' alt='open data layer control icon'
-								    data-tooltip='Open Data Layer Control'/></td></tr></table>
-						    </div>
-						    <div id="flickViews" style="display: none;">
-						    	<table><tr>
-							    <td><table>
-								<tr><td rowspan="2">
-										<img id='flick_btn' data-state='flickUp' src='images/toggleUp.png' alt='Flick'
-										       data-tooltip='Toggle Between Selected Data Layers (F2)'/>
-								           </td>
-									   <td><select name="flick1" id="flick1"></select></td>
-							        </tr>
-							        <tr><td><select name="flick2" id="flick2"></select></td></tr>
-							    </table></td>
-							    <td><img id='flickOn_pic' src='images/layersOn.png' alt='close data layer control icon' data-tooltip='Close Data Layer Control'/></td>
-						    		</tr></table>
-					    	</div>
-						</div>
+		</div> <!-- End of detail_buttons div. -->
+		<!-- ----------------------------------------------------------------------------- -->
+		<div id='top-right-button-group' class="hide" data-show-on-load>
+			    <!-- Layer Controller -->
+			    <div id="layer_control" style="text-align: right; display:none;"
+				data-title='Layer controller'
+				data-intro='Click the layers icon to open the controller. Use the toggle to switch between two data layers. Select the layers using the drop-down menus.'
+				>
+				<div id="flickViews" style="display: none;" data-state='flickUp'>
+				    <button id='flick_btn' data-tooltip='Toggle Between Selected Data Layers (F2)'>
+					<svg width="1em" height="1em"><use href="icons.svg#icon-toggle2-on"/></svg>
+				    </button>
+				    <div style="display: grid; font-size: 0.5em;">
+					<select id="flick1"></select>
+					<select id="flick2"></select>
 				    </div>
-					<img id='colorMenu_btn' class='farRightButton' src='images/barColors.png' alt='Open Alert'
-					     data-hover-img='barColorsHover'
-					     data-tooltip='Edit Map Colors'
-					     data-title='Color Editor'
-					     data-intro='Open a dialog to change the map colors.'
-					/>
-					<img id='barMenu_btn' class='farRightButton' src='images/barMenu.png' alt='Open Menu'
-					     data-title='Hamburger Menu'
-					     data-intro='Opens a drop-down menu of additional choices, including a map preferences dialog, a PDF generator, saving a local copy, and getting additional help.'
-					     data-hover-img='barMenuHover'
-					     data-tooltip='Open NG-CHM Options Menu'
-					/>
-					<div id='introButton' class="farRightButton hide" style="top: 0.2em;"
-					     data-show-on-load
-					     data-prefs-panel-locator
-					     data-title='Guided Tour'
-					     data-intro='Click a tour icon at anytime to initiate a guided tour of on-screen elements.<P>The tour may change based on the current content of the window.'
-					>
-					    <span class="tour-button"
-						data-tooltip="Show interactive tour of the user interface elements"
-						>?</span>
-					</div>
-			                <div id="droptarget" class="">DROP HERE</div>
-			    </div>
-		        <img id='aboutMenu_btn' src='images/aboutNgchm.png' class='farRightButton' alt='About NG-CHM'
-			     data-hide-on-load
-			     data-title='About NG-CHMs'
-			     data-intro='Open for information about the NG-CHM system'
-			     data-tooltip='Open NG-CHM About'
-			/>
-			<div id='introAboutButton' class="farRightButton" style="top: 0.2em;"
-			     data-hide-on-load
-			     data-title='Guided Tour'
-			     data-intro='Click anytime to initiate a guided tour of on-screen elements.<P>The tour may change based on the current content of the window.'
-			>
-			    <span class="tour-button"
-				data-tooltip="Show interactive tour of the user interface elements"
-				>?</span>
-			</div>
-		    </div>
+				</div>
+				<!-- Open/close button that determines whether the other elements of the flick control are visible. -->
+				<button id='layers_open_close'
+				    data-tooltip='Toggles display of the data layer controller'
+				    data-state='closed'
+				    >
+				    <!-- CSS displays exactly one of the following. -->
+				    <div class='closed'><svg width="1em" height="1em"><use href="icons.svg#icon-layers"/></svg></div>
+				    <div class='open'>  <svg width="1em" height="1em"><use href="icons.svg#icon-layers-half"/></svg></div>
+				</button>
+			    </div> <!-- End of layer_control div -->
+			    <!-- Open/Close Map Preferences -->
+			    <button id='colorMenu_btn'
+				data-title='Map Preferences Editor'
+				data-intro='Open a dialog to view/change the map preferences.'
+				data-tooltip='Edit Map Colors'
+				>
+				<svg width="1em" height="1em"><use href="icons.svg#icon-gear"/></svg>
+			    </button>
+			    <!-- Open/Close Gear Menu -->
+			    <button id='barMenu_btn'
+				data-title='Hamburger Menu'
+				data-intro='Opens a drop-down menu of additional choices, including a map preferences dialog, a PDF generator, saving a local copy, and getting additional help.'
+				data-tooltip='Open NG-CHM Options Menu'
+				>
+				<svg width="1em" height="1em"><use href="icons.svg#icon-menu-button-fill"/></svg>
+			    </button>
+			    <!-- Open/Close Help Dialog -->
+			    <button id='introButton'
+				data-prefs-panel-locator
+				data-title='Guided Tour'
+				data-intro='Click a tour icon at anytime to initiate a guided tour of on-screen elements.<P>The tour may change based on the current content of the window.'
+				data-tooltip="Open/Close an About Dialog"
+				>
+				<svg width="1em" height="1em" class="tour-button"><use href="icons.svg#icon-question-circle-fill"/></svg>
+			    </button>
+			</div> <!-- top-right-button-group -->
+			<div id="unloaded-button-group" data-hide-on-load>
+			    <button id='aboutMenu_btn'
+				data-title='About NG-CHMs'
+				data-intro='Open for information about the NG-CHM system'
+				data-tooltip='Open NG-CHM About'
+				>
+				<svg width="1em" height="1em" class="tour-button"><use href="icons.svg#icon-question-circle-fill"/></svg>
+			    </button>
+			</div> <!-- unloaded-button-group -->
+			<div id="droptarget" class="">DROP HERE</div>
+		    </div> <!-- END of mdaServiceHeader -->
 
 		    <div id='content'>
 			<!-- WIDGET EXCLUDE This section removed by widget compiler. -->

@@ -464,7 +464,6 @@ div.paneHeader img {
 	font-size: 0.7rem;
 }
 
-
 span.button {
 	padding: 0.25em 0.5em;
 	background: linear-gradient(0deg, #2a447f, #447afd);
@@ -579,8 +578,40 @@ span.button.negative {
 	margin-right:0px;
 }
 
-#flicks{
+#flicks {
 	display:inline-block;
+}
+
+#flickViews[data-state="flickUp"] svg {
+    transform: rotate(270deg);
+}
+
+#flickViews[data-state="flickDown"] svg {
+    transform: rotate(90deg);
+}
+#flickViews select {
+    background-color: white;
+}
+#flickViews[data-state="flickUp"] #flick1 {
+    background-color: yellow;
+}
+#flickViews[data-state="flickDown"] #flick2 {
+    background-color: yellow;
+}
+
+/* Neither svg displayed by default. */
+button#layers_open_close div {
+    display: none;
+}
+
+/* Display the open svg in the open state. */
+button#layers_open_close[data-state="open"] div.open {
+    display: block;
+}
+
+/* Display the closed svg in the closed state. */
+button#layers_open_close[data-state="closed"] div.closed {
+    display: block;
 }
 
 #helptext {
@@ -894,6 +925,26 @@ th.breakpointContainer {
 	cursor: pointer;
 }
 
+.dblSpace button {
+    font-size: 1.2em;
+    padding: 0;
+    background-color: white;
+    border: 1px solid black;
+    line-height: 1.0;
+    padding: 1px;
+    border-radius: 6px;
+}
+
+.dblSpace button:hover {
+    background-color: lightblue;
+}
+
+.dblSpace button svg {
+    margin: 0;
+    vertical-align: bottom;
+}
+
+
 #linkBoxHdr {
 	position: absolute; /* keep fixed to top of parent */
 }
@@ -1075,47 +1126,37 @@ table.onlineHelp th {
   color: black;
 }
 
-/* farRightButtons are the group of controls in the very top-right of the mdaServiceHeader.
- * All are positioned absolutely at the top of the mdaServiceHeader, near the right.
- * The number of pixels from the right is specified individually for each.
- *
- * Note: droptarget is also positioned at the top-right of the mdaServiceHeader, above the
- *       topRightButtons, but is invisible unless someone is dropping something on the NG-CHM.
- */
-.farRightButton {
-    top: 0px;
+/* Start of top-right and unloadded button groups. */
+
+#unloaded-button-group,
+#top-right-button-group {
     position: absolute;
-    z-index: 2;
-    vertical-align: top;
+    right: 0;
+    display: grid;
+    grid-auto-flow: column;
+    gap: 0.5rem;
 }
 
-/* Buttons displayed when no map is loaded: */
-#aboutMenu_btn {
-    right: 30px;
+#unloaded-button-group button,
+#top-right-button-group button {
+    font-size: 1.2em;
 }
 
-#introAboutButton {
-    right: 0px;
+/* Flick controls displayed when a map is loaded: */
+#layer_control {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 0.5em;
 }
 
-/* Buttons displayed when a map is loaded: */
-#pdf_gear {  /* This is actually the layer controller. */
-    display: inline-block;
-    right: 90px;
+/* Flick controls display when layer control is open. */
+#flickViews {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 0.5em;
 }
 
-#colorMenu_btn {
-    right: 60px;
-}
-
-#barMenu_btn {
-    right: 30px;
-}
-
-#introButton {
-    right: 0px;
-}
-/* End of farRightButtons. */
+/* End of top-right and unloadded button groups. */
 
 .tdTop {
     vertical-align: text-top;
@@ -1387,17 +1428,10 @@ div#droptarget.visible {
 
 
 .tour-button {
-    color: #ffffff;
-    background-color: #0000ff;
     padding: 0.3em;
     font-weight: 900;
     border-radius: 1em;
 }
-.tour-button:hover {
-    color: #0000af;
-    background-color: #dfdf6f;
-}
-
 #bubbleHelp {
     opacity: 0;
     animation: loading-up var(--load-time);

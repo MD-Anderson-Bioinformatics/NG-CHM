@@ -2319,24 +2319,20 @@ let	wS = `const debug = ${debug};`;
 	if (!flickInitialized) {
 	    const dl = heatMap.getDataLayers();
 	    const numLayers = Object.keys(dl).length;
-	    let maxDisplay = 0;
 	    if (numLayers > 1) {
-		const panelConfig = heatMap.getPanelConfiguration();
-		const flickInfo = panelConfig ? panelConfig.flickInfo : null;
 		const dls = new Array(numLayers);
 		const orderedKeys = new Array(numLayers);
 		for (let key in dl){
-		    const dlNext = +key.substring(2, key.length);
+		    const dlNext = +key.substring(2, key.length); // Requires data layer ids to be dl1, dl2, etc.
 		    orderedKeys[dlNext-1] = key;
 		    let displayName = dl[key].name;
-		    if (displayName.length > maxDisplay) {
-			maxDisplay = displayName.length;
-		    }
 		    if (displayName.length > 20) {
 			displayName = displayName.substring(0,17) + "...";
 		    }
 		    dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
 		}
+		const panelConfig = heatMap.getPanelConfiguration();
+		const flickInfo = panelConfig ? panelConfig.flickInfo : null;
 		if (flickInfo) {
 		    FLICK.enableFlicks (dls.join(""), flickInfo.flick1 || 'dl1', flickInfo.flick2 || 'dl1');
 		    const layer = FLICK.setFlickState (flickInfo.flick_btn_state);
@@ -2350,15 +2346,6 @@ let	wS = `const debug = ${debug};`;
 		    FLICK.disableFlicks();
 	    }
 	    flickInitialized = true;
-
-	    var gearBtnPanel = document.getElementById("pdf_gear");
-	    if (maxDisplay > 15) {
-		    gearBtnPanel.style.minWidth = '320px';
-	    } else if (maxDisplay === 0) {
-		    gearBtnPanel.style.minWidth = '80px';
-	    } else {
-		    gearBtnPanel.style.minWidth = '250px';
-	    }
 	}
     }
 

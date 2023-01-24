@@ -829,6 +829,7 @@
     const hamburgerButton = document.getElementById('barMenu_btn');
     hamburgerButton.onclick = (ev) => {
 	openHamburgerMenu(ev.target);
+	ev.stopPropagation();
     };
 
     (function() {

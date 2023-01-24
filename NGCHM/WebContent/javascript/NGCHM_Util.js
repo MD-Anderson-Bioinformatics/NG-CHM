@@ -918,7 +918,6 @@ UTIL.imageTable = {
     nextHover: 'images/nextHover.png',
     cancelHover: 'images/cancelHover.png',
     barColorsHover: 'images/barColorsHover.png',
-    barMenuHover: 'images/barMenuHover.png',
 };
 
 // Sub-module for managing the splash screen.
