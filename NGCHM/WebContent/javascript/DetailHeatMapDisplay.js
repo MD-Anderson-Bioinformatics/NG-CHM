@@ -2373,6 +2373,8 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 	let bars = mapItem.heatMap.getScaledVisibleCovariates (axis, origScale);
 	if (bars.length === 0) return;
 
+	// Aim for larger covariate bars if there are only a few of them.
+	const targetFontSize = 7.5 + Math.max (0, 11 - bars.length) * 0.25;
 	const clientSize = MMGR.isRow (axis) ? mapItem.canvas.clientWidth : mapItem.canvas.clientHeight;
 	const dataViewSize = MMGR.isRow (axis) ? mapItem.dataViewWidth : mapItem.dataViewHeight;
 
@@ -2391,7 +2393,7 @@ DET.drawScatterBarPlotRowClassBar = function(mapItem, pixels, pos, start, length
 		if (fontSize > maxFont) maxFont = fontSize;
 	    });
 	    let midFont = (minFont + maxFont) / 2;
-	    const scaleRatio = 7.5 / (minFont - 1);
+	    const scaleRatio = targetFontSize / (minFont - 1);
 	    if (debug) console.log ({ scale, totalBarHeight, fontScale, minFont, maxFont, midFont, scaleRatio, });
 	    loops++;
 	    if (Math.abs(scaleRatio-1) < 0.1 || loops >= 10) break;
