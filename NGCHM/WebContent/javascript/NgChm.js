@@ -54,11 +54,15 @@ const NgChm = {};
 	    // True on Chrome, false on Firefox.
 	    traceIdx++;
 	}
-	const jindex = trace[traceIdx].indexOf('javascript/');
-	const qindex = trace[traceIdx].indexOf('.js:');
-	if (nindex > 0 && jindex >= 0 && qindex >= 0) {
-	    lastFile = trace[traceIdx].substring(jindex+11, qindex+3);
-	    log.push({ op, ns: err.message.substr(nindex+6), src: lastFile });
+	if (traceIdx < trace.length) {
+	    const jindex = trace[traceIdx].indexOf('javascript/');
+	    const qindex = trace[traceIdx].indexOf('.js:');
+	    if (nindex > 0 && jindex >= 0 && qindex >= 0) {
+		lastFile = trace[traceIdx].substring(jindex+11, qindex+3);
+		log.push({ op, ns: err.message.substr(nindex+6), src: lastFile });
+	    }
+	} else {
+	    lastFile = 'chm.html';
 	}
 	if (debug) {
 	    trace.splice(1,1);
