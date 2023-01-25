@@ -188,7 +188,8 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
      * dialog if an error occurred.
      **********************************************************************************/
     function getViewerHeatmapPDF (heatMap) {
-	console.log ('Called getViewerHeatmapPDF');
+	const debug = false;
+	if (debug) console.log ('Called getViewerHeatmapPDF');
 	// Change the cursor and disable the createPDF button
 	// until PDF generation completes.
 	document.body.style.cursor = 'wait';
@@ -199,11 +200,11 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	var removePdfDialog = true;
 
 	generatePDF (heatMap)
-	.then ((doc) => {
-	    if (doc) {
-		console.log ('PDF generated');
+	.then ((pdfDoc) => {
+	    if (pdfDoc) {
+		if (debug) console.log ('PDF generated');
 		// Save the PDF document
-		doc.save( heatMap.getMapInformation().name + '.pdf');
+		pdfDoc.doc.save( heatMap.getMapInformation().name + '.pdf');
 	    }
 	})
 	.catch (error => {
@@ -230,7 +231,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	    // - Hide the PDF generation dialog.
 	    // - Re-enable the PDF create button.
 	    // - Reset the cursor to default
-	    console.log ('getViewerHeatmapPDF completed');
+	    if (debug) console.log ('getViewerHeatmapPDF completed');
 	    if (removePdfDialog) PDF.pdfCancelButton();
 	    document.getElementById ('prefCreate_btn').disabled = false;
 	    document.getElementById ('pdfProgressBarDiv').style.display = 'none';
@@ -271,65 +272,12 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	    document.getElementById ('pdfErrorMessage').style.display = 'none';
 
 	    // Get a new jsPDF document
-	    const doc = getPdfDocument();
-	    const pageHeight = doc.internal.pageSize.height;
-	    const pageWidth = doc.internal.pageSize.width;
-	    // Header
-	    const pageHeaderHeight = calcPageHeaderHeight();
+	    const pdfDoc = new getPdfDocument(heatMap);
 
 	// Draw the heat map images (based upon user parameter selections)
 	const mapsToShow = isChecked("pdfInputSummaryMap") ? "S" : isChecked("pdfInputDetailMap") ? "D" : "B";
 	const includeSummaryMap = mapsToShow === "S" || mapsToShow === "B";
 	const includeDetailMaps = mapsToShow === "D" || mapsToShow === "B";
-
-	const rowDendroConfig = heatMap.getRowDendroConfig();
-	const colDendroConfig = heatMap.getColDendroConfig();
-
-	// *** BEGIN UNCLEAN SECTION.
-	// Calculate longest labels on each axis
-	var allLabels = getPrimaryLabels();
-	var longestRowLabelUnits,longestColLabelUnits;
-	setLongestLabelUnits();
-
-	// Calculate the maximum size for row/col top items (including area for arrows)
-	var topItemsWidth, topItemsHeight, rowTopItemsLength, colTopItemsLength; 
-	setTopItemsSizing();
-
-	// Set up PDF Page Dimension variables (These are the variables that we will be using repeatedly to place items)
-	var paddingLeft = 10;
-	var paddingTop = pageHeaderHeight+15;
-
-	var sumImgW = pageWidth - 2*paddingLeft  //width of available space for heatmap, class bars, and dendro
-	var sumImgH = pageHeight - paddingTop - paddingLeft; //height of available space for heatmap, class bars, and dendro
-
-	var detImgH = pageHeight - paddingTop - longestColLabelUnits - 2*paddingLeft;
-	var detImgW = pageWidth - longestRowLabelUnits - 2*paddingLeft;
-	var detImgL = paddingLeft;
-	var covTitleRows = 1;
-	
-	var rowDendroWidth, colDendroHeight;
-	var rowClassWidth, colClassHeight;
-	var sumMapW, sumMapH;
-	if (includeSummaryMap) {
-		//Get Dimensions for Summary Row & Column Dendrograms
-		setSummaryDendroDimensions();
-
-		//Get Dimensions for Summary Row & Column Class Bars
-		setSummaryClassDimensions();
-
-		//Get Dimensions for the Summary Heat Map
-		setSummaryHeatmapDimensions();
-	}
-
-	// Create and set the fontSize using the minimum of the calculated sizes for row and column labels
-	// Calculate the font size for rows and columns. Take the lowest of the two.  If the result is greater than 11 set the font to 11.  If the result is less than 6 set the font to 6.
-	var colLabelAdj = 0
-	
-	var colclassctr = heatMap.getColClassificationOrder("show").length
-	var theClassFont = Math.floor((colClassHeight-(colclassctr-2))/colclassctr);
-	var theFont = maxFontSize;
-	doc.setFontSize(maxFontSize);
-	// *** END UNCLEAN SECTION.
 
 	// PDF generation is accomplished by a sequence of possibly
 	// asynchronous jobs that generate each component of the document.
@@ -376,77 +324,33 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	function doNextJob () {
 	    if (drawJobs.length == 0) {
 		// No jobs left.
-		resolve(doc);
+		resolve(pdfDoc);
 	    } else {
 		// Obtain and execute next job.
 		// Reject promise if error detected.
 		// Let UI update between jobs.
 		const { job, mapItem } = drawJobs.shift();
-		jobFuncs[job](mapItem)
+		jobFuncs[job](pdfDoc, mapItem)
 		    .catch (error => { reject (error); })
 		    .then(() => { updateProgress(); setTimeout(doNextJob); });
 	    }
 	}
 
-	function addSummaryPage () {
+	function addSummaryPage (pdfDoc) {
 	    return new Promise ((resolve, reject) => {
-		drawSummaryHeatMapPage (doc, heatMap, includeDetailMaps);
+		drawSummaryHeatMapPage (pdfDoc, includeDetailMaps);
 		resolve();
 	    });
 	}
 
-	const classBarHeaderSize = 12; // these are font sizes
-
-	function addLegendPages () {
-	    return new Promise ((resolve, reject) => {
-		var colorMap = heatMap.getCurrentColorMap();
-
-		// Setup for class bar legends
-		const barsInfo = {};
-		var customFont = PDF.customFont;
-		PDF.customFont = false; // reset this variable once it has been referenced
-		barsInfo.classBarTitleSize = customFont ? maxFontSize : 10;
-		barsInfo.classBarLegendTextSize = customFont ? maxFontSize : 9;
-		barsInfo.classBarHeaderHeight = classBarHeaderSize+10;
-		barsInfo.classBarFigureW = 150; // figure dimensions, unless discrete with 15+ categories
-		barsInfo.classBarFigureH = 0;
-		barsInfo.topSkip = barsInfo.classBarFigureH + classBarHeaderSize + 10;
-		barsInfo.options = {
-		    condenseClassBars: isChecked('pdfInputCondensed'),
-		};
-		barsInfo.rowClassBarData = heatMap.getRowClassificationData();
-		barsInfo.colClassBarData = heatMap.getColClassificationData();
-		barsInfo.rowClassBarConfig = heatMap.getRowClassificationConfig();
-		barsInfo.colClassBarConfig = heatMap.getColClassificationConfig();
-		paddingLeft = 5;
-		paddingTop = pageHeaderHeight+classBarHeaderSize + 10; // reset the top and left coordinates
-
-		barsInfo.rowBarsToDraw = [];
-		barsInfo.colBarsToDraw = [];
-		if (isChecked('pdfInputColumn')) {
-			barsInfo.colBarsToDraw = heatMap.getColClassificationOrder("show");
-		}
-		if (isChecked('pdfInputRow')) {
-			barsInfo.rowBarsToDraw = heatMap.getRowClassificationOrder("show");
-		}
-		barsInfo.topOff = paddingTop + barsInfo.classBarTitleSize + 5;
-		barsInfo.leftOff = 20;
-		barsInfo.sectionHeader = 'undefined';
-
-		// adding the data matrix distribution plot to legend page
-		drawDataDistributionPlot(barsInfo);
-
-		// adding all row covariate bars to legend page
-		drawRowClassLegends(barsInfo);
-
-		// adding all column covariate bars to legend page
-		barsInfo.leftOff = 20; // ...reset leftOff...
-		drawColClassLegends(barsInfo, barsInfo.classBarTitleSize);
-
-		resolve();
-	    });
+	function addLegendPages (pdfDoc) {
+	    const legends = new CovariateBarLegends (pdfDoc);
+	    return legends.addLegendPages ();
 	}
+    });
+    }
 
+    initLegends();
 	//=================================================================================//
 	//=================================================================================//
 	//                        PDF OBJECT HELPER FUNCTIONS 
@@ -457,8 +361,14 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * FUNCTION: getPdfDocument - This function creates and configures jsPDF Document object.
 	 **********************************************************************************/
 
-	var firstPage;
-	function getPdfDocument() {
+	const classBarHeaderSize = 12; // This is a font size
+
+	getPdfDocument.prototype.addPageIfNeeded = addPageIfNeeded;
+	getPdfDocument.prototype.createHeader = createHeader;
+	getPdfDocument.prototype.setPadding = setPadding;
+
+	function getPdfDocument(heatMap) {
+	    // Must be invoked with new.
 	    let paperSize = [792,612];
 	    if (document.getElementById("pdfPaperSize").value == "A4") {
 		    paperSize = [842,595];
@@ -466,18 +376,29 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		    paperSize = [1224,792];
 	    }
 	    const orient = isChecked("pdfInputPortrait") ? "p" : "l";
-	    const newDoc = new jspdf.jsPDF(orient,"pt",paperSize);
-	    newDoc.setFont(document.getElementById("pdfFontStyle").value);
-	    firstPage = true;
-	    return newDoc;
+	    this.doc = new jspdf.jsPDF(orient,"pt",paperSize);
+	    this.doc.setFont(document.getElementById("pdfFontStyle").value);
+	    this.heatMap = heatMap;
+	    this.firstPage = true;
+	    this.pageHeight = this.doc.internal.pageSize.height;
+	    this.pageWidth = this.doc.internal.pageSize.width;
+	    this.pageHeaderHeight = calcPageHeaderHeight();
+
+	    this.paddingLeft = 0;  // Placeholders
+	    this.paddingTop = 0;
+	}
+
+	function setPadding (left, top) {
+	    this.paddingLeft = left || this.paddingLeft;
+	    this.paddingTop  = top || this.paddingTop;
 	}
 
 	// Output a new page to the PDF document except for the first time it's called.
 	function addPageIfNeeded () {
-	    if (firstPage) {
-		firstPage = false;
+	    if (this.firstPage) {
+		this.firstPage = false;
 	    } else {
-		doc.addPage();
+		this.doc.addPage();
 	    }
 	}
 
@@ -486,19 +407,14 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * actual length (11 is the max font size of the labels) these will be the bottom 
 	 * and left padding space for the detail Heat Map
 	 **********************************************************************************/
-	function setLongestLabelUnits() {
-	    longestRowLabelUnits = 1
-	    longestColLabelUnits = 1;
+	function calcLongestLabelUnits(doc, allLabels, axis, fontSize) {
+	    let longest = 0;
 	    allLabels.forEach (label => {
-		const width = doc.getStringUnitWidth(label.innerHTML);
-		if (label.dataset.axis == "Row" || label.dataset.axis == "ColumnCovar"){
-		    longestRowLabelUnits = Math.max(width,longestRowLabelUnits);
-		} else {
-		    longestColLabelUnits = Math.max(width,longestColLabelUnits);
+		if (label.dataset.axis == axis) {
+		    longest = Math.max(doc.getStringUnitWidth(label.innerHTML) * fontSize, longest);
 		}
 	    });
-	    longestColLabelUnits += longestColLabelUnits*maxFontSize+30; //Set initially to maximum font sizing for rough page sizing
-	    longestRowLabelUnits += longestRowLabelUnits*maxFontSize+30;
+	    return longest * 1.05;
 	}
 	
 	/**********************************************************************************
@@ -507,7 +423,8 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * both the top items "lines" canvas and the area required for displaying top item
 	 * labels.
 	 **********************************************************************************/
-	function setTopItemsSizing(){
+	function setTopItemsSizing(doc, maxFontSize) {
+		var topItemsWidth, topItemsHeight, rowTopItemsLength, colTopItemsLength;
 		topItemsWidth = 10;
 		topItemsHeight = 10;
 		var rowTopItems = SUM.rowTopItems;
@@ -528,6 +445,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			rowTopItemsLength += 20;
 			colTopItemsLength -= 20;
 		}
+	   return { topItemsWidth, topItemsHeight, rowTopItemsLength, colTopItemsLength, };
 	}	
 
 	/**********************************************************************************
@@ -536,11 +454,12 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * each is determined by the heat map width/height, only row dendro width and
 	 * column dendro height need be calculated.
 	 **********************************************************************************/
-	function setSummaryDendroDimensions() {
+	function setSummaryDendroDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength) {
 		var rowDendroPctg = document.getElementById("row_dendro_canvas").width / (SUM.boxCanvas.width + SUM.rCCanvas.width + document.getElementById("row_dendro_canvas").width + rowTopItemsLength);
 		var colDendroPctg = document.getElementById("column_dendro_canvas").height / (SUM.boxCanvas.height + SUM.cCCanvas.height + document.getElementById("column_dendro_canvas").height + colTopItemsLength);
-		rowDendroWidth = sumImgW * rowDendroPctg;
-		colDendroHeight = sumImgH * colDendroPctg;
+		const rowDendroWidth = sumImgW * rowDendroPctg;
+		const colDendroHeight = sumImgH * colDendroPctg;
+		return { rowDendroWidth, colDendroHeight };
 	}
 	
 	/**********************************************************************************
@@ -549,22 +468,24 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * each is determined by the heat map width/height, only row class width and
 	 * column class height need be calculated.
 	 **********************************************************************************/
-	function setSummaryClassDimensions() {
+	function setSummaryClassDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength) {
 		var rowClassBarPctg = SUM.rCCanvas.width / (SUM.boxCanvas.width + SUM.rCCanvas.width + document.getElementById("row_dendro_canvas").width + rowTopItemsLength);
 		var colClassBarPctg = SUM.cCCanvas.height / (SUM.boxCanvas.height + SUM.cCCanvas.height + document.getElementById("column_dendro_canvas").height + colTopItemsLength);
-		rowClassWidth = sumImgW * rowClassBarPctg;
-		colClassHeight = sumImgH * colClassBarPctg;
+		const rowClassWidth = sumImgW * rowClassBarPctg;
+		const colClassHeight = sumImgH * colClassBarPctg;
+		return { rowClassWidth, colClassHeight };
 	}
 
 	/**********************************************************************************
 	 * FUNCTION: setSummaryHeatmapDimensions - This function calculates the proper PDF
 	 * display dimensions for the Summary Heat Map page.
 	 **********************************************************************************/
-	function setSummaryHeatmapDimensions() {
+	function setSummaryHeatmapDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength) {
 		var sumMapWPctg = SUM.boxCanvas.width / (SUM.boxCanvas.width + SUM.rCCanvas.width + document.getElementById("row_dendro_canvas").width + rowTopItemsLength);
 		var sumMapHPctg = SUM.boxCanvas.height / (SUM.boxCanvas.height + SUM.cCCanvas.height + document.getElementById("column_dendro_canvas").height + colTopItemsLength);
-		sumMapW = sumImgW * sumMapWPctg //height of summary heatmap (and class bars)
-		sumMapH = sumImgH * sumMapHPctg; //width of summary heatmap (and class bars)
+		const sumMapW = sumImgW * sumMapWPctg //height of summary heatmap (and class bars)
+		const sumMapH = sumImgH * sumMapHPctg; //width of summary heatmap (and class bars)
+		return { sumMapW, sumMapH };
 	}
 
 	/**********************************************************************************
@@ -575,6 +496,8 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	function createHeader(titleText, options = {}) {
 	    const logoLeft = 5;
 	    const logoTop = 5;
+	    const doc = this.doc;
+	    const heatMap = this.heatMap;
 	    const pageWidth = doc.getPageWidth();
 	    const originalFontSize = doc.getFontSize();
 
@@ -594,7 +517,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			 * bottom - y coordinate specifies the bottom of the descenders.
 			 */
 			fullTitle = fullTitle + heatMap.getMapInformation().name;
-			let titlePositionY = pageHeaderHeight - 10;
+			let titlePositionY = this.pageHeaderHeight - 10;
 			let fontSize = 18;
 			doc.setFontSize(fontSize);
 			let titleWidth = doc.getTextWidth (fullTitle);
@@ -626,7 +549,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			doc.rect(5, logo.clientHeight+10, pageWidth-10, 2, "FD");
 			if (options.hasOwnProperty ("contText")) {
 				doc.setFontSize(classBarHeaderSize);
-				doc.text(10, paddingTop, options.contText, null);
+				doc.text(10, this.paddingTop, options.contText, null);
 			}
 		} else {
 			// If widgetized viewer exclude MDA logo and show compressed hear
@@ -640,92 +563,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		doc.setFont(undefined, "normal");
 		doc.setFontSize(originalFontSize);
 	}
-	
-	/**********************************************************************************
-	 * FUNCTION - setClassBarFigureH: This function will set classification bar figure
-	 * height for the class bar legend page.  
-	 **********************************************************************************/
-	function setClassBarFigureH(barsInfo, threshCount, type, isMissing) {
-		var bars = 9; //Set bar default to continuous with 9 bars
-		if (type === 'discrete') {
-			bars = threshCount; //Set bars to threshold count 
-		}
-		bars += isMissing; // Add a bar if missing values exist
-		var calcHeight = bars * (barsInfo.classBarLegendTextSize+3); //number of bars multiplied by display height
-		if (calcHeight > barsInfo.classBarFigureH) {
-			barsInfo.classBarFigureH = calcHeight;
-		}
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION - drawMissingColor: This function will set the missing color line for
-	 * either type (row/col) of classification bar.
-	 **********************************************************************************/
-	function drawMissingColor(barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, totalValues) {
-		const barScale = isChecked("pdfInputPortrait") ? .50 : .65;
-		if (barsInfo.options.condenseClassBars){
-			var barW = 10;
-			doc.rect(barsInfo.leftOff, bartop, barW, barHeight, "FD");
-			doc.setFontSize(barsInfo.classBarLegendTextSize);
-			doc.text(barsInfo.leftOff +barW + 5, bartop + barsInfo.classBarLegendTextSize, "Missing Value", null);
-			doc.text(barsInfo.leftOff +barW + threshMaxLen + 10, bartop + barsInfo.classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/totalValues*100).toFixed(2) + "%)" , null);
-		} else {
-			var barW = (missingCount/maxCount*barsInfo.classBarFigureW)*barScale;
-			doc.rect(barsInfo.leftOff + maxLabelLength, bartop, barW, barHeight, "FD");
-			doc.setFontSize(barsInfo.classBarLegendTextSize);
-			doc.text(barsInfo.leftOff + maxLabelLength - doc.getStringUnitWidth("Missing Value")*barsInfo.classBarLegendTextSize - 4, bartop + barsInfo.classBarLegendTextSize, "Missing Value" , null);
-			doc.text(barsInfo.leftOff + maxLabelLength +barW + 5, bartop + barsInfo.classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/totalValues*100).toFixed(2) + "%)" , null);
-		}
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION - adjustForNextClassBar: This function will set the positioning for the
-	 * next class bar to be drawn
-	 **********************************************************************************/
-	function adjustForNextClassBar(barsInfo, key,type,maxLabelLength) {
-		barsInfo.leftOff += barsInfo.classBarFigureW + maxLabelLength + 60;
-		if (barsInfo.leftOff + barsInfo.classBarFigureW > pageWidth){ // if the next class bar figure will go beyond the width of the page...
-			barsInfo.leftOff = 20; // ...reset leftOff...
-			barsInfo.topSkip  = barsInfo.classBarFigureH + barsInfo.classBarHeaderHeight + (10*covTitleRows); 
-			covTitleRows = 1;
-			barsInfo.topOff += barsInfo.topSkip; // ... and move the next figure to the line below
-			barsInfo.classBarHeaderHeight = classBarHeaderSize+10; //reset this value
-			var nextClassBarFigureH = getNextLineClassBarFigureH(barsInfo, key, type);
-			if (barsInfo.topOff + barsInfo.classBarHeaderHeight + nextClassBarFigureH > pageHeight && !isLastClassBarToBeDrawn(key,type)){ // if the next class bar goes off the page vertically...
-				doc.addPage(); // ... make a new page and reset topOff
-				createHeader(null, { contText: barsInfo.sectionHeader + " (continued)" });
-				barsInfo.topOff = paddingTop + 15;
-			}
-			barsInfo.classBarFigureH = 0;
-		}
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION - getNextLineClassBarFigureH: This function is used to determine the
-	 * height of the next few class bars when a new line of class bar legends needs to 
-	 * be drawn.
-	 **********************************************************************************/
-	function getNextLineClassBarFigureH(barsInfo, key,type){
-		var minLabelLength = doc.getStringUnitWidth("Missing Value")*barsInfo.classBarLegendTextSize;
-		var classBarsToDraw = type == "col" ? barsInfo.colBarsToDraw : barsInfo.rowBarsToDraw;
-		var classBars = type == "col" ? heatMap.getColClassificationConfig(): heatMap.getRowClassificationConfig();
-		var index = classBarsToDraw.indexOf(key);
-		var classW = barsInfo.classBarFigureW;
-		var maxThresh = 0;
-		var numFigures = 0;
-		var nextIdx = index+1;
-		while (numFigures*(barsInfo.classBarFigureW+minLabelLength+60) < pageWidth){
-			var barName = classBarsToDraw[nextIdx];
-			if (!barName) break;
-			var thisBar = classBars[barName];
-			var threshCount = thisBar.color_map.thresholds.length+1; // +1 added to assume that missing values will be present
-			if (thisBar.color_map.type == "continuous"){threshCount = 10}
-			if (threshCount > maxThresh) maxThresh = threshCount;
-			nextIdx++,numFigures++;
-		}
-		return maxThresh*barsInfo.classBarLegendTextSize;
-	}
-	
+
 	/**********************************************************************************
 	 * FUNCTION - isChecked: This function will check the checkboxes/radio buttons to see 
 	 * how the PDF is to be created. 
@@ -734,478 +572,96 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		if(document.getElementById(el))
 		return document.getElementById(el).checked;
 	}
-	
-	/**********************************************************************************
-	 * FUNCTION - getThreshMaxLength: This function will calculate the threshold maximum
-	 * length used in creating the legends page(s)
-	 **********************************************************************************/
-	function getThreshMaxLength(thresholds,fontSize) {
-		var threshMaxLen = 0;
-		for (var i = 0; i < thresholds.length; i++){ // make a gradient stop (and also a bucket for continuous)
-			var thresh = thresholds[i];
-			if (thresh.length > threshMaxLen) {
-				threshMaxLen = thresh.length;
-			}
-		}
-		//Account for "Missing Values" label
-		if (threshMaxLen < 13) {
-			threshMaxLen = 13;
-		}
-		threshMaxLen *= fontSize/2;
-		return threshMaxLen;
+
+	function CovariateBarLegends (pdfDoc)
+	{
+	    this.pdfDoc = pdfDoc;
 	}
 
-	/**********************************************************************************
-	 * FUNCTION - isLastClassBarToBeDrawn: Checks if this is the last class bar to be 
-	 * drawn. Used to determine if we add a new page when drawing class bars.
-	 **********************************************************************************/
-	function isLastClassBarToBeDrawn(classBar,type){
-		var isItLast = false;
+	function initLegends () {
+	Object.assign (CovariateBarLegends.prototype, {
+	    addLegendPages,
+	});
+
+
+	function addLegendPages () {
+	    const pdfDoc = this.pdfDoc;
+	    const heatMap = pdfDoc.heatMap;
+
+	    pdfDoc.setPadding (5, pdfDoc.pageHeaderHeight+classBarHeaderSize + 10); // reset the top and left coordinates
+
+	    return new Promise ((resolve, reject) => {
+		var colorMap = heatMap.getCurrentColorMap();
+
+		// Setup for class bar legends
+		const barsInfo = {};
+		barsInfo.covTitleRows = 1;
+		var customFont = PDF.customFont;
+		PDF.customFont = false; // reset this variable once it has been referenced
+		barsInfo.classBarTitleSize = customFont ? maxFontSize : 10;
+		barsInfo.classBarLegendTextSize = customFont ? maxFontSize : 9;
+		barsInfo.classBarHeaderHeight = classBarHeaderSize+10;
+		barsInfo.classBarFigureW = 150; // figure dimensions, unless discrete with 15+ categories
+		barsInfo.classBarFigureH = 0;
+		barsInfo.topSkip = barsInfo.classBarFigureH + classBarHeaderSize + 10;
+		barsInfo.options = {
+		    condenseClassBars: isChecked('pdfInputCondensed'),
+		};
+		barsInfo.rowClassBarData = heatMap.getRowClassificationData();
+		barsInfo.colClassBarData = heatMap.getColClassificationData();
+		barsInfo.rowClassBarConfig = heatMap.getRowClassificationConfig();
+		barsInfo.colClassBarConfig = heatMap.getColClassificationConfig();
+
+		barsInfo.rowBarsToDraw = [];
+		barsInfo.colBarsToDraw = [];
 		if (isChecked('pdfInputColumn')) {
-			var colBars = heatMap.getColClassificationOrder("show");
-			if ((type === 'col') && (classBar === colBars[colBars.length - 1])) {
-				isItLast = true
-			}
+			barsInfo.colBarsToDraw = heatMap.getColClassificationOrder("show");
 		}
 		if (isChecked('pdfInputRow')) {
-			var rowBars = heatMap.getRowClassificationOrder("show");
-			if ((type === 'row') && (classBar === rowBars[rowBars.length - 1])) {
-				isItLast = true
-			}
+			barsInfo.rowBarsToDraw = heatMap.getRowClassificationOrder("show");
 		}
-		return isItLast;
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION:  drawSummaryHeatMapPage - This function outputs the summary view page of
-	 * the heat map to the PDF document doc.
-	 *
-	 * The 'green' outlines of the detail views are added to the summary view page iff
-	 * showDetailViewBounds is true.
-	 *
-	 **********************************************************************************/
-	function drawSummaryHeatMapPage (doc, heatMap, showDetailViewBounds) {
-		const minDPI = 600;
-		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
-		const mapHeightScale = Math.max (2, Math.ceil (minDPI/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
+		barsInfo.topOff = pdfDoc.paddingTop + barsInfo.classBarTitleSize + 5;
+		barsInfo.leftOff = 20;
+		barsInfo.sectionHeader = 'undefined';
 
-		const mapInfo = heatMap.getMapInformation();
-		const headerOptions = {};
-		if (mapInfo.attributes.hasOwnProperty('chm.info.caption')) {
-		    headerOptions.subTitle = mapInfo.attributes['chm.info.caption'];
-		}
-		addPageIfNeeded();
-		createHeader("Summary", headerOptions);
+		// adding the data matrix distribution plot to legend page
+		drawDataDistributionPlot(pdfDoc, barsInfo);
 
-		// Determine the left edge of the row dendrogram, row class bars, and heat map.
-		const rowDendroLeft = paddingLeft;
-		let rowClassLeft = paddingLeft;
-		let imgLeft = paddingLeft + rowClassWidth;
-		if (rowDendroConfig.show !== 'NONE') {
-		    rowClassLeft += rowDendroWidth;
-		    imgLeft += rowDendroWidth;
-		}
+		// adding all row covariate bars to legend page
+		drawRowClassLegends(pdfDoc, barsInfo);
 
-		// Determine the top edge of the column dendrogram, column class bars, and heat map.
-		const colDendroTop = paddingTop;
-		let colClassTop = paddingTop;
-		let imgTop = paddingTop+colClassHeight;
-		if (SUM.cCCanvas.height > 0) {
-		    imgTop++;
-		}
-		if (colDendroConfig.show !== 'NONE') {
-		    colClassTop += colDendroHeight;
-		    imgTop += colDendroHeight;
-		}
+		// adding all column covariate bars to legend page
+		barsInfo.leftOff = 20; // ...reset leftOff...
+		drawColClassLegends(pdfDoc, barsInfo, barsInfo.classBarTitleSize);
 
-
-		// Add the row dendrogram and row covariate bars.
-		if (rowDendroConfig.show !== 'NONE') {
-		    SUM.rowDendro.drawPDF (doc, { left: paddingLeft, top: imgTop, width: rowDendroWidth-1, height: sumMapH });
-		}
-		if (SUM.rCCanvas.width > 0) {
-		    // Render row covariates to a renderBuffer, convert to a data URL, and add to the document.
-		    const rowCovBarSize = heatMap.getScaledVisibleCovariates('row', 1.0).totalHeight();
-		    const rowCovWidthScale = Math.max (2, Math.ceil (minDPI/72 * rowClassWidth / rowCovBarSize));
-		    const renderBuffer = SUM.buildRowCovariateRenderBuffer (rowCovWidthScale, mapHeightScale);
-		    const sumRowClassData = createDataURLFromRenderBuffer (renderBuffer);
-		    doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
-		}
-
-
-		// Add the column dendrogram and column covariate bars.
-		if (colDendroConfig.show !== 'NONE') {
-		    SUM.colDendro.drawPDF (doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight-1 });
-		}
-		if (SUM.cCCanvas.height > 0) {
-		    // Render column covariates to a renderBuffer, convert to a data URL, and add to document.
-		    const colCovBarSize = heatMap.getScaledVisibleCovariates('column', 1.0).totalHeight();
-		    const colCovWidthScale = Math.max (2, Math.ceil (minDPI/72 * colClassHeight / colCovBarSize));
-		    const renderBuffer = SUM.buildColCovariateRenderBuffer (mapWidthScale, colCovWidthScale);
-		    const sumColClassData = createDataURLFromRenderBuffer (renderBuffer);
-		    doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
-		}
-
-
-		// Render heatmap to a renderBuffer, convert to a data URL, and add to document.
-		{
-		    const renderBuffer = SUM.renderHeatMapToRenderBuffer (mapWidthScale, mapHeightScale);
-		    const sumImgData = createDataURLFromRenderBuffer (renderBuffer);
-		    doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW, sumMapH);
-		}
-
-		// Add the top item marks and labels.
-		if (SUM.rowTopItemPosns.length > 0 || SUM.colTopItemPosns.length > 0) {
-		    const ctx = doc.context2d;
-		    const resScale = 100;
-		    ctx.save();
-		    ctx.scale (1.0/resScale, 1.0/resScale);
-		    ctx.lineWidth = 1;
-		    if (SUM.rowTopItemPosns.length > 0) {
-			// Each top item mark is drawn as a bezier curve from an origin point
-			// (the item position) through two intermediate control points to a
-			// destination point (the label position).
-			// For all row top items, the X coordinates of these control points
-			// are the same.
-			const X1 = (imgLeft + sumMapW + 1) * resScale;
-			const X2 = (imgLeft + sumMapW + 4) * resScale;
-			const X3 = (imgLeft + sumMapW + topItemsWidth - 3) * resScale;
-			const X4 = (imgLeft + sumMapW + topItemsWidth) * resScale;
-			ctx.beginPath();
-			SUM.rowTopItemPosns.forEach(tip => {
-			    // Compute Y coordinates for start and end of the curve.
-			    const Y1 = (imgTop + tip.itemFrac * sumMapH) * resScale;
-			    const Y2 = (imgTop + tip.labelFrac * sumMapH) * resScale;
-			    // Draw the curve.
-			    ctx.moveTo (X1, Y1);
-			    ctx.bezierCurveTo (X2, Y1, X3, Y2, X4, Y2);
-			});
-			ctx.stroke();
-		    }
-		    if (SUM.colTopItemPosns.length > 0) {
-			// For all column top items, the Y coordinates of all control points
-			// are the same.
-			const Y1 = (imgTop + sumMapH + 1) * resScale;
-			const Y2 = (imgTop + sumMapH + 4) * resScale;
-			const Y3 = (imgTop + sumMapH + topItemsHeight - 3) * resScale;
-			const Y4 = (imgTop + sumMapH + topItemsHeight) * resScale;
-			ctx.beginPath();
-			SUM.colTopItemPosns.forEach(tip => {
-			    // Compute X coordinates for start and end of the curve.
-			    const X1 = (imgLeft + tip.itemFrac * sumMapW) * resScale;
-			    const X2 = (imgLeft + tip.labelFrac * sumMapW) * resScale;
-			    // Draw the curve.
-			    ctx.moveTo (X1, Y1);
-			    ctx.bezierCurveTo (X1, Y2, X2, Y3, X2, Y4);
-			});
-			ctx.stroke();
-		    }
-		    ctx.restore();
-		    // Draw the top item labels.
-		    drawSummaryTopItemLabels("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
-		    drawSummaryTopItemLabels("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
-		}
-
-		// Draw the black border around the summary view.
-		const ctx = doc.context2d;
-		ctx.save();
-		ctx.lineWidth = 1;
-		ctx.strokeRect(imgLeft,imgTop,sumMapW,sumMapH);
-
-		// Draw the 'green' boundary rectangles that outline the detail map views.
-		if (showDetailViewBounds) {
-		    const color = heatMap.getCurrentDataLayer().selection_color;
-		    doc.setDrawColor (color);
-		    const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
-		    const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
-		    DVW.detailMaps.forEach (mapItem => {
-			const left = (mapItem.currentCol-1) * xScale;
-			const top = (mapItem.currentRow-1) * yScale;
-			const width = mapItem.dataPerRow * xScale;
-			const height = mapItem.dataPerCol * yScale;
-			ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
-			ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
-		    });
-		}
-		ctx.restore();
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION - getPrimaryLabels: This function retrieves an array filled with the
-	 * labels for the Primary heat map panel.
-	 **********************************************************************************/
-	function getPrimaryLabels(){
-		var allLabels = document.getElementsByClassName("DynamicLabel");
-		var primaryLabels = [];
-		for (var i = 0; i < allLabels.length; i++) {
-			var label = allLabels[i];
-			if ((label.id.split("_").length) < 3) {
-				primaryLabels.push(label);
-			}
-		}
-		return primaryLabels;
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION - drawSummaryTopItemLabels: This function draws the labels for the top
-	 * items on the specific axis of the summary page.
-	 **********************************************************************************/
-	function drawSummaryTopItemLabels(axis, vp) {
-	    const debug = false;
-	    const origFontSize = doc.getFontSize();
-	    const labelFontSize = 5;  // Use a small font for top items.
-	    doc.setFontSize(labelFontSize);
-	    const topItems = [...document.getElementsByClassName("topItems")].filter(ti => ti.axis === axis);
-	    if (debug) {
-		console.log ('Drawing ' + topItems.length + ' ' + axis + ' top items');
-	    }
-	    const chmCanvas = document.getElementById("summary_canvas");
-	    const canvasRect = chmCanvas.getBoundingClientRect();
-	    if (axis === "row") {
-		topItems.forEach(item => {
-		    const rect = item.getBoundingClientRect();
-		    const relPosn = (rect.y - canvasRect.y) / canvasRect.height;
-		    doc.text(vp.left, vp.top + vp.height * relPosn + labelFontSize * 0.75, item.innerHTML);
-		    if (debug) {
-			console.log ('Drew row label ' + item.innerHTML, { x: vp.left, y: vp.top + vp.height * relPosn + labelFontSize, relPosn: relPosn, rect });
-		    }
-		});
-	    } else {
-		topItems.forEach(item => {
-		    const rect = item.getBoundingClientRect();
-		    const relPosn = (rect.x - canvasRect.x) / canvasRect.width;
-		    doc.text(vp.left + vp.width * relPosn + labelFontSize/2, vp.top, item.innerHTML, null, 270);
-		    if (debug) {
-			console.log ('Drew col label ' + item.innerHTML, { x: vp.left+vp.width*relPosn + labelFontSize/2, y: vp.top, relPosn: relPosn, rect });
-		    }
-		});
-	    }
-	    doc.setFontSize (origFontSize);
-	}
-
-	/**********************************************************************************
-	 * FUNCTION:  addDetailPage - This function draws a detail canvases
-	 * onto a detail heat map PDF page.
-	 **********************************************************************************/
-	function addDetailPage (mapItem) {
-	    return DVW.getDetailWindow (mapItem).onready().then (win => {
-		const origFontSize = doc.getFontSize();
-		addPageIfNeeded();
-
-		let detVer = "Primary";
-		if (mapItem.version === 'S') {
-			detVer = "Ver " + mapItem.panelNbr;
-		}
-		createHeader("Detail - " + detVer);
-
-		const rcw = + mapItem.rowDendroCanvas.clientWidth;
-		const cch = + mapItem.colDendroCanvas.clientHeight;
-		const hmw = + mapItem.canvas.width;
-		const hmh = + mapItem.canvas.height;
-		const rowDendroPctg = rcw / (hmw + rcw);
-		const colDendroPctg = cch / (hmh + cch);
-		let detMapW = detImgW*(1-rowDendroPctg);
-		let detMapH = detImgH*(1-colDendroPctg);
-		let detRowDendroWidth = detImgW * rowDendroPctg;
-		let detColDendroHeight = detImgH * colDendroPctg;
-		const totalColClassBarHeight = mapItem.getScaledVisibleCovariates("column").totalHeight();
-		const totalRowClassBarWidth = mapItem.getScaledVisibleCovariates("row").totalHeight();
-		let detColClassHeight = detMapH*(totalColClassBarHeight/hmh);
-		let detRowClassWidth = detMapW*(totalRowClassBarWidth/hmw);
-		let rowDendroLeft = paddingLeft;
-		let imgLeft = paddingLeft+detRowDendroWidth;
-		let colDendroTop = paddingTop;
-		let imgTop = paddingTop+detColDendroHeight;
-		if (rowDendroConfig.show !== 'ALL') {
-			imgLeft = paddingLeft;
-			detMapW = detImgW;
-			detRowClassWidth = detMapW*(totalRowClassBarWidth/mapItem.canvas.width);
-			detRowDendroWidth = 0;
-		}
-		if (colDendroConfig.show !== 'ALL') {
-			imgTop = paddingTop;
-			detMapH = detImgH;
-			detColClassHeight = detMapH*(totalColClassBarHeight/mapItem.canvas.height);
-			detColDendroHeight = 0;
-		}
-
-		const minDPI = 600;
-		const level = DVW.getLevelFromMode (mapItem, MAPREP.DETAIL_LEVEL);
-		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * detMapW / heatMap.getNumColumns (level)));
-		const mapHeightScale = Math.max (2, Math.ceil (minDPI/72 * detMapH / heatMap.getNumRows (level)));
-		const { drawWin, params } = mapItem.detailHeatMapParams[mapItem.heatMap._currentDl];
-		const renderBuffer = DET.getDetailHeatMap (mapItem, drawWin, params);
-		const detImgData = createDataURLFromRenderBuffer (renderBuffer);
-
-		if (rowDendroConfig.show === 'ALL') {
-			mapItem.rowDendro.drawPDF (doc, { left: rowDendroLeft, top: imgTop + detColClassHeight, width: detRowDendroWidth-1, height: detMapH - detColClassHeight });
-		}
-		if (colDendroConfig.show === 'ALL') {
-			mapItem.colDendro.drawPDF(doc, { left: imgLeft+detRowClassWidth, top: colDendroTop, width: detMapW-detRowClassWidth, height: detColDendroHeight });
-		}
-		doc.addImage(detImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
-
-		// Create a 'form object' aka subdocument that will be used for overlaying the
-		// heat map with selection boxes etc. (Equivalent to the on-screen boxCanvas.)
-		// The W and H parameters specify the maximum width and height of the form object.
-		// H also specifies where the top of document is (i.e. what Y=0 denotes inside the
-		// form object).
-		// We have to increase W and H slightly above the target values so that jsPDF does
-		// not crop objects out.  I.e. a strokeRect(0,0,W,H) will be dropped by jsPDF but
-		// should not be.
-		const boxMatrix = new doc.Matrix (1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
-		const boxDoc = doc.beginFormObject ( 0, 0, detMapW+1e-5, detMapH+1e-5, boxMatrix);
-		boxDoc.context2d.save();
-		boxDoc.context2d.scale (1.0/mapWidthScale, 1.0/mapHeightScale);
-		const mapItemVars = DET.drawMapItemSelectionsOnTarget (mapItem, {
-		    width: detMapW * mapWidthScale,
-		    height: detMapH * mapHeightScale,
-		    widthScale: mapWidthScale,
-		    heightScale: mapHeightScale,
-		    ctx: boxDoc.context2d,
-		});
-		boxDoc.context2d.restore();
-		doc.endFormObject(mapItem.pane + '-box-matrix');
-		// Insert the form object into the document.  The X, Y coordinates specify where to place the
-		// bottom-left corner of the form object.
-		const boxMatrix2 = new doc.Matrix (1.0, 0.0, 0.0, 1.0, imgLeft, pageHeight - (imgTop + detMapH) );
-		doc.doFormObject(mapItem.pane + '-box-matrix', boxMatrix2);
-		drawDetailSelectionsAndLabels(mapItem, mapItemVars, detMapW, detMapH, detRowDendroWidth, detColDendroHeight);  
-		doc.setFontSize (origFontSize);
+		resolve();
 	    });
 	}
 
-	function getBlankCanvas(canvas) {  
-		var blankCanvas = document.createElement("canvas");	
-		blankCanvas.width = canvas.width;
-		blankCanvas.height = canvas.height;
-		return blankCanvas
-	}
-
-	/**********************************************************************************
-	 * FUNCTION:  drawDetailSelectionsAndLabels - This function draws any selection 
-	 * boxes and then labels onto the detail heat map page.
-	 **********************************************************************************/
-	function drawDetailSelectionsAndLabels(mapItem, mapItemVars, detMapW, detMapH, detRowDendroWidth, detColDendroHeight) {
-	    const detClient2PdfWRatio = mapItem.canvas.clientWidth/detMapW;  // scale factor to place the labels in their proper locations
-	    const detClient2PdfHRatio = mapItem.canvas.clientHeight/detMapH;
-	    // Draw selection boxes first (this way they will not overlap text)
-	    drawDetailSelectionBoxes(mapItem, mapItemVars, detClient2PdfWRatio, detClient2PdfHRatio, detRowDendroWidth, detColDendroHeight);
-	    // Draw selection boxes first (this way they will not overlap text)
-	    drawDetailLabels(mapItem, mapItemVars, detClient2PdfWRatio, detClient2PdfHRatio, detRowDendroWidth, detColDendroHeight);
-	}
-
-	/**********************************************************************************
-	 * FUNCTION:  drawDetailSelectionsAndLabels - This function draws any selection 
-	 * boxes and selected label boxes onto the detail heat map page.
-	 **********************************************************************************/
-	function drawDetailSelectionBoxes (mapItem, mapItemVars, detClient2PdfWRatio, detClient2PdfHRatio, detRowDendroWidth, detColDendroHeight) {
-	    if (mapItem.labelElements.length == 0) return;
-	    // Draw selection boxes first (this way they will not overlap text)
-	    // Get selection color for current datalayer to be used in highlighting selected labels
-	    const layer = heatMap.getCurrentDataLayer();
-	    const selectedColor = heatMap.getCurrentColorMap().getHexToRgba(layer.selection_color);
-	    doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
-	    // Get row and column labels.
-	    const mapLabelDivs = Object.entries(mapItem.labelElements).map (([id, label]) => label.div);
-	    const rowLabels = mapLabelDivs.filter (label => label.dataset.axis == "Row");
-	    const colLabels = mapLabelDivs.filter (label => label.dataset.axis == "Column");
-	    const labelFontSize = getFontSizeForLabels (rowLabels, mapItemVars.maxRowFontSize, colLabels, mapItemVars.maxColFontSize);
-	    rowLabels.forEach (label => {
-		if (SRCHSTATE.labelIndexInSearch("Row",label.dataset.index)) {
-		    doc.rect(
-			(label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft,
-			(label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight,
-			longestRowLabelUnits+2, labelFontSize, 'F');
-		}
-	    });
-	    colLabels.forEach (label => {
-		if (SRCHSTATE.labelIndexInSearch("Column",label.dataset.index)) {
-		    doc.rect(
-			(label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth-2,
-			(label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight,
-			labelFontSize+2.5, longestColLabelUnits+2, 'F');
-		}
-	    });
-	}
-	
-	/**********************************************************************************
-	 * FUNCTION:  drawDetailLabels - This function draws any labels onto
-	 * the heat map page.
-	 **********************************************************************************/
-	function drawDetailLabels(mapItem, mapItemVars, detClient2PdfWRatio, detClient2PdfHRatio, detRowDendroWidth, detColDendroHeight) {
-	    if (mapItem.labelElements.length == 0) return;
-	    // Determine row and column label divs.
-	    const mapLabelDivs = Object.entries(mapItem.labelElements).map (([id, label]) => label.div);
-	    const rowLabels = mapLabelDivs.filter (label => label.dataset.axis == "Row");
-	    const colLabels = mapLabelDivs.filter (label => label.dataset.axis == "Column");
-	    const columnCovarLabels = mapLabelDivs.filter (label => label.dataset.axis == "ColumnCovar");
-	    const rowCovarLabels = mapLabelDivs.filter (label => label.dataset.axis == "RowCovar");
-
-	    drawLabels (rowLabels, mapItemVars.maxRowFontSize, colLabels, mapItemVars.maxColFontSize);
-	    drawLabels (columnCovarLabels, mapItem.colClassLabelFont, rowCovarLabels, mapItem.rowClassLabelFont);
-
-	    function drawLabels (rowLabels, rowLabelFont, colLabels, colLabelFont) {
-		const labelFontSize = getFontSizeForLabels (rowLabels, rowLabelFont, colLabels, colLabelFont);
-		doc.setFontSize (labelFontSize);
-		// Draw row labels.
-		if (rowLabelFont > 0) {
-		    rowLabels.forEach(label => {
-			const x = (label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth+paddingLeft;
-			let y = (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight+labelFontSize*1.025;
-			if (label.id.indexOf("legendDet") > -1) {
-			    y--;
-			}
-			doc.text(x, y, label.innerHTML, null);
-		    });
-		}
-		// Draw column labels.
-		if (colLabelFont > 0) {
-		    colLabels.forEach(label => {
-			let x = (label.offsetLeft-mapItem.canvas.offsetLeft)/detClient2PdfWRatio+detRowDendroWidth;
-			const y = (label.offsetTop-mapItem.canvas.offsetTop)/detClient2PdfHRatio+paddingTop+detColDendroHeight;
-			if (label.id.indexOf("legendDet") > -1) {
-			    x += paddingLeft;
-			}
-			doc.text(x, y, label.innerHTML, null, 270);
-		    });
-		}
-	    }
-	}
-
-	// Return fontsize of smallest visible labels
-	function getFontSizeForLabels (rowLabels, rowLabelFont, colLabels, colLabelFont) {
-	    let labelFontSize = 10;
-	    if (rowLabelFont > 0 && rowLabels.length > 0) {
-		labelFontSize = Math.min (labelFontSize, 0.95*rowLabelFont);
-	    }
-	    if (colLabelFont > 0 && colLabels.length > 0) {
-		labelFontSize = Math.min (labelFontSize, 0.95*colLabelFont);
-	    }
-	    return labelFontSize;
-	}
-	
 	/**********************************************************************************
 	 * FUNCTION:  drawDataDistributionPlot - This function draws the matrix data 
 	 * distribution plot on the legend page.
 	 **********************************************************************************/
-	function drawDataDistributionPlot(barsInfo) {
+	function drawDataDistributionPlot(pdfDoc, barsInfo) {
 		barsInfo.sectionHeader = "Data Matrix Distribution"
-		doc.addPage();
-		createHeader(null);
-		doc.setFontSize(classBarHeaderSize);
-		doc.setFont(undefined, "bold");
-		doc.text(10, paddingTop, barsInfo.sectionHeader , null);
-		doc.setFont(undefined, "normal");
-		getDataMatrixDistributionPlot(barsInfo);
+		pdfDoc.addPageIfNeeded();
+		pdfDoc.createHeader(null);
+		pdfDoc.doc.setFontSize(classBarHeaderSize);
+		pdfDoc.doc.setFont(undefined, "bold");
+		pdfDoc.doc.text(10, pdfDoc.paddingTop, barsInfo.sectionHeader , null);
+		pdfDoc.doc.setFont(undefined, "normal");
+		getDataMatrixDistributionPlot(pdfDoc, barsInfo);
 	}
 
 	/**********************************************************************************
 	 * FUNCTION - getDataMatrixDistributionPlot: This function creates the distribution 
 	 * plot for the legend page.
 	 **********************************************************************************/
-	function getDataMatrixDistributionPlot(barsInfo) {
+	function getDataMatrixDistributionPlot(pdfDoc, barsInfo) {
 		// function ripped from UPM used in the gear panel
+		const doc = pdfDoc.doc;
+		const heatMap = pdfDoc.heatMap;
+
 		var currentDl = heatMap.getCurrentDL();
 		var cm = heatMap.getColorMapManager().getColorMap("data",currentDl);
 		var thresholds = cm.getThresholds();
@@ -1329,7 +785,8 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * FUNCTION:  drawRowClassLegends - This function draws the legend blocks for each
 	 * row covariate bar on the heat map to the PDF legends page.
 	 **********************************************************************************/
-	function drawRowClassLegends(barsInfo) {
+	function drawRowClassLegends(pdfDoc, barsInfo) {
+		const doc = pdfDoc.doc;
 		barsInfo.sectionHeader = "Row Covariate Bar Legends";
 		if (barsInfo.rowBarsToDraw.length > 0){
 			barsInfo.leftOff = 20; // ...reset leftOff...
@@ -1339,7 +796,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			barsInfo.topOff += barsInfo.classBarTitleSize + 5;
 			for (var i = 0; i < barsInfo.rowBarsToDraw.length;i++){
 				var key = barsInfo.rowBarsToDraw[i];
-				var colorMap = heatMap.getColorMapManager().getColorMap("row", key);
+				var colorMap = pdfDoc.heatMap.getColorMapManager().getColorMap("row", key);
 				doc.setFontSize(barsInfo.classBarTitleSize);
 				var isDiscrete = barsInfo.rowClassBarConfig[key].color_map.type === 'discrete';
 				var colorCount = 10;
@@ -1347,12 +804,12 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 					colorCount = barsInfo.rowClassBarConfig[key].color_map.colors.length;
 				}
 				if (i === 0) {
-					drawLegendSubSectionHeader(barsInfo, colorCount, key);
+					drawLegendSubSectionHeader(pdfDoc, barsInfo, colorCount, key);
 				}
 				if (isDiscrete) {
-					getBarGraphForDiscreteClassBar(key, 'row', barsInfo, barsInfo.rowClassBarConfig[key], barsInfo.rowClassBarData[key]); 
+					getBarGraphForDiscreteClassBar(pdfDoc, key, 'row', barsInfo, barsInfo.rowClassBarConfig[key], barsInfo.rowClassBarData[key]);
 				} else {
-					getBarGraphForContinuousClassBar(key, 'row', barsInfo, barsInfo.rowClassBarConfig[key], barsInfo.rowClassBarData[key]);
+					getBarGraphForContinuousClassBar(pdfDoc, key, 'row', barsInfo, barsInfo.rowClassBarConfig[key], barsInfo.rowClassBarData[key]);
 				}
 			}
 		}
@@ -1362,7 +819,8 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * FUNCTION:  drawColClassLegends - This function draws the legend blocks for each
 	 * column covariate bar on the heat map to the PDF legends page.
 	 **********************************************************************************/
-	function drawColClassLegends(barsInfo) {
+	function drawColClassLegends(pdfDoc, barsInfo) {
+		const doc = pdfDoc.doc;
 		barsInfo.sectionHeader = "Column Covariate Bar Legends"
 		// Draw column class bar legends
 		if (barsInfo.colBarsToDraw.length > 0){
@@ -1379,12 +837,12 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 					colorCount = barsInfo.colClassBarConfig[key].color_map.colors.length;
 				}
 				if (i === 0) {
-					drawLegendSubSectionHeader(barsInfo, colorCount, key, barsInfo.classBarFigureW);
+					drawLegendSubSectionHeader(pdfDoc, barsInfo, colorCount, key, barsInfo.classBarFigureW);
 				}
 				if (isDiscrete) {
-					getBarGraphForDiscreteClassBar(key, 'col', barsInfo, barsInfo.colClassBarConfig[key], barsInfo.colClassBarData[key], barsInfo.classBarFigureW, barsInfo.classBarLegendTextSize);
+					getBarGraphForDiscreteClassBar(pdfDoc, key, 'col', barsInfo, barsInfo.colClassBarConfig[key], barsInfo.colClassBarData[key], barsInfo.classBarFigureW, barsInfo.classBarLegendTextSize);
 				} else {
-					getBarGraphForContinuousClassBar(key, 'col', barsInfo, barsInfo.colClassBarConfig[key], barsInfo.colClassBarData[key]);
+					getBarGraphForContinuousClassBar(pdfDoc, key, 'col', barsInfo, barsInfo.colClassBarConfig[key], barsInfo.colClassBarData[key]);
 				}
 			}
 		}
@@ -1395,24 +853,24 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * header on the legend page(s).  If the next group of legends breaks across a 
 	 * page boundary, a new page is created.
 	 **********************************************************************************/
-	function drawLegendSubSectionHeader(barsInfo, categories, key) {
+	function drawLegendSubSectionHeader(pdfDoc, barsInfo, categories, key) {
 	    const truncTitle = key.length > 40 ? key.substring(0,40) + "..." : key;
-	    const splitTitle = doc.splitTextToSize(truncTitle, barsInfo.classBarFigureW);
+	    const splitTitle = pdfDoc.doc.splitTextToSize(truncTitle, barsInfo.classBarFigureW);
 	    //Adjustment for multi-line covariate headers
 	    if(splitTitle.length > 1) {
 		barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
 	    }
-	    if ((barsInfo.topOff + barsInfo.classBarHeaderHeight + (categories*13) > pageHeight)) {
-		doc.addPage(); // ... make a new page and reset topOff
-		createHeader(null, { contText: barsInfo.sectionHeader });
-		barsInfo.topOff = paddingTop + 15;
+	    if ((barsInfo.topOff + barsInfo.classBarHeaderHeight + (categories*13) > pdfDoc.pageHeight)) {
+		pdfDoc.addPageIfNeeded(); // ... make a new page and reset topOff
+		pdfDoc.createHeader(null, { contText: barsInfo.sectionHeader });
+		barsInfo.topOff = pdfDoc.paddingTop + 15;
 	    } else {
-		doc.setFontSize(classBarHeaderSize);
-		doc.setFont(undefined, "bold");
-		doc.text(10, barsInfo.topOff, barsInfo.sectionHeader , null);
+		pdfDoc.doc.setFontSize(classBarHeaderSize);
+		pdfDoc.doc.setFont(undefined, "bold");
+		pdfDoc.doc.text(10, barsInfo.topOff, barsInfo.sectionHeader , null);
 	    }
-	    doc.setFontSize(barsInfo.classBarTitleSize);
-	    doc.setFont(undefined, "normal");
+	    pdfDoc.doc.setFontSize(barsInfo.classBarTitleSize);
+	    pdfDoc.doc.setFont(undefined, "normal");
 	    barsInfo.topOff += barsInfo.classBarTitleSize + 5;
 	    barsInfo.leftOff = 20; // ...reset leftOff...
 	}
@@ -1422,16 +880,17 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * using the variables leftOff and topOff, which are updated after every classBar legend.
 	 * inputs: classBar object, colorMap object, and string for name
 	 **********************************************************************************/
-	function getBarGraphForDiscreteClassBar(key, type, barsInfo, classBarConfig, classBarData){
+	function getBarGraphForDiscreteClassBar(pdfDoc, key, type, barsInfo, classBarConfig, classBarData){
+		const doc = pdfDoc.doc;
 		var barScale = isChecked("pdfInputPortrait") ? .50 : .65;
 		var foundMissing = 0;
 		var truncTitle = key.length > 40 ? key.substring(0,40) + "..." : key;
 		var splitTitle = doc.splitTextToSize(truncTitle, barsInfo.classBarFigureW);
-		if (covTitleRows === 1) {
-			covTitleRows = splitTitle.length;
+		if (barsInfo.covTitleRows === 1) {
+			barsInfo.covTitleRows = splitTitle.length;
 		}
 		var bartop = barsInfo.topOff+5 + (splitTitle.length-1)*barsInfo.classBarLegendTextSize*2;
-		var colorMap = heatMap.getColorMapManager().getColorMap(type, key);
+		var colorMap = pdfDoc.heatMap.getColorMapManager().getColorMap(type, key);
 		var thresholds = colorMap.getThresholds();
 		var maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*barsInfo.classBarLegendTextSize;
 		if (isChecked("pdfInputPortrait") && (thresholds.length > 56)) {
@@ -1454,10 +913,10 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			if(splitTitle.length > 1) {
 				barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  
 			}
-			if ((barsInfo.topOff + barsInfo.classBarHeaderHeight + (thresholds.length*13) > pageHeight) && !isLastClassBarToBeDrawn(key,type)) {
+			if ((barsInfo.topOff + barsInfo.classBarHeaderHeight + (thresholds.length*13) > pdfDoc.pageHeight) && !isLastClassBarToBeDrawn(pdfDoc.heatMap,key,type)) {
 				doc.addPage(); // ... make a new page and reset topOff
-				createHeader(null, { contText: barsInfo.sectionHeader + " (continued)"});
-				barsInfo.topOff = paddingTop + 15;
+				pdfDoc.createHeader(null, { contText: barsInfo.sectionHeader + " (continued)"});
+				barsInfo.topOff = pdfDoc.paddingTop + 15;
 				barsInfo.leftOff = 20; // ...reset leftOff...
 			}  
 			bartop = barsInfo.topOff+5 + (splitTitle.length - 1)*(barsInfo.classBarLegendTextSize*2);
@@ -1525,7 +984,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 				var rgb = colorMap.getClassificationColor("Missing Value");
 				doc.setFillColor(rgb.r,rgb.g,rgb.b);
 				doc.setDrawColor(0,0,0);
-				drawMissingColor(barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
+				drawMissingColor(pdfDoc, barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
 			}
 			
 			if (thresholds.length * barHeight > barsInfo.classBarFigureH){ // in case a discrete classbar has over 15 categories, make the topOff increment bigger
@@ -1534,7 +993,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			setClassBarFigureH(barsInfo, thresholds.length,'discrete',foundMissing);
 		}
 		// adjust the location for the next class bar figure
-		adjustForNextClassBar(barsInfo, key,type,maxLabelLength);
+		adjustForNextClassBar(pdfDoc, barsInfo, key,type,maxLabelLength);
 	}
 
 	/**********************************************************************************
@@ -1542,22 +1001,25 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * legend using the variables leftOff and topOff, which are updated after every 
 	 * classBar legend. inputs: classBar object, colorMap object, and string for name
 	 **********************************************************************************/
-	function getBarGraphForContinuousClassBar(key, type, barsInfo, classBarConfig, classBarData){
+	function getBarGraphForContinuousClassBar(pdfDoc, key, type, barsInfo, classBarConfig, classBarData){
+		const doc = pdfDoc.doc;
+		const heatMap = pdfDoc.heatMap;
+
 		var barScale = isChecked("pdfInputPortrait") ? .50 : .65;
 		var foundMissing = 0;
 		// Write class bar name to PDF
 		var splitTitle = doc.splitTextToSize(key, barsInfo.classBarFigureW);
-		if (covTitleRows === 1) {
-			covTitleRows = splitTitle.length;
+		if (barsInfo.covTitleRows === 1) {
+			barsInfo.covTitleRows = splitTitle.length;
 		}
 		//Adjustment for multi-line covariate headers
 		if(splitTitle.length > 1) {
 			barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
 		}
-		if ((barsInfo.topOff + barsInfo.classBarHeaderHeight + 130) > pageHeight) {
+		if ((barsInfo.topOff + barsInfo.classBarHeaderHeight + 130) > pdfDoc.pageHeight) {
 			doc.addPage(); // ... make a new page and reset topOff
-			createHeader(null, { contText: barsInfo.sectionHeader + " (continued)" });
-			barsInfo.topOff = paddingTop + 15;
+			pdfDoc.createHeader(null, { contText: barsInfo.sectionHeader + " (continued)" });
+			barsInfo.topOff = pdfDoc.paddingTop + 15;
 			barsInfo.leftOff = 20; // ...reset leftOff...
 		}  
 		doc.setFont(undefined, "bold");
@@ -1683,9 +1145,628 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			drawMissingColor(barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
 		}
 		setClassBarFigureH(barsInfo, 0,'continuous',foundMissing);
-		adjustForNextClassBar(barsInfo, key,type,maxLabelLength);
+		adjustForNextClassBar(pdfDoc, barsInfo, key,type,maxLabelLength);
 	}
-    });
+
+	/**********************************************************************************
+	 * FUNCTION - setClassBarFigureH: This function will set classification bar figure
+	 * height for the class bar legend page.
+	 **********************************************************************************/
+	function setClassBarFigureH(barsInfo, threshCount, type, isMissing) {
+		var bars = 9; //Set bar default to continuous with 9 bars
+		if (type === 'discrete') {
+			bars = threshCount; //Set bars to threshold count
+		}
+		bars += isMissing; // Add a bar if missing values exist
+		var calcHeight = bars * (barsInfo.classBarLegendTextSize+3); //number of bars multiplied by display height
+		if (calcHeight > barsInfo.classBarFigureH) {
+			barsInfo.classBarFigureH = calcHeight;
+		}
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - drawMissingColor: This function will set the missing color line for
+	 * either type (row/col) of classification bar.
+	 **********************************************************************************/
+	function drawMissingColor(pdfDoc, barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, totalValues) {
+		const doc = pdfDoc.doc;
+		const barScale = isChecked("pdfInputPortrait") ? .50 : .65;
+		if (barsInfo.options.condenseClassBars){
+			var barW = 10;
+			doc.rect(barsInfo.leftOff, bartop, barW, barHeight, "FD");
+			doc.setFontSize(barsInfo.classBarLegendTextSize);
+			doc.text(barsInfo.leftOff +barW + 5, bartop + barsInfo.classBarLegendTextSize, "Missing Value", null);
+			doc.text(barsInfo.leftOff +barW + threshMaxLen + 10, bartop + barsInfo.classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/totalValues*100).toFixed(2) + "%)" , null);
+		} else {
+			var barW = (missingCount/maxCount*barsInfo.classBarFigureW)*barScale;
+			doc.rect(barsInfo.leftOff + maxLabelLength, bartop, barW, barHeight, "FD");
+			doc.setFontSize(barsInfo.classBarLegendTextSize);
+			doc.text(barsInfo.leftOff + maxLabelLength - doc.getStringUnitWidth("Missing Value")*barsInfo.classBarLegendTextSize - 4, bartop + barsInfo.classBarLegendTextSize, "Missing Value" , null);
+			doc.text(barsInfo.leftOff + maxLabelLength +barW + 5, bartop + barsInfo.classBarLegendTextSize, "n = " + missingCount + " (" + (missingCount/totalValues*100).toFixed(2) + "%)" , null);
+		}
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - adjustForNextClassBar: This function will set the positioning for the
+	 * next class bar to be drawn
+	 **********************************************************************************/
+	function adjustForNextClassBar(pdfDoc, barsInfo, key,type,maxLabelLength) {
+		barsInfo.leftOff += barsInfo.classBarFigureW + maxLabelLength + 60;
+		if (barsInfo.leftOff + barsInfo.classBarFigureW > pdfDoc.pageWidth){ // if the next class bar figure will go beyond the width of the page...
+			barsInfo.leftOff = 20; // ...reset leftOff...
+			barsInfo.topSkip  = barsInfo.classBarFigureH + barsInfo.classBarHeaderHeight + (10*barsInfo.covTitleRows);
+			barsInfo.covTitleRows = 1;
+			barsInfo.topOff += barsInfo.topSkip; // ... and move the next figure to the line below
+			barsInfo.classBarHeaderHeight = classBarHeaderSize+10; //reset this value
+			var nextClassBarFigureH = getNextLineClassBarFigureH(pdfDoc, barsInfo, key, type);
+			if (barsInfo.topOff + barsInfo.classBarHeaderHeight + nextClassBarFigureH > pdfDoc.pageHeight && !isLastClassBarToBeDrawn(pdfDoc.heatMap,key,type)){ // if the next class bar goes off the page vertically...
+				pdfDoc.addPageIfNeeded(); // ... make a new page and reset topOff
+				pdfDoc.createHeader(null, { contText: barsInfo.sectionHeader + " (continued)" });
+				barsInfo.topOff = pdfDoc.paddingTop + 15;
+			}
+			barsInfo.classBarFigureH = 0;
+		}
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - getNextLineClassBarFigureH: This function is used to determine the
+	 * height of the next few class bars when a new line of class bar legends needs to
+	 * be drawn.
+	 **********************************************************************************/
+	function getNextLineClassBarFigureH(pdfDoc, barsInfo, key,type){
+		var minLabelLength = pdfDoc.doc.getStringUnitWidth("Missing Value")*barsInfo.classBarLegendTextSize;
+		var classBarsToDraw = type == "col" ? barsInfo.colBarsToDraw : barsInfo.rowBarsToDraw;
+		var classBars = type == "col" ? pdfDoc.heatMap.getColClassificationConfig(): pdfDoc.heatMap.getRowClassificationConfig();
+		var index = classBarsToDraw.indexOf(key);
+		var classW = barsInfo.classBarFigureW;
+		var maxThresh = 0;
+		var numFigures = 0;
+		var nextIdx = index+1;
+		while (numFigures*(barsInfo.classBarFigureW+minLabelLength+60) < pdfDoc.pageWidth){
+			var barName = classBarsToDraw[nextIdx];
+			if (!barName) break;
+			var thisBar = classBars[barName];
+			var threshCount = thisBar.color_map.thresholds.length+1; // +1 added to assume that missing values will be present
+			if (thisBar.color_map.type == "continuous"){threshCount = 10}
+			if (threshCount > maxThresh) maxThresh = threshCount;
+			nextIdx++,numFigures++;
+		}
+		return maxThresh*barsInfo.classBarLegendTextSize;
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - getThreshMaxLength: This function will calculate the threshold maximum
+	 * length used in creating the legends page(s)
+	 **********************************************************************************/
+	function getThreshMaxLength(thresholds,fontSize) {
+		var threshMaxLen = 0;
+		for (var i = 0; i < thresholds.length; i++){ // make a gradient stop (and also a bucket for continuous)
+			var thresh = thresholds[i];
+			if (thresh.length > threshMaxLen) {
+				threshMaxLen = thresh.length;
+			}
+		}
+		//Account for "Missing Values" label
+		if (threshMaxLen < 13) {
+			threshMaxLen = 13;
+		}
+		threshMaxLen *= fontSize/2;
+		return threshMaxLen;
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - isLastClassBarToBeDrawn: Checks if this is the last class bar to be
+	 * drawn. Used to determine if we add a new page when drawing class bars.
+	 **********************************************************************************/
+	function isLastClassBarToBeDrawn(heatMap,classBar,type){
+		var isItLast = false;
+		if (isChecked('pdfInputColumn')) {
+			var colBars = heatMap.getColClassificationOrder("show");
+			if ((type === 'col') && (classBar === colBars[colBars.length - 1])) {
+				isItLast = true
+			}
+		}
+		if (isChecked('pdfInputRow')) {
+			var rowBars = heatMap.getRowClassificationOrder("show");
+			if ((type === 'row') && (classBar === rowBars[rowBars.length - 1])) {
+				isItLast = true
+			}
+		}
+		return isItLast;
+	}
+	}
+
+	/**********************************************************************************
+	 * FUNCTION:  drawSummaryHeatMapPage - This function outputs the summary view page of
+	 * the heat map to the PDF document doc.
+	 *
+	 * The 'green' outlines of the detail views are added to the summary view page iff
+	 * showDetailViewBounds is true.
+	 *
+	 **********************************************************************************/
+	function drawSummaryHeatMapPage (pdfDoc, showDetailViewBounds) {
+	    pdfDoc.setPadding (10, pdfDoc.pageHeaderHeight+15);
+
+	    const heatMap = pdfDoc.heatMap;
+	    // Calculate the maximum size for row/col top items (including area for arrows)
+	    const topItemsFontSize = 5;
+
+	    const { topItemsWidth, topItemsHeight, rowTopItemsLength, colTopItemsLength } = setTopItemsSizing(pdfDoc.doc, topItemsFontSize);
+	    const sumImgW = pdfDoc.doc.getPageWidth() - 2*pdfDoc.paddingLeft  //width of available space for heatmap, class bars, and dendro
+	    const sumImgH = pdfDoc.doc.getPageHeight() - pdfDoc.paddingTop; //height of available space for heatmap, class bars, and dendro
+
+	    //Get Dimensions for Summary Row & Column Dendrograms
+	    const { rowDendroWidth, colDendroHeight } = setSummaryDendroDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength);
+
+	    //Get Dimensions for Summary Row & Column Class Bars
+	    const { rowClassWidth, colClassHeight } = setSummaryClassDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength);
+
+	    //Get Dimensions for the Summary Heat Map
+	    const { sumMapW, sumMapH } = setSummaryHeatmapDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength);
+
+		const minDPI = 600;
+		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
+		const mapHeightScale = Math.max (2, Math.ceil (minDPI/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
+
+		const mapInfo = heatMap.getMapInformation();
+		const headerOptions = {};
+		if (mapInfo.attributes.hasOwnProperty('chm.info.caption')) {
+		    headerOptions.subTitle = mapInfo.attributes['chm.info.caption'];
+		}
+		pdfDoc.addPageIfNeeded();
+		pdfDoc.createHeader("Summary", headerOptions);
+
+		const rowDendroConfig = heatMap.getRowDendroConfig();
+		const colDendroConfig = heatMap.getColDendroConfig();
+
+		// Determine the left edge of the row dendrogram, row class bars, and heat map.
+		const rowDendroLeft = pdfDoc.paddingLeft;
+		let rowClassLeft = pdfDoc.paddingLeft;
+		let imgLeft = pdfDoc.paddingLeft + rowClassWidth;
+		if (rowDendroConfig.show !== 'NONE') {
+		    rowClassLeft += rowDendroWidth;
+		    imgLeft += rowDendroWidth;
+		}
+
+		// Determine the top edge of the column dendrogram, column class bars, and heat map.
+		const colDendroTop = pdfDoc.paddingTop;
+		let colClassTop = pdfDoc.paddingTop;
+		let imgTop = pdfDoc.paddingTop+colClassHeight;
+		if (SUM.cCCanvas.height > 0) {
+		    imgTop++;
+		}
+		if (colDendroConfig.show !== 'NONE') {
+		    colClassTop += colDendroHeight;
+		    imgTop += colDendroHeight;
+		}
+
+
+		// Add the row dendrogram and row covariate bars.
+		if (rowDendroConfig.show !== 'NONE') {
+		    SUM.rowDendro.drawPDF (pdfDoc.doc, { left: pdfDoc.paddingLeft, top: imgTop, width: rowDendroWidth-1, height: sumMapH });
+		}
+		if (SUM.rCCanvas.width > 0) {
+		    // Render row covariates to a renderBuffer, convert to a data URL, and add to the document.
+		    const rowCovBarSize = heatMap.getScaledVisibleCovariates('row', 1.0).totalHeight();
+		    const rowCovWidthScale = Math.max (2, Math.ceil (minDPI/72 * rowClassWidth / rowCovBarSize));
+		    const renderBuffer = SUM.buildRowCovariateRenderBuffer (rowCovWidthScale, mapHeightScale);
+		    const sumRowClassData = createDataURLFromRenderBuffer (renderBuffer);
+		    pdfDoc.doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
+		}
+
+
+		// Add the column dendrogram and column covariate bars.
+		if (colDendroConfig.show !== 'NONE') {
+		    SUM.colDendro.drawPDF (pdfDoc.doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight-1 });
+		}
+		if (SUM.cCCanvas.height > 0) {
+		    // Render column covariates to a renderBuffer, convert to a data URL, and add to document.
+		    const colCovBarSize = heatMap.getScaledVisibleCovariates('column', 1.0).totalHeight();
+		    const colCovWidthScale = Math.max (2, Math.ceil (minDPI/72 * colClassHeight / colCovBarSize));
+		    const renderBuffer = SUM.buildColCovariateRenderBuffer (mapWidthScale, colCovWidthScale);
+		    const sumColClassData = createDataURLFromRenderBuffer (renderBuffer);
+		    pdfDoc.doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
+		}
+
+
+		// Render heatmap to a renderBuffer, convert to a data URL, and add to document.
+		{
+		    const renderBuffer = SUM.renderHeatMapToRenderBuffer (mapWidthScale, mapHeightScale);
+		    const sumImgData = createDataURLFromRenderBuffer (renderBuffer);
+		    pdfDoc.doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW, sumMapH);
+		}
+
+		// Add the top item marks and labels.
+		if (SUM.rowTopItemPosns.length > 0 || SUM.colTopItemPosns.length > 0) {
+		    const ctx = pdfDoc.doc.context2d;
+		    const resScale = 100;
+		    ctx.save();
+		    ctx.scale (1.0/resScale, 1.0/resScale);
+		    ctx.lineWidth = 1;
+		    if (SUM.rowTopItemPosns.length > 0) {
+			// Each top item mark is drawn as a bezier curve from an origin point
+			// (the item position) through two intermediate control points to a
+			// destination point (the label position).
+			// For all row top items, the X coordinates of these control points
+			// are the same.
+			const X1 = (imgLeft + sumMapW + 1) * resScale;
+			const X2 = (imgLeft + sumMapW + 4) * resScale;
+			const X3 = (imgLeft + sumMapW + topItemsWidth - 3) * resScale;
+			const X4 = (imgLeft + sumMapW + topItemsWidth) * resScale;
+			ctx.beginPath();
+			SUM.rowTopItemPosns.forEach(tip => {
+			    // Compute Y coordinates for start and end of the curve.
+			    const Y1 = (imgTop + tip.itemFrac * sumMapH) * resScale;
+			    const Y2 = (imgTop + tip.labelFrac * sumMapH) * resScale;
+			    // Draw the curve.
+			    ctx.moveTo (X1, Y1);
+			    ctx.bezierCurveTo (X2, Y1, X3, Y2, X4, Y2);
+			});
+			ctx.stroke();
+		    }
+		    if (SUM.colTopItemPosns.length > 0) {
+			// For all column top items, the Y coordinates of all control points
+			// are the same.
+			const Y1 = (imgTop + sumMapH + 1) * resScale;
+			const Y2 = (imgTop + sumMapH + 4) * resScale;
+			const Y3 = (imgTop + sumMapH + topItemsHeight - 3) * resScale;
+			const Y4 = (imgTop + sumMapH + topItemsHeight) * resScale;
+			ctx.beginPath();
+			SUM.colTopItemPosns.forEach(tip => {
+			    // Compute X coordinates for start and end of the curve.
+			    const X1 = (imgLeft + tip.itemFrac * sumMapW) * resScale;
+			    const X2 = (imgLeft + tip.labelFrac * sumMapW) * resScale;
+			    // Draw the curve.
+			    ctx.moveTo (X1, Y1);
+			    ctx.bezierCurveTo (X1, Y2, X2, Y3, X2, Y4);
+			});
+			ctx.stroke();
+		    }
+		    ctx.restore();
+		    // Draw the top item labels.
+		    drawSummaryTopItemLabels("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
+		    drawSummaryTopItemLabels("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
+		}
+
+		// Draw the black border around the summary view.
+		const ctx = pdfDoc.doc.context2d;
+		ctx.save();
+		ctx.lineWidth = 1;
+		ctx.strokeRect(imgLeft,imgTop,sumMapW,sumMapH);
+
+		// Draw the 'green' boundary rectangles that outline the detail map views.
+		if (showDetailViewBounds) {
+		    const color = heatMap.getCurrentDataLayer().selection_color;
+		    pdfDoc.doc.setDrawColor (color);
+		    const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
+		    const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
+		    DVW.detailMaps.forEach (mapItem => {
+			const left = (mapItem.currentCol-1) * xScale;
+			const top = (mapItem.currentRow-1) * yScale;
+			const width = mapItem.dataPerRow * xScale;
+			const height = mapItem.dataPerCol * yScale;
+			ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
+			ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
+		    });
+		}
+		ctx.restore();
+	}
+
+	/**********************************************************************************
+	 * FUNCTION - drawSummaryTopItemLabels: This function draws the labels for the top
+	 * items on the specific axis of the summary page.
+	 **********************************************************************************/
+	function drawSummaryTopItemLabels(axis, vp) {
+	    const debug = false;
+	    const origFontSize = doc.getFontSize();
+	    const labelFontSize = 5;  // Use a small font for top items.
+	    doc.setFontSize(labelFontSize);
+	    const topItems = [...document.getElementsByClassName("topItems")].filter(ti => ti.axis === axis);
+	    if (debug) {
+		console.log ('Drawing ' + topItems.length + ' ' + axis + ' top items');
+	    }
+	    const chmCanvas = document.getElementById("summary_canvas");
+	    const canvasRect = chmCanvas.getBoundingClientRect();
+	    if (axis === "row") {
+		topItems.forEach(item => {
+		    const rect = item.getBoundingClientRect();
+		    const relPosn = (rect.y - canvasRect.y) / canvasRect.height;
+		    doc.text(vp.left, vp.top + vp.height * relPosn + labelFontSize * 0.75, item.innerHTML);
+		    if (debug) {
+			console.log ('Drew row label ' + item.innerHTML, { x: vp.left, y: vp.top + vp.height * relPosn + labelFontSize, relPosn: relPosn, rect });
+		    }
+		});
+	    } else {
+		topItems.forEach(item => {
+		    const rect = item.getBoundingClientRect();
+		    const relPosn = (rect.x - canvasRect.x) / canvasRect.width;
+		    doc.text(vp.left + vp.width * relPosn + labelFontSize/2, vp.top, item.innerHTML, null, 270);
+		    if (debug) {
+			console.log ('Drew col label ' + item.innerHTML, { x: vp.left+vp.width*relPosn + labelFontSize/2, y: vp.top, relPosn: relPosn, rect });
+		    }
+		});
+	    }
+	    doc.setFontSize (origFontSize);
+	}
+
+	/**********************************************************************************
+	 * FUNCTION:  addDetailPage - This function draws a detail canvases
+	 * onto a detail heat map PDF page.
+	 **********************************************************************************/
+	function addDetailPage (pdfDoc, mapItem) {
+	    pdfDoc.setPadding (10, pdfDoc.pageHeaderHeight + 10);
+	    const doc = pdfDoc.doc;
+
+	    return DVW.getDetailWindow (mapItem).onready().then (win => {
+		const origFontSize = doc.getFontSize();
+		pdfDoc.addPageIfNeeded();
+
+		let detVer = "Primary";
+		if (mapItem.version === 'S') {
+			detVer = "Ver " + mapItem.panelNbr;
+		}
+		pdfDoc.createHeader("Detail - " + detVer);
+
+		const mapLabelDivs = Object.entries(mapItem.labelElements).map (([id, label]) => label.div);
+		const rowLabels = mapLabelDivs.filter (label => label.dataset.axis == "Row");
+		const colLabels = mapLabelDivs.filter (label => label.dataset.axis == "Column");
+		const columnCovarLabels = mapLabelDivs.filter (label => label.dataset.axis == "ColumnCovar");
+		const rowCovarLabels = mapLabelDivs.filter (label => label.dataset.axis == "RowCovar");
+
+		const labelFontSize = getFontSizeForLabels (rowLabels, mapItem.rowLabelFont, colLabels, mapItem.colLabelFont);
+
+		const allLabels = [...mapItem.chm.getElementsByClassName("DynamicLabel")];
+		const longestRowLabelUnits = calcLongestLabelUnits(doc, allLabels, "Row", labelFontSize);
+		const longestColLabelUnits = calcLongestLabelUnits(doc, allLabels, "Column", labelFontSize);
+
+		const longestRowCovarUnits = calcLongestLabelUnits(doc, allLabels, "RowCovar", mapItem.rowClassLabelFont);
+		const longestColCovarUnits = calcLongestLabelUnits(doc, allLabels, "ColumnCovar", mapItem.colClassLabelFont);
+
+		const paddingRight = 10;
+		const paddingBottom = 10;
+
+		// The following calculations use three coordinate systems:
+		// - browser window coordinates (i.e. the size things appear in the browser, determined by CSS etc.)
+		// - canvas coordinates (the sizes drawn inside the canvas. In general, these differ from browser coordinates.
+		//   Recall the difference between canvas.width (canvas coordinates) and canvas.style.width (browser coordinates).
+		// - PDF coordinates.
+
+		// Determine total width and height available for map + dendrograms + covariate bars (in PDF units).
+		const detImgH = pdfDoc.pageHeight - pdfDoc.paddingTop - Math.max(longestColLabelUnits,longestRowCovarUnits) - paddingBottom;
+		const detImgW = pdfDoc.pageWidth - pdfDoc.paddingLeft - Math.max(longestRowLabelUnits,longestColCovarUnits) - paddingRight;
+
+		const heatMap = pdfDoc.heatMap;
+
+		// Determine the proportions in mapItem of (map+dendrograms) used by dendrograms.
+		// (All calculations use browser window coordinates).
+		const rowDendroConfig = heatMap.getRowDendroConfig();
+		const colDendroConfig = heatMap.getColDendroConfig();
+		const rcw = + mapItem.rowDendroCanvas.clientWidth;
+		const cch = + mapItem.colDendroCanvas.clientHeight;
+		const rowDendroPctg = rowDendroConfig.show == 'ALL' ? rcw / (mapItem.canvas.clientWidth + rcw) : 0;
+		const colDendroPctg = colDendroConfig.show == 'ALL' ? cch / (mapItem.canvas.clientHeight + cch) : 0;
+
+		// Determine the total width and height available for the map and the covariate bars (in PDF units).
+		const detMapW = detImgW*(1-rowDendroPctg);
+		const detMapH = detImgH*(1-colDendroPctg);
+
+		// Determine the width of the row dendrograms and the height of the column dendrograms (in PDF units).
+		const detRowDendroWidth = detImgW * rowDendroPctg;
+		const detColDendroHeight = detImgH * colDendroPctg;
+
+		// Determine the total width of the row covariate bars and height of the column covariate bars in PDF units.
+		// (Intermediate proportions are calculated in canvas coordinates).
+		const rowCovariates = mapItem.getScaledVisibleCovariates("row");
+		const detRowClassWidth = detMapW*(rowCovariates.totalHeight()/mapItem.canvas.width);
+		const colCovariates = mapItem.getScaledVisibleCovariates("column");
+		const detColClassHeight = detMapH*(colCovariates.totalHeight()/mapItem.canvas.height);
+
+		const rowDendroLeft = pdfDoc.paddingLeft;	// Left edge of row dendrogram
+		const colDendroTop = pdfDoc.paddingTop;		// Top edge of column dendrogram
+
+		// Note: the image includes both the heat map and the covariate bars.
+		const imgLeft = pdfDoc.paddingLeft+detRowDendroWidth;	// Left edge of the image.
+		const imgTop = pdfDoc.paddingTop+detColDendroHeight;	// Top edge of the image.
+
+		if (rowDendroConfig.show === 'ALL') {
+		    mapItem.rowDendro.drawPDF (doc, {
+			left: rowDendroLeft,
+			top: imgTop + detColClassHeight,	// Top of row dendrogram starts below the column covariates in the image.
+			width: detRowDendroWidth-1,		// Leave a one point gap between the dendrogram and the image.
+			height: detMapH - detColClassHeight,	// Height is the image height less the height of the column covariate bars.
+		    });
+		}
+		if (colDendroConfig.show === 'ALL') {
+		    mapItem.colDendro.drawPDF(doc, {
+			left: imgLeft+detRowClassWidth,		// Left of column dendrogram starts after the row covariates in the image.
+			top: colDendroTop,
+			width: detMapW-detRowClassWidth,	// Width is the image height less the width of the row covariate bars.
+			height: detColDendroHeight-1,		// Leave a one point gap between the dendrogram and the image.
+		    });
+		}
+
+		// Render the image and add it to the document.
+		{
+		    const { drawWin, params } = mapItem.detailHeatMapParams[mapItem.heatMap._currentDl];
+		    const renderBuffer = DET.getDetailHeatMap (mapItem, drawWin, params);
+		    const detImgData = createDataURLFromRenderBuffer (renderBuffer);
+
+		    doc.addImage(detImgData, 'PNG', imgLeft, imgTop, detMapW, detMapH);
+		}
+
+		// Scale the box canvas overlay.
+		const minDPI = 600;
+		const level = DVW.getLevelFromMode (mapItem, MAPREP.DETAIL_LEVEL);
+		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * detMapW / heatMap.getNumColumns (level)));
+		const mapHeightScale = Math.max (2, Math.ceil (minDPI/72 * detMapH / heatMap.getNumRows (level)));
+
+		// Create a 'form object' aka subdocument that will be used for overlaying the
+		// heat map with selection boxes etc. (Equivalent to the on-screen boxCanvas.)
+		// The W and H parameters specify the maximum width and height of the form object.
+		// H also specifies where the top of document is (i.e. what Y=0 denotes inside the
+		// form object).
+		// We have to increase W and H slightly above the target values so that jsPDF does
+		// not crop objects out.  I.e. a strokeRect(0,0,W,H) will be dropped by jsPDF but
+		// should not be.
+		const boxMatrix = new doc.Matrix (1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+		const boxDoc = doc.beginFormObject ( 0, 0, detMapW+1e-5, detMapH+1e-5, boxMatrix);
+		boxDoc.context2d.save();
+		boxDoc.context2d.scale (1.0/mapWidthScale, 1.0/mapHeightScale);
+		const mapItemVars = DET.drawMapItemSelectionsOnTarget (mapItem, {
+		    width: detMapW * mapWidthScale,
+		    height: detMapH * mapHeightScale,
+		    widthScale: mapWidthScale,
+		    heightScale: mapHeightScale,
+		    ctx: boxDoc.context2d,
+		});
+		boxDoc.context2d.restore();
+		doc.endFormObject(mapItem.pane + '-box-matrix');
+
+		// Insert the form object into the document.  The X, Y coordinates specify where to place the
+		// bottom-left corner of the form object.
+		const boxMatrix2 = new doc.Matrix (1.0, 0.0, 0.0, 1.0, imgLeft, pdfDoc.pageHeight - (imgTop + detMapH) );
+		doc.doFormObject(mapItem.pane + '-box-matrix', boxMatrix2);
+
+		// Determine the scaling factors between the browser window coordinates and
+		// the PDF coordinates for both rows and columns.
+		const detClient2PdfWRatio = mapItem.canvas.clientWidth/detMapW;  // scale factors to place the labels in their proper locations
+		const detClient2PdfHRatio = mapItem.canvas.clientHeight/detMapH;
+		Object.assign (mapItemVars, {
+		    labelFontSize, longestRowLabelUnits, longestColLabelUnits,
+		    detClient2PdfWRatio, detClient2PdfHRatio, detRowDendroWidth, detColDendroHeight,
+		});
+		drawDetailSelectionsAndLabels(doc, mapItem, mapItemVars);
+
+		doc.setFontSize (origFontSize);
+	    });
+
+	    // Detail Map Helper Functions
+	    //
+	    /**********************************************************************************
+	     * FUNCTION:  drawDetailSelectionsAndLabels - This function draws any selection
+	     * boxes and then labels onto the detail heat map page.
+	     **********************************************************************************/
+	    function drawDetailSelectionsAndLabels(doc, mapItem, mapItemVars) {
+		// Draw selection boxes first (this way they will not overlap text)
+		drawDetailSelectionBoxes(doc, mapItem, mapItemVars);
+		// Draw labels last (so they write over any selection boxes present)
+		drawDetailLabels(doc, mapItem, mapItemVars);
+	    }
+
+	    /**********************************************************************************
+	     * FUNCTION:  drawDetailSelectionBoxes - This function draws any selection
+	     * boxes and selected label boxes onto the detail heat map page.
+	     **********************************************************************************/
+	    function drawDetailSelectionBoxes (doc, mapItem, mapItemVars) {
+		if (mapItem.labelElements.length == 0) return;
+		// Draw selection boxes first (this way they will not overlap text)
+		// Get selection color for current datalayer to be used in highlighting selected labels
+		const layer = mapItem.heatMap.getCurrentDataLayer();
+		const selectedColor = mapItem.heatMap.getCurrentColorMap().getHexToRgba(layer.selection_color);
+		doc.setFillColor(selectedColor.r, selectedColor.g, selectedColor.b);
+		// Get row and column labels.
+		const mapLabelDivs = Object.entries(mapItem.labelElements).map (([id, label]) => label.div);
+		const rowLabels = mapLabelDivs.filter (label => label.dataset.axis == "Row");
+		const colLabels = mapLabelDivs.filter (label => label.dataset.axis == "Column");
+		rowLabels.forEach (label => {
+		    if (SRCHSTATE.labelIndexInSearch("Row",label.dataset.index)) {
+			const { x, y } = calcRowLabelPosn (mapItem, mapItemVars, label, mapItemVars.labelFontSize);
+			doc.rect(x, y - mapItemVars.labelFontSize, mapItemVars.longestRowLabelUnits+2, mapItemVars.labelFontSize, 'F');
+		    }
+		});
+		colLabels.forEach (label => {
+		    if (SRCHSTATE.labelIndexInSearch("Column",label.dataset.index)) {
+			const { x, y } = calcColLabelPosn (mapItem, mapItemVars, label, mapItemVars.labelFontSize);
+			doc.rect(x-2, y, mapItemVars.labelFontSize+2.5, mapItemVars.longestColLabelUnits+2, 'F');
+		    }
+		});
+	    }
+
+	    // The following two functions attempt to calculate the best x and y PDF coordinates for label.
+	    //
+	    // They do so by calculating the position of the label in the mapItem (in window coordinates) relative
+	    // to the mapItem canvas (in window coordinates), scaling the difference to PDF coordinates, and adding
+	    // it to the image position (in PDF coordinates).
+	    //
+	    // There are several limitations with this approach:
+	    // 1. The window coordinate positions are converted to integers, losing precision,
+	    // 2. The window coordinate positions are tweaked to adjust for rotations, margins etc., that we would
+	    //    ideally like to undo and reapply separately in PDF coordinates.  However, it's not easy to get
+	    //    the extend of the tweaks to undo them.
+	    // 3. It assumes that the covariate bars and the heat map are scaled by the same amount.  It is not
+	    //    clear that we want to scale them exactly the same.
+
+	    function calcRowLabelPosn (mapItem, mapItemVars, label, labelFontSize) {
+		// The following line includes a labelFontSize/2 gap between the edge of the image and the label.
+		const left = pdfDoc.paddingLeft + mapItemVars.detRowDendroWidth + labelFontSize/2;
+		// The -3 in the following line undoes a corresponding +3 when positioning the label in DET/drawAxisLabels.
+		const x = left + (label.offsetLeft-mapItem.canvas.offsetLeft-3) / mapItemVars.detClient2PdfWRatio;
+
+		const top = pdfDoc.paddingTop + mapItemVars.detColDendroHeight + labelFontSize;
+		let y = top + (label.offsetTop-mapItem.canvas.offsetTop) / mapItemVars.detClient2PdfHRatio;
+		if (label.id.indexOf("legendDet") > -1) {
+		    y--;
+		}
+		return { x, y };
+	    }
+
+	    function calcColLabelPosn (mapItem, mapItemVars, label, labelFontSize) {
+		let x = (label.offsetLeft-mapItem.canvas.offsetLeft-3)/mapItemVars.detClient2PdfWRatio+mapItemVars.detRowDendroWidth + pdfDoc.paddingLeft
+		    - labelFontSize;
+		const y = (label.offsetTop-mapItem.canvas.offsetTop)/mapItemVars.detClient2PdfHRatio+pdfDoc.paddingTop+mapItemVars.detColDendroHeight;
+		if (label.id.indexOf("legendDet") > -1) {
+		    x += pdfDoc.paddingLeft;
+		}
+		return { x, y };
+	    }
+
+	    /**********************************************************************************
+	     * FUNCTION:  drawDetailLabels - This function draws any labels onto
+	     * the heat map page.
+	     **********************************************************************************/
+	    function drawDetailLabels(doc, mapItem, mapItemVars) {
+		if (mapItem.labelElements.length == 0) return;
+		// Determine row and column label divs.
+		const mapLabelDivs = Object.entries(mapItem.labelElements).map (([id, label]) => label.div);
+		const rowLabels = mapLabelDivs.filter (label => label.dataset.axis == "Row");
+		const colLabels = mapLabelDivs.filter (label => label.dataset.axis == "Column");
+		const columnCovarLabels = mapLabelDivs.filter (label => label.dataset.axis == "ColumnCovar");
+		const rowCovarLabels = mapLabelDivs.filter (label => label.dataset.axis == "RowCovar");
+
+		drawLabels (rowLabels, mapItemVars.labelFontSize, colLabels, mapItemVars.labelFontSize);
+		drawLabels (columnCovarLabels, mapItem.colClassLabelFont, rowCovarLabels, mapItem.rowClassLabelFont);
+
+		function drawLabels (rowLabels, rowLabelFont, colLabels, colLabelFont) {
+		    // Draw row labels.
+		    if (rowLabelFont > 0) {
+			doc.setFontSize (rowLabelFont);
+			rowLabels.forEach(label => {
+			    const { x, y } = calcRowLabelPosn (mapItem, mapItemVars, label, rowLabelFont);
+			    doc.text(x, y, label.innerHTML, null);
+			});
+		    }
+		    // Draw column labels.
+		    if (colLabelFont > 0) {
+			doc.setFontSize (colLabelFont);
+			colLabels.forEach(label => {
+			    const { x, y } = calcColLabelPosn (mapItem, mapItemVars, label, colLabelFont);
+			    doc.text(x, y, label.innerHTML, null, 270);
+			});
+		    }
+		}
+	    }
+	}
+
+    // Return fontsize of smallest visible labels
+    function getFontSizeForLabels (rowLabels, rowLabelFont, colLabels, colLabelFont) {
+	let labelFontSize = 10;
+	if (rowLabelFont > 0 && rowLabels.length > 0) {
+	    labelFontSize = Math.min (labelFontSize, 0.95*rowLabelFont);
+	}
+	if (colLabelFont > 0 && colLabels.length > 0) {
+	    labelFontSize = Math.min (labelFontSize, 0.95*colLabelFont);
+	}
+	return labelFontSize;
     }
 
     // Calculate the height of the header on each page.
