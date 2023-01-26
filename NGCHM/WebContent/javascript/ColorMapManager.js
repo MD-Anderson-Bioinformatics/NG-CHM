@@ -206,16 +206,6 @@
 	    return color;
 	}
 	
-	function hexToRgba(hex) { // I didn't write this function. I'm not that clever. Thanks stackoverflow
-	    var rgbColor = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	    return rgbColor ? {
-	        r: parseInt(rgbColor[1], 16),
-	        g: parseInt(rgbColor[2], 16),
-	        b: parseInt(rgbColor[3], 16),
-	        a: 255
-	    } : null;
-	}
-
 	function hexToRgb(hex) {
 	    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
 	    return result ? {
@@ -316,5 +306,17 @@ CMM.darkenHexColorIfNeeded = darkenHexColorIfNeeded;
 	    existingColorMap.thresholds = colorMap.getThresholds();
 	    existingColorMap.missing = colorMap.getMissingColor();
 	};
-}
+    };
+
+    CMM.hexToRgba = hexToRgba;
+    function hexToRgba(hex) { // I didn't write this function. I'm not that clever. Thanks stackoverflow
+	var rgbColor = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	return rgbColor ? {
+	    r: parseInt(rgbColor[1], 16),
+	    g: parseInt(rgbColor[2], 16),
+	    b: parseInt(rgbColor[3], 16),
+	    a: 255
+	} : null;
+    }
+
 })();

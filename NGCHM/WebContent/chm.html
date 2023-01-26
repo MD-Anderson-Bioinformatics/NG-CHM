@@ -265,7 +265,6 @@
 										<input id="pdfInputColumn" type="checkbox" name="class" value="row" checked> Column<br>
 										<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Row<br>
 										<h3 style="margin-bottom:0px;">Display Options:</h3>
-										Font Size:&nbsp;&nbsp;&nbsp;<input id="pdfInputFont" type="number" name="font" value="" style="width:40px;" min="1" max="36">
 										<p id="pdfErrorMessage" style="display:none;color:red; font-weight:bold;margin-left: 1.0em; margin-left: 1.0em;">Please select a font between 1 and 36</p><br>
 										Font Style:&nbsp;&nbsp;<select id="pdfFontStyle">
 											<option value="helvetica">Helvetica</option>
@@ -277,6 +276,10 @@
 											<option value="A3">Ledger/Tabloid (11 x 17 inches)</option>
 											<option value="A4">A4 International (210 x 297 mm)</option>
 										</select>
+										<div id="pdfProgressBarDiv" style="display: none;">
+										<label for="pdfProgressBar">Progress:</label>
+										<progress id="pdfProgressBar"></progress>
+										</div>
 									</div>
 									<table>
 										<tbody>
@@ -284,7 +287,9 @@
 												<td style="font-weight: bold;">
 													<div id="pref_buttons" style="text-align: right;">
 														<img id="prefCancel_btn" src="images/prefCancel.png" alt="Cancel changes" style="vertical-align: top;">&nbsp;&nbsp;
-														<img id="prefCreate_btn" src="images/createPdf.png" alt="Create PDF" style="vertical-align: top;">
+													    <button id="prefCreate_btn">
+														<img src="images/createPdf.png" alt="Create PDF" style="vertical-align: top;">
+													    </button>
 													</div>
 												</td>
 											</tr>
@@ -408,7 +413,8 @@
 		<script src="javascript/lib/jstat.min.js"></script>
 		<script src="javascript/use_jstat.js"></script>
 		<!-- NEW CHUNK -->
-		<script src="javascript/lib/jspdf.min.js"></script> <!--PRESERVE-->
+		<script src="javascript/lib/jspdf.umd.min.js"></script> <!--PRESERVE-->
+		<script src="javascript/lib/FileSaver.min.js"></script> <!--PRESERVE-->
 		<script type="text/Javascript">
 			// Note: inline javascript is removed by the Widgetizer.
 			NgChm.importNS('NgChm.UI-Manager').onLoadCHM();

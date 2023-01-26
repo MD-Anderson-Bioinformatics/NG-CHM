@@ -150,8 +150,10 @@
 
 	// Clear ribbon mode for this dendrogram.
 	this.clearSelectedRegion = function() {
-	    this.ribbonModeBar = -1;
-	    this.draw();
+	    if (this.ribbonModeBar != -1) {
+		this.ribbonModeBar = -1;
+		this.draw();
+	    }
 	};
 
 	// Set ribbon mode

@@ -68,7 +68,8 @@
      * specified axis.
      ***********************************************************************************/
     SRCHSTATE.getAxisSearchResults = function (axis) {
-	// Convert keys to integers so that callers don't have to.
+	if (MMGR.isRow(axis)) axis = "Row";
+	if (axis == "column") axis = "Column";
 	return Object.keys(searchResults[axis]).map (val => +val);
     };
 

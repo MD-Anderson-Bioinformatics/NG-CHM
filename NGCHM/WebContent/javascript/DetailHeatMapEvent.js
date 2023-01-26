@@ -460,13 +460,15 @@ DEV.clickStart = function (e) {
 		const divW = e.target.clientWidth;
 		const divH = e.target.clientHeight;
 		// texture space
-		const rowTotalW = mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row");
-		const colTotalH = mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column");
+		const rowBarW = mapItem.getScaledVisibleCovariates("row").totalHeight();
+		const rowTotalW = mapItem.dataViewWidth + rowBarW;
+		const colBarH = mapItem.getScaledVisibleCovariates("column").totalHeight();
+		const colTotalH = mapItem.dataViewHeight + colBarH;
 		// proportion space
 		const rowDendroW = mapItem.dendroWidth/rowTotalW;
 		const colDendroH = mapItem.dendroHeight/colTotalH;
-		const rowClassW = DET.calculateTotalClassBarHeight("row")/rowTotalW;
-		const colClassH = DET.calculateTotalClassBarHeight("column")/colTotalH;
+		const rowClassW = rowBarW / rowTotalW;
+		const colClassH = colBarH / colTotalH;
 		const mapW = mapItem.dataViewWidth/rowTotalW;
 		const mapH = mapItem.dataViewHeight/colTotalH;
 		const clickX = coords.x/divW;
@@ -799,21 +801,41 @@ DEV.detailDataZoomIn = function (mapItem) {
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
 	if (mapItem.mode == 'FULL_MAP') {
 	        let mode = mapItem.mode, row=1, col=1;
+		let selectedStart = 0, selectedStop = 0;
 		if (mapItem.modeHistory.length > 0) {
-		        ({ mode, row, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		        ({ mode, row, col, selectedStart, selectedStop } = mapItem.modeHistory.pop());
 		}
 		if ((mode == 'RIBBONH') || (mode == 'RIBBONH_DETAIL')) {
 			mapItem.currentRow = row;
-			DEV.detailHRibbonButton(mapItem);
+			if (mode == 'RIBBONH_DETAIL') {
+			    mapItem.selectedStart = selectedStart;
+			    mapItem.selectedStop = selectedStop;
+			}
+			DET.detailHRibbon(mapItem);
+			if (mode == 'RIBBONH_DETAIL') {
+			    // Go back into 'full ribbon' mode
+			    DEV.detailDataZoomOut (mapItem.chm);
+			    // Remove unwanted mode history
+			    mapItem.modeHistory.pop();
+			}
 		} else if  ((mode == 'RIBBONV') || (mode == 'RIBBONV_DETAIL')) {
 			mapItem.currentCol = col;
-			DEV.detailVRibbonButton(mapItem);
+			if (mode == 'RIBBONV_DETAIL') {
+			    mapItem.selectedStart = selectedStart;
+			    mapItem.selectedStop = selectedStop;
+			}
+			DET.detailVRibbon(mapItem);
+			if (mode == 'RIBBONV_DETAIL') {
+			    // Go back into 'full ribbon' mode
+			    DEV.detailDataZoomOut (mapItem.chm);
+			    // Remove unwanted mode history
+			    mapItem.modeHistory.pop();
+			}
 		} else {
 			mapItem.saveRow = row;
 			mapItem.saveCol = col;
 			DET.detailNormal(mapItem);
 		}
-		mapItem.modeHistory.pop();
 	} else if (mapItem.mode == 'NORMAL') {
 		if (mapItem.modeHistory.length > 0) {
 		        mapItem.modeHistory = [];
@@ -825,9 +847,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 		}
 		mapItem.updateSelection(false);
 	} else if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'RIBBONH_DETAIL')) {
-	        let mode = mapItem.mode, col;
+	        let mode = mapItem.mode, col = 1, row = 1;
 		if (mapItem.modeHistory.length > 0) {
-		    ({ mode, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    ({ mode, row, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    mapItem.saveRow = row;
+		    mapItem.currentRow = row;
 		    if (mode == 'NORMAL') {
 		        mapItem.saveCol = col;
 		    }
@@ -838,15 +862,14 @@ DEV.detailDataZoomIn = function (mapItem) {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
 			if (current == -1) {
 			    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-			    const heatMap = MMGR.getHeatMap();
 			    mapItem.dataBoxHeight = DET.zoomBoxSizes[0];
-			    mapItem.dataViewHeight = DET.SIZE_NORMAL_MODE;
-			    while (Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
+			    DET.setDataViewSize (mapItem, "column", DET.SIZE_NORMAL_MODE);
+			    const numDetailRows = mapItem.heatMap.getNumRows (MAPREP.DETAIL_LEVEL);
+			    const viewSize = mapItem.dataViewHeight - DET.dataViewBorder;
+			    while (Math.floor(viewSize/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) >= numDetailRows) {
 				DET.setDetailDataHeight(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)+1]);
 			    }
-			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-			    mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
-
+			    DET.setCanvasDimensions(mapItem);
 			    DET.detInitGl(mapItem);
 			} else if (current < DET.zoomBoxSizes.length - 1) {
 				DET.setDetailDataHeight (mapItem,DET.zoomBoxSizes[current+1]);
@@ -855,9 +878,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 		}
 		mapItem.modeHistory.pop();
 	} else if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'RIBBONV_DETAIL')) {
-	        let mode = mapItem.mode, row;
+	        let mode = mapItem.mode, row, col;
 		if (mapItem.modeHistory.length > 0) {
-		    ({ mode, row } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    ({ mode, row, col } = mapItem.modeHistory[mapItem.modeHistory.length-1]);
+		    mapItem.saveCol = col;
+		    mapItem.currentCol = col;
 		    if (mode == 'NORMAL') {
 		        mapItem.saveRow = row;
 		    }
@@ -868,15 +893,15 @@ DEV.detailDataZoomIn = function (mapItem) {
 			let current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 			if (current == -1) {
 			    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-			    const heatMap = MMGR.getHeatMap();
 			    mapItem.dataBoxWidth = DET.zoomBoxSizes[0];
-			    mapItem.dataViewWidth = DET.SIZE_NORMAL_MODE;
-			    while (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
+			    DET.setDataViewSize (mapItem, "row", DET.SIZE_NORMAL_MODE);
+			    const numDetailColumns = mapItem.heatMap.getNumColumns (MAPREP.DETAIL_LEVEL);
+			    const viewSize = mapItem.dataViewWidth - DET.dataViewBorder;
+			    while (Math.floor(viewSize/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) >= numDetailColumns) {
 				DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
 			    }
-			    mapItem.canvas.width =  (mapItem.dataViewWidth + DET.calculateTotalClassBarHeight("row"));
-			    mapItem.canvas.height = (mapItem.dataViewHeight + DET.calculateTotalClassBarHeight("column"));
 
+			    DET.setCanvasDimensions (mapItem);
 			    DET.detInitGl(mapItem);
 			} else if (current < DET.zoomBoxSizes.length - 1) {
 			    DET.setDetailDataWidth(mapItem,DET.zoomBoxSizes[current+1]);
@@ -901,7 +926,10 @@ DEV.detailDataZoomIn = function (mapItem) {
 	UHM.hlpC();
 	LNK.labelHelpCloseAll();
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
-	mapItem.modeHistory.push ({ mode: mapItem.mode, row: mapItem.currentRow, col: mapItem.currentCol });
+	mapItem.modeHistory.push ({ mode: mapItem.mode, row: mapItem.currentRow, col: mapItem.currentCol,
+	   selectedStart: mapItem.selectedStart,
+	   selectedStop: mapItem.selectedStop,
+	});
 	if (mapItem.mode == 'NORMAL') {
 		const current = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		if ((current > 0) &&
@@ -952,6 +980,7 @@ DEV.detailDataZoomIn = function (mapItem) {
      **********************************************************************************/
     DEV.detailHRibbonButton = function (mapItem) {
 	DET.clearDendroSelection(mapItem);
+	DET.clearModeHistory (mapItem);
 	DET.detailHRibbon(mapItem);
     };
 
@@ -961,6 +990,7 @@ DEV.detailDataZoomIn = function (mapItem) {
      **********************************************************************************/
     DEV.detailVRibbonButton = function (mapItem) {
 	DET.clearDendroSelection(mapItem);
+	DET.clearModeHistory (mapItem);
 	DET.detailVRibbon(mapItem);
     };
 
@@ -1228,8 +1258,8 @@ DEV.zoomAnimation = function (chm,destRow,destCol) {
 	// set proportion variables for heatmap canvas
 	const detViewW = mapItem.dataViewWidth;
 	const detViewH = mapItem.dataViewHeight;
-	const classBarW = DET.calculateTotalClassBarHeight("row");
-	const classBarH = DET.calculateTotalClassBarHeight("column");
+	const classBarW = mapItem.getScaledVisibleCovariates("row").totalHeight();
+	const classBarH = mapItem.getScaledVisibleCovariates("column").totalHeight();
 	const dendroW = mapItem.dendroWidth;
 	const dendroH = mapItem.dendroHeight;
 	const rowTotalW = detViewW + classBarW;
