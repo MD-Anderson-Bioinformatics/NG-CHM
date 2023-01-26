@@ -1150,9 +1150,6 @@
 	heatMap.setCurrentDL (newDataLayer);
 
 	SUM.buildSummaryTexture();
-	DVW.detailMaps.forEach(dm => {
-		dm.currentDl = newDataLayer;
-	})
 	SUM.drawLeftCanvasBox();
 	SUM.drawSelectionMarks();
 	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout);

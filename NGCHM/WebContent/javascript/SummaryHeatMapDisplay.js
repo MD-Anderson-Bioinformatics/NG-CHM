@@ -764,7 +764,7 @@ SUM.drawLeftCanvasBox = function() {
 		const boxY = ((((DVW.getCurrentSumRow(mapItem)-1) * SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height);
 		const boxW = (DVW.getCurrentSumDataPerRow(mapItem)*SUM.widthScale / SUM.canvas.width) * SUM.boxCanvas.width - 2;
 		const boxH = (DVW.getCurrentSumDataPerCol(mapItem)*SUM.heightScale / SUM.canvas.height) * SUM.boxCanvas.height - 2;
-		const dataLayer = dataLayers[mapItem.currentDl];
+		const dataLayer = dataLayers[heatMap._currentDl];
 		ctx.strokeStyle=dataLayer.selection_color;
 		if (mapItem.version === 'P') {
 			ctx.lineWidth=4;

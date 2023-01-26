@@ -991,7 +991,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	
 	if (rowRanges.length > 0 || colRanges.length > 0) {
 		// Retrieve the selection color for and set the context for coloring the selection boxes.
-		const dataLayer = dataLayers[mapItem.currentDl];
+		const dataLayer = dataLayers[mapItem.heatMap._currentDl];
 		mapItemVars.ctx.lineWidth = 3 * Math.min (target.widthScale, target.heightScale);
 		mapItemVars.ctx.strokeStyle = dataLayer.selection_color;
 

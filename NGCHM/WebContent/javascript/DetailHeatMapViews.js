@@ -161,7 +161,7 @@ DVW.setMode = function(mapItem, newMode) {
     DVW.getDetailWindow = getDetailWindow;
     function getDetailWindow (mapItem) {
 	    return mapItem.heatMap.getNewAccessWindow ({
-		    layer: mapItem.currentDl,
+		    layer: mapItem.heatMap._currentDl,
 		    level: DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL),
 		    firstRow: DVW.getCurrentDetRow(mapItem),
 		    firstCol: DVW.getCurrentDetCol(mapItem),
