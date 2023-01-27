@@ -174,7 +174,7 @@ UHM.hlp = function(element, text, width, reverse, delay=1500) {
 		} else {
 			helptext.style.left = elemPos.left + 'px';
 		}
-		helptext.style.top = (elemPos.top + 20) + 'px';
+		helptext.style.top = (elemPos.top + 40) + 'px';
 		helptext.innerHTML = "<b><font size='2' color='#0843c1'>"+text+"</font></b>";
 		helptext.style.display = "inherit";
 		bodyElem.appendChild(helptext);
