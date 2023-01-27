@@ -1188,28 +1188,18 @@ UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 	    numCols: numCol,
 	});
 	accessWindow.onready().then (win => {
-	    var nan=0;
-	    for (var i=0; i<numCol;i++){
-		for(var j=0;j<numRow;j++){
-			var val = win.getValue(j,i);
-			if (isNaN(val) || val>=MAPREP.maxValues){ // is it Missing value?
-				nan++;
-			} else if (val <= MAPREP.minValues){ // is it a cut location?
-				continue;
+	    let nan=0;
+	    for(let row=1;row<=numRow;row++){
+		for (let {value} of accessWindow.getRowValues(row)) {
+		    if (isNaN(value) || value>=MAPREP.maxValues){ // is it Missing value?
+			nan++;
+		    } else if (value > MAPREP.minValues) { // Don't count cut locations.
+			let k = 0;
+			while (k < breaks.length && value >= breaks[k]) {
+			    k++;
 			}
-			if (val <= lowBP){
-				bins[0]++;
-				continue;
-			} else if (highBP < val){
-				bins[bins.length-1]++;
-				continue;
-			}
-			for (var k=0;k<breaks.length;k++){
-				if (breaks[k]<=val && val < breaks[k+1]){
-					bins[k+1]++;
-					break;
-				}
-			}
+			bins[k]++;  // N.B. One more bin than breaks.
+		    }
 		}
 	    }
 	    var total = 0;
