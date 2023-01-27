@@ -11,7 +11,27 @@
 
 	--load-time: 200ms;
 	--load-delay: 800ms;
+
+	--button-color: blue;
 }
+
+/* Default button appearance.
+ */
+button {
+    all: revert;
+    color: var(--button-color, blue);
+    background-color: #efefef;
+    display: block;
+    border: 1px solid var(--button-color, blue);
+    border-radius: 0.4rem;
+    z-index: 2;
+}
+
+button:hover {
+    color: #0000af;
+    background-color: #d6d6ff;
+}
+
 
 /* Extra class added to selected labels.
  * Used for coloring their text and background colors.
