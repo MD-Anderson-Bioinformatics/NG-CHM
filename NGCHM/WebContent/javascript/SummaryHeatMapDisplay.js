@@ -6,6 +6,7 @@
 
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
+    const CMM = NgChm.importNS('NgChm.CMM');
     const SUMDDR = NgChm.importNS('NgChm.SUMDDR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const DRAW = NgChm.importNS('NgChm.DRAW');
