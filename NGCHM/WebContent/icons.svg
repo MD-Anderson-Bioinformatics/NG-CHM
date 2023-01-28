@@ -12,6 +12,22 @@
     <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.496 6.033h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286a.237.237 0 0 0 .241.247zm2.325 6.443c.61 0 1.029-.394 1.029-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94 0 .533.425.927 1.01.927z"/>
 </symbol>
 
+<symbol id="icon-big-x" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+  <path d="m0 0 1 0 7 7 7-7 1 0 0 1-7 7 7 7 0 1 -1 0-7-7-7 7-1 0 0-1 7-7-7-7z"/>
+</symbol>
+
+<symbol id="icon-arrow-right-path" version="1.1" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="m1 7 10.5 0-2-5 2.5 0 3 6-3 6-2.5 0 2-5-10.5 0z" stroke-width="1"/>
+</symbol>
+
+<symbol id="icon-go" version="1.1" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <g transform="translate(0 -292.77)">
+	<text transform="scale(.94403 1.0593)" x="0.16817249" y="287.96558" font-size="10.038px" stroke-width=".83648" xml:space="preserve">
+	    <tspan x="0" y="287.96558" font-family="sans-serif" font-size="11px" font-weight="bold" stroke-width=".83648" style="font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal">GO</tspan>
+	</text>
+    </g>
+</symbol>
+
 <symbol id="icon-layers" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-layers" viewBox="0 0 16 16">
     <path d="M8.235 1.559a.5.5 0 0 0-.47 0l-7.5 4a.5.5 0 0 0 0 .882L3.188 8 .264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l2.922-1.559a.5.5 0 0 0 0-.882l-7.5-4zm3.515 7.008L14.438 10 8 13.433 1.562 10 4.25 8.567l3.515 1.874a.5.5 0 0 0 .47 0l3.515-1.874zM8 9.433 1.562 6 8 2.567 14.438 6 8 9.433z"/>
 </symbol>

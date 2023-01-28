@@ -15,13 +15,13 @@
 		    <div class="mdaServiceHeader" id="mdaServiceHeader">
 			<img id='messageOpen_btn' style="position:absolute; vertical-align: top; display: none;" src='images/messageButton.png' width="30" height="30" alt='Open Alert'
 			     data-tooltip='Display Startup Warnings' />
-			<!-- WIDGET EXCLUDE This section removed by widget compiler -->
 		        <div id="mda_header" class="mdaServiceHeaderLogo">
+			<!-- WIDGET EXCLUDE This section removed by widget compiler -->
 			    <a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
 				<img id="mdaLogo" src="images/mdabcblogo262x108.png" width="131" height="54" alt="MD Anderson logo"/>
 			    </a>
-			</div>
 			<!-- WIDGET INCLUDE -->
+			</div>
 				<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);"
 				     data-title='File Chooser'
 				     data-intro='Use this button to load a stand-alone .ngchm file.<P>Press the button, select the .ngchm file to view, and press Open.<P>To create an NGCHM, see <A HREF="https://bioinformatics.mdanderson.org/public-software/ngchm/#building-ng-chms" target="_blank">here</A>.'
@@ -37,26 +37,29 @@
 				  </table>
 				</div>
 				<div id="detail_buttons" class="divTable hide" data-show-on-load>
-				  <div class="divRow">
-				    <div class="divLeft" id="mapName"
-					 data-title='Map Name'
-					 data-intro="The map's name. Hover over the name to see the map's caption (if provided)."
-				    >
+				    <div class="divRow">
+					<div id="MapRow">
+					    <img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM'
+						data-hover-img='openMapHover'
+						data-tooltip='Open .NG-CHM Heat Map'
+						data-title='Open File'
+						data-intro='Click to open a new NG-CHM (replacing the current NG-CHM).'
+						/>
+					    <img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen"
+						data-title='Go Back'
+						data-intro='Click to return to the referring web page.'
+						/>
+					    <label for="mapName">Map name:</label>
+					    <div class="divLeft" id="mapName"
+						data-title='Map Name'
+						data-intro="The map's name. Hover over the name to see the map's caption (if provided)."
+						>
+					    </div>
+					</div>
 				    </div>
-				  </div>
-				  <div class="divRow">
-		  		    <div class="divLeft">  
-						<img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM'
-						     data-hover-img='openMapHover'
-						     data-tooltip='Open .NG-CHM Heat Map'
-						     data-title='Open File'
-						     data-intro='Click to open a new NG-CHM (replacing the current NG-CHM).'
-						/>
-						<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen"
-						     data-title='Go Back'
-						     data-intro='Click to return to the referring web page.'
-						/>
-						<strong>Search:</strong>&nbsp;
+				    <div class="divRow">
+					<div id="SelectionsRow">
+						<label>Search:</label>
 						<select name="search_on" id="search_on" class='srchSelect'
 						    data-title='Search Target'
 						    data-intro='Select whether to search on map labels or a specific covariate.'
@@ -89,35 +92,42 @@
 							<option value="Column">Column</option>
 							<option value="Row">Row</option>
 						</select>
-						<span class="dblSpace"/>
-					    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go'
+					    <button id='go_btn'
 	                                         data-title='Go Button'
 						 data-intro='Perform the search and go to the first search result (if any).'
 						 data-hover-img='goHover'
 					         data-tooltip='Search Row/Column Labels'
-					    />
-					    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous'
+						 style="padding: 0.25em;"
+						 >
+						<svg width="1em" height="1em"><use href="icons.svg#icon-go"/></svg>
+					    </button>
+						<span class="dblSpace"/>
+					    <button id='prev_btn'
 	                                         data-title='Previous Result'
 						 data-intro='Go to the previous search result (if any).'
 						 data-hover-img='prevHover'
 					         data-tooltip='Previous Search Result'
-						 style="display:none;"
-					    />
-					    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next'
+						 >
+						<svg width="1em" height="1em" style="rotate: 180deg;"><use href="icons.svg#icon-arrow-right-path"/></svg>
+					    </button>
+					    <button id='next_btn'
 	                                         data-title='Next Result'
 						 data-intro='Go to the next search result (if any).'
 					         data-hover-img='nextHover'
 						 data-tooltip='Next Search Result'
-						 style="display:none;"
-					    />
-					    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel'
+						 >
+						<svg width="1em" height="1em"><use href="icons.svg#icon-arrow-right-path"/></svg>
+					    </button>
+					<button id='cancel_btn' style="color: red; border: 1px solid red;"
 	                                         data-title='Clear Results'
 						 data-intro='Clear the selection for the specified axis (or axes).'
 					         data-hover-img='cancelHover'
 						 data-tooltip='Clear Search Results'
 						 style="display:none;"
-					    />
-		  			 </div> 
+						 >
+					    <svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
+					</button>
+					 </div>
 				  </div>
 				  <div class="divRow">
 					<div class="divLeft">
@@ -125,6 +135,9 @@
 					</div>
 				  </div>
 		</div> <!-- End of detail_buttons div. -->
+		<!-- ----------------------------------------------------------------------------- -->
+		<div id='top-right-spacer'>
+		</div>
 		<!-- ----------------------------------------------------------------------------- -->
 		<div id='top-right-button-group' class="hide" data-show-on-load>
 			    <!-- Layer Controller -->

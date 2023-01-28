@@ -37,6 +37,9 @@ button:hover {
     background-color: #d6d6ff;
 }
 
+svg {
+    display: block;
+}
 
 /* Extra class added to selected labels.
  * Used for coloring their text and background colors.
@@ -57,11 +60,12 @@ body.NgChmViewer {
 div.mdaServiceHeader
 {
 	position: relative;
-	display: inline-flex;
+	display: grid;
+	grid-template-columns: fit-content(0) auto 1fr auto;
+	grid-gap: 0;
 	float: none;
 	width: 100%;
 	height: 58px;
-	color: #666;
 	margin: 0px 0px 0px 0px;
 	background-color: white;
 	border-bottom: 4px solid #da0505;
@@ -73,6 +77,10 @@ div.mdaServiceHeaderLogo
 	left: 0px;
 	display: inline-block;
 	width: auto;
+}
+
+#mdaLogo
+{
     padding: 0px 30px 0px 0px !important;
 }
 
@@ -925,25 +933,18 @@ th.breakpointContainer {
 	cursor: pointer;
 }
 
+.dblSpace {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    grid-gap: 0.5rem;
+    font-size: 1.2rem;
+}
+
 .dblSpace button {
-    font-size: 1.2em;
-    padding: 0;
-    background-color: white;
-    border: 1px solid black;
+    padding: 0.2rem;
     line-height: 1.0;
-    padding: 1px;
-    border-radius: 6px;
 }
-
-.dblSpace button:hover {
-    background-color: lightblue;
-}
-
-.dblSpace button svg {
-    margin: 0;
-    vertical-align: bottom;
-}
-
 
 #linkBoxHdr {
 	position: absolute; /* keep fixed to top of parent */
@@ -1128,13 +1129,18 @@ table.onlineHelp th {
 
 /* Start of top-right and unloadded button groups. */
 
+#top-right-spacer {
+    width: 0.5em;
+}
+
 #unloaded-button-group,
 #top-right-button-group {
-    position: absolute;
-    right: 0;
     display: grid;
     grid-auto-flow: column;
     gap: 0.5rem;
+    width: fit-content;
+    height: 40px;	/* Fit inside mdaServiceHeader (58px) */
+    margin-top: 7px;	/* Center after considering 4px bottom border of header */
 }
 
 #unloaded-button-group button,
@@ -1292,9 +1298,9 @@ iframe.nopointer {
     display: table;
 }
 .divRow  {
-    display: table-row;
-    padding-bottom: 3px;
-    height: 17px;
+    display: block;
+    padding-bottom: 2px;
+    height: 21px;
 }
 .divLeft {
     display: table-cell;
@@ -1310,6 +1316,25 @@ iframe.nopointer {
 }
 .divLeft p, .divRight p, .divMiddle p {
     margin: 1px 1px;
+}
+
+#MapRow {
+    display: grid;
+    white-space: nowrap;
+    grid-template-columns: auto auto auto 1fr;
+    grid-gap: 0.5em;
+}
+
+#mapName {
+    min-width: 0;
+    overflow: hidden;
+}
+
+#SelectionsRow {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: repeat(6,auto);
+    grid-gap: 0.5em;
 }
 
  .dropDownCheckBoxes {
@@ -1357,12 +1382,6 @@ iframe.nopointer {
   	font-size: 8px;
   }
   
-  .srchSelect {
-  	vertical-align:bottom;
-  	font-size: 12px;
-  	height:20px;
-  }  
-
   .srchText {
  	vertical-align:bottom;
   	font-size: 12px;

@@ -2368,11 +2368,7 @@ let	wS = `const debug = ${debug};`;
 
 	    // Populate the header's nameDiv.
 	    const nameDiv = document.getElementById("mapName");
-	    let mapName = heatMap.getMapInformation().name;
-	    if (mapName.length > 30){
-		    mapName = mapName.substring(0,27) + "...";
-	    }
-	    nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
+	    nameDiv.innerHTML = heatMap.getMapInformation().name;
     }
 
 /**********************************************************************************
