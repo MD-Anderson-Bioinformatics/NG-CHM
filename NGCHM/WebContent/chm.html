@@ -118,12 +118,11 @@
 						 >
 						<svg width="1em" height="1em"><use href="icons.svg#icon-arrow-right-path"/></svg>
 					    </button>
-					<button id='cancel_btn' style="color: red; border: 1px solid red;"
+					<button id='cancel_btn' class='red'
 	                                         data-title='Clear Results'
 						 data-intro='Clear the selection for the specified axis (or axes).'
 					         data-hover-img='cancelHover'
 						 data-tooltip='Clear Search Results'
-						 style="display:none;"
 						 >
 					    <svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
 					</button>
@@ -183,20 +182,20 @@
 			    <!-- Open/Close Help Dialog -->
 			    <button id='introButton'
 				data-prefs-panel-locator
-				data-title='Guided Tour'
-				data-intro='Click a tour icon at anytime to initiate a guided tour of on-screen elements.<P>The tour may change based on the current content of the window.'
+				data-title='About NG-CHMs'
+				data-intro='Displays a brief summary of NG-CHMs and pointers to further information'
 				data-tooltip="Open/Close an About Dialog"
 				>
-				<svg width="1em" height="1em" class="tour-button"><use href="icons.svg#icon-question-circle-fill"/></svg>
+				<svg width="1em" height="1em"><use href="icons.svg#icon-question-circle-fill"/></svg>
 			    </button>
 			</div> <!-- top-right-button-group -->
 			<div id="unloaded-button-group" data-hide-on-load>
-			    <button id='aboutMenu_btn'
+			    <button id='aboutButton'
 				data-title='About NG-CHMs'
 				data-intro='Open for information about the NG-CHM system'
 				data-tooltip='Open NG-CHM About'
 				>
-				<svg width="1em" height="1em" class="tour-button"><use href="icons.svg#icon-question-circle-fill"/></svg>
+				<svg width="1em" height="1em"><use href="icons.svg#icon-question-circle-fill"/></svg>
 			    </button>
 			</div> <!-- unloaded-button-group -->
 			<div id="droptarget" class="">DROP HERE</div>
@@ -204,8 +203,20 @@
 
 		    <div id='content'>
 			<!-- WIDGET EXCLUDE This section removed by widget compiler. -->
-			<div id='splash' class='fadeinslow'>
-			    <DIV id="closeSplash">X</DIV>
+			<div id='splash' class='fadeinslow'
+			    data-title='Splash screen'
+			    data-intro='This splash screen displays brief usage notes when no map is loaded'
+			    >
+			    <span class='closeX'>
+					<button id='closeSplash' class='red'
+	                                         data-title='Close Splash Screen'
+						 data-intro='Closes the splash screen'
+						 data-tooltip='Close the splash screen'
+						 >
+					    <svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
+					</button>
+				    </span>
+					<!-- <DIV id="closeSplash">X</DIV> -->
 			    <h2>Next-Generation Clustered Heat Map Viewer</h2>
 			    <P>
 			        Next-Generation Clustered Heat Maps (NG-CHMs) are optimized for the interactive exploration of data matrices, especially <strong>large</strong> ones
@@ -228,10 +239,6 @@
 				    <LI>Explore a <A href='https://tcga.ngchm.net/NGCHM/chm.html?map=class_subset_tcga_brca'>sample NG-CHM</A>.
 				</UL>
 			    </DIV>
-			    <P>
-				For a quick tour of the NG-CHM User Interface (UI), click
-				<span class="tour-button">?</span>.
-			    </P>
 			</div> <!-- splash -->
 			<!-- WIDGET INCLUDE -->
 			<div id='loader' class='faded'></div>
@@ -334,7 +341,7 @@
 									</div>
 							        </div>
 							        <!-- WIDGET INCLUDE -->
-								<div id="msgBoxTxt" style="display: inherit;font-size: 12px; background-color: rgb(230, 240, 255); width: 400px; height: 80px;"></div>
+								<div id="msgBoxTxt"></div>
 								<div id="msgBoxProgressDiv" style="display: none;">
 								<label for="msgBoxProgressBar">Progress:</label>
 								<progress id="msgBoxProgressBar"></progress>
@@ -384,11 +391,6 @@
 				<div id="menuPng" class="menuItem"><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
 				<div id="menuSave" class="menuItem"><img id='menuSave_btn' src='images/saveButton.png' alt='save heat map changes icon'>Save Heat Map Changes...</div>
 				<div id="menuGear" class="menuItem"><img id='menuGear_btn' src='images/gear.png' alt='open modify map preferences icon'>Modify Map Preferences...</div>
-				<div class="menuItemBorder"></div>
-				<div id="menuLink" class="menuItem"><img id='linkHelp_btn' src='images/plugin.png' alt='open plugin help icon'>Plug-in Help...</div>
-				<div id="menuHelp" class="menuItem"><img id='help_btn' src='images/questionMark.png' alt='open help icon'>NgChm Help...</div>
-				<div id="menuSpaceAbout" class="menuItemBorder"></div>
-				<div id="menuAbout" class="menuItem"><img id='about_btn' src='images/aboutNgchm.png' alt='about ngchm icon'>About NgChm...</div>
 			</div>
 		<script src="javascript/NgChm.js"></script>
 		<script src="javascript/Config.js"></script>

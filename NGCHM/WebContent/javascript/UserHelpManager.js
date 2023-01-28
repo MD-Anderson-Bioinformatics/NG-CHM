@@ -60,8 +60,12 @@
 	    if (!ev.target.dataset.hasOwnProperty('nohoverImg')) ev.target.dataset.nohoverImg = ev.target.src;
 	    ev.target.src = UTIL.imageTable[ev.target.dataset.hoverImg];
 	}
-	if (ev.target.dataset.hasOwnProperty('tooltip')) {
-	    UHM.hlp (ev.target, ev.target.dataset.tooltip || ev.target.dataset.intro || ev.target.dataset.title || "Undefined tooltip", 140, 0);
+	let tt = ev.target;
+	while (tt && !tt.dataset.hasOwnProperty('tooltip')) {
+	    tt = tt.parentElement;
+	}
+	if (tt) {
+	    UHM.hlp (tt, tt.dataset.tooltip || tt.dataset.intro || tt.dataset.title || "Undefined tooltip", 140, 0);
 	}
     }
 })();
@@ -401,6 +405,10 @@ UHM.setMessageBoxHeader = function(headerText) {
 	msgBoxHdr.appendChild(UHM.createCloseX(UHM.messageBoxCancel));
 }
 
+UHM.getMessageTextBox = function() {
+	return document.getElementById('msgBoxTxt');
+};
+
 UHM.setMessageBoxText = function(text) {
 	var msgBoxTxt = document.getElementById('msgBoxTxt');
 	msgBoxTxt.innerHTML = text;
@@ -427,7 +435,10 @@ UHM.displayMessageBox = function() {
  * - src: if type == 'image' source of the button image
  * - alt: if type == 'image' alt attribute of the button image
  * - text: if type == 'text' content of the button
+ * - tooltip: adds value of this property as a tooltip for the button
  * - disableOnClick: if true disables the button element when clicked.
+ * - disabled: disables the button element immediately
+ * - disabledReason: if disabled, include this message in tool tip.
  * - default: if true class default added to the button element.
  *
  * altText (deprecated): added to 'alt' attribute of img buttons.  Superseded by alt field.
@@ -463,6 +474,14 @@ UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
 	}
 	if (buttonSpec.default) {
 	    newButton.classList.add('default');
+	}
+	if (buttonSpec.disabled) {
+	    newButton.disabled = true;
+	    const reason = buttonSpec.disabledReason || 'of unspecified reason';
+	    const tooltip = buttonSpec.tooltip ? buttonSpec.tooltip + '. ' : '';
+	    newButton.dataset.tooltip = tooltip + 'Disabled because ' + reason;
+	} else if (buttonSpec.tooltip) {
+	    newButton.dataset.tooltip = buttonSpec.tooltip + '.';
 	}
 	if (onClick == undefined) {
 	    newButton.onclick = UHM.messageBoxCancel;
@@ -581,11 +600,10 @@ UHM.displayStartupWarnings = function() {
   Returns a span with 'X' that can be used to close a dialog.
 */
 UHM.createCloseX = function(closeFunction) {
-	let closeX = document.createElement("span");
-	closeX.setAttribute("class", "closeX");
-	closeX.innerHTML = "&#x2715;"; // multiplication x 
+	const closeX = UTIL.newSvgButton ('icon-big-x.red');
 	closeX.onclick = closeFunction;
-	return closeX
+	const buttonBox = UTIL.newElement ('SPAN.closeX', {}, [ closeX ]);
+	return buttonBox;
 }
 
 })();

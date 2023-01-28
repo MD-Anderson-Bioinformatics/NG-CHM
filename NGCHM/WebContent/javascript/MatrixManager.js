@@ -1847,11 +1847,12 @@ let	wS = `const debug = ${debug};`;
 
     // Initiate download of NGCHM File Viewer application zip
     function downloadFileApplication () {
+	const heatMap = MMGR.getHeatMap();
 	if (typeof NgChm.galaxy !== 'undefined') {
 	    // Current viewer is embedded within Galaxy.
 	    // FIXME: BMB: Use a better way to determine Galaxy embedding.
 	    window.open("/plugins/visualizations/mda_heatmap_viz/static/ngChmApp.zip");
-	} else if (MMGR.getHeatMap().source() === MMGR.FILE_SOURCE) {
+	} else if (!heatMap || heatMap.source() === MMGR.FILE_SOURCE) {
 	    // Heat map came from a disk file, not from a server.
 	    // (This does not mean the viewer is not from a server, so this could be
 	    // refined further for that case i.e. the "api" condition might be more appropriate)

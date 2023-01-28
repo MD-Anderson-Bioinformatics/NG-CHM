@@ -32,6 +32,11 @@ button {
     z-index: 2;
 }
 
+button.red {
+    color: red;
+    border: 1px solid red;
+}
+
 button:hover {
     color: #0000af;
     background-color: #d6d6ff;
@@ -175,6 +180,18 @@ div.pane canvas {
 
 #pref_buttons button:disabled {
     opacity: 25%;
+}
+
+#msgBox {
+    display: grid;
+    grid-template-columns: auto;
+}
+
+#msgBoxTxt {
+    display: inherit;
+    font-size: 12px;
+    background-color: rgb(230, 240, 255);
+    width: 40em;
 }
 
 #msgBox button:disabled {
@@ -414,6 +431,12 @@ div.paneHeader img {
 .buttonBox {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
+}
+
+#msgBoxButtons {
+    display: grid;
+    grid-auto-flow: column;
+    width: fit-content;
 }
 
 #msgBoxButtons img {
@@ -960,6 +983,13 @@ th.breakpointContainer {
 .closeX {
 	float: right;
 	padding-right: 10px;
+	height: 100%;
+	display: inline-grid;
+	grid-template-rows: repeat(3,1fr);
+}
+
+.closeX button {
+	grid-row: 2;
 }
 
 .closeX:hover {
@@ -1078,6 +1108,10 @@ th.breakpointContainer {
     line-height: 30px;
     text-align: center;
     background: #CBD1EA;
+}
+
+#msgBoxHdr {
+    display: block;
 }
 
 #prefsMove_btn, #redX_btn {

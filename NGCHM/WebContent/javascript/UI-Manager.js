@@ -30,6 +30,9 @@
     const RECPANES = NgChm.importNS('NgChm.RecPanes');
     const CUST = NgChm.importNS('NgChm.CUST');
     const UHM = NgChm.importNS('NgChm.UHM');
+    const TOUR = NgChm.importNS('NgChm.TOUR');
+
+    const localFunctions = {};
 
     /***
     *  Functions related to saving Ng-Chms.
@@ -713,22 +716,92 @@
      **********************************************************************************/
     UIMGR.widgetHelp = function() {
 	    const heatMap = MMGR.getHeatMap();
+	    const isMapLoaded = heatMap && heatMap.isMapLoaded();
 	    const logos = document.getElementById('ngchmLogos');
 	    // Logos are not included in the widgetized version.
 	    if (logos) { logos.style.display = ''; }
 	    UHM.initMessageBox();
 	    UHM.setMessageBoxHeader("About NG-CHM Viewer");
-	    var mapVersion = ((heatMap !== null) && heatMap.isMapLoaded()) === true ? heatMap.getMapInformation().version_id : "N/A";
-	    var text = "<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.</p>";
-	    text = text + "<p><a href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>Additional NG-CHM Information and Help</a></p>";
-	    text = text + "<p><b>Software Version: </b>" + COMPAT.version+"</p>";
-	    text = text + "<p><b>Linkouts Version: </b>" + linkouts.getVersion()+"</p>";
-	    text = text + "<p><b>Map Version: </b>" +mapVersion+"</p>";
-	    text = text + "<p><b>Citation:</b> Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a></p>";
-	    text = text + "<p>The NG-CHM Viewer is also available for a variety of other platforms.</p>";
-	    UHM.setMessageBoxText(text);
-	    UHM.setMessageBoxButton('close', { type: 'image', src: UTIL.imageTable.closeButton, alt: "Close button", default: true });
+	    const mapVersion = isMapLoaded ? heatMap.getMapInformation().version_id : "N/A";
+	    const messageBox = UHM.getMessageTextBox ();
+	    let text = "<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.</p>";
+	    messageBox.innerHTML = text;
+
+	    messageBox.appendChild (UTIL.newElement ('P', {}, 'Links to additional NG-CHM information and help:'));
+	    const links = UTIL.newElement ('UL');
+	    addLink (links, 'https://bioinformatics.mdanderson.org/public-software/ngchm/', 'NG-CHM Project Page');
+	    addLink (links, 'https://www.ngchm.net', 'NG-CHM News and Updates');
+	    addLink (links, 'https://bioinformatics.mdanderson.org/public-software/ngchm/#video-tutorials', 'Video tutorials');
+	    messageBox.appendChild (links);
+
+	    const versions = UTIL.newElement ('TABLE');
+	    addVersion (versions, "Software Version", COMPAT.version);
+	    if (heatMap) {
+		addVersion (versions, "Linkouts Version", linkouts.getVersion());
+		addVersion (versions, "Map Version", mapVersion);
+	    }
+	    messageBox.appendChild (versions);
+
+	    messageBox.appendChild (UTIL.newElement ('P', {}, [
+		"<b>Citation:</b>",
+		' Michael C. Ryan, Mark Stucky, Chris Wakefield, James M. Melott, Rehan Akbani, John N. Weinstein, and Bradley M. Broom,',
+	        ' Interactive Clustered Heat Map Builder: An easy web-based tool for creating sophisticated clustered heat maps.',
+		UTIL.newElement ('A', { href: 'https://doi.org/10.12688/f1000research.20590.2', target: '_blank' }, [
+		    'F1000Research 2019, 8 (ISCB Comm J):1750',
+		]),
+		".",
+	    ]));
+	    messageBox.appendChild (UTIL.newElement ('P', {}, [
+		"The NG-CHM Viewer can be downloaded for stand-alone use. It is also incorporated into a variety of other platforms.",
+	    ]));
+	    UHM.setMessageBoxButton('viewer', {
+		type: 'text',
+		text: 'Download viewer',
+		tooltip: 'Downloads a copy of the NG-CHM viewer',
+	    }, function () {
+		UHM.messageBoxCancel();
+		MMGR.zipAppDownload();
+	    });
+	    UHM.setMessageBoxButton('tour', {
+		type: 'text',
+		text: 'Take a tour',
+		tooltip: 'Displays an interactive tour of the user interface elements',
+	    }, function () {
+		UHM.messageBoxCancel ();
+		TOUR.showTour(null);
+	    });
+	    UHM.setMessageBoxButton('plugins', {
+		type: 'text',
+		text: 'About Plugins',
+		tooltip: 'Displays details of loaded/available plugins',
+		disabled: !isMapLoaded,
+		disabledReason: 'no map is loaded',
+	    }, function () {
+		UHM.messageBoxCancel ();
+		localFunctions.openLinkoutHelp();
+	    });
+	    UHM.setMessageBoxButton('close', {
+		type: 'text',
+		text: 'Close',
+		tooltip: 'Closes this dialog',
+		default: true,
+	    });
 	    UHM.displayMessageBox();
+
+	    function addLink (links, href, text) {
+		const LI = UTIL.newElement ('LI', {}, [
+		    UTIL.newElement ('A', { href, target: '_blank' }, [ text ]),
+		]);
+		links.appendChild (LI);
+	    }
+
+	    function addVersion (versions, name, value) {
+		const row = UTIL.newElement('TR', {}, [
+			UTIL.newElement ('TD', {}, name + ':'),
+			UTIL.newElement ('TD', {}, value)
+			]);
+		versions.appendChild (row);
+	    }
     };
 
     function openHamburgerMenu (e) {
@@ -738,10 +811,6 @@
 	    menu.style.top = parentTop + 'px';
 	    if (menu.style.display === 'none') {
 		    menu.style.display = '';
-		    if (MMGR.getHeatMap().source() !== MMGR.WEB_SOURCE) {
-			    document.getElementById('menuAbout').style.display = 'none';
-			    document.getElementById('menuSpaceAbout').style.display = 'none';
-		    }
 		    // Disable Save as PDF menu item if no heatmap window visble.
 		    const pdfMenuItem = document.getElementById('menuPdf');
 		    if (PDF.canGeneratePdf()) {
@@ -826,6 +895,12 @@
 	    cancelFunc || UHM.messageBoxCancel);
     }
 
+    const aboutButton = document.getElementById ('introButton');
+    aboutButton.onclick = (ev) => {
+	UIMGR.widgetHelp();
+	ev.stopPropagation();
+    };
+
     const hamburgerButton = document.getElementById('barMenu_btn');
     hamburgerButton.onclick = (ev) => {
 	openHamburgerMenu(ev.target);
@@ -845,6 +920,7 @@
 	 * installed for the NG-CHM instance. Then the logic to display the linkout
 	 * help box is called.
 	 **********************************************************************************/
+	localFunctions.openLinkoutHelp = openLinkoutHelp;
 	function openLinkoutHelp () {
 	    UHM.closeMenu();
 	    const mapLinksTbl = openMapLinkoutsHelp();
@@ -1158,10 +1234,6 @@
 	}
 
 
-	document.getElementById('menuLink').onclick = () => {
-	    openLinkoutHelp();
-	};
-
 	document.getElementById('mapLinks_btn').onclick = () => {
 	    showMapPlugins();
 	};
@@ -1176,21 +1248,7 @@
 
     })();
 
-    document.getElementById('menuHelp').onclick = () => {
-	UHM.closeMenu();
-	if (MMGR.getHeatMap().source() !== MMGR.WEB_SOURCE) {
-	    UIMGR.widgetHelp();
-	} else {
-	    let url = location.origin+location.pathname;
-	    window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
-	}
-    };
-
-    document.getElementById('aboutMenu_btn').onclick = (ev) => {
-	UIMGR.widgetHelp();
-    };
-
-    document.getElementById('menuAbout').onclick = () => {
+    document.getElementById('aboutButton').onclick = (ev) => {
 	UIMGR.widgetHelp();
     };
 
