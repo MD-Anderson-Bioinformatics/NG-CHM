@@ -147,23 +147,27 @@ DEV.addEvents = function (paneId) {
  * classification bars.
  *********************************************************************************/
 DEV.userHelpOpen = function(mapItem) {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = mapItem.heatMap;
     UHM.hlpC();
-    var helpContents = document.createElement("TABLE");
-    helpContents.id = 'helpTable';
-    var orgW = window.innerWidth+window.pageXOffset;
-    var orgH = window.innerHeight+window.pageYOffset;
-    var helptext = UHM.getDivElement("helptext");
-    helptext.innerHTML=("<a href align='left'>Copy To Clipboard</a><img id='redX_btn' src='images/redX.png' alt='Close Help' align='right'>");
-    helptext.children[0].onclick = function (ev) {
+
+    const A = UTIL.newElement('A', { href: '', }, 'Copy to Clipboard');
+    A.onclick = function (ev) {
 	ev.preventDefault();
-	UHM.pasteHelpContents();  // The <A> element.
+	UHM.pasteHelpContents();
     };
-    helptext.onclick = function(event) { UHM.hlpC(); };
+    const CLOSE = UTIL.newElement('BUTTON.red', {},
+	    UTIL.newElement('svg', { width: '1em', height: '1em', }, [
+		UTIL.newElement('use', { href: 'icons.svg#icon-big-x', }),
+		'X',  // Fallback for Chrome 109
+	    ]));
+    const HDR = UTIL.newElement('DIV.userHelpHeader', {}, [ UTIL.newElement('SPAN'), A, UTIL.newElement('SPAN'), CLOSE ]);
+    const helptext = UHM.getDivElement("helptext");
     helptext.style.position = "absolute";
+    helptext.appendChild (HDR);
     document.getElementsByTagName('body')[0].appendChild(helptext);
-    var rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
-    var colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
+
+    const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
+    const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
 
     // pixels
     var rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
@@ -183,6 +187,8 @@ DEV.userHelpOpen = function(mapItem) {
 		objectType = "colClass";
 	}
     }
+
+    const helpContents = UTIL.newElement("TABLE#helpTable");
     if (objectType === "map") {
 	var row = Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio('row'));
 	var col = Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio('col'));

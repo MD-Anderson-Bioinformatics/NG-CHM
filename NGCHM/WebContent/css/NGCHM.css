@@ -1109,6 +1109,20 @@ th.breakpointContainer {
     rotate: 180deg;
 }
 
+.userHelpHeader {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto;
+}
+
+.userHelpHeader a {
+    font-size: 1.25em;
+    grid-column: 2;
+}
+
+.userHelpHeader button {
+    grid-column: 4;
+}
+
 #prefsHdr, #pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
 	cursor: move;
     display: table;
