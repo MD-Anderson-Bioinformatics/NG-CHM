@@ -361,12 +361,10 @@ UPM.prefsMoveButton = function() {
 	var prefspanel = document.getElementById("prefs");
 	var moveBtn = document.getElementById("prefsMove_btn");
 	if (moveBtn.dataset.state === 'moveLeft') {
-		moveBtn.setAttribute('src', 'images/prefsRight.png');
 		moveBtn.dataset.state = 'moveRight';
 		prefspanel.style.right = "";
 		prefspanel.style.left = UTIL.containerElement.offsetLeft + 'px';
 	} else {
-		moveBtn.setAttribute('src', 'images/prefsLeft.png');
 		moveBtn.dataset.state = 'moveLeft';
 		prefspanel.style.right = "";
 		prefspanel.style.left = (UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';

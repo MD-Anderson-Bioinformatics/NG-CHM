@@ -433,6 +433,7 @@ div.paneHeader img {
     margin-bottom: 0.5em;
 }
 
+#pref_buttons,
 #msgBoxButtons {
     display: grid;
     grid-auto-flow: column;
@@ -455,6 +456,7 @@ div.paneHeader img {
     border-radius: 1em;
 }
 
+#pref_buttons .default > span,
 #msgBoxButtons .default > span {
     border: 2px solid #3757be;
     border-radius: 1em;
@@ -925,7 +927,7 @@ th.breakpointContainer {
 	width: 420px;
 	overflow: hidden;
 	position: absolute;
-	background-color: #CBDBF6; 
+	background-color: var(--dialog-body-background);
 	border: 1px solid black; 
 	z-index: 10000;
 	resize: vertical;
@@ -988,8 +990,9 @@ th.breakpointContainer {
 	grid-template-rows: repeat(3,1fr);
 }
 
-.closeX button {
-	grid-row: 2;
+.prefsHdr {
+	display: grid;
+	grid-template-columns: auto fit-content(0);
 }
 
 .closeX:hover {
@@ -1060,6 +1063,7 @@ th.breakpointContainer {
 }
 
 #linkBoxFoot button,
+#pref_buttons button,
 #msgBoxButtons button {
     border: none;
     vertical-align: top;
@@ -1096,6 +1100,15 @@ th.breakpointContainer {
     background-color: rgb(203, 219, 246);
 }
 
+#prefsHdr button {
+    font-size: 0.7em;
+    height: 70%;
+}
+
+#prefsMove_btn[data-state='moveLeft'] svg {
+    rotate: 180deg;
+}
+
 #prefsHdr, #pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
 	cursor: move;
     display: table;
@@ -1108,6 +1121,11 @@ th.breakpointContainer {
     line-height: 30px;
     text-align: center;
     background: #CBD1EA;
+}
+
+#prefsHdr {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
 }
 
 #msgBoxHdr {
