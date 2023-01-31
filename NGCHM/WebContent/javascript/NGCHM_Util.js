@@ -90,6 +90,27 @@ UTIL.newTxt = function newTxt(txt) {
 	return document.createTextNode(txt);
 };
 
+// Create a new SVG icon button element.
+//
+// iconIds is one or more SVG symbol ids (separated by !) from icons.svg.
+// By default, all SVG elements are always visible.  The client is
+// responsible for the CSS required to show the SVGs selectively.
+//
+// The svgIds can be followed by an optional #id and .classes.
+// The attrs object defines additional attributes to be set on
+// the newSvgButton.  Note that all such decorations apply to
+// the button element, not to the SVG(s) contained therein.
+//
+UTIL.newSvgButton = newSvgButton;
+function newSvgButton (iconIds, attrs, fn) {
+    const classes = iconIds.split('.');
+    const names = classes.shift().split('#');
+    const svgs = names[0].split('!');
+    const button = UTIL.newElement ('BUTTON');
+    button.innerHTML = svgs.map(svg => '<SVG width="1em" height="1em"><USE href="icons.svg#' + svg + '"/></SVG>').join('');
+    return decorateElement (button, names, classes, attrs, [], fn);
+}
+
 // Create a new DOM element.
 //
 // Spec consists of an element tag name,
@@ -97,24 +118,32 @@ UTIL.newTxt = function newTxt(txt) {
 //     followed by any number of '.' and class id.
 // E.g. div#id.class1.class2
 //
-// Attrs is a dictionary of attributes to add to the new node.
+// Attrs is a dictionary of attributes to add to the new node.  If attrs contains
+// either style and/or dataset, the contents of those objects are added
+// individually to the corresponding objects on the DOM element.
 //
 // Content, if defined, is either a DOM node or an array of DOM nodes to
 // include as children of the new DOM element.
 //
 // Fn, if defined, is a function that is called with the new node as a
-// parameter after it's constructed but before it's returned.
+// parameter after it's constructed but before it's returned.  It must
+// return a DOM element.
 //
 UTIL.newElement = function newElement (spec, attrs, content, fn) {
 	const classes = spec.split('.');
 	const names = classes.shift().split('#');
+	const el = document.createElement(names[0]);
+
+	return decorateElement (el, names, classes, attrs, content, fn);
+};
+
+    function decorateElement (el, names, classes, attrs, content, fn) {
 	content = content || [];
 	if (!Array.isArray(content)) content = [content];
 	if (names.length > 2) {
-		console.log ({ m: 'UTIL.newElement: too many ids', spec, attrs, names });
-		throw new Error ('UTIL.newElement: too many ids');
+		console.log ({ m: 'UTIL.decorateElement: too many ids', spec, attrs, names });
+		throw new Error ('UTIL.decorateElement: too many ids');
 	}
-	const el = document.createElement(names[0]);
 	if (names.length > 1) {
 		el.setAttribute ('id', names[1]);
 	}
@@ -151,11 +180,11 @@ UTIL.newElement = function newElement (spec, attrs, content, fn) {
 		if (x instanceof HTMLElement) {
 			return x;
 		} else {
-			console.error (new Error('UTIL.newElement decorator function did not return a DOM node'));
+			console.error (new Error('UTIL.decorateElement decorator function did not return a DOM node'));
 		}
 	}
 	return el;
-};
+    }
 
 // Create a DOM fragment from an array of DOM nodes.
 UTIL.newFragment = function newFragement (nodes) {
