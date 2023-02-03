@@ -1135,7 +1135,7 @@ th.breakpointContainer {
 #pdfPrefs {
     display: flex;
     flex-direction: column;
-    background-color: rgb(203, 219, 246);
+    background-color: var(--dialog-body-background);
 }
 
 #prefsHdr button {
@@ -1172,7 +1172,22 @@ th.breakpointContainer {
     height: 30px;
     line-height: 30px;
     text-align: center;
-    background: #CBD1EA;
+    background: var(--dialog-header-background,lightsteelblue);
+}
+
+#pdfPrefsHdr {
+    display: grid;
+}
+
+#prefsHdr button {
+    margin-top: 20%;
+}
+
+#userHelpHeader span.closeX,
+#msgBoxHdr span.closeX,
+#pdfPrefsHdr span.closeX {
+    padding-top: 20%;
+    padding-right: 10px;
 }
 
 #prefsHdr {
@@ -1181,7 +1196,8 @@ th.breakpointContainer {
 }
 
 #msgBoxHdr {
-    display: block;
+    display: grid;
+    grid-template-columns: auto fit-content(0);
 }
 
 #prefsMove_btn, #redX_btn {
