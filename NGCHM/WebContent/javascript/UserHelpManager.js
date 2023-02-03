@@ -400,7 +400,7 @@ UHM.messageBoxIsVisible = function () {
 
 UHM.setMessageBoxHeader = function(headerText) {
 	var msgBoxHdr = document.getElementById('msgBoxHdr');
-	msgBoxHdr.innerHTML = headerText;
+	msgBoxHdr.innerHTML = '<SPAN>' + headerText + '</SPAN>';
 	if (msgBoxHdr.querySelector(".closeX")) { msgBoxHdr.querySelector(".closeX").remove(); }
 	msgBoxHdr.appendChild(UHM.createCloseX(UHM.messageBoxCancel));
 }

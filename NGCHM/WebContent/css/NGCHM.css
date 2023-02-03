@@ -237,8 +237,8 @@ div.pane canvas {
 #msgBoxTxt {
     display: inherit;
     font-size: 12px;
-    background-color: rgb(230, 240, 255);
     width: 40em;
+    box-sizing: border-box;
 }
 
 #msgBox button:disabled {
@@ -1116,16 +1116,16 @@ th.breakpointContainer {
     margin-top: 0.5em;
 }
 
+#msgBox {
+    background-color: var(--dialog-body-background);
+}
+
 #linkBoxFoot button,
 #pref_buttons button,
 #msgBoxButtons button {
     border: none;
     vertical-align: top;
     background: transparent;
-}
-
-#msgBoxTxt {
-    box-sizing: border-box
 }
 
 .msgBoxButton {
