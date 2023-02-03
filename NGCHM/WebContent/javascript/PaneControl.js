@@ -329,15 +329,25 @@
 	}
 
 	// Initialize DOM IMG element for the screen mode (expand/contract) function.
-	function initializePaneScreenMode (icon, paneId) {
-		icon.id = paneId + "_ScreenMode";
-		icon.onmouseout = function(e) {
+	function initializePaneScreenMode (expander, shrinker, paneId) {
+		expander.id = paneId + "_ScreenModeE";
+		expander.onmouseout = function(e) {
 			UHM.hlpC();
 		};
-		icon.onmouseover = function(e) {
-			UHM.hlp(icon, 'Expand/Contract Panel', 120, 0);
+		expander.onmouseover = function(e) {
+			UHM.hlp(expander, 'Expand Panel', 120, 0);
 		};
-		icon.addEventListener ('click', function(ev) {
+		expander.addEventListener ('click', function(ev) {
+			changeScreenMode (ev.currentTarget);
+		}, true);
+		shrinker.id = paneId + "_ScreenModeS";
+		shrinker.onmouseout = function(e) {
+			UHM.hlpC();
+		};
+		shrinker.onmouseover = function(e) {
+			UHM.hlp(shrinker, 'Contract Panel', 120, 0);
+		};
+		shrinker.addEventListener ('click', function(ev) {
 			changeScreenMode (ev.currentTarget);
 		}, true);
 	}
@@ -346,12 +356,11 @@
 	function changeScreenMode (icon) {
 		let paneId = icon.id.split("_")[0];
 		if (isPaneExpanded === true) {
-			icon.src = 'images/iconFullScreen.png';
 			closeFullScreen(paneId);
 		} else {
-			icon.src = 'images/iconCloseFullScreen.png';
 			openFullScreen(paneId);
 		}
+		icon.parentElement.dataset.expanded = '' + isPaneExpanded;
 	}
 
 	//Grab a list of panes and show/hide them all
@@ -455,7 +464,7 @@
 	// Exported function.
 	function addPanelIcons (loc, userIcons) {
 	    // Find the icon group containing the paneMenuIcon.
-	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group IMG.paneMenuIcon');
+	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group .paneMenuIcon');
 	    const iconGroup = paneIcon.parentElement;
 	    userIcons.forEach (icon => {
 		iconGroup.insertBefore (icon, paneIcon);
@@ -560,20 +569,16 @@
 			const ig = UTIL.newElement('DIV.icon_group');
 			h.appendChild(ig);
 
-			const img = UTIL.newElement('IMG.paneMenuIcon', {
-				src: 'images/paneMenu.png',
-				alt: 'Open pane menu',
-				align: 'top'
-			});
+			const img = UTIL.newSvgButton ('icon-four-panels!icon-four-panels-glow.paneMenuIcon');
 			initializePaneIconMenu (img);
-			const imgScr = UTIL.newElement('IMG.paneScreenModeIcon', {
-				src: 'images/iconFullScreen.png',
-				alt: 'Expand Pane',
-				align: 'left'
-			});
-			initializePaneScreenMode(imgScr, paneid);
 			ig.appendChild(img);
-			sc.appendChild(imgScr);
+
+			const expander = UTIL.newSvgButton('icon-expand.expander', { align: 'left' });
+			const shrinker = UTIL.newSvgButton('icon-shrink.shrinker', { align: 'left' });
+			initializePaneScreenMode(expander, shrinker, paneid);
+			sc.dataset.expanded = 'false';
+			sc.appendChild(expander);
+			sc.appendChild(shrinker);
 
 		}
 		return pane;
@@ -1255,7 +1260,7 @@
 
 	// Remove any icons except the PanelMenuIcon from the panel menu group.
 	function removePanelMenuGroupIcons (loc) {
-	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group IMG.paneMenuIcon');
+	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group .paneMenuIcon');
 	    const iconGroup = paneIcon.parentElement;
 	    [...iconGroup.children].forEach (element => {
 		if (element !== paneIcon) {

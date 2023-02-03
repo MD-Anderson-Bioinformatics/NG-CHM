@@ -383,6 +383,13 @@ div.paneHeader img {
 	padding: 1px;
 }
 
+div.paneHeader button {
+    font-size: 1.0em;
+    height: 26px;
+    width: 26px;
+    padding: 4px;
+}
+
 .menuHeader {
 	padding: 1px 10px 1px 10px;
 	background-color: #ccccff;
