@@ -198,17 +198,18 @@
 			    data-title='Splash screen'
 			    data-intro='This splash screen displays brief usage notes when no map is loaded'
 			    >
-			    <span class='closeX'>
-					<button id='closeSplash' class='red'
-	                                         data-title='Close Splash Screen'
-						 data-intro='Closes the splash screen'
-						 data-tooltip='Close the splash screen'
-						 >
-					    <svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
-					</button>
-				    </span>
-					<!-- <DIV id="closeSplash">X</DIV> -->
-			    <h2>Next-Generation Clustered Heat Map Viewer</h2>
+			    <div id='splashBoxHeader' class='msgBoxHdr'>
+				<h2>Next-Generation Clustered Heat Map Viewer</h2>
+				<span class='closeX'>
+				    <button id='closeSplash' class='red'
+					     data-title='Close Splash Screen'
+					     data-intro='Closes the splash screen'
+					     data-tooltip='Close the splash screen'
+					     >
+					<svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
+				    </button>
+				</span>
+			    </div>
 			    <P>
 			        Next-Generation Clustered Heat Maps (NG-CHMs) are optimized for the interactive exploration of data matrices, especially <strong>large</strong> ones
 				such as often occur in high-throughput molecular profiling studies (omics).  Although motivated by biological applications,

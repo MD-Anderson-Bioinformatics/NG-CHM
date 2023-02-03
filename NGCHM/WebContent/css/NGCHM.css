@@ -269,11 +269,6 @@ div.pane canvas {
 	border-radius: 0.3em;
 }
 
-#closeSplash:hover {
-	color: rgb(225,0,0);
-	border-color: rgb(225,0,0);
-}
-
 #splashWaiting {
 	font-style: italic;
 	font-weight: bolder;
@@ -1028,11 +1023,8 @@ th.breakpointContainer {
 }
 
 .closeX {
-	float: right;
-	padding-right: 10px;
-	height: 100%;
-	display: inline-grid;
-	grid-template-rows: repeat(3,1fr);
+	display: block;
+	height: 80%;
 }
 
 .prefsHdr {
@@ -1051,6 +1043,10 @@ th.breakpointContainer {
     height: 88%;
     overflow: auto;
     overflow-x: hidden;
+}
+
+#splashBoxHeader {
+    height: 2em;
 }
 
 #prefActions {
