@@ -384,6 +384,7 @@
 			setTimeout (() => {
 			    DMM.switchPaneToDetail (PANE.findPaneLocation(s.child2));
 			    SRCH.doInitialSearch();
+			    PANE.resizePane (SUM.chmElement);
 			}, 32);
 		} else if (UTIL.showSummaryPane) {
 			SMM.switchPaneToSummary (initialLoc);
