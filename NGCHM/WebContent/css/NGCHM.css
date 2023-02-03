@@ -460,6 +460,12 @@ div.paneHeader img {
 	display: contents;
 }
 
+#messageOpen_btn {
+    position: absolute;
+    vertical-align: top;
+    font-size: 54px;
+}
+
 .buttonBox {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
