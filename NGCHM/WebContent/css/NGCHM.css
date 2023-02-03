@@ -32,6 +32,10 @@ button {
     z-index: 2;
 }
 
+button.pressed {
+    background-color: var(--pressed-button-color);
+}
+
 button.red {
     color: red;
     border: 1px solid red;
@@ -40,6 +44,11 @@ button.red {
 button:hover {
     color: #0000af;
     background-color: #d6d6ff;
+}
+
+.buttonSet {
+    display: inline-block;
+    margin-left: 1em;
 }
 
 svg {
@@ -133,7 +142,7 @@ div.paneHeader {
 	font-family: sans-serif;
 	font-weight: bold;
 	margin: 0px 0px 4px 0px;
-	padding: 5px 5px 0px 5px;
+	padding: 5px 5px 5px 5px;
 }
 
 div.paneHeader.activePane {
@@ -156,6 +165,12 @@ div.icon_group {
 
 div.icon_group.client_icons {
 	flex-grow: 5;
+}
+
+div.icon_group.client_icons button {
+    display: inline-block;
+    vertical-align: middle;
+    height: 20px;
 }
 
 span.tdTop {
@@ -265,8 +280,6 @@ div.pane canvas {
 	right: 2em;
 	font-size: 10pt;
 	padding: 0.1em;
-	border: 2px solid rgb(50,50,50);
-	border-radius: 0.3em;
 }
 
 #splashWaiting {

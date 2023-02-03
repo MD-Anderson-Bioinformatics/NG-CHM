@@ -52,6 +52,14 @@
     <path d="m1 7 10.5 0-2-5 2.5 0 3 6-3 6-2.5 0 2-5-10.5 0z" stroke-width="1"/>
 </symbol>
 
+<symbol id="icon-arrow-quad" version="1.1" viewBox="0 0 50 50" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="m26 1 10 10-8 0 0 12 12 0 0-8 10 10-10 10 0-8-12 0 0 12 8 0-10 10-10-10 8 0 0-12-12 0 0 8-10-10 10-10 0 8 12 0 0-12-8 0 z" stroke-width="1"/>
+</symbol>
+
+<symbol id="icon-arrow-double" version="1.1" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+     <path d="m0 8 3 -8 2 0 -2 7 10 0 -2 -7 2 0 3 8 -3 8 -2 0 2 -7 -10 0 2 7 -2 0z" stroke-width="1"/>
+</symbol>
+
 <symbol id="icon-go" version="1.1" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
     <g transform="translate(0 -292.77)">
 	<text transform="scale(.94403 1.0593)" x="0.16817249" y="287.96558" font-size="10.038px" stroke-width=".83648" xml:space="preserve">

@@ -155,11 +155,9 @@ DEV.userHelpOpen = function(mapItem) {
 	ev.preventDefault();
 	UHM.pasteHelpContents();
     };
-    const CLOSE = UTIL.newElement('BUTTON.red', {},
-	    UTIL.newElement('svg', { width: '1em', height: '1em', }, [
-		UTIL.newElement('use', { href: 'icons.svg#icon-big-x', }),
-		'X',  // Fallback for Chrome 109
-	    ]));
+    const CLOSE = UHM.createCloseX (() => {
+	UHM.hlpC();
+    });
     const HDR = UTIL.newElement('DIV.userHelpHeader', {}, [ UTIL.newElement('SPAN'), A, UTIL.newElement('SPAN'), CLOSE ]);
     const helptext = UHM.getDivElement("helptext");
     helptext.style.position = "absolute";
@@ -1098,50 +1096,81 @@ DEV.detailDataZoomIn = function (mapItem) {
     }
 
     (function() {
-	// Table to convert image names to image source names.
-	// A table is required for this otherwise trivial conversion
-	// because the minimizer will convert all the filenames in the
-	// table to inline data sources.
-	const imageTable = {
-	    full: 'images/full.png',
-	    fullHover: 'images/fullHover.png',
-	    full_selected: 'images/full_selected.png',
-	    ribbonH: 'images/ribbonH.png',
-	    ribbonHHover: 'images/ribbonHHover.png',
-	    ribbonH_selected: 'images/ribbonH_selected.png',
-	    ribbonV: 'images/ribbonV.png',
-	    ribbonVHover: 'images/ribbonVHover.png',
-	    ribbonV_selected: 'images/ribbonV_selected.png',
+	const svgButtonStyle = {
+	    fontSize: '1.0em',
+	    height: '26px',
+	    width: '26px',
+	    padding: '4px',
 	};
 
 	DEV.createClientButtons = function (mapNumber, paneId, foobar, switchToPrimaryFn) {
 	    return [
-		zoomButton ('primary_btn'+mapNumber, 'images/primary.png', 'images/primaryHover.png', 'Set to Primary', 75,
-		    switchToPrimaryFn.bind('chm', foobar)),
-		zoomButton ('zoomOut_btn'+mapNumber, 'images/zoomOut.png', 'images/zoomOutHover.png', 'Zoom Out', 50,
-		    DEV.detailDataZoomOut.bind('chm', foobar)),
-		zoomButton ('zoomIn_btn'+mapNumber, 'images/zoomIn.png', 'images/zoomInHover.png', 'Zoom In', 40,
-		    DEV.zoomAnimation.bind('chm', foobar)),
-		modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, DET.detailNormal),
-		modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, DEV.detailHRibbonButton),
-		modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, DEV.detailVRibbonButton)
+		UTIL.newElement ('DIV.buttonSet', {}, [
+		    zoomButton ('primary_btn'+mapNumber, 'icon-make-primary', 'images/primaryHover.png', 'Set to Primary', 75,
+			switchToPrimaryFn.bind('chm', foobar)),
+		]),
+
+		UTIL.newElement ('DIV.buttonSet', {}, [
+		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out', 'images/zoomOutHover.png', 'Zoom Out', 50,
+			DEV.detailDataZoomOut.bind('chm', foobar)),
+		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in', 'images/zoomInHover.png', 'Zoom In', 40,
+			DEV.zoomAnimation.bind('chm', foobar)),
+		]),
+
+		UTIL.newElement ('DIV.buttonSet', {}, [
+		    modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, DET.detailNormal),
+		    modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, DEV.detailHRibbonButton),
+		    modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, DEV.detailVRibbonButton),
+		]),
+
+		UTIL.newElement ('DIV.buttonSet', {}, [
+		    addClass ('srchPrev',
+			srchButton (mapNumber, paneId, '180deg', (ev) => {
+			    console.log ({ target: ev.target });
+			    const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
+			    SRCH.searchPrev (mapItem);
+			})),
+		    UTIL.newSvgButton ('icon-small-circle.srchOrient', { style: svgButtonStyle, }),
+		    addClass ('srchNext', srchButton (mapNumber, paneId, '', (ev) => {
+			console.log ({ target: ev.target });
+			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
+			    SRCH.searchNext (false, mapItem);
+		    })),
+		]),
+
+		UTIL.newElement ('DIV.buttonSet', {}, [
+		    UTIL.newSvgButton ('icon-gear', { style: svgButtonStyle, }),
+		]),
 	    ];
 	};
 
+	function addClass (className, button) {
+	    button.classList.add (className);
+	    return button;
+	}
+
+	function addMarginLeft (button, dist) {
+	    button.style.marginLeft = dist;
+	    return button;
+	}
+
+	function srchButton (mapNumber, paneId, rotate, srchFn) {
+	    const button = UTIL.newSvgButton ('icon-arrow-right-path', { style: svgButtonStyle, });
+	    const SVG = button.firstChild;
+	    if (rotate) {
+		SVG.style.rotate = rotate;
+	    }
+	    button.onclick = srchFn;
+	    return button;
+	}
+
 	function zoomButton (btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
-	    const img = UTIL.newElement ('IMG#'+btnId, { src: btnIcon, alt: btnHelp });
-	    img.onmouseout = function (e) {
-			img.setAttribute ('src', btnIcon);
-			UHM.hlpC();
-	    };
-	    img.onmouseover = function (e) {
-			img.setAttribute ('src', btnHoverIcon);
-			UHM.hlp(img, btnHelp, btnSize);
-	    };
-	    img.onclick = function (e) {
+	    const button = UTIL.newSvgButton (btnIcon, { style: svgButtonStyle, });
+	    button.id = btnId;
+	    button.onclick = function (e) {
 			clickFn();
 	    };
-	    return UTIL.newElement ('SPAN.tdTop', {}, [img]);
+	    return button;
 	}
 
 	// Create a zoomModeButton when creating a new zoomed view.
@@ -1154,25 +1183,24 @@ DEV.detailDataZoomIn = function (mapItem) {
 	// btnSize - size of the button help text
 	// clickFn - function called when the button is clicked.
 	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
+		const icon = mode == 'NORMAL' ? 'icon-arrow-quad' : 'icon-arrow-double';
+		const button = UTIL.newSvgButton (icon, { style: svgButtonStyle, });
+		if (mode == 'RIBBONV') button.firstChild.style.rotate = '90deg';
 		const baseName = buttonBaseName (mode);
-		const selStr = selected ? '_selected' : '';
-		const img = UTIL.newElement ('IMG', { src: imageTable[baseName+selStr], alt: btnHelp });
-		img.id = baseName + '_btn' + mapNumber;
-		img.dataset.mode = mode;
-		img.onmouseout = function (e) {
-			updateButtonImage (img, false);
+		button.id = baseName + '_btn' + mapNumber;
+		button.dataset.mode = mode;
+		button.onmouseout = function (e) {
 			UHM.hlpC();
 		};
-		img.onmouseover = function (e) {
-			updateButtonImage (img, true);
-			UHM.hlp(img, btnHelp, btnSize);
+		button.onmouseover = function (e) {
+			UHM.hlp(button, btnHelp, btnSize);
 		};
-		img.onclick = function (e) {
+		button.onclick = function (e) {
 			const mapItem = DVW.getMapItemFromPane(paneId);
 			DET.clearModeHistory (mapItem);
 			clickFn(mapItem);
 		};
-		return UTIL.newElement ('SPAN.tdTop', {}, [img]);
+		return button;
 	}
 
 	// Return the baseName of the zoom mode buttons.
@@ -1191,45 +1219,20 @@ DEV.detailDataZoomIn = function (mapItem) {
 		const full_btn = document.getElementById('full_btn'+mapItem.panelNbr);
 		const ribbonH_btn = document.getElementById('ribbonH_btn'+mapItem.panelNbr);
 		const ribbonV_btn = document.getElementById('ribbonV_btn'+mapItem.panelNbr);
-		let full_src= "full";
-		let ribbonH_src= "ribbonH";
-		let ribbonV_src= "ribbonV";
-		if (mapItem.mode=='RIBBONV' || mapItem.mode == 'RIBBONV_DETAIL')
-			ribbonV_src += "_selected";
-		else if (mapItem.mode == "RIBBONH" || mapItem.mode == 'RIBBONH_DETAIL')
-			ribbonH_src += "_selected";
-		else
-			full_src += "_selected";
-		full_btn.src = imageTable[full_src];
-		ribbonH_btn.src = imageTable[ribbonH_src];
-		ribbonV_btn.src = imageTable[ribbonV_src];
-	}
+		const ribbonV = mapItem.mode=='RIBBONV' || mapItem.mode == 'RIBBONV_DETAIL';
+		const ribbonH = mapItem.mode=='RIBBONH' || mapItem.mode == 'RIBBONH_DETAIL';
+		const normal = !ribbonV && !ribbonH;
 
+		setActive (ribbonV_btn, ribbonV);
+		setActive (ribbonH_btn, ribbonH);
+		setActive (full_btn, normal);
 
-	// Update a mode button image when the mouse enters/leaves the button.
-	// btn is the IMG element for the button.
-	// It should have data.mode set to NORMAL, RIBBONH, or RIBBONV.
-	// The button's image is updated according to the following rules:
-	//
-	// - If in a zoom mode that matches the button, the image is not changed.
-	//   (The button's image should already be set to the _selected image variant.)
-	//   The "includes" check is used so that e.g. both the RIBBONH and RIBBONH_DETAIL
-	//   zoom modes will match the RIBBONH button.
-	//
-	// - Otherwise, if the mouse is hovering over the image: the hover image is used.
-	//
-	// - Otherwise, the base image is used.
-	//
-	function updateButtonImage (btn, hovering) {
-	        const loc = PANE.findPaneLocation (btn);
-		const mapItem = DVW.getMapItemFromPane (loc.pane.id);
-		const buttonMode = btn.dataset.mode;
-		if (!mapItem.mode.includes(buttonMode)) {
-			let buttonSrc = buttonBaseName (buttonMode);
-			if (hovering) {
-			        buttonSrc += 'Hover';
-			}
-			btn.setAttribute('src', imageTable[buttonSrc]);
+		function setActive (button, active) {
+		    if (active) {
+			button.classList.add ('pressed');
+		    } else {
+			button.classList.remove ('pressed');
+		    }
 		}
 	}
 

@@ -13,6 +13,7 @@
     const DET = NgChm.importNS('NgChm.DET');
     const UHM = NgChm.importNS('NgChm.UHM');
     const PIM = NgChm.importNS('NgChm.PIM');
+    const PANE = NgChm.importNS('NgChm.Pane');
 
     SRCH.clearCurrentSearchItem = function() {
 	SRCHSTATE.clearCurrentSearchItem();
@@ -609,7 +610,8 @@
      * next search item, set it as the current search item, and move the focus of
      * the heat map detail panel to that item.
      ***********************************************************************************/
-    function searchNext (firstTime) {
+    SRCH.searchNext = searchNext;
+    function searchNext (firstTime, mapItem) {
 	const searchAxis = document.getElementById('search_target').value;
 	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 
@@ -624,7 +626,7 @@
 	    // Start search from beginning of requested axis otherwise.
 	    findNextSearchItem(-1, searchAxis);
 	}
-	goToCurrentSearchItem();
+	goToCurrentSearchItem(mapItem);
     }
 
 
@@ -698,7 +700,8 @@
      * previous search item, set it as the current search item, and move the focus of
      * the heat map detail panel to that item.
      ***********************************************************************************/
-    function searchPrev () {
+    SRCH.searchPrev = searchPrev;
+    function searchPrev (mapItem) {
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 	const searchAxis = document.getElementById('search_target').value;
@@ -712,7 +715,7 @@
 	    // Start new search on requested axis.
 	    findPrevSearchItem(-1, searchAxis);
 	}
-	goToCurrentSearchItem();
+	goToCurrentSearchItem(mapItem);
     }
 
     /**********************************************************************************
@@ -748,10 +751,16 @@
      * Internal FUNCTION - goToCurrentSearchItem: The purpose of this function is to move the
      * focus of the detail heat map panel to the current search item.
      ***********************************************************************************/
-    function goToCurrentSearchItem () {
-	const mapItem = DVW.primaryMap;
+    function goToCurrentSearchItem (mapItem) {
+	mapItem = mapItem || DVW.primaryMap;
 	if (!mapItem) return;
 	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
+
+	const pane = PANE.findPaneLocation (mapItem.chm).pane;
+	const srchPrev = pane.getElementsByClassName ('srchPrev');
+	if (srchPrev.length > 0) srchPrev[0].style.rotate = currentSearchItem.axis == 'Row' ? '90deg' : '';
+	const srchNext = pane.getElementsByClassName ('srchNext');
+	if (srchNext.length > 0) srchNext[0].style.rotate = currentSearchItem.axis == 'Row' ? '90deg' : '';
 
 	if (currentSearchItem.axis == "Row") {
 		mapItem.currentRow = currentSearchItem.index;
@@ -912,7 +921,7 @@
     SRCH.showSearchResults = function (validSearch) {
 	const resultsCnts = getSearchResultsCounts();
 	if (resultsCnts[2] > 0) {
-		document.getElementById("search_display_text").innerHTML = "Found: Rows - " + resultsCnts[0] + " Columns - " + resultsCnts[1];
+		document.getElementById("search_display_text").innerHTML = "Selected: Rows - " + resultsCnts[0] + " Columns - " + resultsCnts[1];
 	} else if ((typeof validSearch !== 'undefined') && (validSearch === false)) {
 		document.getElementById("search_display_text").innerHTML = "Invalid search expression entered";
 	} else {
