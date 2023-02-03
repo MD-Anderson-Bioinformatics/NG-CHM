@@ -509,8 +509,7 @@ div.paneHeader button {
     border-radius: 1em;
 }
 
-#pref_buttons .default > span,
-#msgBoxButtons .default > span {
+button.default > span {
     border: 2px solid #3757be;
     border-radius: 1em;
 }
