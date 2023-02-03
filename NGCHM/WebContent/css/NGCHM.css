@@ -12,7 +12,12 @@
 	--load-time: 200ms;
 	--load-delay: 800ms;
 
-	--button-color: blue;
+	--button-color: black;
+	--dialog-header-background: #CBD1EA;
+	--dialog-body-background: #D2E3FF; /* #CBDBF6; */
+	--pressed-button-color: #d1f9d1;
+
+	box-sizing: border-box;
 }
 
 /* Default button appearance.
