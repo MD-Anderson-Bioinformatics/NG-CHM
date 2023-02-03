@@ -32,7 +32,7 @@
 
 	const querySelectors = [
 	    "#introButton", "#introAboutButton", '#splash', "#closeSplash", "#aboutButton", "#fileButton", "#barMenu_btn", "#colorMenu_btn", "#layer_control",
-	    "#mapName", "#fileOpen_btn", "#back_btn", "#search_on", "#search_text", "#search_cov_cont", "#search_target", "#go_btn", "#prev_btn", "#next_btn", "#cancel_btn",
+	    "#mapName", "#search_on", "#search_text", "#search_cov_cont", "#search_target", "#go_btn", "#prev_btn", "#next_btn", "#cancel_btn",
 	];
 	const tourElements = querySelectors.map(qs => document.querySelector(qs)).filter (e => e !== null && e.clientHeight > 0);
 	const steps = tourElements.map(e => {

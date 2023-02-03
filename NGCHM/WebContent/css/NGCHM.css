@@ -46,6 +46,38 @@ svg {
     display: block;
 }
 
+.paneScreenMode button {
+    display: none;
+}
+
+.paneScreenMode[data-expanded="true"] button.shrinker {
+    display: block;
+}
+.paneScreenMode[data-expanded="false"] button.expander {
+    display: block;
+}
+
+.paneMenuIcon svg:nth-child(1) {
+    display: block;
+}
+.paneMenuIcon svg:nth-child(2) {
+    display: none;
+}
+
+.paneMenuIcon:hover svg:nth-child(1) {
+    display: none;
+}
+.paneMenuIcon:hover svg:nth-child(2) {
+    display: block;
+}
+
+.menuSvg {
+    display: inline-block;
+    font-size: 1.25em;
+    margin-right: 0.7em;
+    vertical-align: top;
+}
+
 /* Extra class added to selected labels.
  * Used for coloring their text and background colors.
  */

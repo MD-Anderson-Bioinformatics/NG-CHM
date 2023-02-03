@@ -411,7 +411,7 @@
 	    if ((UTIL.mapId === "") && (UTIL.mapNameRef === "") && (MMGR.embeddedMapName === null)) {
 		    //In local mode, need user to select the zip file with data (required by browser security)
 		    var chmFileItem  = document.getElementById('fileButton');
-		    document.getElementById('fileOpen_btn').style.display = '';
+		    document.getElementById('menuFileOpen').style.display = '';
 		    document.getElementById('detail_buttons').style.display = 'none';
 		    chmFileItem.style.display = '';
 		    chmFileItem.addEventListener('change', loadFileModeCHM, false);
@@ -1256,7 +1256,7 @@
 	saveHeatMapChanges();
     };
 
-    document.getElementById('fileOpen_btn').onclick = () => {
+    document.getElementById('menuFileOpen').onclick = () => {
 	openFileToggle();
     };
 

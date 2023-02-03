@@ -39,16 +39,6 @@
 				<div id="detail_buttons" class="divTable hide" data-show-on-load>
 				    <div class="divRow">
 					<div id="MapRow">
-					    <img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM'
-						data-hover-img='openMapHover'
-						data-tooltip='Open .NG-CHM Heat Map'
-						data-title='Open File'
-						data-intro='Click to open a new NG-CHM (replacing the current NG-CHM).'
-						/>
-					    <img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen"
-						data-title='Go Back'
-						data-intro='Click to return to the referring web page.'
-						/>
 					    <label for="mapName">Map name:</label>
 					    <div class="divLeft" id="mapName"
 						data-title='Map Name'
@@ -398,13 +388,35 @@
 				<div id="prefPrefs" class="prefSubPanel" style="display: block; height: 70px"></div>
 			</div>
 
-			<div id="burgerMenuPanel" style="display: none;">
-				<div class="menuItemTop"></div>
-				<div id="menuPdf" class="menuItem"><img id='menuPdf_btn' src='images/pdf.png' alt='save as PDF icon'>Save Heat Map As PDF...</div>
-				<div id="menuPng" class="menuItem"><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
-				<div id="menuSave" class="menuItem"><img id='menuSave_btn' src='images/saveButton.png' alt='save heat map changes icon'>Save Heat Map Changes...</div>
-				<div id="menuGear" class="menuItem"><img id='menuGear_btn' src='images/gear.png' alt='open modify map preferences icon'>Modify Map Preferences...</div>
-			</div>
+		<!-- Burger Menu Drop Down Panel -->
+		<div id="burgerMenuPanel" style="display: none;">
+		    <div class="menuItemTop"></div>
+		    <div id="menuFileOpen" class="menuItem" style="display:none;">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-open-folder"/></svg></div>
+			Open new heat map...
+		    </div>
+		    <div id="menuBack" class="menuItem" style="display: none;">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-return-arrow"/></svg></div>
+			Return to referring web page
+		    </div>
+		    <div id="menuPdf" class="menuItem">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-file-pdf"/></svg></div>
+			Save Heat Map As PDF...
+		    </div>
+		    <div id="menuPng" class="menuItem">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-thumbnail"/></svg></div>
+			Download Thumbnail...
+		    </div>
+		    <div id="menuSave" class="menuItem">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-floppy-disk"/></svg></div>
+			Save Heat Map Changes...
+		    </div>
+		    <div id="menuGear" class="menuItem">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-gear"/></svg></div>
+			Modify Map Preferences...
+		    </div>
+		</div>
+
 		<script src="javascript/NgChm.js"></script>
 		<script src="javascript/Config.js"></script>
 		<!-- NEW CHUNK -->
