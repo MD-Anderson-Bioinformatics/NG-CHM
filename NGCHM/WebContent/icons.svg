@@ -42,6 +42,11 @@
     <rect x="8" y="8" width="8" height="8" fill="#ffe356"/>
 </symbol>
 
+<symbol id="icon-plus" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+    <path d="m0 7 16 0 0-2-16 0z"/>
+    <path d="m7 0 0 16 2 0 0-16z"/>
+</symbol>
+
 <symbol id="icon-exclamation-circle" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
     <circle cx="8" cy="8" r="8" />
     <circle cx="8" cy="12" r="1" fill="white"/>

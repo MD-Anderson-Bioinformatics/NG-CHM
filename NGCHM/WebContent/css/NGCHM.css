@@ -51,6 +51,11 @@ button:hover {
     background-color: #d6d6ff;
 }
 
+button.text-button {
+    border: none;
+    padding: 0;
+}
+
 .buttonSet {
     display: inline-block;
     margin-left: 1em;
@@ -230,6 +235,7 @@ div.pane canvas {
     margin-left: 0.5em;
 }
 
+#prefActions div.buttonRow button:disabled,
 #pref_buttons button:disabled {
     opacity: 25%;
 }
@@ -1036,6 +1042,34 @@ th.breakpointContainer {
 	position: absolute; /* keep fixed to top of parent */
 }
 
+.colorTableButtons {
+    height: 28px;
+    position: relative;
+}
+
+.colorTableButtons button {
+    display: inline-block;
+    padding: 4px;
+    height: 20px;
+    width: 20px;
+    font-size: 0.8em;
+    position: absolute;
+}
+
+.colorTableButtons button:first-child {
+    top: -10px;
+    left: 0px;
+}
+
+.colorTableButtons button:nth-child(2) {
+    color: red;
+    border-color: red;
+    left: 24px;
+    top: 6px;
+}
+
+.buttonGroup button,
+#prefTabButtons button,
 #linkTabButtons button {
     display: inline-block;
     border: none;
@@ -1067,8 +1101,8 @@ th.breakpointContainer {
 
 #prefPrefs {
 	position: relative;
-    display: inline-block;
-    height: 88%;
+    display: block;
+    height: 70px;
     overflow: auto;
     overflow-x: hidden;
 }
@@ -1081,7 +1115,6 @@ th.breakpointContainer {
 	position: absolute;
 	bottom: 0em; /* fix to bottom of #prefs */
 	width: 100%;
-	background-color: #CBDBF6; 
     font-family: Arial;
     font-weight: bold;
     text-align: center;
@@ -1098,6 +1131,13 @@ th.breakpointContainer {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(4em, 1fr));
+}
+
+#prefActions div.buttonRow button {
+    width: fit-content;
+    border: none;
+    padding: 0;
+    background-color: var(--dialog-body-background);
 }
 
 #prefActions div.buttonRow img {
@@ -1252,7 +1292,7 @@ th.breakpointContainer {
 .prefSubPanel{
 	vertical-align: top;
 	height: 99%;
-	background-color: #CBDBF6; 
+	background-color: var(--dialog-body-background);
     display: none;
     overflow: hidden;
     border: 2px solid #CBDBF6;

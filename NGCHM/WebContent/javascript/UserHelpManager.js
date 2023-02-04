@@ -250,7 +250,7 @@ UHM.setTableRow = function(tableObj, tdArray, colSpan, align) {
 		}
 		if (['string', 'number'].includes(typeof tdArray[i]) || Array.isArray(tdArray[i])) {
 		    td.innerHTML = tdArray[i];
-		} else {
+		} else if (tdArray[i]) {
 		    td.appendChild (tdArray[i]);
 		}
 		if (typeof align != 'undefined') {
