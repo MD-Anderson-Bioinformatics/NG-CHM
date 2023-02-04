@@ -1120,9 +1120,8 @@
 		linkBox.classList.add ('hide');
 		linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 		linkBox.style.right = "5%";
-		linkBoxHdr.innerHTML = "NG-CHM Plug-in Information";
-		if (linkBoxHdr.querySelector(".closeX")) { linkBoxHdr.querySelector(".closeX").remove();}
-		linkBoxHdr.appendChild(UHM.createCloseX(linkBoxCancel));
+		const closer = linkBoxHdr.querySelector("button.red");
+		if (closer) closer.onclick = linkBoxCancel;
 		linkBoxTxt.innerHTML = "";
 		linkBoxTxt.appendChild(mapLinksTbl);
 		mapLinksTbl.style.width = '100%';
@@ -1130,11 +1129,9 @@
 		linkBoxAllTxt.appendChild(allLinksTbl);
 		allLinksTbl.style.width = '100%';
 		linkBoxSizing();
-		hideAllLinks();
-		showMapPlugins();
+		UTIL.showTab ('mapLinks_btn');
 		linkBox.classList.remove ('hide');
 		linkBox.style.left = ((window.innerWidth - linkBox.offsetWidth) / 2) + 'px';
-	//	UTIL.dragElement(document.getElementById("linkBox"));
 	}
 
 	/**********************************************************************************
@@ -1142,23 +1139,8 @@
 	 * help popup window.
 	 **********************************************************************************/
 	function linkBoxCancel () {
-		var linkBox = document.getElementById('linkBox');
+		const linkBox = document.getElementById('linkBox');
 		linkBox.classList.add ('hide');
-	}
-
-	/**********************************************************************************
-	 * FUNCTION - hideAllLinks: The purpose of this function is to hide the linkout
-	 * help boxes and reset the tabs associated with them.
-	 **********************************************************************************/
-	function hideAllLinks () {
-		var linkBoxTxt = document.getElementById('linkBoxTxt');
-		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
-		var mapLinksBtn = document.getElementById("mapLinks_btn");
-		var allLinksBtn = document.getElementById("allLinks_btn");
-		mapLinksBtn.setAttribute('src', 'images/mapLinksOff.png');
-		linkBoxTxt.classList.add ('hide');
-		allLinksBtn.setAttribute('src', 'images/allLinksOff.png');
-		linkBoxAllTxt.classList.add ('hide');
 	}
 
 	/**********************************************************************************
@@ -1204,43 +1186,12 @@
 		}
 	}
 
-	/**********************************************************************************
-	 * FUNCTION - showMapPlugins: The purpose of this function is to show the map specific
-	 * plugins panel within the linkout help screen and toggle the appropriate
-	 * tab button.
-	 **********************************************************************************/
-	function showMapPlugins () {
-		//Turn off all tabs
-		hideAllLinks();
-		//Turn on map links div
-		var linkBoxTxt = document.getElementById('linkBoxTxt');
-		var mapLinksBtn = document.getElementById("mapLinks_btn");
-		mapLinksBtn.setAttribute('src', 'images/mapLinksOn.png');
-		linkBoxTxt.classList.remove('hide');
-	}
-
-	/**********************************************************************************
-	 * FUNCTION - showAllPlugins: The purpose of this function is to show the all
-	 * plugins installed panel within the linkout help screen and toggle the appropriate
-	 * tab button.
-	 **********************************************************************************/
-	function showAllPlugins () {
-		//Turn off all tabs
-		hideAllLinks();
-		//Turn on all links div
-		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
-		var allLinksBtn = document.getElementById("allLinks_btn");
-		allLinksBtn.setAttribute('src', 'images/allLinksOn.png');
-		linkBoxAllTxt.classList.remove ('hide');
-	}
-
-
 	document.getElementById('mapLinks_btn').onclick = () => {
-	    showMapPlugins();
+	    UTIL.showTab ('mapLinks_btn');
 	};
 
 	document.getElementById('allLinks_btn').onclick = () => {
-	    showAllPlugins();
+	    UTIL.showTab ('allLinks_btn');
 	};
 
 	document.getElementById('linkBoxFootCloseButton').onclick = () => {

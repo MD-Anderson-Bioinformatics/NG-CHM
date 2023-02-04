@@ -346,14 +346,27 @@
 			</div>
 		
 			<div id="linkBox" class='hide'>
-				<div id="linkBoxHdr" class="msgBoxHdr"></div>
+				<div id="linkBoxHdr" class="msgBoxHdr">
+				    <span>NG-CHM Plug-in Information</span>
+				    <div class="icon_group">
+					<button class='red'
+						 data-title='Close Plug-in information'
+						 data-intro='Closes the plug-in dialog'
+						 data-tooltip='Close the plug-in dialog'
+						 >
+					    <svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
+					</button>
+				    </div>
+				</div>
 				<p class='boxCaption'>This screen contains a listing of all plug-ins that are active in the current heat map and a listing all plug-ins installed in this Ng-Chm system.</p>
 				<div id="linkTabButtons">
-				    <img id="mapLinks_btn" src="images/mapLinksOn.png" alt="Plugins available for this map" class="clickableItem">
-                                    <img id="allLinks_btn" src="images/allLinksOff.png" alt="Plugins Installed" class="clickableItem">
+				    <button id='mapLinks_btn' data-for-tab='linkBoxTxt' class='clickableItem'><span class='button tab-button'>Active Plug-ins</span></button>
+				    <button id='allLinks_btn' data-for-tab='linkBoxAllTxt' class='clickableItem'><span class='button tab-button'>Installed Plug-ins</span></button>
 				</div>
-				<div id="linkBoxTxt"></div>
-				<div id="linkBoxAllTxt" class="hide"></div>
+				<div id='linkBoxTabs'>
+				    <div id="linkBoxTxt"></div>
+				    <div id="linkBoxAllTxt" class="hide"></div>
+				</div>
 				<div id="linkBoxFoot">
 				    <button id="linkBoxFootCloseButton" class="clickableItem default">
 					<span class="spanbuttonwrapper">

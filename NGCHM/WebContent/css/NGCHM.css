@@ -16,6 +16,7 @@
 	--dialog-header-background: #CBD1EA;
 	--dialog-body-background: #D2E3FF; /* #CBDBF6; */
 	--pressed-button-color: #d1f9d1;
+	--selected-button-color: #00abcd;
 
 	box-sizing: border-box;
 }
@@ -34,6 +35,10 @@ button {
 
 button.pressed {
     background-color: var(--pressed-button-color);
+}
+
+button.selected span.button {
+    background: var(--selected-button-color);
 }
 
 button.red {
@@ -565,6 +570,10 @@ span.button.negative {
 	background: linear-gradient(0deg, #6b0000, #cc0000);
 }
 
+span.button.tab-button {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
 
 .gearPanel div.userLabel .leftLabel::after,
 .gearPanel div.rangeSelector.leftLabel::after,
@@ -986,7 +995,7 @@ th.breakpointContainer {
 	min-height: 200px;
 }
 
-#linkBoxTxt, #linkBoxAllTxt {
+#linkBoxTabs {
 	font-size: 12px;
 	overflow-y: auto;
 	min-height: 100px;
@@ -1025,6 +1034,13 @@ th.breakpointContainer {
 
 #linkBoxHdr {
 	position: absolute; /* keep fixed to top of parent */
+}
+
+#linkTabButtons button {
+    display: inline-block;
+    border: none;
+    padding: 0;
+    padding-bottom: 2px;
 }
 
 #linkBoxButton img,
@@ -1188,6 +1204,15 @@ th.breakpointContainer {
     line-height: 30px;
     text-align: center;
     background: var(--dialog-header-background,lightsteelblue);
+}
+
+#linkBoxHdr {
+    display: grid;
+    grid-template-columns: auto min-content;
+}
+
+#linkBoxHdr .icon_group {
+    margin-right: 0.5em;
 }
 
 #pdfPrefsHdr {

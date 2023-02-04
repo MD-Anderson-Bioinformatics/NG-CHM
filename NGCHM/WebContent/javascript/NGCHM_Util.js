@@ -204,6 +204,42 @@ UTIL.newButton = function newButton (buttonName, properties, handlers) {
 	return button;
 };
 
+    /**********************************************************************************
+     * FUNCTION - showTab: This function shows the tab identified by buttonId and hides
+     * all the other tabs in the group.
+     *
+     * Requires:
+     * - all tab buttons in the group must be contained in the same div (and nothing else)
+     * - each tab button has a data-for-tab attribute containing the id of the tab it
+     *   controls.
+     *
+     * This function:
+     * - adds the 'selected' class to the specified button and removes it from all other
+     *   buttons in the group.
+     * - removes the 'hide' class from the tab div identified by the data-for-tab attribute
+     *   of the specified button and adds it to the divs identified by the other buttons.
+     *
+     **********************************************************************************/
+    UTIL.showTab = showTab;
+    function showTab (buttonId) {
+	const btn = document.getElementById (buttonId);
+	if (!btn) console.error ('No tab button identified by buttonId:', { buttonId });
+	hideAllLinks (btn.parentElement);
+	const tab = btn.dataset.forTab && document.getElementById (btn.dataset.forTab);
+	if (!tab) console.error ('No tab identified by buttonId:', { buttonId });
+	tab.classList.remove('hide');
+	btn.classList.add('selected');
+
+	function hideAllLinks (btns) {
+	    [...btns.children].forEach (btn => {
+		const tab = document.getElementById (btn.dataset.forTab);
+		if (!tab) console.error ('No tab identified by button:', { btn });
+		tab.classList.add('hide');
+		btn.classList.remove('selected');
+	    });
+	}
+    }
+
 /**********************************************************************************
  * FUNCTION - toTitleCase: The purpose of this function is to change the case of
  * the first letter of the first word in each sentence passed in.
