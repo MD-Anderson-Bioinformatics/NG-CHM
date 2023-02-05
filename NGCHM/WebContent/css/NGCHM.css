@@ -58,7 +58,18 @@ button.text-button {
 
 .buttonSet {
     display: inline-block;
-    margin-left: 1em;
+    margin-left: auto;
+    margin-right: auto;
+    vertical-align: top;
+}
+
+div.client_icons > .buttonSet:first-child,
+div.client_icons > button:first-child {
+    margin-left: 0.5em;
+}
+
+div.icon_group.client_icons .buttonSet button {
+    vertical-align: top;
 }
 
 svg {
@@ -163,7 +174,7 @@ div.paneHeader.activePane {
 div.paneTitle {
 	margin: 2px;
 	display: inline-block;
-	flex-grow: 1;
+	flex-grow: 0;
 	max-width: calc(100% - 27px);
 }
 
@@ -174,14 +185,22 @@ div.icon_group {
 	margin-right: 5px;
 }
 
+div.icon_group button {
+    display: inline-block;
+    vertical-align: middle;
+}
+
 div.icon_group.client_icons {
-	flex-grow: 5;
+    flex-grow: 5;
+    display: inline-grid;
+    grid-auto-flow: column;
+    margin: 0;
+    padding: 0;
+    align-items: start;
 }
 
 div.icon_group.client_icons button {
-    display: inline-block;
-    vertical-align: middle;
-    height: 20px;
+    height: 26px;
 }
 
 span.tdTop {

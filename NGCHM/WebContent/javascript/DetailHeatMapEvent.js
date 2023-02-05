@@ -1096,15 +1096,8 @@ DEV.detailDataZoomIn = function (mapItem) {
     }
 
     (function() {
-	const svgButtonStyle = {
-	    fontSize: '1.0em',
-	    height: '26px',
-	    width: '26px',
-	    padding: '4px',
-	};
-
 	DEV.createClientButtons = function (mapNumber, paneId, foobar, switchToPrimaryFn) {
-	    return [
+	    const icons = [
 		UTIL.newElement ('DIV.buttonSet', {}, [
 		    zoomButton ('primary_btn'+mapNumber, 'icon-make-primary', 'Set to Primary',
 			switchToPrimaryFn.bind('chm', foobar)),
@@ -1130,7 +1123,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			    const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
 			    SRCH.searchPrev (mapItem);
 			})),
-		    UTIL.newSvgButton ('icon-small-circle.srchOrient', { style: svgButtonStyle, }),
+		    UTIL.newSvgButton ('icon-small-circle.srchOrient'),
 		    addClass ('srchNext', srchButton (mapNumber, paneId, '', (ev) => {
 			console.log ({ target: ev.target });
 			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
@@ -1139,9 +1132,11 @@ DEV.detailDataZoomIn = function (mapItem) {
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    UTIL.newSvgButton ('icon-gear', { style: svgButtonStyle, }),
+		    UTIL.newSvgButton ('icon-gear'),
 		]),
 	    ];
+	    const template = 'fit-content(0) auto auto auto fit-content(0)';
+	    return { template, icons };
 	};
 
 	function addClass (className, button) {
@@ -1155,7 +1150,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	}
 
 	function srchButton (mapNumber, paneId, rotate, srchFn) {
-	    const button = UTIL.newSvgButton ('icon-arrow-right-path', { style: svgButtonStyle, });
+	    const button = UTIL.newSvgButton ('icon-arrow-right-path');
 	    const SVG = button.firstChild;
 	    if (rotate) {
 		SVG.style.rotate = rotate;
@@ -1165,7 +1160,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	}
 
 	function zoomButton (btnId, btnIcon, btnHelp, clickFn) {
-	    const button = UTIL.newSvgButton (btnIcon, { style: svgButtonStyle, });
+	    const button = UTIL.newSvgButton (btnIcon);
 	    button.id = btnId;
 	    button.dataset.toolTip = btnHelp;
 	    button.onclick = function (e) {
@@ -1185,7 +1180,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	// clickFn - function called when the button is clicked.
 	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
 		const icon = mode == 'NORMAL' ? 'icon-arrow-quad' : 'icon-arrow-double';
-		const button = UTIL.newSvgButton (icon, { style: svgButtonStyle, });
+		const button = UTIL.newSvgButton (icon);
 		if (mode == 'RIBBONV') button.firstChild.style.rotate = '90deg';
 		const baseName = buttonBaseName (mode);
 		button.id = baseName + '_btn' + mapNumber;

@@ -564,7 +564,10 @@
 			t.innerText = title;
 			h.appendChild (t);
 
-			const ig = UTIL.newElement('DIV.icon_group');
+			const ci = UTIL.newElement('DIV.icon_group.client_icons');
+			h.appendChild(ci);
+
+			const ig = UTIL.newElement('DIV.icon_group.panel_icons');
 			h.appendChild(ig);
 
 			const img = UTIL.newSvgButton ('icon-four-panels!icon-four-panels-glow.paneMenuIcon');
@@ -583,21 +586,27 @@
 	}
 
 	// Exported function.
-	// Add an icon group containing icons (an array) to the pane header.
-	function setPaneClientIcons (loc, icons) {
+	// Add a group of icons to the pane header.
+	// Spec is an object with the following entries:
+	// - icons An array of icons or buttonSets to add to the panel header
+	// - template The grid-template-columns to set on the .client_icons div.
+	function setPaneClientIcons (loc, spec) {
 		if (!loc.paneHeader || !loc.paneTitle) return;
-		var ig = loc.paneTitle.nextSibling;
+		const panelIcons = loc.paneHeader.querySelector('.panel_icons');
+		let clientIcons = loc.paneHeader.querySelector('.client_icons');
 		// Remove existing clientIcons, if any.
-		if (ig && ig.classList.contains('client_icons')) {
-			ig.remove();
+		if (clientIcons) {
+			clientIcons.remove();
 		}
-		if (icons && icons.length > 0) {
-		    ig = UTIL.newElement('DIV.icon_group.client_icons');
+		clientIcons = UTIL.newElement('DIV.icon_group.client_icons');
+		clientIcons.style.gridTemplateColumns = spec.template;
+		if (spec.icons) {
+		    const icons = spec.icons.slice();
 		    while (icons.length > 0) {
-			    ig.appendChild (icons.shift());
+			    clientIcons.appendChild (icons.shift());
 		    }
-		    loc.paneHeader.insertBefore (ig, loc.paneTitle.nextSibling);
 		}
+		loc.paneHeader.insertBefore (clientIcons, panelIcons);
 	}
 
 
@@ -1250,7 +1259,7 @@
 		// Set pane title to empty, hide the gear icon, and remove client icons (if any).
 		setPaneTitle (loc, 'empty');
 		removePanelMenuGroupIcons (loc);
-		PANE.setPaneClientIcons (loc, []);
+		PANE.setPaneClientIcons (loc, {});
 		MMGR.getHeatMap().removePaneInfoFromMapConfig(loc.pane.id)
 		// Return remaining client elements to caller.
 		return clientElements;
