@@ -170,20 +170,27 @@ var linkoutsVersion = 'undefined';
 
 	//Add a linkout to the Hamburger menu
 	LNK.addHamburgerLinkout = function(params) {
-		var burgerMenu = document.getElementById('burgerMenuPanel');
+		const burgerMenu = document.getElementById('burgerMenuPanel');
+		let icon;
+
 		//Verify params and set defaults
 		if (params.name === undefined) {return;}
 		params.name = "plugin-" + params.name;
 		if (params.label === undefined) {params.label = params.name;}
-		if (params.icon === undefined) {params.icon = 'images/link.png';}
+		if (params.icon === undefined) {
+		    icon = UTIL.newSvgButton ('icon-links');
+		} else {
+		    // Assume user-specified icon is an image for now.
+		    icon = UTIL.newElement('IMG#plugin-'+params.name+'_btn', { src: params.icon });
+		}
 		if (params.action === undefined) {params.action = UHM.hamburgerLinkMissing;}
+
 		//Create linkout div using params
-		var wrapper= document.createElement('div');
-		wrapper.innerHTML= "<div id='"+params.name+"' class='menuItem'> <img id='plugin-"+params.name+"_btn' src='"+params.icon+"'>"+params.label+"...</div>";
-		var burgerLinkDiv= wrapper.firstChild;
-		burgerLinkDiv.onclick = params.action;
+		const text = UTIL.newTxt(params.label+"...");
 		//Add linkout to burger menu
-		burgerMenu.insertBefore(burgerLinkDiv, burgerMenu.children[LNK.hamburgerLinkCtr]);
+		const menuItem = UTIL.newElement('DIV#'+params.name+'.menuItem', {}, [ icon, text ]);
+		menuItem.onclick = params.action;
+		burgerMenu.insertBefore(menuItem, burgerMenu.children[LNK.hamburgerLinkCtr]);
 		LNK.hamburgerLinkCtr++;
 	}
 
@@ -2784,12 +2791,10 @@ var linkoutsVersion = 'undefined';
 	}
 
 	function addGearIconToPane (loc) {
-	    let gearIcon = loc.paneHeader.querySelector('IMG.gearIcon');
+	    let gearIcon = loc.paneHeader.querySelector('.gearIcon');
 	    if (!gearIcon) {
 		const paneid = loc.pane.id;
-		gearIcon = UTIL.newElement('IMG.gearIcon', {
-			src: 'images/gear.png',
-			alt: 'Open gear menu',
+		gearIcon = UTIL.newSvgButton('icon-gear.gearIcon', {
 			align: 'top',
 			id: paneid+"Icon"
 		});
@@ -2803,11 +2808,9 @@ var linkoutsVersion = 'undefined';
 	// Initialize DOM IMG element icon to a gear menu.
 	function initializeGearIconMenu (icon) {
 		icon.onmouseout = function(e) {
-			icon.src = 'images/gear.png';
 			UHM.hlpC();
 		};
 		icon.onmouseover = function(e) {
-			icon.src = 'images/gearHover.png';
 			UHM.hlp(icon, 'Open gear menu', 120, 0);
 		};
 		icon.onclick = function(e) {
