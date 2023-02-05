@@ -111,6 +111,7 @@ body.NgChmViewer {
 	height: calc(100vh - 16px);
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
 }
 
 div.mdaServiceHeader
@@ -979,6 +980,10 @@ th.breakpointContainer {
 	text-align: left;
 }
 
+#prefTabButtons {
+    margin-top: 1em;
+}
+
 #prefTabButtons, #linkTabButtons {
 	vertical-align: top;
 	border-bottom-width: 2px;
@@ -987,7 +992,7 @@ th.breakpointContainer {
 }
 
 #rowsColsPrefs, #classPrefs, #layerPrefs {
-	padding-bottom: 220px;
+	padding-bottom: 0.5em;
 }
 
 #prefs {
@@ -999,6 +1004,8 @@ th.breakpointContainer {
 	z-index: 10000;
 	resize: vertical;
 	min-height: 200px;
+	display: grid;
+	grid-template-rows: min-content min-content auto min-content;
 }
 
 #linkBoxTabs {
@@ -1102,7 +1109,6 @@ th.breakpointContainer {
 #prefPrefs {
 	position: relative;
     display: block;
-    height: 70px;
     overflow: auto;
     overflow-x: hidden;
 }
@@ -1112,12 +1118,11 @@ th.breakpointContainer {
 }
 
 #prefActions {
-	position: absolute;
-	bottom: 0em; /* fix to bottom of #prefs */
 	width: 100%;
     font-family: Arial;
     font-weight: bold;
     text-align: center;
+    margin-top: 0.1em;
     border-top: 2px solid #0843c1; /* match border-bottom of #prefTabButtons */
     padding-top: 12px; /* seemed aesthetically pleasing */
     padding-bottom: 12px; /* seemed aesthetically pleasing */
@@ -1291,7 +1296,6 @@ th.breakpointContainer {
 
 .prefSubPanel{
 	vertical-align: top;
-	height: 99%;
 	background-color: var(--dialog-body-background);
     display: none;
     overflow: hidden;

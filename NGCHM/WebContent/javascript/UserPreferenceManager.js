@@ -149,7 +149,6 @@ UPM.editPreferences = function(e,errorMsg) {
 		
 		UPM.setMessage("");
 	}
-	UPM.setSizePrefPrefs();
 
 	//If errors exist and they are NOT on the currently visible DIV (dataLayer1),
 	//hide the dataLayers DIV, set the tab to "Covariates", and open the appropriate
@@ -189,7 +188,9 @@ UPM.locatePrefsPanel = function() {
 	const icon = document.querySelector("*[data-prefs-panel-locator]");
 	const contBB = UTIL.containerElement.getBoundingClientRect();
 	const iconBB = icon.getBoundingClientRect();
-	prefspanel.style.top=UTIL.containerElement.parentElement.offsetTop + 30 + 'px';
+	const container = UTIL.containerElement.parentElement;
+	prefspanel.style.top = container.offsetTop + 'px';
+	prefspanel.style.height = container.offsetHeight + 'px';
 	//done for builder panel sizing ONLY
 	const screenNotes = document.getElementById('screenNotesDisplay');
 	if (screenNotes !== null) {
@@ -197,7 +198,6 @@ UPM.locatePrefsPanel = function() {
 		prefspanel.style.top = (iconBB.top - notesBB.height) + 'px';
 	} 
 	
-	prefspanel.style.height = (window.innerHeight - prefspanel.getBoundingClientRect().top) + 'px';
 	document.getElementById("prefsMove_btn").dataset.state = 'moveLeft';
 	prefspanel.style.left = (UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
 }
@@ -221,23 +221,6 @@ UPM.setMessage = function(errorMsgTxt) {
 	document.getElementById('prefReset_btn').onclick = function() { UPM.prefsResetButton(); };
 	document.getElementById('prefClose_btn').onclick = function() { UPM.prefsCancelButton(); };
 }
-
-/**********************************************************************************
- * FUNCTION - setSizePrefPrefs: Sets initial size of #prefPrefs
- **********************************************************************************/
-UPM.setSizePrefPrefs = function() {
-	var prefprefs = document.getElementById('prefPrefs');
-	if (prefprefs !== null) {
-		if (window.innerHeight > 730) {
-			prefprefs.style.height = "85%";
-		} else if (window.innerHeight > 500) {
-			prefprefs.style.height = "80%";
-		} else {
-			prefprefs.style.height = "70%";
-		}
-	}
-}
-
 
 /**********************************************************************************
  * FUNCTION - showRowsColsPrefs: The purpose of this function is to perform the 
@@ -1419,7 +1402,6 @@ UPM.setupClassPrefs = function(e, prefprefs) {
 UPM.setupAllClassesPrefs = function() {
 	const heatMap = MMGR.getHeatMap();
 	var allprefs = UTIL.newElement("DIV#breakPrefs_ALL");
-	allprefs.style.height="100px";
 	var prefContents = document.createElement("TABLE");
 	prefContents.id = "tableAllClasses";
 	UHM.addBlankRow(prefContents);
@@ -1542,7 +1524,8 @@ UPM.setupClassBreaks = function(e, key, barType, classBar) {
 	var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap(barType, key);
 	var thresholds = colorMap.getThresholds();
 	var colors = colorMap.getColors();
-	var helpprefs = UTIL.newElement("DIV#breakPrefs_"+keyRC);
+	var helpprefs = UTIL.newElement("DIV");
+	helpprefs.id = "breakPrefs_"+keyRC;
 	var prefContents = document.createElement("TABLE"); 
 	UHM.addBlankRow(prefContents);
 	var pos = UTIL.toTitleCase(barType);
