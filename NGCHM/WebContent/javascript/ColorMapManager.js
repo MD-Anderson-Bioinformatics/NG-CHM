@@ -112,7 +112,7 @@
 
 	    contColor (value) {
 		if (value <= this.minBreak) {
-		    return value <= MAPREP.minValues ? this.getCutsColor() : rgbaColors[0];
+		    return value <= MAPREP.minValues ? this.cutsColor : rgbaColors[0];
 		} else if (value >= this.maxBreak) {
 		    return value >= MAPREP.maxValues ? rgbaMissingColor : rgbaColors[this.maxIdx];
 		} else {
