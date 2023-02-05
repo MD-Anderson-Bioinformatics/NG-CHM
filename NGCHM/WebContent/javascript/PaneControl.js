@@ -295,11 +295,9 @@
 	var openIconMenu = null;
 	function initializePaneIconMenu (icon) {
 		icon.onmouseout = function(e) {
-			icon.src = 'images/paneMenu.png';
 			UHM.hlpC();
 		};
 		icon.onmouseover = function(e) {
-			icon.src = 'images/paneMenuHover.png';
 			UHM.hlp(icon, 'Open pane menu', 120, 0);
 		};
 		icon.addEventListener ('click', function(e) {
