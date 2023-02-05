@@ -589,6 +589,7 @@ span.button {
 	font-weight: bold;
 	font-size: 0.8rem;
 	cursor: pointer;
+	white-space: nowrap;
 }
 span.button.positive {
 	background: linear-gradient(0deg, #285013, #37741c);
