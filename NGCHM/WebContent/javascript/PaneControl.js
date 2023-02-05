@@ -632,10 +632,10 @@
 				UHM.initMessageBox();
 				UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 				UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
-				UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button', () => {
+				UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, 'Cancel Button', () => {
 				    reject(false);
 				});
-				UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button', () => {
+				UHM.setMessageBoxButton('ok', { type: 'text', text: 'OK' }, 'OK Button', () => {
 				    resolve();
 				});
 				UHM.displayMessageBox();
@@ -1052,10 +1052,10 @@
 						UHM.initMessageBox();
 						UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 						UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
-						UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button', () => {
+						UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel' }, 'Cancel Button', () => {
 						    reject(false);
 						});
-						UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button', () => {
+						UHM.setMessageBoxButton('ok', { type: 'text', text: 'OK', }, 'OK Button', () => {
 						    resolve();
 						});
 						UHM.displayMessageBox();

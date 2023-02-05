@@ -542,10 +542,7 @@ var linkoutsVersion = 'undefined';
 		var topDiv = document.createElement("DIV");
 		topDiv.classList.add("labelMenuCaption");
 		topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Classification") + ' Label Menu:' : axis + ' Menu';
-		var closeMenu = document.createElement("IMG");
-		closeMenu.src = UTIL.imageTable.closeButton;
-		closeMenu.alt = "close menu";
-		closeMenu.classList.add('labelMenuClose')
+		const closeMenu = UTIL.newElement ('DIV.buttonGroup', {}, UTIL.newElement ("BUTTON.labelMenuClose", {}, UTIL.newElement('SPAN.button', {}, 'Close')));
 		closeMenu.addEventListener('click', function(){LNK.labelHelpClose(axis)},false);
 		var table = document.createElement("TABLE");
 		table.id = axis !== "Matrix" ? axis + 'LabelMenuTable' : axis+'MenuTable';

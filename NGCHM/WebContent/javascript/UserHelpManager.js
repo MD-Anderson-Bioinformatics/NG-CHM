@@ -56,10 +56,6 @@
 
     function mouseover(ev) {
 	ev.target.dataset.hovering = '';
-	if (ev.target.dataset.hasOwnProperty('hoverImg')) {
-	    if (!ev.target.dataset.hasOwnProperty('nohoverImg')) ev.target.dataset.nohoverImg = ev.target.src;
-	    ev.target.src = UTIL.imageTable[ev.target.dataset.hoverImg];
-	}
 	let tt = ev.target;
 	while (tt && !tt.dataset.hasOwnProperty('tooltip')) {
 	    tt = tt.parentElement;
@@ -290,7 +286,7 @@ UHM.hamburgerLinkMissing = function() {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("NG-CHM Menu Link Error");
 	UHM.setMessageBoxText("<br>No destination has been defined for the menu link.");
-	UHM.setMessageBoxButton(1, UTIL.imageTable.closeButton, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -302,7 +298,7 @@ UHM.systemMessage = function(header, message) {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader(header);
 	UHM.setMessageBoxText("<br>" + message);
-	UHM.setMessageBoxButton(1, UTIL.imageTable.closeButton, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -318,7 +314,7 @@ UHM.noWebGlContext = function(isDisabled) {
 	} else {
 		UHM.setMessageBoxText("<br>No WebGL context is available.  The NG-CHM Application requires the WebGL Javascript API in order to render images of Next Generation Clustered Heat Maps. Most web browsers and graphics processors support WebGL.<br><br>Please ensure that the browser that you are using and your computer's processor are WebGL compatible.");
 	}
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -331,7 +327,7 @@ UHM.mapNotFound = function(heatMapName) {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Requested Heat Map Not Found");
 	UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you requested cannot be found OR connectivity to the Heat Map repository has been interrupted.<br><br>Please check the Heat Map name and try again.");
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 };
 
@@ -344,7 +340,7 @@ UHM.mapLoadError = function(heatMapName, details) {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Requested Heat Map Not Loaded");
 	UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you selected cannot be loaded.<br><br>Reason: " + details);
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 };
 
@@ -355,7 +351,7 @@ UHM.linkoutError = function(msgText) {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Heat Map Linkout");
 	UHM.setMessageBoxText(msgText);
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -368,7 +364,7 @@ UHM.invalidFileFormat = function() {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Invalid File Format");
 	UHM.setMessageBoxText("<br>The file chosen is not an NG-CHM file.<br><br>Please select a .ngchm file and try again.");
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -572,7 +568,7 @@ UHM.displayStartupWarnings = function() {
 	}
 	UHM.setMessageBoxHeader(headingText);
 	UHM.setMessageBoxText(warningText);
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 

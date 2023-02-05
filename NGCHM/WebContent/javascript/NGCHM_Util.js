@@ -941,20 +941,6 @@ UTIL.getContigRanges = function (sortedArr) {
     return ranges;
 };
 
-// A table of frequently used images.
-// Used to reduce widget size by having a single data: URL for each image instead of one per use.
-UTIL.imageTable = {
-    cancelSmall: 'images/cancelSmall.png',
-    closeButton: 'images/closeButton.png',
-    okButton: 'images/okButton.png',
-    prefCancel: 'images/prefCancel.png',
-    openMapHover: 'images/openMapHover.png',
-    goHover: 'images/goHover.png',
-    prevHover: 'images/prevHover.png',
-    nextHover: 'images/nextHover.png',
-    cancelHover: 'images/cancelHover.png',
-};
-
 // Sub-module for managing the splash screen.
 (function() {
     const exports = { showSplashExample, showLoader, hideLoader };
