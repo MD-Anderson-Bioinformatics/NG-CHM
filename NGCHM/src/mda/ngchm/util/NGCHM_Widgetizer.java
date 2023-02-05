@@ -175,7 +175,7 @@ public class NGCHM_Widgetizer {
     		bw.write("var htmlContent = \"" + finalHtml + "\"\n");
     		bw.write("var embedDiv = document.getElementById(\"NGCHMEmbed\");\n");
     		bw.write("if (embedDiv !== null) {embedDiv.innerHTML = htmlContent;}\n");
-		bw.write("})()\n");
+		bw.write("})();\n");
 
 		// Inject preserved scripts.
 		try {
