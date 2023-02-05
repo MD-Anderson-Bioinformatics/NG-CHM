@@ -538,26 +538,6 @@ UHM.closeMenu = function() {
 	}
 };
 
-UHM.menuOver = function(val) {
-	var menuBtn = document.getElementById('barMenu_btn')
-	if (val === 0) {
-		menuBtn.setAttribute('src', 'images/barMenu.png');
-	} else {
-		menuBtn.setAttribute('src', 'images/barMenuHover.png');
-	}
-	menuBtn.mouseIsOver=val;
-}
-
-UHM.colorOver = function(val) {
-	var menuBtn = document.getElementById('colorMenu_btn')
-	if (val === 0) {
-		menuBtn.setAttribute('src', 'images/barColors.png');
-	} else {
-		menuBtn.setAttribute('src', 'images/barColorsHover.png');
-	}
-	menuBtn.mouseIsOver=val;
-}
-
 /**********************************************************************************
  * FUNCTION - displayStartupWarnings: The purpose of this function is to display any
  * heat map startup warnings in a popup box when the user opens a heat map.  Multiple
