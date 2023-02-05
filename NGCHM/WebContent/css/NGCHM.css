@@ -446,6 +446,7 @@ div.paneHeader button {
 .menuItem img {
 	vertical-align: middle;
 	margin-right: 1em;
+	height: 1em;
 }
 
 .gearPanel {
