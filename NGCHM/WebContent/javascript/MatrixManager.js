@@ -1881,15 +1881,21 @@ let	wS = `const debug = ${debug};`;
 	    UHM.initMessageBox();
 	    UHM.setMessageBoxHeader(title);
 	    UHM.setMessageBoxText(bodyText);
-	    UHM.setMessageBoxButton('download', "images/downloadViewer.png", "Download NG-CHM Viewer App", () => {
-		MMGR.zipAppDownload();
-		UHM.messageBoxCancel();
-	    });
+	    UHM.setMessageBoxButton(
+		'download',
+		{ type: 'text', text: "Download Viewer", },
+	        "Download viewer button",
+		() => {
+		    MMGR.zipAppDownload();
+		    UHM.messageBoxCancel();
+		}
+	    );
 	    UHM.setMessageBoxButton(
 		'cancel',
-		{ type: 'image', src: UTIL.imageTable.cancelSmall, default: true },
+		{ type: 'text', text: "Cancel", default: true },
 		"Cancel button",
-		UHM.messageBoxCancel);
+		UHM.messageBoxCancel
+	    );
 	    UHM.displayMessageBox();
     }
 
