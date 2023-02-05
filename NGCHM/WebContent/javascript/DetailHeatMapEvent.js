@@ -1106,14 +1106,14 @@ DEV.detailDataZoomIn = function (mapItem) {
 	DEV.createClientButtons = function (mapNumber, paneId, foobar, switchToPrimaryFn) {
 	    return [
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    zoomButton ('primary_btn'+mapNumber, 'icon-make-primary', 'images/primaryHover.png', 'Set to Primary', 75,
+		    zoomButton ('primary_btn'+mapNumber, 'icon-make-primary', 'Set to Primary',
 			switchToPrimaryFn.bind('chm', foobar)),
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out', 'images/zoomOutHover.png', 'Zoom Out', 50,
+		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out', 'Zoom Out',
 			DEV.detailDataZoomOut.bind('chm', foobar)),
-		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in', 'images/zoomInHover.png', 'Zoom In', 40,
+		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in', 'Zoom In',
 			DEV.zoomAnimation.bind('chm', foobar)),
 		]),
 
@@ -1164,9 +1164,10 @@ DEV.detailDataZoomIn = function (mapItem) {
 	    return button;
 	}
 
-	function zoomButton (btnId, btnIcon, btnHoverIcon, btnHelp, btnSize, clickFn) {
+	function zoomButton (btnId, btnIcon, btnHelp, clickFn) {
 	    const button = UTIL.newSvgButton (btnIcon, { style: svgButtonStyle, });
 	    button.id = btnId;
+	    button.dataset.toolTip = btnHelp;
 	    button.onclick = function (e) {
 			clickFn();
 	    };
