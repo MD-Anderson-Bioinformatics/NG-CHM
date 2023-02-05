@@ -862,7 +862,9 @@
 				    text = "<br>You have elected to save changes made to this heat map.<br><br>You have the option to save these changes to the original map OR to save them to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				    UHM.setMessageBoxText(text);
 				    addSaveToNgchmButton();
-				    UHM.setMessageBoxButton(2, "images/saveOriginal.png", "Save Original Heat Map", saveHeatMapToServer);
+				    UHM.setMessageBoxButton('saveOriginal',
+					    { type: 'text', text: "Save original", },
+					    saveHeatMapToServer);
 				    addCancelSaveButton();
 			    }
 		    }
