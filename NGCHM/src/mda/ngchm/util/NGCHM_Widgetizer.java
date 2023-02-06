@@ -133,6 +133,7 @@ public class NGCHM_Widgetizer {
 				copyingToWidget = false;
 			} else if (copyingToWidget) {
 				if (debug) System.out.println ("Copying to widget: " + line);
+				line = line.replaceAll ("icons.svg", "");
 				if (line.contains("images/")) {
 					//Write out images, as base 64 binary, to HTML string
 					String toks[] = line.split(" ");
@@ -162,6 +163,17 @@ public class NGCHM_Widgetizer {
 			lineNumber += 1;
     		} 	
 		br.close();
+
+		// Add SVG icons to htmlString.
+		StringBuffer strBuff = new StringBuffer();
+		br = new BufferedReader(new FileReader(args[0] + "/icons.svg" ));
+		line = br.readLine();
+		while (line != null) {
+		    strBuff.append(line+" ");
+		    line = br.readLine();
+		}
+		br.close();
+		htmlString += strBuff.toString();
 
 		// Inject CSS.
 		bw.write("/* BEGIN CSS Javascript: */\n");

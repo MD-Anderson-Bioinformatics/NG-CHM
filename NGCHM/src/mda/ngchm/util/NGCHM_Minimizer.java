@@ -52,7 +52,9 @@ public class NGCHM_Minimizer {
 			else if (inExcludedRegion) {
 			    // Ignore excluded lines.
 			}
-			else if (line.contains("images/")) {
+			else {
+			    line = line.replaceAll ("icons.svg", "");
+			    if (line.contains("images/")) {
 				String toks[] = line.split(" ");
 				for (String tok : toks) {
 					if (tok.contains("images/")) {
@@ -66,20 +68,19 @@ public class NGCHM_Minimizer {
 					}
 				}
 				combinedWidget.write("\n");
-			} else {
-				if (line.contains("script.src = NgChm.CFG.custom_script")) {
-					line = br.readLine();
-					combinedWidget.write(line + "\n");
-					writeCustomJS(webDir, combinedWidget);
-					line = br.readLine();
-					line = br.readLine();
-					line = br.readLine();
-				} else if (line.contains("NgChm.PDF.getViewerHeatmapPDF = function()")) {
-					combinedWidget.write(line + "\n");
-					combinedWidget.write("NgChm.PDF.isWidget = true;\n");
-				} else {
-					combinedWidget.write(line + "\n");
-				}
+			    } else if (line.contains("script.src = NgChm.CFG.custom_script")) {
+				    line = br.readLine();
+				    combinedWidget.write(line + "\n");
+				    writeCustomJS(webDir, combinedWidget);
+				    line = br.readLine();
+				    line = br.readLine();
+				    line = br.readLine();
+			    } else if (line.contains("NgChm.PDF.getViewerHeatmapPDF = function()")) {
+				    combinedWidget.write(line + "\n");
+				    combinedWidget.write("NgChm.PDF.isWidget = true;\n");
+			    } else {
+				    combinedWidget.write(line + "\n");
+			    }
 			}
 			line = br.readLine();
 		} 	

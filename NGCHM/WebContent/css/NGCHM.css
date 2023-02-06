@@ -80,10 +80,10 @@ svg {
     display: none;
 }
 
-.paneScreenMode[data-expanded="true"] button.shrinker {
+.paneScreenMode[data-expanded='true'] button.shrinker {
     display: block;
 }
-.paneScreenMode[data-expanded="false"] button.expander {
+.paneScreenMode[data-expanded='false'] button.expander {
     display: block;
 }
 
@@ -566,7 +566,7 @@ button.default > span {
 }
 
 .gearPanel div .leftLabel::after {
-	content: ":";
+	content: ':';
 }
 
 .gearPanel div.rangeSelector,
@@ -704,20 +704,20 @@ span.button.tab-button {
 	display:inline-block;
 }
 
-#flickViews[data-state="flickUp"] svg {
+#flickViews[data-state='flickUp'] svg {
     transform: rotate(270deg);
 }
 
-#flickViews[data-state="flickDown"] svg {
+#flickViews[data-state='flickDown'] svg {
     transform: rotate(90deg);
 }
 #flickViews select {
     background-color: white;
 }
-#flickViews[data-state="flickUp"] #flick1 {
+#flickViews[data-state='flickUp'] #flick1 {
     background-color: yellow;
 }
-#flickViews[data-state="flickDown"] #flick2 {
+#flickViews[data-state='flickDown'] #flick2 {
     background-color: yellow;
 }
 
@@ -727,12 +727,12 @@ button#layers_open_close div {
 }
 
 /* Display the open svg in the open state. */
-button#layers_open_close[data-state="open"] div.open {
+button#layers_open_close[data-state='open'] div.open {
     display: block;
 }
 
 /* Display the closed svg in the closed state. */
-button#layers_open_close[data-state="closed"] div.closed {
+button#layers_open_close[data-state='closed'] div.closed {
     display: block;
 }
 
