@@ -50,11 +50,7 @@
 	searchOn.onchange = () => searchOnSel();
 
 	// Connect UI elements to onclick handlers.
-	let e = document.getElementById('next_btn');
-	if (e) e.onclick = () => searchNext(false);
-	e = document.getElementById('prev_btn');
-	if (e) e.onclick = () => searchPrev(false);
-	e = document.getElementById('cancel_btn');
+	let e = document.getElementById('cancel_btn');
 	if (e) e.onclick = () => SRCH.clearSearch();
 	e = document.getElementById('go_btn');
 	if (e) e.onclick = () => SRCH.detailSearch();

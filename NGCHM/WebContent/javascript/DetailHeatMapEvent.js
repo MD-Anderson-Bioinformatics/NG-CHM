@@ -1028,8 +1028,6 @@ DEV.detailDataZoomIn = function (mapItem) {
 	PIM.postSelectionToPlugins(this.dataset.axis, clickType, index, null);
 	const searchElement = document.getElementById('search_text');
 	searchElement.value = "";
-	document.getElementById('prev_btn').style.display='';
-	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
 	SUM.clearSelectionMarks();
 	DET.updateDisplayedLabels();
@@ -1069,8 +1067,6 @@ DEV.detailDataZoomIn = function (mapItem) {
 	DET.labelLastClicked[axis] = focusIndex;
 	let searchElement = document.getElementById('search_text');
 	searchElement.value = "";
-	document.getElementById('prev_btn').style.display='';
-	document.getElementById('next_btn').style.display='';
 	document.getElementById('cancel_btn').style.display='';
 	DET.updateDisplayedLabels();
 	SRCH.showSearchResults();
