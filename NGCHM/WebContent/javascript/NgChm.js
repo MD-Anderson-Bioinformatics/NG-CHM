@@ -1,5 +1,6 @@
 
 const NgChm = {};
+window['NgChm'] = NgChm;  // Suddenly, this is needed now (2/5/23) for widget mode.  Can't see what changed. [BMB]
 
 (function() {
     'use strict';
