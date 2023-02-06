@@ -550,6 +550,7 @@ button.default > span {
 	display: flex;
 	margin-bottom: 1em;
 	margin-right: 1em;
+	justify-content: space-evenly;
 }
 
 .gearPanel .fill {
