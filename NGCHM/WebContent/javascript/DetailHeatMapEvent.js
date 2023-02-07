@@ -1101,19 +1101,6 @@ DEV.detailDataZoomIn = function (mapItem) {
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out', 'Zoom Out',
-			DEV.detailDataZoomOut.bind('chm', foobar)),
-		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in', 'Zoom In',
-			DEV.zoomAnimation.bind('chm', foobar)),
-		]),
-
-		UTIL.newElement ('DIV.buttonSet', {}, [
-		    modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, DET.detailNormal),
-		    modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, DEV.detailHRibbonButton),
-		    modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, DEV.detailVRibbonButton),
-		]),
-
-		UTIL.newElement ('DIV.buttonSet', {}, [
 		    srchButton (mapNumber, 'srchPrev', paneId, '180deg', (ev) => {
 			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
 			SRCH.searchPrev (mapItem);
@@ -1133,6 +1120,19 @@ DEV.detailDataZoomIn = function (mapItem) {
 			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
 			SRCH.searchNext (false, mapItem);
 		    }),
+		]),
+
+		UTIL.newElement ('DIV.buttonSet', {}, [
+		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out', 'Zoom Out',
+			DEV.detailDataZoomOut.bind('chm', foobar)),
+		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in', 'Zoom In',
+			DEV.zoomAnimation.bind('chm', foobar)),
+		]),
+
+		UTIL.newElement ('DIV.buttonSet', {}, [
+		    modeButton (mapNumber, paneId, true,  'NORMAL',  'Normal View', 65, DET.detailNormal),
+		    modeButton (mapNumber, paneId, false, 'RIBBONH', 'Horizontal Ribbon View', 115, DEV.detailHRibbonButton),
+		    modeButton (mapNumber, paneId, false, 'RIBBONV', 'Vertical Ribbon View', 100, DEV.detailVRibbonButton),
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
