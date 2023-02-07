@@ -1096,7 +1096,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	DEV.createClientButtons = function (mapNumber, paneId, foobar, switchToPrimaryFn) {
 	    const icons = [
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    zoomButton ('primary_btn'+mapNumber, 'icon-make-primary', 'Set to Primary',
+		    zoomButton ('primary_btn'+mapNumber, 'icon-make-primary',
 			switchToPrimaryFn.bind('chm', foobar)),
 		]),
 
@@ -1105,7 +1105,13 @@ DEV.detailDataZoomIn = function (mapItem) {
 			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
 			SRCH.searchPrev (mapItem);
 		    }),
-		    UTIL.newSvgButton ('icon-small-circle.srchOrient', {}, el => {
+		    UTIL.newSvgButton ('icon-small-circle.srchOrient', {
+			dataset: {
+			    tooltip: 'Set the move to selection axis',
+			    title: 'Set the move to selection axis',
+			    intro: 'Set the axis or axes the move selection can use',
+			},
+		    }, el => {
 			el.onclick = (ev) => {
 			    const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
 			    let button = ev.target;
@@ -1123,9 +1129,9 @@ DEV.detailDataZoomIn = function (mapItem) {
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out', 'Zoom Out',
+		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out',
 			DEV.detailDataZoomOut.bind('chm', foobar)),
-		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in', 'Zoom In',
+		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in',
 			DEV.zoomAnimation.bind('chm', foobar)),
 		]),
 
@@ -1143,8 +1149,24 @@ DEV.detailDataZoomIn = function (mapItem) {
 	    return { template, icons };
 	};
 
+	const srchButtonAttrs = {
+	    srchPrev: {
+		dataset: {
+		    tooltip: 'Move to previous selection',
+		    title: 'Move to Previous Selection',
+		    intro: 'Moves the top or left of the view to the previous selection on the current axis, if any, or to last selection on the other axis if the orientation control is set to any',
+		},
+	    },
+	    srchNext: {
+		dataset: {
+		    tooltip: 'Move to next selection',
+		    title: 'Move to Next Selection',
+		    intro: 'Moves the top or left of the view to the next selection on the current axis, if any, or to the first selection on the other axis if the orientation control is set to any',
+		},
+	    },
+	};
 	function srchButton (mapNumber, buttonClass, paneId, rotate, srchFn) {
-	    const button = UTIL.newSvgButton ('icon-arrow-right-path.' + buttonClass);
+	    const button = UTIL.newSvgButton ('icon-arrow-right-path.' + buttonClass, srchButtonAttrs[buttonClass]);
 	    const SVG = button.firstChild;
 	    if (rotate) {
 		SVG.style.rotate = rotate;
@@ -1153,12 +1175,34 @@ DEV.detailDataZoomIn = function (mapItem) {
 	    return button;
 	}
 
-	function zoomButton (btnId, btnIcon, btnHelp, clickFn) {
-	    const button = UTIL.newSvgButton (btnIcon);
+	const zoomButtonAttrs = {
+	    'icon-make-primary': {
+		dataset: {
+		    tooltip: 'Make primary',
+		    title: 'Make Primary',
+		    intro: 'Make the current detail view the primary detail view.  Keyboard navigation, the search button, and other controls affect the primary detail view.',
+		},
+	    },
+	    'icon-zoom-in': {
+		dataset: {
+		    tooltip: 'Zoom in',
+		    title: 'Zoom In',
+		    intro: 'Zooms into the view.',
+		},
+	    },
+	    'icon-zoom-out': {
+		dataset: {
+		    tooltip: 'Zoom out',
+		    title: 'Zoom Out',
+		    intro: 'Zooms out of the view.  If necessary, it will automatically change the current view mode to a ribbon view or the full map.',
+		},
+	    },
+	};
+	function zoomButton (btnId, btnIcon, clickFn) {
+	    const button = UTIL.newSvgButton (btnIcon, zoomButtonAttrs[btnIcon]);
 	    button.id = btnId;
-	    button.dataset.toolTip = btnHelp;
 	    button.onclick = function (e) {
-			clickFn();
+		clickFn();
 	    };
 	    return button;
 	}
@@ -1172,9 +1216,32 @@ DEV.detailDataZoomIn = function (mapItem) {
 	// btnHelp - help text to display when the user hovers over the button for a while
 	// btnSize - size of the button help text
 	// clickFn - function called when the button is clicked.
+	const modeButtonAttrs = {
+	    NORMAL: {
+		dataset: {
+		    tooltip: 'Set normal view mode',
+		    title: 'Set normal mode',
+		    intro: 'Sets the view mode in this panel to normal. The button will be highlighted in green in normal view mode.',
+		},
+	    },
+	    RIBBONV: {
+		dataset: {
+		    tooltip: 'Set vertical ribbon view mode',
+		    title: 'Set vertical ribbon mode',
+		    intro: 'Sets the view mode in this panel to vertical ribbon. The button will be highlighted in green in vertical ribbon mode.',
+		},
+	    },
+	    RIBBONH: {
+		dataset: {
+		    tooltip: 'Set horizontal ribbon view mode',
+		    title: 'Set horizontal ribbon mode',
+		    intro: 'Sets the view mode in this panel to horizontal ribbon. The button will be highlighted in green in horizontal ribbon mode.',
+		},
+	    },
+	};
 	function modeButton (mapNumber, paneId, selected, mode, btnHelp, btnSize, clickFn) {
 		const icon = mode == 'NORMAL' ? 'icon-arrow-quad' : 'icon-arrow-double';
-		const button = UTIL.newSvgButton (icon);
+		const button = UTIL.newSvgButton (icon, modeButtonAttrs[mode]);
 		if (mode == 'RIBBONV') button.firstChild.style.rotate = '90deg';
 		const baseName = buttonBaseName (mode);
 		button.id = baseName + '_btn' + mapNumber;
