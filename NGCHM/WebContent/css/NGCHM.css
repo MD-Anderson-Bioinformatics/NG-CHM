@@ -17,6 +17,7 @@
 	--dialog-body-background: #D2E3FF; /* #CBDBF6; */
 	--pressed-button-color: #d1f9d1;
 	--selected-button-color: #00abcd;
+	--disabled-button-color: #7f7f7f;
 
 	box-sizing: border-box;
 }
@@ -31,6 +32,10 @@ button {
     border: 1px solid var(--button-color, blue);
     border-radius: 0.4rem;
     z-index: 2;
+}
+
+button:disabled {
+    color: var(--disabled-button-color);
 }
 
 button.pressed {

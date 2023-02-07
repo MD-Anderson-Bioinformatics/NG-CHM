@@ -704,6 +704,7 @@ DEV.handleMoveDrag = function (e) {
 		}
 	    DVW.checkRow(mapItem);
 	    DVW.checkCol(mapItem);
+	    SRCH.enableDisableSearchButtons (mapItem);
 	    mapItem.updateSelection();
     } 
 }	
@@ -1113,18 +1114,25 @@ DEV.detailDataZoomIn = function (mapItem) {
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    addClass ('srchPrev',
-			srchButton (mapNumber, paneId, '180deg', (ev) => {
-			    console.log ({ target: ev.target });
-			    const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
-			    SRCH.searchPrev (mapItem);
-			})),
-		    UTIL.newSvgButton ('icon-small-circle.srchOrient'),
-		    addClass ('srchNext', srchButton (mapNumber, paneId, '', (ev) => {
-			console.log ({ target: ev.target });
+		    srchButton (mapNumber, 'srchPrev', paneId, '180deg', (ev) => {
 			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
-			    SRCH.searchNext (false, mapItem);
-		    })),
+			SRCH.searchPrev (mapItem);
+		    }),
+		    UTIL.newSvgButton ('icon-small-circle.srchOrient', {}, el => {
+			el.onclick = (ev) => {
+			    const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
+			    let button = ev.target;
+			    while (button && button.tagName.toLowerCase() != 'button') {
+				button = button.parentElement;
+			    }
+			    if (button) SRCH.showOrientDialog (mapItem, button);
+			};
+			return el;
+		    }),
+		    srchButton (mapNumber, 'srchNext', paneId, '', (ev) => {
+			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
+			SRCH.searchNext (false, mapItem);
+		    }),
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
@@ -1135,18 +1143,8 @@ DEV.detailDataZoomIn = function (mapItem) {
 	    return { template, icons };
 	};
 
-	function addClass (className, button) {
-	    button.classList.add (className);
-	    return button;
-	}
-
-	function addMarginLeft (button, dist) {
-	    button.style.marginLeft = dist;
-	    return button;
-	}
-
-	function srchButton (mapNumber, paneId, rotate, srchFn) {
-	    const button = UTIL.newSvgButton ('icon-arrow-right-path');
+	function srchButton (mapNumber, buttonClass, paneId, rotate, srchFn) {
+	    const button = UTIL.newSvgButton ('icon-arrow-right-path.' + buttonClass);
 	    const SVG = button.firstChild;
 	    if (rotate) {
 		SVG.style.rotate = rotate;

@@ -111,6 +111,16 @@ function newSvgButton (iconIds, attrs, fn) {
     return decorateElement (button, names, classes, attrs, [], fn);
 }
 
+UTIL.newSvgMenuItem = newSvgMenuItem;
+function newSvgMenuItem (iconIds, attrs, fn) {
+    const classes = iconIds.split('.');
+    const names = classes.shift().split('#');
+    const svgs = names[0].split('!');
+    const menuItem = UTIL.newElement ('DIV.menuSvg');
+    menuItem.innerHTML = svgs.map(svg => '<SVG width="1em" height="1em"><USE href="icons.svg#' + svg + '"/></SVG>').join('');
+    return decorateElement (menuItem, names, classes, attrs, [], fn);
+}
+
 // Create a new DOM element.
 //
 // Spec consists of an element tag name,

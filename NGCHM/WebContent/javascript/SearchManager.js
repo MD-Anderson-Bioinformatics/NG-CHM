@@ -743,6 +743,103 @@
 	}
     }
 
+    const orientMenuItems = [ 'Any axis', 'Rows', 'Columns' ];
+    const orientMenuIcons = [ 'icon-small-circle', 'icon-horizontal-bar', 'icon-horizontal-bar' ];
+    const orientMenuValues = [ 'any', 'row', 'column' ];
+    const orientMenuRotate = [ '', '90deg', '' ];
+    SRCH.showOrientDialog = showOrientDialog;
+    function showOrientDialog (mapItem, button) {
+	const btnPosn = button.getBoundingClientRect();
+	const dialog = UTIL.newElement ('DIV.menuPanel');
+	dialog.style.position = 'absolute';
+	dialog.style.top = (btnPosn.y + btnPosn.height+5) + 'px';
+	dialog.style.left = btnPosn.x + 'px';
+	for (let i = 0; i < 3; i++) {
+	    const menuIcon = UTIL.newSvgMenuItem (orientMenuIcons[i]);
+	    if (orientMenuRotate[i] != '') menuIcon.firstChild.style.rotate = orientMenuRotate[i];
+	    const menuItem = UTIL.newElement('DIV.menuItem', { dataset: {  orient: orientMenuValues[i] }}, [ menuIcon, orientMenuItems[i]]);
+	    dialog.appendChild (menuItem);
+	}
+	dialog.onclick = ev => {
+	    let target = ev.target;
+	    while (target && !target.classList.contains('menuPanel') && !target.classList.contains('menuItem')) {
+		target = target.parentElement;
+	    }
+	    if (target) {
+		if (!target.classList.contains('menuPanel')) {
+		    const idx = orientMenuValues.indexOf (target.dataset.orient);
+		    if (idx < 0) {
+			console.error ('Illegal orientation: ' + target.dataset.orient);
+			return;
+		    }
+		    mapItem.allowedOrientations = target.dataset.orient;
+		    if (target.dataset.orient != 'any') {
+			setSearchButtonsAxis (mapItem, target.dataset.orient);
+			mapItem.searchOrientation = target.dataset.orient;
+		    }
+		    button.innerHTML = "<SVG width='1em' height='1em'><USE href='icons.svg#" + orientMenuIcons[idx] + "'/></SVG>";
+		    button.style.rotate = orientMenuRotate[idx];
+		    enableDisableSearchButtons (mapItem);
+		}
+		while (target && !target.classList.contains('menuPanel')) {
+		    target = target.parentElement;
+		}
+		if (target) {
+		    document.body.removeChild (target);
+		}
+	    }
+	}
+	document.body.appendChild (dialog);
+    }
+
+    SRCH.enableDisableAllSearchButtons = enableDisableAllSearchButtons;
+    function enableDisableAllSearchButtons (mapItem) {
+	DVW.detailMaps.forEach (enableDisableSearchButtons);
+    }
+
+    SRCH.enableDisableSearchButtons = enableDisableSearchButtons;
+    function enableDisableSearchButtons (mapItem) {
+	const pane = PANE.findPaneLocation (mapItem.chm).pane;
+	const srchPrev = pane.getElementsByClassName ('srchPrev')[0];
+	const srchNext = pane.getElementsByClassName ('srchNext')[0];
+
+	if (mapItem.allowedOrientations == 'row') {
+	    const rowOK = anyOutsideSearchResults (SRCHSTATE.getAxisSearchResults('row'), mapItem.currentRow, mapItem.dataPerCol);
+	    srchPrev.disabled = !rowOK;
+	    srchNext.disabled = !rowOK;
+	} else if (mapItem.allowedOrientations == 'column') {
+	    const colOK = anyOutsideSearchResults (SRCHSTATE.getAxisSearchResults('column'), mapItem.currentCol, mapItem.dataPerRow);
+	    srchPrev.disabled = !colOK;
+	    srchNext.disabled = !colOK;
+	} else {
+	    const rowOK = anyOutsideSearchResults (SRCHSTATE.getAxisSearchResults('row'), mapItem.currentRow, mapItem.dataPerCol);
+	    const colOK = anyOutsideSearchResults (SRCHSTATE.getAxisSearchResults('column'), mapItem.currentCol, mapItem.dataPerRow);
+	    srchPrev.disabled = !rowOK && !colOK;
+	    srchNext.disabled = !rowOK && !colOK;
+	}
+    }
+
+    function anyOutsideSearchResults (searchResults, first, count) {
+	const last = first + count - 1;
+	for (let i = 0; i < searchResults.length; i++) {
+	    if (searchResults[i] < first || searchResults[i] > last) {
+		return true;
+	    }
+	}
+	return false;
+    }
+
+    /* Set the orientation of the searchPrev and searchNext buttons of mapItem to match axis.
+     */
+    function setSearchButtonsAxis (mapItem, axis) {
+	if (axis == 'any') return;
+	const pane = PANE.findPaneLocation (mapItem.chm).pane;
+	const srchPrev = pane.getElementsByClassName ('srchPrev');
+	if (srchPrev.length > 0) srchPrev[0].style.rotate = MMGR.isRow(axis) ? '90deg' : '';
+	const srchNext = pane.getElementsByClassName ('srchNext');
+	if (srchNext.length > 0) srchNext[0].style.rotate = MMGR.isRow(axis) ? '90deg' : '';
+    }
+
     /**********************************************************************************
      * Internal FUNCTION - goToCurrentSearchItem: The purpose of this function is to move the
      * focus of the detail heat map panel to the current search item.
@@ -752,11 +849,7 @@
 	if (!mapItem) return;
 	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 
-	const pane = PANE.findPaneLocation (mapItem.chm).pane;
-	const srchPrev = pane.getElementsByClassName ('srchPrev');
-	if (srchPrev.length > 0) srchPrev[0].style.rotate = currentSearchItem.axis == 'Row' ? '90deg' : '';
-	const srchNext = pane.getElementsByClassName ('srchNext');
-	if (srchNext.length > 0) srchNext[0].style.rotate = currentSearchItem.axis == 'Row' ? '90deg' : '';
+	setSearchButtonsAxis (mapItem, currentSearchItem.axis);
 
 	if (currentSearchItem.axis == "Row") {
 		mapItem.currentRow = currentSearchItem.index;
@@ -775,6 +868,7 @@
 		} 
 		DVW.checkCol(mapItem);
 	}
+	enableDisableSearchButtons (mapItem);
 	DET.updateSelections();
     }
 
@@ -918,9 +1012,11 @@
 	const resultsCnts = getSearchResultsCounts();
 	if (resultsCnts[2] > 0) {
 		document.getElementById("search_display_text").innerHTML = "Selected: Rows - " + resultsCnts[0] + " Columns - " + resultsCnts[1];
+		enableDisableAllSearchButtons();
 	} else if ((typeof validSearch !== 'undefined') && (validSearch === false)) {
 		document.getElementById("search_display_text").innerHTML = "Invalid search expression entered";
 	} else {
+		enableDisableAllSearchButtons();
 		hideSearchResults();
 	}
     };
