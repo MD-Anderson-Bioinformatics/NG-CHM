@@ -355,6 +355,7 @@ div.pane canvas {
     margin-left:10px;
     margin-right:10px;
     cursor: ew-resize;
+    margin-top: 5px;
 }
 
 .resizerHelperBottom {
