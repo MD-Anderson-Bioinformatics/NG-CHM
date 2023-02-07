@@ -379,10 +379,10 @@
 			RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig);
 		} else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
 			const s = PANE.splitPane (false, initialLoc);
-			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
-			SMM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
+			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child2, s.child1, s.divider);
+			SMM.switchPaneToSummary (PANE.findPaneLocation(s.child2));
 			setTimeout (() => {
-			    DMM.switchPaneToDetail (PANE.findPaneLocation(s.child2));
+			    DMM.switchPaneToDetail (PANE.findPaneLocation(s.child1));
 			    SRCH.doInitialSearch();
 			    PANE.resizePane (SUM.chmElement);
 			}, 32);
