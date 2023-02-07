@@ -283,6 +283,8 @@
 		    PANE.setPaneTitle (loc, 'Heat Map Summary');
 		    PANE.registerPaneEventHandler (loc.pane, 'empty', emptySummaryPane);
 		    PANE.registerPaneEventHandler (loc.pane, 'resize', resizeSummaryPane);
+		    loc.pane.dataset.title = 'Summary Heat Map';
+		    loc.pane.dataset.intro = '<P>This panel shows an overview of the entire map.  Clicking on this map moves the primary detail panel to that location.</P>';
 	    }
 
 	    // Initialize summary information required for drawing summary views.

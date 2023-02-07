@@ -492,6 +492,8 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		PANE.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
 		DET.setDrawDetailTimeout (mapItem, 0, false);
 		SRCH.enableDisableSearchButtons (mapItem);
+		loc.pane.dataset.title = 'Detail Heat Map';
+		loc.pane.dataset.intro = 'This panel shows a detailed (zoomed) view of a section of the heat map.';
 	}
 
 	/*

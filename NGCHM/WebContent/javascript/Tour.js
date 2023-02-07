@@ -22,7 +22,11 @@
 		    if (e.dataset.title) step.title = e.dataset.title;
 		    return step;
 	    });
-	    steps.unshift ({ element: loc.pane, title: "Brief Panel Tour", intro: "We'll briefly highlight and describe the major features of this NG-CHM panel." });
+	    let title = "Brief Panel Tour";
+	    if (loc.pane.dataset.title) title = title + ': ' + loc.pane.dataset.title;
+	    let intro = "<P>We'll briefly highlight and describe the major features of this NG-CHM panel.</P>" ;
+	    if (loc.pane.dataset.intro) intro = intro + loc.pane.dataset.intro;
+	    steps.unshift ({ element: loc.pane, title, intro });
 	    addTourOfPanelControls (loc.pane, steps);
 	    steps.push ({ title: "End of Panel Tour", intro: "This completes the tour of this panel." });
 	    introJs().setOptions({steps}).start();

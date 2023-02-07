@@ -2781,6 +2781,8 @@ var linkoutsVersion = 'undefined';
 
 	function switchToPlugin (loc, title) {
 	    PANE.registerPaneEventHandler (loc.pane, 'empty', PIM.removePluginInstance);
+	    loc.pane.dataset.title = title + ' Plug-in';
+	    loc.pane.dataset.intro = 'This panel contains an instance of the ' + title + ' plug-in.';
 	    PANE.setPaneTitle (loc, title);
 	    const gearIcon = addGearIconToPane (loc);
 	    PANE.clearExistingDialogs (loc.pane.id);
