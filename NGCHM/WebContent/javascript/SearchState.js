@@ -22,9 +22,10 @@
     // Initialize this to avoid bug #320 when loading old maps via shaid
     const searchResults = { Row: {}, Column: {}, RowCovar: {}, ColumnCovar: {} };
 
-    // currentSearchItem contains the axis and index of the current
-    // search item (used by the forward and backward search arrow buttons).
-    var currentSearchItem = {};
+    // currentSearchItems contains the axis and index of the current
+    // search item (used by the forward and backward search arrow buttons)
+    // for each mapItem.
+    var currentSearchItems = new WeakMap();
 
     // discCovStates stores for each axis the selected options in the select drop down
     // for a discrete covariate.  Used to preserve selection state of the drop down
@@ -59,8 +60,8 @@
     /**********************************************************************************
      * FUNCTION - getCurrentSearchItem: This function returns the current search item.
      **********************************************************************************/
-    SRCHSTATE.getCurrentSearchItem = function() {
-	    return currentSearchItem;
+    SRCHSTATE.getCurrentSearchItem = function(mapItem) {
+	    return currentSearchItems.get(mapItem) || {};
     };
 
     /**********************************************************************************
@@ -134,7 +135,7 @@
 	searchResults["RowCovar"] = {};
 	searchResults["ColumnCovar"]= {};
 
-	currentSearchItem = {};
+	currentSearchItems = new WeakMap();
 	discCovStates["Row"] = "";
 	discCovStates["Column"] = "";
 	for (let axis in gapItems) delete gapItems[axis];
@@ -149,10 +150,10 @@
     };
 
     /**********************************************************************************
-     * FUNCTION - clearCurrentSearchItem: This function clears the current search item.
+     * FUNCTION - clearAllCurrentSearchItems: This function clears the current search item.
      **********************************************************************************/
-    SRCHSTATE.clearCurrentSearchItem = function() {
-	    currentSearchItem = {};
+    SRCHSTATE.clearAllCurrentSearchItems = function() {
+	    currentSearchItems = new WeakMap();
     };
 
     /**********************************************************************************
@@ -160,9 +161,14 @@
      * search item with the supplied axis and curr values. It is called by both the "next"
      * and "previous" searches.
       **********************************************************************************/
-    SRCHSTATE.setSearchItem = function (axis, curr) {
-	currentSearchItem["axis"] = axis;
-	currentSearchItem["index"] = curr;
+    SRCHSTATE.setSearchItem = function (mapItem, axis, curr) {
+	let searchItem = currentSearchItems.get (mapItem);
+	if (!searchItem) {
+	    searchItem = {};
+	    currentSearchItems.set (mapItem, searchItem);
+	}
+	searchItem["axis"] = axis;
+	searchItem["index"] = curr;
     };
 
     /**********************************************************************************

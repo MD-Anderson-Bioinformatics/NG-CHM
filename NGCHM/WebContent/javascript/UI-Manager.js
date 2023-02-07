@@ -603,7 +603,7 @@
 	    DEV.setMouseDown (false);
 	    MMGR.initAxisLabels();
 	    UTIL.removeElementsByClass("DynamicLabel");
-	    SRCH.clearCurrentSearchItem ();
+	    SRCH.clearAllCurrentSearchItems ();
     }
 
     /**********************************************************************************
