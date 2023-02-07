@@ -103,6 +103,11 @@ UPM.hasClasses = false;
 UPM.editPreferences = function(e,errorMsg) {
 	UHM.closeMenu();
 	UHM.hlpC();
+
+	const prefspanel = document.getElementById("prefs");
+	if (prefspanel.style.display !== 'none') {
+	    return;
+	}
 	const heatMap = MMGR.getHeatMap();
 	var rowClassBarsOrder = heatMap.getRowClassificationOrder();
 	var colClassBarsOrder = heatMap.getColClassificationOrder();
@@ -129,7 +134,6 @@ UPM.editPreferences = function(e,errorMsg) {
 	
 	UPM.resetVal = UPM.getResetVals();
 	
-	var prefspanel = document.getElementById("prefs");
 	var prefprefs = document.getElementById("prefPrefs");
 
 	if (errorMsg !== null) {
