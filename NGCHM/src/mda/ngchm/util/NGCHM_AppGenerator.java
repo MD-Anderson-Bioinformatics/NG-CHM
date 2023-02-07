@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.util.Base64;
 import java.util.Date;
+import java.util.ArrayList;
 
 import mda.ngchm.util.CompilerUtilities;
 
@@ -93,6 +94,7 @@ public class NGCHM_AppGenerator {
     			System.exit(1);
     		}
 		
+		ArrayList<String> preservedScripts = new ArrayList<String>();
     		BufferedReader br = new BufferedReader(new FileReader(args[0] + "chm.html" ));
     		BufferedWriter bw = new BufferedWriter(new FileWriter(args[0] + args[1] ));
 		StringBuffer scriptedLines = new StringBuffer();
@@ -113,7 +115,12 @@ public class NGCHM_AppGenerator {
 				scriptedLines.append(line + "\n");
     			//For css file - convert it into a string and use javascript to add it to the html document 
 			} else if (line.contains("src=\"javascript")){
-    				//Ignore
+				if (line.contains("PRESERVE")) {
+					// Add to list of preserved files to add later
+					String jsFile = CompilerUtilities.getJavascriptFileName (line);
+					preservedScripts.add (jsFile);
+				}
+				// Otherwise ignore
     			}  else if (line.contains("<link rel=\"stylesheet")) {
        				//Write out css to be added into Javascript file later
 				String cssFile = CompilerUtilities.getCSSFileName (line);
@@ -143,7 +150,9 @@ public class NGCHM_AppGenerator {
 					bw.write("<script>\n");
 					bw.write("var isNgChmAppViewer=true;\n");
 					copyToFile(args[0] + "javascript/ngchm-min.js", bw);
-					copyToFile(args[0] + "javascript/lib/jspdf.min.js", bw);
+					for (int i = 0; i < preservedScripts.size(); i++) {
+					    copyToFile(args[0] + preservedScripts.get(i), bw);
+					}
 					bw.write(scriptedLines.toString());
 					bw.write("</script>\n");
 				}

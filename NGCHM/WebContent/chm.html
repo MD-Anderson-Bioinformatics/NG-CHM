@@ -286,9 +286,11 @@
 											<tr class="chmTblRow">
 												<td style="font-weight: bold;">
 													<div id="pref_buttons" style="text-align: right;">
-														<img id="prefCancel_btn" src="images/prefCancel.png" alt="Cancel changes" style="vertical-align: top;">&nbsp;&nbsp;
 													    <button id="prefCreate_btn">
 														<img src="images/createPdf.png" alt="Create PDF" style="vertical-align: top;">
+													    </button>
+													    <button id="prefCancel_btn">
+														<img src="images/prefCancel.png" alt="Cancel changes" style="vertical-align: top;">
 													    </button>
 													</div>
 												</td>
@@ -322,6 +324,10 @@
 							        </div>
 							        <!-- WIDGET INCLUDE -->
 								<div id="msgBoxTxt" style="display: inherit;font-size: 12px; background-color: rgb(230, 240, 255); width: 400px; height: 80px;"></div>
+								<div id="msgBoxProgressDiv" style="display: none;">
+								<label for="msgBoxProgressBar">Progress:</label>
+								<progress id="msgBoxProgressBar"></progress>
+								</div>
 								<div id="msgBoxButtons" class='buttonBox'></div>
 							</td>
 						</tr>
@@ -339,7 +345,9 @@
 				<div id="linkBoxTxt"></div>
 				<div id="linkBoxAllTxt" class="hide"></div>
 				<div id="linkBoxFoot">
-				    <img src="images/closeButton.png" alt='close button icon' id="linkBoxFootCloseButton" class="clickableItem">
+				    <button id="linkBoxFootCloseButton" class="default">
+				    <img src="images/closeButton.png" alt='close button icon' class="clickableItem">
+				    </button>
 				</div>
 			</div>
 		
@@ -374,9 +382,6 @@
 		<script src="javascript/NgChm.js"></script>
 		<script src="javascript/Config.js"></script>
 		<!-- NEW CHUNK -->
-		<script src="javascript/lib/zip.js"></script>
-		<script src="javascript/lib/deflate.js"></script>
-		<script src="javascript/lib/inflate.js"></script>
 		<script src="javascript/NGCHM_Util.js"></script>
 		<script src="javascript/CompatibilityManager.js"></script>
 		<script src="javascript/FlickManager.js"></script>
@@ -405,12 +410,13 @@
 		<script src="javascript/UserPreferenceManager.js"></script>
 		<script src="javascript/PdfGenerator.js"></script>
 		<script src="javascript/RecreatePanes.js"></script>
+		<script src="javascript/lib/zip.min.js"></script> <!--PRESERVE already minimized-->
 		<script src="javascript/UI-Manager.js"></script>
 		<!-- NEW CHUNK -->
-		<script src="javascript/lib/intro.min.js"></script>
+		<script src="javascript/lib/intro.min.js"></script> <!--PRESERVE already minimized-->
 		<script src="javascript/API.js"></script>
 		<!-- NEW CHUNK -->
-		<script src="javascript/lib/jstat.min.js"></script>
+		<script src="javascript/lib/jstat.min.js"></script> <!--PRESERVE already minimized-->
 		<script src="javascript/use_jstat.js"></script>
 		<!-- NEW CHUNK -->
 		<script src="javascript/lib/jspdf.umd.min.js"></script> <!--PRESERVE-->

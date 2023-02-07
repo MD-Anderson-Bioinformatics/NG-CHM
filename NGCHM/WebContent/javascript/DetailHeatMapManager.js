@@ -24,7 +24,7 @@ DMM.nextMapNumber = 1;
 
 //Template for a Detail Heat Map object containing initialization values for all pertinent variables.
     const mapTemplate = {
-	  pane: null, chm: null, version: 'P', panelNbr: 1, mode: 'NORMAL', prevMode: 'NORMAL', currentDl: 'dl1', currentRow: 1, currentCol: 1, dataPerRow: null, dataPerCol: null,
+	  pane: null, chm: null, version: 'P', panelNbr: 1, mode: 'NORMAL', prevMode: 'NORMAL', currentRow: 1, currentCol: 1, dataPerRow: null, dataPerCol: null,
 	  selectedStart: 0, selectedStop: 0, colDendroCanvas: null, rowDendroCanvas: null, canvas: null, boxCanvas: null, labelElement: null, labelPostScript: null,
 	  rowLabelDiv: null, colLabelDiv: null, gl: null, uScale: null, uTranslate: null, canvasScaleArray: new Float32Array([1.0, 1.0]), canvasTranslateArray: new Float32Array([0, 0]),
 	  oldMousePos: [0, 0], offsetX: 0, offsetY: 0, pageX: 0, pageY: 0, latestTap: null, latestDoubleTap: null, latestPinchDistance: null, latestTapLocation: null,
@@ -37,6 +37,10 @@ DMM.nextMapNumber = 1;
 	  colClassScale: 1.5,  // Allow the size of covariate bars in detail maps to vary relative to the size of the detail map.
 	  rowClassScale: 1.5,  // Constants for now. Should adjust so that absolute bar sizes do not vary excessively.
 
+	  nextDrawWindow: null,  // DrawWindow to use on next redraw.
+	  drawEventTimer: 0, // Timeout event until next window redraw
+	  drawTimeoutStartTime: 0,  // When we first wanted to redraw panel.
+
 	  //We keep a copy of the last rendered detail heat map for each layer.
 	  //This enables quickly redrawing the heatmap when flicking between layers, which
 	  //needs to be nearly instant to be effective.
@@ -47,7 +51,7 @@ DMM.nextMapNumber = 1;
 	  detailHeatMapLevel: {},      // Level of last rendered heat map for each layer
 	  detailHeatMapValidator: {},  // Encoded drawing parameters used to check heat map is current
 	  detailHeatMapParams: {},     // Drawing parameters for this detail view (used by PDF generator)
-
+	  detailHeatMapAccessWindow: null, // Last used access window (for preventing tileWindow garbage collection)
     };
 
     class DetailHeatMapView {
@@ -62,10 +66,14 @@ DMM.nextMapNumber = 1;
 		tmpLabelSizeElements: [],
 		labelSizeWidthCalcPool: [],
 		labelSizeCache: {},
+		nextDrawWindow: null,
+		drawEventTimer: 0,
+		drawTimeoutStartTime: 0,  // When we first wanted to redraw panel.
 		detailHeatMapCache: {},
 		detailHeatMapLevel: {},
 		detailHeatMapValidator: {},
 		detailHeatMapParams: {},
+		detailHeatMapAccessWindow: null,
 	    });
 	}
 
@@ -120,14 +128,6 @@ DMM.nextMapNumber = 1;
 	updateSelection (noResize) {
 	    //We have the summary heat map so redraw the yellow selection box.
 	    SUM.drawLeftCanvasBox();
-	    const win = this.heatMap.getNewAccessWindow ({
-		layer: this.heatMap.getCurrentDL(),
-		level: DVW.getLevelFromMode(this, MAPREP.DETAIL_LEVEL),
-		firstRow: DVW.getCurrentDetRow(this),
-		firstCol: DVW.getCurrentDetCol(this),
-		numRows: DVW.getCurrentDetDataPerCol(this),
-		numCols: DVW.getCurrentDetDataPerRow(this),
-	    });
 	    DET.setDrawDetailTimeout (this, DET.redrawSelectionTimeout, noResize);
 	}
 

@@ -7,6 +7,7 @@
 
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
+    const CMM = NgChm.importNS('NgChm.CMM');
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SUM = NgChm.importNS('NgChm.SUM');
     const DVW = NgChm.importNS('NgChm.DVW');
@@ -99,19 +100,35 @@ DET.setDrawDetailsTimeout = function (ms, noResize) {
  * the resize routine will be skipped on the next redraw.
  *********************************************************************************************/
 DET.setDrawDetailTimeout = function (mapItem, ms, noResize) {
-	if (mapItem.drawEventTimer) {
-		clearTimeout (mapItem.drawEventTimer);
-	}
 	if (!noResize) mapItem.resizeOnNextDraw = true;
 	if (!mapItem.isVisible()) { return false }
+	mapItem.nextDrawWindow = DVW.getDetailWindow(mapItem);
 
-	const drawWin = DVW.getDetailWindow(mapItem);
+	const now = performance.now();
+	const redrawDelayLimit = 100; // ms
+
+	if (mapItem.drawEventTimer) {
+	    const redrawDelay = now - mapItem.drawTimeoutStartTime;
+	    if (redrawDelay < redrawDelayLimit) {
+		// redraw has not waited too long.
+		// replace previous redraw with the latest one.
+		clearTimeout (mapItem.drawEventTimer);
+	    } else {
+		// Allow existing redraw to proceed, but
+		// also start a new one with latest view.
+		mapItem.drawTimeoutStartTime = now;
+	    }
+	} else {
+	    mapItem.drawTimeoutStartTime = now;
+	}
 	mapItem.drawEventTimer = setTimeout(function drawDetailTimeout () {
-		if (mapItem.chm) {
+		mapItem.drawEventTimer = 0;
+		if (mapItem.nextDrawWindow != null && mapItem.chm && mapItem.isVisible()) {
+			const drawWin = mapItem.nextDrawWindow;
+			mapItem.nextDrawWindow = null;
 			DET.drawDetailHeatMap(mapItem, drawWin.win);
 		}
 	}, ms);
-
 };
 
 /*********************************************************************************************
@@ -131,13 +148,11 @@ DET.flushDrawingCache = function (tile) {
 	// In any case, data for the drawing window's level should also arrive soon
 	// and the heat map would be redrawn then.
 	DVW.detailMaps.forEach (mapItem => {
-	    if (mapItem.detailHeatMapCache.hasOwnProperty (tile.layer) &&
-		mapItem.detailHeatMapLevel[tile.layer] === tile.level) {
-		    mapItem.detailHeatMapValidator[tile.layer] = '';
-		    if (tile.layer === mapItem.heatMap.getCurrentDL()) {
-			// Redraw 'now', without resizing, if the tile is for the currently displayed layer.
-			DET.setDrawDetailTimeout(mapItem, DET.redrawUpdateTimeout, true);
-		    }
+	    const aw = mapItem.detailHeatMapAccessWindow;
+	    if (!aw || aw.isTileInWindow (tile)) {
+		mapItem.detailHeatMapValidator[tile.layer] = '';
+		// Redraw 'now', without resizing, if the tile is for the currently displayed layer.
+		DET.setDrawDetailTimeout(mapItem, DET.redrawUpdateTimeout, true);
 	    }
 	});
 }
@@ -188,7 +203,7 @@ DET.drawDetailHeatMap = function (mapItem, drawWin) {
 	const heatMap = mapItem.heatMap;
 	DET.setDendroShow(mapItem);
 	if (mapItem.resizeOnNextDraw) {
-		DET.detailResize();
+		DET.resizeMapItem(mapItem);
 		mapItem.resizeOnNextDraw = false;
 	}
 	setViewPort(mapItem);
@@ -322,14 +337,18 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	})();
 
 	const heatMap = mapItem.heatMap;
-	const colorMap = heatMap.getColorMapManager().getColorMap("data",layer);
+	const colorMap = heatMap.getColorMapManager().getColorMap("data",layer).getContColorMap();
 
-	const dataGridColor = colorMap.getHexToRgba(params.grid_color);
-	const dataSelectionColorRGB = colorMap.getHexToRgba(params.selection_color);
+	const dataGridColor = CMM.hexToRgba(params.grid_color);
+	const dataSelectionColorRGB = CMM.hexToRgba(params.selection_color);
 	const dataSelectionColor = [dataSelectionColorRGB.r/255, dataSelectionColorRGB.g/255, dataSelectionColorRGB.b/255, 1];
 	const regularGridColor = [dataGridColor.r, dataGridColor.g, dataGridColor.b];
-	const cutsColor = colorMap.getHexToRgba(params.cuts_color);
+	const cutsColor = CMM.hexToRgba(params.cuts_color);
 
+	// Create and keep reference to access window (the latter to prevent garbage collection
+	// of active tileWindows).
+	const accessWindow = heatMap.getNewAccessWindow (drawWin);
+	mapItem.detailHeatMapAccessWindow = accessWindow;
 
 	//Build a horizontal grid line for use between data lines. Tricky because some dots will be selected color if a column is in search results.
 	const linelen = texWidth * DRAW.BYTE_PER_RGBA;
@@ -347,10 +366,16 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	if (params.showHorizontalGrid) {
 		let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
 		linePos+=DRAW.BYTE_PER_RGBA;
+		// Get value generator for this row.
+		const valueGen = accessWindow.getRowValues(currDetRow)[Symbol.iterator]();
+		// We need to lookahead one column when checking for vertical cuts.
+		// Get lookahead for column 0.
+		let nextVal = valueGen.next().value?.value;
 		for (let j = 0; j < detDataPerRow; j++) {
-			//When building grid line check for vertical cuts by grabbing value of currentRow (any row really) and column being iterated to
-			const val = heatMap.getValue(drawWin.level, currDetRow, currDetCol+j);
-			const nextVal = heatMap.getValue(drawWin.level, currDetRow, currDetCol+j+1);
+			// Advance to column j and get lookahead to column j+1.
+			const val = nextVal;
+			nextVal = valueGen.next().value?.value;
+
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
 				//If current column contains a cut value, write an empty white position to the gridline, ELSE write out appropriate grid color
@@ -380,13 +405,20 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	    let linePos = (rowClassBarWidth)*DRAW.BYTE_PER_RGBA;
 	    //If all values in a line are "cut values" AND (because we want gridline at bottom of a row with data values) all values in the
 	    // preceding line are "cut values" mark the current line as as a horizontal cut
-	    const isHorizCut = DET.isLineACut(mapItem,i) && DET.isLineACut(mapItem,i-1);
+	    const isHorizCut = isLineACut(accessWindow,i) && isLineACut(accessWindow,i-1);
 	    linePos+=DRAW.BYTE_PER_RGBA;
+	    // Get value generator for this row.
+	    const valueGen = accessWindow.getRowValues(currDetRow+i)[Symbol.iterator]();
+	    // We need to lookahead one column when checking for cuts.
+	    // Get lookahead for column 0.
+	    let nextVal = valueGen.next().value?.value;
 	    for (let j = 0; j < detDataPerRow; j++) { // for every data point...
-		let val = heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j);
-		let nextVal = j < detDataPerRow-1 ? heatMap.getValue(drawWin.level, currDetRow+i, currDetCol+j+1) : undefined;
+		// Advance to column j.  Get lookahead for column j+1.
+		const val = nextVal;
+		nextVal = valueGen.next().value?.value;
+
 		if (val === undefined) {
-		    console.error ('heatMap.getValue returned undefined', { level: drawWin.level, row: currDetRow+i, col: currDetCol+j });
+		    console.error ('accessWindow value generator returned undefined', { accessWindow, row: currDetRow+i, col: currDetCol+j, detDataPerRow });
 		} else {
 		    const { r, g, b, a } = colorMap.getColor(val);
 
@@ -426,26 +458,58 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	return renderBuffer;
 }
 
-/**********************************************************************************
- * FUNCTION - isLineACut: The purpose of this function is to determine if a given
- * row line is a cut (or gap) line and return a true/false boolean.
- **********************************************************************************/
-DET.isLineACut = function (mapItem, row) {
-	let lineIsCut = true;
-	const heatMap = mapItem.heatMap;
-	const level = DVW.getLevelFromMode(mapItem, MAPREP.DETAIL_LEVEL);
-	const currDetRow = DVW.getCurrentDetRow(mapItem);
-	const currDetCol = DVW.getCurrentDetCol(mapItem);
-	const detDataPerRow = DVW.getCurrentDetDataPerRow(mapItem);
-	for (let x = 0; x < detDataPerRow; x++) { // for every data point...
-		const val = heatMap.getValue(level, currDetRow+row, currDetCol+x);
-		//If any values on the row contain a value other than the cut value, mark lineIsCut as false
-		if (val > MAPREP.minValues) {
-			return false;
-		}
+    /**********************************************************************************
+     * FUNCTION - isLineACut: Return true iff the given row/line is a cut (or gap) line.
+     *
+     * row is a zero-based index within the accessWindow.
+     *
+     * To improve efficiency, memoise the results of the test if possible.  Although the
+     * heat map data itself is constant, it's possible one or more data tiles are not
+     * yet available.  In that case, just compute a temporary answer for now.
+     *
+     **********************************************************************************/
+    function isLineACut (accessWindow, row) {
+
+	// Catch attempt to check row before accessWindow.
+	if (row < 0) return false;
+
+	const baseRowIdx = accessWindow.win.firstRow - 1;  // Convert to 0-based row index.
+	const resultsMemo = accessWindow.heatMap.datalevels[accessWindow.win.level].isLineACut;
+
+	// If we already have a memoized answer, return it.
+	if (resultsMemo[baseRowIdx+row] !== undefined) {
+	    return resultsMemo[baseRowIdx+row];
 	}
-	return true;
-}
+
+	if (accessWindow.allTilesAvailable()) {
+	    // Compute and memoize answers for all rows in the accessWindow.
+	    for (let rr = 0; rr < accessWindow.win.numRows; rr++) {
+		if (resultsMemo[baseRowIdx+rr] == undefined) {
+		    resultsMemo[baseRowIdx+rr] = isRowACut (baseRowIdx+rr);
+		}
+	    }
+	    // Return result for the desired row.
+	    return resultsMemo[baseRowIdx+row];
+	} else {
+	    // At least one tile is missing.
+	    // Return a temporary answer for the desired row.
+	    return isRowACut (baseRowIdx+row);
+	}
+
+	function isRowACut (row) {
+	    // Get value iterator for the row.
+	    // N.B. getRowValues requires a 1-based row index.
+	    const valueIter = accessWindow.getRowValues(row+1);
+	    // If any value on the row is not a cut value, then the row is not a cut.
+	    for (let {value} of valueIter) {
+		if (value > MAPREP.minValues) {
+		    return false;
+		}
+	    }
+	    // All values on the row are cuts, so the row is too.
+	    return true;
+	}
+    }
 
 /*********************************************************************************************
  * FUNCTION:  setDetBoxCanvasSize - The purpose of this function is to set the size of the
@@ -973,7 +1037,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	target.ctx.clearRect(0, 0, target.width, target.height);
 
 	// Draw the border
-	if (MMGR.mapHasGaps() === false) {
+	if (!mapItem.heatMap.hasGaps()) {
 	    // Determine total width and height of map and covariate bars in canvas coordinates.
 	    const canH = mapItem.dataViewHeight + mapItemVars.totalColBarHeight;
 	    const canW = mapItem.dataViewWidth + mapItemVars.totalRowBarHeight;
@@ -991,7 +1055,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	
 	if (rowRanges.length > 0 || colRanges.length > 0) {
 		// Retrieve the selection color for and set the context for coloring the selection boxes.
-		const dataLayer = dataLayers[mapItem.currentDl];
+		const dataLayer = dataLayers[mapItem.heatMap._currentDl];
 		mapItemVars.ctx.lineWidth = 3 * Math.min (target.widthScale, target.heightScale);
 		mapItemVars.ctx.strokeStyle = dataLayer.selection_color;
 
@@ -2084,9 +2148,10 @@ DET.colDendroResize = function(mapItem, drawIt) {
 			let height = parseInt (dendroCanvas.style.height, 10) | 0;
 			height = mapItem.colDendro.summaryDendrogram.callbacks.calcDetailDendrogramSize ('column', height, totalDetHeight);
 			dendroCanvas.style.height = height + 'px';
-			dendroCanvas.height = Math.round(height);
 			dendroCanvas.style.width = (mapItem.canvas.clientWidth * (mapItem.dataViewWidth/canW)) + 'px';
-			dendroCanvas.width = Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width));
+			mapItem.colDendro.setCanvasSize (
+			    Math.round(mapItem.canvas.clientWidth * (mapItem.dataViewWidth/mapItem.canvas.width)),
+			    Math.round(height));
 			if (drawIt) mapItem.colDendro.draw();
 		} else {
 			dendroCanvas.style.height = '0px';
@@ -2111,12 +2176,10 @@ DET.rowDendroResize = function(mapItem, drawIt) {
 
 			width = mapItem.rowDendro.summaryDendrogram.callbacks.calcDetailDendrogramSize ('row', width, totalDetWidth);
 			dendroCanvas.style.width = width + 'px';
-			dendroCanvas.width = Math.round(width);
 
 			const height = mapItem.canvas.clientHeight * (mapItem.dataViewHeight/canH);
 			dendroCanvas.style.height = (height-2) + 'px';
-			dendroCanvas.height = Math.round(height);
-
+			mapItem.rowDendro.setCanvasSize (Math.round(width), Math.round(height));
 			if (drawIt) mapItem.rowDendro.draw();
 		} else {
 			dendroCanvas.style.width = '0px';

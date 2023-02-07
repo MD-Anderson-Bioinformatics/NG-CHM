@@ -380,6 +380,7 @@ UHM.invalidFileFormat = function() {
  * 5. messageBoxCancel - Closes the message box when a Cancel is requested.  
  **********************************************************************************/
 UHM.initMessageBox = function() {
+	UHM.hideMsgBoxProgressBar();
 	document.getElementById('msgBox').style.display = 'none';
 	const msgBoxButtons = document.getElementById ('msgBoxButtons');
 	while (msgBoxButtons.firstChild) {
@@ -424,15 +425,21 @@ UHM.displayMessageBox = function() {
  * New usage: an object that describes the button.  Fields are:
  * - type: 'image' or 'text'
  * - src: if type == 'image' source of the button image
+ * - alt: if type == 'image' alt attribute of the button image
  * - text: if type == 'text' content of the button
+ * - disableOnClick: if true disables the button element when clicked.
  * - default: if true class default added to the button element.
  *
- * altText: added to 'alt' attribute of img buttons.
+ * altText (deprecated): added to 'alt' attribute of img buttons.  Superseded by alt field.
  *
  * onClick: function called when the user clicks on the button.  Defaults
  * to UHM.messageBoxCancel.
  */
 UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
+	if (typeof altText == 'function') {
+	    onClick = altText;
+	    altText = 'missing - deprecated';
+	}
 	const msgBoxButtons = document.getElementById ('msgBoxButtons');
 	const newButton = document.createElement('button');
 	newButton.id = 'msgBoxBtn_'+buttonId;
@@ -445,7 +452,7 @@ UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
 	if (buttonSpec.type == 'image') {
 	    const newImage = document.createElement('img');
 	    newImage.src = buttonSpec.src;
-	    newImage.alt = altText;
+	    newImage.alt = buttonSpec.alt || altText;
 	    newButton.appendChild (newImage);
 	} else {
 	    const newText = UTIL.newElement('span.button');
@@ -460,10 +467,43 @@ UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
 	if (onClick == undefined) {
 	    newButton.onclick = UHM.messageBoxCancel;
 	} else {
-	    newButton.onclick = function() { onClick(); };
+	    newButton.onclick = function(ev) {
+		if (buttonSpec.disableOnClick) {
+		    newButton.disabled = true;
+		}
+		onClick();
+	    };
 	}
 	msgBoxButtons.appendChild (newButton);
 };
+
+// Show the progress bar in the messageBox.
+// Usually called by a long-running button event
+// handler.
+//
+UHM.showMsgBoxProgressBar = showMsgBoxProgressBar;
+function showMsgBoxProgressBar () {
+    document.getElementById ('msgBoxProgressDiv').style.display = '';
+    document.getElementById ('msgBoxProgressBar').value = 0;
+}
+
+// Hide the message box progress bar.
+// Normally unnecessary to call explicitly.
+// Will be called automatically when the message
+// box is cancelled.
+UHM.hideMsgBoxProgressBar = hideMsgBoxProgressBar;
+function hideMsgBoxProgressBar () {
+    document.getElementById ('msgBoxProgressDiv').style.display = 'none';
+}
+
+// Set the value of the message box progress bar.
+// Assumes that the progress bar is displayed.
+// Value must be a number between 0 (not started) and 1 (finished).
+//
+UHM.msgBoxProgressMeter = msgBoxProgressMeter;
+function msgBoxProgressMeter (value) {
+    document.getElementById ('msgBoxProgressBar').value = value;
+}
 
 UHM.messageBoxCancel = function() {
 	UHM.initMessageBox();

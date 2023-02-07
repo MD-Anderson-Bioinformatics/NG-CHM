@@ -12,6 +12,7 @@
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const COMPAT = NgChm.importNS('NgChm.CM');
     const FLICK = NgChm.importNS('NgChm.FLICK');
+    const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const SUM = NgChm.importNS('NgChm.SUM');
     const SMM = NgChm.importNS('NgChm.SMM');
     const PDF = NgChm.importNS('NgChm.PDF');
@@ -37,21 +38,25 @@
 	    const heatMap = MMGR.getHeatMap();
 	    PIM.requestDataFromPlugins();
 	    var success = true;
-	    UHM.initMessageBox();
 	    if (heatMap.source() === MMGR.WEB_SOURCE) {
-		    success = MMGR.zipMapProperties(JSON.stringify(mapConfig));
-		    zipSaveNotification(heatMap, false);
+		    success = MMGR.zipMapProperties(heatMap, JSON.stringify(heatMap.mapConfig));
+		    showViewerSaveNotification(heatMap);
+		    UHM.messageBoxCancel();
 	    } else {
+		    UHM.showMsgBoxProgressBar();
 		    let waitForPluginDataCount = 0;
 		    let awaitingPluginData = setInterval(function() {
 			    waitForPluginDataCount = waitForPluginDataCount + 1; // only wait so long
 			    if (PIM.havePluginData() || waitForPluginDataCount > 3) {
 				    clearInterval(awaitingPluginData);
 				    PIM.warnAboutMissingPluginData();
-				    heatMap.zipSaveMapProperties(addSaveStateToMapConfig());
+				    MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
+				    .then(() => {
+					UHM.messageBoxCancel();
+					showViewerSaveNotification(heatMap);
+				    });
 			    }
 		    }, 1000);
-		    zipSaveNotification(heatMap, false);
 	    }
 	    heatMap.setUnAppliedChanges(false);
     }
@@ -65,9 +70,9 @@
 			// FIXME: BMB. Verify this does what it's required to do.
 			// This appears to only be saving mapConfig.
 			// What about mapData?
-			success = MMGR.webSaveMapProperties(JSON.stringify(heatMap.getMapConfig()));
+			success = MMGR.webSaveMapProperties(heatMap);
 		    } else {
-			zipSaveNotification(heatMap, true);
+			zipSaveOutdated(heatMap);
 		    }
 	    }
 	    return success;
@@ -150,41 +155,42 @@
     }
 
     /**********************************************************************************
-     * FUNCTION - zipSaveNotification: This function handles all of the tasks necessary
+     * FUNCTION - zipSaveOutdated: This function handles all of the tasks necessary
+     * display a modal window for saving a zip file is being saved. The textId passed in
+     * instructs the code to display either the startup save OR preferences save message.
+     **********************************************************************************/
+    function zipSaveOutdated (heatMap) {
+	    const text = "<br>This NG-CHM contains an outdated heat map configuration. It has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>To avoid this notice in the future, replace your original file with the version now being displayed.<br><br>";
+	    UHM.initMessageBox();
+	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
+	    UHM.setMessageBoxText(text);
+	    addSaveToNgchmButton(() => {
+		UHM.showMsgBoxProgressBar();
+		MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
+		.then(() => {
+		    UHM.messageBoxCancel();
+		    showViewerSaveNotification(heatMap);
+		});
+	    });
+	    addCancelSaveButton();
+	    UHM.displayMessageBox();
+    }
+
+    /**********************************************************************************
+     * FUNCTION - showViewerSaveNotification: This function handles all of the tasks necessary
      * display a modal window whenever a zip file is being saved. The textId passed in
      * instructs the code to display either the startup save OR preferences save message.
      **********************************************************************************/
-    function zipSaveNotification (heatMap, autoSave) {
-	    var text;
-	    UHM.initMessageBox();
-	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
-	    if (autoSave) {
-		    text = "<br>This NG-CHM archive file contains an out dated heat map configuration that has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>In order to upgrade the NG-CHM and avoid this notice in the future, you will want to replace your original file with the version now being displayed.<br><br>";
-		    UHM.setMessageBoxButton(1, UTIL.imageTable.saveNgchm, "Save NG-CHM button", () => {
-			heatMap.zipSaveMapProperties(addSaveStateToMapConfig());
-			UHM.messageBoxCancel();
-		    });
-	    } else {
-		    text = "<br>You have just saved a heat map as a NG-CHM file.  In order to see your saved changes, you will want to open this new file using the NG-CHM File Viewer application.  If you have not already downloaded the application, press the Download Viewer button to get the latest version.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
-		    UHM.setMessageBoxButton(1, "images/downloadViewer.png", "Download NG-CHM Viewer App", () => {
-			MMGR.zipAppDownload();
-			UHM.messageBoxCancel();
-		    });
-	    }
-	    UHM.setMessageBoxText(text);
-	    UHM.setMessageBoxButton(
-		'cancel',
-		{ type: 'image', src: UTIL.imageTable.cancelSmall, default: true },
-		"Cancel button",
-		UHM.messageBoxCancel);
-	    UHM.displayMessageBox();
+    function showViewerSaveNotification (heatMap) {
+	    const title = "NG-CHM File Viewer";
+	    const text = "<br>You have just saved a heat map as a NG-CHM file.  To open this new file you will need the NG-CHM File Viewer application.  To get the lastest version, press the Download Viewer button.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you can run the application by double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
+            MMGR.showDownloadViewerNotification (title, text);
     }
 
     function saveHeatMapToServer () {
 	    const heatMap = MMGR.getHeatMap();
-	    const mapConfig = heatMap.getMapConfig();
 	    UHM.initMessageBox();
-	    const success = MMGR.webSaveMapProperties(JSON.stringify(mapConfig));
+	    const success = MMGR.webSaveMapProperties(heatMap);
 	    if (success !== "false") {
 		    heatMap.setUnAppliedChanges(false);
 	    } else {
@@ -195,6 +201,72 @@
     }
     // End of map save functions.
 
+
+    (function() {
+
+	// Cache of access windows for the summary data corresponding to the flick1 and flick2 controls.
+	// Used to ensure the summary level for the (up to) two data layers shown in the flick control
+	// are kept available.
+	const summaryWindows = {};
+
+	// For debugging.
+	UIMGR.getSummaryAccessWindows = function () {
+	    return summaryWindows;
+	};
+
+	/************************************************************************************************
+	 * FUNCTION: changeDataLayer - Responds to a change in a selected data layer.  All of these actions
+	 * depend upon the flick control being visible (i.e. active) There are 3 types of changes:
+	 * (1) User clicks on the toggle control.
+	 * (2) User changes the value of one of the 2 dropdowns AND the toggle control is on that dropdown.
+	 * (3) The user presses the one or two key, corresponding
+	 * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown.
+	 * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
+	 *
+	 * change is an object containing three fields:
+	 * - element Either flick1 or flick2. The flick control that changed.
+	 * - layer The heat map layer now associated with element.
+	 * - redrawRequired element is the active control AND layer is different from the last layer
+	 *   selected (irrespective of which element it was associated with).
+	 ***********************************************************************************************/
+	UIMGR.changeDataLayer = function changeDataLayer (change) {
+	    const heatMap = MMGR.getHeatMap();
+	    // Associated the flick element with an AccessWindow for the summary level for this layer.
+	    summaryWindows[change.flickElement] = getSummaryAccessWindow(heatMap, change.layer);
+	    // Redraw the UI if the currently visible layer changed.
+	    if (change.redrawRequired) {
+		heatMap.setCurrentDL (change.layer);
+		SUM.buildSummaryTexture();
+		SUM.drawLeftCanvasBox();
+		SUM.drawSelectionMarks();
+		DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout);
+	    }
+	};
+	FLICK.setFlickHandler (UIMGR.changeDataLayer);
+
+	UIMGR.initializeSummaryWindows = function () {
+	    const flickState = FLICK.getFlickState();
+	    const first = flickState.shift();
+	    const heatMap = MMGR.getHeatMap();
+	    summaryWindows[first.element] = getSummaryAccessWindow(heatMap, first.layer);
+	    setTimeout (() => {
+		flickState.forEach (alt => {
+		    summaryWindows[alt.element] = getSummaryAccessWindow(heatMap, alt.layer);
+		});
+	    });
+	};
+
+	function getSummaryAccessWindow (heatMap, layer) {
+	    return heatMap.getNewAccessWindow ({
+		layer: layer,
+		level: MAPREP.SUMMARY_LEVEL,
+		firstRow: 1,
+		firstCol: 1,
+		numRows: heatMap.getNumRows(MAPREP.SUMMARY_LEVEL),
+		numCols: heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL),
+	    });
+	}
+    })();
 
     // Function configurePanelInterface must called once immediately after the HeatMap is loaded.
     // It configures the initial Panel user interface according to the heat map preferences and
@@ -209,6 +281,8 @@
 	    if (event !== MMGR.Event_INITIALIZED) {
 		return;
 	    }
+
+	    UIMGR.initializeSummaryWindows();
 
 	    //If any new configs were added to the heatmap's config, save the config file.
 	    const heatMap = MMGR.getHeatMap();
@@ -299,9 +373,7 @@
 		const initialLoc = PANE.initializePanes ();
 		const panelConfig = MMGR.getHeatMap().getPanelConfiguration();
 		if (panelConfig) {
-			RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig, {
-			    setFlickState: setFlickState,
-			});
+			RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig);
 		} else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
 			const s = PANE.splitPane (false, initialLoc);
 			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
@@ -470,7 +542,6 @@
      * stand-alone and widgetized "file" versions of the application.
      **********************************************************************************/
     function displayFileModeCHM (chmFile, sizeBuilderView) {
-	    zip.useWebWorkers = false;
 	    resetCHM();
 	initDisplayVars();
 	MMGR.createHeatMap(MMGR.FILE_SOURCE, "",  [
@@ -656,7 +727,7 @@
 	    text = text + "<p><b>Citation:</b> Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a></p>";
 	    text = text + "<p>The NG-CHM Viewer is also available for a variety of other platforms.</p>";
 	    UHM.setMessageBoxText(text);
-	    UHM.setMessageBoxButton(3, UTIL.imageTable.closeButton, "Close button", UHM.messageBoxCancel);
+	    UHM.setMessageBoxButton('close', { type: 'image', src: UTIL.imageTable.closeButton, alt: "Close button", default: true });
 	    UHM.displayMessageBox();
     };
 
@@ -687,7 +758,6 @@
 	    } else {
 		    menu.style.display = 'none';
 	}
-	DEV.redrawCanvases();
     }
 
     /**********************************************************************************
@@ -733,18 +803,27 @@
 		    addCancelSaveButton();
 	    }
 	    UHM.displayMessageBox();
+    }
 
-	    function addSaveToNgchmButton() {
-		UHM.setMessageBoxButton(
-		    'saveToNgchm',
-		    { type: 'image', src: UTIL.imageTable.saveNgchm, default: true },
-		    "Save To NG-CHM File",
-		    saveHeatMapToNgchm);
-	    }
+    // Adds a "Save to .ngchm" button to an initialized UHM dialog.
+    //
+    // Executes saveHeatMapToNgchm when clicked by default.  If saveFunc
+    // is supplied, executes that instead.
+    function addSaveToNgchmButton(saveFunc) {
+	UHM.setMessageBoxButton(
+	    'saveToNgchm',
+	    { type: 'text', text: 'Save to .ngchm', disableOnClick: true, default: true },
+	    saveFunc || saveHeatMapToNgchm);
+    }
 
-	    function addCancelSaveButton() {
-		UHM.setMessageBoxButton('cancelSave', UTIL.imageTable.closeButton, "Cancel Save", UHM.messageBoxCancel);
-	    }
+    // Adds a "Cancel" button to an initialized UHM dialog.
+    //
+    // Executes UHM.messageBoxCancel when clicked by default.  If cancelFunc
+    // is supplied, executes that instead.
+    function addCancelSaveButton(cancelFunc) {
+	UHM.setMessageBoxButton('cancelSave',
+	    { type: 'text', text: 'Cancel', },
+	    cancelFunc || UHM.messageBoxCancel);
     }
 
     const hamburgerButton = document.getElementById('barMenu_btn');
@@ -770,7 +849,6 @@
 	    const mapLinksTbl = openMapLinkoutsHelp();
 	    const allLinksTbl = openAllLinkoutsHelp();
 	    linkoutHelp(mapLinksTbl,allLinksTbl);
-	    DEV.redrawCanvases();
 	}
 
 	/**********************************************************************************
@@ -1105,7 +1183,6 @@
 	    let url = location.origin+location.pathname;
 	    window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
 	}
-	DEV.redrawCanvases();
     };
 
     document.getElementById('aboutMenu_btn').onclick = (ev) => {
@@ -1123,40 +1200,6 @@
     document.getElementById('fileOpen_btn').onclick = () => {
 	openFileToggle();
     };
-
-    /************************************************************************************************
-     * FUNCTION: flickChange - Responds to a change in the flick view control.  All of these actions
-     * depend upon the flick control being visible (i.e. active) There are 3 types of changes
-     * (1) User clicks on the toggle control. (2) User changes the value of one of the 2 dropdowns
-     * AND the toggle control is on that dropdown. (3) The user presses the one or two key, corresponding
-     * to the 2 dropdowns, AND the current visible data layer is for the opposite dropdown.
-     * If any of the above cases are met, the currentDl is changed and the screen is redrawn.
-     ***********************************************************************************************/
-    UIMGR.flickChange = function(fromList) {
-	const newDataLayer = FLICK.toggleFlickState (fromList);
-	setDataLayer (newDataLayer);
-    };
-    FLICK.setFlickHandler (UIMGR.flickChange);
-
-    function setFlickState (state) {
-	const newDataLayer = FLICK.setFlickState (state);
-	setDataLayer (newDataLayer);
-    }
-
-    function setDataLayer (newDataLayer) {
-	if (!newDataLayer) return;
-
-	const heatMap = MMGR.getHeatMap();
-	heatMap.setCurrentDL (newDataLayer);
-
-	SUM.buildSummaryTexture();
-	DVW.detailMaps.forEach(dm => {
-		dm.currentDl = newDataLayer;
-	})
-	SUM.drawLeftCanvasBox();
-	SUM.drawSelectionMarks();
-	DET.setDrawDetailsTimeout(DET.redrawSelectionTimeout);
-    }
 
     function clearSelectedDendrogram (mapItem) {
 	if (mapItem.selectedIsDendrogram) {
@@ -1306,7 +1349,7 @@
 				break;
 			case 'F2': // F2 key
 				if (FLICK.flickIsOn()) {
-				    UIMGR.flickChange (FLICK.isFlickUp() ? "toggle2" : "toggle1");
+				    UIMGR.changeDataLayer(FLICK.toggleFlickState ("toggle"));
 				}
 				break;
 			case 'Enter':
@@ -1318,6 +1361,9 @@
 				    } else {
 					UHM.messageBoxCancel();
 				    }
+				}
+				if (!document.getElementById('linkBox').classList.contains('hide')) {
+				    document.querySelector('#linkBox button.default').onclick();
 				}
 				break;
 			default:

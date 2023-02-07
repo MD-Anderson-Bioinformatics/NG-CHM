@@ -92,8 +92,61 @@
 	this.setMissingColor = function(color){
 		missingColor = color;
 	}
-	
-	
+
+	class ContColorMap {
+
+	    constructor (colorMap, thresholds) {
+		this.minBreak = thresholds[0];
+		this.maxIdx = thresholds.length - 1;
+		this.maxBreak = thresholds[this.maxIdx];
+		this.thresholds = thresholds;
+		this.cutsColor = colorMap.getCutsColor();
+	    }
+
+	    getColor (value) {
+		if (value === "Missing" || isNaN(value)) {
+		    return rgbaMissingColor;
+		}
+		return this.contColor(+value);
+	    }
+
+	    contColor (value) {
+		if (value <= this.minBreak) {
+		    return value <= MAPREP.minValues ? this.cutsColor : rgbaColors[0];
+		} else if (value >= this.maxBreak) {
+		    return value >= MAPREP.maxValues ? rgbaMissingColor : rgbaColors[this.maxIdx];
+		} else {
+		    let idx;
+		    //  Since we know value < this.maxBreak, tests below are valid and loop must terminate.
+		    if (value < this.thresholds[1]) {
+			idx = 0;
+		    } else if (value < this.thresholds[2]) {
+			idx = 1;
+		    } else {
+			idx = 2;
+			while (value >= this.thresholds[idx+1]) {
+			    idx++;
+			}
+		    }
+		    // Assert: this.thresholds[idx] <= value < this.thresholds[idx+1]
+		    return blendColors(value, idx, this.thresholds);
+		}
+	    }
+	}
+
+	this.getContColorMap = function() {
+	    return new ContColorMap (this, thresholds);
+	};
+
+	this.getCutsColor = function () {
+	    const dl = this.heatMap.getDataLayers()[this.heatMap.getCurrentDL()];
+	    if (typeof dl.cuts_color !== 'undefined') {
+		    return hexToRgba(dl.cuts_color);
+	    } else {
+		    return {r: 255, g: 255, b: 255, a: 255};
+	    }
+	};
+
 	// returns an RGBA value from the given value
 	this.getColor = function(value){
 		var color;
@@ -101,19 +154,14 @@
 		if (value >= MAPREP.maxValues || value == "Missing" || isNaN(value)){
 			color = rgbaMissingColor;
 		}else if(value <= MAPREP.minValues){
-			const dl = this.heatMap.getDataLayers()[heatMap.getCurrentDL()];
-			if (typeof dl.cuts_color !== 'undefined') {
-				color = this.getHexToRgba(dl.cuts_color);
-			} else {
-				color = {r: 255, g: 255, b: 255, a: 255};
-			}
+		    color = this.getCutsColor();
 		}else if(value <= thresholds[0]){
 			color = rgbaColors[0]; // return color for lowest threshold if value is below range
 		} else if (value >= thresholds[numBreaks-1]){
 			color = rgbaColors[numBreaks-1]; // return color for highest threshold if value is above range
 		} else {
 			const bounds = findBounds(value, thresholds);
-			color = blendColors(value, bounds);
+			color = blendColors(value, bounds['lower'], thresholds);
 		}
 		
 		return color;
@@ -164,17 +212,6 @@
 		rgbaColors.splice(bounds["lower"],1);
 	}
 	
-	this.getHexToRgba = function(hex) { // I didn't write this function. I'm not that clever. Thanks stackoverflow
-	    var rgbColor = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	    return rgbColor ? {
-	        r: parseInt(rgbColor[1], 16),
-	        g: parseInt(rgbColor[2], 16),
-	        b: parseInt(rgbColor[3], 16),
-	        a: 255
-	    } : null;
-	}
-
-	
 	//===========================//
 	// internal helper functions //
 	//===========================//
@@ -193,13 +230,13 @@
 		return bounds;
 	}
 	
-	function blendColors(value, bounds){
-		var ratio = (value - thresholds[bounds["lower"]])/(thresholds[bounds["upper"]]-thresholds[bounds["lower"]]);
-		var lowerColor = rgbaColors[bounds["lower"]];
-		var upperColor = rgbaColors[bounds["upper"]];
-		// lowerColor and upperColor should be in { r:###, g:###, b:### } format
-		var color = {};
-		color["r"] = Math.round(lowerColor["r"] * (1.0 - ratio) + upperColor["r"] * ratio);
+	function blendColors(value, idx, thresholds){
+	    const ratio = (value - thresholds[idx])/(thresholds[idx+1]-thresholds[idx]);
+	    const lowerColor = rgbaColors[idx];
+	    const upperColor = rgbaColors[idx+1];
+	    // lowerColor and upperColor should be in { r:###, g:###, b:### } format
+	    const color = {};
+	    color["r"] = Math.round(lowerColor["r"] * (1.0 - ratio) + upperColor["r"] * ratio);
 	    color["g"] = Math.round(lowerColor["g"] * (1.0 - ratio) + upperColor["g"] * ratio);
 	    color["b"] = Math.round(lowerColor["b"] * (1.0 - ratio) + upperColor["b"] * ratio);
 	    color["a"] = 255;
@@ -214,10 +251,7 @@
 	        b: parseInt(result[3], 16)
 	    } : null;
 	}
-	this.getHexToRgba = function(hex){
-		return hexToRgba(hex);
-	}
-	
+
 	this.getColorLuminance = function(color) {
 		var rgb = hexToRgb(color);
 	    if (!rgb) {
@@ -287,10 +321,11 @@ CMM.darkenHexColorIfNeeded = darkenHexColorIfNeeded;
 }
 		
     // All color maps and current color maps are stored here.
-    CMM.ColorMapManager = function(heatMap, mapConfig) {
+    CMM.ColorMapManager = function(heatMap) {
 	
 	this.heatMap = heatMap;
 
+	const mapConfig = heatMap.mapConfig;
 	const colorMapCollection = [mapConfig.data_configuration.map_information.data_layer,mapConfig.row_configuration.classifications,mapConfig.col_configuration.classifications];
 	
 	this.getColorMap = function(type, colorMapName){

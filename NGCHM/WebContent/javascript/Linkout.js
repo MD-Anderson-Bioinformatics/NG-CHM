@@ -164,7 +164,7 @@ var linkoutsVersion = 'undefined';
                         if (name) {
 				PANE.setPaneTitle (pane, name);
                         }
-			MMGR.saveLinkoutPaneToMapConfig(pane.pane.id, url, name);
+			MMGR.getHeatMap().saveLinkoutPaneToMapConfig(pane.pane.id, url, name);
                 }
 	};
 
@@ -359,13 +359,13 @@ var linkoutsVersion = 'undefined';
 		    numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
 		});
 		win.onready((win) => {
-		    LNK.createMatrixDataTsv(searchLabels);
+		    createMatrixDataTsv(win, searchLabels);
 		});
 	};
 
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
-	LNK.createMatrixDataTsv = function(searchLabels) {
+	function createMatrixDataTsv (accessWindow, searchLabels) {
 		var matrix = new Array();
 
 		let rowSearchItems = SRCHSTATE.getAxisSearchResults("Row");
@@ -403,7 +403,7 @@ var linkoutsVersion = 'undefined';
 		var dataMatrix = new Array();
 		rowSearchItems.forEach( x => {
 			colSearchItems.forEach( y => {
-				let matrixValue = heatMap.getValue(MAPREP.DETAIL_LEVEL,x,y);
+				let matrixValue = accessWindow.getValue(x,y);
 				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
 				if (matrixValue !== MAPREP.minValues-1) {
 					dataMatrix.push(matrixValue);
@@ -919,7 +919,7 @@ var linkoutsVersion = 'undefined';
 		LNK.linkoutElement = UTIL.newElement ('DIV.linkouts');
 		PANE.setPaneTitle (loc, 'Linkouts');
 		loc.pane.appendChild (LNK.linkoutElement);
-		MMGR.saveLinkoutPaneToMapConfig(loc.pane.id, "", "Linkouts");
+		MMGR.getHeatMap().saveLinkoutPaneToMapConfig(loc.pane.id, "", "Linkouts");
 	};
 	PANE.registerPaneContentOption ('Linkouts', LNK.switchPaneToLinkouts);
 
@@ -1282,7 +1282,7 @@ var linkoutsVersion = 'undefined';
 		}
 		heatMap.setUnAppliedChanges(true);
 		PIM.sendMessageToPlugin ({ nonce, op: 'plot', config, data });
-		MMGR.saveDataSentToPluginToMapConfig(nonce, config, data);
+		heatMap.saveDataSentToPluginToMapConfig(nonce, config, data);
 	}; // end of initializePanePlugin
 
 	function filterGaps (data, gapIndices) {
@@ -2697,7 +2697,7 @@ var linkoutsVersion = 'undefined';
 		if (Object.entries(instance.params).length === 0) {
 		        PIM.sendMessageToPlugin ({ nonce: msg.nonce, op: 'none' }); // Let plugin know we heard it.
 			switchToPlugin (loc, instance.plugin.name);
-			MMGR.saveDataSentToPluginToMapConfig(msg.nonce, null, null);
+			MMGR.getHeatMap().saveDataSentToPluginToMapConfig(msg.nonce, null, null);
 		} else {
 			loc.paneTitle.innerText = instance.plugin.name;
 			LNK.initializePanePlugin (msg.nonce, instance.params);
@@ -2832,7 +2832,7 @@ var linkoutsVersion = 'undefined';
 	defineVanodiMessageHandler('sendingPluginData', function vanodiSaveData (instance, msg) {
 		let pluginInstances = PIM.getPluginInstances();
 		pluginInstances[instance.nonce]['dataFromPlugin'] = msg.pluginData;
-		MMGR.saveDataFromPluginToMapConfig(instance.nonce, pluginInstances[instance.nonce]['dataFromPlugin']);
+		MMGR.getHeatMap().saveDataFromPluginToMapConfig(instance.nonce, pluginInstances[instance.nonce]['dataFromPlugin']);
 	})
 
 	/*

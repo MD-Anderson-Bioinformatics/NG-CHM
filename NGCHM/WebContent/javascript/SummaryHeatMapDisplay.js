@@ -6,6 +6,7 @@
 
     const MAPREP = NgChm.importNS('NgChm.MAPREP');
     const MMGR = NgChm.importNS('NgChm.MMGR');
+    const CMM = NgChm.importNS('NgChm.CMM');
     const SUMDDR = NgChm.importNS('NgChm.SUMDDR');
     const UTIL = NgChm.importNS('NgChm.UTIL');
     const DRAW = NgChm.importNS('NgChm.DRAW');
@@ -494,22 +495,30 @@ SUM.drawHeatMap = function() {
 	//Needs to go backward because WebGL draws bottom up.
 	const numRows = heatMap.getNumRows (MAPREP.SUMMARY_LEVEL);
 	const numColumns = heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL);
+	const accessWindow = heatMap.getNewAccessWindow ({
+	    layer: currentDl,
+	    level: MAPREP.SUMMARY_LEVEL,
+	    firstRow: 1,
+	    firstCol: 1,
+	    numRows: numRows,
+	    numCols: numColumns,
+	});
+	const contColorMap = colorMap.getContColorMap ();
 	const line = new Array(numColumns*widthScale*DRAW.BYTE_PER_RGBA);
 	let pos = 0;
 	SUM.avgValue[currentDl] = 0;
 	for (let i = numRows; i > 0; i--) {
 		let linepos = 0;
-		for (let j = 1; j <= numColumns; j++) { // draw the heatmap
-			const val = heatMap.getValue(MAPREP.SUMMARY_LEVEL, i, j);
-			if ((val < MAPREP.maxValues) && (val > MAPREP.minValues)) {
-				SUM.avgValue[currentDl] += val;
+		for (let {value} of accessWindow.getRowValues(i)) {
+			if ((value < MAPREP.maxValues) && (value > MAPREP.minValues)) {
+				SUM.avgValue[currentDl] += value;
 			}
-			const color = colorMap.getColor(val);
+			const { r, g, b, a } = contColorMap.getColor(value);
 			for (let k = 0; k < widthScale; k++){
-				line[linepos] = color['r'];
-				line[linepos + 1] = color['g'];
-				line[linepos + 2] = color['b'];
-				line[linepos + 3] = color['a'];
+				line[linepos] = r;
+				line[linepos + 1] = g;
+				line[linepos + 2] = b;
+				line[linepos + 3] = a;
 				linepos+= DRAW.BYTE_PER_RGBA;
 			}
 		}
@@ -690,12 +699,13 @@ SUM.resetBoxCanvas = function() {
 	ctx.lineWidth=1;
 	ctx.strokeStyle="#000000";
 
+	const heatMap = MMGR.getHeatMap();
+
 	// If no row or column cuts, draw the heat map border in black
-	if (MMGR.mapHasGaps() === false){
-		ctx.strokeRect(0,0,SUM.boxCanvas.width,SUM.boxCanvas.height);
+	if (!heatMap.hasGaps()){
+	    ctx.strokeRect(0, 0, SUM.boxCanvas.width, SUM.boxCanvas.height);
 	}
 
-	const heatMap = MMGR.getHeatMap();
 	const primaryMap = DVW.primaryMap;
 	if (primaryMap) {
 	    //If in sub-dendro mode, draw rectangles outside of selected range.
@@ -764,7 +774,7 @@ SUM.drawLeftCanvasBox = function() {
 		const boxY = ((((DVW.getCurrentSumRow(mapItem)-1) * SUM.heightScale) / SUM.canvas.height) * SUM.boxCanvas.height);
 		const boxW = (DVW.getCurrentSumDataPerRow(mapItem)*SUM.widthScale / SUM.canvas.width) * SUM.boxCanvas.width - 2;
 		const boxH = (DVW.getCurrentSumDataPerCol(mapItem)*SUM.heightScale / SUM.canvas.height) * SUM.boxCanvas.height - 2;
-		const dataLayer = dataLayers[mapItem.currentDl];
+		const dataLayer = dataLayers[heatMap._currentDl];
 		ctx.strokeStyle=dataLayer.selection_color;
 		if (mapItem.version === 'P') {
 			ctx.lineWidth=4;
@@ -798,7 +808,7 @@ SUM.getScaledHeight = function(height, axis) {
 		var val = classBarValues[k];
 		var color = colorMap.getClassificationColor(val);
 		if (val == "null") {
-			color = colorMap.getHexToRgba(colorMap.getMissingColor());
+			color = CMM.hexToRgba(colorMap.getMissingColor());
 		}
 		for (let i = 0; i < widthScale; i++){
 			line[loc] = color['r'];
@@ -1060,7 +1070,7 @@ SUM.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalHeight,
 		let val = classBarValues[j-1];
 		let color = colorMap.getClassificationColor(val);
 		if (val == "null") {
-			color = colorMap.getHexToRgba(colorMap.getMissingColor());
+			color = CMM.hexToRgba(colorMap.getMissingColor());
 		}
 		// Output heightScale rows of the element's color.
 		for (let i = 0; i < heightScale; i++) {

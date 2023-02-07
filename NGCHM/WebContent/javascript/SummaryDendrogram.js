@@ -368,7 +368,7 @@
         DDR.ColumnDendrogram.call (this);
 	SummaryDendrogram.call (this,
 		heatMap.getColDendroConfig(),
-		heatMap.getColDendroData(),
+		heatMap.getDendrogramData('column'),
 		heatMap.getNumColumns('d'),
 		callbacks
 	);
@@ -383,7 +383,7 @@
         DDR.RowDendrogram.call (this);
 	SummaryDendrogram.call (this,
 		heatMap.getRowDendroConfig(),
-		heatMap.getRowDendroData(),
+		heatMap.getDendrogramData('row'),
 		heatMap.getNumRows('d'),
 		callbacks
 	);
