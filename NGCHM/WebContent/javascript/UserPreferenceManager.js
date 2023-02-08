@@ -40,6 +40,11 @@
 	UPM.prefsCancelButton();
     };
 
+    uiElement = document.getElementById('prefMapInfo_btn');
+    uiElement.onclick = () => {
+	UPM.showInfoPrefs();
+    };
+
     uiElement = document.getElementById('prefLayer_btn');
     uiElement.onclick = () => {
 	UPM.showLayerPrefs();
@@ -139,6 +144,9 @@ UPM.editPreferences = function(e,errorMsg) {
 	if (errorMsg !== null) {
 		UPM.setMessage(errorMsg[2]);
 	} else {
+		//Create and populate map info preferences DIV and add to parent DIV
+		const mapinfoprefs = UPM.setupMapInfoPrefs(e, prefprefs);
+
 		//Create and populate row & col preferences DIV and add to parent DIV
 		const rowcolprefs = UPM.setupRowColPrefs(e, prefprefs);
 
@@ -169,6 +177,8 @@ UPM.editPreferences = function(e,errorMsg) {
 	} else if ((errorMsg != null) && (errorMsg[1] === "layerPrefs")){ 
 		UPM.showLayerBreak(errorMsg[0]);
 		UPM.showLayerPrefs();
+	} else if ((errorMsg != null) && (errorMsg[1] === "infoPrefs")) {
+		UPM.showInfoPrefs();
 	} else if ((errorMsg != null) && (errorMsg[1] === "rowColPrefs")){ 
 		UPM.showRowsColsPrefs();
 	} else if (UPM.searchPerformed) {
@@ -234,6 +244,9 @@ UPM.showRowsColsPrefs = function() {
     UTIL.showTab ('prefRowsCols_btn');
 }
 
+UPM.showInfoPrefs = function() {
+    UTIL.showTab ('prefMapInfo_btn');
+};
 
 /**********************************************************************************
  * FUNCTION - showLayerPrefs: The purpose of this function is to perform the 
@@ -305,20 +318,13 @@ UPM.removeSettingsPanels = function() {
 	//Remove all panels that are content specific before closing
 	UPM.setMessage ('');
 	
-	const rcPrefs = document.getElementById("rowsColsPrefs");
-	while (rcPrefs.firstChild) {
-	    rcPrefs.removeChild(rcPrefs.firstChild);
-	}
-	
-	const lPrefs = document.getElementById("layerPrefs");
-	while (lPrefs.firstChild) {
-	    lPrefs.removeChild(lPrefs.firstChild);
-	}
-	
-	const cPrefs = document.getElementById("classPrefs");
-	while (cPrefs.firstChild) {
-	    cPrefs.removeChild(cPrefs.firstChild);
-	}
+	const prefTabs = [...document.getElementById("prefPrefs").children];
+
+	prefTabs.forEach (tab => {
+	    while (tab.firstChild) {
+		tab.removeChild(tab.firstChild);
+	    }
+	});
 }
 
 /**********************************************************************************
@@ -1925,6 +1931,58 @@ UPM.filterShow = function(key) {
  *      - dendroColShowChange
  =================================================================================*/
 
+UPM.setupMapInfoPrefs = function (e, prefprefs) {
+	const heatMap = MMGR.getHeatMap();
+	const mapInfo = heatMap.getMapInformation();
+	const mapInfoPrefs = document.getElementById("infoPrefs");
+	const prefContents = document.createElement("TABLE");
+
+	const totalRows = heatMap.getTotalRows()-mapInfo.map_cut_rows;
+	const totalCols = heatMap.getTotalCols()-mapInfo.map_cut_cols;
+
+	UHM.setTableRowX(prefContents,["ABOUT:"], ['header'], [ { colSpan: 2 }]);
+	UHM.setTableRowX(prefContents,["Name:", mapInfo.name]);
+	UHM.setTableRowX(prefContents,["Size:", totalRows + " rows by " + totalCols + " columns"]);
+	UHM.setTableRowX(prefContents,["Description:", mapInfo.description]);
+	UHM.setTableRowX(prefContents,["Build time:", mapInfo.attributes['chm.info.build.time']]);
+	UHM.setTableRowX(prefContents,["Read Only:", mapInfo.read_only]);
+
+	UHM.setTableRowX(prefContents,["VERSIONS:"], ['header'], [ { colSpan: 2}]);
+	UHM.setTableRowX(prefContents,["Viewer Version:", COMPAT.version]);
+	UHM.setTableRowX(prefContents,["Map Version:", mapInfo.version_id]);
+	UHM.setTableRowX(prefContents,["Builder Version:", mapInfo.builder_version]);
+
+	UHM.setTableRowX(prefContents,["LAYERS:"], ['header'], [{ colSpan: 2 }]);
+	for (let dl in mapInfo.data_layer) {
+	    UHM.setTableRowX(prefContents,[dl + ':', mapInfo.data_layer[dl].name]);
+	}
+
+	UHM.setTableRowX(prefContents,["ATTRIBUTES:"], ['header'], [{ colSpan: 2 }]);
+	const omit = [ /^chm/, /^!/, ];
+	const pass = [ /^chm.info.external.url/, /^!extraparam/ ];
+	for (let attr in mapInfo.attributes) {
+	    if (!matchAny (attr, omit) || matchAny (attr, pass)) {
+		let attrVal = mapInfo.attributes[attr];
+		if (/.external.url/.test(attr)) {
+		    attrVal = UTIL.newElement ('A', { href: attrVal, target: '_blank', }, [ attrVal ]);
+		}
+		UHM.setTableRowX(prefContents,[attr + ':', attrVal]);
+	    }
+	}
+
+	UHM.addBlankRow(prefContents,2);
+	mapInfoPrefs.appendChild(prefContents);
+
+	return mapInfoPrefs;
+
+	function matchAny (str, regExpArray) {
+	    for (let regExp of regExpArray) {
+		if (regExp.test(str)) return true;
+	    }
+	    return false;
+	}
+};
+
 /**********************************************************************************
  * FUNCTION - setupRowColPrefs: The purpose of this function is to construct a DIV 
  * panel containing all row & col preferences.  Two sections are presented, one for
@@ -1936,12 +1994,6 @@ UPM.setupRowColPrefs = function(e, prefprefs) {
 	const rowcolprefs = document.getElementById("rowsColsPrefs");
 	var prefContents = document.createElement("TABLE");
 	UHM.addBlankRow(prefContents);
-	UHM.setTableRow(prefContents,["MAP INFORMATION:"], 2);
-	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Viewer Version:", COMPAT.version]);
-	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Map Version:", heatMap.getMapInformation().version_id]);
-	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Builder Version:", heatMap.getMapInformation().builder_version]);
-	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Read Only:", heatMap.getMapInformation().read_only]);
-	UHM.addBlankRow(prefContents,2);
 	UHM.setTableRow(prefContents,["ROW INFORMATION:"], 2);
 	var rowLabels = heatMap.getRowLabels();
 	var rowOrganization = heatMap.getRowOrganization();

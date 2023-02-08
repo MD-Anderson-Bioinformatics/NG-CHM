@@ -817,6 +817,21 @@ button#layers_open_close[data-state='closed'] div.closed {
     text-align: left;
 }
 
+.chmTblRow td.label,
+.chmTblRow.header {
+    font-weight: bold;
+}
+
+.chmTblRow.header td {
+    padding-top: 1em;
+}
+
+.chmTblRow.entry td.label {
+    padding-left: 0.7em;
+    white-space: nowrap;
+    vertical-align: text-top;
+}
+
 /* Style plugin help table links same color/font as table text.
    Links will still be underlined.
 */
@@ -1030,7 +1045,7 @@ th.breakpointContainer {
 	border-bottom-style: solid;
 }
 
-#rowsColsPrefs, #classPrefs, #layerPrefs {
+#rowsColsPrefs, #classPrefs, #layerPrefs, #infoPrefs {
 	padding-bottom: 0.5em;
 }
 
@@ -1158,10 +1173,9 @@ th.breakpointContainer {
 }
 
 #prefPrefs {
-	position: relative;
+    position: relative;
     display: block;
     overflow: auto;
-    overflow-x: hidden;
 }
 
 #splashBoxHeader {

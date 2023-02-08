@@ -289,6 +289,55 @@ UHM.setTableRow = function(tableObj, tdArray, colSpan, align) {
 }
 
 /**********************************************************************************
+ * FUNCTION - setTableRowX: eXperimental/eXtended version of setTableRow.
+ * or configuration html TABLE item for a given help pop-up panel. It receives text for
+ * the header column, detail column, and the number of columns to span as inputs.
+ **********************************************************************************/
+UHM.setTableRowX = function(tableObj, tdArray, rowClasses, tdProps) {
+	rowClasses = rowClasses || [];
+	tdProps = tdProps || Array(tdArray.length);
+
+	const tr = tableObj.insertRow();
+	tr.classList.add ("chmTblRow");
+	rowClasses.forEach (rowClass => {
+	    tr.classList.add(rowClass);
+	});
+	if (tr.classList.length == 1) {
+	    tr.classList.add('entry');
+	}
+
+	for (let i = 0; i < tdArray.length; i++) {
+		const td = tr.insertCell(i);
+
+		for (let [key, value] of Object.entries(tdProps[i]||{})) {
+		    if (typeof value != 'object') {
+			td[key] = value;
+		    } else if (key == 'style') {
+			for (let [k2, v2] of Object.entries(value)) {
+			    td.style[k2] = v2;
+			}
+		    } else if (key == 'classList') {
+			value.forEach(className => td.classList.add(className));
+		    } else if (key == 'dataset') {
+			for (let [k2, v2] of Object.entries(value)) {
+			    td.dataset[k2] = v2;
+			}
+		    } else {
+			console.error ('Unknown object in tdProps: ' + key);
+		    }
+		}
+		if (td.classList.length == 0) {
+			td.classList.add (i == 0 ? 'label' : 'value');
+		}
+		if (['string', 'number'].includes(typeof tdArray[i]) || Array.isArray(tdArray[i])) {
+		    td.innerHTML = tdArray[i];
+		} else if (tdArray[i]) {
+		    td.appendChild (tdArray[i]);
+		}
+	}
+};
+
+/**********************************************************************************
  * FUNCTION - formatBlankRow: The purpose of this function is to return the html
  * text for a blank row.
  **********************************************************************************/
