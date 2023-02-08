@@ -370,11 +370,11 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 		const valueGen = accessWindow.getRowValues(currDetRow)[Symbol.iterator]();
 		// We need to lookahead one column when checking for vertical cuts.
 		// Get lookahead for column 0.
-		let nextVal = valueGen.next().value?.value;
+		let nextVal = (v=>v&&v.value)(valueGen.next().value);
 		for (let j = 0; j < detDataPerRow; j++) {
 			// Advance to column j and get lookahead to column j+1.
 			const val = nextVal;
-			nextVal = valueGen.next().value?.value;
+			nextVal = (v=>v&&v.value)(valueGen.next().value);
 
 			const gridColor = ((params.searchCols.indexOf(mapItem.currentCol+j) > -1) || (params.searchCols.indexOf(mapItem.currentCol+j+1) > -1)) ? params.searchGridColor : regularGridColor;
 			for (let k = 0; k < mapItem.dataBoxWidth; k++) {
@@ -411,11 +411,11 @@ DET.getDetailHeatMap = function (mapItem, drawWin, params) {
 	    const valueGen = accessWindow.getRowValues(currDetRow+i)[Symbol.iterator]();
 	    // We need to lookahead one column when checking for cuts.
 	    // Get lookahead for column 0.
-	    let nextVal = valueGen.next().value?.value;
+	    let nextVal = (v=>v&&v.value)(valueGen.next().value);
 	    for (let j = 0; j < detDataPerRow; j++) { // for every data point...
 		// Advance to column j.  Get lookahead for column j+1.
 		const val = nextVal;
-		nextVal = valueGen.next().value?.value;
+		nextVal = (v=>v&&v.value)(valueGen.next().value);
 
 		if (val === undefined) {
 		    console.error ('accessWindow value generator returned undefined', { accessWindow, row: currDetRow+i, col: currDetCol+j, detDataPerRow });
