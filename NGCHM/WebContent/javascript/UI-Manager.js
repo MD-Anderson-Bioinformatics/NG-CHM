@@ -1284,6 +1284,8 @@
 					} else {
 					    mapItem.currentCol--;
 					}
+					DVW.checkCol(mapItem);
+					SRCH.enableDisableSearchButtons (mapItem);
 				}
 				break;
 			case 'ArrowUp': // up key
@@ -1298,6 +1300,8 @@
 					} else {
 					    mapItem.currentRow--;
 					}
+					DVW.checkRow(mapItem);
+					SRCH.enableDisableSearchButtons (mapItem);
 				}
 				break;
 			case 'ArrowRight': // right key
@@ -1314,6 +1318,8 @@
 					} else {
 					    mapItem.currentCol++;
 					}
+					DVW.checkCol(mapItem);
+					SRCH.enableDisableSearchButtons (mapItem);
 				}
 				break;
 			case 'ArrowDown': // down key
@@ -1328,6 +1334,8 @@
 					} else {
 					    mapItem.currentRow++;
 					}
+					DVW.checkRow(mapItem);
+					SRCH.enableDisableSearchButtons (mapItem);
 				}
 				break;
 			case 'PageUp': // page up
@@ -1344,6 +1352,7 @@
 				} else {
 					DEV.zoomAnimation(mapItem.chm);
 				}
+				SRCH.enableDisableSearchButtons (mapItem);
 				break;
 			case 'PageDown': // page down
 				e.preventDefault();
@@ -1359,6 +1368,7 @@
 				} else {
 					DEV.detailDataZoomOut(mapItem.chm);
 				}
+				SRCH.enableDisableSearchButtons (mapItem);
 				break;
 			case 'F2': // F2 key
 				if (FLICK.flickIsOn()) {
@@ -1384,7 +1394,8 @@
 		}
 		DVW.checkRow(mapItem);
 		DVW.checkCol(mapItem);
-	    mapItem.updateSelection();
+		mapItem.updateSelection();
+		SRCH.enableDisableSearchButtons (mapItem);
 	} else {
 	    if ((document.activeElement.id === "search_text") && (e.key === 'Enter')) {
 		    SRCH.detailSearch();

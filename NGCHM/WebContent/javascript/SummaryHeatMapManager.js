@@ -11,6 +11,7 @@
     const DVW = NgChm.importNS('NgChm.DVW');
     const DMM = NgChm.importNS('NgChm.DMM');
     const PANE = NgChm.importNS('NgChm.Pane');
+    const SRCH = NgChm.importNS('NgChm.SRCH');
 
     var mouseEventActive = false;
     var dragSelect = false;	  // Indicates if user has made a drag selection on the summary panel
@@ -34,6 +35,7 @@
 	    DVW.checkRow(DVW.primaryMap);
 	    DVW.checkCol(DVW.primaryMap);
 	    mouseEventActive = false;
+	    SRCH.enableDisableSearchButtons (DVW.primaryMap);
     }
 
     SMM.onMouseUpSelColCanvas = function(evt) {
@@ -53,6 +55,7 @@
 	    DVW.checkRow(DVW.primaryMap);
 	    DVW.checkCol(DVW.primaryMap);
 	    mouseEventActive = false;
+	    SRCH.enableDisableSearchButtons (DVW.primaryMap);
     }
 
     SMM.getTouchEventOffset = function (evt) {
@@ -151,6 +154,7 @@
 		    if (DVW.primaryMap) {
 			DVW.checkRow(DVW.primaryMap);
 			DVW.checkCol(DVW.primaryMap);
+			SRCH.enableDisableSearchButtons (DVW.primaryMap);
 		    }
 		    mouseEventActive = false;
 	    }
@@ -163,6 +167,7 @@
 	    DVW.setCurrentRowFromSum(DVW.primaryMap,sumRow);
 	    DVW.setCurrentColFromSum(DVW.primaryMap,sumCol);
 	    DVW.primaryMap.updateSelection();
+	    SRCH.enableDisableSearchButtons (DVW.primaryMap);
     }
 
     SMM.dragMove = function(evt) {
@@ -176,6 +181,7 @@
 	    DVW.setCurrentRowFromSum(DVW.primaryMap,sumRow);
 	    DVW.setCurrentColFromSum(DVW.primaryMap,sumCol);
 	    DVW.primaryMap.updateSelection();
+	    SRCH.enableDisableSearchButtons (DVW.primaryMap);
 	    MMGR.getHeatMap().setUnAppliedChanges(true);
     }
 
@@ -220,6 +226,7 @@
 		DVW.primaryMap.dataPerCol = endRow - startRow;
 		DVW.primaryMap.currentRow = startRow;
 		DVW.primaryMap.currentCol = startCol;
+		SRCH.enableDisableSearchButtons (DVW.primaryMap);
 	    }
 	    SUM.drawLeftCanvasBox();
     }

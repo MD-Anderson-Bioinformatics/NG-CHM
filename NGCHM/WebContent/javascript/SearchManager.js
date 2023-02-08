@@ -610,19 +610,19 @@
      ***********************************************************************************/
     SRCH.searchNext = searchNext;
     function searchNext (firstTime, mapItem) {
-	const searchAxis = document.getElementById('search_target').value;
+	const searchAxis = mapItem.allowedOrientations;
 	const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
 
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	if (firstTime || !currentSearchItem["index"] || !currentSearchItem["axis"]) {
-	    // Start new search.  If searchAxis == "Both", start on the columns.
-	    findNextSearchItem(mapItem, -1, searchAxis === "Column" ? "Column" : "Row");
-	} else if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
+	    // Start new search.  If searchAxis == "any", start on the rows.
+	    findNextSearchItem(mapItem, -1, searchAxis === "column" ? "Column" : "Row");
+	} else if ((searchAxis === 'any') || (currentSearchItem["axis"].toLowerCase() === searchAxis)) {
 	    // Continue search on current axis if permitted.
 	    findNextSearchItem(mapItem, currentSearchItem["index"], currentSearchItem["axis"]);
 	} else {
 	    // Start search from beginning of requested axis otherwise.
-	    findNextSearchItem(mapItem, -1, searchAxis);
+	    findNextSearchItem(mapItem, -1, searchAxis == "column" ? "Column" : "Row");
 	}
 	goToCurrentSearchItem(mapItem);
     }
@@ -671,9 +671,9 @@
 	        // Found it. Set search item.
 		SRCHSTATE.setSearchItem(mapItem, axis, curr);
 	} else {
-		const searchTarget = document.getElementById('search_target').value;
+		const allowedAxes = mapItem.allowedOrientations;
 	        // if no more searchResults exist in first axis, move to other axis if possible.
-		if (searchTarget === 'Both') {
+		if (allowedAxes === 'any') {
 			const otherAxis = axis == "Row" ? "Column" : "Row";
 			curr = findNextAxisSearchItem (mapItem, otherAxis, -1);
 			if (curr >= 0) {
@@ -773,7 +773,7 @@
 			console.error ('Illegal orientation: ' + target.dataset.orient);
 			return;
 		    }
-		    setAllowedMapOrientations (mapItem, buttons, idx);
+		    setAllowedMapOrientations (mapItem, button, idx);
 		}
 		while (target && !target.classList.contains('menuPanel')) {
 		    target = target.parentElement;

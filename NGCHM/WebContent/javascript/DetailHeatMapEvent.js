@@ -895,6 +895,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		}
 		mapItem.modeHistory.pop();
 	}
+	SRCH.enableDisableSearchButtons (mapItem);
 };
 
     /**********************************************************************************
@@ -957,6 +958,7 @@ DEV.detailDataZoomIn = function (mapItem) {
         } else {
 	    console.error ('Unknown zoom mode ', mapItem.mode);
 	}
+	SRCH.enableDisableSearchButtons (mapItem);
     };
 
     /**********************************************************************************
