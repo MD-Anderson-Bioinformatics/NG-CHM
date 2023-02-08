@@ -1160,7 +1160,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    UTIL.newSvgButton ('icon-gear'),
+		    UTIL.newSvgButton ('icon-gear.hide'),
 		]),
 	    ];
 	    const template = 'fit-content(0) auto auto auto fit-content(0)';
