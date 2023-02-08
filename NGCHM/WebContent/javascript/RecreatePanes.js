@@ -190,21 +190,6 @@
 		}
 	}
 
-	/**
-	 * Iterate over panes and return the primary detail pane. If no primary detail pane,
-	 * return null.
-	 */
-	function getPrimaryDetailPane() {
-		let panes = document.getElementsByClassName("pane");
-		for (let i=0; i<panes.length; i++) {
-			let pane = document.getElementById(panes[i].id);
-			if (pane.textContent.includes("Heat Map Detail - Primary")) {
-				return pane;
-			}
-		}
-		return null;
-	}
-
 	function setSelections() {
 		if (!RECPANES.mapConfigPanelConfiguration.hasOwnProperty('selections')) return;
 		let rowSelections = RECPANES.mapConfigPanelConfiguration['selections']['row'];

@@ -1107,18 +1107,34 @@ DEV.detailDataZoomIn = function (mapItem) {
 		    }),
 		    UTIL.newSvgButton ('icon-small-circle.srchOrient', {
 			dataset: {
-			    tooltip: 'Set the move to selection axis',
-			    title: 'Set the move to selection axis',
-			    intro: 'Set the axis or axes the move selection can use',
+			    tooltip: 'Choose the selection movement axis (long click for menu)',
+			    title: 'Choose the selection movement axis',
+			    intro: 'Choose the axis or axes the selection movement buttons can use: both axes, rows only, or columns only. Cycles among allowed values by default. Use a long click for a menu.',
 			},
 		    }, el => {
+			el.onmousedown = (ev) => {
+			    let button = ev.target;
+			    while (button && button.tagName.toLowerCase() != 'button') {
+				button = button.parentElement;
+			    }
+			    if (button) {
+				button.dataset.mouseDownTime = '' + performance.now();
+			    }
+			};
 			el.onclick = (ev) => {
+			    ev.stopPropagation();
 			    const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
 			    let button = ev.target;
 			    while (button && button.tagName.toLowerCase() != 'button') {
 				button = button.parentElement;
 			    }
-			    if (button) SRCH.showOrientDialog (mapItem, button);
+			    if (button) {
+				if (button.dataset.mouseDownTime && performance.now()-button.dataset.mouseDownTime < 100) {
+				    SRCH.showNextOrientation (mapItem, button);
+				} else {
+				    SRCH.showOrientDialog (mapItem, button);
+				}
+			    }
 			};
 			return el;
 		    }),
@@ -1152,16 +1168,18 @@ DEV.detailDataZoomIn = function (mapItem) {
 	const srchButtonAttrs = {
 	    srchPrev: {
 		dataset: {
-		    tooltip: 'Move to previous selection',
+		    tooltip: 'Move to previous selection.',
 		    title: 'Move to Previous Selection',
 		    intro: 'Moves the top or left of the view to the previous selection on the current axis, if any, or to last selection on the other axis if the orientation control is set to any',
+		    disabledReason: 'Disabled when no selections on allowed axis/axes outside current view.',
 		},
 	    },
 	    srchNext: {
 		dataset: {
-		    tooltip: 'Move to next selection',
+		    tooltip: 'Move to next selection.',
 		    title: 'Move to Next Selection',
 		    intro: 'Moves the top or left of the view to the next selection on the current axis, if any, or to the first selection on the other axis if the orientation control is set to any',
+		    disabledReason: 'Disabled when no selections on allowed axis/axes outside current view.',
 		},
 	    },
 	};
@@ -1178,7 +1196,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 	const zoomButtonAttrs = {
 	    'icon-make-primary': {
 		dataset: {
-		    tooltip: 'Make primary',
+		    tooltip: 'Make primary. A green background indicates the primary map.',
 		    title: 'Make Primary',
 		    intro: 'Make the current detail view the primary detail view.  Keyboard navigation, the search button, and other controls affect the primary detail view.',
 		},
@@ -1200,6 +1218,9 @@ DEV.detailDataZoomIn = function (mapItem) {
 	};
 	function zoomButton (btnId, btnIcon, clickFn) {
 	    const button = UTIL.newSvgButton (btnIcon, zoomButtonAttrs[btnIcon]);
+	    if (btnIcon == 'icon-make-primary') {
+		button.classList.add ('make-primary');
+	    }
 	    button.id = btnId;
 	    button.onclick = function (e) {
 		clickFn();

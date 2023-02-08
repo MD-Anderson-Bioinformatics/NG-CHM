@@ -15,7 +15,8 @@
     UHM.postMapToWhom = null;		// Identity of the window to post map details to
     UHM.myNonce = 'N';			// Shared secret for vetting message sender
 
-    var popupTimeoutId = undefined;	// Timeout for displaying a pending popup window.
+    var popupTimeoutId = null;		// Timeout for displaying a pending popup window.
+    var popupTimeoutElement = null;	// Element for which we are displaying the popup window.
 
 // Define action handlers for static UHM UI elements.
 //
@@ -45,24 +46,39 @@
 	// Clear any (pending) tooltips if the user clicks on the element.
 	UHM.hlpC();
 	UHM.closeMenu();
+
+	const closeables = document.getElementsByClassName ('remove-on-click');
+	[...closeables].forEach (element => {
+	    element.remove();
+	});
     }
 
     function mouseout (ev) {
-	delete ev.target.dataset.hovering;
-	if (ev.target.dataset.hasOwnProperty('nohoverImg')) {
-	    ev.target.src = ev.target.dataset.nohoverImg;
-	}
+	const tt = findMajorNode (ev.target);
+	delete tt.dataset.hovering;
     }
 
     function mouseover(ev) {
-	ev.target.dataset.hovering = '';
-	let tt = ev.target;
-	while (tt && !tt.dataset.hasOwnProperty('tooltip')) {
-	    tt = tt.parentElement;
+	const tt = findMajorNode (ev.target);
+	tt.dataset.hovering = '';
+	if (tt.dataset.tooltip) {
+	    let text = tt.dataset.tooltip;
+	    if (tt.disabled && tt.dataset.disabledReason) {
+		text += ' ' + tt.dataset.disabledReason;
+	    }
+	    UHM.hlp (tt, text, 140, 0);
 	}
-	if (tt) {
-	    UHM.hlp (tt, tt.dataset.tooltip || tt.dataset.intro || tt.dataset.title || "Undefined tooltip", 140, 0);
+    }
+
+    function findMajorNode (el) {
+	let node = el;
+	while (node) {
+	    if (node.tagName.toLowerCase() == 'button' || node.dataset.hasOwnProperty('tooltip') || node.dataset.hasOwnProperty('title')) {
+		return node;
+	    }
+	    node = node.parentElement;
 	}
+	return el;
     }
 })();
 
@@ -157,12 +173,20 @@ function pasteHelpContents() {
  * The tooltip will appear delay milliseconds after this function is called unless
  * the user does something to clear the pending popup (e.g. move the mouse, press a key).
  **********************************************************************************/
-UHM.hlp = function(element, text, width, reverse, delay=1500) {
+UHM.hlp = function(element, text, width, reverse, delay=500) {
+	if (element == popupTimeoutElement) {
+	    return;
+	}
 	UHM.hlpC();
+	popupTimeoutElement = element;
 	popupTimeoutId = setTimeout(function(){
 		const bodyElem = document.querySelector('body');
 		if (!bodyElem) return;
 
+		if (element.dataset.hovering != '') {
+		    // Don't show popup unless user is still hovering.
+		    return;
+		}
 		const elemPos = UHM.getElemPosition(element);
 		const title = UTIL.newElement('span.title', {}, [UTIL.newTxt(element.dataset.title || "")]);
 		const content = UTIL.newElement('span.intro', {}, [element.dataset.intro || text]);
@@ -178,6 +202,13 @@ UHM.hlp = function(element, text, width, reverse, delay=1500) {
 		helptext.innerHTML = "<b><font size='2' color='#0843c1'>"+text+"</font></b>";
 		helptext.style.display = "inherit";
 		bodyElem.appendChild(helptext);
+		popupTimeoutId = null;
+		setTimeout (() => {
+		    if (popupTimeoutElement == element) {
+			popupTimeoutElement = null;
+			UHM.hlpC();
+		    }
+		}, 5000);
 	}, delay);
 };
 
@@ -203,17 +234,19 @@ UHM.getElemPosition = function(el) {
  * FUNCTION - hlpC: This function clears any bubble help box displayed on the screen.
  **********************************************************************************/
 UHM.hlpC = function() {
-    if (popupTimeoutId !== undefined) {
+    if (popupTimeoutId !== null) {
 	clearTimeout(popupTimeoutId);
-	popupTimeoutId = undefined;
+	popupTimeoutId = null;
+	popupTimeoutElement = null;
     }
     let helptext = document.getElementById('bubbleHelp');
     if (helptext === null) {
 	helptext = document.getElementById('helptext');
     }
-    if (helptext){
+    if (helptext) {
 	helptext.remove();
     }
+
 };
 
 /**********************************************************************************

@@ -298,7 +298,7 @@
 			UHM.hlpC();
 		};
 		icon.onmouseover = function(e) {
-			UHM.hlp(icon, 'Open pane menu', 120, 0);
+			UHM.hlp(icon, 'Open panel menu', 120, 0);
 		};
 		icon.addEventListener ('click', function(e) {
 			if (openIconMenu != null) {
@@ -863,18 +863,18 @@
 			menuSeparator();
 		}
 
-		menuHeader ('Pane control');
+		menuHeader ('Panel control');
 		if (isPaneExpanded === true) {
-			menuItemDisabled ('Add Pane Below');
-			menuItemDisabled ('Add Pane Right');
+			menuItemDisabled ('Add Panel Below');
+			menuItemDisabled ('Add Panel Right');
 		} else if (paneLoc.pane.classList.contains('collapsed')) {
-			menuItemDisabled ('Add Pane Below');
-			menuItemDisabled ('Add Pane Right');
+			menuItemDisabled ('Add Panel Below');
+			menuItemDisabled ('Add Panel Right');
 		} else {
-			menuItem ('Add Pane Below', () => {
+			menuItem ('Add Panel Below', () => {
 				splitPaneCheck (true, findPaneLocation(icon));
 			});
-			menuItem ('Add Pane Right', () => {
+			menuItem ('Add Panel Right', () => {
 				splitPaneCheck (false, findPaneLocation(icon));
 			});
 		}

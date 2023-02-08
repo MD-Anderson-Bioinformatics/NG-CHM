@@ -1413,12 +1413,20 @@ UPM.setupAllClassesPrefs = function() {
 	var rowClassBarsOrder = heatMap.getRowClassificationOrder();
 	var colClassBars = heatMap.getColClassificationConfig();
 	var colClassBarsOrder = heatMap.getColClassificationOrder();
-	const buttons = UTIL.newFragment ([
-	    UTIL.newElement('BUTTON', { type: 'button' }, "<b>-</b>", function (el) {
+	const buttons = UTIL.newElement ('DIV.icon_group', {}, [
+	    UTIL.newSvgButton('icon-minus', {
+		dataset: {
+		    tooltip: 'Decrease the size of all selected covariate bars by one',
+		},
+	    }, function (el) {
 		el.onclick = function () { UPM.decrementAllHeights(); };
 		return el;
 	    }),
-	    UTIL.newElement('BUTTON', { type: 'button' }, "<b>+</b>", function (el) {
+	    UTIL.newSvgButton('icon-plus', {
+		dataset: {
+		    tooltip: 'Increase the size of all selected covariate bars by one',
+		},
+	    }, function (el) {
 		el.onclick = function () { UPM.incrementAllHeights(); };
 		return el;
 	    }),

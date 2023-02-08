@@ -751,7 +751,7 @@
     SRCH.showOrientDialog = showOrientDialog;
     function showOrientDialog (mapItem, button) {
 	const btnPosn = button.getBoundingClientRect();
-	const dialog = UTIL.newElement ('DIV.menuPanel');
+	const dialog = UTIL.newElement ('DIV.menuPanel.remove-on-click');
 	dialog.style.position = 'absolute';
 	dialog.style.top = (btnPosn.y + btnPosn.height+5) + 'px';
 	dialog.style.left = btnPosn.x + 'px';
@@ -773,14 +773,7 @@
 			console.error ('Illegal orientation: ' + target.dataset.orient);
 			return;
 		    }
-		    mapItem.allowedOrientations = target.dataset.orient;
-		    if (target.dataset.orient != 'any') {
-			setSearchButtonsAxis (mapItem, target.dataset.orient);
-			mapItem.searchOrientation = target.dataset.orient;
-		    }
-		    button.innerHTML = "<SVG width='1em' height='1em'><USE href='icons.svg#" + orientMenuIcons[idx] + "'/></SVG>";
-		    button.style.rotate = orientMenuRotate[idx];
-		    enableDisableSearchButtons (mapItem);
+		    setAllowedMapOrientations (mapItem, buttons, idx);
 		}
 		while (target && !target.classList.contains('menuPanel')) {
 		    target = target.parentElement;
@@ -791,6 +784,29 @@
 	    }
 	}
 	document.body.appendChild (dialog);
+    }
+
+    SRCH.showNextOrientation = showNextOrientation;
+    function showNextOrientation (mapItem, button) {
+	const idx = orientMenuValues.indexOf (mapItem.allowedOrientations);
+	if (idx < 0) {
+	    console.error ('mapItem has unknown orientation: ' + mapItem.allowedOrientations);
+	    return;
+	}
+	const newidx = (idx+1) % orientMenuValues.length;
+	setAllowedMapOrientations (mapItem, button, newidx);
+    }
+
+    function setAllowedMapOrientations (mapItem, button, idx) {
+	const neworient = orientMenuValues[idx];
+	mapItem.allowedOrientations = neworient;
+	if (neworient != 'any') {
+	    setSearchButtonsAxis (mapItem, neworient);
+	    mapItem.searchOrientation = neworient;
+	}
+	button.innerHTML = "<SVG width='1em' height='1em'><USE href='icons.svg#" + orientMenuIcons[idx] + "'/></SVG>";
+	button.style.rotate = orientMenuRotate[idx];
+	enableDisableSearchButtons (mapItem);
     }
 
     SRCH.enableDisableAllSearchButtons = enableDisableAllSearchButtons;

@@ -47,6 +47,10 @@
     <path d="m7 0 0 16 2 0 0-16z"/>
 </symbol>
 
+<symbol id="icon-minus" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
+    <path d="m0 7 16 0 0-2-16 0z"/>
+</symbol>
+
 <symbol id="icon-exclamation-circle" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16">
     <circle cx="8" cy="8" r="8" />
     <circle cx="8" cy="12" r="1" fill="white"/>

@@ -15,9 +15,10 @@
 	--button-color: black;
 	--dialog-header-background: #CBD1EA;
 	--dialog-body-background: #D2E3FF; /* #CBDBF6; */
-	--pressed-button-color: #d1f9d1;
+	--pressed-button-color: #b0ffb0;
 	--selected-button-color: #00abcd;
 	--disabled-button-color: #7f7f7f;
+	--button-background-color: #efefef;
 
 	box-sizing: border-box;
 }
@@ -27,7 +28,7 @@
 button {
     all: revert;
     color: var(--button-color, blue);
-    background-color: #efefef;
+    background-color: var(--button-background-color);
     display: block;
     border: 1px solid var(--button-color, blue);
     border-radius: 0.4rem;
@@ -36,6 +37,11 @@ button {
 
 button:disabled {
     color: var(--disabled-button-color);
+}
+
+button:disabled:hover {
+     color: var(--disabled-button-color);
+     background-color: var(--button-background-color);
 }
 
 button.pressed {
@@ -59,6 +65,10 @@ button:hover {
 button.text-button {
     border: none;
     padding: 0;
+}
+
+button.make-primary[data-version='P'] {
+    background-color: var(--pressed-button-color);
 }
 
 .buttonSet {
@@ -188,6 +198,7 @@ div.icon_group {
 	vertical-align: top;
 	align-items: end;
 	margin-right: 5px;
+	padding-right: 5px;
 }
 
 div.icon_group button {
@@ -1023,6 +1034,13 @@ th.breakpointContainer {
 	padding-bottom: 0.5em;
 }
 
+#classPrefs button {
+	height: 20px;
+	width: 20px;
+	font-size: 0.8em;
+	padding: 4px;
+}
+
 #prefs {
 	width: 420px;
 	overflow: hidden;
@@ -1092,15 +1110,20 @@ th.breakpointContainer {
 }
 
 .colorTableButtons button:first-child {
-    top: -10px;
-    left: 0px;
+    top: -11px;
+    left: 20px;
 }
 
 .colorTableButtons button:nth-child(2) {
     color: red;
     border-color: red;
-    left: 24px;
-    top: 6px;
+    left: 0px;
+    top: 5px;
+}
+
+#linkTabButtons button:first-child,
+#prefTabButtons button:first-child {
+    margin-left: 2px;
 }
 
 .buttonGroup button,
