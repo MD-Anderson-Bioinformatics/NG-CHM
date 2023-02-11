@@ -893,8 +893,8 @@ let	wS = `const debug = ${debug};`;
 	const white = CMM.hexToRgba("#FFFFFF");
 	class VisibleCovariateBar {
 
-	    constructor (key, details, scale) {
-		Object.assign (this, details, { label: key, height: (details.height * scale) | 0 });
+	    constructor (key, idx, details, scale) {
+		Object.assign (this, details, { idx, label: key, height: (details.height * scale) | 0 });
 	    }
 
 	    // Return an array of colors to use when creating scatter or bar plots.
@@ -920,7 +920,7 @@ let	wS = `const debug = ${debug};`;
 	HeatMap.prototype.getScaledVisibleCovariates = function (axis, scale) {
 	    const axisConfig = isRow (axis) ? this.mapConfig.row_configuration : this.mapConfig.col_configuration;
 	    const order = axisConfig.hasOwnProperty('classifications_order') ? axisConfig.classifications_order : Object.keys(axisConfig.classifications);
-	    const bars = order.map (key => new VisibleCovariateBar (key, axisConfig.classifications[key], scale)).filter (bar => bar.show === 'Y');
+	    const bars = order.map ((key, idx) => new VisibleCovariateBar (key, idx, axisConfig.classifications[key], scale)).filter (bar => bar.show === 'Y');
 	    Object.defineProperty (bars, 'totalHeight', {
 	        value: totalHeight,
 		enumerable: false

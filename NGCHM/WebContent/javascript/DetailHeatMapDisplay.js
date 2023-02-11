@@ -1740,7 +1740,7 @@ DET.drawRowAndColLabels = function (mapItem) {
 		    const availableSpace = Math.min((currentClassBar.height - DET.paddingHeight) * scale, DET.maxLabelSize);
 		    if (availableSpace >= mapItem.rowClassLabelFont) {
 			const labelText = MMGR.getLabelText(currentClassBar.label,'COL');
-			DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_classrow' + index + mapItem.labelPostScript, 'DynamicLabel ClassBar', labelText, currentClassBar.label, xPos, yPos, mapItem.rowClassLabelFont, 'T', index, "RowCovar",currentClassBar.label);
+			DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_classrow' + index + mapItem.labelPostScript, 'DynamicLabel ClassBar', labelText, currentClassBar.label, xPos, yPos, mapItem.rowClassLabelFont, 'T', currentClassBar.idx, "RowCovar",currentClassBar.label);
 		    }
 		    startingPoint += barWidth;
 		});
@@ -1790,7 +1790,7 @@ DET.drawRowAndColLabels = function (mapItem) {
 			// Try to center label in large-height bars
 			const delta = Math.max ((barHeightScaled - mapItem.colClassLabelFont)/2 - 3, 0);
 			const labelText = MMGR.getLabelText(currentClassBar.label,'ROW');
-			DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_classcol' + index + mapItem.labelPostScript, 'DynamicLabel ClassBar', labelText, currentClassBar.label, xPos, yPos + delta, mapItem.colClassLabelFont, 'F', index, "ColumnCovar");
+			DET.addLabelDiv(mapItem, mapItem.labelElement, 'detail_classcol' + index + mapItem.labelPostScript, 'DynamicLabel ClassBar', labelText, currentClassBar.label, xPos, yPos + delta, mapItem.colClassLabelFont, 'F', currentClassBar.idx, "ColumnCovar");
 		    }
 		    yPos += barHeightScaled;
 		});	
@@ -2104,6 +2104,7 @@ DET.updateLabelDiv = function (mapItem, parent, id, className, text ,longText, l
 	//div.style.fontFamily = 'sans-serif';
 	//div.style.fontWeight = 'bold';
 	div.innerText = text;
+	div.dataset.index = index;
 }
 
 //----------------------------------------------------------------------------------------------//
