@@ -180,6 +180,18 @@ public class NGCHM_ServerAppGenerator {
 		bw.write("<script defer src='" + chunkFile + "'></script>\n");
 	}
 
+	public static void copyFileToWriter (String src, BufferedWriter bw)
+		throws FileNotFoundException, IOException
+	{
+		BufferedReader br = new BufferedReader(new FileReader(src));
+		String jsLine = br.readLine();
+		while (jsLine != null) {
+			bw.write(jsLine+"\n");
+			jsLine = br.readLine();
+		}
+		br.close();
+	}
+
 	/*******************************************************************
 	 * METHOD: main
 	 *
@@ -284,10 +296,12 @@ public class NGCHM_ServerAppGenerator {
 						chunkPieces.add(CompilerUtilities.minifyDeferredCSS (cssLines, outputDir, closureJar));
 						outputChunk (chunkPieces, outputDir, bw);
 					}
+					copyFileToWriter (sourceDir + "/icons.svg", bw);
 					// Close the body.
 					bw.write(line+"\n");
 				} else {
 					//This is standard HTML, write out to html string
+					line = line.replaceAll ("icons.svg", "");
 					CompilerUtilities.copyLineAndImages (line, sourceDir, outputDir);
 					bw.write(line+"\n");
 				}

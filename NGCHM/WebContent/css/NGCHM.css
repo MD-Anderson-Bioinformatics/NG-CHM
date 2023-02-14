@@ -11,6 +11,116 @@
 
 	--load-time: 200ms;
 	--load-delay: 800ms;
+
+	--button-color: black;
+	--dialog-header-background: #CBD1EA;
+	--dialog-body-background: #D2E3FF; /* #CBDBF6; */
+	--pressed-button-color: #b0ffb0;
+	--selected-button-color: #00abcd;
+	--disabled-button-color: #7f7f7f;
+	--button-background-color: #efefef;
+
+	box-sizing: border-box;
+}
+
+/* Default button appearance.
+ */
+button {
+    all: revert;
+    color: var(--button-color, blue);
+    background-color: var(--button-background-color);
+    display: block;
+    border: 1px solid var(--button-color, blue);
+    border-radius: 0.4rem;
+    z-index: 2;
+}
+
+button:disabled {
+    color: var(--disabled-button-color);
+}
+
+button:disabled:hover {
+     color: var(--disabled-button-color);
+     background-color: var(--button-background-color);
+}
+
+button.pressed {
+    background-color: var(--pressed-button-color);
+}
+
+button.selected span.button {
+    background: var(--selected-button-color);
+}
+
+button.red {
+    color: red;
+    border: 1px solid red;
+}
+
+button:hover {
+    color: #0000af;
+    background-color: #d6d6ff;
+}
+
+button.text-button {
+    border: none;
+    padding: 0;
+}
+
+button.make-primary[data-version='P'] {
+    background-color: var(--pressed-button-color);
+}
+
+.buttonSet {
+    display: inline-block;
+    margin-left: auto;
+    margin-right: auto;
+    vertical-align: top;
+}
+
+div.client_icons > .buttonSet:first-child,
+div.client_icons > button:first-child {
+    margin-left: 0.5em;
+}
+
+div.icon_group.client_icons .buttonSet button {
+    vertical-align: top;
+}
+
+svg {
+    display: block;
+}
+
+.paneScreenMode button {
+    display: none;
+}
+
+.paneScreenMode[data-expanded='true'] button.shrinker {
+    display: block;
+}
+.paneScreenMode[data-expanded='false'] button.expander {
+    display: block;
+}
+
+.paneMenuIcon svg:nth-child(1) {
+    display: block;
+}
+.paneMenuIcon svg:nth-child(2) {
+    display: none;
+}
+
+.paneMenuIcon:hover svg:nth-child(1) {
+    display: none;
+}
+.paneMenuIcon:hover svg:nth-child(2) {
+    display: block;
+}
+
+.menuSvg {
+    display: inline-block;
+    font-size: 1.25em;
+    margin-right: 0.7em;
+    vertical-align: top;
 }
 
 /* Extra class added to selected labels.
@@ -27,16 +137,18 @@ body.NgChmViewer {
 	height: calc(100vh - 16px);
 	display: flex;
 	flex-direction: column;
+	overflow: hidden;
 }
 
 div.mdaServiceHeader
 {
 	position: relative;
-	display: inline-flex;
+	display: grid;
+	grid-template-columns: fit-content(0) auto 1fr auto;
+	grid-gap: 0;
 	float: none;
 	width: 100%;
 	height: 58px;
-	color: #666;
 	margin: 0px 0px 0px 0px;
 	background-color: white;
 	border-bottom: 4px solid #da0505;
@@ -48,6 +160,10 @@ div.mdaServiceHeaderLogo
 	left: 0px;
 	display: inline-block;
 	width: auto;
+}
+
+#mdaLogo
+{
     padding: 0px 30px 0px 0px !important;
 }
 
@@ -63,7 +179,7 @@ div.paneHeader {
 	font-family: sans-serif;
 	font-weight: bold;
 	margin: 0px 0px 4px 0px;
-	padding: 5px 5px 0px 5px;
+	padding: 5px 5px 5px 5px;
 }
 
 div.paneHeader.activePane {
@@ -73,7 +189,7 @@ div.paneHeader.activePane {
 div.paneTitle {
 	margin: 2px;
 	display: inline-block;
-	flex-grow: 1;
+	flex-grow: 0;
 	max-width: calc(100% - 27px);
 }
 
@@ -82,10 +198,25 @@ div.icon_group {
 	vertical-align: top;
 	align-items: end;
 	margin-right: 5px;
+	padding-right: 5px;
+}
+
+div.icon_group button {
+    display: inline-block;
+    vertical-align: middle;
 }
 
 div.icon_group.client_icons {
-	flex-grow: 5;
+    flex-grow: 5;
+    display: inline-grid;
+    grid-auto-flow: column;
+    margin: 0;
+    padding: 0;
+    align-items: start;
+}
+
+div.icon_group.client_icons button {
+    height: 26px;
 }
 
 span.tdTop {
@@ -140,8 +271,21 @@ div.pane canvas {
     margin-left: 0.5em;
 }
 
+#prefActions div.buttonRow button:disabled,
 #pref_buttons button:disabled {
     opacity: 25%;
+}
+
+#msgBox {
+    display: grid;
+    grid-template-columns: auto;
+}
+
+#msgBoxTxt {
+    display: inherit;
+    font-size: 12px;
+    width: 40em;
+    box-sizing: border-box;
 }
 
 #msgBox button:disabled {
@@ -183,13 +327,6 @@ div.pane canvas {
 	right: 2em;
 	font-size: 10pt;
 	padding: 0.1em;
-	border: 2px solid rgb(50,50,50);
-	border-radius: 0.3em;
-}
-
-#closeSplash:hover {
-	color: rgb(225,0,0);
-	border-color: rgb(225,0,0);
 }
 
 #splashWaiting {
@@ -234,6 +371,7 @@ div.pane canvas {
     margin-left:10px;
     margin-right:10px;
     cursor: ew-resize;
+    margin-top: 5px;
 }
 
 .resizerHelperBottom {
@@ -301,6 +439,13 @@ div.paneHeader img {
 	padding: 1px;
 }
 
+div.paneHeader button {
+    font-size: 1.0em;
+    height: 26px;
+    width: 26px;
+    padding: 4px;
+}
+
 .menuHeader {
 	padding: 1px 10px 1px 10px;
 	background-color: #ccccff;
@@ -337,6 +482,7 @@ div.paneHeader img {
 .menuItem img {
 	vertical-align: middle;
 	margin-right: 1em;
+	height: 1em;
 }
 
 .gearPanel {
@@ -378,9 +524,22 @@ div.paneHeader img {
 	display: contents;
 }
 
+#messageOpen_btn {
+    position: absolute;
+    vertical-align: top;
+    font-size: 54px;
+}
+
 .buttonBox {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
+}
+
+#pref_buttons,
+#msgBoxButtons {
+    display: grid;
+    grid-auto-flow: column;
+    width: fit-content;
 }
 
 #msgBoxButtons img {
@@ -390,7 +549,7 @@ div.paneHeader img {
 }
 
 .spanbuttonwrapper {
-    padding: 0.4em 0.2em;
+    padding: 0.4em 2px;
     margin-left: 1em;
 }
 
@@ -399,7 +558,7 @@ div.paneHeader img {
     border-radius: 1em;
 }
 
-#msgBoxButtons .default > span {
+button.default > span {
     border: 2px solid #3757be;
     border-radius: 1em;
 }
@@ -408,6 +567,7 @@ div.paneHeader img {
 	display: flex;
 	margin-bottom: 1em;
 	margin-right: 1em;
+	justify-content: space-evenly;
 }
 
 .gearPanel .fill {
@@ -424,7 +584,7 @@ div.paneHeader img {
 }
 
 .gearPanel div .leftLabel::after {
-	content: ":";
+	content: ':';
 }
 
 .gearPanel div.rangeSelector,
@@ -439,7 +599,6 @@ div.paneHeader img {
 	font-size: 0.7rem;
 }
 
-
 span.button {
 	padding: 0.25em 0.5em;
 	background: linear-gradient(0deg, #2a447f, #447afd);
@@ -448,6 +607,7 @@ span.button {
 	font-weight: bold;
 	font-size: 0.8rem;
 	cursor: pointer;
+	white-space: nowrap;
 }
 span.button.positive {
 	background: linear-gradient(0deg, #285013, #37741c);
@@ -456,6 +616,10 @@ span.button.negative {
 	background: linear-gradient(0deg, #6b0000, #cc0000);
 }
 
+span.button.tab-button {
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
 
 .gearPanel div.userLabel .leftLabel::after,
 .gearPanel div.rangeSelector.leftLabel::after,
@@ -554,8 +718,40 @@ span.button.negative {
 	margin-right:0px;
 }
 
-#flicks{
+#flicks {
 	display:inline-block;
+}
+
+#flickViews[data-state='flickUp'] svg {
+    transform: rotate(270deg);
+}
+
+#flickViews[data-state='flickDown'] svg {
+    transform: rotate(90deg);
+}
+#flickViews select {
+    background-color: white;
+}
+#flickViews[data-state='flickUp'] #flick1 {
+    background-color: yellow;
+}
+#flickViews[data-state='flickDown'] #flick2 {
+    background-color: yellow;
+}
+
+/* Neither svg displayed by default. */
+button#layers_open_close div {
+    display: none;
+}
+
+/* Display the open svg in the open state. */
+button#layers_open_close[data-state='open'] div.open {
+    display: block;
+}
+
+/* Display the closed svg in the closed state. */
+button#layers_open_close[data-state='closed'] div.closed {
+    display: block;
 }
 
 #helptext {
@@ -619,6 +815,21 @@ span.button.negative {
     color: #0843c1;
     vertical-align: middle;
     text-align: left;
+}
+
+.chmTblRow td.label,
+.chmTblRow.header {
+    font-weight: bold;
+}
+
+.chmTblRow.header td {
+    padding-top: 1em;
+}
+
+.chmTblRow.entry td.label {
+    padding-left: 0.7em;
+    white-space: nowrap;
+    vertical-align: text-top;
 }
 
 /* Style plugin help table links same color/font as table text.
@@ -823,6 +1034,10 @@ th.breakpointContainer {
 	text-align: left;
 }
 
+#prefTabButtons {
+    margin-top: 1em;
+}
+
 #prefTabButtons, #linkTabButtons {
 	vertical-align: top;
 	border-bottom-width: 2px;
@@ -830,22 +1045,31 @@ th.breakpointContainer {
 	border-bottom-style: solid;
 }
 
-#rowsColsPrefs, #classPrefs, #layerPrefs {
-	padding-bottom: 220px;
+#rowsColsPrefs, #classPrefs, #layerPrefs, #infoPrefs {
+	padding-bottom: 0.5em;
+}
+
+#classPrefs button {
+	height: 20px;
+	width: 20px;
+	font-size: 0.8em;
+	padding: 4px;
 }
 
 #prefs {
 	width: 420px;
 	overflow: hidden;
 	position: absolute;
-	background-color: #CBDBF6; 
+	background-color: var(--dialog-body-background);
 	border: 1px solid black; 
 	z-index: 10000;
 	resize: vertical;
 	min-height: 200px;
+	display: grid;
+	grid-template-rows: min-content min-content auto min-content;
 }
 
-#linkBoxTxt, #linkBoxAllTxt {
+#linkBoxTabs {
 	font-size: 12px;
 	overflow-y: auto;
 	min-height: 100px;
@@ -869,8 +1093,61 @@ th.breakpointContainer {
 	cursor: pointer;
 }
 
+.dblSpace {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    grid-gap: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.dblSpace button {
+    padding: 0.2rem;
+    line-height: 1.0;
+}
+
 #linkBoxHdr {
 	position: absolute; /* keep fixed to top of parent */
+}
+
+.colorTableButtons {
+    height: 28px;
+    position: relative;
+}
+
+.colorTableButtons button {
+    display: inline-block;
+    padding: 4px;
+    height: 20px;
+    width: 20px;
+    font-size: 0.8em;
+    position: absolute;
+}
+
+.colorTableButtons button:first-child {
+    top: -11px;
+    left: 20px;
+}
+
+.colorTableButtons button:nth-child(2) {
+    color: red;
+    border-color: red;
+    left: 0px;
+    top: 5px;
+}
+
+#linkTabButtons button:first-child,
+#prefTabButtons button:first-child {
+    margin-left: 2px;
+}
+
+.buttonGroup button,
+#prefTabButtons button,
+#linkTabButtons button {
+    display: inline-block;
+    border: none;
+    padding: 0;
+    padding-bottom: 2px;
 }
 
 #linkBoxButton img,
@@ -881,8 +1158,13 @@ th.breakpointContainer {
 }
 
 .closeX {
-	float: right;
-	padding-right: 10px;
+	display: block;
+	height: 80%;
+}
+
+.prefsHdr {
+	display: grid;
+	grid-template-columns: auto fit-content(0);
 }
 
 .closeX:hover {
@@ -891,21 +1173,21 @@ th.breakpointContainer {
 }
 
 #prefPrefs {
-	position: relative;
-    display: inline-block;
-    height: 88%;
+    position: relative;
+    display: block;
     overflow: auto;
-    overflow-x: hidden;
+}
+
+#splashBoxHeader {
+    height: 2em;
 }
 
 #prefActions {
-	position: absolute;
-	bottom: 0em; /* fix to bottom of #prefs */
 	width: 100%;
-	background-color: #CBDBF6; 
     font-family: Arial;
     font-weight: bold;
     text-align: center;
+    margin-top: 0.1em;
     border-top: 2px solid #0843c1; /* match border-bottom of #prefTabButtons */
     padding-top: 12px; /* seemed aesthetically pleasing */
     padding-bottom: 12px; /* seemed aesthetically pleasing */
@@ -919,6 +1201,13 @@ th.breakpointContainer {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(4em, 1fr));
+}
+
+#prefActions div.buttonRow button {
+    width: fit-content;
+    border: none;
+    padding: 0;
+    background-color: var(--dialog-body-background);
 }
 
 #prefActions div.buttonRow img {
@@ -952,15 +1241,16 @@ th.breakpointContainer {
     margin-top: 0.5em;
 }
 
+#msgBox {
+    background-color: var(--dialog-body-background);
+}
+
 #linkBoxFoot button,
+#pref_buttons button,
 #msgBoxButtons button {
     border: none;
     vertical-align: top;
     background: transparent;
-}
-
-#msgBoxTxt {
-    box-sizing: border-box
 }
 
 .msgBoxButton {
@@ -986,7 +1276,30 @@ th.breakpointContainer {
 #pdfPrefs {
     display: flex;
     flex-direction: column;
-    background-color: rgb(203, 219, 246);
+    background-color: var(--dialog-body-background);
+}
+
+#prefsHdr button {
+    font-size: 0.7em;
+    height: 70%;
+}
+
+#prefsMove_btn[data-state='moveLeft'] svg {
+    rotate: 180deg;
+}
+
+.userHelpHeader {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto;
+}
+
+.userHelpHeader a {
+    font-size: 1.25em;
+    grid-column: 2;
+}
+
+.userHelpHeader button {
+    grid-column: 4;
 }
 
 #prefsHdr, #pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
@@ -1000,7 +1313,41 @@ th.breakpointContainer {
     height: 30px;
     line-height: 30px;
     text-align: center;
-    background: #CBD1EA;
+    background: var(--dialog-header-background,lightsteelblue);
+}
+
+#linkBoxHdr {
+    display: grid;
+    grid-template-columns: auto min-content;
+}
+
+#linkBoxHdr .icon_group {
+    margin-right: 0.5em;
+}
+
+#pdfPrefsHdr {
+    display: grid;
+}
+
+#prefsHdr button {
+    margin-top: 20%;
+}
+
+#userHelpHeader span.closeX,
+#msgBoxHdr span.closeX,
+#pdfPrefsHdr span.closeX {
+    padding-top: 20%;
+    padding-right: 10px;
+}
+
+#prefsHdr {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+}
+
+#msgBoxHdr {
+    display: grid;
+    grid-template-columns: auto fit-content(0);
 }
 
 #prefsMove_btn, #redX_btn {
@@ -1014,8 +1361,7 @@ th.breakpointContainer {
 
 .prefSubPanel{
 	vertical-align: top;
-	height: 99%;
-	background-color: #CBDBF6; 
+	background-color: var(--dialog-body-background);
     display: none;
     overflow: hidden;
     border: 2px solid #CBDBF6;
@@ -1050,47 +1396,42 @@ table.onlineHelp th {
   color: black;
 }
 
-/* farRightButtons are the group of controls in the very top-right of the mdaServiceHeader.
- * All are positioned absolutely at the top of the mdaServiceHeader, near the right.
- * The number of pixels from the right is specified individually for each.
- *
- * Note: droptarget is also positioned at the top-right of the mdaServiceHeader, above the
- *       topRightButtons, but is invisible unless someone is dropping something on the NG-CHM.
- */
-.farRightButton {
-    top: 0px;
-    position: absolute;
-    z-index: 2;
-    vertical-align: top;
+/* Start of top-right and unloadded button groups. */
+
+#top-right-spacer {
+    width: 0.5em;
 }
 
-/* Buttons displayed when no map is loaded: */
-#aboutMenu_btn {
-    right: 30px;
+#unloaded-button-group,
+#top-right-button-group {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 0.5rem;
+    width: fit-content;
+    height: 40px;	/* Fit inside mdaServiceHeader (58px) */
+    margin-top: 7px;	/* Center after considering 4px bottom border of header */
 }
 
-#introAboutButton {
-    right: 0px;
+#unloaded-button-group button,
+#top-right-button-group button {
+    font-size: 1.2em;
 }
 
-/* Buttons displayed when a map is loaded: */
-#pdf_gear {  /* This is actually the layer controller. */
-    display: inline-block;
-    right: 90px;
+/* Flick controls displayed when a map is loaded: */
+#layer_control {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 0.5em;
 }
 
-#colorMenu_btn {
-    right: 60px;
+/* Flick controls display when layer control is open. */
+#flickViews {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 0.5em;
 }
 
-#barMenu_btn {
-    right: 30px;
-}
-
-#introButton {
-    right: 0px;
-}
-/* End of farRightButtons. */
+/* End of top-right and unloadded button groups. */
 
 .tdTop {
     vertical-align: text-top;
@@ -1226,9 +1567,9 @@ iframe.nopointer {
     display: table;
 }
 .divRow  {
-    display: table-row;
-    padding-bottom: 3px;
-    height: 17px;
+    display: block;
+    padding-bottom: 2px;
+    height: 21px;
 }
 .divLeft {
     display: table-cell;
@@ -1244,6 +1585,25 @@ iframe.nopointer {
 }
 .divLeft p, .divRight p, .divMiddle p {
     margin: 1px 1px;
+}
+
+#MapRow {
+    display: grid;
+    white-space: nowrap;
+    grid-template-columns: auto auto auto 1fr;
+    grid-gap: 0.5em;
+}
+
+#mapName {
+    min-width: 0;
+    overflow: hidden;
+}
+
+#SelectionsRow {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: repeat(6,auto);
+    grid-gap: 0.5em;
 }
 
  .dropDownCheckBoxes {
@@ -1291,12 +1651,6 @@ iframe.nopointer {
   	font-size: 8px;
   }
   
-  .srchSelect {
-  	vertical-align:bottom;
-  	font-size: 12px;
-  	height:20px;
-  }  
-
   .srchText {
  	vertical-align:bottom;
   	font-size: 12px;
@@ -1310,11 +1664,16 @@ iframe.nopointer {
 }
 
 /* Help Question marks. These are anchors in the HTML, and when
-   a user hovers over them, a help message is diplayed */
+   a user hovers over them, a help message is displayed */
 .helpQuestionMark {
-	content: url('../images/questionMark.png'); 
-	height: 15px;
-	width: 15px;
+    content: url("data:image/svg+xml,%3Csvg fill='currentColor' viewBox='-5.5 0 19 19' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7.987 5.653a4.536 4.536 0 0 1-.149 1.213 4.276 4.276 0 0 1-.389.958 5.186 5.186 0 0 1-.533.773c-.195.233-.386.454-.568.658l-.024.026c-.17.18-.328.353-.468.516a3.596 3.596 0 0 0-.4.567 2.832 2.832 0 0 0-.274.677 3.374 3.374 0 0 0-.099.858v.05a1.03 1.03 0 0 1-2.058 0v-.05a5.427 5.427 0 0 1 .167-1.385 4.92 4.92 0 0 1 .474-1.17 5.714 5.714 0 0 1 .63-.89c.158-.184.335-.38.525-.579.166-.187.34-.39.52-.603a3.108 3.108 0 0 0 .319-.464 2.236 2.236 0 0 0 .196-.495 2.466 2.466 0 0 0 .073-.66 1.891 1.891 0 0 0-.147-.762 1.944 1.944 0 0 0-.416-.633 1.917 1.917 0 0 0-.62-.418 1.758 1.758 0 0 0-.723-.144 1.823 1.823 0 0 0-.746.146 1.961 1.961 0 0 0-1.06 1.062 1.833 1.833 0 0 0-.146.747v.028a1.03 1.03 0 1 1-2.058 0v-.028a3.882 3.882 0 0 1 .314-1.56 4.017 4.017 0 0 1 2.135-2.139 3.866 3.866 0 0 1 1.561-.314 3.792 3.792 0 0 1 1.543.314A3.975 3.975 0 0 1 7.678 4.09a3.933 3.933 0 0 1 .31 1.563zm-2.738 9.81a1.337 1.337 0 0 1 0 1.033 1.338 1.338 0 0 1-.71.71l-.005.003a1.278 1.278 0 0 1-.505.103 1.338 1.338 0 0 1-1.244-.816 1.313 1.313 0 0 1 .284-1.451 1.396 1.396 0 0 1 .434-.283 1.346 1.346 0 0 1 .526-.105 1.284 1.284 0 0 1 .505.103l.005.003a1.404 1.404 0 0 1 .425.281 1.28 1.28 0 0 1 .285.418z'/%3E%3C/svg%3E");
+    display: inline-block;
+    height: 15px;
+    width: 15px;
+    color: var(--button-color);
+    /* border: 1px solid var(--button-color); */
+    border-radius: 4px;
+    background-color: lightblue;
 }
 
 
@@ -1362,17 +1721,10 @@ div#droptarget.visible {
 
 
 .tour-button {
-    color: #ffffff;
-    background-color: #0000ff;
     padding: 0.3em;
     font-weight: 900;
     border-radius: 1em;
 }
-.tour-button:hover {
-    color: #0000af;
-    background-color: #dfdf6f;
-}
-
 #bubbleHelp {
     opacity: 0;
     animation: loading-up var(--load-time);

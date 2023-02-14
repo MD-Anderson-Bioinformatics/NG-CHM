@@ -40,6 +40,11 @@
 	UPM.prefsCancelButton();
     };
 
+    uiElement = document.getElementById('prefMapInfo_btn');
+    uiElement.onclick = () => {
+	UPM.showInfoPrefs();
+    };
+
     uiElement = document.getElementById('prefLayer_btn');
     uiElement.onclick = () => {
 	UPM.showLayerPrefs();
@@ -103,6 +108,11 @@ UPM.hasClasses = false;
 UPM.editPreferences = function(e,errorMsg) {
 	UHM.closeMenu();
 	UHM.hlpC();
+
+	const prefspanel = document.getElementById("prefs");
+	if (prefspanel.style.display !== 'none') {
+	    return;
+	}
 	const heatMap = MMGR.getHeatMap();
 	var rowClassBarsOrder = heatMap.getRowClassificationOrder();
 	var colClassBarsOrder = heatMap.getColClassificationOrder();
@@ -129,34 +139,28 @@ UPM.editPreferences = function(e,errorMsg) {
 	
 	UPM.resetVal = UPM.getResetVals();
 	
-	var prefspanel = document.getElementById("prefs");
 	var prefprefs = document.getElementById("prefPrefs");
 
 	if (errorMsg !== null) {
 		UPM.setMessage(errorMsg[2]);
 	} else {
+		//Create and populate map info preferences DIV and add to parent DIV
+		const mapinfoprefs = UPM.setupMapInfoPrefs(e, prefprefs);
+
 		//Create and populate row & col preferences DIV and add to parent DIV
-		var rowcolprefs = UPM.setupRowColPrefs(e, prefprefs);
-		prefprefs.appendChild(rowcolprefs);
+		const rowcolprefs = UPM.setupRowColPrefs(e, prefprefs);
 
 		//Create and populate classifications preferences DIV and add to parent DIV
-		var classprefs = UPM.setupClassPrefs(e, prefprefs);
-		prefprefs.appendChild(classprefs);
+		const classprefs = UPM.setupClassPrefs(e, prefprefs);
 		
 		//Create and populate breakpoint preferences DIV and add to parent DIV
-		var layerprefs = UPM.setupLayerPrefs(e, prefprefs);
-		prefprefs.appendChild(layerprefs);
+		const layerprefs = UPM.setupLayerPrefs(e, prefprefs);
 
 		// Set DIV containing both class and break DIVs to visible and append to prefspanel table
 		prefprefs.style.display="block";
-		prefspanel.appendChild(prefprefs);
 		
-		var prefBtnsDiv = document.createElement('div');
-		prefBtnsDiv.id='prefActions';
-		prefspanel.appendChild(prefBtnsDiv);
 		UPM.setMessage("");
 	}
-	UPM.setSizePrefPrefs();
 
 	//If errors exist and they are NOT on the currently visible DIV (dataLayer1),
 	//hide the dataLayers DIV, set the tab to "Covariates", and open the appropriate
@@ -173,6 +177,8 @@ UPM.editPreferences = function(e,errorMsg) {
 	} else if ((errorMsg != null) && (errorMsg[1] === "layerPrefs")){ 
 		UPM.showLayerBreak(errorMsg[0]);
 		UPM.showLayerPrefs();
+	} else if ((errorMsg != null) && (errorMsg[1] === "infoPrefs")) {
+		UPM.showInfoPrefs();
 	} else if ((errorMsg != null) && (errorMsg[1] === "rowColPrefs")){ 
 		UPM.showRowsColsPrefs();
 	} else if (UPM.searchPerformed) {
@@ -196,7 +202,9 @@ UPM.locatePrefsPanel = function() {
 	const icon = document.querySelector("*[data-prefs-panel-locator]");
 	const contBB = UTIL.containerElement.getBoundingClientRect();
 	const iconBB = icon.getBoundingClientRect();
-	prefspanel.style.top=UTIL.containerElement.parentElement.offsetTop + 30 + 'px';
+	const container = UTIL.containerElement.parentElement;
+	prefspanel.style.top = container.offsetTop + 'px';
+	prefspanel.style.height = container.offsetHeight + 'px';
 	//done for builder panel sizing ONLY
 	const screenNotes = document.getElementById('screenNotesDisplay');
 	if (screenNotes !== null) {
@@ -204,7 +212,6 @@ UPM.locatePrefsPanel = function() {
 		prefspanel.style.top = (iconBB.top - notesBB.height) + 'px';
 	} 
 	
-	prefspanel.style.height = (window.innerHeight - prefspanel.getBoundingClientRect().top) + 'px';
 	document.getElementById("prefsMove_btn").dataset.state = 'moveLeft';
 	prefspanel.style.left = (UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
 }
@@ -214,83 +221,40 @@ UPM.locatePrefsPanel = function() {
  * the bottom of the preferences panel when it is drawn or re-drawn.
  **********************************************************************************/
 UPM.setMessage = function(errorMsgTxt) {
-	const prefBtnsDiv = document.getElementById('prefActions');
-	prefBtnsDiv.replaceChildren ();
-	if (errorMsgTxt !== "") prefBtnsDiv.appendChild (UTIL.newElement('DIV.errorMessage', {}, UTIL.newTxt(errorMsgTxt)));
-	const buttons = UTIL.newElement('DIV.buttonRow');
-	buttons.appendChild (UTIL.newElement('IMG#prefApplyInactive_btn', {
-	    src: 'images/applyButtonInactive.png',
-	    style: { 'display' : 'none' }
-	}));
-	buttons.appendChild (UTIL.newElement('IMG#prefApply_btn', {
-	    src: 'images/applyButtonActive.png',
-	    alt: 'Apply changes'
-	}, null, function (el) {
-	    el.onclick = function() { UPM.prefsApplyButton(); };
-	    return el;
-	}));
-	buttons.appendChild (UTIL.newElement('IMG#prefReset_btn', {
-	    src: 'images/reset.png',
-	    alt: 'Reset'
-	}, null, function (el) {
-	    el.onclick = function() { UPM.prefsResetButton(); };
-	    return el;
-	}));
-	buttons.appendChild (UTIL.newElement('IMG#prefClose_btn', {
-	    src: 'images/prefClose.png',
-	    alt: 'Close'
-	}, null, function (el) {
-	    el.onclick = function() { UPM.prefsCancelButton(); };
-	    return el;
-	}));
-	prefBtnsDiv.appendChild (buttons);
-}
-
-/**********************************************************************************
- * FUNCTION - setSizePrefPrefs: Sets initial size of #prefPrefs
- **********************************************************************************/
-UPM.setSizePrefPrefs = function() {
-	var prefprefs = document.getElementById('prefPrefs');
-	if (prefprefs !== null) {
-		if (window.innerHeight > 730) {
-			prefprefs.style.height = "85%";
-		} else if (window.innerHeight > 500) {
-			prefprefs.style.height = "80%";
-		} else {
-			prefprefs.style.height = "70%";
-		}
+	const prefActions = document.getElementById ('prefActions');
+	const errMsg = prefActions.querySelector ('.errorMessage');
+	if (errMsg) {
+	    // Remove any existing error message.
+	    prefActions.removeChild (errMsg);
 	}
+	if (errorMsgTxt) {
+	    // Add new error message node before the buttons row (first child of prefActions).
+	    prefActions.insertBefore (UTIL.newElement('DIV.errorMessage', {}, UTIL.newTxt(errorMsgTxt)), prefActions.firstChild);
+	}
+	document.getElementById('prefApply_btn').onclick = function() { UPM.prefsApplyButton(); };
+	document.getElementById('prefReset_btn').onclick = function() { UPM.prefsResetButton(); };
+	document.getElementById('prefClose_btn').onclick = function() { UPM.prefsCancelButton(); };
 }
-
 
 /**********************************************************************************
  * FUNCTION - showRowsColsPrefs: The purpose of this function is to perform the 
  * processing for the preferences tab when the user selects the "Rows & Cols" tab.
  **********************************************************************************/
 UPM.showRowsColsPrefs = function() {
-	//Turn off all tabs
-	UPM.hideAllPrefs();
-	//Turn on layer prefs tab
-	var rowsColsBtn = document.getElementById("prefRowsCols_btn");
-	rowsColsBtn.setAttribute('src', 'images/rowsColsOn.png');
-	var rowsColsDiv = document.getElementById("rowsColsPrefs");
-	rowsColsDiv.style.display="block";
+    UTIL.showTab ('prefRowsCols_btn');
 }
 
+UPM.showInfoPrefs = function() {
+    UTIL.showTab ('prefMapInfo_btn');
+};
 
 /**********************************************************************************
  * FUNCTION - showLayerPrefs: The purpose of this function is to perform the 
  * processing for the preferences tab when the user selects the "Data Layers" tab.
  **********************************************************************************/
 UPM.showLayerPrefs = function() {
-	//Turn off all tabs
-	UPM.hideAllPrefs();
-	//Turn on layer prefs tab
-	var layerBtn = document.getElementById("prefLayer_btn");
-	layerBtn.setAttribute('src', 'images/heatMapColorsOn.png');
-	var layerDiv = document.getElementById("layerPrefs");
-	layerDiv.style.display="block";
-	UPM.showLayerBreak();
+    UTIL.showTab ('prefLayer_btn');
+	UPM.showLayerBreak();  // ??
 }
 
 /**********************************************************************************
@@ -298,33 +262,7 @@ UPM.showLayerPrefs = function() {
  * processing for the preferences tab when the user selects the "Covariates" tab.
  **********************************************************************************/
 UPM.showClassPrefs = function() {
-	//Turn off all tabs
-	UPM.hideAllPrefs();
-	//Turn on classification prefs tab
-	var classBtn = document.getElementById("prefClass_btn");
-	classBtn.setAttribute('src', 'images/covariateBarsOn.png');
-	var classDiv = document.getElementById("classPrefs");
-	classDiv.style.display="block";
-}
-
-/**********************************************************************************
- * FUNCTION - hideAllPrefs: The purpose of this function is to set all tabs off. It 
- * is called whenever a tab is clicked.  All tabs are set to hidden with their
- * image set to the "off" image.
- **********************************************************************************/
-UPM.hideAllPrefs = function() {
-	var classBtn = document.getElementById("prefClass_btn");
-	classBtn.setAttribute('src', 'images/covariateBarsOff.png');
-	var classDiv = document.getElementById("classPrefs");
-	classDiv.style.display="none";
-	var layerBtn = document.getElementById("prefLayer_btn");
-	layerBtn.setAttribute('src', 'images/heatMapColorsOff.png');
-	var layerDiv = document.getElementById("layerPrefs");
-	layerDiv.style.display="none";
-	var rowsColsBtn = document.getElementById("prefRowsCols_btn");
-	rowsColsBtn.setAttribute('src', 'images/rowsColsOff.png');
-	var rowsColsDiv = document.getElementById("rowsColsPrefs");
-	rowsColsDiv.style.display="none";
+    UTIL.showTab ('prefClass_btn');
 }
 
 /**********************************************************************************
@@ -361,12 +299,10 @@ UPM.prefsMoveButton = function() {
 	var prefspanel = document.getElementById("prefs");
 	var moveBtn = document.getElementById("prefsMove_btn");
 	if (moveBtn.dataset.state === 'moveLeft') {
-		moveBtn.setAttribute('src', 'images/prefsRight.png');
 		moveBtn.dataset.state = 'moveRight';
 		prefspanel.style.right = "";
 		prefspanel.style.left = UTIL.containerElement.offsetLeft + 'px';
 	} else {
-		moveBtn.setAttribute('src', 'images/prefsLeft.png');
 		moveBtn.dataset.state = 'moveLeft';
 		prefspanel.style.right = "";
 		prefspanel.style.left = (UTIL.containerElement.getBoundingClientRect().right - (prefspanel.offsetWidth)) + 'px';
@@ -380,18 +316,15 @@ UPM.prefsMoveButton = function() {
 UPM.removeSettingsPanels = function() {
 	
 	//Remove all panels that are content specific before closing
-	var pActions = document.getElementById("prefActions");
-	pActions.parentNode.removeChild(pActions);
+	UPM.setMessage ('');
 	
-	var rcPrefs = document.getElementById("rowsColsPrefs");
-	rcPrefs.parentNode.removeChild(rcPrefs);
-	
-	var lPrefs = document.getElementById("layerPrefs");
-	lPrefs.parentNode.removeChild(lPrefs);
-	
-	var cPrefs = document.getElementById("classPrefs");
-	cPrefs.parentNode.removeChild(cPrefs);
+	const prefTabs = [...document.getElementById("prefPrefs").children];
 
+	prefTabs.forEach (tab => {
+	    while (tab.firstChild) {
+		tab.removeChild(tab.firstChild);
+	    }
+	});
 }
 
 /**********************************************************************************
@@ -443,10 +376,8 @@ UPM.doApply = function(isReset){
  **********************************************************************************/
 
 UPM.disableApplyButton = function(){
-	var button = document.getElementById("prefApplyInactive_btn");
-	button.style.display = '';
-	var activeButton = document.getElementById("prefApply_btn");
-	activeButton.style.display = "none";
+	const applyButton = document.getElementById("prefApply_btn");
+	applyButton.disabled = true;
 	UPM.applyDone = false;
 }
 
@@ -457,10 +388,8 @@ UPM.disableApplyButton = function(){
 
 UPM.enableApplyButton = function(){
 	if (UPM.applyDone){ // make sure the apply is done
-		var button = document.getElementById("prefApply_btn");
-		button.style.display = '';
-		var activeButton = document.getElementById("prefApplyInactive_btn");
-		activeButton.style.display = "none";
+		const applyButton = document.getElementById("prefApply_btn");
+		applyButton.disabled = false;
 	} else { // otherwise try again in a bit
 		setTimeout(UPM.enableApplyButton,500);
 	}
@@ -794,25 +723,26 @@ UPM.prefsValidateBreakColors = function(colorMapName,type, prefPanel) {
  * FUNCTION - prefsApplyBreaks: The purpose of this function is to apply all 
  * user entered changes to colors and breakpoints. 
  **********************************************************************************/
-UPM.prefsApplyBreaks = function(colorMapName, type) {
+UPM.prefsApplyBreaks = function(colorMapName, colorMapAxis) {
 
 	const heatMap = MMGR.getHeatMap();
-	var colorMap = heatMap.getColorMapManager().getColorMap(type,colorMapName);
+	var colorMap = heatMap.getColorMapManager().getColorMap(colorMapAxis,colorMapName);
 	var thresholds = colorMap.getThresholds();
 	var colors = colorMap.getColors();
-	var newColors = UPM.getNewBreakColors(colorMapName, type);
+	var newColors = getNewBreakColors(colorMapAxis, colorMapName);
 	colorMap.setColors(newColors);
 	var key = colorMapName;
-	if (type === "data") {
-		var newThresholds = UPM.getNewBreakThresholds(colorMapName);
-		colorMap.setThresholds(newThresholds);
-	} else {
-		key = key+"_"+type;
+	if (colorMap.getType() != 'discrete') {
+	    const newThresholds = getNewBreakThresholds(colorMapAxis, colorMapName);
+	    colorMap.setThresholds(newThresholds);
+	}
+	if (colorMapAxis !== "data") {
+	    key += "_" + colorMapAxis;
 	}
 	var missingElement = document.getElementById(key+"_missing_colorPref");
 	colorMap.setMissingColor(missingElement.value);
 	var colorMapMgr = heatMap.getColorMapManager();
-	colorMapMgr.setColorMap(colorMapName, colorMap, type);
+	colorMapMgr.setColorMap(colorMapName, colorMap, colorMapAxis);
 }
 
 /**********************************************************************************
@@ -824,34 +754,34 @@ UPM.prefsApplyBreaks = function(colorMapName, type) {
  * addLayerBreak and deleteLayerBreak functions with parameters passed in for 
  * the position to add/delete and the action to be performed (add/delete).
  **********************************************************************************/
-UPM.getNewBreakColors = function(colorMapName, type, pos, action) {
+    function getNewBreakColors (colorMapAxis, colorMapName, pos, action) {
 	const heatMap = MMGR.getHeatMap();
-	var colorMap = heatMap.getColorMapManager().getColorMap(type,colorMapName);
+	var colorMap = heatMap.getColorMapManager().getColorMap(colorMapAxis,colorMapName);
 	var thresholds = colorMap.getThresholds();
 	var newColors = [];
 	var key = colorMapName;
-	if (type !== "data") {
-		key = key+"_"+type;
+	if (colorMapAxis !== "data") {
+		key = key+"_"+colorMapAxis;
 	}
-	for (var j = 0; j < thresholds.length; j++) {
-		var colorElement = document.getElementById(key+"_color"+j+"_colorPref");
+	let prevColorElement = document.getElementById(key+"_color0_colorPref");
+	if (pos == 0 && action == 'add') {
+	    newColors.push (UTIL.blendTwoColors("#000000", prevColorElement.value));
+	}
+	if (pos != 0 || action != 'delete') {
+	    newColors.push (prevColorElement.value);  // color0
+	}
+	for (let j = 1; j < thresholds.length; j++) {
+		const colorElement = document.getElementById(key+"_color"+j+"_colorPref");
 		//In case there are now less elements than the thresholds list on Reset.
 		if (colorElement !== null) {
 			//If being called from addLayerBreak or deleteLayerBreak
 			if (typeof pos !== 'undefined') {
 				if (action === "add") {
-					newColors.push(colorElement.value);
 					if (j === pos) {
-						//get next breakpoint color.  If none, use black
-						var nextColorElement = document.getElementById(key+"_color"+(j+1)+"_colorPref");
-						var nextColorVal = "#000000";
-						if (nextColorElement !== null) {
-							nextColorVal = nextColorElement.value;
-						}
-						//Blend last and next breakpoint colors to get new color.
-						var newColor =  UTIL.blendTwoColors(colorElement.value, nextColorVal);
-						newColors.push(newColor);
+						//Blend previous and current breakpoint colors to get new color.
+						newColors.push(UTIL.blendTwoColors(prevColorElement.value, colorElement.value));
 					}
+					newColors.push(colorElement.value);
 				} else {
 					if (j !== pos) {
 						newColors.push(colorElement.value);
@@ -861,6 +791,10 @@ UPM.getNewBreakColors = function(colorMapName, type, pos, action) {
 				newColors.push(colorElement.value);
 			}
 		}
+		prevColorElement = colorElement;
+	}
+	if (pos == thresholds.length && action == 'add') {
+	    newColors.push (UTIL.blendTwoColors("#000000", prevColorElement.value));
 	}
 	
 	//If this color map is for a row/col class bar AND that bar is a scatter or
@@ -868,9 +802,9 @@ UPM.getNewBreakColors = function(colorMapName, type, pos, action) {
 	//to the foreground color set by the user for the bar/scatter plot. This is
 	//default behavior that happens when a map is built but must be managed as
 	//users change preferences and bar types.
-	if (type !== "data") {
+	if (colorMapAxis !== "data") {
 		var classBar = heatMap.getColClassificationConfig()[colorMapName];
-		if (type === "row") {
+		if (colorMapAxis === "row") {
 			classBar = heatMap.getRowClassificationConfig()[colorMapName];
 		}
 		if (classBar.bar_type != 'color_plot') {
@@ -898,47 +832,55 @@ UPM.getNewBreakColors = function(colorMapName, type, pos, action) {
  * from the data layer addLayerBreak and deleteLayerBreak functions with parameters 
  * passed in for the position to add/delete and the action to be performed (add/delete).
  **********************************************************************************/
-UPM.getNewBreakThresholds = function(colorMapName, pos, action) {
+function getNewBreakThresholds (colorMapAxis, colorMapName, pos, action) {
 	const heatMap = MMGR.getHeatMap();
-	var colorMap = heatMap.getColorMapManager().getColorMap("data",colorMapName);
+	var colorMap = heatMap.getColorMapManager().getColorMap(colorMapAxis,colorMapName);
+	let elementIdPrefix = colorMapName;
+	if (colorMapAxis != "data") elementIdPrefix += "_" + colorMapAxis;
 	var thresholds = colorMap.getThresholds();
 	var newThresholds = [];
-	for (var j = 0; j < thresholds.length; j++) {
-		var breakElement = document.getElementById(colorMapName+"_breakPt"+j+"_breakPref");
+	let prevBreakElement = document.getElementById(elementIdPrefix+"_breakPt0_breakPref");
+	let prevBreakValue = Number(prevBreakElement.value);
+	if (pos == 0 && action == 'add') {
+		newThresholds.push(prevBreakValue - 1);
+	}
+	if (pos != 0 || action != 'delete') {
+	    newThresholds.push(prevBreakValue);
+	}
+	for (let j = 1; j < thresholds.length; j++) {
+		const breakElement = document.getElementById(elementIdPrefix+"_breakPt"+j+"_breakPref");
+		const breakValue = Number(breakElement.value);
 		//In case there are now less elements than the thresholds list on Reset.
 		if (breakElement !== null) {
 			if (typeof pos !== 'undefined') {
 				if (action === "add") {
-					newThresholds.push(breakElement.value);
 					if (j === pos) {
-						//get next breakpoint value.  If none, add 1 to current breakpoint
-						var nextBreakElement = document.getElementById(colorMapName+"_breakPt"+(j+1)+"_breakPref");
-						var nextBreakVal = 0;
-						if (nextBreakElement === null) {
-							nextBreakVal = Number(breakElement.value)+1;
-						} else {
-							nextBreakVal = Number(nextBreakElement.value);
-						}
 						//calculate the difference between last and next breakpoint values and divide by 2 to get the mid-point between.
-						var breakDiff = (Math.abs((Math.abs(nextBreakVal) - Math.abs(Number(breakElement.value))))/2);
+						const breakDiff = breakValue - prevBreakValue;
 						//add mid-point to last breakpoint.
-						var calcdBreak = (Number(breakElement.value) + breakDiff).toFixed(4);
+						const calcdBreak = (prevBreakValue + breakDiff/2).toFixed(4);
 						newThresholds.push(calcdBreak);
 					}
+					newThresholds.push(breakValue);
 				} else {
 					if (j !== pos) {
-						newThresholds.push(breakElement.value);
+						newThresholds.push(breakValue);
 					}
 				}
 			} else {
-				newThresholds.push(breakElement.value);
+				newThresholds.push(breakValue);
 			}
 		}
+		prevBreakElement = breakElement;
+		prevBreakValue = breakValue;
+	}
+	if (pos == thresholds.length) {
+		newThresholds.push(prevBreakValue + 1);
 	}
 	//Potentially on a data layer reset, there could be more color points than contained in the thresholds object
 	//because a user may have deleted a breakpoint and then hit "reset". So we check for up to 50 preferences.
 	for (var k = thresholds.length; k < 50; k++) {
-		var breakElement = document.getElementById(colorMapName+"_breakPt"+k+"_breakPref");
+		var breakElement = document.getElementById(elementIdPrefix+"_breakPt"+k+"_breakPref");
 		if (breakElement !== null) {
 			newThresholds.push(breakElement.value);
 		}
@@ -967,37 +909,40 @@ UPM.getNewBreakThresholds = function(colorMapName, pos, action) {
  **********************************************************************************/
 UPM.setupLayerPrefs = function(e, prefprefs) {
 	const heatMap = MMGR.getHeatMap();
-	var layerprefs = UHM.getDivElement("layerPrefs");
-	var prefContents = document.createElement("TABLE");
-	var dataLayers = heatMap.getDataLayers();
-	var colorMapName = "dl1";
+	const layerprefs = document.getElementById ("layerPrefs");
+	const prefContents = document.createElement("TABLE");
+	const dataLayers = heatMap.getDataLayers();
+
 	UHM.addBlankRow(prefContents);
 	const dlSelect = UTIL.newElement("SELECT", { name: 'dlPref_list', id: 'dlPref_list' }, null, function (el) {
 	   el.onchange = function () { UPM.showLayerBreak(); }
 	   return el;
 	});
+
 	// Re-order options in datalayer order (which is lost on JSON save)
-	var dls = new Array(Object.keys(dataLayers).length);
-	var orderedKeys = new Array(Object.keys(dataLayers).length);
-	for (var key in dataLayers) {
-		var dlNext = key.substring(2, key.length);
+	const dls = new Array(Object.keys(dataLayers).length);
+	const orderedKeys = new Array(Object.keys(dataLayers).length);
+	for (let key in dataLayers) {
+		const dlNext = key.substring(2, key.length);
 		orderedKeys[dlNext-1] = key;
-		var displayName = dataLayers[key].name;
+		let displayName = dataLayers[key].name;
 		if (displayName.length > 20){
 			displayName = displayName.substring(0,17) + "...";
 		}
 		dls[dlNext-1] = UTIL.newElement('OPTION', { value: key }, displayName);
 	}
-	for(var i=0;i<dls.length;i++) {
+	for (let i=0;i<dls.length;i++) {
 		dlSelect.appendChild (dls[i]);
 	}
+
 	UHM.setTableRow(prefContents,["&nbsp;Data Layer: ", dlSelect]);
 	UHM.addBlankRow(prefContents, 2)
 	layerprefs.appendChild(prefContents);
 	UHM.addBlankRow(prefContents)
+
 	// Loop data layers, setting up a panel div for each layer
-	for (var key in dataLayers){
-		var breakprefs = UPM.setupLayerBreaks(e, key);
+	for (let key in dataLayers) {
+		const breakprefs = setupLayerBreaks("data", key);
 		breakprefs.style.display="none";
 		layerprefs.appendChild(breakprefs);
 	}
@@ -1033,12 +978,12 @@ UPM.setupLayerPrefs = function(e, prefprefs) {
  * FUNCTION - setupLayerBreaks: The purpose of this function is to construct a DIV 
  * containing a list of breakpoints/colors for a given matrix data layer.
  **********************************************************************************/
-UPM.setupLayerBreaks = function(e, mapName) {
+    function setupLayerBreaks (colorMapAxis, mapName) {
 	const heatMap = MMGR.getHeatMap();
-	var colorMap = heatMap.getColorMapManager().getColorMap("data",mapName);
+	var colorMap = heatMap.getColorMapManager().getColorMap(colorMapAxis,mapName);
 	var thresholds = colorMap.getThresholds();
 	var colors = colorMap.getColors();
-	var helpprefs = UHM.getDivElement("breakPrefs_"+mapName);
+	var helpprefs = UTIL.newElement("DIV#breakPrefs_"+mapName);
 	var prefContents = document.createElement("TABLE"); 
 	var dataLayers = heatMap.getDataLayers();
 	var layer = dataLayers[mapName];
@@ -1052,39 +997,10 @@ UPM.setupLayerBreaks = function(e, mapName) {
 	var gapColorInput = "<input class='spectrumColor' type='color' name='"+mapName+"_gapColorPref' id='"+mapName+"_gapColorPref' value='"+layer.cuts_color+"'>"; 
 	UHM.addBlankRow(prefContents, 2)
 	UHM.setTableRow(prefContents, ["&nbsp;<u>Breakpoint</u>", "<u><b>Color</b></u>","&nbsp;"]);
-	var breakpts = document.createElement("TABLE"); 
-	breakpts.id = "breakPrefsTable_"+mapName;
-	for (var j = 0; j < thresholds.length; j++) {
-		var threshold = thresholds[j];    
-		var color = colors[j];
-		var threshId = mapName+"_breakPt"+j;
-		var colorId = mapName+"_color"+j;
-		var breakPtInput = "&nbsp;&nbsp;<input name='"+threshId+"_breakPref' id='"+threshId+"_breakPref' value='"+threshold+"' maxlength='8' size='8'>";
-		var colorInput = "<input class='spectrumColor' type='color' name='"+colorId+"_colorPref' id='"+colorId+"_colorPref' value='"+color+"'>"; 
-		const addButton = UTIL.newElement('IMG', {
-		    id: threshId+'_breakAdd',
-		    src: 'images/plusButton.png',
-		    alt: 'Add Breakpoint',
-		    align: 'top'
-		}, null, function (el) {
-		    el.onclick = (function(j,mapName) { return function() { UPM.addLayerBreak(j, mapName); }; })(j, mapName);
-		    return el;
-		});
-		if (j === 0) {
-			UHM.setTableRow(breakpts, [breakPtInput, colorInput, addButton]);
-		} else {
-			const delButton = UTIL.newElement ('IMG', {
-			    id: threshId+'_breakDel',
-			    src: 'images/minusButton.png',
-			    alt: 'Remove Breakpoint',
-			    align: 'top',
-			}, null, function (el) {
-			    el.onclick = (function(j,mapName) { return function() { UPM.deleteLayerBreak(j, mapName); }; })(j, mapName);
-			    return el;
-			});
-			UHM.setTableRow(breakpts, [breakPtInput,  colorInput, UTIL.newFragment([addButton, delButton]) ]);
-		}
-	} 
+	UHM.setTableRow(prefContents, ["&nbsp;",null,null]);
+
+	const breakpts = UTIL.newElement("TABLE#breakPrefsTable_"+mapName);
+	fillBreaksTable (breakpts, "data", mapName, thresholds, colors);
 	UHM.setTableRow(prefContents, [breakpts], 3);
 	UHM.addBlankRow(prefContents)
 	UHM.setTableRow(prefContents, ["&nbsp;Missing Color:",  "<input class='spectrumColor' type='color' name='"+mapName+"_missing_colorPref' id='"+mapName+"_missing_colorPref' value='"+colorMap.getMissingColor()+"'>"]);
@@ -1104,10 +1020,14 @@ UPM.setupLayerBreaks = function(e, mapName) {
 	UHM.addBlankRow(prefContents, 3);
 	UHM.setTableRow(prefContents, [
 		"&nbsp;Color Histogram:",
-		UTIL.newElement('BUTTON', { type: 'button' }, 'Update', function(el) {
-		   el.onclick = function() { UHM.loadColorPreviewDiv(mapName); };
-		   return el;
-		}),
+		UTIL.newElement('DIV.buttonGroup', {},
+		    UTIL.newElement('BUTTON', { type: 'button' },
+			UTIL.newElement('SPAN.button', {}, 'Update'),
+			function(el) {
+			   el.onclick = function() { UHM.loadColorPreviewDiv(mapName); };
+			   return el;
+			}),
+		),
 	]);
 	var previewDiv = "<div id='previewWrapper"+mapName+"' style='display:flex; height: 100px; width: 110px;position:relative;' ></div>";//UHM.loadColorPreviewDiv(mapName,true);
 	UHM.setTableRow(prefContents, [previewDiv]);
@@ -1118,6 +1038,45 @@ UPM.setupLayerBreaks = function(e, mapName) {
 	return helpprefs;
 }	
 
+	function fillBreaksTable (breakpts, colorMapAxis, layerName, thresholds, colors) {
+	    // Remove any existing elements.
+	    while (breakpts.firstChild) {
+		breakpts.removeChild (breakpts.firstChild);
+	    }
+	    const elementIdPrefix = layerName + (colorMapAxis == "data" ? "" : "_" + colorMapAxis);
+	    for (let j = 0; j <= thresholds.length; j++) {
+		    const threshId =  elementIdPrefix + "_breakPt" + j;
+		    const buttonsDiv = UTIL.newElement('DIV.colorTableButtons');
+		    const addButton = UTIL.newSvgButton('icon-plus', {
+			id: threshId+'_breakAdd',
+		    }, function (el) {
+			el.onclick = (function(j,layerName) { return function() { addLayerBreak(colorMapAxis, j, layerName); }; })(j, layerName);
+			return el;
+		    });
+		    buttonsDiv.appendChild (addButton);
+		    if (j == thresholds.length) {
+			UHM.setTableRow(breakpts, [null, null, buttonsDiv]);
+			break;
+		    }
+		    var threshold = thresholds[j];
+		    var color = colors[j];
+		    var colorId = elementIdPrefix + "_color" + j;
+		    var breakPtInput = "&nbsp;&nbsp;<input name='"+threshId+"_breakPref' id='"+threshId+"_breakPref' value='"+threshold+"' maxlength='8' size='8'>";
+		    var colorInput = "<input class='spectrumColor' type='color' name='"+colorId+"_colorPref' id='"+colorId+"_colorPref' value='"+color+"'>";
+		    if (thresholds.length == 1) {
+			    UHM.setTableRow(breakpts, [breakPtInput, colorInput, buttonsDiv]);
+		    } else {
+			    const delButton = UTIL.newSvgButton ('icon-big-x', {
+				id: threshId+'_breakDel',
+			    }, function (el) {
+				el.onclick = (function(j,layerName) { return function() { deleteLayerBreak(colorMapAxis, j, layerName); }; })(j, layerName);
+				return el;
+			    });
+			    buttonsDiv.appendChild (delButton);
+			    UHM.setTableRow(breakpts, [breakPtInput,  colorInput, buttonsDiv ]);
+		    }
+	    }
+	}
 
 /**********************************************************************************
  * FUNCTION - getTempCM: This function  will create a dummy color map object to be 
@@ -1321,32 +1280,32 @@ UPM.showLayerBreak = function(selLayer) {
  * row to a data layer colormap. A new row is created using the preceding row as a 
  * template (i.e. breakpt value and color same as row clicked on).  
  **********************************************************************************/
-UPM.addLayerBreak = function(pos,colorMapName) {
+    function addLayerBreak (colorMapAxis, pos, colorMapName) {
 	//Retrieve colormap for data layer
-	var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap("data",colorMapName);
-	var newThresholds = UPM.getNewBreakThresholds(colorMapName, pos, "add");
-	var newColors = UPM.getNewBreakColors(colorMapName, "data", pos, "add");
+	const colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap(colorMapAxis,colorMapName);
+	const newThresholds = getNewBreakThresholds(colorMapAxis, colorMapName, pos, "add");
+	const newColors = getNewBreakColors(colorMapAxis, colorMapName, pos, "add");
 	colorMap.setThresholds(newThresholds);
 	colorMap.setColors(newColors);
-	UPM.reloadLayerBreaksColorMap(colorMapName, colorMap);
-}
+	reloadLayerBreaksColorMap(colorMapAxis, colorMapName, colorMap);
+    }
 
 /**********************************************************************************
  * FUNCTION - deleteLayerBreak: The purpose of this function is to remove a breakpoint
  * row from a data layer colormap.   
  **********************************************************************************/
-UPM.deleteLayerBreak = function(pos,colorMapName) {
-	var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap("data",colorMapName);
+    function deleteLayerBreak (colorMapAxis, pos, colorMapName) {
+	var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap(colorMapAxis,colorMapName);
 	var thresholds = colorMap.getThresholds();
 	var colors = colorMap.getColors();
-	var newThresholds = UPM.getNewBreakThresholds(colorMapName, pos, "delete");
-	var newColors = UPM.getNewBreakColors(colorMapName, "data", pos, "delete");
+	var newThresholds = getNewBreakThresholds(colorMapAxis, colorMapName, pos, "delete");
+	var newColors = getNewBreakColors(colorMapAxis, colorMapName, pos, "delete");
 	//Apply new arrays for thresholds and colors to the datalayer
 	//and reload the colormap.
 	colorMap.setThresholds(newThresholds);
 	colorMap.setColors(newColors);
-	UPM.reloadLayerBreaksColorMap(colorMapName, colorMap);
-}
+	reloadLayerBreaksColorMap(colorMapAxis, colorMapName, colorMap);
+    }
 
 /**********************************************************************************
  * FUNCTION - reloadLayerBreaksColorMap: The purpose of this function is to reload
@@ -1354,19 +1313,23 @@ UPM.deleteLayerBreak = function(pos,colorMapName) {
  * this common function.  The layerPrefs DIV is retrieved and the setupLayerBreaks
  * method is called, passing in the newly edited colormap. 
  **********************************************************************************/
-UPM.reloadLayerBreaksColorMap = function(colorMapName, colorMap) {
-	var e = document.getElementById('gear_btn')
-	var colorMapMgr = MMGR.getHeatMap().getColorMapManager();
-	colorMapMgr.setColorMap(colorMapName, colorMap, "data");
-	var breakPrefs = document.getElementById('breakPrefs_'+colorMapName);
+    function reloadLayerBreaksColorMap (colorMapAxis, colorMapName, colorMap) {
+	const colorMapMgr = MMGR.getHeatMap().getColorMapManager();
+	colorMapMgr.setColorMap(colorMapName, colorMap, colorMapAxis);
+	let breakPrefsId = 'breakPrefs_' + colorMapName;
+	if (colorMapAxis != 'data') breakPrefsId += "_" + colorMapAxis;
+	let breakPrefs = document.getElementById(breakPrefsId);
 	if (breakPrefs){
 		breakPrefs.remove();
 	}
-	var layerprefs = UHM.getDivElement("layerPrefs");
-	var breakPrefs = UPM.setupLayerBreaks(e, colorMapName, colorMapName);
-	breakPrefs.style.display="block";
-	layerPrefs.appendChild(breakPrefs);
-}
+	if (colorMapAxis == "data") {
+	    breakPrefs = setupLayerBreaks(colorMapAxis, colorMapName);
+	    breakPrefs.style.display="block";
+	    document.getElementById('layerPrefs').appendChild(breakPrefs);
+	} else {
+	    setupCovariateBreaks (colorMapAxis, colorMapName);
+	}
+    }
 
 /*===================================================================================
  *  COVARIATE CLASSIFICATION PREFERENCE PROCESSING FUNCTIONS
@@ -1394,16 +1357,16 @@ UPM.setupClassPrefs = function(e, prefprefs) {
 	var rowClassBarsOrder = heatMap.getRowClassificationOrder();
 	var colClassBars = heatMap.getColClassificationConfig();
 	var colClassBarsOrder = heatMap.getColClassificationOrder();
-	var classprefs = UHM.getDivElement("classPrefs");
+	const classprefs = document.getElementById("classPrefs");
 	var prefContents = document.createElement("TABLE");
 	UHM.addBlankRow(prefContents);
 	if (UPM.hasClasses) {
 		var filterInput = "<input name='all_searchPref' id='all_searchPref'>";
-		var filterButton = UTIL.newElement('IMG#all_searchPref_btn', {
-		    src: 'images/filterClassButton.png',
-		    alt: 'Filter Covariates',
+		const filterButton = UTIL.newElement('BUTTON#all_searchPref_btn.text-button', {
 		    align: 'top',
-		}, null, function (el) {
+		}, [
+		    UTIL.newElement('SPAN.button', {}, 'Filter Covariates'),
+		], function (el) {
 		    el.onclick = function () { UPM.filterClassPrefs(true); };
 		    return el;
 		});
@@ -1456,8 +1419,7 @@ UPM.setupClassPrefs = function(e, prefprefs) {
  **********************************************************************************/
 UPM.setupAllClassesPrefs = function() {
 	const heatMap = MMGR.getHeatMap();
-	var allprefs = UHM.getDivElement("breakPrefs_ALL");
-	allprefs.style.height="100px";
+	var allprefs = UTIL.newElement("DIV#breakPrefs_ALL");
 	var prefContents = document.createElement("TABLE");
 	prefContents.id = "tableAllClasses";
 	UHM.addBlankRow(prefContents);
@@ -1465,12 +1427,20 @@ UPM.setupAllClassesPrefs = function() {
 	var rowClassBarsOrder = heatMap.getRowClassificationOrder();
 	var colClassBars = heatMap.getColClassificationConfig();
 	var colClassBarsOrder = heatMap.getColClassificationOrder();
-	const buttons = UTIL.newFragment ([
-	    UTIL.newElement('BUTTON', { type: 'button' }, "<b>-</b>", function (el) {
+	const buttons = UTIL.newElement ('DIV.icon_group', {}, [
+	    UTIL.newSvgButton('icon-minus', {
+		dataset: {
+		    tooltip: 'Decrease the size of all selected covariate bars by one',
+		},
+	    }, function (el) {
 		el.onclick = function () { UPM.decrementAllHeights(); };
 		return el;
 	    }),
-	    UTIL.newElement('BUTTON', { type: 'button' }, "<b>+</b>", function (el) {
+	    UTIL.newSvgButton('icon-plus', {
+		dataset: {
+		    tooltip: 'Increase the size of all selected covariate bars by one',
+		},
+	    }, function (el) {
 		el.onclick = function () { UPM.incrementAllHeights(); };
 		return el;
 	    }),
@@ -1580,7 +1550,9 @@ UPM.setupClassBreaks = function(e, key, barType, classBar) {
 	var colorMap = MMGR.getHeatMap().getColorMapManager().getColorMap(barType, key);
 	var thresholds = colorMap.getThresholds();
 	var colors = colorMap.getColors();
-	var helpprefs = UHM.getDivElement("breakPrefs_"+keyRC);
+	var helpprefs = UTIL.newElement("DIV");
+	helpprefs.id = "breakPrefs_"+keyRC;
+
 	var prefContents = document.createElement("TABLE"); 
 	UHM.addBlankRow(prefContents);
 	var pos = UTIL.toTitleCase(barType);
@@ -1613,17 +1585,25 @@ UPM.setupClassBreaks = function(e, key, barType, classBar) {
 	
 	
 	UHM.addBlankRow(prefContents);
-	var helpprefsCB = UHM.getDivElement(keyRC+"_breakPrefsCB");
+	var helpprefsCB = UTIL.newElement("DIV");
+	helpprefsCB.id = keyRC+"_breakPrefsCB";
 	var prefContentsCB = document.createElement("TABLE"); 
-	UHM.setTableRow(prefContentsCB, ["&nbsp;<u>Category</u>","<b><u>"+"Color"+"</b></u>"]);
-	for (var j = 0; j < thresholds.length; j++) {
-		var threshold = thresholds[j];
-		var color = colors[j];
-		var threshId = keyRC+"_breakPt"+j;
-		var colorId = keyRC+"_color"+j;
-		var colorInput = "<input class='spectrumColor' type='color' name='"+colorId+"_colorPref' id='"+colorId+"_colorPref' value='"+color+"'>"; 
-		UHM.setTableRow(prefContentsCB, ["&nbsp;&nbsp;"+threshold, colorInput]);
-	} 
+	if (typ === 'Discrete') {
+	    UHM.setTableRow(prefContentsCB, ["&nbsp;<u>Category</u>","<b><u>"+"Color"+"</b></u>"]);
+	    for (var j = 0; j < thresholds.length; j++) {
+		    var threshold = thresholds[j];
+		    var color = colors[j];
+		    var threshId = keyRC+"_breakPt"+j;
+		    var colorId = keyRC+"_color"+j;
+		    var colorInput = "<input class='spectrumColor' type='color' name='"+colorId+"_colorPref' id='"+colorId+"_colorPref' value='"+color+"'>";
+		    UHM.setTableRow(prefContentsCB, ["&nbsp;&nbsp;"+threshold, colorInput]);
+	    }
+	} else {
+	    UHM.setTableRow(prefContentsCB, ["&nbsp;<u>Breakpoint</u>","<b><u>"+"Color"+"</b></u>"]);
+	    const colorScheme = document.createElement("TABLE");
+	    fillBreaksTable (colorScheme, barType, key, thresholds, colors);
+	    UHM.setTableRow (prefContentsCB, [ colorScheme ], 3);
+	}
 	UHM.addBlankRow(prefContentsCB);
 	UHM.setTableRow(prefContentsCB, ["&nbsp;Missing Color:",  "<input class='spectrumColor' type='color' name='"+keyRC+"_missing_colorPref' id='"+keyRC+"_missing_colorPref' value='"+colorMap.getMissingColor()+"'>"]);
 	UHM.addBlankRow(prefContentsCB, 3);
@@ -1644,7 +1624,8 @@ UPM.setupClassBreaks = function(e, key, barType, classBar) {
 	}
 	helpprefsCB.style.height = prefContentsCB.rows.length;
 	helpprefsCB.appendChild(prefContentsCB);
-	var helpprefsBB = UHM.getDivElement(keyRC+"_breakPrefsBB");
+	var helpprefsBB = UTIL.newElement("DIV");
+	helpprefsBB.id = keyRC+"_breakPrefsBB";
 	var prefContentsBB = document.createElement("TABLE"); 
 	UHM.setTableRow(prefContentsBB, ["&nbsp;&nbsp;Lower Bound:", lowBound]);
 	UHM.setTableRow(prefContentsBB, ["&nbsp;&nbsp;Upper Bound:", highBound]);
@@ -1664,6 +1645,14 @@ UPM.setupClassBreaks = function(e, key, barType, classBar) {
 	}
 	return helpprefs;
 }	
+
+    function setupCovariateBreaks (colorMapAxis, covariateName) {
+	const bars = NgChm.MMGR.getHeatMap().getAxisCovariateConfig(colorMapAxis);
+	const breakPrefs = UPM.setupClassBreaks({}, covariateName, colorMapAxis, bars[covariateName]);
+
+	const classPrefs = document.getElementById ('classPrefs');
+	classPrefs.append (breakPrefs);
+    }
 
 UPM.showPlotTypeProperties = function(keyRC) {
 	var barTypeSel = document.getElementById(keyRC+"_barTypePref");
@@ -1828,17 +1817,19 @@ UPM.showClassBreak = function(selClass) {
 UPM.filterClassPrefs = function(filterOn) {
 	UPM.searchPerformed = true;
 	UPM.showClassBreak("ALL");
-	var filterButton = document.getElementById('all_searchPref_btn');
+	const filterButton = document.getElementById('all_searchPref_btn');
+	const textSpan = filterButton.querySelector('span');
+	if (!textSpan) return;
 	var searchPrefSelect = document.getElementById('all_searchPref');
 	var searchPrefVal = searchPrefSelect.value;
 	if (filterOn) {
 		if (searchPrefVal != "") {
 			UPM.filterVal = searchPrefVal;
-			filterButton.src = "images/removeFilterClassButton.png";
+			textSpan.innerText = "Remove filter";
 			filterButton.onclick=function (){UPM.filterClassPrefs(false);};
 		}
 	} else {
-		filterButton.src = "images/filterClassButton.png";
+		textSpan.innerText = "Filter covariates";
 		filterButton.onclick=function (){UPM.filterClassPrefs(true);};
 		searchPrefSelect.value = "";
 		UPM.filterVal = null;
@@ -1966,6 +1957,58 @@ UPM.filterShow = function(key) {
  *      - dendroColShowChange
  =================================================================================*/
 
+UPM.setupMapInfoPrefs = function (e, prefprefs) {
+	const heatMap = MMGR.getHeatMap();
+	const mapInfo = heatMap.getMapInformation();
+	const mapInfoPrefs = document.getElementById("infoPrefs");
+	const prefContents = document.createElement("TABLE");
+
+	const totalRows = heatMap.getTotalRows()-mapInfo.map_cut_rows;
+	const totalCols = heatMap.getTotalCols()-mapInfo.map_cut_cols;
+
+	UHM.setTableRowX(prefContents,["ABOUT:"], ['header'], [ { colSpan: 2 }]);
+	UHM.setTableRowX(prefContents,["Name:", mapInfo.name]);
+	UHM.setTableRowX(prefContents,["Size:", totalRows + " rows by " + totalCols + " columns"]);
+	UHM.setTableRowX(prefContents,["Description:", mapInfo.description]);
+	UHM.setTableRowX(prefContents,["Build time:", mapInfo.attributes['chm.info.build.time']]);
+	UHM.setTableRowX(prefContents,["Read Only:", mapInfo.read_only]);
+
+	UHM.setTableRowX(prefContents,["VERSIONS:"], ['header'], [ { colSpan: 2}]);
+	UHM.setTableRowX(prefContents,["Viewer Version:", COMPAT.version]);
+	UHM.setTableRowX(prefContents,["Map Version:", mapInfo.version_id]);
+	UHM.setTableRowX(prefContents,["Builder Version:", mapInfo.builder_version]);
+
+	UHM.setTableRowX(prefContents,["LAYERS:"], ['header'], [{ colSpan: 2 }]);
+	for (let dl in mapInfo.data_layer) {
+	    UHM.setTableRowX(prefContents,[dl + ':', mapInfo.data_layer[dl].name]);
+	}
+
+	UHM.setTableRowX(prefContents,["ATTRIBUTES:"], ['header'], [{ colSpan: 2 }]);
+	const omit = [ /^chm/, /^!/, ];
+	const pass = [ /^chm.info.external.url/, /^!extraparam/ ];
+	for (let attr in mapInfo.attributes) {
+	    if (!matchAny (attr, omit) || matchAny (attr, pass)) {
+		let attrVal = mapInfo.attributes[attr];
+		if (/.external.url/.test(attr)) {
+		    attrVal = UTIL.newElement ('A', { href: attrVal, target: '_blank', }, [ attrVal ]);
+		}
+		UHM.setTableRowX(prefContents,[attr + ':', attrVal]);
+	    }
+	}
+
+	UHM.addBlankRow(prefContents,2);
+	mapInfoPrefs.appendChild(prefContents);
+
+	return mapInfoPrefs;
+
+	function matchAny (str, regExpArray) {
+	    for (let regExp of regExpArray) {
+		if (regExp.test(str)) return true;
+	    }
+	    return false;
+	}
+};
+
 /**********************************************************************************
  * FUNCTION - setupRowColPrefs: The purpose of this function is to construct a DIV 
  * panel containing all row & col preferences.  Two sections are presented, one for
@@ -1974,15 +2017,9 @@ UPM.filterShow = function(key) {
  **********************************************************************************/
 UPM.setupRowColPrefs = function(e, prefprefs) {
 	const heatMap = MMGR.getHeatMap();
-	var rowcolprefs = UHM.getDivElement("rowsColsPrefs");
+	const rowcolprefs = document.getElementById("rowsColsPrefs");
 	var prefContents = document.createElement("TABLE");
 	UHM.addBlankRow(prefContents);
-	UHM.setTableRow(prefContents,["MAP INFORMATION:"], 2);
-	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Viewer Version:", COMPAT.version]);
-	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Map Version:", heatMap.getMapInformation().version_id]);
-	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Builder Version:", heatMap.getMapInformation().builder_version]);
-	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Read Only:", heatMap.getMapInformation().read_only]);
-	UHM.addBlankRow(prefContents,2);
 	UHM.setTableRow(prefContents,["ROW INFORMATION:"], 2);
 	var rowLabels = heatMap.getRowLabels();
 	var rowOrganization = heatMap.getRowOrganization();
@@ -2225,60 +2262,12 @@ UPM.prefsResetButton = function(){
 	for (var dl in resetVal.matrix.data_layer){
 		var layer = resetVal.matrix.data_layer[dl];
 		var cm = layer.color_map;
-		//Check to see if there are more breakpoints in current threshold set than those being reset and remove them
-		for (var i = cm.thresholds.length; i < 50; i++) {
-			var bPrefix = dl + "_breakPt" + i;
-			var breakpt = document.getElementById(bPrefix + "_breakPref");
-			if (breakpt !== null) {
-				var elt = breakpt.closest(".chmTblRow");
-				elt.remove();
-			} else {
-				break;
-			}
-		}
-		for (var i = 0; i < cm.thresholds.length; i++){
-			var breakpt = document.getElementById(dl + "_breakPt" + i + "_breakPref");
-			//If there are not enough screen elements to reset, add them.
-			if (breakpt === null) {
-				var bPrefix = dl + "_breakPt" + i;
-				var bName = bPrefix + "_breakPref";
-				var cName = dl + "_color" + i + "_colorPref";
-				var colorId = mapName+"_color"+i;
-				var breakPtInput = "&nbsp;&nbsp;<input name='"+bName+"' " + " id='"+bName+"' value='"+cm.thresholds[i]+"' maxlength='8' size='8'>";
-				var colorInput = "<input class='spectrumColor' type='color' name='"+cName+"' id='"+cName+"' value='"+cm.colors[i]+"'>"; 
-				const addDelButtons = UTIL.newFragment([
-				    UTIL.newElement ('IMG', {
-					id: bPrefix+'_breakAdd',
-					src: 'images/plusButton.png',
-					alt: 'Add Breakpoint',
-					align: 'top',
-				    }, null, function(el) {
-					el.onclick = (function(i,dl) { return function() { UPM.addLayerBreak(i, dl); }; })(i, dl);
-					return el;
-				    }),
-				    UTIL.newElement ('IMG', {
-					id: bPrefix+'_breakDel',
-					src: 'images/minusButton.png',
-					alt: 'Remove Breakpoint',
-					align: 'top',
-				    }, null, function(el) {
-					el.onclick = (function(i,dl) { return function() { UPM.deleteLayerBreak(i, dl); }; })(i, dl);
-					return el;
-				    }),
-				]);
-				var dlTable = document.getElementById("breakPrefsTable_" + dl);
-				UHM.setTableRow(dlTable, [breakPtInput, colorInput, addDelButtons]);
-
-			} else {
-				breakpt.value = cm.thresholds[i];
-				var colorpt = document.getElementById(dl + "_color" + i + "_colorPref");
-				colorpt.value = cm.colors[i];
-			}
-		}
+		const dlTable = document.getElementById("breakPrefsTable_" + dl);
+		fillBreaksTable (dlTable, "data", dl, cm.thresholds, cm.colors);
 		var gridColor = document.getElementById(dl + "_gridColorPref");
 		gridColor.value = layer.grid_color;
 		var gridShow = document.getElementById(dl + "_gridPref");
-		layer.grid_show == "Y" ? gridShow.checked = true : gridShow.checked = false; 
+		gridShow.checked = layer.grid_show == "Y";
 		var selectionColor = document.getElementById(dl + "_selectionColorPref");
 		selectionColor.value = layer.selection_color;
 		var gapColor = document.getElementById(dl + "_gapColorPref");
@@ -2290,7 +2279,7 @@ UPM.prefsResetButton = function(){
 	for (var name in resetVal.colClassification){
 		var bar = resetVal.colClassification[name];
 		var show = document.getElementById(name + "_col_showPref");
-		bar.show == "Y" ? show.checked = true : show.checked = false;
+		show.checked = bar.show == "Y";
 		var height = document.getElementById(name + "_col_heightPref");
 		height.value = bar.height;
 		
@@ -2323,7 +2312,7 @@ UPM.prefsResetButton = function(){
 	for (var name in resetVal.rowClassification){
 		var bar = resetVal.rowClassification[name];
 		var show = document.getElementById(name + "_row_showPref");
-		bar.show == "Y" ? show.checked = true : show.checked = false;
+		show.checked = bar.show == "Y";
 		var height = document.getElementById(name + "_row_heightPref");
 		height.value = bar.height;
 		if (bar.bar_type == "bar_plot" || bar.bar_type == "scatter_plot"){

@@ -13,15 +13,16 @@
 	<body class="NgChmViewer" style="font-family: sans-serif; font-size: 100%">
 		    <!--  <a href="javascript:alert(document.compatMode);">What mode am I?</a>   -->
 		    <div class="mdaServiceHeader" id="mdaServiceHeader">
-			<img id='messageOpen_btn' style="position:absolute; vertical-align: top; display: none;" src='images/messageButton.png' width="30" height="30" alt='Open Alert'
-			     data-tooltip='Display Startup Warnings' />
-			<!-- WIDGET EXCLUDE This section removed by widget compiler -->
+			<button id='messageOpen_btn' class='red' style="display: none;" data-tool-tip='Display Startup Warnings'>
+			    <svg width="1em" height="1em"><use href="icons.svg#icon-exclamation-circle"/></svg>
+			</button>
 		        <div id="mda_header" class="mdaServiceHeaderLogo">
+			<!-- WIDGET EXCLUDE This section removed by widget compiler -->
 			    <a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
 				<img id="mdaLogo" src="images/mdabcblogo262x108.png" width="131" height="54" alt="MD Anderson logo"/>
 			    </a>
-			</div>
 			<!-- WIDGET INCLUDE -->
+			</div>
 				<div id="fileButton" style="display:none; font-size: 12px;color: rgb(51, 51, 51);"
 				     data-title='File Chooser'
 				     data-intro='Use this button to load a stand-alone .ngchm file.<P>Press the button, select the .ngchm file to view, and press Open.<P>To create an NGCHM, see <A HREF="https://bioinformatics.mdanderson.org/public-software/ngchm/#building-ng-chms" target="_blank">here</A>.'
@@ -37,26 +38,19 @@
 				  </table>
 				</div>
 				<div id="detail_buttons" class="divTable hide" data-show-on-load>
-				  <div class="divRow">
-				    <div class="divLeft" id="mapName"
-					 data-title='Map Name'
-					 data-intro="The map's name. Hover over the name to see the map's caption (if provided)."
-				    >
+				    <div class="divRow">
+					<div id="MapRow">
+					    <label for="mapName">Map name:</label>
+					    <div class="divLeft" id="mapName"
+						data-title='Map Name'
+						data-intro="The map's name. Hover over the name to see the map's caption (if provided)."
+						>
+					    </div>
+					</div>
 				    </div>
-				  </div>
-				  <div class="divRow">
-		  		    <div class="divLeft">  
-						<img id='fileOpen_btn' style="display: none;vertical-align: bottom;" src='images/openMap.png' alt='Open .NG-CHM'
-						     data-hover-img='openMapHover'
-						     data-tooltip='Open .NG-CHM Heat Map'
-						     data-title='Open File'
-						     data-intro='Click to open a new NG-CHM (replacing the current NG-CHM).'
-						/>
-						<img id="back_btn" style="display: none;vertical-align: bottom;" src="images/returnArrow.png" alt="Return to previous screen"
-						     data-title='Go Back'
-						     data-intro='Click to return to the referring web page.'
-						/>
-						<strong>Search:</strong>&nbsp;
+				    <div class="divRow">
+					<div id="SelectionsRow">
+						<label>Search:</label>
 						<select name="search_on" id="search_on" class='srchSelect'
 						    data-title='Search Target'
 						    data-intro='Select whether to search on map labels or a specific covariate.'
@@ -89,113 +83,117 @@
 							<option value="Column">Column</option>
 							<option value="Row">Row</option>
 						</select>
-						<span class="dblSpace"/>
-					    <img id='go_btn' style='vertical-align: middle;' src='images/go.png' alt='Go'
+					    <button id='go_btn'
 	                                         data-title='Go Button'
 						 data-intro='Perform the search and go to the first search result (if any).'
 						 data-hover-img='goHover'
 					         data-tooltip='Search Row/Column Labels'
-					    />
-					    <img id='prev_btn' style='vertical-align: middle;' src='images/prev.png' alt='Previous'
-	                                         data-title='Previous Result'
-						 data-intro='Go to the previous search result (if any).'
-						 data-hover-img='prevHover'
-					         data-tooltip='Previous Search Result'
-						 style="display:none;"
-					    />
-					    <img id='next_btn' style='vertical-align: middle;' src='images/next.png' alt='Next'
-	                                         data-title='Next Result'
-						 data-intro='Go to the next search result (if any).'
-					         data-hover-img='nextHover'
-						 data-tooltip='Next Search Result'
-						 style="display:none;"
-					    />
-					    <img id='cancel_btn' style='vertical-align: middle;' src='images/cancel.png' alt='Cancel'
+						 style="padding: 0.25em;"
+						 >
+						<svg width="1em" height="1em"><use href="icons.svg#icon-go"/></svg>
+					    </button>
+						<span class="dblSpace"/>
+					<button id='cancel_btn' class='red'
 	                                         data-title='Clear Results'
 						 data-intro='Clear the selection for the specified axis (or axes).'
 					         data-hover-img='cancelHover'
-						 data-tooltip='Clear Search Results'
-						 style="display:none;"
-					    />
-		  			 </div> 
+						 data-tooltip='Clear selected rows and/or columns'
+						 >
+					    <svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
+					</button>
+					 </div>
 				  </div>
 				  <div class="divRow">
 					<div class="divLeft">
 						<div><span id="search_display_text" style="margin-left:15em;font-size: 10px; vertical-align: top;"></span></div>
 					</div>
 				  </div>
-		<!--  	    </div>	-->
-				    <div id="pdf_gear" style="text-align: right;" class="farRightButton"
-					data-title='Layer controller'
-					data-intro='Click the layers icon to open the controller. Use the toggle to switch between two data layers. Select the layers using the drop-down menus.'
-				    >
-						<div id="flicks" style="display: none;">
-						    <div id="noFlickViews" style="display: none;">
-							<table><tr><td><img id='flickOff' src='images/layersOff.png' alt='open data layer control icon'
-								    data-tooltip='Open Data Layer Control'/></td></tr></table>
-						    </div>
-						    <div id="flickViews" style="display: none;">
-						    	<table><tr>
-							    <td><table>
-								<tr><td rowspan="2">
-										<img id='flick_btn' data-state='flickUp' src='images/toggleUp.png' alt='Flick'
-										       data-tooltip='Toggle Between Selected Data Layers (F2)'/>
-								           </td>
-									   <td><select name="flick1" id="flick1"></select></td>
-							        </tr>
-							        <tr><td><select name="flick2" id="flick2"></select></td></tr>
-							    </table></td>
-							    <td><img id='flickOn_pic' src='images/layersOn.png' alt='close data layer control icon' data-tooltip='Close Data Layer Control'/></td>
-						    		</tr></table>
-					    	</div>
-						</div>
+		</div> <!-- End of detail_buttons div. -->
+		<!-- ----------------------------------------------------------------------------- -->
+		<div id='top-right-spacer'>
+		</div>
+		<!-- ----------------------------------------------------------------------------- -->
+		<div id='top-right-button-group' class="hide" data-show-on-load>
+			    <!-- Layer Controller -->
+			    <div id="layer_control" style="text-align: right; display:none;"
+				data-title='Layer controller'
+				data-intro='Click the layers icon to open the controller. Use the toggle to switch between two data layers. Select the layers using the drop-down menus.'
+				>
+				<div id="flickViews" style="display: none;" data-state='flickUp'>
+				    <button id='flick_btn' data-tooltip='Toggle Between Selected Data Layers (F2)'>
+					<svg width="1em" height="1em"><use href="icons.svg#icon-toggle2-on"/></svg>
+				    </button>
+				    <div style="display: grid; font-size: 0.5em;">
+					<select id="flick1"></select>
+					<select id="flick2"></select>
 				    </div>
-					<img id='colorMenu_btn' class='farRightButton' src='images/barColors.png' alt='Open Alert'
-					     data-hover-img='barColorsHover'
-					     data-tooltip='Edit Map Colors'
-					     data-title='Color Editor'
-					     data-intro='Open a dialog to change the map colors.'
-					/>
-					<img id='barMenu_btn' class='farRightButton' src='images/barMenu.png' alt='Open Menu'
-					     data-title='Hamburger Menu'
-					     data-intro='Opens a drop-down menu of additional choices, including a map preferences dialog, a PDF generator, saving a local copy, and getting additional help.'
-					     data-hover-img='barMenuHover'
-					     data-tooltip='Open NG-CHM Options Menu'
-					/>
-					<div id='introButton' class="farRightButton hide" style="top: 0.2em;"
-					     data-show-on-load
-					     data-prefs-panel-locator
-					     data-title='Guided Tour'
-					     data-intro='Click a tour icon at anytime to initiate a guided tour of on-screen elements.<P>The tour may change based on the current content of the window.'
-					>
-					    <span class="tour-button"
-						data-tooltip="Show interactive tour of the user interface elements"
-						>?</span>
-					</div>
-			                <div id="droptarget" class="">DROP HERE</div>
-			    </div>
-		        <img id='aboutMenu_btn' src='images/aboutNgchm.png' class='farRightButton' alt='About NG-CHM'
-			     data-hide-on-load
-			     data-title='About NG-CHMs'
-			     data-intro='Open for information about the NG-CHM system'
-			     data-tooltip='Open NG-CHM About'
-			/>
-			<div id='introAboutButton' class="farRightButton" style="top: 0.2em;"
-			     data-hide-on-load
-			     data-title='Guided Tour'
-			     data-intro='Click anytime to initiate a guided tour of on-screen elements.<P>The tour may change based on the current content of the window.'
-			>
-			    <span class="tour-button"
-				data-tooltip="Show interactive tour of the user interface elements"
-				>?</span>
-			</div>
-		    </div>
+				</div>
+				<!-- Open/close button that determines whether the other elements of the flick control are visible. -->
+				<button id='layers_open_close'
+				    data-tooltip='Toggles display of the data layer controller'
+				    data-state='closed'
+				    >
+				    <!-- CSS displays exactly one of the following. -->
+				    <div class='closed'><svg width="1em" height="1em"><use href="icons.svg#icon-layers"/></svg></div>
+				    <div class='open'>  <svg width="1em" height="1em"><use href="icons.svg#icon-layers-half"/></svg></div>
+				</button>
+			    </div> <!-- End of layer_control div -->
+			    <!-- Open/Close Map Preferences -->
+			    <button id='colorMenu_btn'
+				data-title='Map Preferences Editor'
+				data-intro='Open a dialog to view/change the map preferences.'
+				data-tooltip='Edit Map Colors'
+				>
+				<svg width="1em" height="1em"><use href="icons.svg#icon-gear"/></svg>
+			    </button>
+			    <!-- Open/Close Gear Menu -->
+			    <button id='barMenu_btn'
+				data-title='Hamburger Menu'
+				data-intro='Opens a drop-down menu of additional choices, including a map preferences dialog, a PDF generator, saving a local copy, and getting additional help.'
+				data-tooltip='Open NG-CHM Options Menu'
+				>
+				<svg width="1em" height="1em"><use href="icons.svg#icon-menu-button-fill"/></svg>
+			    </button>
+			    <!-- Open/Close Help Dialog -->
+			    <button id='introButton'
+				data-prefs-panel-locator
+				data-title='About NG-CHMs'
+				data-intro='Displays a brief summary of NG-CHMs and pointers to further information'
+				data-tooltip="Open/Close an About Dialog"
+				>
+				<svg width="1em" height="1em"><use href="icons.svg#icon-question-circle-fill"/></svg>
+			    </button>
+			</div> <!-- top-right-button-group -->
+			<div id="unloaded-button-group" data-hide-on-load>
+			    <button id='aboutButton'
+				data-title='About NG-CHMs'
+				data-intro='Open for information about the NG-CHM system'
+				data-tooltip='Open NG-CHM About'
+				>
+				<svg width="1em" height="1em"><use href="icons.svg#icon-question-circle-fill"/></svg>
+			    </button>
+			</div> <!-- unloaded-button-group -->
+			<div id="droptarget" class="">DROP HERE</div>
+		    </div> <!-- END of mdaServiceHeader -->
 
 		    <div id='content'>
 			<!-- WIDGET EXCLUDE This section removed by widget compiler. -->
-			<div id='splash' class='fadeinslow'>
-			    <DIV id="closeSplash">X</DIV>
-			    <h2>Next-Generation Clustered Heat Map Viewer</h2>
+			<div id='splash' class='fadeinslow'
+			    data-title='Splash screen'
+			    data-intro='This splash screen displays brief usage notes when no map is loaded'
+			    >
+			    <div id='splashBoxHeader' class='msgBoxHdr'>
+				<h2>Next-Generation Clustered Heat Map Viewer</h2>
+				<span class='closeX'>
+				    <button id='closeSplash' class='red'
+					     data-title='Close Splash Screen'
+					     data-intro='Closes the splash screen'
+					     data-tooltip='Close the splash screen'
+					     >
+					<svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
+				    </button>
+				</span>
+			    </div>
 			    <P>
 			        Next-Generation Clustered Heat Maps (NG-CHMs) are optimized for the interactive exploration of data matrices, especially <strong>large</strong> ones
 				such as often occur in high-throughput molecular profiling studies (omics).  Although motivated by biological applications,
@@ -217,10 +215,6 @@
 				    <LI>Explore a <A href='https://tcga.ngchm.net/NGCHM/chm.html?map=class_subset_tcga_brca'>sample NG-CHM</A>.
 				</UL>
 			    </DIV>
-			    <P>
-				For a quick tour of the NG-CHM User Interface (UI), click
-				<span class="tour-button">?</span>.
-			    </P>
 			</div> <!-- splash -->
 			<!-- WIDGET INCLUDE -->
 			<div id='loader' class='faded'></div>
@@ -245,12 +239,12 @@
 				</div>
 			</div>
 			<div id="pdfPrefs" class="hide">
-				<div class="prefsHdr" id="pdfPrefsHdr">PDF Generation</div>
+			    <div class="prefsHdr" id="pdfPrefsHdr"><span>PDF Generation</span></div>
 				<table id="pdfPrefsTable">
 					<tbody>
 						<tr class="chmTblRow">
 							<td>
-								<div id="pdfprefprefs" style="display: block; background-color: rgb(203, 219, 246);">
+								<div id="pdfprefprefs" style="display: block;">
 									<div style="display: inherit; width: 290px; height: 350px;">
 										<h3 style="margin-bottom:0px;">Show maps:</h3>
 										<input id="pdfInputSummaryMap" type="radio" name="pages" value="summary"> Summary<br>
@@ -281,29 +275,29 @@
 										<progress id="pdfProgressBar"></progress>
 										</div>
 									</div>
-									<table>
-										<tbody>
-											<tr class="chmTblRow">
-												<td style="font-weight: bold;">
-													<div id="pref_buttons" style="text-align: right;">
-													    <button id="prefCreate_btn">
-														<img src="images/createPdf.png" alt="Create PDF" style="vertical-align: top;">
-													    </button>
-													    <button id="prefCancel_btn">
-														<img src="images/prefCancel.png" alt="Cancel changes" style="vertical-align: top;">
-													    </button>
-													</div>
-												</td>
-											</tr>
-										</tbody>
-									</table>
+									<div id="pref_buttons" class="buttonBox">
+									    <button id="prefCreate_btn" class='default'>
+										<span class="spanbuttonwrapper">
+										    <span class='button'>
+											Create PDF
+										    </span>
+										</span>
+									    </button>
+									    <button id="prefCancel_btn">
+										<span class="spanbuttonwrapper">
+										    <span class='button'>
+											Cancel
+										    </span>
+										</span>
+									    </button>
+									</div>
 								</div>
 							</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
-			<div id="msgBox" style="display: none; position: absolute; background-color: rgb(230, 240, 255);">
+			<div id="msgBox" style="display: none; position: absolute;">
 				<div class="msgBoxHdr" id="msgBoxHdr"></div>
 				<table>
 					<tbody>
@@ -323,7 +317,7 @@
 									</div>
 							        </div>
 							        <!-- WIDGET INCLUDE -->
-								<div id="msgBoxTxt" style="display: inherit;font-size: 12px; background-color: rgb(230, 240, 255); width: 400px; height: 80px;"></div>
+								<div id="msgBoxTxt"></div>
 								<div id="msgBoxProgressDiv" style="display: none;">
 								<label for="msgBoxProgressBar">Progress:</label>
 								<progress id="msgBoxProgressBar"></progress>
@@ -336,49 +330,114 @@
 			</div>
 		
 			<div id="linkBox" class='hide'>
-				<div id="linkBoxHdr" class="msgBoxHdr"></div>
+				<div id="linkBoxHdr" class="msgBoxHdr">
+				    <span>NG-CHM Plug-in Information</span>
+				    <div class="icon_group">
+					<button class='red'
+						 data-title='Close Plug-in information'
+						 data-intro='Closes the plug-in dialog'
+						 data-tooltip='Close the plug-in dialog'
+						 >
+					    <svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
+					</button>
+				    </div>
+				</div>
 				<p class='boxCaption'>This screen contains a listing of all plug-ins that are active in the current heat map and a listing all plug-ins installed in this Ng-Chm system.</p>
 				<div id="linkTabButtons">
-				    <img id="mapLinks_btn" src="images/mapLinksOn.png" alt="Plugins available for this map" class="clickableItem">
-                                    <img id="allLinks_btn" src="images/allLinksOff.png" alt="Plugins Installed" class="clickableItem">
+				    <button id='mapLinks_btn' data-for-tab='linkBoxTxt' class='clickableItem'><span class='button tab-button'>Active Plug-ins</span></button>
+				    <button id='allLinks_btn' data-for-tab='linkBoxAllTxt' class='clickableItem'><span class='button tab-button'>Installed Plug-ins</span></button>
 				</div>
-				<div id="linkBoxTxt"></div>
-				<div id="linkBoxAllTxt" class="hide"></div>
+				<div id='linkBoxTabs'>
+				    <div id="linkBoxTxt"></div>
+				    <div id="linkBoxAllTxt" class="hide"></div>
+				</div>
 				<div id="linkBoxFoot">
-				    <button id="linkBoxFootCloseButton" class="default">
-				    <img src="images/closeButton.png" alt='close button icon' class="clickableItem">
+				    <button id="linkBoxFootCloseButton" class="clickableItem default">
+					<span class="spanbuttonwrapper">
+					    <span class='button'>
+						Close
+					    </span>
+					</span>
 				    </button>
 				</div>
 			</div>
 		
 			<div id="prefs" style="display: none;">
 				<div id="prefsHdr">
-				     <img id='prefsMove_btn' data-state='moveLeft' src='images/prefsLeft.png' alt='Move preferences'
-				          data-tooltip='Move Preferences'
-					  style='float: left;'>
-				     Heat Map Display Properties
-				     <img id="redX_btn" src="images/redX.png" alt="Cancel changes" style="float: right;">
+				    <button id='prefsMove_btn'
+					 data-title='Move Preferences'
+					 data-intro='Moves the preferences dialog to the (other) side.'
+					 data-tooltip='Move preferences to (other) side of window'
+					 style='float: left;'
+					 >
+					<svg width="1em" height="1em"><use href="icons.svg#icon-greater-than"/></svg>
+				    </button>
+				    <span>Heat Map Display Properties</span>
+				    <button id='redX_btn' class='red'
+					     data-title='Close Preferences'
+					     data-intro='Closes the map preferences dialog'
+					     data-tooltip='Close the map preferences dialog'
+					     style='float: right;'
+					     >
+					<svg width="1em" height="1em"><use href="icons.svg#icon-big-x"/></svg>
+				    </button>
 				</div>
-				<div style="height: 20px;"></div>
 				<div id="prefTabButtons">
-				    <img id="prefLayer_btn" src="images/heatMapColorsOff.png" alt="Edit Data Layers">
-				    <img id="prefRowsCols_btn" src="images/rowsColsOn.png" alt="Edit Rows &amp; Columns">
-				    <img id="prefClass_btn" src="images/covariateBarsOff.png" alt="Edit Classifications">
+				    <button id="prefMapInfo_btn" data-for-tab='infoPrefs' class='clickableItem'><span class='button tab-button'>Map Info</span></button>
+				    <button id="prefLayer_btn" data-for-tab='layerPrefs' class='clickableItem'><span class='button tab-button'>Heat Map Colors</span></button>
+				    <button id="prefRowsCols_btn" data-for-tab='rowsColsPrefs' class='clickableItem'><span class='button tab-button'>Rows &amp; Cols</span></button>
+				    <button id="prefClass_btn" data-for-tab='classPrefs' class='clickableItem'><span class='button tab-button'>Covariate Bars</span></button>
 				</div>
-				<div id="prefPrefs" class="prefSubPanel" style="display: block; height: 70px"></div>
+				<div id="prefPrefs" class="prefSubPanel">
+				    <div id="infoPrefs"></div>
+				    <div id="layerPrefs"></div>
+				    <div id="rowsColsPrefs"></div>
+				    <div id="classPrefs"></div>
+				</div>
+				<div id="prefActions">
+				    <div class="buttonRow">
+					<button id='prefApply_btn' class='clickableItem'>
+					    <span class='spanbuttonwrapper'><span class='button'>APPLY</span></span>
+					</button>
+					<button id='prefReset_btn' class='clickableItem'>
+					    <span class='spanbuttonwrapper'><span class='button'>RESET</span></span>
+					</button>
+					<button id='prefClose_btn' class='clickableItem'>
+					    <span class='spanbuttonwrapper'><span class='button'>CLOSE</span></span>
+					</button>
+				    </div>
+				</div>
 			</div>
-			<div id="burgerMenuPanel" style="display: none;">
-				<div class="menuItemTop"></div>
-				<div id="menuPdf" class="menuItem"><img id='menuPdf_btn' src='images/pdf.png' alt='save as PDF icon'>Save Heat Map As PDF...</div>
-				<div id="menuPng" class="menuItem"><img id='menuPng_btn' src='images/thumbnail.png' alt='download thumbnail icon'>Download Thumbnail...</div>
-				<div id="menuSave" class="menuItem"><img id='menuSave_btn' src='images/saveButton.png' alt='save heat map changes icon'>Save Heat Map Changes...</div>
-				<div id="menuGear" class="menuItem"><img id='menuGear_btn' src='images/gear.png' alt='open modify map preferences icon'>Modify Map Preferences...</div>
-				<div class="menuItemBorder"></div>
-				<div id="menuLink" class="menuItem"><img id='linkHelp_btn' src='images/plugin.png' alt='open plugin help icon'>Plug-in Help...</div>
-				<div id="menuHelp" class="menuItem"><img id='help_btn' src='images/questionMark.png' alt='open help icon'>NgChm Help...</div>
-				<div id="menuSpaceAbout" class="menuItemBorder"></div>
-				<div id="menuAbout" class="menuItem"><img id='about_btn' src='images/aboutNgchm.png' alt='about ngchm icon'>About NgChm...</div>
-			</div>
+
+		<!-- Burger Menu Drop Down Panel -->
+		<div id="burgerMenuPanel" style="display: none;">
+		    <div class="menuItemTop"></div>
+		    <div id="menuFileOpen" class="menuItem" style="display:none;">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-open-folder"/></svg></div>
+			Open new heat map...
+		    </div>
+		    <div id="menuBack" class="menuItem" style="display: none;">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-return-arrow"/></svg></div>
+			Return to referring web page
+		    </div>
+		    <div id="menuPdf" class="menuItem">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-file-pdf"/></svg></div>
+			Save Heat Map As PDF...
+		    </div>
+		    <div id="menuPng" class="menuItem">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-thumbnail"/></svg></div>
+			Download Thumbnail...
+		    </div>
+		    <div id="menuSave" class="menuItem">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-floppy-disk"/></svg></div>
+			Save Heat Map Changes...
+		    </div>
+		    <div id="menuGear" class="menuItem">
+			<div class="menuSvg"><svg width="1em" height="1em"><use href="icons.svg#icon-gear"/></svg></div>
+			Modify Map Preferences...
+		    </div>
+		</div>
+
 		<script src="javascript/NgChm.js"></script>
 		<script src="javascript/Config.js"></script>
 		<!-- NEW CHUNK -->
@@ -395,11 +454,11 @@
 		<script src="javascript/Customization.js"></script>
 		<script src="javascript/SummaryDendrogram.js"></script>
 		<script src="javascript/DetailDendrogram.js"></script>
+		<script src="javascript/DetailHeatMapViews.js"></script>
 		<script src="javascript/Tour.js"></script>
 		<script src="javascript/PaneControl.js"></script>
 		<script src="javascript/PluginInstanceManager.js"></script>
 		<script src="javascript/Drawing.js"></script>
-		<script src="javascript/DetailHeatMapViews.js"></script>
 		<script src="javascript/SummaryHeatMapDisplay.js"></script>
 		<script src="javascript/DetailHeatMapDisplay.js"></script>
 		<script src="javascript/SearchManager.js"></script>

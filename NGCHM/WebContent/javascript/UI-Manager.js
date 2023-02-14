@@ -30,6 +30,9 @@
     const RECPANES = NgChm.importNS('NgChm.RecPanes');
     const CUST = NgChm.importNS('NgChm.CUST');
     const UHM = NgChm.importNS('NgChm.UHM');
+    const TOUR = NgChm.importNS('NgChm.TOUR');
+
+    const localFunctions = {};
 
     /***
     *  Functions related to saving Ng-Chms.
@@ -376,11 +379,12 @@
 			RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig);
 		} else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
 			const s = PANE.splitPane (false, initialLoc);
-			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child1, s.child2, s.divider);
-			SMM.switchPaneToSummary (PANE.findPaneLocation(s.child1));
+			PANE.setPanePropWidths (MMGR.getHeatMap().getDividerPref(), s.child2, s.child1, s.divider);
+			SMM.switchPaneToSummary (PANE.findPaneLocation(s.child2));
 			setTimeout (() => {
-			    DMM.switchPaneToDetail (PANE.findPaneLocation(s.child2));
+			    DMM.switchPaneToDetail (PANE.findPaneLocation(s.child1));
 			    SRCH.doInitialSearch();
+			    PANE.resizePane (SUM.chmElement);
 			}, 32);
 		} else if (UTIL.showSummaryPane) {
 			SMM.switchPaneToSummary (initialLoc);
@@ -408,7 +412,7 @@
 	    if ((UTIL.mapId === "") && (UTIL.mapNameRef === "") && (MMGR.embeddedMapName === null)) {
 		    //In local mode, need user to select the zip file with data (required by browser security)
 		    var chmFileItem  = document.getElementById('fileButton');
-		    document.getElementById('fileOpen_btn').style.display = '';
+		    document.getElementById('menuFileOpen').style.display = '';
 		    document.getElementById('detail_buttons').style.display = 'none';
 		    chmFileItem.style.display = '';
 		    chmFileItem.addEventListener('change', loadFileModeCHM, false);
@@ -599,7 +603,7 @@
 	    DEV.setMouseDown (false);
 	    MMGR.initAxisLabels();
 	    UTIL.removeElementsByClass("DynamicLabel");
-	    SRCH.clearCurrentSearchItem ();
+	    SRCH.clearAllCurrentSearchItems ();
     }
 
     /**********************************************************************************
@@ -713,22 +717,92 @@
      **********************************************************************************/
     UIMGR.widgetHelp = function() {
 	    const heatMap = MMGR.getHeatMap();
+	    const isMapLoaded = heatMap && heatMap.isMapLoaded();
 	    const logos = document.getElementById('ngchmLogos');
 	    // Logos are not included in the widgetized version.
 	    if (logos) { logos.style.display = ''; }
 	    UHM.initMessageBox();
 	    UHM.setMessageBoxHeader("About NG-CHM Viewer");
-	    var mapVersion = ((heatMap !== null) && heatMap.isMapLoaded()) === true ? heatMap.getMapInformation().version_id : "N/A";
-	    var text = "<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.</p>";
-	    text = text + "<p><a href='https://bioinformatics.mdanderson.org/public-software/ngchm/' target='_blank'>Additional NG-CHM Information and Help</a></p>";
-	    text = text + "<p><b>Software Version: </b>" + COMPAT.version+"</p>";
-	    text = text + "<p><b>Linkouts Version: </b>" + linkouts.getVersion()+"</p>";
-	    text = text + "<p><b>Map Version: </b>" +mapVersion+"</p>";
-	    text = text + "<p><b>Citation:</b> Bradley M. Broom, Michael C. Ryan, Robert E. Brown, Futa Ikeda, Mark Stucky, David W. Kane, James Melott, Chris Wakefield, Tod D. Casasent, Rehan Akbani and John N. Weinstein, A Galaxy Implementation of Next-Generation Clustered Heatmaps for Interactive Exploration of Molecular Profiling Data. Cancer Research 77(21): e23-e26 (2017): <a href='http://cancerres.aacrjournals.org/content/77/21/e23' target='_blank'>http://cancerres.aacrjournals.org/content/77/21/e23</a></p>";
-	    text = text + "<p>The NG-CHM Viewer is also available for a variety of other platforms.</p>";
-	    UHM.setMessageBoxText(text);
-	    UHM.setMessageBoxButton('close', { type: 'image', src: UTIL.imageTable.closeButton, alt: "Close button", default: true });
+	    const mapVersion = isMapLoaded ? heatMap.getMapInformation().version_id : "N/A";
+	    const messageBox = UHM.getMessageTextBox ();
+	    let text = "<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.</p>";
+	    messageBox.innerHTML = text;
+
+	    messageBox.appendChild (UTIL.newElement ('P', {}, 'Links to additional NG-CHM information and help:'));
+	    const links = UTIL.newElement ('UL');
+	    addLink (links, 'https://bioinformatics.mdanderson.org/public-software/ngchm/', 'NG-CHM Project Page');
+	    addLink (links, 'https://www.ngchm.net', 'NG-CHM News and Updates');
+	    addLink (links, 'https://bioinformatics.mdanderson.org/public-software/ngchm/#video-tutorials', 'Video tutorials');
+	    messageBox.appendChild (links);
+
+	    const versions = UTIL.newElement ('TABLE');
+	    addVersion (versions, "Software Version", COMPAT.version);
+	    if (heatMap) {
+		addVersion (versions, "Linkouts Version", linkouts.getVersion());
+		addVersion (versions, "Map Version", mapVersion);
+	    }
+	    messageBox.appendChild (versions);
+
+	    messageBox.appendChild (UTIL.newElement ('P', {}, [
+		"<b>Citation:</b>",
+		' Michael C. Ryan, Mark Stucky, Chris Wakefield, James M. Melott, Rehan Akbani, John N. Weinstein, and Bradley M. Broom,',
+	        ' Interactive Clustered Heat Map Builder: An easy web-based tool for creating sophisticated clustered heat maps.',
+		UTIL.newElement ('A', { href: 'https://doi.org/10.12688/f1000research.20590.2', target: '_blank' }, [
+		    'F1000Research 2019, 8 (ISCB Comm J):1750',
+		]),
+		".",
+	    ]));
+	    messageBox.appendChild (UTIL.newElement ('P', {}, [
+		"The NG-CHM Viewer can be downloaded for stand-alone use. It is also incorporated into a variety of other platforms.",
+	    ]));
+	    UHM.setMessageBoxButton('viewer', {
+		type: 'text',
+		text: 'Download viewer',
+		tooltip: 'Downloads a copy of the NG-CHM viewer',
+	    }, function () {
+		UHM.messageBoxCancel();
+		MMGR.zipAppDownload();
+	    });
+	    UHM.setMessageBoxButton('tour', {
+		type: 'text',
+		text: 'Take a tour',
+		tooltip: 'Displays an interactive tour of the user interface elements',
+	    }, function () {
+		UHM.messageBoxCancel ();
+		TOUR.showTour(null);
+	    });
+	    UHM.setMessageBoxButton('plugins', {
+		type: 'text',
+		text: 'About Plugins',
+		tooltip: 'Displays details of loaded/available plugins',
+		disabled: !isMapLoaded,
+		disabledReason: 'no map is loaded',
+	    }, function () {
+		UHM.messageBoxCancel ();
+		localFunctions.openLinkoutHelp();
+	    });
+	    UHM.setMessageBoxButton('close', {
+		type: 'text',
+		text: 'Close',
+		tooltip: 'Closes this dialog',
+		default: true,
+	    });
 	    UHM.displayMessageBox();
+
+	    function addLink (links, href, text) {
+		const LI = UTIL.newElement ('LI', {}, [
+		    UTIL.newElement ('A', { href, target: '_blank' }, [ text ]),
+		]);
+		links.appendChild (LI);
+	    }
+
+	    function addVersion (versions, name, value) {
+		const row = UTIL.newElement('TR', {}, [
+			UTIL.newElement ('TD', {}, name + ':'),
+			UTIL.newElement ('TD', {}, value)
+			]);
+		versions.appendChild (row);
+	    }
     };
 
     function openHamburgerMenu (e) {
@@ -738,10 +812,6 @@
 	    menu.style.top = parentTop + 'px';
 	    if (menu.style.display === 'none') {
 		    menu.style.display = '';
-		    if (MMGR.getHeatMap().source() !== MMGR.WEB_SOURCE) {
-			    document.getElementById('menuAbout').style.display = 'none';
-			    document.getElementById('menuSpaceAbout').style.display = 'none';
-		    }
 		    // Disable Save as PDF menu item if no heatmap window visble.
 		    const pdfMenuItem = document.getElementById('menuPdf');
 		    if (PDF.canGeneratePdf()) {
@@ -792,7 +862,9 @@
 				    text = "<br>You have elected to save changes made to this heat map.<br><br>You have the option to save these changes to the original map OR to save them to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
 				    UHM.setMessageBoxText(text);
 				    addSaveToNgchmButton();
-				    UHM.setMessageBoxButton(2, "images/saveOriginal.png", "Save Original Heat Map", saveHeatMapToServer);
+				    UHM.setMessageBoxButton('saveOriginal',
+					    { type: 'text', text: "Save original", },
+					    saveHeatMapToServer);
 				    addCancelSaveButton();
 			    }
 		    }
@@ -826,9 +898,16 @@
 	    cancelFunc || UHM.messageBoxCancel);
     }
 
+    const aboutButton = document.getElementById ('introButton');
+    aboutButton.onclick = (ev) => {
+	UIMGR.widgetHelp();
+	ev.stopPropagation();
+    };
+
     const hamburgerButton = document.getElementById('barMenu_btn');
     hamburgerButton.onclick = (ev) => {
 	openHamburgerMenu(ev.target);
+	ev.stopPropagation();
     };
 
     (function() {
@@ -844,6 +923,7 @@
 	 * installed for the NG-CHM instance. Then the logic to display the linkout
 	 * help box is called.
 	 **********************************************************************************/
+	localFunctions.openLinkoutHelp = openLinkoutHelp;
 	function openLinkoutHelp () {
 	    UHM.closeMenu();
 	    const mapLinksTbl = openMapLinkoutsHelp();
@@ -1042,9 +1122,8 @@
 		linkBox.classList.add ('hide');
 		linkBox.style.top = (headerpanel.offsetTop + 15) + 'px';
 		linkBox.style.right = "5%";
-		linkBoxHdr.innerHTML = "NG-CHM Plug-in Information";
-		if (linkBoxHdr.querySelector(".closeX")) { linkBoxHdr.querySelector(".closeX").remove();}
-		linkBoxHdr.appendChild(UHM.createCloseX(linkBoxCancel));
+		const closer = linkBoxHdr.querySelector("button.red");
+		if (closer) closer.onclick = linkBoxCancel;
 		linkBoxTxt.innerHTML = "";
 		linkBoxTxt.appendChild(mapLinksTbl);
 		mapLinksTbl.style.width = '100%';
@@ -1052,11 +1131,9 @@
 		linkBoxAllTxt.appendChild(allLinksTbl);
 		allLinksTbl.style.width = '100%';
 		linkBoxSizing();
-		hideAllLinks();
-		showMapPlugins();
+		UTIL.showTab ('mapLinks_btn');
 		linkBox.classList.remove ('hide');
 		linkBox.style.left = ((window.innerWidth - linkBox.offsetWidth) / 2) + 'px';
-	//	UTIL.dragElement(document.getElementById("linkBox"));
 	}
 
 	/**********************************************************************************
@@ -1064,23 +1141,8 @@
 	 * help popup window.
 	 **********************************************************************************/
 	function linkBoxCancel () {
-		var linkBox = document.getElementById('linkBox');
+		const linkBox = document.getElementById('linkBox');
 		linkBox.classList.add ('hide');
-	}
-
-	/**********************************************************************************
-	 * FUNCTION - hideAllLinks: The purpose of this function is to hide the linkout
-	 * help boxes and reset the tabs associated with them.
-	 **********************************************************************************/
-	function hideAllLinks () {
-		var linkBoxTxt = document.getElementById('linkBoxTxt');
-		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
-		var mapLinksBtn = document.getElementById("mapLinks_btn");
-		var allLinksBtn = document.getElementById("allLinks_btn");
-		mapLinksBtn.setAttribute('src', 'images/mapLinksOff.png');
-		linkBoxTxt.classList.add ('hide');
-		allLinksBtn.setAttribute('src', 'images/allLinksOff.png');
-		linkBoxAllTxt.classList.add ('hide');
 	}
 
 	/**********************************************************************************
@@ -1126,47 +1188,12 @@
 		}
 	}
 
-	/**********************************************************************************
-	 * FUNCTION - showMapPlugins: The purpose of this function is to show the map specific
-	 * plugins panel within the linkout help screen and toggle the appropriate
-	 * tab button.
-	 **********************************************************************************/
-	function showMapPlugins () {
-		//Turn off all tabs
-		hideAllLinks();
-		//Turn on map links div
-		var linkBoxTxt = document.getElementById('linkBoxTxt');
-		var mapLinksBtn = document.getElementById("mapLinks_btn");
-		mapLinksBtn.setAttribute('src', 'images/mapLinksOn.png');
-		linkBoxTxt.classList.remove('hide');
-	}
-
-	/**********************************************************************************
-	 * FUNCTION - showAllPlugins: The purpose of this function is to show the all
-	 * plugins installed panel within the linkout help screen and toggle the appropriate
-	 * tab button.
-	 **********************************************************************************/
-	function showAllPlugins () {
-		//Turn off all tabs
-		hideAllLinks();
-		//Turn on all links div
-		var linkBoxAllTxt = document.getElementById('linkBoxAllTxt');
-		var allLinksBtn = document.getElementById("allLinks_btn");
-		allLinksBtn.setAttribute('src', 'images/allLinksOn.png');
-		linkBoxAllTxt.classList.remove ('hide');
-	}
-
-
-	document.getElementById('menuLink').onclick = () => {
-	    openLinkoutHelp();
-	};
-
 	document.getElementById('mapLinks_btn').onclick = () => {
-	    showMapPlugins();
+	    UTIL.showTab ('mapLinks_btn');
 	};
 
 	document.getElementById('allLinks_btn').onclick = () => {
-	    showAllPlugins();
+	    UTIL.showTab ('allLinks_btn');
 	};
 
 	document.getElementById('linkBoxFootCloseButton').onclick = () => {
@@ -1175,21 +1202,7 @@
 
     })();
 
-    document.getElementById('menuHelp').onclick = () => {
-	UHM.closeMenu();
-	if (MMGR.getHeatMap().source() !== MMGR.WEB_SOURCE) {
-	    UIMGR.widgetHelp();
-	} else {
-	    let url = location.origin+location.pathname;
-	    window.open(url.replace("chm.html", "chmHelp.html"),'_blank');
-	}
-    };
-
-    document.getElementById('aboutMenu_btn').onclick = (ev) => {
-	UIMGR.widgetHelp();
-    };
-
-    document.getElementById('menuAbout').onclick = () => {
+    document.getElementById('aboutButton').onclick = (ev) => {
 	UIMGR.widgetHelp();
     };
 
@@ -1197,7 +1210,7 @@
 	saveHeatMapChanges();
     };
 
-    document.getElementById('fileOpen_btn').onclick = () => {
+    document.getElementById('menuFileOpen').onclick = () => {
 	openFileToggle();
     };
 
@@ -1271,6 +1284,8 @@
 					} else {
 					    mapItem.currentCol--;
 					}
+					DVW.checkCol(mapItem);
+					SRCH.enableDisableSearchButtons (mapItem);
 				}
 				break;
 			case 'ArrowUp': // up key
@@ -1285,6 +1300,8 @@
 					} else {
 					    mapItem.currentRow--;
 					}
+					DVW.checkRow(mapItem);
+					SRCH.enableDisableSearchButtons (mapItem);
 				}
 				break;
 			case 'ArrowRight': // right key
@@ -1301,6 +1318,8 @@
 					} else {
 					    mapItem.currentCol++;
 					}
+					DVW.checkCol(mapItem);
+					SRCH.enableDisableSearchButtons (mapItem);
 				}
 				break;
 			case 'ArrowDown': // down key
@@ -1315,6 +1334,8 @@
 					} else {
 					    mapItem.currentRow++;
 					}
+					DVW.checkRow(mapItem);
+					SRCH.enableDisableSearchButtons (mapItem);
 				}
 				break;
 			case 'PageUp': // page up
@@ -1331,6 +1352,7 @@
 				} else {
 					DEV.zoomAnimation(mapItem.chm);
 				}
+				SRCH.enableDisableSearchButtons (mapItem);
 				break;
 			case 'PageDown': // page down
 				e.preventDefault();
@@ -1346,6 +1368,7 @@
 				} else {
 					DEV.detailDataZoomOut(mapItem.chm);
 				}
+				SRCH.enableDisableSearchButtons (mapItem);
 				break;
 			case 'F2': // F2 key
 				if (FLICK.flickIsOn()) {
@@ -1371,7 +1394,8 @@
 		}
 		DVW.checkRow(mapItem);
 		DVW.checkCol(mapItem);
-	    mapItem.updateSelection();
+		mapItem.updateSelection();
+		SRCH.enableDisableSearchButtons (mapItem);
 	} else {
 	    if ((document.activeElement.id === "search_text") && (e.key === 'Enter')) {
 		    SRCH.detailSearch();

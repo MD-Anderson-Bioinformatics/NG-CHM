@@ -141,7 +141,7 @@
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Warning: Unable to save some plugin data");
 	UHM.setMessageBoxText(warningText);
-	UHM.setMessageBoxButton(1, UTIL.imageTable.okButton, 'OK Button');
+	UHM.setMessageBoxButton('ok', { type: 'text', text: 'OK', }, 'OK Button');
 	UHM.displayMessageBox();
     };
 

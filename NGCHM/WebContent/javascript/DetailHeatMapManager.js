@@ -34,6 +34,8 @@ DMM.nextMapNumber = 1;
 	  rowLabelFont: 0, colLabelFont: 0,colClassLabelFont: 0, rowClassLabelFont: 0, labelElements: {}, oldLabelElements: {}, tmpLabelSizeElements: [], 
 	  labelSizeWidthCalcPool: [], labelSizeCache: {},zoomOutNormal: null, zoomOutPos: null, subDendroMode: 'none',
 	  selectedIsDendrogram: false,
+	  searchOrientation: 'row',
+	  allowedOrientations: 'any',
 	  colClassScale: 1.5,  // Allow the size of covariate bars in detail maps to vary relative to the size of the detail map.
 	  rowClassScale: 1.5,  // Constants for now. Should adjust so that absolute bar sizes do not vary excessively.
 
@@ -264,17 +266,14 @@ DMM.switchToPrimary = function (chm) {
 	const newPrimaryLoc = PANE.findPaneLocation(chm);
 	const mapItem = DVW.getMapItemFromChm(chm);
 	for (let i=0; i<DVW.detailMaps.length;i++ ) {
-		if (DVW.detailMaps[i].chm === chm) {
+		const item = DVW.detailMaps[i];
+		if (item.chm === chm) {
 			DMM.setPrimaryDetailMap(mapItem);
-			PANE.setPaneTitle(newPrimaryLoc, 'Heat Map Detail - Primary');
-		} else {
-			const item = DVW.detailMaps[i];
-			if (item.version === 'P') {
-				const oldPrimaryLoc = PANE.findPaneLocation(item.chm);
-				item.version = 'S';
-				PANE.setPaneTitle(oldPrimaryLoc, 'Heat Map Detail - Ver '+item.panelNbr);
-				document.getElementById('primary_btn'+DVW.detailMaps[i].panelNbr).style.display = '';
-			}
+		} else if (item.version === 'P') {
+			const oldPrimaryLoc = PANE.findPaneLocation(item.chm);
+			const makePrimaryButton = oldPrimaryLoc.paneHeader.querySelector('.make-primary');
+			item.version = 'S';
+			makePrimaryButton.dataset.version = 'S';
 		}
 	}
 }
@@ -287,7 +286,9 @@ DMM.switchToPrimary = function (chm) {
 DMM.setPrimaryDetailMap = function (mapItem) {
 	mapItem.version = 'P';
 	DVW.primaryMap = mapItem;
-	document.getElementById('primary_btn'+mapItem.panelNbr).style.display = 'none';
+	const pane = PANE.findPaneLocation (mapItem.chm);
+	const makePrimaryButton = pane.paneHeader.querySelector('.make-primary');
+	makePrimaryButton.dataset.version = 'P';
 	SUM.drawLeftCanvasBox ();
 	if (SUM.rowDendro) {
 	    SUM.rowDendro.clearSelectedRegion();
@@ -479,16 +480,14 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		}
 		SUM.drawLeftCanvasBox();
 		DEV.addEvents(paneId);
-		if (isPrimary) {
-			document.getElementById('primary_btn'+mapNumber).style.display = 'none';
-			PANE.setPaneTitle (loc, 'Heat Map Detail - Primary');
-		} else {
-			document.getElementById('primary_btn'+mapNumber).style.display = '';
-			PANE.setPaneTitle (loc, 'Heat Map Detail - Ver ' + mapNumber);
-		}
+		document.getElementById('primary_btn'+mapNumber).dataset.version = isPrimary ? 'P' : 'S';
+		PANE.setPaneTitle (loc, 'Heat Map Detail');
 		PANE.registerPaneEventHandler (loc.pane, 'empty', emptyDetailPane);
 		PANE.registerPaneEventHandler (loc.pane, 'resize', resizeDetailPane);
 		DET.setDrawDetailTimeout (mapItem, 0, false);
+		SRCH.enableDisableSearchButtons (mapItem);
+		loc.pane.dataset.title = 'Detail Heat Map';
+		loc.pane.dataset.intro = 'This panel shows a detailed (zoomed) view of a section of the heat map.';
 	}
 
 	/*

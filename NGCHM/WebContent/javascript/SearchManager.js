@@ -13,9 +13,10 @@
     const DET = NgChm.importNS('NgChm.DET');
     const UHM = NgChm.importNS('NgChm.UHM');
     const PIM = NgChm.importNS('NgChm.PIM');
+    const PANE = NgChm.importNS('NgChm.Pane');
 
-    SRCH.clearCurrentSearchItem = function() {
-	SRCHSTATE.clearCurrentSearchItem();
+    SRCH.clearAllCurrentSearchItems = function() {
+	SRCHSTATE.clearAllCurrentSearchItems();
     };
 
     SRCH.setAxisSearchResults = function(axis, left, right) {
@@ -49,11 +50,7 @@
 	searchOn.onchange = () => searchOnSel();
 
 	// Connect UI elements to onclick handlers.
-	let e = document.getElementById('next_btn');
-	if (e) e.onclick = () => searchNext(false);
-	e = document.getElementById('prev_btn');
-	if (e) e.onclick = () => searchPrev(false);
-	e = document.getElementById('cancel_btn');
+	let e = document.getElementById('cancel_btn');
 	if (e) e.onclick = () => SRCH.clearSearch();
 	e = document.getElementById('go_btn');
 	if (e) e.onclick = () => SRCH.detailSearch();
@@ -293,7 +290,7 @@
 	    SRCHSTATE.setAxisSearchResultsVec(axis, results);
 	    searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
 	}
-	searchNext(true);
+	if (DVW.primaryMap) searchNext(true, DVW.primaryMap);
 	return validSearch;
     };
 
@@ -549,21 +546,23 @@
 		return;
 	}
 
-	searchNext(true);
 	searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
-	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
-	if (currentSearchItem.index && currentSearchItem.axis){
-		if (itemsFound.length != tmpSearchItems.length && itemsFound.length > 0) {
-			searchElement.style.backgroundColor = "rgba(255,255,0,0.3)";
-		} else if (itemsFound.length == 0){
-			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
-		}
-	} else {
-		if (searchString != null && searchString.length> 0) {
-			searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
-		}	
-		//Clear previous matches when search is empty.
-		DET.updateSelections();
+	if (DVW.primaryMap) {
+	    searchNext(true, DVW.primaryMap);
+	    const currentSearchItem = SRCHSTATE.getCurrentSearchItem(DVW.primaryMap);
+	    if (currentSearchItem.index && currentSearchItem.axis){
+		    if (itemsFound.length != tmpSearchItems.length && itemsFound.length > 0) {
+			    searchElement.style.backgroundColor = "rgba(255,255,0,0.3)";
+		    } else if (itemsFound.length == 0){
+			    searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
+		    }
+	    } else {
+		    if (searchString != null && searchString.length> 0) {
+			    searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
+		    }
+		    //Clear previous matches when search is empty.
+		    DET.updateSelections();
+	    }
 	}
     }
 
@@ -609,22 +608,23 @@
      * next search item, set it as the current search item, and move the focus of
      * the heat map detail panel to that item.
      ***********************************************************************************/
-    function searchNext (firstTime) {
-	const searchAxis = document.getElementById('search_target').value;
-	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
+    SRCH.searchNext = searchNext;
+    function searchNext (firstTime, mapItem) {
+	const searchAxis = mapItem.allowedOrientations;
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
 
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	if (firstTime || !currentSearchItem["index"] || !currentSearchItem["axis"]) {
-	    // Start new search.  If searchAxis == "Both", start on the columns.
-	    findNextSearchItem(-1, searchAxis === "Column" ? "Column" : "Row");
-	} else if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
+	    // Start new search.  If searchAxis == "any", start on the rows.
+	    findNextSearchItem(mapItem, -1, searchAxis === "column" ? "Column" : "Row");
+	} else if ((searchAxis === 'any') || (currentSearchItem["axis"].toLowerCase() === searchAxis)) {
 	    // Continue search on current axis if permitted.
-	    findNextSearchItem(currentSearchItem["index"], currentSearchItem["axis"]);
+	    findNextSearchItem(mapItem, currentSearchItem["index"], currentSearchItem["axis"]);
 	} else {
 	    // Start search from beginning of requested axis otherwise.
-	    findNextSearchItem(-1, searchAxis);
+	    findNextSearchItem(mapItem, -1, searchAxis == "column" ? "Column" : "Row");
 	}
-	goToCurrentSearchItem();
+	goToCurrentSearchItem(mapItem);
     }
 
 
@@ -632,9 +632,8 @@
      * Internal FUNCTION - findNextAxisSearchItem: Returns the index of the next search item
      * after index on the specified axis.  If no search item found, returns -1.
      ***********************************************************************************/
-    function findNextAxisSearchItem (axis, index) {
-	const heatMap = MMGR.getHeatMap();
-	const axisLength = heatMap.getAxisLabels(axis).labels.length;
+    function findNextAxisSearchItem (mapItem, axis, index) {
+	const axisLength = mapItem.heatMap.getAxisLabels(axis).labels.length;
         const axisItems = SRCHSTATE.getSearchResults(axis);
 	while( ++index <= axisLength) {
 	    if (axisItems[index]) return index;
@@ -647,11 +646,11 @@
      * before index on the specified axis.  If index is -1, start from the last index.
      * If no search item found, returns -1.
      ***********************************************************************************/
-    function findPrevAxisSearchItem (axis, index) {
+    function findPrevAxisSearchItem (mapItem, axis, index) {
 	if (!axis) return -1;
         const axisItems = SRCHSTATE.getSearchResults(axis);
 	if (index == -1) {
-	    index = MMGR.getHeatMap().getAxisLabels(axis).labels.length + 1;
+	    index = mapItem.heatMap.getAxisLabels(axis).labels.length + 1;
 	}
 	while( --index >= 0) {
 	   if (axisItems[index]) return index;
@@ -664,31 +663,31 @@
      * next search item, based upon the search target (row/col/both) and set that item
      * as the current search item.
      ***********************************************************************************/
-    function findNextSearchItem (index, axis) {
+    function findNextSearchItem (mapItem, index, axis) {
 
 	// Find next search item on current axis.
-	let curr = findNextAxisSearchItem (axis, index);
+	let curr = findNextAxisSearchItem (mapItem, axis, index);
 	if (curr >= 0) {
 	        // Found it. Set search item.
-		SRCHSTATE.setSearchItem(axis, curr);
+		SRCHSTATE.setSearchItem(mapItem, axis, curr);
 	} else {
-		const searchTarget = document.getElementById('search_target').value;
+		const allowedAxes = mapItem.allowedOrientations;
 	        // if no more searchResults exist in first axis, move to other axis if possible.
-		if (searchTarget === 'Both') {
+		if (allowedAxes === 'any') {
 			const otherAxis = axis == "Row" ? "Column" : "Row";
-			curr = findNextAxisSearchItem (otherAxis, -1);
+			curr = findNextAxisSearchItem (mapItem, otherAxis, -1);
 			if (curr >= 0) {
 				// Found it. Set search item.
-				SRCHSTATE.setSearchItem(otherAxis, curr);
+				SRCHSTATE.setSearchItem(mapItem, otherAxis, curr);
 				return;
 			}
 		}
 		// Either can't search other axis, or no matches on that axis.
 		// Try from beginning of current axis.
-		curr = findNextAxisSearchItem (axis, -1);
+		curr = findNextAxisSearchItem (mapItem, axis, -1);
 		if (curr >= 0) {
 			// Found it. Set search item.
-			SRCHSTATE.setSearchItem(axis, curr);
+			SRCHSTATE.setSearchItem(mapItem, axis, curr);
 		}
 	}
     }
@@ -698,21 +697,22 @@
      * previous search item, set it as the current search item, and move the focus of
      * the heat map detail panel to that item.
      ***********************************************************************************/
-    function searchPrev () {
+    SRCH.searchPrev = searchPrev;
+    function searchPrev (mapItem) {
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
-	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
 	const searchAxis = document.getElementById('search_target').value;
 	if (!currentSearchItem["index"] || !currentSearchItem["axis"]) {
 	    // No search result.
 	    return;
 	} else if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
 	    // Continue on current search axis if permitted.
-	    findPrevSearchItem(currentSearchItem["index"],currentSearchItem["axis"]);
+	    findPrevSearchItem(mapItem, currentSearchItem["index"],currentSearchItem["axis"]);
 	} else {
 	    // Start new search on requested axis.
-	    findPrevSearchItem(-1, searchAxis);
+	    findPrevSearchItem(mapItem, -1, searchAxis);
 	}
-	goToCurrentSearchItem();
+	goToCurrentSearchItem(mapItem);
     }
 
     /**********************************************************************************
@@ -720,56 +720,172 @@
      * previous search item, based upon the search target (row/col/both) and set that item
      * as the current search item.
      ***********************************************************************************/
-    function findPrevSearchItem (index, axis) {
+    function findPrevSearchItem (mapItem, index, axis) {
 	const heatMap = MMGR.getHeatMap();
 	const axisLength = heatMap.getAxisLabels(axis).labels.length;
-	let curr = findPrevAxisSearchItem (axis, index);
+	let curr = findPrevAxisSearchItem (mapItem, axis, index);
 	if (curr < 0) { // if no searchResults exist in first axis, move to other axis
 		if (document.getElementById('search_target').value === 'Both') { 
 			const otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
-			curr = findPrevAxisSearchItem (otherAxis, -1);
+			curr = findPrevAxisSearchItem (mapItem, otherAxis, -1);
 			if (curr > 0){
-				SRCHSTATE.setSearchItem(otherAxis, curr);
+				SRCHSTATE.setSearchItem(mapItem, otherAxis, curr);
 				return;
 			}
 		}
 		// Either other axis locked, or no matches on other axis.
 		// Try from end of current axis.
-		curr = findPrevAxisSearchItem (axis, -1);
+		curr = findPrevAxisSearchItem (mapItem, axis, -1);
 		if (curr >= 0) {
-			SRCHSTATE.setSearchItem(axis, curr);
+			SRCHSTATE.setSearchItem(mapItem, axis, curr);
 		}
 	} else {
-		SRCHSTATE.setSearchItem(axis, curr);
+		SRCHSTATE.setSearchItem(mapItem, axis, curr);
 	}
+    }
+
+    const orientMenuItems = [ 'Any axis', 'Rows', 'Columns' ];
+    const orientMenuIcons = [ 'icon-small-circle', 'icon-horizontal-bar', 'icon-horizontal-bar' ];
+    const orientMenuValues = [ 'any', 'row', 'column' ];
+    const orientMenuRotate = [ '', '90deg', '' ];
+    SRCH.showOrientDialog = showOrientDialog;
+    function showOrientDialog (mapItem, button) {
+	const btnPosn = button.getBoundingClientRect();
+	const dialog = UTIL.newElement ('DIV.menuPanel.remove-on-click');
+	dialog.style.position = 'absolute';
+	dialog.style.top = (btnPosn.y + btnPosn.height+5) + 'px';
+	dialog.style.left = btnPosn.x + 'px';
+	for (let i = 0; i < 3; i++) {
+	    const menuIcon = UTIL.newSvgMenuItem (orientMenuIcons[i]);
+	    if (orientMenuRotate[i] != '') menuIcon.firstChild.style.rotate = orientMenuRotate[i];
+	    const menuItem = UTIL.newElement('DIV.menuItem', { dataset: {  orient: orientMenuValues[i] }}, [ menuIcon, orientMenuItems[i]]);
+	    dialog.appendChild (menuItem);
+	}
+	dialog.onclick = ev => {
+	    let target = ev.target;
+	    while (target && !target.classList.contains('menuPanel') && !target.classList.contains('menuItem')) {
+		target = target.parentElement;
+	    }
+	    if (target) {
+		if (!target.classList.contains('menuPanel')) {
+		    const idx = orientMenuValues.indexOf (target.dataset.orient);
+		    if (idx < 0) {
+			console.error ('Illegal orientation: ' + target.dataset.orient);
+			return;
+		    }
+		    setAllowedMapOrientations (mapItem, button, idx);
+		}
+		while (target && !target.classList.contains('menuPanel')) {
+		    target = target.parentElement;
+		}
+		if (target) {
+		    document.body.removeChild (target);
+		}
+	    }
+	}
+	document.body.appendChild (dialog);
+    }
+
+    SRCH.showNextOrientation = showNextOrientation;
+    function showNextOrientation (mapItem, button) {
+	const idx = orientMenuValues.indexOf (mapItem.allowedOrientations);
+	if (idx < 0) {
+	    console.error ('mapItem has unknown orientation: ' + mapItem.allowedOrientations);
+	    return;
+	}
+	const newidx = (idx+1) % orientMenuValues.length;
+	setAllowedMapOrientations (mapItem, button, newidx);
+    }
+
+    function setAllowedMapOrientations (mapItem, button, idx) {
+	const neworient = orientMenuValues[idx];
+	mapItem.allowedOrientations = neworient;
+	if (neworient != 'any') {
+	    setSearchButtonsAxis (mapItem, neworient);
+	    mapItem.searchOrientation = neworient;
+	}
+	button.innerHTML = "<SVG width='1em' height='1em'><USE href='icons.svg#" + orientMenuIcons[idx] + "'/></SVG>";
+	button.style.rotate = orientMenuRotate[idx];
+	enableDisableSearchButtons (mapItem);
+    }
+
+    SRCH.enableDisableAllSearchButtons = enableDisableAllSearchButtons;
+    function enableDisableAllSearchButtons (mapItem) {
+	DVW.detailMaps.forEach (enableDisableSearchButtons);
+    }
+
+    SRCH.enableDisableSearchButtons = enableDisableSearchButtons;
+    function enableDisableSearchButtons (mapItem) {
+	const pane = PANE.findPaneLocation (mapItem.chm).pane;
+	const srchPrev = pane.getElementsByClassName ('srchPrev')[0];
+	const srchNext = pane.getElementsByClassName ('srchNext')[0];
+
+	if (mapItem.allowedOrientations == 'row') {
+	    const rowOK = anyOutsideSearchResults (SRCHSTATE.getAxisSearchResults('row'), mapItem.currentRow, mapItem.dataPerCol);
+	    srchPrev.disabled = !rowOK;
+	    srchNext.disabled = !rowOK;
+	} else if (mapItem.allowedOrientations == 'column') {
+	    const colOK = anyOutsideSearchResults (SRCHSTATE.getAxisSearchResults('column'), mapItem.currentCol, mapItem.dataPerRow);
+	    srchPrev.disabled = !colOK;
+	    srchNext.disabled = !colOK;
+	} else {
+	    const rowOK = anyOutsideSearchResults (SRCHSTATE.getAxisSearchResults('row'), mapItem.currentRow, mapItem.dataPerCol);
+	    const colOK = anyOutsideSearchResults (SRCHSTATE.getAxisSearchResults('column'), mapItem.currentCol, mapItem.dataPerRow);
+	    srchPrev.disabled = !rowOK && !colOK;
+	    srchNext.disabled = !rowOK && !colOK;
+	}
+    }
+
+    function anyOutsideSearchResults (searchResults, first, count) {
+	const last = first + count - 1;
+	for (let i = 0; i < searchResults.length; i++) {
+	    if (searchResults[i] < first || searchResults[i] > last) {
+		return true;
+	    }
+	}
+	return false;
+    }
+
+    /* Set the orientation of the searchPrev and searchNext buttons of mapItem to match axis.
+     */
+    function setSearchButtonsAxis (mapItem, axis) {
+	if (axis == 'any') return;
+	const pane = PANE.findPaneLocation (mapItem.chm).pane;
+	const srchPrev = pane.getElementsByClassName ('srchPrev');
+	if (srchPrev.length > 0) srchPrev[0].style.rotate = MMGR.isRow(axis) ? '90deg' : '';
+	const srchNext = pane.getElementsByClassName ('srchNext');
+	if (srchNext.length > 0) srchNext[0].style.rotate = MMGR.isRow(axis) ? '90deg' : '';
     }
 
     /**********************************************************************************
      * Internal FUNCTION - goToCurrentSearchItem: The purpose of this function is to move the
      * focus of the detail heat map panel to the current search item.
      ***********************************************************************************/
-    function goToCurrentSearchItem () {
-	const mapItem = DVW.primaryMap;
+    function goToCurrentSearchItem (mapItem) {
+	mapItem = mapItem || DVW.primaryMap;
 	if (!mapItem) return;
-	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
+	const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
+
+	setSearchButtonsAxis (mapItem, currentSearchItem.axis);
 
 	if (currentSearchItem.axis == "Row") {
 		mapItem.currentRow = currentSearchItem.index;
 		if ((mapItem.mode == 'RIBBONV') && mapItem.selectedStart!= 0 && (mapItem.currentRow < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentRow)){
-			showSearchError(1);
+			showSearchError(1, currentSearchItem);
 		} else if (mapItem.mode == 'RIBBONV' && mapItem.selectedStart == 0){
-			showSearchError(2);
+			showSearchError(2, currentSearchItem);
 		} 
 		DVW.checkRow(mapItem);
 	} else if (currentSearchItem.axis == "Column"){
 		mapItem.currentCol = currentSearchItem.index;
 		if ((mapItem.mode == 'RIBBONH') && mapItem.selectedStart!= 0 && (mapItem.currentCol < mapItem.selectedStart-1 || mapItem.selectedStop-1 < mapItem.currentCol )){
-			showSearchError(1)
+			showSearchError(1, currentSearchItem)
 		} else if (mapItem.mode == 'RIBBONH' && mapItem.selectedStart == 0){
-			showSearchError(2);
+			showSearchError(2, currentSearchItem);
 		} 
 		DVW.checkCol(mapItem);
 	}
+	enableDisableSearchButtons (mapItem);
 	DET.updateSelections();
     }
 
@@ -781,27 +897,32 @@
      * next search item will move to the other axis.
      ***********************************************************************************/
     SRCH.clearSearch = function () {
-	const currentSearchItem = SRCHSTATE.getCurrentSearchItem();
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const searchTarget = document.getElementById('search_target').value;
 	SUM.clearSelectionMarks(searchTarget);
 	clearSearchRequest(searchTarget);
 	if (searchTarget === "Row") {
-		if (currentSearchItem["axis"] === "Row") {
-			findNextSearchItem(-1,"Column");
-			goToCurrentSearchItem();
-		}
+		DVW.detailMaps.forEach (mapItem => {
+		    const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
+		    if (currentSearchItem["axis"] === "Row") {
+			findNextSearchItem(mapItem, -1,"Column");
+			goToCurrentSearchItem(mapItem);
+		    }
+		});
 		SUM.rowDendro.clearSelectedBars();
 		SRCH.showSearchResults();
 	} else if (searchTarget === "Column") {
-		if (currentSearchItem["axis"] === "Column") {
-			findNextSearchItem(-1,"Row");
-			goToCurrentSearchItem();
-		}
+		DVW.detailMaps.forEach (mapItem => {
+		    const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
+		    if (currentSearchItem["axis"] === "Column") {
+			findNextSearchItem(mapItem, -1,"Row");
+			goToCurrentSearchItem(mapItem);
+		    }
+		});
 		SUM.colDendro.clearSelectedBars();
 		SRCH.showSearchResults();
 	} else {
-		SRCHSTATE.clearCurrentSearchItem();
+		SRCHSTATE.clearAllCurrentSearchItems();
 		DET.labelLastClicked = {};
 		SUM.rowDendro.clearSelectedBars();
 		SUM.colDendro.clearSelectedBars();
@@ -912,10 +1033,12 @@
     SRCH.showSearchResults = function (validSearch) {
 	const resultsCnts = getSearchResultsCounts();
 	if (resultsCnts[2] > 0) {
-		document.getElementById("search_display_text").innerHTML = "Found: Rows - " + resultsCnts[0] + " Columns - " + resultsCnts[1];
+		document.getElementById("search_display_text").innerHTML = "Selected: Rows - " + resultsCnts[0] + " Columns - " + resultsCnts[1];
+		enableDisableAllSearchButtons();
 	} else if ((typeof validSearch !== 'undefined') && (validSearch === false)) {
 		document.getElementById("search_display_text").innerHTML = "Invalid search expression entered";
 	} else {
+		enableDisableAllSearchButtons();
 		hideSearchResults();
 	}
     };
@@ -939,13 +1062,12 @@
 	return [ rowCount, colCount, rowCount+colCount ];
     }
 
-    function showSearchError (type) {
+    function showSearchError (type, searchItem) {
 	    var searchError = UHM.getDivElement('searchError');
 	    searchError.style.display = 'inherit';
 	    var searchBar = document.getElementById('search_text');
 	    searchError.style.top = (searchBar.offsetTop + searchBar.offsetHeight) + 'px';
 	    searchError.style.left = (searchBar.offsetLeft + searchBar.offsetWidth) + 'px';
-	    const searchItem = SRCHSTATE.getCurrentSearchItem();
 	    switch (type){
 		    case 0: searchError.innerHTML = "No matching labels found"; break;
 		    case 1: searchError.innerHTML = "Exit dendrogram selection to go to " + searchItem.label;break;

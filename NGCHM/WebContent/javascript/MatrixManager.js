@@ -1847,11 +1847,12 @@ let	wS = `const debug = ${debug};`;
 
     // Initiate download of NGCHM File Viewer application zip
     function downloadFileApplication () {
+	const heatMap = MMGR.getHeatMap();
 	if (typeof NgChm.galaxy !== 'undefined') {
 	    // Current viewer is embedded within Galaxy.
 	    // FIXME: BMB: Use a better way to determine Galaxy embedding.
 	    window.open("/plugins/visualizations/mda_heatmap_viz/static/ngChmApp.zip");
-	} else if (MMGR.getHeatMap().source() === MMGR.FILE_SOURCE) {
+	} else if (!heatMap || heatMap.source() === MMGR.FILE_SOURCE) {
 	    // Heat map came from a disk file, not from a server.
 	    // (This does not mean the viewer is not from a server, so this could be
 	    // refined further for that case i.e. the "api" condition might be more appropriate)
@@ -1880,15 +1881,21 @@ let	wS = `const debug = ${debug};`;
 	    UHM.initMessageBox();
 	    UHM.setMessageBoxHeader(title);
 	    UHM.setMessageBoxText(bodyText);
-	    UHM.setMessageBoxButton('download', "images/downloadViewer.png", "Download NG-CHM Viewer App", () => {
-		MMGR.zipAppDownload();
-		UHM.messageBoxCancel();
-	    });
+	    UHM.setMessageBoxButton(
+		'download',
+		{ type: 'text', text: "Download Viewer", },
+	        "Download viewer button",
+		() => {
+		    MMGR.zipAppDownload();
+		    UHM.messageBoxCancel();
+		}
+	    );
 	    UHM.setMessageBoxButton(
 		'cancel',
-		{ type: 'image', src: UTIL.imageTable.cancelSmall, default: true },
+		{ type: 'text', text: "Cancel", default: true },
 		"Cancel button",
-		UHM.messageBoxCancel);
+		UHM.messageBoxCancel
+	    );
 	    UHM.displayMessageBox();
     }
 
@@ -2319,24 +2326,20 @@ let	wS = `const debug = ${debug};`;
 	if (!flickInitialized) {
 	    const dl = heatMap.getDataLayers();
 	    const numLayers = Object.keys(dl).length;
-	    let maxDisplay = 0;
 	    if (numLayers > 1) {
-		const panelConfig = heatMap.getPanelConfiguration();
-		const flickInfo = panelConfig ? panelConfig.flickInfo : null;
 		const dls = new Array(numLayers);
 		const orderedKeys = new Array(numLayers);
 		for (let key in dl){
-		    const dlNext = +key.substring(2, key.length);
+		    const dlNext = +key.substring(2, key.length); // Requires data layer ids to be dl1, dl2, etc.
 		    orderedKeys[dlNext-1] = key;
 		    let displayName = dl[key].name;
-		    if (displayName.length > maxDisplay) {
-			maxDisplay = displayName.length;
-		    }
 		    if (displayName.length > 20) {
 			displayName = displayName.substring(0,17) + "...";
 		    }
 		    dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
 		}
+		const panelConfig = heatMap.getPanelConfiguration();
+		const flickInfo = panelConfig ? panelConfig.flickInfo : null;
 		if (flickInfo) {
 		    FLICK.enableFlicks (dls.join(""), flickInfo.flick1 || 'dl1', flickInfo.flick2 || 'dl1');
 		    const layer = FLICK.setFlickState (flickInfo.flick_btn_state);
@@ -2350,15 +2353,6 @@ let	wS = `const debug = ${debug};`;
 		    FLICK.disableFlicks();
 	    }
 	    flickInitialized = true;
-
-	    var gearBtnPanel = document.getElementById("pdf_gear");
-	    if (maxDisplay > 15) {
-		    gearBtnPanel.style.minWidth = '320px';
-	    } else if (maxDisplay === 0) {
-		    gearBtnPanel.style.minWidth = '80px';
-	    } else {
-		    gearBtnPanel.style.minWidth = '250px';
-	    }
 	}
     }
 
@@ -2381,11 +2375,7 @@ let	wS = `const debug = ${debug};`;
 
 	    // Populate the header's nameDiv.
 	    const nameDiv = document.getElementById("mapName");
-	    let mapName = heatMap.getMapInformation().name;
-	    if (mapName.length > 30){
-		    mapName = mapName.substring(0,27) + "...";
-	    }
-	    nameDiv.innerHTML = "<b>Map Name:</b>&ensp;"+mapName;
+	    nameDiv.innerHTML = heatMap.getMapInformation().name;
     }
 
 /**********************************************************************************

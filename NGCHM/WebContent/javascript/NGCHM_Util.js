@@ -90,6 +90,37 @@ UTIL.newTxt = function newTxt(txt) {
 	return document.createTextNode(txt);
 };
 
+// Create a new SVG icon button element.
+//
+// iconIds is one or more SVG symbol ids (separated by !) from icons.svg.
+// By default, all SVG elements are always visible.  The client is
+// responsible for the CSS required to show the SVGs selectively.
+//
+// The svgIds can be followed by an optional #id and .classes.
+// The attrs object defines additional attributes to be set on
+// the newSvgButton.  Note that all such decorations apply to
+// the button element, not to the SVG(s) contained therein.
+//
+UTIL.newSvgButton = newSvgButton;
+function newSvgButton (iconIds, attrs, fn) {
+    const classes = iconIds.split('.');
+    const names = classes.shift().split('#');
+    const svgs = names[0].split('!');
+    const button = UTIL.newElement ('BUTTON');
+    button.innerHTML = svgs.map(svg => '<SVG width="1em" height="1em"><USE href="icons.svg#' + svg + '"/></SVG>').join('');
+    return decorateElement (button, names, classes, attrs, [], fn);
+}
+
+UTIL.newSvgMenuItem = newSvgMenuItem;
+function newSvgMenuItem (iconIds, attrs, fn) {
+    const classes = iconIds.split('.');
+    const names = classes.shift().split('#');
+    const svgs = names[0].split('!');
+    const menuItem = UTIL.newElement ('DIV.menuSvg');
+    menuItem.innerHTML = svgs.map(svg => '<SVG width="1em" height="1em"><USE href="icons.svg#' + svg + '"/></SVG>').join('');
+    return decorateElement (menuItem, names, classes, attrs, [], fn);
+}
+
 // Create a new DOM element.
 //
 // Spec consists of an element tag name,
@@ -97,24 +128,32 @@ UTIL.newTxt = function newTxt(txt) {
 //     followed by any number of '.' and class id.
 // E.g. div#id.class1.class2
 //
-// Attrs is a dictionary of attributes to add to the new node.
+// Attrs is a dictionary of attributes to add to the new node.  If attrs contains
+// either style and/or dataset, the contents of those objects are added
+// individually to the corresponding objects on the DOM element.
 //
 // Content, if defined, is either a DOM node or an array of DOM nodes to
 // include as children of the new DOM element.
 //
 // Fn, if defined, is a function that is called with the new node as a
-// parameter after it's constructed but before it's returned.
+// parameter after it's constructed but before it's returned.  It must
+// return a DOM element.
 //
 UTIL.newElement = function newElement (spec, attrs, content, fn) {
 	const classes = spec.split('.');
 	const names = classes.shift().split('#');
+	const el = document.createElement(names[0]);
+
+	return decorateElement (el, names, classes, attrs, content, fn);
+};
+
+    function decorateElement (el, names, classes, attrs, content, fn) {
 	content = content || [];
 	if (!Array.isArray(content)) content = [content];
 	if (names.length > 2) {
-		console.log ({ m: 'UTIL.newElement: too many ids', spec, attrs, names });
-		throw new Error ('UTIL.newElement: too many ids');
+		console.log ({ m: 'UTIL.decorateElement: too many ids', spec, attrs, names });
+		throw new Error ('UTIL.decorateElement: too many ids');
 	}
-	const el = document.createElement(names[0]);
 	if (names.length > 1) {
 		el.setAttribute ('id', names[1]);
 	}
@@ -151,11 +190,11 @@ UTIL.newElement = function newElement (spec, attrs, content, fn) {
 		if (x instanceof HTMLElement) {
 			return x;
 		} else {
-			console.error (new Error('UTIL.newElement decorator function did not return a DOM node'));
+			console.error (new Error('UTIL.decorateElement decorator function did not return a DOM node'));
 		}
 	}
 	return el;
-};
+    }
 
 // Create a DOM fragment from an array of DOM nodes.
 UTIL.newFragment = function newFragement (nodes) {
@@ -174,6 +213,42 @@ UTIL.newButton = function newButton (buttonName, properties, handlers) {
 	}
 	return button;
 };
+
+    /**********************************************************************************
+     * FUNCTION - showTab: This function shows the tab identified by buttonId and hides
+     * all the other tabs in the group.
+     *
+     * Requires:
+     * - all tab buttons in the group must be contained in the same div (and nothing else)
+     * - each tab button has a data-for-tab attribute containing the id of the tab it
+     *   controls.
+     *
+     * This function:
+     * - adds the 'selected' class to the specified button and removes it from all other
+     *   buttons in the group.
+     * - removes the 'hide' class from the tab div identified by the data-for-tab attribute
+     *   of the specified button and adds it to the divs identified by the other buttons.
+     *
+     **********************************************************************************/
+    UTIL.showTab = showTab;
+    function showTab (buttonId) {
+	const btn = document.getElementById (buttonId);
+	if (!btn) console.error ('No tab button identified by buttonId:', { buttonId });
+	hideAllLinks (btn.parentElement);
+	const tab = btn.dataset.forTab && document.getElementById (btn.dataset.forTab);
+	if (!tab) console.error ('No tab identified by buttonId:', { buttonId });
+	tab.classList.remove('hide');
+	btn.classList.add('selected');
+
+	function hideAllLinks (btns) {
+	    [...btns.children].forEach (btn => {
+		const tab = document.getElementById (btn.dataset.forTab);
+		if (!tab) console.error ('No tab identified by button:', { btn });
+		tab.classList.add('hide');
+		btn.classList.remove('selected');
+	    });
+	}
+    }
 
 /**********************************************************************************
  * FUNCTION - toTitleCase: The purpose of this function is to change the case of
@@ -692,7 +767,7 @@ UTIL.embedExpandableMap = function (options) {
 	embeddedDiv.appendChild(ngchmIFrame); 
 	var doc = ngchmIFrame.contentWindow.document;
 	doc.open();
-	doc.write("<!DOCTYPE html><HTML><BODY style='margin:0px;width:100vw;height: 100vh;display: flex;flex-direction: column;'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.API.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><div><img img id='NGCHMEmbedButton' src='images/buttonCollapseMap.png' alt='Collapse Heat Map' onclick='NgChm.API.hideEmbed();' /></div></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.API.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
+	doc.write("<!DOCTYPE html><HTML><BODY style='margin:0px;width:100vw;height: 100vh;display: flex;flex-direction: column;'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='height: "+options.thumbnailHeight+"; width: "+options.thumbnailWidth+"'><img img id='NGCHMEmbedButton' src='"+options.thumbnail+"' alt='Show Heat Map' onclick='NgChm.API.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.UTIL.showEmbed(this,\""+displayWidth+"\",\""+displayHeight+"\",\""+customJS+"\");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><div class='buttonGroup'><button id='NGCHMEmbedButton' onclick='NgChm.API.hideEmbed();'><span class='button'>Collapse Map</span></button></div></div><br/><div id='NGCHMEmbed' style='display: none; background-color: white; height: 100%; width: 98%; border: 2px solid gray; padding: 5px;'></div><script src='"+options.ngchmWidget+"'><\/script><script type='text/Javascript'>NgChm.API.embedCHM('"+options.ngchm+"');<\/script></BODY></HTML><br><br>");
 	doc.close();
 };
 UTIL.defaultNgchmWidget = 'ngchmWidget-min.js';
@@ -874,22 +949,6 @@ UTIL.getContigRanges = function (sortedArr) {
 	}
     }
     return ranges;
-};
-
-// A table of frequently used images.
-// Used to reduce widget size by having a single data: URL for each image instead of one per use.
-UTIL.imageTable = {
-    cancelSmall: 'images/cancelSmall.png',
-    closeButton: 'images/closeButton.png',
-    okButton: 'images/okButton.png',
-    prefCancel: 'images/prefCancel.png',
-    openMapHover: 'images/openMapHover.png',
-    goHover: 'images/goHover.png',
-    prevHover: 'images/prevHover.png',
-    nextHover: 'images/nextHover.png',
-    cancelHover: 'images/cancelHover.png',
-    barColorsHover: 'images/barColorsHover.png',
-    barMenuHover: 'images/barMenuHover.png',
 };
 
 // Sub-module for managing the splash screen.

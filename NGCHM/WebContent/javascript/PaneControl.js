@@ -295,12 +295,10 @@
 	var openIconMenu = null;
 	function initializePaneIconMenu (icon) {
 		icon.onmouseout = function(e) {
-			icon.src = 'images/paneMenu.png';
 			UHM.hlpC();
 		};
 		icon.onmouseover = function(e) {
-			icon.src = 'images/paneMenuHover.png';
-			UHM.hlp(icon, 'Open pane menu', 120, 0);
+			UHM.hlp(icon, 'Open panel menu', 120, 0);
 		};
 		icon.addEventListener ('click', function(e) {
 			if (openIconMenu != null) {
@@ -329,15 +327,25 @@
 	}
 
 	// Initialize DOM IMG element for the screen mode (expand/contract) function.
-	function initializePaneScreenMode (icon, paneId) {
-		icon.id = paneId + "_ScreenMode";
-		icon.onmouseout = function(e) {
+	function initializePaneScreenMode (expander, shrinker, paneId) {
+		expander.id = paneId + "_ScreenModeE";
+		expander.onmouseout = function(e) {
 			UHM.hlpC();
 		};
-		icon.onmouseover = function(e) {
-			UHM.hlp(icon, 'Expand/Contract Panel', 120, 0);
+		expander.onmouseover = function(e) {
+			UHM.hlp(expander, 'Expand Panel', 120, 0);
 		};
-		icon.addEventListener ('click', function(ev) {
+		expander.addEventListener ('click', function(ev) {
+			changeScreenMode (ev.currentTarget);
+		}, true);
+		shrinker.id = paneId + "_ScreenModeS";
+		shrinker.onmouseout = function(e) {
+			UHM.hlpC();
+		};
+		shrinker.onmouseover = function(e) {
+			UHM.hlp(shrinker, 'Contract Panel', 120, 0);
+		};
+		shrinker.addEventListener ('click', function(ev) {
 			changeScreenMode (ev.currentTarget);
 		}, true);
 	}
@@ -346,12 +354,11 @@
 	function changeScreenMode (icon) {
 		let paneId = icon.id.split("_")[0];
 		if (isPaneExpanded === true) {
-			icon.src = 'images/iconFullScreen.png';
 			closeFullScreen(paneId);
 		} else {
-			icon.src = 'images/iconCloseFullScreen.png';
 			openFullScreen(paneId);
 		}
+		icon.parentElement.dataset.expanded = '' + isPaneExpanded;
 	}
 
 	//Grab a list of panes and show/hide them all
@@ -455,7 +462,7 @@
 	// Exported function.
 	function addPanelIcons (loc, userIcons) {
 	    // Find the icon group containing the paneMenuIcon.
-	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group IMG.paneMenuIcon');
+	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group .paneMenuIcon');
 	    const iconGroup = paneIcon.parentElement;
 	    userIcons.forEach (icon => {
 		iconGroup.insertBefore (icon, paneIcon);
@@ -557,44 +564,49 @@
 			t.innerText = title;
 			h.appendChild (t);
 
-			const ig = UTIL.newElement('DIV.icon_group');
+			const ci = UTIL.newElement('DIV.icon_group.client_icons');
+			h.appendChild(ci);
+
+			const ig = UTIL.newElement('DIV.icon_group.panel_icons');
 			h.appendChild(ig);
 
-			const img = UTIL.newElement('IMG.paneMenuIcon', {
-				src: 'images/paneMenu.png',
-				alt: 'Open pane menu',
-				align: 'top'
-			});
+			const img = UTIL.newSvgButton ('icon-four-panels!icon-four-panels-glow.paneMenuIcon');
 			initializePaneIconMenu (img);
-			const imgScr = UTIL.newElement('IMG.paneScreenModeIcon', {
-				src: 'images/iconFullScreen.png',
-				alt: 'Expand Pane',
-				align: 'left'
-			});
-			initializePaneScreenMode(imgScr, paneid);
 			ig.appendChild(img);
-			sc.appendChild(imgScr);
+
+			const expander = UTIL.newSvgButton('icon-expand.expander', { align: 'left' });
+			const shrinker = UTIL.newSvgButton('icon-shrink.shrinker', { align: 'left' });
+			initializePaneScreenMode(expander, shrinker, paneid);
+			sc.dataset.expanded = 'false';
+			sc.appendChild(expander);
+			sc.appendChild(shrinker);
 
 		}
 		return pane;
 	}
 
 	// Exported function.
-	// Add an icon group containing icons (an array) to the pane header.
-	function setPaneClientIcons (loc, icons) {
+	// Add a group of icons to the pane header.
+	// Spec is an object with the following entries:
+	// - icons An array of icons or buttonSets to add to the panel header
+	// - template The grid-template-columns to set on the .client_icons div.
+	function setPaneClientIcons (loc, spec) {
 		if (!loc.paneHeader || !loc.paneTitle) return;
-		var ig = loc.paneTitle.nextSibling;
+		const panelIcons = loc.paneHeader.querySelector('.panel_icons');
+		let clientIcons = loc.paneHeader.querySelector('.client_icons');
 		// Remove existing clientIcons, if any.
-		if (ig && ig.classList.contains('client_icons')) {
-			ig.remove();
+		if (clientIcons) {
+			clientIcons.remove();
 		}
-		if (icons && icons.length > 0) {
-		    ig = UTIL.newElement('DIV.icon_group.client_icons');
+		clientIcons = UTIL.newElement('DIV.icon_group.client_icons');
+		clientIcons.style.gridTemplateColumns = spec.template;
+		if (spec.icons) {
+		    const icons = spec.icons.slice();
 		    while (icons.length > 0) {
-			    ig.appendChild (icons.shift());
+			    clientIcons.appendChild (icons.shift());
 		    }
-		    loc.paneHeader.insertBefore (ig, loc.paneTitle.nextSibling);
 		}
+		loc.paneHeader.insertBefore (clientIcons, panelIcons);
 	}
 
 
@@ -620,10 +632,10 @@
 				UHM.initMessageBox();
 				UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 				UHM.setMessageBoxText('This action will delete all the information in PathwayMapper. Would you like to continue?')
-				UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button', () => {
+				UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, 'Cancel Button', () => {
 				    reject(false);
 				});
-				UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button', () => {
+				UHM.setMessageBoxButton('ok', { type: 'text', text: 'OK' }, 'OK Button', () => {
 				    resolve();
 				});
 				UHM.displayMessageBox();
@@ -851,18 +863,18 @@
 			menuSeparator();
 		}
 
-		menuHeader ('Pane control');
+		menuHeader ('Panel control');
 		if (isPaneExpanded === true) {
-			menuItemDisabled ('Add Pane Below');
-			menuItemDisabled ('Add Pane Right');
+			menuItemDisabled ('Add Panel Below');
+			menuItemDisabled ('Add Panel Right');
 		} else if (paneLoc.pane.classList.contains('collapsed')) {
-			menuItemDisabled ('Add Pane Below');
-			menuItemDisabled ('Add Pane Right');
+			menuItemDisabled ('Add Panel Below');
+			menuItemDisabled ('Add Panel Right');
 		} else {
-			menuItem ('Add Pane Below', () => {
+			menuItem ('Add Panel Below', () => {
 				splitPaneCheck (true, findPaneLocation(icon));
 			});
-			menuItem ('Add Pane Right', () => {
+			menuItem ('Add Panel Right', () => {
 				splitPaneCheck (false, findPaneLocation(icon));
 			});
 		}
@@ -1040,10 +1052,10 @@
 						UHM.initMessageBox();
 						UHM.setMessageBoxHeader('PathwayMapper Pane Reset Warning');
 						UHM.setMessageBoxText('This action will delete all information in PathwayMapper. Would you like to continue?')
-						UHM.setMessageBoxButton(1, UTIL.imageTable.cancelSmall, 'Cancel Button', () => {
+						UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel' }, 'Cancel Button', () => {
 						    reject(false);
 						});
-						UHM.setMessageBoxButton(2, UTIL.imageTable.okButton, 'OK Button', () => {
+						UHM.setMessageBoxButton('ok', { type: 'text', text: 'OK', }, 'OK Button', () => {
 						    resolve();
 						});
 						UHM.displayMessageBox();
@@ -1247,7 +1259,7 @@
 		// Set pane title to empty, hide the gear icon, and remove client icons (if any).
 		setPaneTitle (loc, 'empty');
 		removePanelMenuGroupIcons (loc);
-		PANE.setPaneClientIcons (loc, []);
+		PANE.setPaneClientIcons (loc, {});
 		MMGR.getHeatMap().removePaneInfoFromMapConfig(loc.pane.id)
 		// Return remaining client elements to caller.
 		return clientElements;
@@ -1255,7 +1267,7 @@
 
 	// Remove any icons except the PanelMenuIcon from the panel menu group.
 	function removePanelMenuGroupIcons (loc) {
-	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group IMG.paneMenuIcon');
+	    const paneIcon = loc.paneHeader.querySelector('DIV.icon_group .paneMenuIcon');
 	    const iconGroup = paneIcon.parentElement;
 	    [...iconGroup.children].forEach (element => {
 		if (element !== paneIcon) {

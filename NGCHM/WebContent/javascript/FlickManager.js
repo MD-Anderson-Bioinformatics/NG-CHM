@@ -21,10 +21,10 @@
     };
     const FLICK = NgChm.createNS('NgChm.FLICK', exports);
 
-    const flicksElement = document.getElementById("flicks");
+    const flicksElement = document.getElementById("layer_control");
+    const layersOpenClose = document.getElementById ('layers_open_close');
     const flickBtn = document.getElementById("flick_btn");
     const flickViewsElement = document.getElementById("flickViews");
-    const flickViewsOffElement = document.getElementById("noFlickViews");
     const flickDrop1 = document.getElementById("flick1");
     const flickDrop2 = document.getElementById("flick2");
 
@@ -33,7 +33,6 @@
 	flickDrop2.innerHTML = options;
 	flickDrop1.value = value1;
 	flickDrop2.value = value2;
-	flickViewsElement.style.display = '';
 	flicksElement.style.display = '';
     }
 
@@ -50,7 +49,7 @@
     }
 
     function isFlickUp () {
-	return flickBtn.dataset.state === 'flickUp';
+	return flickViewsElement.dataset.state === 'flickUp';
     }
 
     /************************************************************************************************
@@ -66,9 +65,8 @@
 		flickDrop2.selectedIndex = 0;
 	    }
 	}
-	setFlickColors();
-	flickViewsOffElement.style.display="none";
 	flickViewsElement.style.display='';
+	layersOpenClose.dataset.state = 'open';
     }
 
     /************************************************************************************************
@@ -76,25 +74,16 @@
      ***********************************************************************************************/
     function flickToggleOff () {
 	flickViewsElement.style.display="none";
-	flickViewsOffElement.style.display='';
+	layersOpenClose.dataset.state = 'closed';
     }
 
-    function setFlickColors () {
-	if (flickBtn.dataset.state === 'flickUp') {
-	    flickDrop1.style.backgroundColor="yellow";
-	    flickDrop2.style.backgroundColor="white";
+    function flickToggleOnOff () {
+	if (layersOpenClose.dataset.state == 'closed') {
+	    flickToggleOn();
 	} else {
-	    flickDrop1.style.backgroundColor="white";
-	    flickDrop2.style.backgroundColor="yellow";
+	    flickToggleOff();
 	}
     }
-
-    // Table of flick button images so that Widgetizer only adds one
-    // data: URL for each to the widget.
-    const toggleButtons = {
-	flickUp: 'images/toggleUp.png',
-	flickDown: 'images/toggleDown.png'
-    };
 
     // Low-level utility to change the state of the flick button and
     // return the value associated with the new state.
@@ -102,7 +91,7 @@
     // Used by UI Manager.flickChange().  You should call that function
     // if you want to changethe flick state.
     function toggleFlickState (flickElement) {
-	let togglePosition = flickBtn.dataset.state;
+	let togglePosition = flickViewsElement.dataset.state;
 	let layer = (togglePosition === 'flickUp' ? flickDrop1.value : flickDrop2.value) || "dl1";
 	let redrawRequired = false;
 
@@ -135,9 +124,7 @@
     // Set the flickState to the position of flickElement, update the flickColors, return the value
     // associated with the flickElement (or "dl1" if no associated value).
     function setFlickState (flickElement) {
-	flickBtn.dataset.state = flickElement === 'flick1' ? 'flickUp' : 'flickDown';
-	flickBtn.setAttribute('src', toggleButtons[flickBtn.dataset.state]);
-	setFlickColors();
+	flickViewsElement.dataset.state = flickElement === 'flick1' ? 'flickUp' : 'flickDown';
 	return (flickElement === 'flick1' ? flickDrop1.value : flickDrop2.value) || "dl1";
     }
 
@@ -147,7 +134,7 @@
 	    return [f1];
 	} else {
 	    const f2 = { element: 'flick2', layer: flickDrop2.value };
-	    return flickBtn.dataset.state === 'flickUp' ? [f1,f2] : [f2,f1];
+	    return flickViewsElement.dataset.state === 'flickUp' ? [f1,f2] : [f2,f1];
 	}
     }
 
@@ -163,13 +150,8 @@
 	};
     }
 
-    document.getElementById('flickOff').onclick = () => {
-	flickToggleOn();
+    layersOpenClose.onclick = function (event) {
+	flickToggleOnOff();
     };
 
-    document.getElementById('flickOn_pic').onclick = function (event) {
-	flickToggleOff();
-    };
-
-    setFlickColors();
 })();

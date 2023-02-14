@@ -15,7 +15,8 @@
     UHM.postMapToWhom = null;		// Identity of the window to post map details to
     UHM.myNonce = 'N';			// Shared secret for vetting message sender
 
-    var popupTimeoutId = undefined;	// Timeout for displaying a pending popup window.
+    var popupTimeoutId = null;		// Timeout for displaying a pending popup window.
+    var popupTimeoutElement = null;	// Element for which we are displaying the popup window.
 
 // Define action handlers for static UHM UI elements.
 //
@@ -45,24 +46,39 @@
 	// Clear any (pending) tooltips if the user clicks on the element.
 	UHM.hlpC();
 	UHM.closeMenu();
+
+	const closeables = document.getElementsByClassName ('remove-on-click');
+	[...closeables].forEach (element => {
+	    element.remove();
+	});
     }
 
     function mouseout (ev) {
-	delete ev.target.dataset.hovering;
-	if (ev.target.dataset.hasOwnProperty('nohoverImg')) {
-	    ev.target.src = ev.target.dataset.nohoverImg;
-	}
+	const tt = findMajorNode (ev.target);
+	delete tt.dataset.hovering;
     }
 
     function mouseover(ev) {
-	ev.target.dataset.hovering = '';
-	if (ev.target.dataset.hasOwnProperty('hoverImg')) {
-	    if (!ev.target.dataset.hasOwnProperty('nohoverImg')) ev.target.dataset.nohoverImg = ev.target.src;
-	    ev.target.src = UTIL.imageTable[ev.target.dataset.hoverImg];
+	const tt = findMajorNode (ev.target);
+	tt.dataset.hovering = '';
+	if (tt.dataset.tooltip) {
+	    let text = tt.dataset.tooltip;
+	    if (tt.disabled && tt.dataset.disabledReason) {
+		text += ' ' + tt.dataset.disabledReason;
+	    }
+	    UHM.hlp (tt, text, 140, 0);
 	}
-	if (ev.target.dataset.hasOwnProperty('tooltip')) {
-	    UHM.hlp (ev.target, ev.target.dataset.tooltip || ev.target.dataset.intro || ev.target.dataset.title || "Undefined tooltip", 140, 0);
+    }
+
+    function findMajorNode (el) {
+	let node = el;
+	while (node) {
+	    if (node.tagName.toLowerCase() == 'button' || node.dataset.hasOwnProperty('tooltip') || node.dataset.hasOwnProperty('title')) {
+		return node;
+	    }
+	    node = node.parentElement;
 	}
+	return el;
     }
 })();
 
@@ -157,12 +173,20 @@ function pasteHelpContents() {
  * The tooltip will appear delay milliseconds after this function is called unless
  * the user does something to clear the pending popup (e.g. move the mouse, press a key).
  **********************************************************************************/
-UHM.hlp = function(element, text, width, reverse, delay=1500) {
+UHM.hlp = function(element, text, width, reverse, delay=500) {
+	if (element == popupTimeoutElement) {
+	    return;
+	}
 	UHM.hlpC();
+	popupTimeoutElement = element;
 	popupTimeoutId = setTimeout(function(){
 		const bodyElem = document.querySelector('body');
 		if (!bodyElem) return;
 
+		if (element.dataset.hovering != '') {
+		    // Don't show popup unless user is still hovering.
+		    return;
+		}
 		const elemPos = UHM.getElemPosition(element);
 		const title = UTIL.newElement('span.title', {}, [UTIL.newTxt(element.dataset.title || "")]);
 		const content = UTIL.newElement('span.intro', {}, [element.dataset.intro || text]);
@@ -174,10 +198,17 @@ UHM.hlp = function(element, text, width, reverse, delay=1500) {
 		} else {
 			helptext.style.left = elemPos.left + 'px';
 		}
-		helptext.style.top = (elemPos.top + 20) + 'px';
+		helptext.style.top = (elemPos.top + 40) + 'px';
 		helptext.innerHTML = "<b><font size='2' color='#0843c1'>"+text+"</font></b>";
 		helptext.style.display = "inherit";
 		bodyElem.appendChild(helptext);
+		popupTimeoutId = null;
+		setTimeout (() => {
+		    if (popupTimeoutElement == element) {
+			popupTimeoutElement = null;
+			UHM.hlpC();
+		    }
+		}, 5000);
 	}, delay);
 };
 
@@ -203,17 +234,19 @@ UHM.getElemPosition = function(el) {
  * FUNCTION - hlpC: This function clears any bubble help box displayed on the screen.
  **********************************************************************************/
 UHM.hlpC = function() {
-    if (popupTimeoutId !== undefined) {
+    if (popupTimeoutId !== null) {
 	clearTimeout(popupTimeoutId);
-	popupTimeoutId = undefined;
+	popupTimeoutId = null;
+	popupTimeoutElement = null;
     }
     let helptext = document.getElementById('bubbleHelp');
     if (helptext === null) {
 	helptext = document.getElementById('helptext');
     }
-    if (helptext){
+    if (helptext) {
 	helptext.remove();
     }
+
 };
 
 /**********************************************************************************
@@ -246,7 +279,7 @@ UHM.setTableRow = function(tableObj, tdArray, colSpan, align) {
 		}
 		if (['string', 'number'].includes(typeof tdArray[i]) || Array.isArray(tdArray[i])) {
 		    td.innerHTML = tdArray[i];
-		} else {
+		} else if (tdArray[i]) {
 		    td.appendChild (tdArray[i]);
 		}
 		if (typeof align != 'undefined') {
@@ -254,6 +287,55 @@ UHM.setTableRow = function(tableObj, tdArray, colSpan, align) {
 		}
 	}
 }
+
+/**********************************************************************************
+ * FUNCTION - setTableRowX: eXperimental/eXtended version of setTableRow.
+ * or configuration html TABLE item for a given help pop-up panel. It receives text for
+ * the header column, detail column, and the number of columns to span as inputs.
+ **********************************************************************************/
+UHM.setTableRowX = function(tableObj, tdArray, rowClasses, tdProps) {
+	rowClasses = rowClasses || [];
+	tdProps = tdProps || Array(tdArray.length);
+
+	const tr = tableObj.insertRow();
+	tr.classList.add ("chmTblRow");
+	rowClasses.forEach (rowClass => {
+	    tr.classList.add(rowClass);
+	});
+	if (tr.classList.length == 1) {
+	    tr.classList.add('entry');
+	}
+
+	for (let i = 0; i < tdArray.length; i++) {
+		const td = tr.insertCell(i);
+
+		for (let [key, value] of Object.entries(tdProps[i]||{})) {
+		    if (typeof value != 'object') {
+			td[key] = value;
+		    } else if (key == 'style') {
+			for (let [k2, v2] of Object.entries(value)) {
+			    td.style[k2] = v2;
+			}
+		    } else if (key == 'classList') {
+			value.forEach(className => td.classList.add(className));
+		    } else if (key == 'dataset') {
+			for (let [k2, v2] of Object.entries(value)) {
+			    td.dataset[k2] = v2;
+			}
+		    } else {
+			console.error ('Unknown object in tdProps: ' + key);
+		    }
+		}
+		if (td.classList.length == 0) {
+			td.classList.add (i == 0 ? 'label' : 'value');
+		}
+		if (['string', 'number'].includes(typeof tdArray[i]) || Array.isArray(tdArray[i])) {
+		    td.innerHTML = tdArray[i];
+		} else if (tdArray[i]) {
+		    td.appendChild (tdArray[i]);
+		}
+	}
+};
 
 /**********************************************************************************
  * FUNCTION - formatBlankRow: The purpose of this function is to return the html
@@ -286,7 +368,7 @@ UHM.hamburgerLinkMissing = function() {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("NG-CHM Menu Link Error");
 	UHM.setMessageBoxText("<br>No destination has been defined for the menu link.");
-	UHM.setMessageBoxButton(1, UTIL.imageTable.closeButton, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -298,7 +380,7 @@ UHM.systemMessage = function(header, message) {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader(header);
 	UHM.setMessageBoxText("<br>" + message);
-	UHM.setMessageBoxButton(1, UTIL.imageTable.closeButton, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -314,7 +396,7 @@ UHM.noWebGlContext = function(isDisabled) {
 	} else {
 		UHM.setMessageBoxText("<br>No WebGL context is available.  The NG-CHM Application requires the WebGL Javascript API in order to render images of Next Generation Clustered Heat Maps. Most web browsers and graphics processors support WebGL.<br><br>Please ensure that the browser that you are using and your computer's processor are WebGL compatible.");
 	}
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -327,7 +409,7 @@ UHM.mapNotFound = function(heatMapName) {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Requested Heat Map Not Found");
 	UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you requested cannot be found OR connectivity to the Heat Map repository has been interrupted.<br><br>Please check the Heat Map name and try again.");
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 };
 
@@ -340,7 +422,7 @@ UHM.mapLoadError = function(heatMapName, details) {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Requested Heat Map Not Loaded");
 	UHM.setMessageBoxText("<br>The Heat Map (" + heatMapName + ") that you selected cannot be loaded.<br><br>Reason: " + details);
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 };
 
@@ -351,7 +433,7 @@ UHM.linkoutError = function(msgText) {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Heat Map Linkout");
 	UHM.setMessageBoxText(msgText);
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -364,7 +446,7 @@ UHM.invalidFileFormat = function() {
 	UHM.initMessageBox();
 	UHM.setMessageBoxHeader("Invalid File Format");
 	UHM.setMessageBoxText("<br>The file chosen is not an NG-CHM file.<br><br>Please select a .ngchm file and try again.");
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -396,10 +478,14 @@ UHM.messageBoxIsVisible = function () {
 
 UHM.setMessageBoxHeader = function(headerText) {
 	var msgBoxHdr = document.getElementById('msgBoxHdr');
-	msgBoxHdr.innerHTML = headerText;
+	msgBoxHdr.innerHTML = '<SPAN>' + headerText + '</SPAN>';
 	if (msgBoxHdr.querySelector(".closeX")) { msgBoxHdr.querySelector(".closeX").remove(); }
 	msgBoxHdr.appendChild(UHM.createCloseX(UHM.messageBoxCancel));
 }
+
+UHM.getMessageTextBox = function() {
+	return document.getElementById('msgBoxTxt');
+};
 
 UHM.setMessageBoxText = function(text) {
 	var msgBoxTxt = document.getElementById('msgBoxTxt');
@@ -427,7 +513,10 @@ UHM.displayMessageBox = function() {
  * - src: if type == 'image' source of the button image
  * - alt: if type == 'image' alt attribute of the button image
  * - text: if type == 'text' content of the button
+ * - tooltip: adds value of this property as a tooltip for the button
  * - disableOnClick: if true disables the button element when clicked.
+ * - disabled: disables the button element immediately
+ * - disabledReason: if disabled, include this message in tool tip.
  * - default: if true class default added to the button element.
  *
  * altText (deprecated): added to 'alt' attribute of img buttons.  Superseded by alt field.
@@ -463,6 +552,14 @@ UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
 	}
 	if (buttonSpec.default) {
 	    newButton.classList.add('default');
+	}
+	if (buttonSpec.disabled) {
+	    newButton.disabled = true;
+	    const reason = buttonSpec.disabledReason || 'of unspecified reason';
+	    const tooltip = buttonSpec.tooltip ? buttonSpec.tooltip + '. ' : '';
+	    newButton.dataset.tooltip = tooltip + 'Disabled because ' + reason;
+	} else if (buttonSpec.tooltip) {
+	    newButton.dataset.tooltip = buttonSpec.tooltip + '.';
 	}
 	if (onClick == undefined) {
 	    newButton.onclick = UHM.messageBoxCancel;
@@ -519,26 +616,6 @@ UHM.closeMenu = function() {
 	}
 };
 
-UHM.menuOver = function(val) {
-	var menuBtn = document.getElementById('barMenu_btn')
-	if (val === 0) {
-		menuBtn.setAttribute('src', 'images/barMenu.png');
-	} else {
-		menuBtn.setAttribute('src', 'images/barMenuHover.png');
-	}
-	menuBtn.mouseIsOver=val;
-}
-
-UHM.colorOver = function(val) {
-	var menuBtn = document.getElementById('colorMenu_btn')
-	if (val === 0) {
-		menuBtn.setAttribute('src', 'images/barColors.png');
-	} else {
-		menuBtn.setAttribute('src', 'images/barColorsHover.png');
-	}
-	menuBtn.mouseIsOver=val;
-}
-
 /**********************************************************************************
  * FUNCTION - displayStartupWarnings: The purpose of this function is to display any
  * heat map startup warnings in a popup box when the user opens a heat map.  Multiple
@@ -573,7 +650,7 @@ UHM.displayStartupWarnings = function() {
 	}
 	UHM.setMessageBoxHeader(headingText);
 	UHM.setMessageBoxText(warningText);
-	UHM.setMessageBoxButton(3, UTIL.imageTable.prefCancel, "Cancel button", UHM.messageBoxCancel);
+	UHM.setMessageBoxButton('cancel', { type: 'text', text: 'Cancel', }, "Cancel button", UHM.messageBoxCancel);
 	UHM.displayMessageBox();
 }
 
@@ -581,11 +658,10 @@ UHM.displayStartupWarnings = function() {
   Returns a span with 'X' that can be used to close a dialog.
 */
 UHM.createCloseX = function(closeFunction) {
-	let closeX = document.createElement("span");
-	closeX.setAttribute("class", "closeX");
-	closeX.innerHTML = "&#x2715;"; // multiplication x 
+	const closeX = UTIL.newSvgButton ('icon-big-x.red');
 	closeX.onclick = closeFunction;
-	return closeX
+	const buttonBox = UTIL.newElement ('SPAN.closeX', {}, [ closeX ]);
+	return buttonBox;
 }
 
 })();

@@ -143,6 +143,8 @@ public class NGCHM_AppGenerator {
     				}
     				bw.write(htmlString+"\n");
 			} else if (line.contains("</body>")) {
+				// Add all SVG icons just before javascript.
+				copyToFile(args[0] + "icons.svg", bw);
 				// Write all javascript just before closing body tag.
 				if (args[1].equals("ngChm.html")) {
 					bw.write("<script src='javascript/ngchm-min.js'></script>\n");
@@ -159,7 +161,7 @@ public class NGCHM_AppGenerator {
 				bw.write(line+"\n");
     			} else {	
     				//This is standard HTML, write out to html string
-    				bw.write(line+"\n");
+				bw.write(line.replaceAll ("icons.svg", "")+"\n");
     			}
     			line = br.readLine();
     		} 	
