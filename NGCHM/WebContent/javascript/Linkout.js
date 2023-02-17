@@ -504,7 +504,7 @@ var linkoutsVersion = 'undefined';
 	    var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
 	    var row = header.getElementsByTagName('TR')[0];
 	    if (((axisLabelsLength > 0) || (LNK.selection !== '')) && axis !== "Matrix"){
-			row.innerHTML = "Selected " + axis.replace("Covar"," Classification") + "s : " + axisLabelsLength;
+			row.innerHTML = "Selected " + axis.replace("Covar"," Covariate") + "s : " + axisLabelsLength;
 			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
 			LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else if ((axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) && axis == "Matrix"){
@@ -516,7 +516,7 @@ var linkoutsVersion = 'undefined';
 			row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
 			LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else {
-			row.innerHTML = "Please select a " + axis.replace("Covar"," Classification");
+			row.innerHTML = "Please select a " + axis.replace("Covar"," Covariate");
 			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
 	    }
 	    
@@ -541,7 +541,7 @@ var linkoutsVersion = 'undefined';
 		labelMenu.classList.add('hide');
 		var topDiv = document.createElement("DIV");
 		topDiv.classList.add("labelMenuCaption");
-		topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Classification") + ' Label Menu:' : axis + ' Menu';
+		topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Covariate") + ' Label Menu:' : axis + ' Menu';
 		const closeMenu = UTIL.newElement ('DIV.buttonGroup', {}, UTIL.newElement ("BUTTON.labelMenuClose", {}, UTIL.newElement('SPAN.button', {}, 'Close')));
 		closeMenu.addEventListener('click', function(){LNK.labelHelpClose(axis)},false);
 		var table = document.createElement("TABLE");
