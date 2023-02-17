@@ -816,10 +816,10 @@ var linkoutsVersion = 'undefined';
 			LNK.addLinkout("Copy selected labels to clipboard", rowLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
 		}
 
-		LNK.addLinkout("Copy bar data for all labels", "ColumnCovar", null, LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy bar data for selected labels", "ColumnCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
-		LNK.addLinkout("Copy bar data for all labels", "RowCovar", null,LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy bar data for selected labels", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Copy bar data for all columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
+		LNK.addLinkout("Copy bar data for selected columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Copy bar data for all rows", "RowCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
+		LNK.addLinkout("Copy bar data for selected rows", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
