@@ -660,6 +660,12 @@ var linkoutsVersion = 'undefined';
 			if (grpLinkouts.length > firstGroupLinkout) {
 				let addedHeader = false;
 				for (let l = firstGroupLinkout; l < grpLinkouts.length;l++ ) {
+					if (covar && grpLinkouts[l].linkout.title.indexOf('for selected') != -1 &&
+					    SRCHSTATE.getAxisSearchResults(axis.replace("Covar","")).length == 0) {
+					    // Don't add the "Copy bar data for selected rows/columns" to the covariate label menu
+					    // if there are no selected labels on that axis.
+					    continue;
+					}
 					addedHeader = LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, addedHeader);
 				}
 			}
