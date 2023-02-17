@@ -1002,7 +1002,18 @@ DEV.detailDataZoomIn = function (mapItem) {
 	    if (DET.labelLastClicked[axis]){ // if label in the same axis was clicked last, highlight all
 		const anchorIndex = Number(DET.labelLastClicked[axis]);
 		const startIndex = Math.min(focusIndex,anchorIndex), endIndex = Math.max(focusIndex,anchorIndex);
-		SRCH.setAxisSearchResults (axis, startIndex, endIndex);
+		if (axis.indexOf('Covar') == -1) {
+		    SRCH.setAxisSearchResults (axis, startIndex, endIndex);
+		} else {
+		    // Can select covariate bar clicked on, but
+		    SRCH.setAxisSearchResults (axis, focusIndex, focusIndex);
+		    // Some intermediate covariate bars may be hidden, so need to test for presence of each one.
+		    for (let idx = startIndex+1; idx < endIndex; idx++) {
+			if (document.querySelector('.ClassBar[data-axis="' + axis + '"][data-index="' + idx + '"]')) {
+			    SRCH.setAxisSearchResults (axis, idx, idx);
+			}
+		    }
+		}
 	    } else { // otherwise, treat as normal click
 		SRCH.clearSearchItems(focusNode.dataset.axis);
 		searchIndex = SRCHSTATE.labelIndexInSearch(axis,focusIndex);
