@@ -645,17 +645,21 @@ var linkoutsVersion = 'undefined';
 				LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, true);
 			}
 		} else {
-			//Always add clipboard link at top of list
-			LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
+			const covar = axis.indexOf('Covar') != -1;
+			if (!covar) {
+			    // Always add clipboard link at top of list
+			    LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
+			}
+			const firstGroupLinkout = covar ? 0 : 1;
 			if ((indLinkouts.length > 0) && (LNK.selection !== undefined)) {
-				var addedHeader = false;
-				for (var k=0; k < indLinkouts.length;k++ ) {
+				let addedHeader = false;
+				for (let k=0; k < indLinkouts.length;k++ ) {
 					addedHeader = LNK.addMenuItemToTable(axis, table, indLinkouts[k].linkout, addedHeader);
 				}
 			}
-			if (grpLinkouts.length > 1) {
-				var addedHeader = false;
-				for (var l=1; l < grpLinkouts.length;l++ ) {
+			if (grpLinkouts.length > firstGroupLinkout) {
+				let addedHeader = false;
+				for (let l = firstGroupLinkout; l < grpLinkouts.length;l++ ) {
 					addedHeader = LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, addedHeader);
 				}
 			}
