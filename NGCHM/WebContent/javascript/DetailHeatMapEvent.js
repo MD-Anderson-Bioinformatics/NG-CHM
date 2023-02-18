@@ -58,7 +58,7 @@ DEV.addEvents = function (paneId) {
 		}else if (e.touches.length == 2){ // two finger tap
 		} else if (e.touches.length == 1) { // single finger tap
 			mapItem.latestTapLocation = UTIL.getCursorPosition(e);
-			DET.clickStart(e);
+			DEV.clickStart(e);
 		}
 		mapItem.latestTap = now;
 	}, UTIL.passiveCompat({ passive: false }));
