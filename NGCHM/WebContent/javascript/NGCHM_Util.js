@@ -811,6 +811,9 @@ UTIL.getClickType = function (e) {
 	    case 3: clickType = 1;
 	    break; 
 	}
+	 if (e.ctrlKey) {
+	     clickType = 1;
+	 }
 	 return clickType;
 }
 
