@@ -296,7 +296,6 @@
 	    SRCH.configSearchInterface (heatMap);
 
 	    CUST.addCustomJS();
-	    document.addEventListener ("keydown", keyNavigate);
 		if (heatMap.source() === MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (SUM.chmElement) {
@@ -1273,6 +1272,7 @@
 			case 'ArrowLeft': // left key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
+					if (!mapItem) return;
 					if (e.shiftKey) {
 					    mapItem.currentCol -= mapItem.dataPerRow;
 					} else if (e.ctrlKey) {
@@ -1291,6 +1291,7 @@
 			case 'ArrowUp': // up key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
+					if (!mapItem) return;
 					if (e.shiftKey) {
 					    mapItem.currentRow -= mapItem.dataPerCol;
 					} else if (e.ctrlKey) {
@@ -1307,6 +1308,7 @@
 			case 'ArrowRight': // right key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
+					if (!mapItem) return;
 					if (e.shiftKey) {
 					    mapItem.currentCol += mapItem.dataPerRow;
 					} else if (e.ctrlKey) {
@@ -1325,6 +1327,7 @@
 			case 'ArrowDown': // down key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
+					if (!mapItem) return;
 					if (e.shiftKey) {
 					    mapItem.currentRow += mapItem.dataPerCol;
 					} else if (e.ctrlKey) {
@@ -1340,6 +1343,7 @@
 				break;
 			case 'PageUp': // page up
 				e.preventDefault();
+				if (!mapItem) return;
 				if (e.shiftKey){
 					let newMode;
 					DET.clearDendroSelection(mapItem);
@@ -1356,6 +1360,7 @@
 				break;
 			case 'PageDown': // page down
 				e.preventDefault();
+				if (!mapItem) return;
 				if (e.shiftKey){
 					let newMode;
 					DET.clearDendroSelection(mapItem);
@@ -1392,10 +1397,12 @@
 			default:
 				return;
 		}
-		DVW.checkRow(mapItem);
-		DVW.checkCol(mapItem);
-		mapItem.updateSelection();
-		SRCH.enableDisableSearchButtons (mapItem);
+		if (mapItem) {
+		    DVW.checkRow(mapItem);
+		    DVW.checkCol(mapItem);
+		    mapItem.updateSelection();
+		    SRCH.enableDisableSearchButtons (mapItem);
+		}
 	} else {
 	    if ((document.activeElement.id === "search_text") && (e.key === 'Enter')) {
 		    SRCH.detailSearch();
@@ -1452,5 +1459,7 @@
 	    SRCH.showSearchResults();
 	    SUM.redrawSelectionMarks();
 	});
+
+	document.addEventListener ("keydown", keyNavigate);
 
 })();
