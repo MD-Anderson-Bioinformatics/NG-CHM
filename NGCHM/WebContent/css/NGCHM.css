@@ -942,7 +942,7 @@ button#layers_open_close[data-state='closed'] div.closed {
     font-weight: normal;
     background: #dddddd;
     color: #000000;
-    width: 240px;
+    width: 250px;
     text-align: center;
     box-shadow: 5px 5px 5px #777777;
     position:relative;
@@ -992,6 +992,7 @@ button#layers_open_close[data-state='closed'] div.closed {
     font-weight: normal;
     color: #0843c1;
     cursor: pointer;
+    white-space: nowrap;
 }
 
 .labelMenuBody td:hover{

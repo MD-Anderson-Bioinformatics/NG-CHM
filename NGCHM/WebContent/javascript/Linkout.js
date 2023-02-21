@@ -662,7 +662,7 @@ var linkoutsVersion = 'undefined';
 				for (let l = firstGroupLinkout; l < grpLinkouts.length;l++ ) {
 					if (covar && grpLinkouts[l].linkout.title.indexOf('for selected') != -1 &&
 					    SRCHSTATE.getAxisSearchResults(axis.replace("Covar","")).length == 0) {
-					    // Don't add the "Copy bar data for selected rows/columns" to the covariate label menu
+					    // Don't add the "Copy covariate data for selected rows/columns" to the covariate label menu
 					    // if there are no selected labels on that axis.
 					    continue;
 					}
@@ -826,10 +826,10 @@ var linkoutsVersion = 'undefined';
 			LNK.addLinkout("Copy selected labels to clipboard", rowLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
 		}
 
-		LNK.addLinkout("Copy bar data for all columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy bar data for selected columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyPartialClassBarToClipBoard,null,1);
-		LNK.addLinkout("Copy bar data for all rows", "RowCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy bar data for selected rows", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Copy covariate data for all columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
+		LNK.addLinkout("Copy covariate data for selected columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Copy covariate data for all rows", "RowCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
+		LNK.addLinkout("Copy covariate data for selected rows", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
