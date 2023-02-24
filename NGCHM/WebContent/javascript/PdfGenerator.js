@@ -84,7 +84,7 @@ PDF.pdfCancelButton = function() {
 	var prefspanel = document.getElementById('pdfPrefs');
 	prefspanel.classList.add ('hide');
 	document.body.style.cursor = 'default';
-	DVW.primaryMap.canvas.focus();
+	if (DVW.primaryMap) DVW.primaryMap.canvas.focus();
 };
 
 /**********************************************************************************
