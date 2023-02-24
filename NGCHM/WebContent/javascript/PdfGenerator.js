@@ -1015,23 +1015,20 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		doc.setFont(undefined, "bold");
 		doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
 		doc.setFont(undefined, "normal");
-		var classBars = heatMap.getColClassificationConfig();
-		if (type === 'row') {
-			classBars = heatMap.getRowClassificationConfig();
-		}
-		var classBar = classBars[key];
+		const classBars = heatMap.getAxisCovariateConfig(type);
+		const classBar = classBars[key];
 		//Adjustment for multi-line covariate headers
 //		if(splitTitle.length > 1) {
 //			barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
 //		}
-		var colorMap = heatMap.getColorMapManager().getColorMap(type, key);
+		const colorMap = heatMap.getColorMapManager().getColorMap(type, key);
 
 		// For Continuous Classifications: 
     	// 1. Retrieve continuous threshold array from colorMapManager
     	// 2. Retrieve threshold range size divided by 2 (1/2 range size)
     	// 3. If remainder of half range > .75 set threshold value up to next value, Else use floor value.
-		var thresholds = colorMap.getContinuousThresholdKeys();
-		var threshSize = colorMap.getContinuousThresholdKeySize()/2;
+		const thresholds = colorMap.getContinuousThresholdKeys();
+		const threshSize = colorMap.getContinuousThresholdKeySize()/2;
 		var thresholdSize;
 		if ((threshSize%1) > .5) {
 			// Used to calculate modified threshold size for all but first and last threshold
@@ -1049,31 +1046,32 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 
 		// get the continuous thresholds and find the counts for each bucket
 		var cutValues = 0;
-		for(var i = 0; i < classBarData.values.length; i++) {
-		    var num = parseFloat(classBarData.values[i]);
-		    if (classBarData.values[i] !== '!CUT!') {
-		    	var prevThresh = 0;
-			    for (var k = 0; k < thresholds.length; k++){
-					var thresh = thresholds[k];
-					if (k == 0 && num <= thresholds[k]){
-						counts[k] = counts[k] ? counts[k]+1 : 1;
-						break;
-					} else if (k == thresholds.length-2 && ((num < thresh) && (num > prevThresh))) {
-						counts[k] = counts[k] ? counts[k]+1 : 1;
-						break;
-					} else if (k == thresholds.length-1) {
-						if (num >= thresholds[thresholds.length-1]) {
-							counts[k] = counts[k] ? counts[k]+1 : 1;
-						}
-						break;
-					} else if ((k < thresholds.length-2) && ((num <= thresh) && (num > prevThresh))) {
-						counts[k] = counts[k] ? counts[k]+1 : 1;
-						break;
-					}
-					prevThresh = thresh;
-				}
-		    } else {
+		for (let k = 0; k < thresholds.length; k++) {
+		    counts[k] = 0;
+		}
+		for (let i = 0; i < classBarData.values.length; i++) {
+		    if (classBarData.values[i] === '!CUT!') {
 		    	cutValues++;
+		    } else if (classBarData.values[i] !== 'null') {
+			const num = parseFloat(classBarData.values[i]);
+			if (isNaN (num)) {
+			    console.warn ('Encountered bad continuous covariate value in ' + key + ': ' + classBarData.values[i]);
+			} else {
+			    let k;
+			    if (num <= thresholds[0]) {
+				k = 0;
+			    } else if (num > thresholds[thresholds.length-1]) {
+				k = thresholds.length-1; // Stick it into last bucket, even though it rightfully belongs in another.
+			    } else {
+				k = 1;
+				while (num > thresholds[k]) {
+				    // This loop must terminate because of the above test
+				    // against the last threshold.
+				    k++;
+				}
+			    }
+			    counts[k] = counts[k]+1;
+			}
 		    }
 		}
 
@@ -1132,7 +1130,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			var rgb = colorMap.getClassificationColor("Missing Value");
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
-			drawMissingColor(barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
+			drawMissingColor(pdfDoc, barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
 		}
 		setClassBarFigureH(barsInfo, 0,'continuous',foundMissing);
 		adjustForNextClassBar(pdfDoc, barsInfo, key,type,maxLabelLength);
@@ -1161,7 +1159,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	function drawMissingColor(pdfDoc, barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, totalValues) {
 		const doc = pdfDoc.doc;
 		const barScale = isChecked("pdfInputPortrait") ? .50 : .65;
-		if (barsInfo.options.condenseClassBars){
+		if (barsInfo.options && barsInfo.options.condenseClassBars){
 			var barW = 10;
 			doc.rect(barsInfo.leftOff, bartop, barW, barHeight, "FD");
 			doc.setFontSize(barsInfo.classBarLegendTextSize);

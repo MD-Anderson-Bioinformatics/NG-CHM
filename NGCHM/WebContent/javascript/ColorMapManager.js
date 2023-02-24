@@ -53,18 +53,18 @@
 	 * submitted.  It is used only for rendering a continuous classification bar help.  
 	 **********************************************************************************/
 	this.getContinuousThresholdKeys = function(){
-    	var conThresh = new Array();
-    	var bottomThresh = thresholds[0];
-    	var threshSize = this.getContinuousThresholdKeySize();
-    	//Add first threshold from original threshold list
-    	conThresh.push(bottomThresh);
-    	//Calculate and create "interim" 8 thresholds
-    	for (var i = 1; i <= 8; i++){
-	    	conThresh.push(bottomThresh+threshSize*i);
-    	}
-    	//Add last threshold from original threshold list
-    	conThresh.push(thresholds[thresholds.length - 1]);  
-    	return conThresh;
+	    const conThresh = new Array();
+	    const bottomThresh = thresholds[0];
+	    const threshSize = this.getContinuousThresholdKeySize();
+	    // Add first threshold from original threshold list
+	    conThresh.push(bottomThresh);
+	    // Calculate and create "interim" 8 thresholds
+	    for (let i = 1; i <= 8; i++) {
+		    conThresh.push(bottomThresh+threshSize*i);
+	    }
+	    // Add last threshold from original threshold list
+	    conThresh.push(thresholds[thresholds.length - 1]);
+	    return conThresh;
 	}
 	
 	/**********************************************************************************
@@ -72,9 +72,9 @@
 	 * separating each "interim" threshold key for a continuous classification bar.  
 	 **********************************************************************************/
 	this.getContinuousThresholdKeySize = function(){
-    	var bottomThresh = thresholds[0];
-    	var topThresh = thresholds[thresholds.length - 1]; 
-    	return (topThresh - bottomThresh) / 8;
+	    const bottomThresh = thresholds[0];
+	    const topThresh = thresholds[thresholds.length - 1];
+	    return (topThresh - bottomThresh) / 9;
 	}
 	
 	this.getColors = function(){
