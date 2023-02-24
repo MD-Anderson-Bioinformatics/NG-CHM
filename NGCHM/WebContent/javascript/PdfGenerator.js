@@ -1414,8 +1414,8 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		    }
 		    ctx.restore();
 		    // Draw the top item labels.
-		    drawSummaryTopItemLabels("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
-		    drawSummaryTopItemLabels("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
+		    drawSummaryTopItemLabels(pdfDoc, "row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
+		    drawSummaryTopItemLabels(pdfDoc, "col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
 		}
 
 		// Draw the black border around the summary view.
@@ -1446,8 +1446,9 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * FUNCTION - drawSummaryTopItemLabels: This function draws the labels for the top
 	 * items on the specific axis of the summary page.
 	 **********************************************************************************/
-	function drawSummaryTopItemLabels(axis, vp) {
+	function drawSummaryTopItemLabels(pdfDoc, axis, vp) {
 	    const debug = false;
+	    const doc = pdfDoc.doc;
 	    const origFontSize = doc.getFontSize();
 	    const labelFontSize = 5;  // Use a small font for top items.
 	    doc.setFontSize(labelFontSize);
