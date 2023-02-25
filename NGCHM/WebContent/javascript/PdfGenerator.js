@@ -351,15 +351,19 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 
 	function getPdfDocument(heatMap) {
 	    // Must be invoked with new.
-	    let paperSize = [792,612];
+
+	    // Get document font and paper choices from the UI.
+	    this.paperSize = [792,612];
 	    if (document.getElementById("pdfPaperSize").value == "A4") {
-		    paperSize = [842,595];
+		    this.paperSize = [842,595];
 	    } else if (document.getElementById("pdfPaperSize").value == "A3") {
-		    paperSize = [1224,792];
+		    this.paperSize = [1224,792];
 	    }
-	    const orient = isChecked("pdfInputPortrait") ? "p" : "l";
-	    this.doc = new jspdf.jsPDF(orient,"pt",paperSize);
-	    this.doc.setFont(document.getElementById("pdfFontStyle").value);
+	    this.paperOrientation = isChecked("pdfInputPortrait") ? "p" : "l";
+	    this.fontStyle = document.getElementById("pdfFontStyle").value;
+
+	    this.doc = new jspdf.jsPDF(this.paperOrientation,"pt",this.paperSize);
+	    this.doc.setFont(this.fontStyle);
 	    this.heatMap = heatMap;
 	    this.firstPage = true;
 	    this.pageHeight = this.doc.internal.pageSize.height;
@@ -531,8 +535,9 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			    doc.text (titleLeft, titlePositionY + fontSize, subTitle, null );
 			}
 			doc.setFontSize (fontSize);
+			doc.setFont(this.fontStyle, "normal");
 			doc.text (titleLeft, titlePositionY, fullTitle, null );
-			doc.setFont(undefined, "bold");
+			doc.setFont(this.fontStyle, "bold");
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
 			doc.rect(5, logoHeight+10, pageWidth-10, 2, "FD");
@@ -543,13 +548,13 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		} else {
 			// If widgetized viewer exclude MDA logo and show compressed hear
 			doc.setFontSize(8);
-			doc.setFont(undefined, "bold");
+			doc.setFont(this.fontStyle, "bold");
 			doc.text(10,10,"NG-CHM Heat Map: "+ heatMap.getMapInformation().name,null);
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
 			doc.rect(0, 15, pageWidth-10, 2, "FD");
 		}
-		doc.setFont(undefined, "normal");
+		doc.setFont(this.fontStyle, "normal");
 		doc.setFontSize(originalFontSize);
 	}
 
@@ -636,9 +641,9 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		pdfDoc.addPageIfNeeded();
 		pdfDoc.createHeader(null);
 		pdfDoc.doc.setFontSize(classBarHeaderSize);
-		pdfDoc.doc.setFont(undefined, "bold");
+		pdfDoc.doc.setFont(pdfDoc.fontStyle, "bold");
 		pdfDoc.doc.text(10, pdfDoc.paddingTop, barsInfo.sectionHeader , null);
-		pdfDoc.doc.setFont(undefined, "normal");
+		pdfDoc.doc.setFont(pdfDoc.fontStyle, "normal");
 		return getDataMatrixDistributionPlot(pdfDoc, barsInfo);
 	}
 
@@ -863,11 +868,11 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		barsInfo.topOff = pdfDoc.paddingTop + 15;
 	    } else {
 		pdfDoc.doc.setFontSize(classBarHeaderSize);
-		pdfDoc.doc.setFont(undefined, "bold");
+		pdfDoc.doc.setFont(pdfDoc.fontStyle, "bold");
 		pdfDoc.doc.text(10, barsInfo.topOff, barsInfo.sectionHeader , null);
 	    }
 	    pdfDoc.doc.setFontSize(barsInfo.classBarTitleSize);
-	    pdfDoc.doc.setFont(undefined, "normal");
+	    pdfDoc.doc.setFont(pdfDoc.fontStyle, "normal");
 	    barsInfo.topOff += barsInfo.classBarTitleSize + 5;
 	    barsInfo.leftOff = 20; // ...reset leftOff...
 	}
@@ -891,16 +896,16 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		var thresholds = colorMap.getThresholds();
 		var maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*barsInfo.classBarLegendTextSize;
 		if (isChecked("pdfInputPortrait") && (thresholds.length > 56)) {
-			doc.setFont(undefined, "bold");
+			doc.setFont(pdfDoc.fontStyle, "bold");
 			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
-			doc.setFont(undefined, "normal");
+			doc.setFont(pdfDoc.fontStyle, "normal");
 			doc.text(barsInfo.leftOff + 15, bartop + barsInfo.classBarLegendTextSize, "This discrete covariate bar contains too", null);
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize+12, "many categories to print.", null);
 			setClassBarFigureH(barsInfo, 2,'discrete',0);
 		} else if (isChecked("pdfInputLandscape") && (thresholds.length > 40)) {
-			doc.setFont(undefined, "bold");
+			doc.setFont(pdfDoc.fontStyle, "bold");
 			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
-			doc.setFont(undefined, "normal");
+			doc.setFont(pdfDoc.fontStyle, "normal");
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize,    "This discrete covariate bar contains too", null);
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize+12, "many categories to print. You may try", null);
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize+24, "printing in portrait mode.", null);
@@ -921,9 +926,9 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			if(splitTitle.length > 1) {
 				barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  
 			}
-			doc.setFont(undefined, "bold");
+			doc.setFont(pdfDoc.fontStyle, "bold");
 			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
-			doc.setFont(undefined, "normal");
+			doc.setFont(pdfDoc.fontStyle, "normal");
 		    
 			var barHeight = barsInfo.classBarLegendTextSize + 3;
 			var counts = {}, maxCount = 0;
@@ -1019,9 +1024,9 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			barsInfo.topOff = pdfDoc.paddingTop + 15;
 			barsInfo.leftOff = 20; // ...reset leftOff...
 		}  
-		doc.setFont(undefined, "bold");
+		doc.setFont(pdfDoc.fontStyle, "bold");
 		doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
-		doc.setFont(undefined, "normal");
+		doc.setFont(pdfDoc.fontStyle, "normal");
 		const classBars = heatMap.getAxisCovariateConfig(type);
 		const classBar = classBars[key];
 		//Adjustment for multi-line covariate headers
@@ -1631,7 +1636,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		    labelFontSize, longestRowLabelUnits, longestColLabelUnits,
 		    detClient2PdfWRatio, detClient2PdfHRatio, detRowDendroWidth, detColDendroHeight,
 		});
-		drawDetailSelectionsAndLabels(doc, mapItem, mapItemVars);
+		drawDetailSelectionsAndLabels(pdfDoc, mapItem, mapItemVars);
 
 		doc.setFontSize (origFontSize);
 	    });
@@ -1642,11 +1647,12 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	     * FUNCTION:  drawDetailSelectionsAndLabels - This function draws any selection
 	     * boxes and then labels onto the detail heat map page.
 	     **********************************************************************************/
-	    function drawDetailSelectionsAndLabels(doc, mapItem, mapItemVars) {
+	    function drawDetailSelectionsAndLabels(pdfDoc, mapItem, mapItemVars) {
 		// Draw selection boxes first (this way they will not overlap text)
-		drawDetailSelectionBoxes(doc, mapItem, mapItemVars);
+		drawDetailSelectionBoxes(pdfDoc.doc, mapItem, mapItemVars);
 		// Draw labels last (so they write over any selection boxes present)
-		drawDetailLabels(doc, mapItem, mapItemVars);
+		doc.setFont (pdfDoc.fontStyle, 'normal');
+		drawDetailLabels(pdfDoc.doc, mapItem, mapItemVars);
 	    }
 
 	    /**********************************************************************************
