@@ -483,9 +483,10 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	    const pageWidth = doc.getPageWidth();
 	    const originalFontSize = doc.getFontSize();
 
+	    const logo = document.getElementById('mdaLogo');
+
 		//If standard viewer version OR file viewer version show MDA logo 
-		if ((PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined')) {
-			const logo = document.getElementById('mdaLogo');
+		if (logo && ((PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined'))) {
 			const logoHeight = this.pageHeaderHeight - 2 * logoTop;
 			const logoWidth = (logo.clientWidth/logo.clientHeight) * logoHeight; // Preserve aspect ratio.
 			doc.addImage(PDF.mdaLogo, 'PNG', logoLeft, logoTop, logoWidth, logoHeight);
