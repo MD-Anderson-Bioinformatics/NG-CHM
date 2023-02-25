@@ -1452,12 +1452,14 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		    const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
 		    const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
 		    DVW.detailMaps.forEach (mapItem => {
-			const left = (mapItem.currentCol-1) * xScale;
-			const top = (mapItem.currentRow-1) * yScale;
-			const width = mapItem.dataPerRow * xScale;
-			const height = mapItem.dataPerCol * yScale;
-			ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
-			ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
+			if (mapItem.isVisible()) {
+			    const left = (mapItem.currentCol-1) * xScale;
+			    const top = (mapItem.currentRow-1) * yScale;
+			    const width = mapItem.dataPerRow * xScale;
+			    const height = mapItem.dataPerCol * yScale;
+			    ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
+			    ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
+			}
 		    });
 		}
 		ctx.restore();
