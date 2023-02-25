@@ -486,7 +486,13 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		//If standard viewer version OR file viewer version show MDA logo 
 		if ((PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined')) {
 			const logo = document.getElementById('mdaLogo');
-			doc.addImage(PDF.mdaLogo, 'PNG', logoLeft, logoTop, logo.clientWidth, logo.clientHeight);
+			const logoHeight = this.pageHeaderHeight - 2 * logoTop;
+			const logoWidth = (logo.clientWidth/logo.clientHeight) * logoHeight; // Preserve aspect ratio.
+			doc.addImage(PDF.mdaLogo, 'PNG', logoLeft, logoTop, logoWidth, logoHeight);
+
+			const titleLeft = logoLeft + logoWidth + 2*logoLeft;
+			const maxTitleWidth = pageWidth - titleLeft - 50;
+
 			// Center Heat Map name in header whitespace to left of logo and step down the font if excessively long.
 			let fullTitle = "";
 			if (titleText !== null) {
@@ -503,7 +509,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			let fontSize = 18;
 			doc.setFontSize(fontSize);
 			let titleWidth = doc.getTextWidth (fullTitle);
-			while (fontSize > 10 && titleWidth > pageWidth - 200) {
+			while (fontSize > 10 && titleWidth > maxTitleWidth) {
 			    doc.setFontSize(-- fontSize);
 			    titleWidth = doc.getTextWidth (fullTitle);
 			}
@@ -511,24 +517,24 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			    let subTitleFontSize = fontSize - 2;
 			    let subTitle = options.subTitle;
 			    let subTitleWidth = doc.getTextWidth (subTitle);
-			    while (subTitleFontSize > 8 && subTitleWidth > pageWidth - 200) {
+			    while (subTitleFontSize > 8 && subTitleWidth > maxTitleWidth) {
 				doc.setFontSize(-- subTitleFontSize);
 				titleWidth = doc.getTextWidth (subTitle);
 			    }
-			    if (titleWidth > pageWidth - 200) {
-				subTitle = doc.splitTextToSize (subTitle, pageWidth - 200);
+			    if (titleWidth > maxTitleWidth) {
+				subTitle = doc.splitTextToSize (subTitle, maxTitleWidth);
 			    } else {
 				subTitle = [ subTitle ];
 			    }
 			    titlePositionY -= subTitle.length * subTitleFontSize + 10;
-			    doc.text (150, titlePositionY + fontSize, subTitle, null );
+			    doc.text (titleLeft, titlePositionY + fontSize, subTitle, null );
 			}
 			doc.setFontSize (fontSize);
-			doc.text (150, titlePositionY, fullTitle, null );
+			doc.text (titleLeft, titlePositionY, fullTitle, null );
 			doc.setFont(undefined, "bold");
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
-			doc.rect(5, logo.clientHeight+10, pageWidth-10, 2, "FD");
+			doc.rect(5, logoHeight+10, pageWidth-10, 2, "FD");
 			if (options.hasOwnProperty ("contText")) {
 				doc.setFontSize(classBarHeaderSize);
 				doc.text(10, this.paddingTop, options.contText, null);
