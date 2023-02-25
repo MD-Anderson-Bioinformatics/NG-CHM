@@ -32,12 +32,22 @@ PDF.canGeneratePdf = function() {
 	return SUM.isVisible() || DVW.anyVisible();
 };
 
+PDF.pdfDialogClosed = function() {
+	const prefspanel = document.getElementById('pdfPrefs');
+	return prefspanel.classList.contains ('hide');
+};
+
 PDF.openPdfPrefs = function(e) {
 	UHM.closeMenu();
 	UHM.hlpC();
+	const prefspanel = document.getElementById('pdfPrefs');
 	if (e.classList.contains('disabled')) {
-		UHM.systemMessage("NG-CHM PDF Generator", "Cannot generate the PDF when the Summary and all Detail heat map panels are closed.");
-		return;
+	    let whyDisabled = "Cannot open the PDF dialog since it's already open";
+	    if (prefspanel.classList.contains('hide')) {
+		whyDisabled = "Cannot generate a PDF when the Summary and all Detail heat map panels are closed.";
+	    }
+	    UHM.systemMessage("NG-CHM PDF Generator", whyDisabled);
+	    return;
 	}
 
 	// Set maps to generate based on visible maps:
@@ -61,13 +71,13 @@ PDF.openPdfPrefs = function(e) {
 		bothButton.disabled = false;
 	} else {
 		// Should not happen.
-		UHM.systemMessage("NG-CHM PDF", "Cannot generate PDF when the Summary or Detail heat map panels are closed.");
+		UHM.systemMessage("NG-CHM PDF", "Cannot generate PDF: inconsistent visibility check");
 		return;
 	}
+	document.getElementById('menuPdf').classList.add('disabled');
 	let pdfPrefsHdr = document.getElementById("pdfPrefsHdr");
 	if (pdfPrefsHdr.querySelector(".closeX")) { pdfPrefsHdr.querySelector(".closeX").remove(); }
 	pdfPrefsHdr.appendChild(UHM.createCloseX(PDF.pdfCancelButton));
-	var prefspanel = document.getElementById('pdfPrefs');
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	//Add prefspanel table to the main preferences DIV and set position and display
 	prefspanel.style.top = (headerpanel.offsetTop + 15) + 'px';
@@ -81,6 +91,7 @@ PDF.openPdfPrefs = function(e) {
  **********************************************************************************/
 PDF.pdfCancelButton = function() {
 	document.getElementById ('pdfErrorMessage').style.display = 'none';
+	document.getElementById('menuPdf').classList.remove('disabled');
 	var prefspanel = document.getElementById('pdfPrefs');
 	prefspanel.classList.add ('hide');
 	document.body.style.cursor = 'default';

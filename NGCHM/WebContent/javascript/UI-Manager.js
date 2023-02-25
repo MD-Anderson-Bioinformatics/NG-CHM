@@ -813,7 +813,7 @@
 		    menu.style.display = '';
 		    // Disable Save as PDF menu item if no heatmap window visble.
 		    const pdfMenuItem = document.getElementById('menuPdf');
-		    if (PDF.canGeneratePdf()) {
+		    if (PDF.canGeneratePdf() && PDF.pdfDialogClosed()) {
 			    pdfMenuItem.classList.remove('disabled');
 		    } else {
 			    pdfMenuItem.classList.add('disabled');
