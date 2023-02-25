@@ -74,6 +74,7 @@ PDF.openPdfPrefs = function(e) {
 		UHM.systemMessage("NG-CHM PDF", "Cannot generate PDF: inconsistent visibility check");
 		return;
 	}
+	updateShowBounds();
 	document.getElementById('menuPdf').classList.add('disabled');
 	let pdfPrefsHdr = document.getElementById("pdfPrefsHdr");
 	if (pdfPrefsHdr.querySelector(".closeX")) { pdfPrefsHdr.querySelector(".closeX").remove(); }
@@ -84,6 +85,19 @@ PDF.openPdfPrefs = function(e) {
 	prefspanel.classList.remove ('hide');
 	prefspanel.style.left = ((window.innerWidth - prefspanel.offsetWidth) / 2) + 'px';
 };
+
+function updateShowBounds () {
+    const bothButton = document.getElementById ('pdfInputBothMaps');
+    const showBounds = document.getElementById ('pdfInputShowBounds');
+
+    if (bothButton.checked) {
+	showBounds.checked = true;
+	showBounds.disabled = false;
+    } else {
+	showBounds.checked = false;
+	showBounds.disabled = true;
+    }
+}
 
 /**********************************************************************************
  * FUNCTION - pdfCancelButton: This function closes the PDF preferences panel when
@@ -330,7 +344,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 
 	function addSummaryPage (pdfDoc) {
 	    return new Promise ((resolve, reject) => {
-		drawSummaryHeatMapPage (pdfDoc, includeDetailMaps);
+		drawSummaryHeatMapPage (pdfDoc, includeDetailMaps && pdfDoc.showDetailBounds);
 		resolve();
 	    });
 	}
@@ -371,6 +385,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		    this.paperSize = [1224,792];
 	    }
 	    this.paperOrientation = isChecked("pdfInputPortrait") ? "p" : "l";
+	    this.showDetailBounds = isChecked("pdfInputShowBounds");
 	    this.fontStyle = document.getElementById("pdfFontStyle").value;
 
 	    this.doc = new jspdf.jsPDF(this.paperOrientation,"pt",this.paperSize);
@@ -1810,6 +1825,10 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	glMan.drawTexture ();
 	return canvas.toDataURL('image/png');
     }
+
+document.getElementById ('pdfInputSummaryMap').onchange = updateShowBounds;
+document.getElementById ('pdfInputDetailMap').onchange = updateShowBounds;
+document.getElementById ('pdfInputBothMaps').onchange = updateShowBounds;
 
 document.getElementById('prefCancel_btn').onclick = function (event) {
     PDF.pdfCancelButton();
