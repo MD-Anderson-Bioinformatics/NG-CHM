@@ -1546,7 +1546,7 @@ div.linkouts {
         height: calc(100% - 28px);
 }
 
-iframe {
+iframe:not(.youtube) {
         width: 100%;
         height: 100%;
         border: none;

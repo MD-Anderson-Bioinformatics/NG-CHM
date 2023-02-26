@@ -710,6 +710,27 @@
 	    }
     }
 
+    function showTutorialVideos () {
+	UHM.initMessageBox();
+	UHM.setMessageBoxHeader("NG-CHM Tutorial Videos");
+	const messageBox = UHM.getMessageTextBox ();
+
+	const youTubePlayList = UTIL.newElement('DIV.youtube');
+	youTubePlayList.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLIBaINv-Qmd05G3Kj7SbBbSAPZrG-H5bq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+	youTubePlayList.firstChild.classList.add('youtube');
+	messageBox.innerHTML = '';
+	messageBox.appendChild (youTubePlayList);
+
+	UHM.setMessageBoxButton('close', {
+	    type: 'text',
+	    text: 'Close',
+	    tooltip: 'Closes this dialog',
+	    default: true,
+	});
+	UHM.displayMessageBox();
+
+    }
+
     /**********************************************************************************
      * FUNCTION - widgetHelp: This function displays a special help popup box for
      * the widgetized version of the NG-CHM embedded viewer.
@@ -762,6 +783,11 @@
 		UHM.messageBoxCancel();
 		MMGR.zipAppDownload();
 	    });
+	    UHM.setMessageBoxButton('videos', {
+		type: 'text',
+		text: 'Videos',
+		tooltip: 'Shows NG-CHM Tutorial Videos',
+	    }, showTutorialVideos);
 	    UHM.setMessageBoxButton('tour', {
 		type: 'text',
 		text: 'Take a tour',
