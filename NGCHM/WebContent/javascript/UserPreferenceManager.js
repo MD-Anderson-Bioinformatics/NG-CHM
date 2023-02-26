@@ -110,10 +110,9 @@ UPM.editPreferences = function(e,errorMsg) {
 	UHM.hlpC();
 
 	const prefspanel = document.getElementById("prefs");
-	if (prefspanel.style.display !== 'none') {
-	    return;
-	}
+	const prefsPanelAlreadyOpen = prefspanel.style.display !== 'none';
 	const heatMap = MMGR.getHeatMap();
+
 	var rowClassBarsOrder = heatMap.getRowClassificationOrder();
 	var colClassBarsOrder = heatMap.getColClassificationOrder();
 	if ((colClassBarsOrder.length > 0) || (rowClassBarsOrder.length > 0)) {
@@ -172,7 +171,7 @@ UPM.editPreferences = function(e,errorMsg) {
 	UPM.showLabelSelections();
 	UPM.setShowAll();
 	if ((errorMsg != null) && (errorMsg[1] === "classPrefs")) {
-		UPM.showClassBreak(errorMsg[0]);
+		UPM.showClassBreak(errorMsg[0], errorMsg[3]);
 		UPM.showClassPrefs();
 	} else if ((errorMsg != null) && (errorMsg[1] === "layerPrefs")){ 
 		UPM.showLayerBreak(errorMsg[0]);
@@ -189,8 +188,10 @@ UPM.editPreferences = function(e,errorMsg) {
 		UPM.showLayerPrefs();
 	}
 	errorMsg = null;
-	prefspanel.style.display= '';	
-	UPM.locatePrefsPanel();
+	if (!prefsPanelAlreadyOpen) {
+	    prefspanel.style.display= '';
+	    UPM.locatePrefsPanel();
+	}
 }
 
 /**********************************************************************************
@@ -339,7 +340,7 @@ UPM.removeSettingsPanels = function() {
  * configure heat map presentation.
  **********************************************************************************/
 UPM.prefsApplyButton = function(isReset) {
-	UPM.disableApplyButton();
+	disableApplyButton();
 	setTimeout(function(){ // wait until the disable button has been updated, otherwise the disable button never shows up
         UPM.doApply(isReset);
    },10);
@@ -354,11 +355,13 @@ UPM.doApply = function(isReset){
 		var errorMsg = UPM.prefsValidate();
 		if (errorMsg !== null) {
 			UPM.prefsError(errorMsg);
+			UPM.applyDone = true;
+			enableApplyButton();
 		} else {
 			UPM.prefsApply();
 			heatMap.setUnAppliedChanges(true);
 			UPM.prefsSuccess();
-			UPM.enableApplyButton();
+			enableApplyButton();
 		}
 	} else {
 		//When resetting no validations need be performed and, if they were, 
@@ -366,7 +369,7 @@ UPM.doApply = function(isReset){
 		UPM.prefsApply();
 		heatMap.setUnAppliedChanges(true);
 		UPM.prefsSuccess();
-		UPM.enableApplyButton();
+		enableApplyButton();
 	}
 }
 
@@ -375,25 +378,26 @@ UPM.doApply = function(isReset){
  * greyed out version when the Apply or Reset button is pressed
  **********************************************************************************/
 
-UPM.disableApplyButton = function(){
+    function disableApplyButton () {
 	const applyButton = document.getElementById("prefApply_btn");
 	applyButton.disabled = true;
 	UPM.applyDone = false;
-}
+    }
 
 /**********************************************************************************
  * FUNCTION - enableApplyButton: This function toggles the Apply button back to the   
  * standard/blue one after the apply/reset has finished
  **********************************************************************************/
 
-UPM.enableApplyButton = function(){
+    function enableApplyButton () {
 	if (UPM.applyDone){ // make sure the apply is done
 		const applyButton = document.getElementById("prefApply_btn");
 		applyButton.disabled = false;
 	} else { // otherwise try again in a bit
-		setTimeout(UPM.enableApplyButton,500);
+		setTimeout(enableApplyButton,500);
 	}
-}
+    }
+
 /**********************************************************************************
  * FUNCTION - prefsSuccess: The purpose of this function perform the functions
  * necessary when preferences are determined to be valid. It is shared by the
@@ -532,25 +536,35 @@ UPM.prefsApply = function() {
  * the prefsApply function. 
  **********************************************************************************/
 UPM.prefsValidate = function() {
-	var errorMsg = null;
+	const heatMap = MMGR.getHeatMap();
+
 	if (document.getElementById("rowTopItems").value.split(/[;, ]+/).length > 10) {
 		return  ["ALL", "rowColPrefs", "ERROR: Top Row entries cannot exceed 10"];
 	};
 	if (document.getElementById("colTopItems").value.split(/[;, ]+/).length > 10) {
 		return  ["ALL", "rowColPrefs", "ERROR: Top Column entries cannot exceed 10"];
 	};
-	errorMsg = UPM.prefsValidateForNumeric();
+	return UPM.prefsValidateForNumeric() || validateDataLayers() || validateAxis ("row") || validateAxis ("col");
 
-	//Validate all breakpoints and colors for the main data layer
-	if (errorMsg === null) {
-		var dataLayers = MMGR.getHeatMap().getDataLayers();
-		for (var key in dataLayers){
-			errorMsg = UPM.prefsValidateBreakPoints(key,"layerPrefs");
-			if (errorMsg != null) break;
-		}
+	function validateDataLayers () {
+	    const dataLayers = heatMap.getDataLayers();
+	    for (let key in dataLayers) {
+		const errorMsg = prefsValidateBreakPoints("data", key,"layerPrefs");
+		if (errorMsg != null) return errorMsg;
+	    }
+	    return null;
 	}
-	
-	return errorMsg;
+
+	function validateAxis (axis) {
+	    const covBars = heatMap.getAxisCovariateConfig(axis);
+	    for (let [key,config] of Object.entries(covBars)) {
+		if (config.color_map.type == 'continuous') {
+		    const errorMsg = prefsValidateBreakPoints(axis, key, "classPrefs");
+		    if (errorMsg != null) return errorMsg;
+		}
+	    }
+	    return null;
+	}
 }
 
 
@@ -633,9 +647,9 @@ UPM.prefsValidateForNumeric = function() {
  * first error is found, an error  message (string array containing error information) 
  * is created and returned to the prefsApply function. 
  **********************************************************************************/
-UPM.prefsValidateBreakPoints = function(colorMapName,prefPanel) {
+    function prefsValidateBreakPoints (colorMapAxis, colorMapName, prefPanel) {
 	const heatMap = MMGR.getHeatMap();
-	var colorMap = heatMap.getColorMapManager().getColorMap("data",colorMapName);
+	var colorMap = heatMap.getColorMapManager().getColorMap(colorMapAxis, colorMapName);
 	var thresholds = colorMap.getThresholds();
 	var colors = colorMap.getColors();
 	var charBreak = false;
@@ -643,9 +657,15 @@ UPM.prefsValidateBreakPoints = function(colorMapName,prefPanel) {
 	var breakOrder = false;
 	var prevBreakValue = MAPREP.minValues;
 	var errorMsg = null;
+	const elementIdPrefix = colorMapName + (colorMapAxis == "data" ? "" : "_" + colorMapAxis) + "_breakPt";
 	//Loop thru colormap thresholds and validate for order and duplicates
 	for (var i = 0; i < thresholds.length; i++) {
-		var breakElement = document.getElementById(colorMapName+"_breakPt"+i+"_breakPref");
+		const breakElementId = elementIdPrefix+i+"_breakPref";
+		const breakElement = document.getElementById(breakElementId);
+		if (!breakElement) {
+		    console.error ('Unable to find breakElement for ' + breakElementId);
+		    continue;
+		}
 		//If current breakpoint is not numeric
 		if ((isNaN(breakElement.value)) || (breakElement.value === "")) {
 			charBreak = true;
@@ -660,7 +680,7 @@ UPM.prefsValidateBreakPoints = function(colorMapName,prefPanel) {
 		//Loop thru thresholds, skipping current element, searching for a match to the 
 		//current selection.  If found, throw duplicate error
 		for (var j = 0; j < thresholds.length; j++) {
-			var be = document.getElementById(colorMapName+"_breakPt"+j+"_breakPref");
+			var be = document.getElementById(elementIdPrefix+j+"_breakPref");
 			if (be !== null) {
 				if (i != j) {
 					if (Number(breakElement.value) === Number(be.value)) {
@@ -673,17 +693,17 @@ UPM.prefsValidateBreakPoints = function(colorMapName,prefPanel) {
 		prevBreakValue = breakElement.value;
 	}
 	if (charBreak) {
-		errorMsg =  [colorMapName, prefPanel, "ERROR: Data layer breakpoints must be numeric"];
+		errorMsg =  [colorMapName, prefPanel, "ERROR: Breakpoints must be numeric", colorMapAxis];
 	}
 	if (breakOrder) {
-		errorMsg =  [colorMapName, prefPanel, "ERROR: Data layer breakpoints must be in order"];
+		errorMsg =  [colorMapName, prefPanel, "ERROR: Breakpoints must be in increasing order", colorMapAxis];
 	}
 	if (dupeBreak) {
-		errorMsg =  [colorMapName, prefPanel, "ERROR: Duplicate data layer breakpoint found"];
+		errorMsg =  [colorMapName, prefPanel, "ERROR: Duplicate breakpoint found", colorMapAxis];
 	}
 	
 	return errorMsg;
-}
+    }
 
 /**********************************************************************************
  * FUNCTION - prefsValidateBreakColors: The purpose of this function is to validate 
@@ -1789,10 +1809,10 @@ UPM.setShowAll = function() {
  * function is also called when an error is trappped, opening the covariate DIV
  * that contains the erroneous data entry.
  **********************************************************************************/
-UPM.showClassBreak = function(selClass) {
+UPM.showClassBreak = function(selClass, selAxis) {
 	var classBtn = document.getElementById("classPref_list");
 	if (typeof selClass != 'undefined') {
-		classBtn.value = selClass;
+		classBtn.value = selClass + (selAxis ? "_" + selAxis : "");
 	} 
 	for (var i=0; i<classBtn.length; i++){
 		var classVal = "breakPrefs_"+classBtn.options[i].value;
