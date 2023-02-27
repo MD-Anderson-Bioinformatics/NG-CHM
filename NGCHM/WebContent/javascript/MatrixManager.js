@@ -280,6 +280,12 @@ let	wS = `const debug = ${debug};`;
 
 	constructor (heatMap, tileSpec) {
 	    const { layer, level, startRowTile, endRowTile, startColTile, endColTile } = tileSpec;
+	    const heatMapLevel = heatMap.datalevels[level];
+	    if (startRowTile < 1 || endRowTile > heatMapLevel.numTileRows ||
+	        startColTile < 1 || endColTile > heatMapLevel.numTileColumns ||
+		endRowTile < startRowTile || endColTile < startColTile) {
+		console.error ('Constructing TileWindow with out-of-range tiles', tileSpec, heatMapLevel);
+	    }
 	    this.heatMap = heatMap;
 	    this.layer = layer;
 	    this.level = level;
@@ -1754,11 +1760,8 @@ let	wS = `const debug = ${debug};`;
 	    const startColTile = Math.floor((column-1)/this.colsPerTile) + 1;
 	    const endRowCalc = (row+numRows-1)/this.rowsPerTile;
 	    const endColCalc = (column+numColumns-1)/this.colsPerTile;
-	    const endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
-	    const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
-	    if (endRowTile < startRowTile) {
-		console.log ('error');
-	    }
+	    const endRowTile = Math.ceil(endRowCalc);
+	    const endColTile = Math.ceil(endColCalc);
 	    const tileSpec = { layer, level: this.level, startRowTile, endRowTile, startColTile, endColTile };
 	    return getTileWindow (tileSpec);
 	}
