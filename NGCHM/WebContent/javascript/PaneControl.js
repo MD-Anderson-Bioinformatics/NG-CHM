@@ -1018,7 +1018,6 @@
 							const pc = paneLoc.container.parentElement;
 							if (pc.id !== 'ngChmContainer' && pc.classList.contains('ngChmContainer') &&
 							    pc.classList.contains('vertical') === paneLoc.container.classList.contains('vertical')) {
-								console.log ('Merging into parent container.');
 								while (paneLoc.container.firstChild) {
 									pc.insertBefore (paneLoc.container.firstChild, paneLoc.container);
 								}
