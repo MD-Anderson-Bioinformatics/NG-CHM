@@ -289,7 +289,7 @@
 
 	    //If any new configs were added to the heatmap's config, save the config file.
 	    const heatMap = MMGR.getHeatMap();
-	    if (MMGR.mapUpdatedOnLoad() && heatMap.getMapInformation().read_only !== "Y") {
+	    if (MMGR.mapUpdatedOnLoad(heatMap) && heatMap.getMapInformation().read_only !== "Y") {
 		    var success = autoSaveHeatMap(heatMap);
 	    }
 	    heatMap.setSelectionColors();

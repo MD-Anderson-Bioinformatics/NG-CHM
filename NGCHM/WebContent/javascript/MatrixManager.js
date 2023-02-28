@@ -2334,22 +2334,35 @@ let	wS = `const debug = ${debug};`;
 // Matrix Manager block.
 {
     var heatMap = null;
-    var mapUpdatedOnLoad = false;
-    var flickInitialized = false;
+    var mapStatusDB = new WeakMap();
 
     const compat = { addMapConfig, addMapData };
+
+    function getMapStatus (heatMap) {
+	let status = mapStatusDB.get (heatMap);
+	if (!status) {
+	    status = {
+		mapUpdatedOnLoad: false,
+	        flickInitialized: false,
+	    };
+	    mapStatusDB.set (heatMap, status);
+	}
+	return status;
+    }
 
     function addMapData(heatMap, md) {
 	heatMap.mapData = md;
 	if (COMPAT.mapDataCompatibility(heatMap.mapData)) {
-	    mapUpdatedOnLoad = true;
+	    const status = getMapStatus (heatMap);
+	    status.mapUpdatedOnLoad = true;
 	}
 	heatMap.sendCallBack(MMGR.Event_JSON);
     }
 
     function addMapConfig(heatMap, mc) {
 	if (COMPAT.CompatibilityManager(mc)) {
-	    mapUpdatedOnLoad = true;
+	    const status = getMapStatus (heatMap);
+	    status.mapUpdatedOnLoad = true;
 	}
 	heatMap.mapConfig = mc;
 	addDataLayers(heatMap);
@@ -2357,8 +2370,9 @@ let	wS = `const debug = ${debug};`;
 	heatMap.sendCallBack(MMGR.Event_JSON);
     }
 
-    MMGR.mapUpdatedOnLoad = function() {
-	return mapUpdatedOnLoad;
+    MMGR.mapUpdatedOnLoad = function(heatMap) {
+	const status = getMapStatus (heatMap);
+	return status.mapUpdatedOnLoad;
     };
 
     //Main function of the matrix manager - retrieve a heat map object.
@@ -2380,7 +2394,8 @@ let	wS = `const debug = ${debug};`;
      * Set the 'flick' control and data layer
     */
     function configureFlick (heatMap) {
-	if (!flickInitialized) {
+	const status = getMapStatus (heatMap);
+	if (!status.flickInitialized) {
 	    const dl = heatMap.getDataLayers();
 	    const numLayers = Object.keys(dl).length;
 	    if (numLayers > 1) {
@@ -2409,7 +2424,7 @@ let	wS = `const debug = ${debug};`;
 		    heatMap.setCurrentDL("dl1");
 		    FLICK.disableFlicks();
 	    }
-	    flickInitialized = true;
+	    status.flickInitialized = true;
 	}
     }
 
