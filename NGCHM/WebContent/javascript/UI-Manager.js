@@ -435,6 +435,8 @@
 				    mapName = MMGR.embeddedMapName;
 				    dataSource = MMGR.LOCAL_SOURCE;
 			    }
+			    resetCHM();
+			    initDisplayVars();
 			    MMGR.createHeatMap(dataSource, mapName, [
 				    UIMGR.configurePanelInterface,
 				    SUM.processSummaryMapUpdate,
