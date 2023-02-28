@@ -1148,53 +1148,21 @@ UHM.loadColorPreviewDiv = function(mapName,firstLoad){
 	}
 	gradient += ")";
 	var wrapper = document.getElementById("previewWrapper"+mapName);
-	var bins = new Array(10+1).join('0').split('').map(parseFloat); // make array of 0's to start the counters
-	var breaks = new Array(9+1).join('0').split('').map(parseFloat);
-	for (var i=0; i <breaks.length;i++){
-		breaks[i]+=lowBP+diff/(breaks.length-1)*i; // array of the breakpoints shown in the preview div
-	}
+
 	const heatMap = MMGR.getHeatMap();
-	var numCol = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
-	var numRow = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
-	const accessWindow = heatMap.getNewAccessWindow ({
-	    layer: mapName,
-	    level: MAPREP.SUMMARY_LEVEL,
-	    firstRow: 1,
-	    firstCol: 1,
-	    numRows: numRow,
-	    numCols: numCol,
-	});
-	accessWindow.onready().then (win => {
-	    let nan=0;
-	    for(let row=1;row<=numRow;row++){
-		for (let {value} of accessWindow.getRowValues(row)) {
-		    if (isNaN(value) || value>=MAPREP.maxValues){ // is it Missing value?
-			nan++;
-		    } else if (value > MAPREP.minValues) { // Don't count cut locations.
-			let k = 0;
-			while (k < breaks.length && value >= breaks[k]) {
-			    k++;
-			}
-			bins[k]++;  // N.B. One more bin than breaks.
-		    }
-		}
-	    }
-	    var total = 0;
-	    var binMax = nan;
-	    for (var i=0;i<bins.length;i++){
-		    if (bins[i]>binMax)
-			    binMax=bins[i];
-		    total+=bins[i];
-	    }
+
+	heatMap
+	.getSummaryHist (mapName, lowBP, highBP)
+	.then (hist => {
 	    var svg = "<svg id='previewSVG"+mapName+"' width='110' height='100' style='position:absolute;left:10px;top:20px;'>"
-	    for (var i=0;i<bins.length;i++){
-		    var rect = "<rect x='" +i*10+ "' y='" +(1-bins[i]/binMax)*100+ "' width='10' height='" +bins[i]/binMax*100+ "' style='fill:rgb(0,0,0);fill-opacity:0;stroke-width:1;stroke:rgb(0,0,0)'> "/*<title>"+bins[i]+"</title>*/+ "</rect>";
+	    for (var i=0;i<hist.bins.length;i++){
+		    var rect = "<rect x='" +i*10+ "' y='" +(1-hist.bins[i]/hist.binMax)*100+ "' width='10' height='" +hist.bins[i]/hist.binMax*100+ "' style='fill:rgb(0,0,0);fill-opacity:0;stroke-width:1;stroke:rgb(0,0,0)'> "/*<title>"+hist.bins[i]+"</title>*/+ "</rect>";
 		    svg+=rect;
 	    }
-	    var missingRect = "<rect x='100' y='" +(1-nan/binMax)*100+ "' width='10' height='" +nan/binMax*100+ "' style='fill:rgb(255,255,255);fill-opacity:1;stroke-width:1;stroke:rgb(0,0,0)'> "/* <title>"+nan+"</title>*/+"</rect>";
+	    var missingRect = "<rect x='100' y='" +(1-hist.nan/hist.binMax)*100+ "' width='10' height='" +hist.nan/hist.binMax*100+ "' style='fill:rgb(255,255,255);fill-opacity:1;stroke-width:1;stroke:rgb(0,0,0)'> "/* <title>"+hist.nan+"</title>*/+"</rect>";
 	    svg+= missingRect;
 	    svg+="</svg>";
-	    var binNums = "";//"<p class='previewLegend' style='position:absolute;left:0;top:100;font-size:10;'>0</p><p class='previewLegend' style='position:absolute;left:0;top:0;font-size:10;'>"+binMax+"</p>"
+	    var binNums = "";//"<p class='previewLegend' style='position:absolute;left:0;top:100;font-size:10;'>0</p><p class='previewLegend' style='position:absolute;left:0;top:0;font-size:10;'>"+hist.binMax+"</p>"
 	    var boundNums = "<p class='previewLegend' style='position:absolute;left:10px;top:110px;font-size:10px;'>"+lowBP.toFixed(2)+"</p><p class='previewLegend' style='position:absolute;left:90px;top:110px;font-size:10px;'>"+highBP.toFixed(2)+"</p>"
 
 	    var preview = "<div id='previewMainColor"+mapName+"' style='height: 100px; width:100px;background:"+gradient+";position:absolute; left: 10px; top: 20px;'></div>"

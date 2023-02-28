@@ -1498,6 +1498,60 @@ let	wS = `const debug = ${debug};`;
 	    return new AccessWindow (this, win);
 	};
 
+	/* Obtain a promise for a histogram of the map's summary values.
+	 *
+	 * The returned histogram includes the following fields:
+	 * - breaks : break points between bins,
+	 * - bins : an array of histogram bins, each containing a count.
+	 * - binMax : maximum value in bins
+	 * - total : total of bins
+	 * - nan : number of missing values / NaN's in the data (not in the bins)
+	 *
+	 * bins.length == breaks.length+1
+	 */
+	HeatMap.prototype.getSummaryHist = function (layer, lowBP, highBP) {
+	    const diff = highBP-lowBP;
+	    const bins = new Array(10+1).join('0').split('').map(parseFloat); // make array of 0's to start the counters
+	    const breaks = new Array(9+1).join('0').split('').map(parseFloat);
+	    for (let i=0; i <breaks.length;i++){
+		    breaks[i]+=lowBP+diff/(breaks.length-1)*i; // array of the breakpoints shown in the preview div
+	    }
+	    const numCol = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
+	    const numRow = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
+	    const accessWindow = this.getNewAccessWindow ({
+		layer: layer,
+		level: MAPREP.SUMMARY_LEVEL,
+		firstRow: 1,
+		firstCol: 1,
+		numRows: numRow,
+		numCols: numCol,
+	    });
+	    return accessWindow.onready().then (win => {
+		let nan=0;
+		for(let row=1;row<=numRow;row++){
+		    for (let {value} of accessWindow.getRowValues(row)) {
+			if (isNaN(value) || value>=MAPREP.maxValues){ // is it Missing value?
+			    nan++;
+			} else if (value > MAPREP.minValues) { // Don't count cut locations.
+			    let k = 0;
+			    while (k < breaks.length && value >= breaks[k]) {
+				k++;
+			    }
+			    bins[k]++;  // N.B. One more bin than breaks.
+			}
+		    }
+		}
+		let total = 0;
+		let binMax = nan;
+		for (let i=0;i<bins.length;i++){
+			if (bins[i]>binMax)
+				binMax=bins[i];
+			total+=bins[i];
+		}
+		return { breaks, bins, binMax, total, nan };
+	    });
+	}
+
     }
     /********************************************************************************************
      *
