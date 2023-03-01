@@ -40,6 +40,6 @@ jobs:
         id: make_build_tag
         uses: marohrdanz/build-number-tag@v1.0.0
         with:
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           prefix: '-build-'
           version_prefix: ${{ steps.get_version_number.outputs.version_number }}
