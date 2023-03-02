@@ -32,10 +32,13 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const PANE = NgChm.importNS('NgChm.Pane');
     const DEV = NgChm.importNS('NgChm.DEV');
+    const PDF = NgChm.importNS('NgChm.PDF');
 
     // Re-exports.
     NgChm.exportToNS ('NgChm.API', {
 	'b64toBlob': UTIL.b64toBlob,
+	'jsPDF': jspdf.jsPDF,
+	'generatePDF': PDF.openPdfPrefs,
     });
 
     // Also add the deprecated API functions to UTIL module for the time being.

@@ -470,16 +470,15 @@
 		<script src="javascript/PdfGenerator.js"></script>
 		<script src="javascript/RecreatePanes.js"></script>
 		<script src="javascript/lib/zip.min.js"></script> <!--PRESERVE already minimized-->
-		<script src="javascript/UI-Manager.js"></script>
+		<script src="javascript/UI-Manager.js"></script> <!-- requires zip -->
 		<!-- NEW CHUNK -->
 		<script src="javascript/lib/intro.min.js"></script> <!--PRESERVE already minimized-->
-		<script src="javascript/API.js"></script>
-		<!-- NEW CHUNK -->
 		<script src="javascript/lib/jstat.min.js"></script> <!--PRESERVE already minimized-->
 		<script src="javascript/use_jstat.js"></script>
-		<!-- NEW CHUNK -->
 		<script src="javascript/lib/jspdf.umd.min.js"></script> <!--PRESERVE-->
 		<script src="javascript/lib/FileSaver.min.js"></script> <!--PRESERVE-->
+		<!-- NEW CHUNK -->
+		<script src="javascript/API.js"></script>  <!-- requires jspdf -->
 		<script type="text/Javascript">
 			// Note: inline javascript is removed by the Widgetizer.
 			NgChm.importNS('NgChm.UI-Manager').onLoadCHM();
