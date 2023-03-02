@@ -22,6 +22,7 @@
 	'loadAllTilesTimer': loadAllTilesTimer,
 	'heatMapLoaded': heatMapLoaded,
 	'getSummaryHist': getSummaryHist,
+	'getLinkoutTypes': getLinkoutTypes,
     };
     const API = NgChm.createNS('NgChm.API', exports);
 
@@ -52,6 +53,17 @@
     function getSummaryHist (thresholds) {
 	const heatMap = MMGR.getHeatMap();
 	return heatMap.getSummaryHist (heatMap.getCurrentDL(), +thresholds[0], +thresholds[thresholds.length-1]);
+    }
+
+    // Return a promise for an array of all linkout types available for the NG-CHM.
+    // The promise resolves after the NG-CHM's customization file has loaded.
+    //
+    function getLinkoutTypes () {
+	return new Promise ((resolve) => {
+	    NgChm.CUST.waitForPlugins (() => {
+		resolve (NgChm.CUST.linkoutTypes.slice(0));
+	    });
+	});
     }
 
     /**********************************************************************************
