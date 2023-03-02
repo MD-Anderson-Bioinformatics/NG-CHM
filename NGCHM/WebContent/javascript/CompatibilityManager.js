@@ -19,6 +19,8 @@ CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\": \"Y
 		    "Full length description of this heatmap\",\"summary_width\": \"50\",\"builder_version\": \"NA\",\"summary_height\": \"100\",\"detail_width\": \"50\",\"detail_height\": \"100\",\"read_only\": \"N\",\"version_id\": \"1.0.0\",\"map_cut_rows\": \"0\",\"map_cut_cols\": \"0\"}}}";
 
 // CURRENT VERSION NUMBER
+// WARNING: The line starting with 'CM.version = ' is used by .github/workflows/create-build-tag.yml for creating build tags
+// If making changes to the string 'CM.version = ', make corresponding changes to the 'start_string' in that action.
 CM.version = "2.23.1";	// Please increment rightmost digit for each interim version
 CM.versionCheckUrl = "https://bioinformatics.mdanderson.org/versioncheck/NGCHM/";
 CM.viewerAppUrl = "https://bioinformatics.mdanderson.org/ngchm/ZipAppDownload";
