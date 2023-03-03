@@ -539,9 +539,10 @@ UTIL.isValidURL = function (str) {
 UTIL.dragElement = function (elmnt) {
 	  let deltaMouseElementX = 0;
 	  let deltaMouseElementY = 0;
-	  if (document.getElementById(elmnt.id + "Hdr")) {
+	  const header = document.getElementById(elmnt.id + "Hdr") || elmnt.querySelector('.msgBoxHdr');
+	  if (header) {
 	    /* if present, the header is where you move the DIV from:*/
-	    document.getElementById(elmnt.id + "Hdr").onmousedown = dragMouseDown;
+	    header.onmousedown = dragMouseDown;
 	  }
 
 	  function dragMouseDown(e) {
