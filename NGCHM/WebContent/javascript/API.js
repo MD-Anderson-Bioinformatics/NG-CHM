@@ -39,6 +39,7 @@
 	'b64toBlob': UTIL.b64toBlob,
 	'jsPDF': jspdf.jsPDF,
 	'generatePDF': PDF.openPdfPrefs,
+	'chmResize': () => PANE.resizeNGCHM(),  // Function not initialized before panes initialized
     });
 
     // Also add the deprecated API functions to UTIL module for the time being.
