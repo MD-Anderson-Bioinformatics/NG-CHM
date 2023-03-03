@@ -402,6 +402,9 @@
      **********************************************************************************/
     UIMGR.onLoadCHM = function (sizeBuilderView) {
 
+	    // Flush summary cache before possibly replacing current CHM with a new map.
+	    SUM.summaryHeatMapCache = {};
+
 	    UTIL.isBuilderView = sizeBuilderView;
 	    //Run startup checks that enable startup warnings button.
 	    setDragPanels();

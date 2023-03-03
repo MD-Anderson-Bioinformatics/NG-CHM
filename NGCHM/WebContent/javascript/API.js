@@ -223,6 +223,8 @@
     //   - Hides the summary box canvas.
     // * "nopanelheaders":
     //   - Hides the panel headers.
+    // * "showSummaryCovariateLabels":
+    //   - show covariate bar labels in the summary view.
     //
     function editWidget (options) {
 	    options = options || [];
@@ -235,6 +237,9 @@
 	    if (options.indexOf('nodetailview') !== -1) {
 		    UTIL.showDetailPane = false;
 		    document.getElementById('summary_box_canvas').classList.add('hide');
+	    }
+	    if (options.indexOf('showSummaryCovariateLabels') !== -1) {
+		    SUM.flagDrawClassBarLabels = true;
 	    }
     }
 
