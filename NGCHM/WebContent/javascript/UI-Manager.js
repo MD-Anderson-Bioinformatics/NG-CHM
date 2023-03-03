@@ -713,9 +713,9 @@
     }
 
     function showTutorialVideos () {
-	UHM.initMessageBox();
-	UHM.setMessageBoxHeader("NG-CHM Tutorial Videos");
-	const messageBox = UHM.getMessageTextBox ();
+	const msgBox = UHM.newMessageBox();
+	UHM.setNewMessageBoxHeader(msgBox, "NG-CHM Tutorial Videos");
+	const messageBox = UHM.getNewMessageTextBox (msgBox);
 
 	const youTubePlayList = UTIL.newElement('DIV.youtube');
 	youTubePlayList.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLIBaINv-Qmd05G3Kj7SbBbSAPZrG-H5bq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
@@ -723,13 +723,12 @@
 	messageBox.innerHTML = '';
 	messageBox.appendChild (youTubePlayList);
 
-	UHM.setMessageBoxButton('close', {
+	UHM.setNewMessageBoxButton(msgBox, 'close', {
 	    type: 'text',
 	    text: 'Close',
 	    tooltip: 'Closes this dialog',
-	    default: true,
 	});
-	UHM.displayMessageBox();
+	UHM.displayNewMessageBox(msgBox);
 
     }
 
@@ -789,7 +788,10 @@
 		type: 'text',
 		text: 'Videos',
 		tooltip: 'Shows NG-CHM Tutorial Videos',
-	    }, showTutorialVideos);
+	    }, function () {
+		UHM.messageBoxCancel();
+		showTutorialVideos();
+	    });
 	    UHM.setMessageBoxButton('tour', {
 		type: 'text',
 		text: 'Take a tour',
@@ -1411,7 +1413,7 @@
 			case 'Enter':
 				if (UHM.messageBoxIsVisible()) {
 				    e.preventDefault();
-				    const defaultButton = document.querySelector('#msgBoxButtons button.default');
+				    const defaultButton = document.querySelector('.msgBoxButtons button.default');
 				    if (defaultButton) {
 					defaultButton.onclick();
 				    } else {

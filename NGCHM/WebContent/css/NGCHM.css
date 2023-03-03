@@ -276,11 +276,13 @@ div.pane canvas {
     opacity: 25%;
 }
 
+.msgBox,
 #msgBox {
     display: grid;
     grid-template-columns: auto;
 }
 
+.msgBoxTxt,
 #msgBoxTxt {
     display: inherit;
     font-size: 12px;
@@ -288,10 +290,12 @@ div.pane canvas {
     box-sizing: border-box;
 }
 
+.msgBox button:disabled,
 #msgBox button:disabled {
     opacity: 25%;
 }
 
+.msgBoxProgressBar,
 #msgBoxProgressBar {
     width: 100%;
 }
@@ -536,13 +540,13 @@ div.paneHeader button {
 }
 
 #pref_buttons,
-#msgBoxButtons {
+.msgBoxButtons {
     display: grid;
     grid-auto-flow: column;
     width: fit-content;
 }
 
-#msgBoxButtons img {
+.msgBoxButtons img {
     padding: 0.2em;
     border: 2px solid #e6f0ff;
     border-radius: 1em;
@@ -553,7 +557,7 @@ div.paneHeader button {
     margin-left: 1em;
 }
 
-#msgBoxButtons .default img {
+.msgBoxButtons .default img {
     border: 2px solid #3377b4;
     border-radius: 1em;
 }
@@ -1217,6 +1221,7 @@ th.breakpointContainer {
     align: top;
 }
 
+.msgBox,
 #pdfPrefs, #msgBox, #linkBox {
 	position: absolute;
 	margin: 5px !important;
@@ -1242,13 +1247,14 @@ th.breakpointContainer {
     margin-top: 0.5em;
 }
 
+.msgBox,
 #msgBox {
     background-color: var(--dialog-body-background);
 }
 
 #linkBoxFoot button,
 #pref_buttons button,
-#msgBoxButtons button {
+.msgBoxButtons button {
     border: none;
     vertical-align: top;
     background: transparent;
@@ -1270,6 +1276,7 @@ th.breakpointContainer {
 	overflow-x: hidden; /* prevent horizontal scroll bar */
 }
 
+.msgBox p,
 #msgBox p {
     white-space: normal;
 }
@@ -1303,6 +1310,7 @@ th.breakpointContainer {
     grid-column: 4;
 }
 
+.msgBoxHdr,
 #prefsHdr, #pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
 	cursor: move;
     display: table;
@@ -1335,6 +1343,7 @@ th.breakpointContainer {
 }
 
 #userHelpHeader span.closeX,
+.msgBoxHdr span.closeX,
 #msgBoxHdr span.closeX,
 #pdfPrefsHdr span.closeX {
     padding-top: 20%;
@@ -1346,6 +1355,7 @@ th.breakpointContainer {
     grid-template-columns: auto 1fr auto;
 }
 
+.msgBoxHdr,
 #msgBoxHdr {
     display: grid;
     grid-template-columns: auto fit-content(0);
@@ -1355,7 +1365,7 @@ th.breakpointContainer {
 	cursor: default;
 }
 
-#pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
+.msgBoxHdr, #pdfPrefsHdr, #msgBoxHdr, #linkBoxHdr{
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
 }

@@ -463,8 +463,9 @@ UHM.invalidFileFormat = function() {
  **********************************************************************************/
 UHM.initMessageBox = function() {
 	UHM.hideMsgBoxProgressBar();
-	document.getElementById('msgBox').style.display = 'none';
-	const msgBoxButtons = document.getElementById ('msgBoxButtons');
+	const msgBox = document.getElementById('msgBox');
+	msgBox.style.display = 'none';
+	const msgBoxButtons = msgBox.querySelector ('.msgBoxButtons');
 	while (msgBoxButtons.firstChild) {
 	    msgBoxButtons.removeChild (msgBoxButtons.firstChild);
 	}
@@ -525,11 +526,16 @@ UHM.displayMessageBox = function() {
  * to UHM.messageBoxCancel.
  */
 UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
+    const msgBox = document.getElementById ('msgBox');
+    addMsgBoxButton (msgBox, buttonId, buttonSpec, altText, onClick);
+};
+
+function addMsgBoxButton (msgBox, buttonId, buttonSpec, altText, onClick) {
 	if (typeof altText == 'function') {
 	    onClick = altText;
 	    altText = 'missing - deprecated';
 	}
-	const msgBoxButtons = document.getElementById ('msgBoxButtons');
+	const msgBoxButtons = msgBox.querySelector('.msgBoxButtons');
 	const newButton = document.createElement('button');
 	newButton.id = 'msgBoxBtn_'+buttonId;
 	if (typeof buttonSpec != 'object') {
@@ -562,7 +568,15 @@ UHM.setMessageBoxButton = function(buttonId, buttonSpec, altText, onClick) {
 	    newButton.dataset.tooltip = buttonSpec.tooltip + '.';
 	}
 	if (onClick == undefined) {
-	    newButton.onclick = UHM.messageBoxCancel;
+	    newButton.onclick = () => {
+		if (msgBox == document.getElementById('msgBox')) {
+		    // Close original message box.
+		    UHM.messageBoxCancel();
+		} else {
+		    // Remove a new message box.
+		    document.body.removeChild (msgBox);
+		}
+	    };
 	} else {
 	    newButton.onclick = function(ev) {
 		if (buttonSpec.disableOnClick) {
@@ -605,6 +619,54 @@ function msgBoxProgressMeter (value) {
 UHM.messageBoxCancel = function() {
 	UHM.initMessageBox();
 }
+
+// ******************************
+//
+// Support for 'new' message boxes.  These message boxes are created dynamically and can
+// co-exist alongside other message boxes.
+//
+// Currently only the functionality required by the Video Tutorial message box is implemented.
+//
+
+// Create a new message box.
+UHM.newMessageBox = function () {
+    const msgBox = document.querySelector('template#msgBoxTemplate').content.querySelector('div').cloneNode(true);
+    msgBox.classList.add('hide');
+    document.body.appendChild (msgBox);
+    UTIL.dragElement (msgBox);
+    return msgBox;
+};
+
+// Set the header text of a new message box.
+UHM.setNewMessageBoxHeader = function (msgBox, headerText) {
+    const msgBoxHdr = msgBox.querySelector('.msgBoxHdr');
+    msgBoxHdr.innerHTML = '<SPAN>' + headerText + '</SPAN>';
+    if (msgBoxHdr.querySelector(".closeX")) { msgBoxHdr.querySelector(".closeX").remove(); }
+    msgBoxHdr.appendChild(UHM.createCloseX(() => {
+	document.body.removeChild (msgBox);
+    }));
+};
+
+// Get the text box of a new message box.
+UHM.getNewMessageTextBox = function (msgBox) {
+    return msgBox.querySelector('.msgBoxTxt');
+};
+
+// Add a button to a new message box.
+// See setMessageBoxButton for details.
+UHM.setNewMessageBoxButton = function (msgBox, buttonId, buttonSpec, altText, onClick) {
+    addMsgBoxButton (msgBox, buttonId, buttonSpec, altText, onClick);
+};
+
+// Display a new message box.
+//
+UHM.displayNewMessageBox = function (msgBox) {
+    msgBox.classList.remove('hide');
+};
+//
+// End support for 'new' message boxes.
+//
+// ******************************
 
 UHM.closeMenu = function() {
 	const barMenuBtn = document.getElementById('barMenu_btn');

@@ -182,7 +182,7 @@
 			    data-title='Splash screen'
 			    data-intro='This splash screen displays brief usage notes when no map is loaded'
 			    >
-			    <div id='splashBoxHeader' class='msgBoxHdr'>
+			    <div id='splashBoxHeader'>
 				<h2>Next-Generation Clustered Heat Map Viewer</h2>
 				<span class='closeX'>
 				    <button id='closeSplash' class='red'
@@ -297,6 +297,7 @@
 					</tbody>
 				</table>
 			</div>
+
 			<div id="msgBox" style="display: none; position: absolute;">
 				<div class="msgBoxHdr" id="msgBoxHdr"></div>
 				<table>
@@ -322,13 +323,47 @@
 								<label for="msgBoxProgressBar">Progress:</label>
 								<progress id="msgBoxProgressBar"></progress>
 								</div>
-								<div id="msgBoxButtons" class='buttonBox'></div>
+								<div class='msgBoxButtons buttonBox'></div>
 							</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
-		
+
+			<template id="msgBoxTemplate" style="display: none; position: absolute;">
+			    <div class="msgBox">
+				<div class="msgBoxHdr"></div>
+				<table>
+					<tbody>
+						<tr class="chmTblRow">
+							<td>
+							        <!-- WIDGET EXCLUDE -->
+								<div class="ngchmLogos" style="display: none">
+									<div class="msgBoxLogoLeft">
+										<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
+										    <img src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
+										</a>
+									</div>
+									<div class="msgBoxLogoRight">
+										<a href="http://insilico.us.com/"  target="_blank">
+											<img src='images/insilicologo.png' alt='insilico' height=40 />
+										</a>
+									</div>
+							        </div>
+							        <!-- WIDGET INCLUDE -->
+								<div class="msgBoxTxt"></div>
+								<div class="msgBoxProgressDiv" style="display: none;">
+								    <label>Progress:</label>
+								    <progress class="msgBoxProgressBar"></progress>
+								</div>
+								<div class='msgBoxButtons buttonBox'></div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			    </div>
+			</template>
+
 			<div id="linkBox" class='hide'>
 				<div id="linkBoxHdr" class="msgBoxHdr">
 				    <span>NG-CHM Plug-in Information</span>
