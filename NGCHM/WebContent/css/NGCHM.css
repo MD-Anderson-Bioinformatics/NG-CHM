@@ -1069,7 +1069,7 @@ th.breakpointContainer {
 }
 
 #prefs {
-	width: 420px;
+	width: 440px;
 	overflow: hidden;
 	position: absolute;
 	background-color: var(--dialog-body-background);
@@ -1756,6 +1756,22 @@ div#droptarget.visible {
 #bubbleHelp span.title {
     font-weight: bold;
     padding-bottom: 3px;
+}
+
+.keyTable THEAD TH {
+    text-align: left;
+    border-bottom: 1px solid grey;
+}
+
+.keyTable TBODY TD {
+    vertical-align: top;
+    padding-top: 0.2em;
+    border-bottom: 1px dashed grey;
+}
+
+.keyTable TBODY TD:nth-child(2) {
+    padding-left: 0.2em;
+    padding-right: 0.2em;
 }
 
 /* Use opacity:0 instead of display:none for elements that will be faded in

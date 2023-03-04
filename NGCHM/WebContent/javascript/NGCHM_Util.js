@@ -46,6 +46,18 @@ UTIL.capitalize = function capitalize (str) {
 	}
 })();
 
+{
+    const keyMap = new Map();
+
+    UTIL.setKeyData = function (key, data) {
+	keyMap.set (key, data);
+    }
+
+    UTIL.getKeyData = function (key) {
+	return keyMap.get (key);
+    }
+}
+
 // Load the dynamic script file.
 UTIL.addScript = function(src, callback) {
 	const head = document.getElementsByTagName('head')[0];

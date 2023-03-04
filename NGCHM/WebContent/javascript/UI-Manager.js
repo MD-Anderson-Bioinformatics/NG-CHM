@@ -247,10 +247,9 @@
 	};
 	FLICK.setFlickHandler (UIMGR.changeDataLayer);
 
-	UIMGR.initializeSummaryWindows = function () {
+	UIMGR.initializeSummaryWindows = function (heatMap) {
 	    const flickState = FLICK.getFlickState();
 	    const first = flickState.shift();
-	    const heatMap = MMGR.getHeatMap();
 	    summaryWindows[first.element] = getSummaryAccessWindow(heatMap, first.layer);
 	    setTimeout (() => {
 		flickState.forEach (alt => {
@@ -285,10 +284,11 @@
 		return;
 	    }
 
-	    UIMGR.initializeSummaryWindows();
+
+	    const heatMap = MMGR.getHeatMap();
+	    UIMGR.initializeSummaryWindows(heatMap);
 
 	    //If any new configs were added to the heatmap's config, save the config file.
-	    const heatMap = MMGR.getHeatMap();
 	    if (MMGR.mapUpdatedOnLoad(heatMap) && heatMap.getMapInformation().read_only !== "Y") {
 		    var success = autoSaveHeatMap(heatMap);
 	    }
@@ -1527,6 +1527,7 @@
 	    [ 'Enter',      'CloseDialog', ],
 	]);
 
+	UTIL.setKeyData ('keyActions', [ keyToAction, actions ]);
 	document.addEventListener ("keydown", keyNavigate);
 
 	function keyNavigate (e) {
