@@ -962,17 +962,6 @@ UTIL.getContigRanges = function (sortedArr) {
     var firstLoaderMessage = true;
     var messages = "";
 
-    // Add event handler for closing splash screen.
-    (function() {
-	const closeBtn = document.getElementById('closeSplash');
-	if (closeBtn) {
-	    closeBtn.addEventListener('click', () => {
-		const splash = document.getElementById('splash');
-		splash.classList.add('hide');
-	    }, { passive: true });
-	}
-    })();
-
     function showSplashExample () {
 	const splashWaiting = document.getElementById('splashWaiting');
 	// Splash screen removed in widget.

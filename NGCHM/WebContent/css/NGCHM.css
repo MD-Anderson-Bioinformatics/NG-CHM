@@ -311,7 +311,14 @@ div.pane canvas {
 	flex-grow: 1;
 }
 
-#splash, #loader {
+#splash {
+	position: absolute;
+	max-width: 50em;
+	height: 100%;
+	overflow-y: auto;
+}
+
+#loader {
 	position: absolute;
 	top: 4em;
 	left: auto;
@@ -1756,12 +1763,14 @@ div#droptarget.visible {
  */
 .faded {
     opacity: 0;
+    z-index: -1000;
 }
 
 /* Start at opacity 0 and transition to opacity 1.
  */
 .fadein {
     opacity: 0;
+    z-index: 10;
     animation-name: loading-up;
     animation-duration: var(--load-time);
     animation-fill-mode: forwards;
@@ -1772,6 +1781,7 @@ div#droptarget.visible {
  */
 .fadeinslow {
     opacity: 0;
+    z-index: 10;
     animation-name: loading-up;
     animation-duration: var(--load-time);
     animation-fill-mode: forwards;
