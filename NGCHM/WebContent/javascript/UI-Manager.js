@@ -799,6 +799,8 @@
 		type: 'text',
 		text: 'Take a tour',
 		tooltip: 'Displays an interactive tour of the user interface elements',
+		disabled: !isMapLoaded,
+		disabledReason: 'no map is loaded',
 	    }, function () {
 		UHM.messageBoxCancel ();
 		TOUR.showTour(null);
