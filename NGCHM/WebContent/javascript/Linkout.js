@@ -310,7 +310,7 @@ var linkoutsVersion = 'undefined';
 				    }
 				}
 				if (linkout.title === 'Download selected matrix data to file') {
-					labelDataMatrix = LNK.createMatrixData(searchLabels);
+					labelDataMatrix = createMatrixData(heatMap, searchLabels);
 				}
 			}
 		} else { // if this linkout was added using addMatrixLinkout
@@ -354,9 +354,8 @@ var linkoutsVersion = 'undefined';
 	}
 
 
-	LNK.createMatrixData = function(searchLabels) {
+	function createMatrixData (heatMap, searchLabels) {
 		//console.log ({ m: 'LNK.createMatrixData', searchLabels});
-		const heatMap = MMGR.getHeatMap();
 		const win = heatMap.getNewAccessWindow({
 		    layer: heatMap.getCurrentDL(),
 		    level: MAPREP.DETAIL_LEVEL,
@@ -366,13 +365,13 @@ var linkoutsVersion = 'undefined';
 		    numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
 		});
 		win.onready((win) => {
-		    createMatrixDataTsv(win, searchLabels);
+		    createMatrixDataTsv(heatMap, win, searchLabels);
 		});
 	};
 
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
-	function createMatrixDataTsv (accessWindow, searchLabels) {
+	function createMatrixDataTsv (heatMap, accessWindow, searchLabels) {
 		var matrix = new Array();
 
 		let rowSearchItems = SRCHSTATE.getAxisSearchResults("Row");
@@ -406,7 +405,6 @@ var linkoutsVersion = 'undefined';
 		}
 		
 		//Load up an array containing data values for the selected data matrix
-		const heatMap = MMGR.getHeatMap();
 		var dataMatrix = new Array();
 		rowSearchItems.forEach( x => {
 			colSearchItems.forEach( y => {
@@ -434,7 +432,7 @@ var linkoutsVersion = 'undefined';
 				matrixCtr++;
 			}
 		}
-		LNK.copySelectedDataToClipboard(matrix,"Matrix");
+		downloadSelectedData (heatMap, matrix, "Matrix");
 	};
 
 	//This function creates a temporary searchItems object array and
@@ -826,10 +824,10 @@ var linkoutsVersion = 'undefined';
 			LNK.addLinkout("Copy selected labels to clipboard", rowLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
 		}
 
-		LNK.addLinkout("Copy covariate data for all columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy covariate data for selected columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyPartialClassBarToClipBoard,null,1);
-		LNK.addLinkout("Copy covariate data for all rows", "RowCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy covariate data for selected rows", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Download covariate data for all columns", "ColumnCovar", linkouts.MULTI_SELECT, downloadEntireClassBar,null,0);
+		LNK.addLinkout("Download covariate data for selected columns", "ColumnCovar", linkouts.MULTI_SELECT, downloadPartialClassBar,null,1);
+		LNK.addLinkout("Download covariate data for all rows", "RowCovar", linkouts.MULTI_SELECT, downloadEntireClassBar,null,0);
+		LNK.addLinkout("Download covariate data for selected rows", "RowCovar", linkouts.MULTI_SELECT, downloadPartialClassBar,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
@@ -856,61 +854,50 @@ var linkoutsVersion = 'undefined';
 		window.open("","",'width=335,height=330,resizable=1').document.write(labels.join("<br>"));
 	}
 
-	LNK.copyEntireClassBarToClipBoard = function(labels,covarAxis){
-		const newWindow = window.open("","",'width=335,height=330,resizable=1');
-		if (!newWindow) {
-		    console.error ("Error opening clipboard window");
-		    return;
-		}
-		const newDoc = newWindow.document;
-		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
+	function downloadEntireClassBar (labels, covarAxis) {
 		const heatMap = MMGR.getHeatMap();
+		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const axisLabels = heatMap.getAxisLabels(axis)["labels"];
 		const classBars = heatMap.getAxisCovariateData(axis);
-		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
-		for (let i = 0; i < axisLabels.length; i++){
-			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
-			for (let j = 0; j < labels.length; j++){
-				newDoc.write(classBars[labels[j]].values[i] + "&emsp;");
-			}
-			newDoc.write("<br>");
+		const covarData = [];
+		covarData.push (['Sample'].concat(labels));
+		for (let i = 0; i < axisLabels.length; i++) {
+			covarData.push ([axisLabels[i]].concat(labels.map(lbl => classBars[lbl].values[i])));
 		}
-	};
+		downloadSelectedData (heatMap, covarData, covarAxis);
+	}
 
-	LNK.copyPartialClassBarToClipBoard = function(labels, covarAxis){
-		const newWindow = window.open("","",'width=335,height=330,resizable=1');
-		if (!newWindow) {
-		    console.error ("Error opening clipboard window");
-		    return;
-		}
-		const newDoc = newWindow.document;
+	function downloadPartialClassBar (labels, covarAxis) {
+		const heatMap = MMGR.getHeatMap();
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const axisLabels = SRCHSTATE.getSearchLabelsByAxis(axis);
 		const labelIndex = SRCHSTATE.getAxisSearchResults(axis);
-		const classBars = MMGR.getHeatMap().getAxisCovariateData(axis);
-		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
-		for (let i = 0; i < axisLabels.length; i++){
-			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
-			for (let j = 0; j < labels.length; j++){
-				newDoc.write(classBars[labels[j]].values[labelIndex[i]-1] + "&emsp;");
-			}
-			newDoc.write("<br>");
+		const classBars = heatMap.getAxisCovariateData(axis);
+		const covarData = [];
+		covarData.push (['Sample'].concat(labels));
+		for (let i = 0; i < axisLabels.length; i++) {
+			covarData.push ([axisLabels[i]].concat(labels.map(lbl => classBars[lbl].values[labelIndex[i]-1])));
 		}
-	};
+		downloadSelectedData (heatMap, covarData, covarAxis);
+	}
 
 	LNK.copySelectionToClipboard = function(labels,axis){
 		window.open("","",'width=335,height=330,resizable=1').document.write("<b>Rows:</b><br>" + labels["Row"].join("<br>") + "<br><br><b>Columns:</b><br>" + labels["Column"].join("<br>"));
 	}
 
-	LNK.copySelectedDataToClipboard = function(matrixData,axis){
-		var dataStr = "";
-		for (var i = 0; i<matrixData.length;i++) {
-			var rowData = matrixData[i].join('\t');
+	// Data is a matrix: an array of arrays.
+	// Each element of data is a row.
+	// Each element of a row is a cell.
+	// The first row should be column labels.
+	// The first cell in each row should be a row label.
+	function downloadSelectedData (heatMap, data, axis) {
+		let dataStr = "";
+		for (let i = 0; i < data.length; i++) {
+			const rowData = data[i].join('\t');
 			dataStr += rowData+"\n";
 		}
-		var fileName = MMGR.getHeatMap().getMapInformation().name+" Matrix Data.tsv";
-		download(fileName,dataStr);
-		//window.open("","",'width=335,height=330,resizable=1').document.write(dataStr);
+		const fileName = heatMap.getMapInformation().name + "_" + axis + "_Data.tsv";
+		download (fileName, dataStr);
 	}
 
 	function download(filename, text) {
