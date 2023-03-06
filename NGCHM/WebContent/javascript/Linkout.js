@@ -135,6 +135,7 @@ var linkoutsVersion = 'undefined';
     const CMM = NgChm.importNS('NgChm.CMM');
 
     var menuOpenCanvas = null;  // Canvas on which the most recent linkouts popup was opened.
+    LNK.enableBuilderUploads = true;
 
     const pluginRestoreInfo = {};
 
@@ -830,6 +831,9 @@ var linkoutsVersion = 'undefined';
 		LNK.addLinkout("Download covariate data for selected rows", "RowCovar", linkouts.MULTI_SELECT, downloadPartialClassBar,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
+		if (LNK.enableBuilderUploads) {
+		    LNK.addLinkout("Upload matrix data to builder", "Matrix", linkouts.MULTI_SELECT, uploadSelectedToBuilder, null, 0);
+		}
 	}
 
 	// Return and clear a reference to the last canvas on which a label help menu was opened.
@@ -883,6 +887,97 @@ var linkoutsVersion = 'undefined';
 
 	LNK.copySelectionToClipboard = function(labels,axis){
 		window.open("","",'width=335,height=330,resizable=1').document.write("<b>Rows:</b><br>" + labels["Row"].join("<br>") + "<br><br><b>Columns:</b><br>" + labels["Column"].join("<br>"));
+	}
+
+	function uploadSelectedToBuilder (data, axis) {
+	    const msgBox = UHM.newMessageBox('upload');
+	    UHM.setNewMessageBoxHeader (msgBox, "Upload selected data to NG-CHM Builder");
+	    const msgBoxText = UHM.getNewMessageTextBox (msgBox);
+	    const label = UTIL.newElement ('LABEL', { 'for': 'builder-url' }, "NG-CHM Builder URL:");
+	    const util = UTIL.newElement ('INPUT', { name: 'builder-url', size: 60 });
+	    util.value = UTIL.getKeyData ('web-builder-url');
+	    msgBoxText.appendChild (UTIL.newElement('BR'));
+	    msgBoxText.appendChild (label);
+	    msgBoxText.appendChild (util);
+	    msgBoxText.appendChild (UTIL.newElement('BR'));
+	    msgBoxText.appendChild (UTIL.newElement('BR'));
+	    UHM.setNewMessageBoxButton (msgBox, 'upload', { type: 'text', text: 'Upload', tooltip: 'Upload data to builder', default: true }, () => {
+		UTIL.setKeyData ('web-builder-url', util.value);
+		sendDataToBuilder ();
+	    });
+	    UHM.setNewMessageBoxButton (msgBox, 'cancel', { type: 'text', text: 'Cancel', tooltip: 'Cancel upload', default: false });
+	    UHM.displayNewMessageBox (msgBox);
+
+	    function sendDataToBuilder () {
+		const debug = false;
+		const heatMap = MMGR.getHeatMap();
+		const nonce = PIM.getNewNonce();
+		const url = new URL (util.value.replace(/[/]*[A-Za-z0-9-.]*.html*$/,''));
+		const builder = window.open (url.href + "/Upload_Matrix.html?adv=Y&nonce="+nonce, "_blank");
+		var established = false;
+		var numProbes = 0;
+
+		if (debug) console.log ('UploadSelectedDataToBuilder', heatMap, data, axis);
+		window.addEventListener('message', processMessage, false);
+		setTimeout (sendProbe, 50);
+
+		// Send probe messages until we get a response or it appears we never will.
+		function sendProbe () {
+		    if (!established && numProbes < 1200) {
+			builder.postMessage ({ op: 'probe', nonce: nonce, }, url.origin );
+			numProbes++;
+			setTimeout (sendProbe, 50);
+		    }
+		}
+
+		function processMessage(msg) {
+		    if (msg.data.nonce == nonce) {
+			if (debug) console.log ('Got message from builder');
+			if (msg.source != builder) {
+			    console.error ('Message not from builder', msg, builder);
+			    return;
+			}
+			if (msg.data.op == 'ready') {
+			    established = true;
+			    if (debug) console.log ('Established comms with builder');
+			    const win = heatMap.getNewAccessWindow({
+				layer: heatMap.getCurrentDL(),
+				level: MAPREP.DETAIL_LEVEL,
+				firstRow: 1,
+				firstCol: 1,
+				numRows: heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
+				numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
+			    });
+			    win.onready((win) => {
+				if (debug) console.log ('Ready to send tiles');
+				const tiles = {
+				    startRowTile: win.tileWindow.startRowTile,
+				    startColTile: win.tileWindow.startColTile,
+				    endRowTile: win.tileWindow.endRowTile,
+				    endColTile: win.tileWindow.endColTile,
+				};
+				const ngchm = {
+				    mapName: heatMap.mapName,
+				    mapConfig: heatMap.mapConfig,
+				    mapData: heatMap.mapData,
+				    currentLayer: heatMap._currentDl,
+				    tiles: tiles,
+				};
+				// Send the NG-CHM config and summary data and all the tile data.
+				builder.postMessage ({ op: 'ngchm', nonce: nonce, ngchm: ngchm, }, url.origin );
+				for (let row = win.tileWindow.startRowTile; row <= win.tileWindow.endRowTile; row++) {
+				    for (let col = win.tileWindow.startColTile; col <= win.tileWindow.endColTile; col++) {
+					const tile = win.tileWindow.getTileData (row, col);
+					const res = builder.postMessage ({ op: 'ngchm-tile', nonce: nonce, row, col, tile, }, url.origin );
+				    }
+				}
+				if (debug) console.log ('All tiles sent');
+				UHM.closeNewMessageBox (msgBox);
+			    });
+			}
+		    }
+		}
+	    }
 	}
 
 	// Data is a matrix: an array of arrays.

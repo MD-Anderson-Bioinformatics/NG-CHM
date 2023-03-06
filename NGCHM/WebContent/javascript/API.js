@@ -33,6 +33,7 @@
     const PANE = NgChm.importNS('NgChm.Pane');
     const DEV = NgChm.importNS('NgChm.DEV');
     const PDF = NgChm.importNS('NgChm.PDF');
+    const LNK = NgChm.importNS('NgChm.LNK');
 
     // Re-exports.
     NgChm.exportToNS ('NgChm.API', {
@@ -241,6 +242,9 @@
 	    }
 	    if (options.indexOf('showSummaryCovariateLabels') !== -1) {
 		    SUM.flagDrawClassBarLabels = true;
+	    }
+	    if (options.indexOf('noBuilderUploads') !== -1) {
+		LNK.enableBuilderUploads = false;
 	    }
     }
 

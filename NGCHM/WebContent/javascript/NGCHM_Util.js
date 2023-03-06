@@ -8,6 +8,7 @@
 
     //Define Namespace for NgChm UTIL
     const UTIL = NgChm.createNS('NgChm.UTIL');
+    const CFG = NgChm.importNS('NgChm.CFG');
 
 //Get a value for a parm passed in the URL.
 UTIL.getURLParameter = function(name) {
@@ -57,6 +58,9 @@ UTIL.capitalize = function capitalize (str) {
 	return keyMap.get (key);
     }
 }
+
+// Set initial value for web builder URL.
+UTIL.setKeyData ('web-builder-url', CFG.builder_url);
 
 // Load the dynamic script file.
 UTIL.addScript = function(src, callback) {
