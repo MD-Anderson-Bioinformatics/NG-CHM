@@ -37,7 +37,7 @@
     // Re-exports.
     NgChm.exportToNS ('NgChm.API', {
 	'b64toBlob': UTIL.b64toBlob,
-	'jsPDF': jspdf.jsPDF,
+	'jsPDF': (...args) => jspdf.jsPDF.apply (null, args),
 	'generatePDF': PDF.openPdfPrefs,
 	'chmResize': () => PANE.resizeNGCHM(),  // Function not initialized before panes initialized
     });
