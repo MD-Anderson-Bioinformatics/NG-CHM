@@ -623,15 +623,22 @@ UHM.messageBoxCancel = function() {
 // ******************************
 //
 // Support for 'new' message boxes.  These message boxes are created dynamically and can
-// co-exist alongside other message boxes.
+// co-exist alongside other message boxes with different 'names'.
 //
 // Currently only the functionality required by the Video Tutorial message box is implemented.
 //
 
 // Create a new message box.
-UHM.newMessageBox = function () {
+UHM.newMessageBox = function (name) {
+    const id = 'msgBox-for-' + name;
+    const existing = document.getElementById (id);
+    if (existing) {
+	return existing;
+    }
+
     const msgBox = document.querySelector('template#msgBoxTemplate').content.querySelector('div').cloneNode(true);
     msgBox.classList.add('hide');
+    msgBox.id = id;
     document.body.appendChild (msgBox);
     UTIL.dragElement (msgBox);
     return msgBox;
@@ -643,7 +650,7 @@ UHM.setNewMessageBoxHeader = function (msgBox, headerText) {
     msgBoxHdr.innerHTML = '<SPAN>' + headerText + '</SPAN>';
     if (msgBoxHdr.querySelector(".closeX")) { msgBoxHdr.querySelector(".closeX").remove(); }
     msgBoxHdr.appendChild(UHM.createCloseX(() => {
-	document.body.removeChild (msgBox);
+	UHM.closeNewMessageBox (msgBox);
     }));
 };
 
@@ -654,14 +661,25 @@ UHM.getNewMessageTextBox = function (msgBox) {
 
 // Add a button to a new message box.
 // See setMessageBoxButton for details.
-UHM.setNewMessageBoxButton = function (msgBox, buttonId, buttonSpec, altText, onClick) {
-    addMsgBoxButton (msgBox, buttonId, buttonSpec, altText, onClick);
+UHM.setNewMessageBoxButton = function (msgBox, buttonId, buttonSpec, onClick) {
+    if (!onClick) {
+	onClick = () => {
+	    UHM.closeNewMessageBox (msgBox);
+	};
+    }
+    addMsgBoxButton (msgBox, buttonId, buttonSpec, onClick);
 };
 
 // Display a new message box.
 //
 UHM.displayNewMessageBox = function (msgBox) {
     msgBox.classList.remove('hide');
+};
+
+// Close a new message box.
+//
+UHM.closeNewMessageBox = function (msgBox) {
+    document.body.removeChild (msgBox);
 };
 //
 // End support for 'new' message boxes.

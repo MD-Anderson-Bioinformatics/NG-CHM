@@ -716,7 +716,7 @@
     }
 
     function showTutorialVideos () {
-	const msgBox = UHM.newMessageBox();
+	const msgBox = UHM.newMessageBox('videos');
 	UHM.setNewMessageBoxHeader(msgBox, "NG-CHM Tutorial Videos");
 	const messageBox = UHM.getNewMessageTextBox (msgBox);
 
