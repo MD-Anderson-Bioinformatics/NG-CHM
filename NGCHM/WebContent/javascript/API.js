@@ -22,6 +22,7 @@
 	'loadAllTilesTimer': loadAllTilesTimer,
 	'heatMapLoaded': heatMapLoaded,
 	'getSummaryHist': getSummaryHist,
+	'getLinkoutTypes': getLinkoutTypes,
     };
     const API = NgChm.createNS('NgChm.API', exports);
 
@@ -31,10 +32,14 @@
     const SUM = NgChm.importNS('NgChm.SUM');
     const PANE = NgChm.importNS('NgChm.Pane');
     const DEV = NgChm.importNS('NgChm.DEV');
+    const PDF = NgChm.importNS('NgChm.PDF');
 
     // Re-exports.
     NgChm.exportToNS ('NgChm.API', {
 	'b64toBlob': UTIL.b64toBlob,
+	'jsPDF': jspdf.jsPDF,
+	'generatePDF': PDF.openPdfPrefs,
+	'chmResize': () => PANE.resizeNGCHM(),  // Function not initialized before panes initialized
     });
 
     // Also add the deprecated API functions to UTIL module for the time being.
@@ -52,6 +57,17 @@
     function getSummaryHist (thresholds) {
 	const heatMap = MMGR.getHeatMap();
 	return heatMap.getSummaryHist (heatMap.getCurrentDL(), +thresholds[0], +thresholds[thresholds.length-1]);
+    }
+
+    // Return a promise for an array of all linkout types available for the NG-CHM.
+    // The promise resolves after the NG-CHM's customization file has loaded.
+    //
+    function getLinkoutTypes () {
+	return new Promise ((resolve) => {
+	    NgChm.CUST.waitForPlugins (() => {
+		resolve (NgChm.CUST.linkoutTypes.slice(0));
+	    });
+	});
     }
 
     /**********************************************************************************
@@ -208,6 +224,8 @@
     //   - Hides the summary box canvas.
     // * "nopanelheaders":
     //   - Hides the panel headers.
+    // * "showSummaryCovariateLabels":
+    //   - show covariate bar labels in the summary view.
     //
     function editWidget (options) {
 	    options = options || [];
@@ -220,6 +238,9 @@
 	    if (options.indexOf('nodetailview') !== -1) {
 		    UTIL.showDetailPane = false;
 		    document.getElementById('summary_box_canvas').classList.add('hide');
+	    }
+	    if (options.indexOf('showSummaryCovariateLabels') !== -1) {
+		    SUM.flagDrawClassBarLabels = true;
 	    }
     }
 
