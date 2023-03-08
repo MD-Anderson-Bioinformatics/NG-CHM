@@ -38,6 +38,9 @@
     // Re-exports.
     NgChm.exportToNS ('NgChm.API', {
 	'b64toBlob': UTIL.b64toBlob,
+	// Export of jsPDF complicated by fact that jsPDF may not be loaded before API.js in the
+	// standalone version of the system.  The following approach lets us avoid having to
+	// know any details about the parameters / arguments of the jsPDF call.
 	'jsPDF': (...args) => jspdf.jsPDF.apply (null, args),
 	'generatePDF': PDF.openPdfPrefs,
 	'chmResize': () => PANE.resizeNGCHM(),  // Function not initialized before panes initialized
