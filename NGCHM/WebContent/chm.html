@@ -182,7 +182,7 @@
 			    data-title='Splash screen'
 			    data-intro='This splash screen displays brief usage notes when no map is loaded'
 			    >
-			    <div id='splashBoxHeader' class='msgBoxHdr'>
+			    <div id='splashBoxHeader'>
 				<h2>Next-Generation Clustered Heat Map Viewer</h2>
 				<span class='closeX'>
 				    <button id='closeSplash' class='red'
@@ -246,19 +246,17 @@
 							<td>
 								<div id="pdfprefprefs" style="display: block;">
 									<div style="display: inherit; width: 290px; height: 350px;">
-										<h3 style="margin-bottom:0px;">Show maps:</h3>
+										<h3 style="margin-bottom:0px;">Include maps:</h3>
 										<input id="pdfInputSummaryMap" type="radio" name="pages" value="summary"> Summary<br>
 										<input id="pdfInputDetailMap" type="radio" name="pages" value="detail"> Detail<br>
 										<input id="pdfInputBothMaps" type="radio" name="pages" value="both" checked> Both<br><br>
-								<!--  		<input id="pdfInputPages" type="checkbox" name="pages" value="separate"> Show maps on separate pages<br>	-->
-										<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait
-										<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape <br>
-										<h3 style="margin-bottom:0px;">Show classification bars:</h3>
+										<input id="pdfInputShowBounds" type="checkbox" name="showBounds" value="showbounds">Show detail view boundaries on summary map<br>
+										<h3 style="margin-bottom:0px;">Include covariate bar legends:</h3>
 										<input id="pdfInputCondensed" type="radio" name="condensed" value="condensed" checked> Condensed
 										<input id="pdfInputHistogram" type="radio" name="condensed" value="histogram"> Histogram <br>
 										<input id="pdfInputColumn" type="checkbox" name="class" value="row" checked> Column<br>
 										<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Row<br>
-										<h3 style="margin-bottom:0px;">Display Options:</h3>
+										<h3 style="margin-bottom:0px;">Font &amp; Paper Options:</h3>
 										<p id="pdfErrorMessage" style="display:none;color:red; font-weight:bold;margin-left: 1.0em; margin-left: 1.0em;">Please select a font between 1 and 36</p><br>
 										Font Style:&nbsp;&nbsp;<select id="pdfFontStyle">
 											<option value="helvetica">Helvetica</option>
@@ -270,6 +268,8 @@
 											<option value="A3">Ledger/Tabloid (11 x 17 inches)</option>
 											<option value="A4">A4 International (210 x 297 mm)</option>
 										</select>
+										<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait
+										<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape <br>
 										<div id="pdfProgressBarDiv" style="display: none;">
 										<label for="pdfProgressBar">Progress:</label>
 										<progress id="pdfProgressBar"></progress>
@@ -297,6 +297,7 @@
 					</tbody>
 				</table>
 			</div>
+
 			<div id="msgBox" style="display: none; position: absolute;">
 				<div class="msgBoxHdr" id="msgBoxHdr"></div>
 				<table>
@@ -322,13 +323,47 @@
 								<label for="msgBoxProgressBar">Progress:</label>
 								<progress id="msgBoxProgressBar"></progress>
 								</div>
-								<div id="msgBoxButtons" class='buttonBox'></div>
+								<div class='msgBoxButtons buttonBox'></div>
 							</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
-		
+
+			<template id="msgBoxTemplate" style="display: none; position: absolute;">
+			    <div class="msgBox">
+				<div class="msgBoxHdr"></div>
+				<table>
+					<tbody>
+						<tr class="chmTblRow">
+							<td>
+							        <!-- WIDGET EXCLUDE -->
+								<div class="ngchmLogos" style="display: none">
+									<div class="msgBoxLogoLeft">
+										<a href="https://www.mdanderson.org/education-and-research/departments-programs-and-labs/departments-and-divisions/bioinformatics-and-computational-biology/index.html"  target="_blank">
+										    <img src="images/mdabcblogo262x108.png" alt="MD Anderson logo"/>
+										</a>
+									</div>
+									<div class="msgBoxLogoRight">
+										<a href="http://insilico.us.com/"  target="_blank">
+											<img src='images/insilicologo.png' alt='insilico' height=40 />
+										</a>
+									</div>
+							        </div>
+							        <!-- WIDGET INCLUDE -->
+								<div class="msgBoxTxt"></div>
+								<div class="msgBoxProgressDiv" style="display: none;">
+								    <label>Progress:</label>
+								    <progress class="msgBoxProgressBar"></progress>
+								</div>
+								<div class='msgBoxButtons buttonBox'></div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			    </div>
+			</template>
+
 			<div id="linkBox" class='hide'>
 				<div id="linkBoxHdr" class="msgBoxHdr">
 				    <span>NG-CHM Plug-in Information</span>

@@ -207,7 +207,7 @@ DVW.getCurrentDetRow = function(mapItem) {
 	let detRow = mapItem.currentRow;
 	if ((mapItem.mode == 'RIBBONV') && (mapItem.selectedStart >= 1)) {
 		const rvRatio = mapItem.heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
-		detRow = Math.round(mapItem.selectedStart/rvRatio);
+		detRow = 1 + Math.floor((mapItem.selectedStart-1)/rvRatio);
 	}
 	return  detRow;
 };
@@ -217,7 +217,7 @@ DVW.getCurrentDetCol = function(mapItem) {
 	let detCol = mapItem.currentCol;
 	if ((mapItem.mode == 'RIBBONH') && (mapItem.selectedStart >= 1)) {
 		const rhRatio = mapItem.heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
-		detCol = Math.round(mapItem.selectedStart/rhRatio);
+		detCol = 1 + Math.floor((mapItem.selectedStart-1)/rhRatio);
 	}
 	return  detCol;
 };
@@ -231,6 +231,9 @@ DVW.getCurrentDetDataPerRow = function(mapItem) {
 	// make sure dataPerCol is the correct value. 
 	let	detDataPerRow = mapItem.dataPerRow;
 	if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
+		if (mapItem.selectedStart >= 1) {
+		    detDataPerRow = mapItem.selectedStop - mapItem.selectedStart + 1;
+		}
 		const rate = mapItem.heatMap.getColSummaryRatio(MAPREP.RIBBON_HOR_LEVEL);
 		detDataPerRow = Math.ceil(detDataPerRow/rate);
 	} 
@@ -241,6 +244,9 @@ DVW.getCurrentDetDataPerCol = function(mapItem) {
 	// make sure dataPerCol is the correct value.  
 	let	detDataPerCol = mapItem.dataPerCol;
 	if ((mapItem.mode == 'RIBBONV') || (mapItem.mode == 'FULL_MAP')) {
+		if (mapItem.selectedStart >= 1) {
+		    detDataPerCol = mapItem.selectedStop - mapItem.selectedStart + 1;
+		}
 		const rate = mapItem.heatMap.getRowSummaryRatio(MAPREP.RIBBON_VERT_LEVEL);
 		detDataPerCol = Math.ceil(detDataPerCol/rate);
 	} 

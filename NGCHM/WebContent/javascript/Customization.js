@@ -286,20 +286,34 @@
     // Load the user's custom.js file.
     CUST.addCustomJS = function() {
 	const heatMap = MMGR.getHeatMap();
-		CUST.beforeLoadCustom(heatMap);
-	    var head = document.getElementsByTagName('head')[0];
-	    var script = document.createElement('script');
+	CUST.beforeLoadCustom(heatMap);
+	const head = document.getElementsByTagName('head')[0];
+	const script = document.createElement('script');
+	if (CFG.custom_specified) {
+	    initScript();
+	} else {
+	    // USE DEFAULT CUSTOM.JS
+	    // NOTE: These 3 lines of code are replaced when building ngchmApp.html and ngchmWidget-min.js (the "file mode" and "widget" versions of the application).
+	    initScript();
+	}
+	head.appendChild(script);
+
+	function initScript () {
 	    script.type = 'text/javascript';
 	    script.src = CFG.custom_script;
-        // Most browsers:   NOTE: The next 2 lines of code are replaced when building ngchmApp.html and ngchmWidget-min.js (the "file mode" and "widget" versions of the application)
-        script.onload = CUST.definePluginLinkouts;
-        // Internet explorer:
-        script.onreadystatechange = function() { if (this.readyState == 'complete') {     	CUST.definePluginLinkouts();   }   };  //Leave this as one line for filemode version app builder
-	script.onerror = function () {
-	    console.warn ("Loading of " + CFG.custom_script + " failed.");
-	    CUST.definePluginLinkouts();
-	};
-	head.appendChild(script);
+	    // Most browsers:
+	    script.onload = CUST.definePluginLinkouts;
+	    // Internet explorer:
+	    script.onreadystatechange = function() {
+		if (this.readyState == 'complete') {
+		    CUST.definePluginLinkouts();
+		}
+	    };
+	    script.onerror = function () {
+		console.warn ("Loading of " + CFG.custom_script + " failed.");
+		CUST.definePluginLinkouts();
+	    };
+	}
     };
     
     // Interface accessible to embedded maps that specify a custom js file 

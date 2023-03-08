@@ -289,14 +289,13 @@
 
 	    //If any new configs were added to the heatmap's config, save the config file.
 	    const heatMap = MMGR.getHeatMap();
-	    if (MMGR.mapUpdatedOnLoad() && heatMap.getMapInformation().read_only !== "Y") {
+	    if (MMGR.mapUpdatedOnLoad(heatMap) && heatMap.getMapInformation().read_only !== "Y") {
 		    var success = autoSaveHeatMap(heatMap);
 	    }
 	    heatMap.setSelectionColors();
 	    SRCH.configSearchInterface (heatMap);
 
 	    CUST.addCustomJS();
-	    document.addEventListener ("keydown", keyNavigate);
 		if (heatMap.source() === MMGR.FILE_SOURCE) {
 			firstTime = true;
 			if (SUM.chmElement) {
@@ -436,6 +435,8 @@
 				    mapName = MMGR.embeddedMapName;
 				    dataSource = MMGR.LOCAL_SOURCE;
 			    }
+			    resetCHM();
+			    initDisplayVars();
 			    MMGR.createHeatMap(dataSource, mapName, [
 				    UIMGR.configurePanelInterface,
 				    SUM.processSummaryMapUpdate,
@@ -711,6 +712,26 @@
 	    }
     }
 
+    function showTutorialVideos () {
+	const msgBox = UHM.newMessageBox();
+	UHM.setNewMessageBoxHeader(msgBox, "NG-CHM Tutorial Videos");
+	const messageBox = UHM.getNewMessageTextBox (msgBox);
+
+	const youTubePlayList = UTIL.newElement('DIV.youtube');
+	youTubePlayList.innerHTML = '<iframe width="560" height="315" src="https://www.youtube.com/embed/videoseries?list=PLIBaINv-Qmd05G3Kj7SbBbSAPZrG-H5bq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>';
+	youTubePlayList.firstChild.classList.add('youtube');
+	messageBox.innerHTML = '';
+	messageBox.appendChild (youTubePlayList);
+
+	UHM.setNewMessageBoxButton(msgBox, 'close', {
+	    type: 'text',
+	    text: 'Close',
+	    tooltip: 'Closes this dialog',
+	});
+	UHM.displayNewMessageBox(msgBox);
+
+    }
+
     /**********************************************************************************
      * FUNCTION - widgetHelp: This function displays a special help popup box for
      * the widgetized version of the NG-CHM embedded viewer.
@@ -763,6 +784,14 @@
 		UHM.messageBoxCancel();
 		MMGR.zipAppDownload();
 	    });
+	    UHM.setMessageBoxButton('videos', {
+		type: 'text',
+		text: 'Videos',
+		tooltip: 'Shows NG-CHM Tutorial Videos',
+	    }, function () {
+		UHM.messageBoxCancel();
+		showTutorialVideos();
+	    });
 	    UHM.setMessageBoxButton('tour', {
 		type: 'text',
 		text: 'Take a tour',
@@ -814,7 +843,7 @@
 		    menu.style.display = '';
 		    // Disable Save as PDF menu item if no heatmap window visble.
 		    const pdfMenuItem = document.getElementById('menuPdf');
-		    if (PDF.canGeneratePdf()) {
+		    if (PDF.canGeneratePdf() && PDF.pdfDialogClosed()) {
 			    pdfMenuItem.classList.remove('disabled');
 		    } else {
 			    pdfMenuItem.classList.add('disabled');
@@ -1273,6 +1302,7 @@
 			case 'ArrowLeft': // left key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
+					if (!mapItem) return;
 					if (e.shiftKey) {
 					    mapItem.currentCol -= mapItem.dataPerRow;
 					} else if (e.ctrlKey) {
@@ -1291,6 +1321,7 @@
 			case 'ArrowUp': // up key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
+					if (!mapItem) return;
 					if (e.shiftKey) {
 					    mapItem.currentRow -= mapItem.dataPerCol;
 					} else if (e.ctrlKey) {
@@ -1307,6 +1338,7 @@
 			case 'ArrowRight': // right key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
+					if (!mapItem) return;
 					if (e.shiftKey) {
 					    mapItem.currentCol += mapItem.dataPerRow;
 					} else if (e.ctrlKey) {
@@ -1325,6 +1357,7 @@
 			case 'ArrowDown': // down key
 				if (document.activeElement.id !== "search_text"){
 					e.preventDefault();
+					if (!mapItem) return;
 					if (e.shiftKey) {
 					    mapItem.currentRow += mapItem.dataPerCol;
 					} else if (e.ctrlKey) {
@@ -1340,6 +1373,7 @@
 				break;
 			case 'PageUp': // page up
 				e.preventDefault();
+				if (!mapItem) return;
 				if (e.shiftKey){
 					let newMode;
 					DET.clearDendroSelection(mapItem);
@@ -1356,6 +1390,7 @@
 				break;
 			case 'PageDown': // page down
 				e.preventDefault();
+				if (!mapItem) return;
 				if (e.shiftKey){
 					let newMode;
 					DET.clearDendroSelection(mapItem);
@@ -1378,7 +1413,7 @@
 			case 'Enter':
 				if (UHM.messageBoxIsVisible()) {
 				    e.preventDefault();
-				    const defaultButton = document.querySelector('#msgBoxButtons button.default');
+				    const defaultButton = document.querySelector('.msgBoxButtons button.default');
 				    if (defaultButton) {
 					defaultButton.onclick();
 				    } else {
@@ -1392,10 +1427,12 @@
 			default:
 				return;
 		}
-		DVW.checkRow(mapItem);
-		DVW.checkCol(mapItem);
-		mapItem.updateSelection();
-		SRCH.enableDisableSearchButtons (mapItem);
+		if (mapItem) {
+		    DVW.checkRow(mapItem);
+		    DVW.checkCol(mapItem);
+		    mapItem.updateSelection();
+		    SRCH.enableDisableSearchButtons (mapItem);
+		}
 	} else {
 	    if ((document.activeElement.id === "search_text") && (e.key === 'Enter')) {
 		    SRCH.detailSearch();
@@ -1452,5 +1489,7 @@
 	    SRCH.showSearchResults();
 	    SUM.redrawSelectionMarks();
 	});
+
+	document.addEventListener ("keydown", keyNavigate);
 
 })();

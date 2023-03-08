@@ -68,13 +68,11 @@ public class NGCHM_Minimizer {
 					}
 				}
 				combinedWidget.write("\n");
-			    } else if (line.contains("script.src = NgChm.CFG.custom_script")) {
+			    } else if (line.contains("USE DEFAULT CUSTOM.JS")) {
+				    // Skip the USE DEFAULT line and the following two lines.
 				    line = br.readLine();
-				    combinedWidget.write(line + "\n");
+				    line = br.readLine();
 				    writeCustomJS(webDir, combinedWidget);
-				    line = br.readLine();
-				    line = br.readLine();
-				    line = br.readLine();
 			    } else if (line.contains("NgChm.PDF.getViewerHeatmapPDF = function()")) {
 				    combinedWidget.write(line + "\n");
 				    combinedWidget.write("NgChm.PDF.isWidget = true;\n");

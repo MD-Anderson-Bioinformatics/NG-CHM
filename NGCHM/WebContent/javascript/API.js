@@ -20,6 +20,8 @@
 	'editWidget': editWidget,
 	'hideEmbed': hideEmbed,
 	'loadAllTilesTimer': loadAllTilesTimer,
+	'heatMapLoaded': heatMapLoaded,
+	'getSummaryHist': getSummaryHist,
     };
     const API = NgChm.createNS('NgChm.API', exports);
 
@@ -38,6 +40,19 @@
     // Also add the deprecated API functions to UTIL module for the time being.
     // Use Object.assign instead of exportToNS to avoid the module graph.
     Object.assign (UTIL, exports);
+
+    // Return true if there is a heat map loaded. Otherwise false.
+    function heatMapLoaded () {
+	return MMGR.getHeatMap() !== null;
+    }
+
+    // Return a histogram of the summary values of the current data layer.
+    // Thresholds is an array of numeric thresholds, but we currently only use
+    // the first and last values.
+    function getSummaryHist (thresholds) {
+	const heatMap = MMGR.getHeatMap();
+	return heatMap.getSummaryHist (heatMap.getCurrentDL(), +thresholds[0], +thresholds[thresholds.length-1]);
+    }
 
     /**********************************************************************************
      * FUNCTION - downloadSummaryPng: This function downloads a PNG image of the

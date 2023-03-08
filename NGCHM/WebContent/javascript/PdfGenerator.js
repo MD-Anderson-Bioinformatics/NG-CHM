@@ -32,12 +32,22 @@ PDF.canGeneratePdf = function() {
 	return SUM.isVisible() || DVW.anyVisible();
 };
 
+PDF.pdfDialogClosed = function() {
+	const prefspanel = document.getElementById('pdfPrefs');
+	return prefspanel.classList.contains ('hide');
+};
+
 PDF.openPdfPrefs = function(e) {
 	UHM.closeMenu();
 	UHM.hlpC();
+	const prefspanel = document.getElementById('pdfPrefs');
 	if (e.classList.contains('disabled')) {
-		UHM.systemMessage("NG-CHM PDF Generator", "Cannot generate the PDF when the Summary and all Detail heat map panels are closed.");
-		return;
+	    let whyDisabled = "Cannot open the PDF dialog since it's already open";
+	    if (prefspanel.classList.contains('hide')) {
+		whyDisabled = "Cannot generate a PDF when the Summary and all Detail heat map panels are closed.";
+	    }
+	    UHM.systemMessage("NG-CHM PDF Generator", whyDisabled);
+	    return;
 	}
 
 	// Set maps to generate based on visible maps:
@@ -61,13 +71,14 @@ PDF.openPdfPrefs = function(e) {
 		bothButton.disabled = false;
 	} else {
 		// Should not happen.
-		UHM.systemMessage("NG-CHM PDF", "Cannot generate PDF when the Summary or Detail heat map panels are closed.");
+		UHM.systemMessage("NG-CHM PDF", "Cannot generate PDF: inconsistent visibility check");
 		return;
 	}
+	updateShowBounds();
+	document.getElementById('menuPdf').classList.add('disabled');
 	let pdfPrefsHdr = document.getElementById("pdfPrefsHdr");
 	if (pdfPrefsHdr.querySelector(".closeX")) { pdfPrefsHdr.querySelector(".closeX").remove(); }
 	pdfPrefsHdr.appendChild(UHM.createCloseX(PDF.pdfCancelButton));
-	var prefspanel = document.getElementById('pdfPrefs');
 	var headerpanel = document.getElementById('mdaServiceHeader');
 	//Add prefspanel table to the main preferences DIV and set position and display
 	prefspanel.style.top = (headerpanel.offsetTop + 15) + 'px';
@@ -75,16 +86,30 @@ PDF.openPdfPrefs = function(e) {
 	prefspanel.style.left = ((window.innerWidth - prefspanel.offsetWidth) / 2) + 'px';
 };
 
+function updateShowBounds () {
+    const bothButton = document.getElementById ('pdfInputBothMaps');
+    const showBounds = document.getElementById ('pdfInputShowBounds');
+
+    if (bothButton.checked) {
+	showBounds.checked = true;
+	showBounds.disabled = false;
+    } else {
+	showBounds.checked = false;
+	showBounds.disabled = true;
+    }
+}
+
 /**********************************************************************************
  * FUNCTION - pdfCancelButton: This function closes the PDF preferences panel when
  * the user presses the cancel button.
  **********************************************************************************/
 PDF.pdfCancelButton = function() {
 	document.getElementById ('pdfErrorMessage').style.display = 'none';
+	document.getElementById('menuPdf').classList.remove('disabled');
 	var prefspanel = document.getElementById('pdfPrefs');
 	prefspanel.classList.add ('hide');
 	document.body.style.cursor = 'default';
-	DVW.primaryMap.canvas.focus();
+	if (DVW.primaryMap) DVW.primaryMap.canvas.focus();
 };
 
 /**********************************************************************************
@@ -319,7 +344,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 
 	function addSummaryPage (pdfDoc) {
 	    return new Promise ((resolve, reject) => {
-		drawSummaryHeatMapPage (pdfDoc, includeDetailMaps);
+		drawSummaryHeatMapPage (pdfDoc, includeDetailMaps && pdfDoc.showDetailBounds);
 		resolve();
 	    });
 	}
@@ -351,15 +376,20 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 
 	function getPdfDocument(heatMap) {
 	    // Must be invoked with new.
-	    let paperSize = [792,612];
+
+	    // Get document font and paper choices from the UI.
+	    this.paperSize = [792,612];
 	    if (document.getElementById("pdfPaperSize").value == "A4") {
-		    paperSize = [842,595];
+		    this.paperSize = [842,595];
 	    } else if (document.getElementById("pdfPaperSize").value == "A3") {
-		    paperSize = [1224,792];
+		    this.paperSize = [1224,792];
 	    }
-	    const orient = isChecked("pdfInputPortrait") ? "p" : "l";
-	    this.doc = new jspdf.jsPDF(orient,"pt",paperSize);
-	    this.doc.setFont(document.getElementById("pdfFontStyle").value);
+	    this.paperOrientation = isChecked("pdfInputPortrait") ? "p" : "l";
+	    this.showDetailBounds = isChecked("pdfInputShowBounds");
+	    this.fontStyle = document.getElementById("pdfFontStyle").value;
+
+	    this.doc = new jspdf.jsPDF(this.paperOrientation,"pt",this.paperSize);
+	    this.doc.setFont(this.fontStyle);
 	    this.heatMap = heatMap;
 	    this.firstPage = true;
 	    this.pageHeight = this.doc.internal.pageSize.height;
@@ -483,10 +513,17 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	    const pageWidth = doc.getPageWidth();
 	    const originalFontSize = doc.getFontSize();
 
+	    const logo = document.getElementById('mdaLogo');
+
 		//If standard viewer version OR file viewer version show MDA logo 
-		if ((PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined')) {
-			const logo = document.getElementById('mdaLogo');
-			doc.addImage(PDF.mdaLogo, 'PNG', logoLeft, logoTop, logo.clientWidth, logo.clientHeight);
+		if (logo && ((PDF.isWidget === false) || (typeof isNgChmAppViewer !== 'undefined'))) {
+			const logoHeight = this.pageHeaderHeight - 2 * logoTop;
+			const logoWidth = (logo.clientWidth/logo.clientHeight) * logoHeight; // Preserve aspect ratio.
+			doc.addImage(PDF.mdaLogo, 'PNG', logoLeft, logoTop, logoWidth, logoHeight);
+
+			const titleLeft = logoLeft + logoWidth + 2*logoLeft;
+			const maxTitleWidth = pageWidth - titleLeft - 50;
+
 			// Center Heat Map name in header whitespace to left of logo and step down the font if excessively long.
 			let fullTitle = "";
 			if (titleText !== null) {
@@ -503,7 +540,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			let fontSize = 18;
 			doc.setFontSize(fontSize);
 			let titleWidth = doc.getTextWidth (fullTitle);
-			while (fontSize > 10 && titleWidth > pageWidth - 200) {
+			while (fontSize > 10 && titleWidth > maxTitleWidth) {
 			    doc.setFontSize(-- fontSize);
 			    titleWidth = doc.getTextWidth (fullTitle);
 			}
@@ -511,24 +548,25 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			    let subTitleFontSize = fontSize - 2;
 			    let subTitle = options.subTitle;
 			    let subTitleWidth = doc.getTextWidth (subTitle);
-			    while (subTitleFontSize > 8 && subTitleWidth > pageWidth - 200) {
+			    while (subTitleFontSize > 8 && subTitleWidth > maxTitleWidth) {
 				doc.setFontSize(-- subTitleFontSize);
 				titleWidth = doc.getTextWidth (subTitle);
 			    }
-			    if (titleWidth > pageWidth - 200) {
-				subTitle = doc.splitTextToSize (subTitle, pageWidth - 200);
+			    if (titleWidth > maxTitleWidth) {
+				subTitle = doc.splitTextToSize (subTitle, maxTitleWidth);
 			    } else {
 				subTitle = [ subTitle ];
 			    }
 			    titlePositionY -= subTitle.length * subTitleFontSize + 10;
-			    doc.text (150, titlePositionY + fontSize, subTitle, null );
+			    doc.text (titleLeft, titlePositionY + fontSize, subTitle, null );
 			}
 			doc.setFontSize (fontSize);
-			doc.text (150, titlePositionY, fullTitle, null );
-			doc.setFont(undefined, "bold");
+			doc.setFont(this.fontStyle, "normal");
+			doc.text (titleLeft, titlePositionY, fullTitle, null );
+			doc.setFont(this.fontStyle, "bold");
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
-			doc.rect(5, logo.clientHeight+10, pageWidth-10, 2, "FD");
+			doc.rect(5, logoHeight+10, pageWidth-10, 2, "FD");
 			if (options.hasOwnProperty ("contText")) {
 				doc.setFontSize(classBarHeaderSize);
 				doc.text(10, this.paddingTop, options.contText, null);
@@ -536,13 +574,13 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		} else {
 			// If widgetized viewer exclude MDA logo and show compressed hear
 			doc.setFontSize(8);
-			doc.setFont(undefined, "bold");
+			doc.setFont(this.fontStyle, "bold");
 			doc.text(10,10,"NG-CHM Heat Map: "+ heatMap.getMapInformation().name,null);
 			doc.setFillColor(255,0,0);
 			doc.setDrawColor(255,0,0);
 			doc.rect(0, 15, pageWidth-10, 2, "FD");
 		}
-		doc.setFont(undefined, "normal");
+		doc.setFont(this.fontStyle, "normal");
 		doc.setFontSize(originalFontSize);
 	}
 
@@ -629,9 +667,9 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		pdfDoc.addPageIfNeeded();
 		pdfDoc.createHeader(null);
 		pdfDoc.doc.setFontSize(classBarHeaderSize);
-		pdfDoc.doc.setFont(undefined, "bold");
+		pdfDoc.doc.setFont(pdfDoc.fontStyle, "bold");
 		pdfDoc.doc.text(10, pdfDoc.paddingTop, barsInfo.sectionHeader , null);
-		pdfDoc.doc.setFont(undefined, "normal");
+		pdfDoc.doc.setFont(pdfDoc.fontStyle, "normal");
 		return getDataMatrixDistributionPlot(pdfDoc, barsInfo);
 	}
 
@@ -856,11 +894,11 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		barsInfo.topOff = pdfDoc.paddingTop + 15;
 	    } else {
 		pdfDoc.doc.setFontSize(classBarHeaderSize);
-		pdfDoc.doc.setFont(undefined, "bold");
+		pdfDoc.doc.setFont(pdfDoc.fontStyle, "bold");
 		pdfDoc.doc.text(10, barsInfo.topOff, barsInfo.sectionHeader , null);
 	    }
 	    pdfDoc.doc.setFontSize(barsInfo.classBarTitleSize);
-	    pdfDoc.doc.setFont(undefined, "normal");
+	    pdfDoc.doc.setFont(pdfDoc.fontStyle, "normal");
 	    barsInfo.topOff += barsInfo.classBarTitleSize + 5;
 	    barsInfo.leftOff = 20; // ...reset leftOff...
 	}
@@ -884,16 +922,16 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		var thresholds = colorMap.getThresholds();
 		var maxLabelLength = doc.getStringUnitWidth("XXXXXXXXXXXXXXXX")*barsInfo.classBarLegendTextSize;
 		if (isChecked("pdfInputPortrait") && (thresholds.length > 56)) {
-			doc.setFont(undefined, "bold");
+			doc.setFont(pdfDoc.fontStyle, "bold");
 			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
-			doc.setFont(undefined, "normal");
+			doc.setFont(pdfDoc.fontStyle, "normal");
 			doc.text(barsInfo.leftOff + 15, bartop + barsInfo.classBarLegendTextSize, "This discrete covariate bar contains too", null);
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize+12, "many categories to print.", null);
 			setClassBarFigureH(barsInfo, 2,'discrete',0);
 		} else if (isChecked("pdfInputLandscape") && (thresholds.length > 40)) {
-			doc.setFont(undefined, "bold");
+			doc.setFont(pdfDoc.fontStyle, "bold");
 			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
-			doc.setFont(undefined, "normal");
+			doc.setFont(pdfDoc.fontStyle, "normal");
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize,    "This discrete covariate bar contains too", null);
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize+12, "many categories to print. You may try", null);
 			doc.text(barsInfo.leftOff +15, bartop + barsInfo.classBarLegendTextSize+24, "printing in portrait mode.", null);
@@ -914,9 +952,9 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			if(splitTitle.length > 1) {
 				barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;  
 			}
-			doc.setFont(undefined, "bold");
+			doc.setFont(pdfDoc.fontStyle, "bold");
 			doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
-			doc.setFont(undefined, "normal");
+			doc.setFont(pdfDoc.fontStyle, "normal");
 		    
 			var barHeight = barsInfo.classBarLegendTextSize + 3;
 			var counts = {}, maxCount = 0;
@@ -1012,26 +1050,23 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			barsInfo.topOff = pdfDoc.paddingTop + 15;
 			barsInfo.leftOff = 20; // ...reset leftOff...
 		}  
-		doc.setFont(undefined, "bold");
+		doc.setFont(pdfDoc.fontStyle, "bold");
 		doc.text(barsInfo.leftOff, barsInfo.topOff, splitTitle);
-		doc.setFont(undefined, "normal");
-		var classBars = heatMap.getColClassificationConfig();
-		if (type === 'row') {
-			classBars = heatMap.getRowClassificationConfig();
-		}
-		var classBar = classBars[key];
+		doc.setFont(pdfDoc.fontStyle, "normal");
+		const classBars = heatMap.getAxisCovariateConfig(type);
+		const classBar = classBars[key];
 		//Adjustment for multi-line covariate headers
 //		if(splitTitle.length > 1) {
 //			barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
 //		}
-		var colorMap = heatMap.getColorMapManager().getColorMap(type, key);
+		const colorMap = heatMap.getColorMapManager().getColorMap(type, key);
 
 		// For Continuous Classifications: 
     	// 1. Retrieve continuous threshold array from colorMapManager
     	// 2. Retrieve threshold range size divided by 2 (1/2 range size)
     	// 3. If remainder of half range > .75 set threshold value up to next value, Else use floor value.
-		var thresholds = colorMap.getContinuousThresholdKeys();
-		var threshSize = colorMap.getContinuousThresholdKeySize()/2;
+		const thresholds = colorMap.getContinuousThresholdKeys();
+		const threshSize = colorMap.getContinuousThresholdKeySize()/2;
 		var thresholdSize;
 		if ((threshSize%1) > .5) {
 			// Used to calculate modified threshold size for all but first and last threshold
@@ -1049,31 +1084,32 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 
 		// get the continuous thresholds and find the counts for each bucket
 		var cutValues = 0;
-		for(var i = 0; i < classBarData.values.length; i++) {
-		    var num = parseFloat(classBarData.values[i]);
-		    if (classBarData.values[i] !== '!CUT!') {
-		    	var prevThresh = 0;
-			    for (var k = 0; k < thresholds.length; k++){
-					var thresh = thresholds[k];
-					if (k == 0 && num <= thresholds[k]){
-						counts[k] = counts[k] ? counts[k]+1 : 1;
-						break;
-					} else if (k == thresholds.length-2 && ((num < thresh) && (num > prevThresh))) {
-						counts[k] = counts[k] ? counts[k]+1 : 1;
-						break;
-					} else if (k == thresholds.length-1) {
-						if (num >= thresholds[thresholds.length-1]) {
-							counts[k] = counts[k] ? counts[k]+1 : 1;
-						}
-						break;
-					} else if ((k < thresholds.length-2) && ((num <= thresh) && (num > prevThresh))) {
-						counts[k] = counts[k] ? counts[k]+1 : 1;
-						break;
-					}
-					prevThresh = thresh;
-				}
-		    } else {
+		for (let k = 0; k < thresholds.length; k++) {
+		    counts[k] = 0;
+		}
+		for (let i = 0; i < classBarData.values.length; i++) {
+		    if (classBarData.values[i] === '!CUT!') {
 		    	cutValues++;
+		    } else if (classBarData.values[i] !== 'null') {
+			const num = parseFloat(classBarData.values[i]);
+			if (isNaN (num)) {
+			    console.warn ('Encountered bad continuous covariate value in ' + key + ': ' + classBarData.values[i]);
+			} else {
+			    let k;
+			    if (num <= thresholds[0]) {
+				k = 0;
+			    } else if (num > thresholds[thresholds.length-1]) {
+				k = thresholds.length-1; // Stick it into last bucket, even though it rightfully belongs in another.
+			    } else {
+				k = 1;
+				while (num > thresholds[k]) {
+				    // This loop must terminate because of the above test
+				    // against the last threshold.
+				    k++;
+				}
+			    }
+			    counts[k] = counts[k]+1;
+			}
 		    }
 		}
 
@@ -1132,7 +1168,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 			var rgb = colorMap.getClassificationColor("Missing Value");
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
-			drawMissingColor(barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
+			drawMissingColor(pdfDoc, barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, classBarData.values.length);
 		}
 		setClassBarFigureH(barsInfo, 0,'continuous',foundMissing);
 		adjustForNextClassBar(pdfDoc, barsInfo, key,type,maxLabelLength);
@@ -1161,7 +1197,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	function drawMissingColor(pdfDoc, barsInfo, bartop, barHeight, missingCount, maxCount, maxLabelLength, threshMaxLen, totalValues) {
 		const doc = pdfDoc.doc;
 		const barScale = isChecked("pdfInputPortrait") ? .50 : .65;
-		if (barsInfo.options.condenseClassBars){
+		if (barsInfo.options && barsInfo.options.condenseClassBars){
 			var barW = 10;
 			doc.rect(barsInfo.leftOff, bartop, barW, barHeight, "FD");
 			doc.setFontSize(barsInfo.classBarLegendTextSize);
@@ -1414,8 +1450,8 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		    }
 		    ctx.restore();
 		    // Draw the top item labels.
-		    drawSummaryTopItemLabels("row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
-		    drawSummaryTopItemLabels("col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
+		    drawSummaryTopItemLabels(pdfDoc, "row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
+		    drawSummaryTopItemLabels(pdfDoc, "col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
 		}
 
 		// Draw the black border around the summary view.
@@ -1431,12 +1467,14 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		    const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
 		    const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
 		    DVW.detailMaps.forEach (mapItem => {
-			const left = (mapItem.currentCol-1) * xScale;
-			const top = (mapItem.currentRow-1) * yScale;
-			const width = mapItem.dataPerRow * xScale;
-			const height = mapItem.dataPerCol * yScale;
-			ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
-			ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
+			if (mapItem.isVisible()) {
+			    const left = (mapItem.currentCol-1) * xScale;
+			    const top = (mapItem.currentRow-1) * yScale;
+			    const width = mapItem.dataPerRow * xScale;
+			    const height = mapItem.dataPerCol * yScale;
+			    ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
+			    ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
+			}
 		    });
 		}
 		ctx.restore();
@@ -1446,8 +1484,9 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	 * FUNCTION - drawSummaryTopItemLabels: This function draws the labels for the top
 	 * items on the specific axis of the summary page.
 	 **********************************************************************************/
-	function drawSummaryTopItemLabels(axis, vp) {
+	function drawSummaryTopItemLabels(pdfDoc, axis, vp) {
 	    const debug = false;
+	    const doc = pdfDoc.doc;
 	    const origFontSize = doc.getFontSize();
 	    const labelFontSize = 5;  // Use a small font for top items.
 	    doc.setFontSize(labelFontSize);
@@ -1625,7 +1664,7 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 		    labelFontSize, longestRowLabelUnits, longestColLabelUnits,
 		    detClient2PdfWRatio, detClient2PdfHRatio, detRowDendroWidth, detColDendroHeight,
 		});
-		drawDetailSelectionsAndLabels(doc, mapItem, mapItemVars);
+		drawDetailSelectionsAndLabels(pdfDoc, mapItem, mapItemVars);
 
 		doc.setFontSize (origFontSize);
 	    });
@@ -1636,11 +1675,12 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	     * FUNCTION:  drawDetailSelectionsAndLabels - This function draws any selection
 	     * boxes and then labels onto the detail heat map page.
 	     **********************************************************************************/
-	    function drawDetailSelectionsAndLabels(doc, mapItem, mapItemVars) {
+	    function drawDetailSelectionsAndLabels(pdfDoc, mapItem, mapItemVars) {
 		// Draw selection boxes first (this way they will not overlap text)
-		drawDetailSelectionBoxes(doc, mapItem, mapItemVars);
+		drawDetailSelectionBoxes(pdfDoc.doc, mapItem, mapItemVars);
 		// Draw labels last (so they write over any selection boxes present)
-		drawDetailLabels(doc, mapItem, mapItemVars);
+		doc.setFont (pdfDoc.fontStyle, 'normal');
+		drawDetailLabels(pdfDoc.doc, mapItem, mapItemVars);
 	    }
 
 	    /**********************************************************************************
@@ -1785,6 +1825,10 @@ PDF.setBuilderLogText = function (doc, text, pos, end) {
 	glMan.drawTexture ();
 	return canvas.toDataURL('image/png');
     }
+
+document.getElementById ('pdfInputSummaryMap').onchange = updateShowBounds;
+document.getElementById ('pdfInputDetailMap').onchange = updateShowBounds;
+document.getElementById ('pdfInputBothMaps').onchange = updateShowBounds;
 
 document.getElementById('prefCancel_btn').onclick = function (event) {
     PDF.pdfCancelButton();

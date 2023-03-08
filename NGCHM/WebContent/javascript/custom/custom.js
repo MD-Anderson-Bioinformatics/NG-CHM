@@ -106,6 +106,11 @@ linkouts.addPanePlugin ({
           displayName: "Ensembl transcript identifier",
           description: "An Ensembl transcript identifier"
         },
+	{ typeName: "bio.gdc.case.uuid",
+	  displayName: "GDC Case UUID",
+	  description: "UUID for identifying specific GDC cases",
+	  format: "A hypenated text string with five components",
+	},
         { typeName: "scholar",
           displayName: "Google Scholar search term",
           description: "A text string used to search for something in Google Scholar"
@@ -367,6 +372,32 @@ function linkoutHelp () {
 	logo: "http://firebrowse.org/img/firebrowse.png",
 	linkouts: [
             { menuEntry: "View FireBrowse", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openFireBrowseGene }
+	]
+    });
+}) (linkouts);
+
+//==============================================//
+//GDC plugin                                    //
+//==============================================//
+(function(linkouts) {
+
+    function openGdcGene(labels) {
+	linkouts.openUrl("https://portal.gdc.cancer.gov/genes/" + labels[0], "GDC");
+    }
+
+    function openGdcCase(labels) {
+	linkouts.openUrl("https://portal.gdc.cancer.gov/cases/" + labels[0], "GDC");
+    }
+
+    linkouts.addPlugin({
+	name: "GDC",
+	description: "Adds linkouts to the GDC Data Portal.",
+	version: "1.0.0",
+	site: "http://www.portal.gdc.cancer.gov/",
+	logo: "https://portal.gdc.cancer.gov/static/media/NHI_GDC_DataPortal-logo.23e6ca47.svg",
+	linkouts: [
+	    { menuEntry: "View GDC Gene", typeName: "bio.transcript.ensembl", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGdcGene },
+	    { menuEntry: "View GDC Case", typeName: "bio.gdc.case.uuid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGdcCase },
 	]
     });
 }) (linkouts);

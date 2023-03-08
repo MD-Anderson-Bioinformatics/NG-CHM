@@ -280,6 +280,12 @@ let	wS = `const debug = ${debug};`;
 
 	constructor (heatMap, tileSpec) {
 	    const { layer, level, startRowTile, endRowTile, startColTile, endColTile } = tileSpec;
+	    const heatMapLevel = heatMap.datalevels[level];
+	    if (startRowTile < 1 || endRowTile > heatMapLevel.numTileRows ||
+	        startColTile < 1 || endColTile > heatMapLevel.numTileColumns ||
+		endRowTile < startRowTile || endColTile < startColTile) {
+		console.error ('Constructing TileWindow with out-of-range tiles', tileSpec, heatMapLevel);
+	    }
 	    this.heatMap = heatMap;
 	    this.layer = layer;
 	    this.level = level;
@@ -1492,6 +1498,60 @@ let	wS = `const debug = ${debug};`;
 	    return new AccessWindow (this, win);
 	};
 
+	/* Obtain a promise for a histogram of the map's summary values.
+	 *
+	 * The returned histogram includes the following fields:
+	 * - breaks : break points between bins,
+	 * - bins : an array of histogram bins, each containing a count.
+	 * - binMax : maximum value in bins
+	 * - total : total of bins
+	 * - nan : number of missing values / NaN's in the data (not in the bins)
+	 *
+	 * bins.length == breaks.length+1
+	 */
+	HeatMap.prototype.getSummaryHist = function (layer, lowBP, highBP) {
+	    const diff = highBP-lowBP;
+	    const bins = new Array(10+1).join('0').split('').map(parseFloat); // make array of 0's to start the counters
+	    const breaks = new Array(9+1).join('0').split('').map(parseFloat);
+	    for (let i=0; i <breaks.length;i++){
+		    breaks[i]+=lowBP+diff/(breaks.length-1)*i; // array of the breakpoints shown in the preview div
+	    }
+	    const numCol = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
+	    const numRow = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
+	    const accessWindow = this.getNewAccessWindow ({
+		layer: layer,
+		level: MAPREP.SUMMARY_LEVEL,
+		firstRow: 1,
+		firstCol: 1,
+		numRows: numRow,
+		numCols: numCol,
+	    });
+	    return accessWindow.onready().then (win => {
+		let nan=0;
+		for(let row=1;row<=numRow;row++){
+		    for (let {value} of accessWindow.getRowValues(row)) {
+			if (isNaN(value) || value>=MAPREP.maxValues){ // is it Missing value?
+			    nan++;
+			} else if (value > MAPREP.minValues) { // Don't count cut locations.
+			    let k = 0;
+			    while (k < breaks.length && value >= breaks[k]) {
+				k++;
+			    }
+			    bins[k]++;  // N.B. One more bin than breaks.
+			}
+		    }
+		}
+		let total = 0;
+		let binMax = nan;
+		for (let i=0;i<bins.length;i++){
+			if (bins[i]>binMax)
+				binMax=bins[i];
+			total+=bins[i];
+		}
+		return { breaks, bins, binMax, total, nan };
+	    });
+	}
+
     }
     /********************************************************************************************
      *
@@ -1754,11 +1814,8 @@ let	wS = `const debug = ${debug};`;
 	    const startColTile = Math.floor((column-1)/this.colsPerTile) + 1;
 	    const endRowCalc = (row+numRows-1)/this.rowsPerTile;
 	    const endColCalc = (column+numColumns-1)/this.colsPerTile;
-	    const endRowTile = Math.floor(endRowCalc)+(endRowCalc%1 > 0 ? 1 : 0);
-	    const endColTile = Math.floor(endColCalc)+(endColCalc%1 > 0 ? 1 : 0);
-	    if (endRowTile < startRowTile) {
-		console.log ('error');
-	    }
+	    const endRowTile = Math.ceil(endRowCalc);
+	    const endColTile = Math.ceil(endColCalc);
 	    const tileSpec = { layer, level: this.level, startRowTile, endRowTile, startColTile, endColTile };
 	    return getTileWindow (tileSpec);
 	}
@@ -2277,22 +2334,35 @@ let	wS = `const debug = ${debug};`;
 // Matrix Manager block.
 {
     var heatMap = null;
-    var mapUpdatedOnLoad = false;
-    var flickInitialized = false;
+    var mapStatusDB = new WeakMap();
 
     const compat = { addMapConfig, addMapData };
+
+    function getMapStatus (heatMap) {
+	let status = mapStatusDB.get (heatMap);
+	if (!status) {
+	    status = {
+		mapUpdatedOnLoad: false,
+	        flickInitialized: false,
+	    };
+	    mapStatusDB.set (heatMap, status);
+	}
+	return status;
+    }
 
     function addMapData(heatMap, md) {
 	heatMap.mapData = md;
 	if (COMPAT.mapDataCompatibility(heatMap.mapData)) {
-	    mapUpdatedOnLoad = true;
+	    const status = getMapStatus (heatMap);
+	    status.mapUpdatedOnLoad = true;
 	}
 	heatMap.sendCallBack(MMGR.Event_JSON);
     }
 
     function addMapConfig(heatMap, mc) {
 	if (COMPAT.CompatibilityManager(mc)) {
-	    mapUpdatedOnLoad = true;
+	    const status = getMapStatus (heatMap);
+	    status.mapUpdatedOnLoad = true;
 	}
 	heatMap.mapConfig = mc;
 	addDataLayers(heatMap);
@@ -2300,8 +2370,9 @@ let	wS = `const debug = ${debug};`;
 	heatMap.sendCallBack(MMGR.Event_JSON);
     }
 
-    MMGR.mapUpdatedOnLoad = function() {
-	return mapUpdatedOnLoad;
+    MMGR.mapUpdatedOnLoad = function(heatMap) {
+	const status = getMapStatus (heatMap);
+	return status.mapUpdatedOnLoad;
     };
 
     //Main function of the matrix manager - retrieve a heat map object.
@@ -2323,7 +2394,8 @@ let	wS = `const debug = ${debug};`;
      * Set the 'flick' control and data layer
     */
     function configureFlick (heatMap) {
-	if (!flickInitialized) {
+	const status = getMapStatus (heatMap);
+	if (!status.flickInitialized) {
 	    const dl = heatMap.getDataLayers();
 	    const numLayers = Object.keys(dl).length;
 	    if (numLayers > 1) {
@@ -2352,7 +2424,7 @@ let	wS = `const debug = ${debug};`;
 		    heatMap.setCurrentDL("dl1");
 		    FLICK.disableFlicks();
 	    }
-	    flickInitialized = true;
+	    status.flickInitialized = true;
 	}
     }
 

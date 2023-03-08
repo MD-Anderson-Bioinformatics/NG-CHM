@@ -504,7 +504,7 @@ var linkoutsVersion = 'undefined';
 	    var header = labelMenu.getElementsByClassName('labelMenuHeader')[0];
 	    var row = header.getElementsByTagName('TR')[0];
 	    if (((axisLabelsLength > 0) || (LNK.selection !== '')) && axis !== "Matrix"){
-			row.innerHTML = "Selected " + axis.replace("Covar"," Classification") + "s : " + axisLabelsLength;
+			row.innerHTML = "Selected " + axis.replace("Covar"," Covariate") + "s : " + axisLabelsLength;
 			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
 			LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else if ((axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) && axis == "Matrix"){
@@ -516,7 +516,7 @@ var linkoutsVersion = 'undefined';
 			row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
 			LNK.populateLabelMenu(axis,axisLabelsLength);
 	    } else {
-			row.innerHTML = "Please select a " + axis.replace("Covar"," Classification");
+			row.innerHTML = "Please select a " + axis.replace("Covar"," Covariate");
 			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
 	    }
 	    
@@ -541,7 +541,7 @@ var linkoutsVersion = 'undefined';
 		labelMenu.classList.add('hide');
 		var topDiv = document.createElement("DIV");
 		topDiv.classList.add("labelMenuCaption");
-		topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Classification") + ' Label Menu:' : axis + ' Menu';
+		topDiv.innerHTML = axis !== "Matrix" ? axis.replace("Covar"," Covariate") + ' Label Menu:' : axis + ' Menu';
 		const closeMenu = UTIL.newElement ('DIV.buttonGroup', {}, UTIL.newElement ("BUTTON.labelMenuClose", {}, UTIL.newElement('SPAN.button', {}, 'Close')));
 		closeMenu.addEventListener('click', function(){LNK.labelHelpClose(axis)},false);
 		var table = document.createElement("TABLE");
@@ -645,17 +645,27 @@ var linkoutsVersion = 'undefined';
 				LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, true);
 			}
 		} else {
-			//Always add clipboard link at top of list
-			LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
+			const covar = axis.indexOf('Covar') != -1;
+			if (!covar) {
+			    // Always add clipboard link at top of list
+			    LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
+			}
+			const firstGroupLinkout = covar ? 0 : 1;
 			if ((indLinkouts.length > 0) && (LNK.selection !== undefined)) {
-				var addedHeader = false;
-				for (var k=0; k < indLinkouts.length;k++ ) {
+				let addedHeader = false;
+				for (let k=0; k < indLinkouts.length;k++ ) {
 					addedHeader = LNK.addMenuItemToTable(axis, table, indLinkouts[k].linkout, addedHeader);
 				}
 			}
-			if (grpLinkouts.length > 1) {
-				var addedHeader = false;
-				for (var l=1; l < grpLinkouts.length;l++ ) {
+			if (grpLinkouts.length > firstGroupLinkout) {
+				let addedHeader = false;
+				for (let l = firstGroupLinkout; l < grpLinkouts.length;l++ ) {
+					if (covar && grpLinkouts[l].linkout.title.indexOf('for selected') != -1 &&
+					    SRCHSTATE.getAxisSearchResults(axis.replace("Covar","")).length == 0) {
+					    // Don't add the "Copy covariate data for selected rows/columns" to the covariate label menu
+					    // if there are no selected labels on that axis.
+					    continue;
+					}
 					addedHeader = LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, addedHeader);
 				}
 			}
@@ -816,10 +826,10 @@ var linkoutsVersion = 'undefined';
 			LNK.addLinkout("Copy selected labels to clipboard", rowLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
 		}
 
-		LNK.addLinkout("Copy bar data for all labels", "ColumnCovar", null, LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy bar data for selected labels", "ColumnCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
-		LNK.addLinkout("Copy bar data for all labels", "RowCovar", null,LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy bar data for selected labels", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Copy covariate data for all columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
+		LNK.addLinkout("Copy covariate data for selected columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Copy covariate data for all rows", "RowCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
+		LNK.addLinkout("Copy covariate data for selected rows", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 	}
