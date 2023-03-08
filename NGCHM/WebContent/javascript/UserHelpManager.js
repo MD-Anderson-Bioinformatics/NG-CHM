@@ -681,6 +681,7 @@ UHM.displayNewMessageBox = function (msgBox) {
 UHM.closeNewMessageBox = function (msgBox) {
     document.body.removeChild (msgBox);
 };
+
 //
 // End support for 'new' message boxes.
 //

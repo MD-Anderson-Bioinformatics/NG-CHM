@@ -1,0 +1,45 @@
+##
+## GitHub action workflow to add a incremental build tag to the repo based on
+##
+##  - Version number in CompatibilityManager.js
+##  - Existing '-build-' tags in repo
+##
+##  For example, if there are exiting tags in the repo:
+##
+##  - 2.22.1-build-4
+##  - 2.21.0-build-3
+##  - 2.20.1-build-2
+##
+##  and the version from CompatibilityManager.js is '2.22.1', the new tag
+##  will be: 2.22.1-build-5.
+##
+on:
+  push:
+    branches:
+      main
+
+jobs:
+  make_build_tag:
+    runs-on: ubuntu-latest
+    name: Creating build number tag based on version
+    steps:
+      # https://github.com/marketplace/actions/checkout
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}
+      # https://github.com/marohrdanz/extract-version-from-file
+      - name: Get version number
+        id: get_version_number
+        uses: marohrdanz/extract-version-from-file@v1.0.0
+        with:
+          file_path: 'NGCHM/WebContent/javascript/CompatibilityManager.js'
+          start_string: 'CM.version = '
+      # https://github.com/marohrdanz/build-number-tag
+      - name: Create Build Number Tag
+        id: make_build_tag
+        uses: marohrdanz/build-number-tag@v1.0.0
+        with:
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
+          prefix: '-build-'
+          version_prefix: ${{ steps.get_version_number.outputs.version_number }}
