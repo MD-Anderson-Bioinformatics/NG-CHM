@@ -247,10 +247,9 @@
 	};
 	FLICK.setFlickHandler (UIMGR.changeDataLayer);
 
-	UIMGR.initializeSummaryWindows = function () {
+	UIMGR.initializeSummaryWindows = function (heatMap) {
 	    const flickState = FLICK.getFlickState();
 	    const first = flickState.shift();
-	    const heatMap = MMGR.getHeatMap();
 	    summaryWindows[first.element] = getSummaryAccessWindow(heatMap, first.layer);
 	    setTimeout (() => {
 		flickState.forEach (alt => {
@@ -285,10 +284,11 @@
 		return;
 	    }
 
-	    UIMGR.initializeSummaryWindows();
+
+	    const heatMap = MMGR.getHeatMap();
+	    UIMGR.initializeSummaryWindows(heatMap);
 
 	    //If any new configs were added to the heatmap's config, save the config file.
-	    const heatMap = MMGR.getHeatMap();
 	    if (MMGR.mapUpdatedOnLoad(heatMap) && heatMap.getMapInformation().read_only !== "Y") {
 		    var success = autoSaveHeatMap(heatMap);
 	    }
@@ -716,7 +716,7 @@
     }
 
     function showTutorialVideos () {
-	const msgBox = UHM.newMessageBox();
+	const msgBox = UHM.newMessageBox('videos');
 	UHM.setNewMessageBoxHeader(msgBox, "NG-CHM Tutorial Videos");
 	const messageBox = UHM.getNewMessageTextBox (msgBox);
 
@@ -799,6 +799,8 @@
 		type: 'text',
 		text: 'Take a tour',
 		tooltip: 'Displays an interactive tour of the user interface elements',
+		disabled: !isMapLoaded,
+		disabledReason: 'no map is loaded',
 	    }, function () {
 		UHM.messageBoxCancel ();
 		TOUR.showTour(null);
@@ -1292,156 +1294,304 @@
     }
 
     /*********************************************************************************************
-     * FUNCTION:  keyNavigate - The purpose of this function is to handle a user key press event.
-     * As key presses are received at the document level, their detail processing will be routed to
-     * the primary detail panel.
+     *
+     * Handle user key press events received at the document level.
+     *
      *********************************************************************************************/
-    function keyNavigate (e) {
-	const mapItem = DVW.primaryMap;
-	UHM.hlpC();
-	if (e.target.type != "text" && e.target.type != "textarea") {
-		// console.log ({ m: 'KeyPress', keyCode: e.keyCode, key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, meta: e.metaKey, e });
-		switch(e.key){ // prevent default added redundantly to each case so that other key inputs won't get ignored
-			case 'ArrowLeft': // left key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (!mapItem) return;
-					if (e.shiftKey) {
-					    mapItem.currentCol -= mapItem.dataPerRow;
-					} else if (e.ctrlKey) {
-					    mapItem.currentCol -= 1;
-					    clearSelectedDendrogram (mapItem);
-					    mapItem.selectedStart -= 1;
-					    mapItem.selectedStop -= 1;
-					    DET.callDetailDrawFunction(mapItem.mode);
-					} else {
-					    mapItem.currentCol--;
-					}
-					DVW.checkCol(mapItem);
-					SRCH.enableDisableSearchButtons (mapItem);
-				}
-				break;
-			case 'ArrowUp': // up key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (!mapItem) return;
-					if (e.shiftKey) {
-					    mapItem.currentRow -= mapItem.dataPerCol;
-					} else if (e.ctrlKey) {
-					    clearSelectedDendrogram (mapItem);
-					    mapItem.selectedStop += 1;
-					    DET.callDetailDrawFunction(mapItem.mode);
-					} else {
-					    mapItem.currentRow--;
-					}
-					DVW.checkRow(mapItem);
-					SRCH.enableDisableSearchButtons (mapItem);
-				}
-				break;
-			case 'ArrowRight': // right key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (!mapItem) return;
-					if (e.shiftKey) {
-					    mapItem.currentCol += mapItem.dataPerRow;
-					} else if (e.ctrlKey) {
-					    mapItem.currentCol += 1;
-					    clearSelectedDendrogram (mapItem);
-					    mapItem.selectedStart += 1;
-					    mapItem.selectedStop += 1;
-					    DET.callDetailDrawFunction(mapItem.mode);
-					} else {
-					    mapItem.currentCol++;
-					}
-					DVW.checkCol(mapItem);
-					SRCH.enableDisableSearchButtons (mapItem);
-				}
-				break;
-			case 'ArrowDown': // down key
-				if (document.activeElement.id !== "search_text"){
-					e.preventDefault();
-					if (!mapItem) return;
-					if (e.shiftKey) {
-					    mapItem.currentRow += mapItem.dataPerCol;
-					} else if (e.ctrlKey) {
-					    clearSelectedDendrogram (mapItem);
-					    mapItem.selectedStop -= 1;
-					    DET.callDetailDrawFunction(mapItem.mode);
-					} else {
-					    mapItem.currentRow++;
-					}
-					DVW.checkRow(mapItem);
-					SRCH.enableDisableSearchButtons (mapItem);
-				}
-				break;
-			case 'PageUp': // page up
-				e.preventDefault();
-				if (!mapItem) return;
-				if (e.shiftKey){
-					let newMode;
-					DET.clearDendroSelection(mapItem);
-					switch(mapItem.mode){
-						case "RIBBONV": newMode = 'RIBBONH'; break;
-						case "RIBBONH": newMode = 'NORMAL'; break;
-						default: newMode = mapItem.mode;break;
-					}
-					DET.callDetailDrawFunction(newMode);
-				} else {
-					DEV.zoomAnimation(mapItem.chm);
-				}
-				SRCH.enableDisableSearchButtons (mapItem);
-				break;
-			case 'PageDown': // page down
-				e.preventDefault();
-				if (!mapItem) return;
-				if (e.shiftKey){
-					let newMode;
-					DET.clearDendroSelection(mapItem);
-					switch(mapItem.mode){
-						case "NORMAL": newMode = 'RIBBONH'; break;
-						case "RIBBONH": newMode = 'RIBBONV'; break;
-						default: newMode = mapItem.mode;break;
-					}
-					DET.callDetailDrawFunction(newMode);
-				} else {
-					DEV.detailDataZoomOut(mapItem.chm);
-				}
-				SRCH.enableDisableSearchButtons (mapItem);
-				break;
-			case 'F2': // F2 key
-				if (FLICK.flickIsOn()) {
-				    UIMGR.changeDataLayer(FLICK.toggleFlickState ("toggle"));
-				}
-				break;
-			case 'Enter':
-				if (UHM.messageBoxIsVisible()) {
-				    e.preventDefault();
-				    const defaultButton = document.querySelector('.msgBoxButtons button.default');
-				    if (defaultButton) {
-					defaultButton.onclick();
-				    } else {
-					UHM.messageBoxCancel();
-				    }
-				}
-				if (!document.getElementById('linkBox').classList.contains('hide')) {
-				    document.querySelector('#linkBox button.default').onclick();
-				}
-				break;
-			default:
-				return;
+    {
+	// Table of all available keyboard actions.
+	const actions = new Map();
+
+	dvAction ('MoveLeftOne',
+	    "Move the primary normal, vertical, or restricted vertical ribbon view one column to the left",
+	    (e, mapItem) => { mapItem.currentCol--; }
+	);
+	dvAction ('MoveLeftPage',
+	    "Move the primary normal, vertical, or restricted vertical ribbon view one page to the left",
+	    (e, mapItem) => { mapItem.currentCol -= mapItem.dataPerRow; }
+	);
+	dvAction ('MoveRibbonLeft',
+	    "Move the primary normal, vertical, restricted vertical, or restricted horizontal ribbon view one column to the left",
+	    (e, mapItem) => {
+		if ((mapItem.mode == 'NORMAL' || mapItem.mode.startsWith('RIBBONV')) && mapItem.currentCol > 1) {
+		    mapItem.currentCol -= 1;
+		} else if (mapItem.mode == 'RIBBONH_DETAIL' && mapItem.selectedStart > 1) {
+		    mapItem.currentCol -= 1;
+		    clearSelectedDendrogram (mapItem);
+		    mapItem.selectedStart -= 1;
+		    mapItem.selectedStop -= 1;
+		    DET.callDetailDrawFunction(mapItem.mode);
 		}
-		if (mapItem) {
-		    DVW.checkRow(mapItem);
-		    DVW.checkCol(mapItem);
-		    mapItem.updateSelection();
-		    SRCH.enableDisableSearchButtons (mapItem);
+	    }
+	);
+	dvAction ('ExpandRibbonLeft',
+	    "Expand the primary restricted horizontal ribbon view one column to the left",
+	    (e, mapItem) => {
+		if (mapItem.mode == 'RIBBONH_DETAIL' && mapItem.selectedStart > 1) {
+		    mapItem.currentCol -= 1;
+		    clearSelectedDendrogram (mapItem);
+		    mapItem.selectedStart -= 1;
+		    mapItem.dataPerRow += 1;
+		    DET.callDetailDrawFunction(mapItem.mode);
 		}
-	} else {
-	    if ((document.activeElement.id === "search_text") && (e.key === 'Enter')) {
+	    }
+	);
+	dvAction ('MoveRightOne',
+	    "Move the primary normal, vertical, or restricted vertical ribbon view one column to the right",
+	    (e, mapItem) => { mapItem.currentCol++; }
+	);
+	dvAction ('MoveRightPage',
+	    "Move the primary normal, vertical, or restricted vertical ribbon view one page to the right",
+	    (e, mapItem) => { mapItem.currentCol += mapItem.dataPerRow; }
+	);
+	dvAction ('MoveRibbonRight',
+	    "Move the primary normal, vertical, restricted vertical, or restricted horizontal ribbon view one column to the right",
+	    (e, mapItem) => {
+		if ((mapItem.mode == 'NORMAL' || mapItem.mode.startsWith('RIBBONV')) && (mapItem.currentCol+mapItem.dataPerRow) < mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
+		    mapItem.currentCol += 1;
+		} else if (mapItem.mode.startsWith('RIBBONH_DETAIL') && mapItem.selectedStop < mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
+		    mapItem.currentCol += 1;
+		    clearSelectedDendrogram (mapItem);
+		    mapItem.selectedStart += 1;
+		    mapItem.selectedStop += 1;
+		    DET.callDetailDrawFunction(mapItem.mode);
+		}
+	    }
+	);
+	dvAction ('ExpandRibbonRight',
+	    "Expand the primary restricted horizontal ribbon view one column to the right",
+	    (e, mapItem) => {
+		if (mapItem.mode == 'RIBBONH_DETAIL' && mapItem.selectedStop < mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)) {
+		    clearSelectedDendrogram (mapItem);
+		    mapItem.selectedStop += 1;
+		    mapItem.dataPerRow += 1;
+		    DET.callDetailDrawFunction(mapItem.mode);
+		}
+	    }
+	);
+	dvAction ('MoveUpOne',
+	    "Move the primary normal, horizontal, or restricted horizontal ribbon view up one row",
+	    (e, mapItem) => { mapItem.currentRow--; }
+	);
+	dvAction ('MoveUpPage',
+	    "Move the primary normal, horizontal, or restricted horizontal ribbon view up one page",
+	    (e, mapItem) => { mapItem.currentRow -= mapItem.dataPerCol; }
+	);
+	dvAction ('MoveRibbonUp',
+	    "Move the primary normal, horizontal, restricted horizontal, or restricted vertical ribbon view up one row",
+	    (e, mapItem) => {
+		if ((mapItem.mode == 'NORMAL' || mapItem.mode.startsWith('RIBBONH')) && mapItem.currentRow > 1) {
+		    mapItem.currentRow -= 1;
+		} else if (mapItem.mode == 'RIBBONV_DETAIL' && mapItem.selectedStart > 1) {
+		    mapItem.currentRow -= 1;
+		    clearSelectedDendrogram (mapItem);
+		    mapItem.selectedStart -= 1;
+		    mapItem.selectedStop -= 1;
+		    DET.callDetailDrawFunction(mapItem.mode);
+		}
+	    }
+	);
+	dvAction ('ExpandRibbonUp',
+	    "Expand the primary restricted vertical ribbon view up one row",
+	    (e, mapItem) => {
+		if (mapItem.mode == 'RIBBONV_DETAIL' && mapItem.selectedStart > 1) {
+		    mapItem.currentRow -= 1;
+		    clearSelectedDendrogram (mapItem);
+		    mapItem.selectedStart -= 1;
+		    mapItem.dataPerCol += 1;
+		    DET.callDetailDrawFunction(mapItem.mode);
+		}
+	    }
+	);
+	dvAction ('MoveDownOne',
+	    "Move the primary normal, horizontal, or restricted horizontal view down one row",
+	    (e, mapItem) => { mapItem.currentRow++; }
+	);
+	dvAction ('MoveDownPage',
+	    "Move the primary normal, horizontal, or restricted horizontal view down one page",
+	    (e, mapItem) => { mapItem.currentRow += mapItem.dataPerRow; }
+	);
+	dvAction ('MoveRibbonDown',
+	    "Move the primary normal, horizontal, restricted horizontal, or restricted vertical ribbon view down one row",
+	    (e, mapItem) => {
+		if ((mapItem.mode == 'NORMAL' || mapItem.mode.startsWith('RIBBONH')) && (mapItem.currentRow+mapItem.dataPerCol) < mapItem.heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
+		    mapItem.currentRow += 1;
+		} else if (mapItem.mode == 'RIBBONV_DETAIL' && mapItem.selectedStop < mapItem.heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
+		    mapItem.currentRow += 1;
+		    clearSelectedDendrogram (mapItem);
+		    mapItem.selectedStart += 1;
+		    mapItem.selectedStop += 1;
+		    DET.callDetailDrawFunction(mapItem.mode);
+		}
+	    }
+	);
+	dvAction ('ExpandRibbonDown',
+	    "Expand the primary restricted vertical ribbon view down one row",
+	    (e, mapItem) => {
+		if (mapItem.mode == 'RIBBONV_DETAIL' && mapItem.selectedStop < mapItem.heatMap.getNumRows(MAPREP.DETAIL_LEVEL)) {
+		    clearSelectedDendrogram (mapItem);
+		    mapItem.selectedStop += 1;
+		    mapItem.dataPerCol += 1;
+		    DET.callDetailDrawFunction(mapItem.mode);
+		}
+	    }
+	);
+	dvAction ('ZoomIn',
+	    "Zoom the primary detail view in one step",
+	    (e, mapItem) => {
+		DEV.zoomAnimation(mapItem.chm);
+	    }
+	);
+	dvAction ('ChangeZoomModeLeft',
+	    "Change zoom modes: Vertical ribbon -> horizontal ribbon -> normal",
+	    (e, mapItem) => {
+		let newMode;
+		DET.clearDendroSelection(mapItem);
+		switch(mapItem.mode){
+			case "RIBBONV": newMode = 'RIBBONH'; break;
+			case "RIBBONH": newMode = 'NORMAL'; break;
+			default: newMode = mapItem.mode;break;
+		}
+		DET.callDetailDrawFunction(newMode);
+	    }
+	);
+	dvAction ('ZoomOut',
+	    "Zoom the primary detail view out one step",
+	    (e, mapItem) => {
+		DEV.detailDataZoomOut(mapItem.chm);
+	    }
+	);
+	dvAction ('ChangeZoomModeRight',
+	    "Change zoom modes: Normal -> horizontal ribbon -> vertical ribbon",
+	    (e, mapItem) => {
+		let newMode;
+		DET.clearDendroSelection(mapItem);
+		switch(mapItem.mode){
+			case "NORMAL": newMode = 'RIBBONH'; break;
+			case "RIBBONH": newMode = 'RIBBONV'; break;
+			default: newMode = mapItem.mode;break;
+		}
+		DET.callDetailDrawFunction(newMode);
+	    }
+	);
+
+	stdAction ('ToggleLayers',
+	    'Toggle between the two selected layers',
+	    (e) => {
+		if (FLICK.flickIsOn()) {
+		    UIMGR.changeDataLayer(FLICK.toggleFlickState ("toggle"));
+		}
+	    }
+	);
+
+	stdAction ('CloseDialog',
+	    'Close any open dialog window',
+	    (e) => {
+		if (UHM.messageBoxIsVisible()) {
+		    const defaultButton = document.querySelector('.msgBoxButtons button.default');
+		    if (defaultButton) {
+			defaultButton.onclick();
+		    } else {
+			UHM.messageBoxCancel();
+		    }
+		}
+		if (!document.getElementById('linkBox').classList.contains('hide')) {
+		    document.querySelector('#linkBox button.default').onclick();
+		}
+	    }
+	);
+
+	// Default key to action map.
+	const keyToAction = new Map ([
+	    [ 'ArrowLeft',  'MoveLeftOne', ],
+	    [ 'shift-ArrowLeft',  'MoveLeftPage', ],
+	    [ 'ctrl-ArrowLeft',  'MoveRibbonLeft', ],
+	    [ 'ctrl-meta-ArrowLeft', 'ExpandRibbonLeft' ],
+	    [ 'ArrowRight', 'MoveRightOne', ],
+	    [ 'shift-ArrowRight', 'MoveRightPage', ],
+	    [ 'ctrl-ArrowRight', 'MoveRibbonRight', ],
+	    [ 'ctrl-meta-ArrowRight', 'ExpandRibbonRight' ],
+	    [ 'ArrowUp',    'MoveUpOne', ],
+	    [ 'shift-ArrowUp',    'MoveUpPage', ],
+	    [ 'ctrl-ArrowUp',    'MoveRibbonUp', ],
+	    [ 'ctrl-meta-ArrowUp', 'ExpandRibbonUp' ],
+	    [ 'ArrowDown',  'MoveDownOne', ],
+	    [ 'shift-ArrowDown',  'MoveDownPage', ],
+	    [ 'ctrl-ArrowDown',  'MoveRibbonDown', ],
+	    [ 'ctrl-meta-ArrowDown', 'ExpandRibbonDown' ],
+	    [ 'PageUp',     'ZoomIn', ],
+	    [ 'shift-PageUp',     'ChangeZoomModeLeft', ],
+	    [ 'PageDown',   'ZoomOut', ],
+	    [ 'shift-PageDown',   'ChangeZoomModeRight', ],
+	    [ 'F2',         'ToggleLayers', ],
+	    [ 'Enter',      'CloseDialog', ],
+	]);
+
+	UTIL.setKeyData ('keyActions', [ keyToAction, actions ]);
+	document.addEventListener ("keydown", keyNavigate);
+
+	function keyNavigate (e) {
+	    const debug = false;
+
+	    // Key press events that target the search_text input box are mostly
+	    // handled by that input..
+	    if (e.target.id === 'search_text') {
+		if (e.key === 'Enter') {
 		    SRCH.detailSearch();
+		}
+		return;
+	    }
+	    if (debug) console.log ({ m: 'KeyPress', key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, meta: e.metaKey, e });
+	    const actionName = keyToAction.get(fullKey (e));
+	    if (!actionName) {
+		if (debug) console.log ('No action found for ' + fullKey (e));
+		return;
+	    }
+	    UHM.hlpC();
+	    const action = actions.get (actionName);
+	    if (!action) {
+		console.error ('Could not get action detail found for ', actionName);
+		return;
+	    }
+	    if (action.needsDV && !DVW.primaryMap) {
+		if (debug) console.log ('Action ' + actionName + ' needs primary detail view, but it does not exist');
+		return;
+	    }
+	    e.preventDefault();
+	    if (debug) console.log ('Action ' + actionName);
+	    if (action.needsDV) {
+		action.fn (e, DVW.primaryMap);
+		DVW.checkRow(DVW.primaryMap);
+		DVW.checkCol(DVW.primaryMap);
+		DVW.primaryMap.updateSelection();
+		SRCH.enableDisableSearchButtons (DVW.primaryMap);
+	    } else {
+		action.fn (e);
 	    }
 	}
+
+	// Helper function for creating an action that needs a detail view.
+	function dvAction (name, help, fn) {
+	    actions.set (name, { name, help, needsDV: true, fn });
+	}
+
+	// Helper function for creating an action that does not need a detail view.
+	function stdAction (name, help, fn) {
+	    actions.set (name, { name, help, needsDV: false, fn });
+	}
+
+	// Helper function for returning a key name with leading modifier key names.
+	function fullKey (e) {
+	    let mod = '';
+	    if (e.ctrlKey) mod += 'ctrl-';
+	    if (e.altKey) mod += 'alt-';
+	    if (e.shiftKey) mod += 'shift-';
+	    if (e.metaKey) mod += 'meta-';
+	    return mod + e.key;
+	}
+
     }
+    /*********************************************************************************************/
 
 	/*
 		Process message from plugins to highlight points selected in plugin
@@ -1492,7 +1642,5 @@
 	    SRCH.showSearchResults();
 	    SUM.redrawSelectionMarks();
 	});
-
-	document.addEventListener ("keydown", keyNavigate);
 
 })();

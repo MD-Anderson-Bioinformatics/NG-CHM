@@ -45,7 +45,7 @@
      * see if the flickViews DIV is visible.
      ***********************************************************************************************/
     function flickIsOn () {
-	return flickViewsElement.style.display === '';
+	return flicksElement.style.display === '';
     }
 
     function isFlickUp () {

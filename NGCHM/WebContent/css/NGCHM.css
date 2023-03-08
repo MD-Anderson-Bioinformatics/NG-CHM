@@ -311,7 +311,14 @@ div.pane canvas {
 	flex-grow: 1;
 }
 
-#splash, #loader {
+#splash {
+	position: absolute;
+	max-width: 50em;
+	height: 100%;
+	overflow-y: auto;
+}
+
+#loader {
 	position: absolute;
 	top: 4em;
 	left: auto;
@@ -946,7 +953,7 @@ button#layers_open_close[data-state='closed'] div.closed {
     font-weight: normal;
     background: #dddddd;
     color: #000000;
-    width: 250px;
+    width: 280px;
     text-align: center;
     box-shadow: 5px 5px 5px #777777;
     position:relative;
@@ -1062,7 +1069,7 @@ th.breakpointContainer {
 }
 
 #prefs {
-	width: 420px;
+	width: 440px;
 	overflow: hidden;
 	position: absolute;
 	background-color: var(--dialog-body-background);
@@ -1751,17 +1758,35 @@ div#droptarget.visible {
     padding-bottom: 3px;
 }
 
+.keyTable THEAD TH {
+    text-align: left;
+    border-bottom: 1px solid grey;
+}
+
+.keyTable TBODY TD {
+    vertical-align: top;
+    padding-top: 0.2em;
+    border-bottom: 1px dashed grey;
+}
+
+.keyTable TBODY TD:nth-child(2) {
+    padding-left: 0.2em;
+    padding-right: 0.2em;
+}
+
 /* Use opacity:0 instead of display:none for elements that will be faded in
  * to avoid redraw/reflow.
  */
 .faded {
     opacity: 0;
+    z-index: -1000;
 }
 
 /* Start at opacity 0 and transition to opacity 1.
  */
 .fadein {
     opacity: 0;
+    z-index: 10;
     animation-name: loading-up;
     animation-duration: var(--load-time);
     animation-fill-mode: forwards;
@@ -1772,6 +1797,7 @@ div#droptarget.visible {
  */
 .fadeinslow {
     opacity: 0;
+    z-index: 10;
     animation-name: loading-up;
     animation-duration: var(--load-time);
     animation-fill-mode: forwards;

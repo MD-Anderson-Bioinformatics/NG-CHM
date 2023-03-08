@@ -135,6 +135,7 @@ var linkoutsVersion = 'undefined';
     const CMM = NgChm.importNS('NgChm.CMM');
 
     var menuOpenCanvas = null;  // Canvas on which the most recent linkouts popup was opened.
+    LNK.enableBuilderUploads = true;
 
     const pluginRestoreInfo = {};
 
@@ -310,7 +311,7 @@ var linkoutsVersion = 'undefined';
 				    }
 				}
 				if (linkout.title === 'Download selected matrix data to file') {
-					labelDataMatrix = LNK.createMatrixData(searchLabels);
+					labelDataMatrix = createMatrixData(heatMap, searchLabels);
 				}
 			}
 		} else { // if this linkout was added using addMatrixLinkout
@@ -354,9 +355,8 @@ var linkoutsVersion = 'undefined';
 	}
 
 
-	LNK.createMatrixData = function(searchLabels) {
+	function createMatrixData (heatMap, searchLabels) {
 		//console.log ({ m: 'LNK.createMatrixData', searchLabels});
-		const heatMap = MMGR.getHeatMap();
 		const win = heatMap.getNewAccessWindow({
 		    layer: heatMap.getCurrentDL(),
 		    level: MAPREP.DETAIL_LEVEL,
@@ -366,13 +366,13 @@ var linkoutsVersion = 'undefined';
 		    numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
 		});
 		win.onready((win) => {
-		    createMatrixDataTsv(win, searchLabels);
+		    createMatrixDataTsv(heatMap, win, searchLabels);
 		});
 	};
 
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
-	function createMatrixDataTsv (accessWindow, searchLabels) {
+	function createMatrixDataTsv (heatMap, accessWindow, searchLabels) {
 		var matrix = new Array();
 
 		let rowSearchItems = SRCHSTATE.getAxisSearchResults("Row");
@@ -406,7 +406,6 @@ var linkoutsVersion = 'undefined';
 		}
 		
 		//Load up an array containing data values for the selected data matrix
-		const heatMap = MMGR.getHeatMap();
 		var dataMatrix = new Array();
 		rowSearchItems.forEach( x => {
 			colSearchItems.forEach( y => {
@@ -434,7 +433,7 @@ var linkoutsVersion = 'undefined';
 				matrixCtr++;
 			}
 		}
-		LNK.copySelectedDataToClipboard(matrix,"Matrix");
+		downloadSelectedData (heatMap, matrix, "Matrix");
 	};
 
 	//This function creates a temporary searchItems object array and
@@ -826,12 +825,15 @@ var linkoutsVersion = 'undefined';
 			LNK.addLinkout("Copy selected labels to clipboard", rowLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
 		}
 
-		LNK.addLinkout("Copy covariate data for all columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy covariate data for selected columns", "ColumnCovar", linkouts.MULTI_SELECT, LNK.copyPartialClassBarToClipBoard,null,1);
-		LNK.addLinkout("Copy covariate data for all rows", "RowCovar", linkouts.MULTI_SELECT, LNK.copyEntireClassBarToClipBoard,null,0);
-		LNK.addLinkout("Copy covariate data for selected rows", "RowCovar", linkouts.MULTI_SELECT,LNK.copyPartialClassBarToClipBoard,null,1);
+		LNK.addLinkout("Download covariate data for all columns", "ColumnCovar", linkouts.MULTI_SELECT, downloadEntireClassBar,null,0);
+		LNK.addLinkout("Download covariate data for selected columns", "ColumnCovar", linkouts.MULTI_SELECT, downloadPartialClassBar,null,1);
+		LNK.addLinkout("Download covariate data for all rows", "RowCovar", linkouts.MULTI_SELECT, downloadEntireClassBar,null,0);
+		LNK.addLinkout("Download covariate data for selected rows", "RowCovar", linkouts.MULTI_SELECT, downloadPartialClassBar,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
+		if (LNK.enableBuilderUploads) {
+		    LNK.addLinkout("Upload matrix data to builder", "Matrix", linkouts.MULTI_SELECT, uploadSelectedToBuilder, null, 0);
+		}
 	}
 
 	// Return and clear a reference to the last canvas on which a label help menu was opened.
@@ -856,61 +858,141 @@ var linkoutsVersion = 'undefined';
 		window.open("","",'width=335,height=330,resizable=1').document.write(labels.join("<br>"));
 	}
 
-	LNK.copyEntireClassBarToClipBoard = function(labels,covarAxis){
-		const newWindow = window.open("","",'width=335,height=330,resizable=1');
-		if (!newWindow) {
-		    console.error ("Error opening clipboard window");
-		    return;
-		}
-		const newDoc = newWindow.document;
-		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
+	function downloadEntireClassBar (labels, covarAxis) {
 		const heatMap = MMGR.getHeatMap();
+		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const axisLabels = heatMap.getAxisLabels(axis)["labels"];
 		const classBars = heatMap.getAxisCovariateData(axis);
-		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
-		for (let i = 0; i < axisLabels.length; i++){
-			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
-			for (let j = 0; j < labels.length; j++){
-				newDoc.write(classBars[labels[j]].values[i] + "&emsp;");
-			}
-			newDoc.write("<br>");
+		const covarData = [];
+		covarData.push (['Sample'].concat(labels));
+		for (let i = 0; i < axisLabels.length; i++) {
+			covarData.push ([axisLabels[i]].concat(labels.map(lbl => classBars[lbl].values[i])));
 		}
-	};
+		downloadSelectedData (heatMap, covarData, covarAxis);
+	}
 
-	LNK.copyPartialClassBarToClipBoard = function(labels, covarAxis){
-		const newWindow = window.open("","",'width=335,height=330,resizable=1');
-		if (!newWindow) {
-		    console.error ("Error opening clipboard window");
-		    return;
-		}
-		const newDoc = newWindow.document;
+	function downloadPartialClassBar (labels, covarAxis) {
+		const heatMap = MMGR.getHeatMap();
 		const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
 		const axisLabels = SRCHSTATE.getSearchLabelsByAxis(axis);
 		const labelIndex = SRCHSTATE.getAxisSearchResults(axis);
-		const classBars = MMGR.getHeatMap().getAxisCovariateData(axis);
-		newDoc.write("Sample&emsp;" + labels.join("&emsp;") + ":<br>");
-		for (let i = 0; i < axisLabels.length; i++){
-			newDoc.write(axisLabels[i].split("|")[0] + "&emsp;");
-			for (let j = 0; j < labels.length; j++){
-				newDoc.write(classBars[labels[j]].values[labelIndex[i]-1] + "&emsp;");
-			}
-			newDoc.write("<br>");
+		const classBars = heatMap.getAxisCovariateData(axis);
+		const covarData = [];
+		covarData.push (['Sample'].concat(labels));
+		for (let i = 0; i < axisLabels.length; i++) {
+			covarData.push ([axisLabels[i]].concat(labels.map(lbl => classBars[lbl].values[labelIndex[i]-1])));
 		}
-	};
+		downloadSelectedData (heatMap, covarData, covarAxis);
+	}
 
 	LNK.copySelectionToClipboard = function(labels,axis){
 		window.open("","",'width=335,height=330,resizable=1').document.write("<b>Rows:</b><br>" + labels["Row"].join("<br>") + "<br><br><b>Columns:</b><br>" + labels["Column"].join("<br>"));
 	}
 
-	LNK.copySelectedDataToClipboard = function(matrixData,axis){
-		var dataStr = "";
-		for (var i = 0; i<matrixData.length;i++) {
-			var rowData = matrixData[i].join('\t');
+	function uploadSelectedToBuilder (data, axis) {
+	    const msgBox = UHM.newMessageBox('upload');
+	    UHM.setNewMessageBoxHeader (msgBox, "Upload selected data to NG-CHM Builder");
+	    const msgBoxText = UHM.getNewMessageTextBox (msgBox);
+	    const label = UTIL.newElement ('LABEL', { 'for': 'builder-url' }, "NG-CHM Builder URL:");
+	    const util = UTIL.newElement ('INPUT', { name: 'builder-url', size: 60 });
+	    util.value = UTIL.getKeyData ('web-builder-url');
+	    msgBoxText.appendChild (UTIL.newElement('BR'));
+	    msgBoxText.appendChild (label);
+	    msgBoxText.appendChild (util);
+	    msgBoxText.appendChild (UTIL.newElement('BR'));
+	    msgBoxText.appendChild (UTIL.newElement('BR'));
+	    UHM.setNewMessageBoxButton (msgBox, 'upload', { type: 'text', text: 'Upload', tooltip: 'Upload data to builder', default: true }, () => {
+		UTIL.setKeyData ('web-builder-url', util.value);
+		sendDataToBuilder ();
+	    });
+	    UHM.setNewMessageBoxButton (msgBox, 'cancel', { type: 'text', text: 'Cancel', tooltip: 'Cancel upload', default: false });
+	    UHM.displayNewMessageBox (msgBox);
+
+	    function sendDataToBuilder () {
+		const debug = false;
+		const heatMap = MMGR.getHeatMap();
+		const nonce = PIM.getNewNonce();
+		const url = new URL (util.value.replace(/[/]*[A-Za-z0-9-.]*.html*$/,''));
+		const builder = window.open (url.href + "/Upload_Matrix.html?adv=Y&nonce="+nonce, "_blank");
+		var established = false;
+		var numProbes = 0;
+
+		if (debug) console.log ('UploadSelectedDataToBuilder', heatMap, data, axis);
+		window.addEventListener('message', processMessage, false);
+		setTimeout (sendProbe, 50);
+
+		// Send probe messages until we get a response or it appears we never will.
+		function sendProbe () {
+		    if (!established && numProbes < 1200) {
+			builder.postMessage ({ op: 'probe', nonce: nonce, }, url.origin );
+			numProbes++;
+			setTimeout (sendProbe, 50);
+		    }
+		}
+
+		function processMessage(msg) {
+		    if (msg.data.nonce == nonce) {
+			if (debug) console.log ('Got message from builder');
+			if (msg.source != builder) {
+			    console.error ('Message not from builder', msg, builder);
+			    return;
+			}
+			if (msg.data.op == 'ready') {
+			    established = true;
+			    if (debug) console.log ('Established comms with builder');
+			    const win = heatMap.getNewAccessWindow({
+				layer: heatMap.getCurrentDL(),
+				level: MAPREP.DETAIL_LEVEL,
+				firstRow: 1,
+				firstCol: 1,
+				numRows: heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
+				numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
+			    });
+			    win.onready((win) => {
+				if (debug) console.log ('Ready to send tiles');
+				const tiles = {
+				    startRowTile: win.tileWindow.startRowTile,
+				    startColTile: win.tileWindow.startColTile,
+				    endRowTile: win.tileWindow.endRowTile,
+				    endColTile: win.tileWindow.endColTile,
+				};
+				const ngchm = {
+				    mapName: heatMap.mapName,
+				    mapConfig: heatMap.mapConfig,
+				    mapData: heatMap.mapData,
+				    currentLayer: heatMap._currentDl,
+				    tiles: tiles,
+				};
+				// Send the NG-CHM config and summary data and all the tile data.
+				builder.postMessage ({ op: 'ngchm', nonce: nonce, ngchm: ngchm, }, url.origin );
+				for (let row = win.tileWindow.startRowTile; row <= win.tileWindow.endRowTile; row++) {
+				    for (let col = win.tileWindow.startColTile; col <= win.tileWindow.endColTile; col++) {
+					const tile = win.tileWindow.getTileData (row, col);
+					const res = builder.postMessage ({ op: 'ngchm-tile', nonce: nonce, row, col, tile, }, url.origin );
+				    }
+				}
+				if (debug) console.log ('All tiles sent');
+				UHM.closeNewMessageBox (msgBox);
+			    });
+			}
+		    }
+		}
+	    }
+	}
+
+	// Data is a matrix: an array of arrays.
+	// Each element of data is a row.
+	// Each element of a row is a cell.
+	// The first row should be column labels.
+	// The first cell in each row should be a row label.
+	function downloadSelectedData (heatMap, data, axis) {
+		let dataStr = "";
+		for (let i = 0; i < data.length; i++) {
+			const rowData = data[i].join('\t');
 			dataStr += rowData+"\n";
 		}
-		var fileName = MMGR.getHeatMap().getMapInformation().name+" Matrix Data.tsv";
-		download(fileName,dataStr);
-		//window.open("","",'width=335,height=330,resizable=1').document.write(dataStr);
+		const fileName = heatMap.getMapInformation().name + "_" + axis + "_Data.tsv";
+		download (fileName, dataStr);
 	}
 
 	function download(filename, text) {

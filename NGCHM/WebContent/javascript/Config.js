@@ -2,6 +2,8 @@
     'use strict';
     NgChm.markFile();
 
+    const defaultBuilderURL = 'https://build.ngchm.net/NGCHM-web-builder/';
+
     NgChm.createNS('NgChm.CFG', {
 	// NgChm Config
 
@@ -17,6 +19,10 @@
 	// Location of script for defining custom link outs etc.
 	//
 	custom_script: document.body.dataset.hasOwnProperty('ngchmCustomFile') ? document.body.dataset.ngchmCustomFile : 'javascript/custom/custom.js',
+
+	// Location of default NG-CHM GUI builder.
+	//
+	builder_url: document.body.dataset.hasOwnProperty('ngchmBuilderUrl') ? document.body.dataset.ngchmBuilderUrl : defaultBuilderURL,
     });
 
 })();

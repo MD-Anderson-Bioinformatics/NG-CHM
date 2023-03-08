@@ -33,11 +33,15 @@
     const PANE = NgChm.importNS('NgChm.Pane');
     const DEV = NgChm.importNS('NgChm.DEV');
     const PDF = NgChm.importNS('NgChm.PDF');
+    const LNK = NgChm.importNS('NgChm.LNK');
 
     // Re-exports.
     NgChm.exportToNS ('NgChm.API', {
 	'b64toBlob': UTIL.b64toBlob,
-	'jsPDF': jspdf.jsPDF,
+	// Export of jsPDF complicated by fact that jsPDF may not be loaded before API.js in the
+	// standalone version of the system.  The following approach lets us avoid having to
+	// know any details about the parameters / arguments of the jsPDF call.
+	'jsPDF': (...args) => jspdf.jsPDF.apply (null, args),
 	'generatePDF': PDF.openPdfPrefs,
 	'chmResize': () => PANE.resizeNGCHM(),  // Function not initialized before panes initialized
     });
@@ -241,6 +245,9 @@
 	    }
 	    if (options.indexOf('showSummaryCovariateLabels') !== -1) {
 		    SUM.flagDrawClassBarLabels = true;
+	    }
+	    if (options.indexOf('noBuilderUploads') !== -1) {
+		LNK.enableBuilderUploads = false;
 	    }
     }
 

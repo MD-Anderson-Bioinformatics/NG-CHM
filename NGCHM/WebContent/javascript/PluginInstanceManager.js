@@ -57,6 +57,7 @@
     };
 
     // Create a new, unique nonce.
+    PIM.getNewNonce = getNewNonce;
     function getNewNonce () {
 	const ta = new Uint8Array(16);
 	window.crypto.getRandomValues(ta);

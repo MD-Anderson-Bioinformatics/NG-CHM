@@ -60,6 +60,11 @@
 	UPM.showClassPrefs();
     };
 
+    uiElement = document.getElementById('prefKeys_btn');
+    uiElement.onclick = () => {
+	UPM.showKeyPrefs();
+    };
+
     uiElement = document.getElementById('menuGear');
     uiElement.onclick = (ev) => {
 	UPM.editPreferences(ev.target,null);
@@ -85,6 +90,7 @@ UPM.hasClasses = false;
  *  	- setPrefsDivSizing
  *  	- showLayerPrefs
  *      - showClassPrefs
+ *      - showKeyPrefs
  *      - showRowsColsPrefs
  *      - prefsCancel
  *      - prefsApply
@@ -173,13 +179,15 @@ UPM.editPreferences = function(e,errorMsg) {
 	if ((errorMsg != null) && (errorMsg[1] === "classPrefs")) {
 		UPM.showClassBreak(errorMsg[0], errorMsg[3]);
 		UPM.showClassPrefs();
-	} else if ((errorMsg != null) && (errorMsg[1] === "layerPrefs")){ 
+	} else if ((errorMsg != null) && (errorMsg[1] === "layerPrefs")) {
 		UPM.showLayerBreak(errorMsg[0]);
 		UPM.showLayerPrefs();
 	} else if ((errorMsg != null) && (errorMsg[1] === "infoPrefs")) {
 		UPM.showInfoPrefs();
-	} else if ((errorMsg != null) && (errorMsg[1] === "rowColPrefs")){ 
+	} else if ((errorMsg != null) && (errorMsg[1] === "rowColPrefs")) {
 		UPM.showRowsColsPrefs();
+	} else if ((errorMsg != null) && (errorMsg[1] === "keyPrefs")) {
+		UPM.showKeyPrefs();
 	} else if (UPM.searchPerformed) {
 		UPM.searchPerformed = false;
 		UPM.showClassPrefs();
@@ -265,6 +273,32 @@ UPM.showLayerPrefs = function() {
 UPM.showClassPrefs = function() {
     UTIL.showTab ('prefClass_btn');
 }
+
+/**********************************************************************************
+ * FUNCTION - showKeyPrefs: The purpose of this function is to perform the
+ * processing for the preferences tab when the user selects the "Covariates" tab.
+ **********************************************************************************/
+UPM.showKeyPrefs = function() {
+
+    const [ keyMap, actionTab ] = UTIL.getKeyData ('keyActions');
+
+    UTIL.showTab ('prefKeys_btn');
+    const keyPrefs = document.getElementById("keyPrefs");
+    while (keyPrefs.firstChild) keyPrefs.removeChild (keyPrefs.firstChild);
+
+    const head = UTIL.newElement ('THEAD', {}, [
+	UTIL.newElement('TR', {}, [ "Key", "Action", "Description" ].map (h => UTIL.newElement ('TH', {}, h)))
+    ]);
+    console.log ('Populating key map body');
+    const body = UTIL.newElement ('TBODY');
+    keyMap.forEach ((action, key) => {
+	const help = actionTab.get(action).help;
+	body.appendChild (UTIL.newElement('TR', {},
+	    [ key, action, help ].map (val => UTIL.newElement ('TD', {}, val))));
+    });
+    const table = UTIL.newElement ('TABLE.keyTable', {}, [ head, body ]);
+    keyPrefs.append (table);
+};
 
 /**********************************************************************************
  * FUNCTION - prefsCancelButton: The purpose of this function is to perform all processing

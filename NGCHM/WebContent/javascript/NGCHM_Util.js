@@ -8,6 +8,7 @@
 
     //Define Namespace for NgChm UTIL
     const UTIL = NgChm.createNS('NgChm.UTIL');
+    const CFG = NgChm.importNS('NgChm.CFG');
 
 //Get a value for a parm passed in the URL.
 UTIL.getURLParameter = function(name) {
@@ -45,6 +46,21 @@ UTIL.capitalize = function capitalize (str) {
 		return cold;
 	}
 })();
+
+{
+    const keyMap = new Map();
+
+    UTIL.setKeyData = function (key, data) {
+	keyMap.set (key, data);
+    }
+
+    UTIL.getKeyData = function (key) {
+	return keyMap.get (key);
+    }
+}
+
+// Set initial value for web builder URL.
+UTIL.setKeyData ('web-builder-url', CFG.builder_url);
 
 // Load the dynamic script file.
 UTIL.addScript = function(src, callback) {
@@ -961,17 +977,6 @@ UTIL.getContigRanges = function (sortedArr) {
     NgChm.exportToNS ("NgChm.UTIL", exports);
     var firstLoaderMessage = true;
     var messages = "";
-
-    // Add event handler for closing splash screen.
-    (function() {
-	const closeBtn = document.getElementById('closeSplash');
-	if (closeBtn) {
-	    closeBtn.addEventListener('click', () => {
-		const splash = document.getElementById('splash');
-		splash.classList.add('hide');
-	    }, { passive: true });
-	}
-    })();
 
     function showSplashExample () {
 	const splashWaiting = document.getElementById('splashWaiting');
