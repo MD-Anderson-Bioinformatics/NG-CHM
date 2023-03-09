@@ -779,14 +779,6 @@
 	    messageBox.appendChild (UTIL.newElement ('P', {}, [
 		"The NG-CHM Viewer can be downloaded for stand-alone use. It is also incorporated into a variety of other platforms.",
 	    ]));
-	    UHM.setMessageBoxButton('viewer', {
-		type: 'text',
-		text: 'Download viewer',
-		tooltip: 'Downloads a copy of the NG-CHM viewer',
-	    }, function () {
-		UHM.messageBoxCancel();
-		MMGR.zipAppDownload();
-	    });
 	    UHM.setMessageBoxButton('videos', {
 		type: 'text',
 		text: 'Videos',
@@ -805,9 +797,25 @@
 		UHM.messageBoxCancel ();
 		TOUR.showTour(null);
 	    });
+	    UHM.setMessageBoxButton('viewer', {
+		type: 'text',
+		text: 'Download viewer',
+		tooltip: 'Downloads a copy of the NG-CHM viewer',
+	    }, function () {
+		UHM.messageBoxCancel();
+		MMGR.zipAppDownload();
+	    });
+	    UHM.setMessageBoxButton('showkeys', {
+		type: 'text',
+		text: 'Show Keys',
+		tooltip: 'Display keyboard controls',
+	    }, function () {
+		UHM.messageBoxCancel();
+		console.log ('Implement me');
+	    });
 	    UHM.setMessageBoxButton('plugins', {
 		type: 'text',
-		text: 'About Plugins',
+		text: 'Show Plugins',
 		tooltip: 'Displays details of loaded/available plugins',
 		disabled: !isMapLoaded,
 		disabledReason: 'no map is loaded',

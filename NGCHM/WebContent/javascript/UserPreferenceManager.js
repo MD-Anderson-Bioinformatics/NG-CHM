@@ -2074,8 +2074,7 @@ UPM.setupRowColPrefs = function(e, prefprefs) {
 	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Trim Label Text From:",rowLabelAbbrevSelect]);
 
 	var topRowItemData = heatMap.getRowConfig().top_items.toString();
-	var topRowItemsStyle = "style='font-family: sans-serif;font-size: 80%;";
-	var topRowItems = "&nbsp;&nbsp;<textarea name='rowTopItems' id='rowTopItems' " + topRowItemsStyle +" rows='3', cols='80'>"+topRowItemData+"</textarea>";
+	var topRowItems = "<textarea name='rowTopItems' id='rowTopItems' rows='3' cols='80'>"+topRowItemData+"</textarea>";
 	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Top Rows:"]);
 	UHM.setTableRow(prefContents,[topRowItems],2);
 
@@ -2107,8 +2106,7 @@ UPM.setupRowColPrefs = function(e, prefprefs) {
 	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Maximum Label Length:",colLabelSizeSelect]);
 	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Trim Label Text From:",colLabelAbbrevSelect]);
 	var topColItemData = heatMap.getColConfig().top_items.toString();
-	var topColItemsStyle = "style='font-family: sans-serif;font-size: 80%;";
-	var topColItems = "&nbsp;&nbsp;<textarea name='colTopItems' id='colTopItems' " + topColItemsStyle +" rows='3', cols='80'>"+topColItemData+"</textarea>";
+	var topColItems = "<textarea name='colTopItems' id='colTopItems' rows='3' cols='80'>"+topColItemData+"</textarea>";
 	UHM.setTableRow(prefContents,["&nbsp;&nbsp;Top Columns:"]);
 	UHM.setTableRow(prefContents,[topColItems],2);
 	rowcolprefs.appendChild(prefContents);

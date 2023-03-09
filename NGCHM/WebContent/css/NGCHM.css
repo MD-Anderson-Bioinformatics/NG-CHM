@@ -548,9 +548,23 @@ div.paneHeader button {
 
 #pref_buttons,
 .msgBoxButtons {
+    /* Parameters: */
+    --grid-layout-gap: 10px;
+    --grid-column-count: 3;
+    --grid-item--min-width: 100px;
+
+    /* Calculated values: */
+    --gap-count: calc(var(--grid-column-count) - 1);
+    --total-gap-width: calc(var(--gap-count) * var(--grid-layout-gap));
+    --grid-item--max-width: calc((100% - var(--total-gap-width)) / var(--grid-column-count));
+
+    /* The layout: */
     display: grid;
-    grid-auto-flow: column;
-    width: fit-content;
+    grid-template-columns: repeat(auto-fill, minmax(max(var(--grid-item--min-width), var(--grid-item--max-width)), 1fr));
+    grid-gap: var(--grid-layout-gap);
+
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 .msgBoxButtons img {
@@ -561,7 +575,6 @@ div.paneHeader button {
 
 .spanbuttonwrapper {
     padding: 0.4em 2px;
-    margin-left: 1em;
 }
 
 .msgBoxButtons .default img {
@@ -841,6 +854,15 @@ button#layers_open_close[data-state='closed'] div.closed {
     padding-left: 0.7em;
     white-space: nowrap;
     vertical-align: text-top;
+}
+
+.chmTblRow textarea {
+    width: calc(100% - 22px);
+    margin-left: 20px;
+    margin-right: 2px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    padding: 0;
 }
 
 /* Style plugin help table links same color/font as table text.
@@ -1213,6 +1235,7 @@ th.breakpointContainer {
     width: 100%;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(4em, 1fr));
+    justify-items: center;
 }
 
 #prefActions div.buttonRow button {
@@ -1265,6 +1288,7 @@ th.breakpointContainer {
     border: none;
     vertical-align: top;
     background: transparent;
+    margin-bottom: 0.5em;
 }
 
 .msgBoxButton {
