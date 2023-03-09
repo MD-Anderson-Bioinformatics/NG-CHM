@@ -1194,31 +1194,3 @@ linkouts.addPlugin({
     });
 }) (linkouts);
 
-
-
-//==============================================//
-// Zodiac plugin                                //
-//==============================================//
-(function(linkouts) {
-
-    function viewZodiacG (labels) {
-	var glist = encodeURIComponent(linkouts.simplifyLabels(labels).join(","));
-	linkouts.openUrl("http://compgenome.org/zodiac/query.php?act=input&gene_list=" + glist, "Zodiac");
-    };
-
-    linkouts.addPlugin({
-        name: "Zodiac",
-	description: "Adds linkouts to Zodiac.",
-	version: "0.1.0",
-	site: "http://www.compgenome.org/zodiac/",
-	logo: "http://www.compgenome.org/zodiac/images/zodiac_logo.png",
-	linkouts: [
-            { menuEntry: "View Zodiac", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: viewZodiacG }
-	],
-        matrixLinkouts: [
-            { menuEntry: "View Zodiac", typeName1: ["bio.gene.hugo"], typeName2: ["bio.gene.hugo"], selectMode: linkouts.MULTI_SELECT, linkoutFn: viewZodiacG }
-        ]
-
-    });
-}) (linkouts);
-
