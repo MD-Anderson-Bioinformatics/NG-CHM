@@ -749,6 +749,7 @@
 	    UHM.setMessageBoxHeader("About NG-CHM Viewer");
 	    const mapVersion = isMapLoaded ? heatMap.getMapInformation().version_id : "N/A";
 	    const messageBox = UHM.getMessageTextBox ();
+	    messageBox.style.width = '40em';
 	    let text = "<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.</p>";
 	    messageBox.innerHTML = text;
 
@@ -811,7 +812,7 @@
 		tooltip: 'Display keyboard controls',
 	    }, function () {
 		UHM.messageBoxCancel();
-		console.log ('Implement me');
+		UIMGR.showKeysDialog ();
 	    });
 	    UHM.setMessageBoxButton('plugins', {
 		type: 'text',
@@ -1597,6 +1598,41 @@
 	    if (e.metaKey) mod += 'meta-';
 	    return mod + e.key;
 	}
+
+	/**********************************************************************************
+	 * FUNCTION - showKeysDialog: Show the keys dialog.
+	 **********************************************************************************/
+	UIMGR.showKeysDialog = showKeysDialog;
+	function showKeysDialog () {
+
+	    const msgBox = UHM.newMessageBox('keynav');
+	    UHM.setNewMessageBoxHeader(msgBox, "Key Actions");
+	    const messageBox = UHM.getNewMessageTextBox (msgBox);
+	    messageBox.innerHTML = '';
+
+	    const head = UTIL.newElement ('THEAD', {}, [
+		UTIL.newElement('TR', {}, [ "Key", "Action", "Description" ].map (h => UTIL.newElement ('TH', {}, h)))
+	    ]);
+
+	    // Populating key map body.
+	    const [ keyMap, actionTab ] = UTIL.getKeyData ('keyActions');
+	    const body = UTIL.newElement ('TBODY');
+	    keyMap.forEach ((action, key) => {
+		const help = actionTab.get(action).help;
+		body.appendChild (UTIL.newElement('TR', {},
+		    [ key, action, help ].map (val => UTIL.newElement ('TD', {}, val))));
+	    });
+	    const table = UTIL.newElement ('TABLE.keyTable', {}, [ head, body ]);
+	    messageBox.appendChild (table);
+
+	    UHM.setNewMessageBoxButton(msgBox, 'close', {
+		type: 'text',
+		text: 'Close',
+		tooltip: 'Closes this dialog',
+		default: true,
+	    });
+	    UHM.displayNewMessageBox(msgBox);
+	};
 
     }
     /*********************************************************************************************/

@@ -236,7 +236,7 @@
 						<tr class="chmTblRow">
 							<td>
 								<div id="pdfprefprefs" style="display: block;">
-									<div style="display: inherit; width: 290px; height: 350px;">
+									<div style="display: inherit; width: 290px;">
 										<h3 style="margin-bottom:0px;">Include maps:</h3>
 										<input id="pdfInputSummaryMap" type="radio" name="pages" value="summary"> Summary<br>
 										<input id="pdfInputDetailMap" type="radio" name="pages" value="detail"> Detail<br>
@@ -328,6 +328,7 @@
 					<tbody>
 						<tr class="chmTblRow">
 							<td>
+							    <div>
 							        <!-- WIDGET EXCLUDE -->
 								<div class="ngchmLogos" style="display: none">
 									<div class="msgBoxLogoLeft">
@@ -347,11 +348,12 @@
 								    <label>Progress:</label>
 								    <progress class="msgBoxProgressBar"></progress>
 								</div>
-								<div class='msgBoxButtons buttonBox'></div>
+							    </div>
 							</td>
 						</tr>
 					</tbody>
 				</table>
+				<div class='msgBoxButtons buttonBox'></div>
 			    </div>
 			</template>
 
@@ -413,14 +415,12 @@
 				    <button id="prefLayer_btn" data-for-tab='layerPrefs' class='clickableItem'><span class='button tab-button'>Heat Map Colors</span></button>
 				    <button id="prefRowsCols_btn" data-for-tab='rowsColsPrefs' class='clickableItem'><span class='button tab-button'>Rows &amp; Cols</span></button>
 				    <button id="prefClass_btn" data-for-tab='classPrefs' class='clickableItem'><span class='button tab-button'>Covariate Bars</span></button>
-				    <button id="prefKeys_btn" data-for-tab='keyPrefs' class='clickableItem'><span class='button tab-button'>Keys</span></button>
 				</div>
 				<div id="prefPrefs" class="prefSubPanel">
 				    <div id="infoPrefs"></div>
 				    <div id="layerPrefs"></div>
 				    <div id="rowsColsPrefs"></div>
 				    <div id="classPrefs"></div>
-				    <div id="keyPrefs"></div>
 				</div>
 				<div id="prefActions">
 				    <div class="buttonRow">

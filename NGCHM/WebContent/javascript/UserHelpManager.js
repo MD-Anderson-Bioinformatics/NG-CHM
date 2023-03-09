@@ -465,6 +465,7 @@ UHM.initMessageBox = function() {
 	UHM.hideMsgBoxProgressBar();
 	const msgBox = document.getElementById('msgBox');
 	msgBox.style.display = 'none';
+	msgBox.style.width = '';
 	const msgBoxButtons = msgBox.querySelector ('.msgBoxButtons');
 	while (msgBoxButtons.firstChild) {
 	    msgBoxButtons.removeChild (msgBoxButtons.firstChild);

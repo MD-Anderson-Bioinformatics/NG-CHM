@@ -279,14 +279,19 @@ div.pane canvas {
 .msgBox,
 #msgBox {
     display: grid;
-    grid-template-columns: auto;
+    grid-template-rows: auto 1fr auto;
+    max-height: calc(100% - 70px);
+}
+
+.msgBox > :nth-child(2) {
+    display: block;
+    overflow-y: auto;
 }
 
 .msgBoxTxt,
 #msgBoxTxt {
     display: inherit;
     font-size: 12px;
-    width: 40em;
     box-sizing: border-box;
 }
 
@@ -544,6 +549,15 @@ div.paneHeader button {
 .buttonBox {
     margin-top: 0.5em;
     margin-bottom: 0.5em;
+}
+
+#msgBox-for-keynav {
+    max-width: 35em;
+}
+
+#pdfPrefs .buttonBox,
+#msgBox-for-keynav .buttonBox {
+    margin-top: 2em;
 }
 
 #pref_buttons,
@@ -1091,7 +1105,7 @@ th.breakpointContainer {
 }
 
 #prefs {
-	width: 440px;
+	width: 420px;
 	overflow: hidden;
 	position: absolute;
 	background-color: var(--dialog-body-background);
