@@ -54,9 +54,11 @@
 				    clearInterval(awaitingPluginData);
 				    PIM.warnAboutMissingPluginData();
 				    MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
-				    .then(() => {
+				    .then((success) => {
 					UHM.messageBoxCancel();
-					showViewerSaveNotification(heatMap);
+					if (success) {
+					    showViewerSaveNotification(heatMap);
+					}
 				    });
 			    }
 		    }, 1000);
@@ -161,15 +163,18 @@
      **********************************************************************************/
     function zipSaveOutdated (heatMap) {
 	    const text = "<br>This NG-CHM contains an outdated heat map configuration. It has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>To avoid this notice in the future, replace your original file with the version now being displayed.<br><br>";
-	    UHM.initMessageBox();
+	    const msgBox = UHM.initMessageBox();
+	    msgBox.classList.add ('file-viewer');
 	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
 	    UHM.setMessageBoxText(text);
 	    addSaveToNgchmButton(() => {
 		UHM.showMsgBoxProgressBar();
 		MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
-		.then(() => {
+		.then((success) => {
 		    UHM.messageBoxCancel();
-		    showViewerSaveNotification(heatMap);
+		    if (success) {
+			showViewerSaveNotification(heatMap);
+		    }
 		});
 	    });
 	    addCancelSaveButton();
@@ -878,7 +883,8 @@
 	    const heatMap = MMGR.getHeatMap();
 	    var text;
 	    UHM.closeMenu();
-	    UHM.initMessageBox();
+	    const msgBox = UHM.initMessageBox();
+	    msgBox.classList.add('save-heat-map');
 	    UHM.setMessageBoxHeader("Save Heat Map");
 	    //Have changes been made?
 	    if (heatMap.getUnAppliedChanges()) {
@@ -930,12 +936,18 @@
 
     // Adds a "Cancel" button to an initialized UHM dialog.
     //
-    // Executes UHM.messageBoxCancel when clicked by default.  If cancelFunc
-    // is supplied, executes that instead.
-    function addCancelSaveButton(cancelFunc) {
+    // Executes UHM.messageBoxCancel when clicked by default.
+    function addCancelSaveButton() {
 	UHM.setMessageBoxButton('cancelSave',
 	    { type: 'text', text: 'Cancel', },
-	    cancelFunc || UHM.messageBoxCancel);
+	    (button) => {
+		if (UHM.isProgressBarVisible()) {
+		    UHM.cancelOperation();
+		    button.disabled = true;
+		} else {
+		    UHM.messageBoxCancel();
+		}
+	    });
     }
 
     const aboutButton = document.getElementById ('introButton');

@@ -464,6 +464,9 @@ UHM.invalidFileFormat = function() {
 UHM.initMessageBox = function() {
 	UHM.hideMsgBoxProgressBar();
 	const msgBox = document.getElementById('msgBox');
+	while (msgBox.classList.length > 0) {
+	    msgBox.classList.remove (msgBox.classList[0]);
+	}
 	msgBox.style.display = 'none';
 	msgBox.style.width = '';
 	const msgBoxButtons = msgBox.querySelector ('.msgBoxButtons');
@@ -471,6 +474,7 @@ UHM.initMessageBox = function() {
 	    msgBoxButtons.removeChild (msgBoxButtons.firstChild);
 	}
 	document.getElementById('messageOpen_btn').style.display = 'none';
+	return msgBox;
 }
 
 UHM.messageBoxIsVisible = function () {
@@ -583,7 +587,7 @@ function addMsgBoxButton (msgBox, buttonId, buttonSpec, altText, onClick) {
 		if (buttonSpec.disableOnClick) {
 		    newButton.disabled = true;
 		}
-		onClick();
+		onClick(newButton);
 	    };
 	}
 	msgBoxButtons.appendChild (newButton);
@@ -608,6 +612,10 @@ function hideMsgBoxProgressBar () {
     document.getElementById ('msgBoxProgressDiv').style.display = 'none';
 }
 
+UHM.isProgressBarVisible = function isProgressBarVisible () {
+    return document.getElementById ('msgBoxProgressDiv').style.display == '';
+};
+
 // Set the value of the message box progress bar.
 // Assumes that the progress bar is displayed.
 // Value must be a number between 0 (not started) and 1 (finished).
@@ -615,7 +623,13 @@ function hideMsgBoxProgressBar () {
 UHM.msgBoxProgressMeter = msgBoxProgressMeter;
 function msgBoxProgressMeter (value) {
     document.getElementById ('msgBoxProgressBar').value = value;
+    return document.getElementById ('msgBoxProgressBar').dataset.cancelled != 'true';
 }
+
+UHM.cancelOperation = function cancelOperation () {
+    document.getElementById ('msgBoxProgressBar').dataset.cancelled = 'true';
+    document.getElementById ('msgBoxProgressDiv').style.opacity = 0.5;
+};
 
 UHM.messageBoxCancel = function() {
 	UHM.initMessageBox();

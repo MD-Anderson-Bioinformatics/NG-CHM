@@ -305,6 +305,11 @@ div.pane canvas {
     width: 100%;
 }
 
+.file-viewer,
+.save-heat-map {
+    max-width: 35em;
+}
+
 /* #content contains everything between the page header and footer.
  * Initially it contains the splash screen.
  * Once loading commences it's replaced by the loading screen.
