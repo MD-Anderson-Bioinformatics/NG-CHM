@@ -2411,15 +2411,9 @@ let	wS = `const debug = ${debug};`;
 		    dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
 		}
 		const panelConfig = heatMap.getPanelConfiguration();
-		const flickInfo = panelConfig ? panelConfig.flickInfo : null;
-		if (flickInfo) {
-		    FLICK.enableFlicks (dls.join(""), flickInfo.flick1 || 'dl1', flickInfo.flick2 || 'dl1');
-		    const layer = FLICK.setFlickState (flickInfo.flick_btn_state);
-		    heatMap.setCurrentDL(layer);
-		} else {
-		    FLICK.enableFlicks (dls.join(""), "dl1", orderedKeys[1]);
-		    heatMap.setCurrentDL("dl1");
-		}
+		const flickInfo = panelConfig && panelConfig.flickInfo ? panelConfig.flickInfo : {};
+		const layer = FLICK.enableFlicks (orderedKeys, dls.join(""), flickInfo);
+		heatMap.setCurrentDL(layer);
 	    } else {
 		    heatMap.setCurrentDL("dl1");
 		    FLICK.disableFlicks();

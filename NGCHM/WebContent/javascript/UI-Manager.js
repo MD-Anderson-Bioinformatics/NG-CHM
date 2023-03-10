@@ -129,11 +129,8 @@
 	* Save information about the data layers (i.e. 'flick info') to mapConfig
 	*/
 	function saveFlickInfoToMapConfig() {
-		mapConfig.panel_configuration['flickInfo'] = {};
 		try {
-			mapConfig.panel_configuration.flickInfo['flick_btn_state'] = document.getElementById('flick_btn').dataset.state;
-			mapConfig.panel_configuration.flickInfo['flick1'] = document.getElementById('flick1').value;
-			mapConfig.panel_configuration.flickInfo['flick2'] = document.getElementById('flick2').value;
+			mapConfig.panel_configuration['flickInfo'] = FLICK.getFlickSaveState();
 		} catch(err) {
 			console.error(err);
 		}
