@@ -283,6 +283,59 @@ PDF.pdfCancelButton = function() {
     }
 
     initLegends();
+
+    { // PDF dialog event handlers.
+	const pdfResolution = document.getElementById('pdfResolution');
+	const pdfCustomResolution = document.getElementById('pdfCustomResolution');
+	const createPdfButton = document.getElementById('prefCreate_btn');
+	const minDPI = 24;
+	const maxDPI = 1200;
+	pdfResolution.value = '50 dpi';
+	pdfResolution.onchange = function (e) {
+	    const pdfCustomResLabel = document.querySelector('label[for="pdfCustomResolution"]');
+	    if (e.target.value == 'custom') {
+		pdfCustomResLabel.classList.remove('hide');
+		pdfCustomResolution.classList.remove('hide');
+		checkResolution ();
+	    } else {
+		pdfCustomResLabel.classList.add('hide');
+		pdfCustomResolution.classList.add('hide');
+		createPdfButton.disabled = false;
+	    }
+	};
+	pdfCustomResolution.onchange = function (e) {
+	    if (pdfResolution.value == 'custom') checkResolution();
+	};
+
+	function checkResolution () {
+	    const val = parseInt (pdfCustomResolution.value);
+		if (isNaN (val)) {
+		    createPdfButton.disabled = true;
+		    createPdfButton.dataset.disabledReason = 'Disabled because custom DPI is not a number.';
+		    pdfCustomResolution.style.backgroundColor = '#ff00004d';
+		    return;
+		}
+		if (val < minDPI) {
+		    createPdfButton.disabled = true;
+		    createPdfButton.dataset.disabledReason = 'Disabled because custom DPI is less than ' + minDPI + '.';
+		    pdfCustomResolution.style.backgroundColor = '#ff00004d';
+		    return;
+		}
+
+		if (val > maxDPI) {
+		    createPdfButton.disabled = true;
+		    createPdfButton.dataset.disabledReason = 'Disabled because custom DPI is greater than ' + maxDPI + '.';
+		    pdfCustomResolution.style.backgroundColor = '#ff00004d';
+		    return;
+		}
+
+		createPdfButton.disabled = false;
+		createPdfButton.dataset.disabledReason = '';
+		pdfCustomResolution.style.backgroundColor = '';
+	}
+    }
+
+
 	//=================================================================================//
 	//=================================================================================//
 	//                        PDF OBJECT HELPER FUNCTIONS 
@@ -308,6 +361,18 @@ PDF.pdfCancelButton = function() {
 		    this.paperSize = [842,595];
 	    } else if (document.getElementById("pdfPaperSize").value == "A3") {
 		    this.paperSize = [1224,792];
+	    }
+	    const pdfResolution = document.getElementById('pdfResolution');
+	    const pdfCustomResolution = document.getElementById('pdfCustomResolution');
+	    this.resolution = pdfResolution.value;
+	    if (this.resolution == 'custom') {
+		this.resolution = parseInt(pdfCustomResolution.value);
+	    } else {
+		this.resolution = parseInt(this.resolution.replace(/ dpi/,''));
+	    }
+	    if (isNaN (this.resolution)) {
+		console.warn ('Unexpected non-numeric pdf resolution. Defaulting to 600 dpi.');
+		this.resolution = 600;   // Shouldn't happen.
 	    }
 	    this.paperOrientation = isChecked("pdfInputPortrait") ? "p" : "l";
 	    this.showDetailBounds = isChecked("pdfInputShowBounds");
@@ -1255,9 +1320,8 @@ PDF.pdfCancelButton = function() {
 	    //Get Dimensions for the Summary Heat Map
 	    const { sumMapW, sumMapH } = setSummaryHeatmapDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength);
 
-		const minDPI = 600;
-		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
-		const mapHeightScale = Math.max (2, Math.ceil (minDPI/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
+		const mapWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
+		const mapHeightScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
 
 		const mapInfo = heatMap.getMapInformation();
 		const headerOptions = {};
@@ -1299,7 +1363,7 @@ PDF.pdfCancelButton = function() {
 		if (SUM.rCCanvas.width > 0) {
 		    // Render row covariates to a renderBuffer, convert to a data URL, and add to the document.
 		    const rowCovBarSize = heatMap.getScaledVisibleCovariates('row', 1.0).totalHeight();
-		    const rowCovWidthScale = Math.max (2, Math.ceil (minDPI/72 * rowClassWidth / rowCovBarSize));
+		    const rowCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * rowClassWidth / rowCovBarSize));
 		    const renderBuffer = SUM.buildRowCovariateRenderBuffer (rowCovWidthScale, mapHeightScale);
 		    const sumRowClassData = createDataURLFromRenderBuffer (renderBuffer);
 		    pdfDoc.doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
@@ -1313,7 +1377,7 @@ PDF.pdfCancelButton = function() {
 		if (SUM.cCCanvas.height > 0) {
 		    // Render column covariates to a renderBuffer, convert to a data URL, and add to document.
 		    const colCovBarSize = heatMap.getScaledVisibleCovariates('column', 1.0).totalHeight();
-		    const colCovWidthScale = Math.max (2, Math.ceil (minDPI/72 * colClassHeight / colCovBarSize));
+		    const colCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * colClassHeight / colCovBarSize));
 		    const renderBuffer = SUM.buildColCovariateRenderBuffer (mapWidthScale, colCovWidthScale);
 		    const sumColClassData = createDataURLFromRenderBuffer (renderBuffer);
 		    pdfDoc.doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
@@ -1549,10 +1613,9 @@ PDF.pdfCancelButton = function() {
 		}
 
 		// Scale the box canvas overlay.
-		const minDPI = 600;
 		const level = DVW.getLevelFromMode (mapItem, MAPREP.DETAIL_LEVEL);
-		const mapWidthScale = Math.max (2, Math.ceil (minDPI/72 * detMapW / heatMap.getNumColumns (level)));
-		const mapHeightScale = Math.max (2, Math.ceil (minDPI/72 * detMapH / heatMap.getNumRows (level)));
+		const mapWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * detMapW / heatMap.getNumColumns (level)));
+		const mapHeightScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * detMapH / heatMap.getNumRows (level)));
 
 		// Create a 'form object' aka subdocument that will be used for overlaying the
 		// heat map with selection boxes etc. (Equivalent to the on-screen boxCanvas.)

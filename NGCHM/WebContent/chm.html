@@ -249,25 +249,43 @@
 										<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Row<br>
 										<h3 style="margin-bottom:0px;">Font &amp; Paper Options:</h3>
 										<p id="pdfErrorMessage" style="display:none;color:red; font-weight:bold;margin-left: 1.0em; margin-left: 1.0em;">Please select a font between 1 and 36</p><br>
-										Font Style:&nbsp;&nbsp;<select id="pdfFontStyle">
+										<div id='font-and-paper-options'>
+										    <label for="pdfResolution">Resolution:</label>
+										    <select id="pdfResolution">
+											<option value="600 dpi">600 dpi</option>
+											<option value="300 dpi">300 dpi</option>
+											<option value="150 dpi">150 dpi</option>
+											<option value="72 dpi">72 dpi</option>
+											<option value="50 dpi">50 dpi</option>
+											<option value="custom">Custom</option>
+										    </select>
+										    <label for="pdfCustomResolution" class='hide'>DPI:</label>
+											<input id="pdfCustomResolution" class='hide' type="text" value="">
+										    <label for="pdfFontStyle">Font Style:</label>
+										    <select id="pdfFontStyle">
 											<option value="helvetica">Helvetica</option>
 											<option value="courier">Courier</option>
 											<option value="times">Times-Roman</option>
-										</select><br>
-										Paper Size:&nbsp;<select id="pdfPaperSize">
+										    </select>
+										    <label for="pdfPaperSize">Paper Size:</label>
+										    <select id="pdfPaperSize">
 											<option value="standard">Standard Letter (8.5 x 11 inches)</option>
 											<option value="A3">Ledger/Tabloid (11 x 17 inches)</option>
 											<option value="A4">A4 International (210 x 297 mm)</option>
-										</select>
-										<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait
-										<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape <br>
+										    </select>
+										    <label>Orientation:</label>
+										    <div>
+											<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait
+											<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape
+										    </div>
+										</div>
 										<div id="pdfProgressBarDiv" style="display: none;">
 										<label for="pdfProgressBar">Progress:</label>
 										<progress id="pdfProgressBar"></progress>
 										</div>
 									</div>
 									<div id="pref_buttons" class="buttonBox">
-									    <button id="prefCreate_btn" class='default'>
+									    <button id="prefCreate_btn" class='default' data-tooltip='Click to create the PDF.'>
 										<span class="spanbuttonwrapper">
 										    <span class='button'>
 											Create PDF

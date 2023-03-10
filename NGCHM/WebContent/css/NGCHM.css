@@ -560,6 +560,29 @@ div.paneHeader button {
     margin-top: 2em;
 }
 
+label[for="pdfCustomResolution"] {
+    text-align: right;
+}
+
+#pdfCustomResolution {
+    width: 15em;
+}
+
+#font-and-paper-options {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    row-gap: 4px;
+}
+
+#font-and-paper-options label {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+#font-and-paper-options select {
+    margin-right: 5px;
+}
+
 #pref_buttons,
 .msgBoxButtons {
     /* Parameters: */

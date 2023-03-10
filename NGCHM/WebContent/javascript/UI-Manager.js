@@ -1550,6 +1550,12 @@
 		}
 		return;
 	    }
+	    if (e.target.id === 'pdfCustomResolution') {
+		if (e.key === 'Enter') {
+		    e.target.dispatchEvent(new Event('change'));
+		}
+		return;
+	    }
 	    if (debug) console.log ({ m: 'KeyPress', key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, meta: e.metaKey, e });
 	    const actionName = keyToAction.get(fullKey (e));
 	    if (!actionName) {
