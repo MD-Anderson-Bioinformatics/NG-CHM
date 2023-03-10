@@ -182,8 +182,9 @@ function linkoutHelp () {
 //==============================================//
 (function(linkouts) {
     function openSlideArchive (ids) {
-        var part = ids[0].substr(0,12);
-        linkouts.openUrl("https://cancer.digitalslidearchive.org/#!/CDSA/byPatientID/" + part, "SlideArchive");
+	const part = ids[0].substr(0,12);
+	// __reload=part is just to force the browser to reload the page, not just change the hash.
+	linkouts.openUrl("https://cancer.digitalslidearchive.org/?__reload=" + part + "#!/CDSA/byPatientID/" + part, "SlideArchive");
     }
     linkouts.addPlugin({
         name: "Cancer Digital Slide Archive",
