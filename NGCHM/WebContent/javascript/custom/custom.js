@@ -267,7 +267,7 @@ function linkoutHelp () {
 
     function openCosmicGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://cancer.sanger.ac.uk/cosmic/gene/analysis?ln=" + gname, "Cosmic");
+	linkouts.openUrl("https://cancer.sanger.ac.uk/cosmic/gene/analysis?ln=" + gname, "Cosmic", { noframe: true });
     }
 
     linkouts.addPlugin({
