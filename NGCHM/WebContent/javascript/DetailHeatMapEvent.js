@@ -82,7 +82,7 @@ DEV.addEvents = function (paneId) {
 	    		} else if (distance > mapItem.latestPinchDistance){ // pinch inward
 				DEV.detailDataZoomIn(mapItem);
 	    		} else if (mapItem.latestPinchDistance > distance){ // pinch outward
-				DEV.detailDataZoomOut(e);
+				DEV.detailDataZoomOut(mapItem.chm);
 	    		}
 	    		mapItem.latestPinchDistance = distance;
 	    	} else if (e.touches.length == 1){
@@ -555,7 +555,7 @@ DEV.dblClick = function(e) {
 			mapItem.currentCol = destCol;
 			
 			if (e.shiftKey) {
-				DEV.detailDataZoomOut(e);
+				DEV.detailDataZoomOut(mapItem.chm);
 			} else {
 				DEV.zoomAnimation(mapItem.chm, clickRow, clickCol);
 			}
@@ -903,8 +903,8 @@ DEV.detailDataZoomIn = function (mapItem) {
      * the processing necessary to zoom outwards on a given heat map panel.
      **********************************************************************************/
     DEV.detailDataZoomOut = function (chm) {
-	const heatMap = MMGR.getHeatMap();
 	const mapItem = DVW.getMapItemFromChm(chm);
+	const heatMap = mapItem.heatMap;
 	if (mapItem.mode == 'FULL_MAP') {
 	    // Already in full map view. We actually can't zoom out any further.
 	    return;
