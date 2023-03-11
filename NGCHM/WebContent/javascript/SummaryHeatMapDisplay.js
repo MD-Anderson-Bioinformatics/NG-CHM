@@ -566,14 +566,13 @@ SUM.buildRowClassTexture = function buildRowClassTexture () {
 
 	const renderBuffer = DRAW.createRenderBuffer (SUM.rowClassBarWidth*widthScale, SUM.matrixHeight * heightScale, 1.0);
 	var dataBuffer = renderBuffer.pixels;
-	dataBuffer.fill(0);
+	dataBuffer.fill(255);
 	var classBarsData = heatMap.getRowClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
 	var offset = 0;
 
 	const bars = heatMap.getScaledVisibleCovariates ("row", 1.0);
 	bars.forEach (currentClassBar => {
-	    let pos = 0 + offset;
 	    const barWidth = SUM.getScaledHeight(currentClassBar.height, "row");
 	    var colorMap = colorMapMgr.getColorMap("row",currentClassBar.label); // assign the proper color scheme...
 	    var classBarValues = classBarsData[currentClassBar.label].values;
@@ -583,10 +582,9 @@ SUM.buildRowClassTexture = function buildRowClassTexture () {
 		classBarLength = classBarValues.length;
 	    }
 	    if (currentClassBar.bar_type === 'color_plot') {
-		pos = SUM.drawColorPlotRowClassBar(renderBuffer, pos, barWidth, classBarValues, classBarLength, colorMap, widthScale, heightScale);
+		SUM.drawColorPlotRowClassBar(renderBuffer, offset, barWidth, classBarValues, classBarLength, colorMap, widthScale, heightScale);
 	    } else {
-		const remainingWidth = SUM.rowClassBarWidth * widthScale - barWidth;
-		pos = SUM.drawScatterBarPlotRowClassBar(renderBuffer, pos, barWidth-SUM.colClassPadding, classBarValues, currentClassBar, remainingWidth, widthScale, heightScale);
+		SUM.drawScatterBarPlotRowClassBar(renderBuffer, offset, barWidth-SUM.colClassPadding, classBarValues, currentClassBar, widthScale, heightScale);
 	    }
 	    offset += barWidth * widthScale * DRAW.BYTE_PER_RGBA;
 	});
@@ -620,7 +618,7 @@ SUM.buildColClassTexture = function() {
 SUM.buildColCovariateRenderBuffer = function (widthScale, heightScale) {
 	const heatMap = MMGR.getHeatMap();
 	const renderBuffer = DRAW.createRenderBuffer (SUM.totalWidth*widthScale, SUM.colClassBarHeight*heightScale, 1.0);
-	renderBuffer.pixels.fill(0);
+	renderBuffer.pixels.fill(255);
 	var classBarsData = heatMap.getColClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
 	const bars = heatMap.getScaledVisibleCovariates("column", 1.0);
@@ -1089,17 +1087,17 @@ SUM.drawColClassBarLegend = function(key,currentClassBar,prevHeight,totalHeight,
 	return pos;
     };
 
-SUM.drawScatterBarPlotRowClassBar = function(renderBuffer, pos, height, classBarValues, covariateBar, remainingWidth, widthScale, heightScale) {
+SUM.drawScatterBarPlotRowClassBar = function(renderBuffer, offset, height, classBarValues, covariateBar, widthScale, heightScale) {
+	// height is the width of the covariate bar
+	// Matrix is a vector of length height*widthScale
+	// Each element of matrix is a vector of length classBarValues.length
 	const matrix = SUM.buildScatterBarPlotMatrix( height, widthScale, classBarValues, covariateBar);
 	const colors = covariateBar.getScatterBarPlotColors();
 	const dataBuffer = renderBuffer.pixels;
-	// go total width of the summary canvas and back up the width of a single class bar to return to starting point for next row 
-	const oldSkipToNextRow = SUM.rowClassPadding*DRAW.BYTE_PER_RGBA+(remainingWidth*DRAW.BYTE_PER_RGBA);
-	const skipToNextRow = renderBuffer.width - height * DRAW.BYTE_PER_RGBA;
-	console.log ('drawScatterBarPlotRowClassBar', { oldSkipToNextRow, skipToNextRow });
 	for (let h = (matrix[0].length-1); h >= 0 ; h--) {
-	    // Output one row
-	    const firstRowPos = pos;
+	    // Output one row covariate.  Draw the first row.
+	    const firstRowPos = offset;
+	    let pos = firstRowPos;
 	    for (let i = 0; i < matrix.length; i++) {
 		const { r, g, b, a } = colors[matrix[i][h]];
 		dataBuffer[pos]   = r;
@@ -1108,19 +1106,19 @@ SUM.drawScatterBarPlotRowClassBar = function(renderBuffer, pos, height, classBar
 		dataBuffer[pos+3] = a;
 		pos += DRAW.BYTE_PER_RGBA;
 	    }
-	    // Advance to next row in renderBuffer.
-	    pos += skipToNextRow;
+	    // Advance one output row.
+	    offset += renderBuffer.width * DRAW.BYTE_PER_RGBA;
+	    // Each row covariate requires a total of heightScale repetitions.
 	    // Duplicate the first row if needed.
-	    if (heightScale > 1) {
-		for (let rep=1; rep < heightScale;rep++){
-		    for (let i = 0; i < matrix.length * DRAW.BYTE_PER_RGBA; i++) {
-			dataBuffer[pos+i] = dataBuffer[firstRowPos+i];
-		    }
-		    pos += renderBuffer.width;
+	    const bytesToDup = matrix.length * DRAW.BYTE_PER_RGBA;
+	    for (let rep=1; rep < heightScale; rep++) {
+		for (let i = 0; i < bytesToDup; i++) {
+		    dataBuffer[offset+i] = dataBuffer[firstRowPos+i];
 		}
+		// Advance one output row.
+		offset += renderBuffer.width * DRAW.BYTE_PER_RGBA;
 	    }
 	}
-	return pos;
 };
 
 //THIS FUNCTION NOT CURRENTLY FOR THE SUMMARY PANEL CALLED BUT MAY BE ADDED BACK IN IN THE FUTURE
