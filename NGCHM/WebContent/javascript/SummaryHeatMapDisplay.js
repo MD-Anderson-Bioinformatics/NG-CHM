@@ -617,14 +617,16 @@ SUM.buildColClassTexture = function() {
 
 SUM.buildColCovariateRenderBuffer = function (widthScale, heightScale) {
 	const heatMap = MMGR.getHeatMap();
-	const renderBuffer = DRAW.createRenderBuffer (SUM.totalWidth*widthScale, SUM.colClassBarHeight*heightScale, 1.0);
+	// SUM.totalWidth includes a factor of SUM.widthScale, so we need to get the width without that scaling.
+	const baseWidth = SUM.totalWidth / SUM.widthScale;
+	const renderBuffer = DRAW.createRenderBuffer (baseWidth*widthScale, SUM.colClassBarHeight*heightScale, 1.0);
 	renderBuffer.pixels.fill(255);
 	var classBarsData = heatMap.getColClassificationData();
 	var colorMapMgr = heatMap.getColorMapManager();
 	const bars = heatMap.getScaledVisibleCovariates("column", 1.0);
 	// Determine padding between class bars in bytes.
 	// Need to multiply totalWidth by widthScale and lines of padding by heightScale.
-	const paddingSkip = SUM.totalWidth * widthScale * SUM.colClassPadding * heightScale * DRAW.BYTE_PER_RGBA;
+	const paddingSkip = baseWidth * widthScale * SUM.colClassPadding * heightScale * DRAW.BYTE_PER_RGBA;
 	var pos = 0;
 
 	//We reverse the order of the classBars before drawing because we draw from bottom up
