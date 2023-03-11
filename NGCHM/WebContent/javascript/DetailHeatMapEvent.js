@@ -758,14 +758,16 @@ DEV.getRowFromLayerY = function (mapItem,layerY) {
 	const colElementSize = mapItem.dataBoxHeight * mapItem.canvas.clientHeight/mapItem.canvas.height;
 	const colClassHeightPx = DET.getColClassPixelHeight(mapItem);
 	const mapLocY = layerY - colClassHeightPx;
-	return Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio(mapItem.mode,'row'));
+	const maxRow = mapItem.currentRow + mapItem.dataPerCol - 1;
+	return Math.min (maxRow, Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio(mapItem.mode,'row')));
 }
 
 DEV.getColFromLayerX = function (mapItem,layerX) {
 	const rowElementSize = mapItem.dataBoxWidth * mapItem.canvas.clientWidth/mapItem.canvas.width; // px/Glpoint
 	const rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
 	const mapLocX = layerX - rowClassWidthPx;
-	return Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio(mapItem.mode,'col'));
+	const maxCol = mapItem.currentCol + mapItem.dataPerRow - 1;
+	return Math.min (maxCol, Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio(mapItem.mode,'col')));
 }
 
 
