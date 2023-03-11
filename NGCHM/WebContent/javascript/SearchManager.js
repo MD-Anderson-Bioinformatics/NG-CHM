@@ -605,7 +605,7 @@
 
     /**********************************************************************************
      * FUNCTION - searchNext: The purpose of this function is to find the
-     * next search item, set it as the current search item, and move the focus of
+     * next selected item, set it as the current selected item, and move the view of
      * the heat map detail panel to that item.
      ***********************************************************************************/
     SRCH.searchNext = searchNext;
@@ -701,16 +701,18 @@
     function searchPrev (mapItem) {
 	UTIL.closeCheckBoxDropdown('srchCovSelectBox','srchCovCheckBoxes');
 	const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
-	const searchAxis = document.getElementById('search_target').value;
+	const searchAxis = mapItem.allowedOrientations;
 	if (!currentSearchItem["index"] || !currentSearchItem["axis"]) {
 	    // No search result.
 	    return;
-	} else if ((searchAxis === 'Both') || (currentSearchItem["axis"] === searchAxis)) {
-	    // Continue on current search axis if permitted.
-	    findPrevSearchItem(mapItem, currentSearchItem["index"],currentSearchItem["axis"]);
 	} else {
-	    // Start new search on requested axis.
-	    findPrevSearchItem(mapItem, -1, searchAxis);
+	    if ((searchAxis === 'any') || (currentSearchItem["axis"].toLowerCase() === searchAxis)) {
+		// Continue on current search axis if permitted.
+		findPrevSearchItem(mapItem, currentSearchItem["index"], currentSearchItem["axis"]);
+	    } else {
+		// Start new search on requested axis.
+		findPrevSearchItem(mapItem, -1, searchAxis);
+	    }
 	}
 	goToCurrentSearchItem(mapItem);
     }
@@ -721,26 +723,31 @@
      * as the current search item.
      ***********************************************************************************/
     function findPrevSearchItem (mapItem, index, axis) {
-	const heatMap = MMGR.getHeatMap();
-	const axisLength = heatMap.getAxisLabels(axis).labels.length;
+	axis = MMGR.isRow (axis) ? "Row" : "Column";
+
+	// Try to find previous item on current axis.
 	let curr = findPrevAxisSearchItem (mapItem, axis, index);
-	if (curr < 0) { // if no searchResults exist in first axis, move to other axis
-		if (document.getElementById('search_target').value === 'Both') { 
-			const otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
-			curr = findPrevAxisSearchItem (mapItem, otherAxis, -1);
-			if (curr > 0){
-				SRCHSTATE.setSearchItem(mapItem, otherAxis, curr);
-				return;
-			}
-		}
-		// Either other axis locked, or no matches on other axis.
-		// Try from end of current axis.
-		curr = findPrevAxisSearchItem (mapItem, axis, -1);
-		if (curr >= 0) {
-			SRCHSTATE.setSearchItem(mapItem, axis, curr);
-		}
-	} else {
-		SRCHSTATE.setSearchItem(mapItem, axis, curr);
+	if (curr >= 0) {
+	    SRCHSTATE.setSearchItem(mapItem, axis, curr);
+	    return;
+	}
+
+	// That failed, try other axis if allowed.
+	const allowedAxes = mapItem.allowedOrientations;
+	if (allowedAxes === 'any') {
+	    const otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
+	    curr = findPrevAxisSearchItem (mapItem, otherAxis, -1);
+	    if (curr > 0){
+		SRCHSTATE.setSearchItem(mapItem, otherAxis, curr);
+		return;
+	    }
+	}
+
+	// Either a) other axis is not allowed, or b) no matches on other axis.
+	// Try from end of the current axis.
+	curr = findPrevAxisSearchItem (mapItem, axis, -1);
+	if (curr >= 0) {
+	    SRCHSTATE.setSearchItem(mapItem, axis, curr);
 	}
     }
 
