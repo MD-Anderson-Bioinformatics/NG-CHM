@@ -437,28 +437,23 @@ function updateShowBounds () {
 	 * labels.
 	 **********************************************************************************/
 	function setTopItemsSizing(doc, maxFontSize) {
-		var topItemsWidth, topItemsHeight, rowTopItemsLength, colTopItemsLength;
-		topItemsWidth = 10;
-		topItemsHeight = 10;
-		var rowTopItems = SUM.rowTopItems;
-		var colTopItems = SUM.colTopItems;
-		var longestRowTopItems = 0;
-		var longestColTopItems = 0;
-		for (var i = 0; i < rowTopItems.length; i++){
-			longestRowTopItems = Math.max(doc.getStringUnitWidth(rowTopItems[i]),longestRowTopItems);
-		}
-		longestRowTopItems *= maxFontSize;
-		for (var i = 0; i < colTopItems.length; i++){
-			longestColTopItems = Math.max(doc.getStringUnitWidth(colTopItems[i]),longestColTopItems);
-		}
-		longestColTopItems *= maxFontSize;
-		rowTopItemsLength = longestRowTopItems + topItemsWidth + 10; 
-		colTopItemsLength = longestColTopItems + topItemsHeight + 40; 
-		if (isChecked("pdfInputPortrait")) {
-			rowTopItemsLength += 20;
-			colTopItemsLength -= 20;
-		}
-	   return { topItemsWidth, topItemsHeight, rowTopItemsLength, colTopItemsLength, };
+	    const rowTopItems = SUM.rowTopItems;
+	    const colTopItems = SUM.colTopItems;
+	    const topItemsWidth = rowTopItems.length > 0 ? 10 : 0;  // Width of row top item lines
+	    const topItemsHeight = colTopItems.length > 0 ? 10 : 0; // Height of column top item lines
+	    let longestRowTopItems = 0;
+	    let longestColTopItems = 0;
+	    for (let i = 0; i < rowTopItems.length; i++){
+		    longestRowTopItems = Math.max(doc.getStringUnitWidth(rowTopItems[i]),longestRowTopItems);
+	    }
+	    longestRowTopItems *= maxFontSize * 1.05;
+	    for (let i = 0; i < colTopItems.length; i++){
+		    longestColTopItems = Math.max(doc.getStringUnitWidth(colTopItems[i]),longestColTopItems);
+	    }
+	    longestColTopItems *= maxFontSize * 1.05;
+	    const rowTopItemsLength = longestRowTopItems + topItemsWidth + 10;  // Padding between map and right edge of page
+	    const colTopItemsLength = longestColTopItems + topItemsHeight + 10; // Padding between map and bottom edge of page
+	    return { topItemsWidth, topItemsHeight, rowTopItemsLength, colTopItemsLength, };
 	}	
 
 	/**********************************************************************************
@@ -466,13 +461,21 @@ function updateShowBounds () {
 	 * display dimensions for the Summary page dendrograms.  Since one dimension of 
 	 * each is determined by the heat map width/height, only row dendro width and
 	 * column dendro height need be calculated.
+	 *
+	 * Both the parameters and the return values are in document units.
+	 *
 	 **********************************************************************************/
 	function setSummaryDendroDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength) {
-		var rowDendroPctg = document.getElementById("row_dendro_canvas").width / (SUM.boxCanvas.width + SUM.rCCanvas.width + document.getElementById("row_dendro_canvas").width + rowTopItemsLength);
-		var colDendroPctg = document.getElementById("column_dendro_canvas").height / (SUM.boxCanvas.height + SUM.cCCanvas.height + document.getElementById("column_dendro_canvas").height + colTopItemsLength);
-		const rowDendroWidth = sumImgW * rowDendroPctg;
-		const colDendroHeight = sumImgH * colDendroPctg;
-		return { rowDendroWidth, colDendroHeight };
+	    // Convert dendrogram sizes in the summary view panel to percentages.
+	    const rowDendroW = W(document.getElementById("row_dendro_canvas"));
+	    const rowDendroPctg = rowDendroW / (W(SUM.boxCanvas) + W(SUM.rCCanvas) + rowDendroW);
+	    const colDendroH = H(document.getElementById("column_dendro_canvas"));
+	    const colDendroPctg = colDendroH / (H(SUM.boxCanvas) + H(SUM.cCCanvas) + colDendroH);
+
+	    // Convert percentage sizes to document units.
+	    const rowDendroWidth = (sumImgW - rowTopItemsLength) * rowDendroPctg;
+	    const colDendroHeight = (sumImgH - colTopItemsLength) * colDendroPctg;
+	    return { rowDendroWidth, colDendroHeight };
 	}
 	
 	/**********************************************************************************
@@ -480,13 +483,18 @@ function updateShowBounds () {
 	 * display dimensions for the Summary page class bars.  Since one dimension of 
 	 * each is determined by the heat map width/height, only row class width and
 	 * column class height need be calculated.
+	 *
+	 * Both the parameters and the return values are in document units.
+	 *
 	 **********************************************************************************/
 	function setSummaryClassDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength) {
-		var rowClassBarPctg = SUM.rCCanvas.width / (SUM.boxCanvas.width + SUM.rCCanvas.width + document.getElementById("row_dendro_canvas").width + rowTopItemsLength);
-		var colClassBarPctg = SUM.cCCanvas.height / (SUM.boxCanvas.height + SUM.cCCanvas.height + document.getElementById("column_dendro_canvas").height + colTopItemsLength);
-		const rowClassWidth = sumImgW * rowClassBarPctg;
-		const colClassHeight = sumImgH * colClassBarPctg;
-		return { rowClassWidth, colClassHeight };
+	    const rowDendroW = W(document.getElementById("row_dendro_canvas"));
+	    const rowClassBarPctg = W(SUM.rCCanvas) / (W(SUM.boxCanvas) + W(SUM.rCCanvas) + rowDendroW);
+	    const colDendroH = H(document.getElementById("column_dendro_canvas"));
+	    const colClassBarPctg = H(SUM.cCCanvas) / (H(SUM.boxCanvas) + H(SUM.cCCanvas) + colDendroH);
+	    const rowClassWidth = (sumImgW - rowTopItemsLength) * rowClassBarPctg;
+	    const colClassHeight = (sumImgH - colTopItemsLength) * colClassBarPctg;
+	    return { rowClassWidth, colClassHeight };
 	}
 
 	/**********************************************************************************
@@ -494,11 +502,22 @@ function updateShowBounds () {
 	 * display dimensions for the Summary Heat Map page.
 	 **********************************************************************************/
 	function setSummaryHeatmapDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength) {
-		var sumMapWPctg = SUM.boxCanvas.width / (SUM.boxCanvas.width + SUM.rCCanvas.width + document.getElementById("row_dendro_canvas").width + rowTopItemsLength);
-		var sumMapHPctg = SUM.boxCanvas.height / (SUM.boxCanvas.height + SUM.cCCanvas.height + document.getElementById("column_dendro_canvas").height + colTopItemsLength);
-		const sumMapW = sumImgW * sumMapWPctg //height of summary heatmap (and class bars)
-		const sumMapH = sumImgH * sumMapHPctg; //width of summary heatmap (and class bars)
-		return { sumMapW, sumMapH };
+	    const rowDendroW = W(document.getElementById("row_dendro_canvas"));
+	    const sumMapWPctg = W(SUM.boxCanvas) / (W(SUM.boxCanvas) + W(SUM.rCCanvas) + rowDendroW);
+	    const colDendroH = H(document.getElementById("column_dendro_canvas"));
+	    const sumMapHPctg = H(SUM.boxCanvas) / (H(SUM.boxCanvas) + H(SUM.cCCanvas) + colDendroH);
+	    const sumMapW = (sumImgW - rowTopItemsLength) * sumMapWPctg; //height of summary heatmap (and class bars)
+	    const sumMapH = (sumImgH - colTopItemsLength) * sumMapHPctg; //width of summary heatmap (and class bars)
+	    return { sumMapW, sumMapH };
+	}
+
+	// Return the width of element in pixels.
+	function W (element) {
+	    return +element.style.width.replace(/px/,'');
+	}
+	// Return the height of element in pixels.
+	function H (element) {
+	    return +element.style.height.replace(/px/,'');
 	}
 
 	/**********************************************************************************
@@ -1312,6 +1331,9 @@ function updateShowBounds () {
 	 *
 	 **********************************************************************************/
 	function drawSummaryHeatMapPage (pdfDoc, showDetailViewBounds) {
+
+	    const debug = false;
+
 	    pdfDoc.setPadding (10, pdfDoc.pageHeaderHeight+15);
 
 	    const heatMap = pdfDoc.heatMap;
@@ -1319,8 +1341,10 @@ function updateShowBounds () {
 	    const topItemsFontSize = 5;
 
 	    const { topItemsWidth, topItemsHeight, rowTopItemsLength, colTopItemsLength } = setTopItemsSizing(pdfDoc.doc, topItemsFontSize);
-	    const sumImgW = pdfDoc.doc.getPageWidth() - 2*pdfDoc.paddingLeft  //width of available space for heatmap, class bars, and dendro
-	    const sumImgH = pdfDoc.doc.getPageHeight() - pdfDoc.paddingTop; //height of available space for heatmap, class bars, and dendro
+	    const sumPaddingWidth = 5;
+	    const sumPaddingHeight = 5;
+	    const sumImgW = pdfDoc.doc.getPageWidth() - pdfDoc.paddingLeft - sumPaddingWidth;  //width of available space for heatmap, class bars, and dendro
+	    const sumImgH = pdfDoc.doc.getPageHeight() - pdfDoc.paddingTop - sumPaddingHeight; //height of available space for heatmap, class bars, and dendro
 
 	    //Get Dimensions for Summary Row & Column Dendrograms
 	    const { rowDendroWidth, colDendroHeight } = setSummaryDendroDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength);
@@ -1331,153 +1355,148 @@ function updateShowBounds () {
 	    //Get Dimensions for the Summary Heat Map
 	    const { sumMapW, sumMapH } = setSummaryHeatmapDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength);
 
-		const mapWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
-		const mapHeightScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
+	    const mapWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
+	    const mapHeightScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
 
-		const mapInfo = heatMap.getMapInformation();
-		const headerOptions = {};
-		if (mapInfo.attributes.hasOwnProperty('chm.info.caption')) {
-		    headerOptions.subTitle = mapInfo.attributes['chm.info.caption'];
-		}
-		pdfDoc.addPageIfNeeded();
-		pdfDoc.createHeader("Summary", headerOptions);
+	    const mapInfo = heatMap.getMapInformation();
+	    const headerOptions = {};
+	    if (mapInfo.attributes.hasOwnProperty('chm.info.caption')) {
+		headerOptions.subTitle = mapInfo.attributes['chm.info.caption'];
+	    }
+	    pdfDoc.addPageIfNeeded();
+	    pdfDoc.createHeader("Summary", headerOptions);
 
-		const rowDendroConfig = heatMap.getRowDendroConfig();
-		const colDendroConfig = heatMap.getColDendroConfig();
+	    const rowDendroConfig = heatMap.getRowDendroConfig();
+	    const colDendroConfig = heatMap.getColDendroConfig();
 
-		// Determine the left edge of the row dendrogram, row class bars, and heat map.
-		const rowDendroLeft = pdfDoc.paddingLeft;
-		let rowClassLeft = pdfDoc.paddingLeft;
-		let imgLeft = pdfDoc.paddingLeft + rowClassWidth;
-		if (rowDendroConfig.show !== 'NONE') {
-		    rowClassLeft += rowDendroWidth;
-		    imgLeft += rowDendroWidth;
-		}
+	    // Determine the left edge of the row dendrogram, row class bars, and heat map.
+	    const rowDendroLeft = pdfDoc.paddingLeft;
+	    const rowClassLeft = rowDendroLeft + (rowDendroConfig.show !== 'NONE' ? rowDendroWidth+1 : 0);
+	    const imgLeft = rowClassLeft + (rowClassWidth > 0 ? rowClassWidth+1 : 0);
 
-		// Determine the top edge of the column dendrogram, column class bars, and heat map.
-		const colDendroTop = pdfDoc.paddingTop;
-		let colClassTop = pdfDoc.paddingTop;
-		let imgTop = pdfDoc.paddingTop+colClassHeight;
-		if (SUM.cCCanvas.height > 0) {
-		    imgTop++;
-		}
-		if (colDendroConfig.show !== 'NONE') {
-		    colClassTop += colDendroHeight;
-		    imgTop += colDendroHeight;
-		}
+	    // Determine the top edge of the column dendrogram, column class bars, and heat map.
+	    const colDendroTop = pdfDoc.paddingTop;
+	    const colClassTop = colDendroTop + (colDendroConfig.show !== 'NONE' ? colDendroHeight+1 : 0);
+	    const imgTop = colClassTop + (colClassHeight > 0 ? colClassHeight+1 : 0);
 
+	    // Add the row dendrogram and row covariate bars.
+	    if (rowDendroConfig.show !== 'NONE') {
+		if (debug) console.log ('rowDendro@', { left: rowDendroLeft, top: imgTop, width: rowDendroWidth, height: sumMapH });
+		SUM.rowDendro.drawPDF (pdfDoc.doc, { left: rowDendroLeft, top: imgTop, width: rowDendroWidth, height: sumMapH });
+	    }
+	    if (SUM.rCCanvas.width > 0) {
+		// Render row covariates to a renderBuffer, convert to a data URL, and add to the document.
+		const rowCovBarSize = heatMap.getScaledVisibleCovariates('row', 1.0).totalHeight();
+		const rowCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * rowClassWidth / rowCovBarSize));
+		const renderBuffer = SUM.buildRowCovariateRenderBuffer (rowCovWidthScale, mapHeightScale);
+		const sumRowClassData = createDataURLFromRenderBuffer (renderBuffer);
 
-		// Add the row dendrogram and row covariate bars.
-		if (rowDendroConfig.show !== 'NONE') {
-		    SUM.rowDendro.drawPDF (pdfDoc.doc, { left: pdfDoc.paddingLeft, top: imgTop, width: rowDendroWidth-1, height: sumMapH });
-		}
-		if (SUM.rCCanvas.width > 0) {
-		    // Render row covariates to a renderBuffer, convert to a data URL, and add to the document.
-		    const rowCovBarSize = heatMap.getScaledVisibleCovariates('row', 1.0).totalHeight();
-		    const rowCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * rowClassWidth / rowCovBarSize));
-		    const renderBuffer = SUM.buildRowCovariateRenderBuffer (rowCovWidthScale, mapHeightScale);
-		    const sumRowClassData = createDataURLFromRenderBuffer (renderBuffer);
-		    pdfDoc.doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
-		}
+		if (debug) console.log('rowCovar@', { left: rowClassLeft, top: imgTop, width: rowClassWidth, height: sumMapH});
+		pdfDoc.doc.addImage(sumRowClassData, 'PNG', rowClassLeft, imgTop, rowClassWidth, sumMapH);
+	    }
 
 
-		// Add the column dendrogram and column covariate bars.
-		if (colDendroConfig.show !== 'NONE') {
-		    SUM.colDendro.drawPDF (pdfDoc.doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight-1 });
-		}
-		if (SUM.cCCanvas.height > 0) {
-		    // Render column covariates to a renderBuffer, convert to a data URL, and add to document.
-		    const colCovBarSize = heatMap.getScaledVisibleCovariates('column', 1.0).totalHeight();
-		    const colCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * colClassHeight / colCovBarSize));
-		    const renderBuffer = SUM.buildColCovariateRenderBuffer (mapWidthScale, colCovWidthScale);
-		    const sumColClassData = createDataURLFromRenderBuffer (renderBuffer);
-		    pdfDoc.doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
-		}
+	    // Add the column dendrogram and column covariate bars.
+	    if (colDendroConfig.show !== 'NONE') {
+		if (debug) console.log ('colDendro@', { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight });
+		SUM.colDendro.drawPDF (pdfDoc.doc, { left: imgLeft, top: colDendroTop, width: sumMapW, height: colDendroHeight });
+	    }
+	    if (SUM.cCCanvas.height > 0) {
+		// Render column covariates to a renderBuffer, convert to a data URL, and add to document.
+		const colCovBarSize = heatMap.getScaledVisibleCovariates('column', 1.0).totalHeight();
+		const colCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * colClassHeight / colCovBarSize));
+		const renderBuffer = SUM.buildColCovariateRenderBuffer (mapWidthScale, colCovWidthScale);
+		const sumColClassData = createDataURLFromRenderBuffer (renderBuffer);
+
+		if (debug) console.log ('colCovar@', { left: imgLeft, top: colClassTop, width: sumMapW, height: colClassHeight});
+		pdfDoc.doc.addImage(sumColClassData, 'PNG', imgLeft, colClassTop, sumMapW, colClassHeight);
+	    }
 
 
-		// Render heatmap to a renderBuffer, convert to a data URL, and add to document.
-		{
-		    const renderBuffer = SUM.renderHeatMapToRenderBuffer (mapWidthScale, mapHeightScale);
-		    const sumImgData = createDataURLFromRenderBuffer (renderBuffer);
-		    pdfDoc.doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW, sumMapH);
-		}
+	    // Render heatmap to a renderBuffer, convert to a data URL, and add to document.
+	    {
+		const renderBuffer = SUM.renderHeatMapToRenderBuffer (mapWidthScale, mapHeightScale);
+		const sumImgData = createDataURLFromRenderBuffer (renderBuffer);
+		if (debug) console.log ('map@', { left: imgLeft, top: imgTop, width: sumMapW, height: sumMapH});
+		pdfDoc.doc.addImage(sumImgData, 'PNG', imgLeft, imgTop, sumMapW, sumMapH);
+	    }
 
-		// Add the top item marks and labels.
-		if (SUM.rowTopItemPosns.length > 0 || SUM.colTopItemPosns.length > 0) {
-		    const ctx = pdfDoc.doc.context2d;
-		    const resScale = 100;
-		    ctx.save();
-		    ctx.scale (1.0/resScale, 1.0/resScale);
-		    ctx.lineWidth = 1;
-		    if (SUM.rowTopItemPosns.length > 0) {
-			// Each top item mark is drawn as a bezier curve from an origin point
-			// (the item position) through two intermediate control points to a
-			// destination point (the label position).
-			// For all row top items, the X coordinates of these control points
-			// are the same.
-			const X1 = (imgLeft + sumMapW + 1) * resScale;
-			const X2 = (imgLeft + sumMapW + 4) * resScale;
-			const X3 = (imgLeft + sumMapW + topItemsWidth - 3) * resScale;
-			const X4 = (imgLeft + sumMapW + topItemsWidth) * resScale;
-			ctx.beginPath();
-			SUM.rowTopItemPosns.forEach(tip => {
-			    // Compute Y coordinates for start and end of the curve.
-			    const Y1 = (imgTop + tip.itemFrac * sumMapH) * resScale;
-			    const Y2 = (imgTop + tip.labelFrac * sumMapH) * resScale;
-			    // Draw the curve.
-			    ctx.moveTo (X1, Y1);
-			    ctx.bezierCurveTo (X2, Y1, X3, Y2, X4, Y2);
-			});
-			ctx.stroke();
-		    }
-		    if (SUM.colTopItemPosns.length > 0) {
-			// For all column top items, the Y coordinates of all control points
-			// are the same.
-			const Y1 = (imgTop + sumMapH + 1) * resScale;
-			const Y2 = (imgTop + sumMapH + 4) * resScale;
-			const Y3 = (imgTop + sumMapH + topItemsHeight - 3) * resScale;
-			const Y4 = (imgTop + sumMapH + topItemsHeight) * resScale;
-			ctx.beginPath();
-			SUM.colTopItemPosns.forEach(tip => {
-			    // Compute X coordinates for start and end of the curve.
-			    const X1 = (imgLeft + tip.itemFrac * sumMapW) * resScale;
-			    const X2 = (imgLeft + tip.labelFrac * sumMapW) * resScale;
-			    // Draw the curve.
-			    ctx.moveTo (X1, Y1);
-			    ctx.bezierCurveTo (X1, Y2, X2, Y3, X2, Y4);
-			});
-			ctx.stroke();
-		    }
-		    ctx.restore();
-		    // Draw the top item labels.
-		    drawSummaryTopItemLabels(pdfDoc, "row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
-		    drawSummaryTopItemLabels(pdfDoc, "col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
-		}
-
-		// Draw the black border around the summary view.
+	    // Add the top item marks and labels.
+	    if (SUM.rowTopItemPosns.length > 0 || SUM.colTopItemPosns.length > 0) {
 		const ctx = pdfDoc.doc.context2d;
+		const resScale = 100;
 		ctx.save();
+		ctx.scale (1.0/resScale, 1.0/resScale);
 		ctx.lineWidth = 1;
-		ctx.strokeRect(imgLeft,imgTop,sumMapW,sumMapH);
-
-		// Draw the 'green' boundary rectangles that outline the detail map views.
-		if (showDetailViewBounds) {
-		    const color = heatMap.getCurrentDataLayer().selection_color;
-		    pdfDoc.doc.setDrawColor (color);
-		    const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
-		    const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
-		    DVW.detailMaps.forEach (mapItem => {
-			if (mapItem.isVisible()) {
-			    const left = (mapItem.currentCol-1) * xScale;
-			    const top = (mapItem.currentRow-1) * yScale;
-			    const width = mapItem.dataPerRow * xScale;
-			    const height = mapItem.dataPerCol * yScale;
-			    ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
-			    ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
-			}
+		if (SUM.rowTopItemPosns.length > 0) {
+		    // Each top item mark is drawn as a bezier curve from an origin point
+		    // (the item position) through two intermediate control points to a
+		    // destination point (the label position).
+		    // For all row top items, the X coordinates of these control points
+		    // are the same.
+		    const X1 = (imgLeft + sumMapW + 1) * resScale;
+		    const X2 = (imgLeft + sumMapW + 4) * resScale;
+		    const X3 = (imgLeft + sumMapW + topItemsWidth - 3) * resScale;
+		    const X4 = (imgLeft + sumMapW + topItemsWidth) * resScale;
+		    ctx.beginPath();
+		    SUM.rowTopItemPosns.forEach(tip => {
+			// Compute Y coordinates for start and end of the curve.
+			const Y1 = (imgTop + tip.itemFrac * sumMapH) * resScale;
+			const Y2 = (imgTop + tip.labelFrac * sumMapH) * resScale;
+			// Draw the curve.
+			ctx.moveTo (X1, Y1);
+			ctx.bezierCurveTo (X2, Y1, X3, Y2, X4, Y2);
 		    });
+		    ctx.stroke();
+		}
+		if (SUM.colTopItemPosns.length > 0) {
+		    // For all column top items, the Y coordinates of all control points
+		    // are the same.
+		    const Y1 = (imgTop + sumMapH + 1) * resScale;
+		    const Y2 = (imgTop + sumMapH + 4) * resScale;
+		    const Y3 = (imgTop + sumMapH + topItemsHeight - 3) * resScale;
+		    const Y4 = (imgTop + sumMapH + topItemsHeight) * resScale;
+		    ctx.beginPath();
+		    SUM.colTopItemPosns.forEach(tip => {
+			// Compute X coordinates for start and end of the curve.
+			const X1 = (imgLeft + tip.itemFrac * sumMapW) * resScale;
+			const X2 = (imgLeft + tip.labelFrac * sumMapW) * resScale;
+			// Draw the curve.
+			ctx.moveTo (X1, Y1);
+			ctx.bezierCurveTo (X1, Y2, X2, Y3, X2, Y4);
+		    });
+		    ctx.stroke();
 		}
 		ctx.restore();
+		// Draw the top item labels.
+		drawSummaryTopItemLabels(pdfDoc, "row", { left: imgLeft + sumMapW + topItemsWidth + 2, top: imgTop, width: undefined, height: sumMapH });
+		drawSummaryTopItemLabels(pdfDoc, "col", { left: imgLeft, top: imgTop + sumMapH + topItemsHeight + 2, width: sumMapW, height: undefined });
+	    }
+
+	    // Draw the black border around the summary view.
+	    const ctx = pdfDoc.doc.context2d;
+	    ctx.save();
+	    ctx.lineWidth = 1;
+	    ctx.strokeRect(imgLeft,imgTop,sumMapW,sumMapH);
+
+	    // Draw the 'green' boundary rectangles that outline the detail map views.
+	    if (showDetailViewBounds) {
+		const color = heatMap.getCurrentDataLayer().selection_color;
+		pdfDoc.doc.setDrawColor (color);
+		const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
+		const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
+		DVW.detailMaps.forEach (mapItem => {
+		    if (mapItem.isVisible()) {
+			const left = (mapItem.currentCol-1) * xScale;
+			const top = (mapItem.currentRow-1) * yScale;
+			const width = mapItem.dataPerRow * xScale;
+			const height = mapItem.dataPerCol * yScale;
+			ctx.lineWidth = mapItem.version == 'P' ? 2 : 1;
+			ctx.strokeRect (imgLeft + left, imgTop + top, width, height);
+		    }
+		});
+	    }
+	    ctx.restore();
 	}
 
 	/**********************************************************************************

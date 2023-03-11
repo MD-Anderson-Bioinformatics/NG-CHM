@@ -588,7 +588,7 @@ SUM.buildRowClassTexture = function buildRowClassTexture () {
 		const remainingWidth = SUM.rowClassBarWidth * widthScale - barWidth;
 		pos = SUM.drawScatterBarPlotRowClassBar(renderBuffer, pos, barWidth-SUM.colClassPadding, classBarValues, currentClassBar, remainingWidth, widthScale, heightScale);
 	    }
-	    offset += barWidth*DRAW.BYTE_PER_RGBA;
+	    offset += barWidth * widthScale * DRAW.BYTE_PER_RGBA;
 	});
 
 	return renderBuffer;
