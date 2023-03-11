@@ -1427,7 +1427,7 @@
 	);
 	dvAction ('MoveDownPage',
 	    "Move the primary normal, horizontal, or restricted horizontal view down one page",
-	    (e, mapItem) => { mapItem.currentRow += mapItem.dataPerRow; }
+	    (e, mapItem) => { mapItem.currentRow += mapItem.dataPerCol; }
 	);
 	dvAction ('MoveRibbonDown',
 	    "Move the primary normal, horizontal, restricted horizontal, or restricted vertical ribbon view down one row",
