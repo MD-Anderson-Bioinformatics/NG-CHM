@@ -1540,6 +1540,7 @@ DET.setDetailDataHeight = function (mapItem, size) {
      * or canvas.clientHeight) by the proportion of the total space used by the data view.
      *
      ************************************************************************************************/
+    const fontSizeMap = new Map();
     function calcAxisLabelFontSize (mapItem, axis) {
 	// Determine the sizes of the three view components: data view, dendrogram, and covariate bars.
 	const dataViewSize = MMGR.isRow (axis) ? mapItem.dataViewHeight : mapItem.dataViewWidth;
@@ -1552,8 +1553,37 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	// Determine font size from CSS size of map, map fraction used by data view, and number of labels.
 	const numLabels = MMGR.isRow(axis) ? mapItem.dataPerCol : mapItem.dataPerRow;
 	const clientSize = MMGR.isRow (axis) ? mapItem.canvas.clientHeight : mapItem.canvas.clientWidth;
-	const skip = Math.floor(clientSize * mapFraction / numLabels) - 2;
-	return Math.min(skip, DET.maxLabelSize);
+	const skip = Math.floor(clientSize * mapFraction / numLabels); // Min space between labels.
+
+	const targetSize = Math.min (DET.maxLabelSize, Math.max (UTIL.minLabelSize, skip));
+	if (!fontSizeMap.has(targetSize)) {
+	    // Find and memoize a font size that is exactly targetSize pixels high.
+	    // Get and initialize a temporary element for determining label size.
+	    const el = getPoolElement (mapItem);
+	    el.innerText = 'Sp';
+	    mapItem.labelElement.appendChild(el);
+	    // Binary search to find the font size.
+	    let high = DET.maxLabelSize;
+	    let low = UTIL.minLabelSize / 2;
+	    let mid;
+	    for (let tries = 0; tries < 10; tries++) {
+		mid = (low+high)/2;
+		el.style.fontSize = mid.toFixed(2) +'pt';
+		const testHeight = el.getBoundingClientRect().height;
+		if (testHeight > targetSize) {
+		    high = mid;
+		} else if (testHeight < targetSize) {
+		    low = mid;
+		} else {
+		    break;
+		}
+	    }
+	    fontSizeMap.set (targetSize, +mid.toFixed(2));
+	    // Return temporary element to pool.
+	    mapItem.labelElement.removeChild(el);
+	    mapItem.labelSizeWidthCalcPool.push (el);
+	}
+	return fontSizeMap.get (targetSize);
     }
 
     /************************************************************************************************
