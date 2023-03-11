@@ -623,15 +623,22 @@ DEV.handleMouseOut = function (e) {
      * FUNCTION:  getSamplingRatio - This function returns the appropriate row/col sampling ration
      * for the heat map based upon the screen mode.
      *********************************************************************************************/
-    function getSamplingRatio (mode,axis) {
+    function getSamplingRatio (mode, axis) {
 	const heatMap = MMGR.getHeatMap();
 	const isRow = MMGR.isRow (axis);
 	let level;
-	switch (mode){
-	    case 'RIBBONH': level = MAPREP.RIBBON_HOR_LEVEL;
-	    case 'RIBBONV': level = MAPREP.RIBBON_VERT_LEVEL;
-	    case 'FULL_MAP': level = isRow ? MAPREP.RIBBON_VERT_LEVEL : MAPREP.RIBBON_HOR_LEVEL;
-	    default:        level = MAPREP.DETAIL_LEVEL;
+	switch (mode) {
+	    case 'RIBBONH':
+		level = MAPREP.RIBBON_HOR_LEVEL;
+		break;
+	    case 'RIBBONV':
+		level = MAPREP.RIBBON_VERT_LEVEL;
+		break;
+	    case 'FULL_MAP':
+		level = isRow ? MAPREP.RIBBON_VERT_LEVEL : MAPREP.RIBBON_HOR_LEVEL;
+		break;
+	    default:
+		level = MAPREP.DETAIL_LEVEL;
 	}
 
 	if (isRow) {
@@ -759,7 +766,8 @@ DEV.getRowFromLayerY = function (mapItem,layerY) {
 	const colClassHeightPx = DET.getColClassPixelHeight(mapItem);
 	const mapLocY = layerY - colClassHeightPx;
 	const maxRow = mapItem.currentRow + mapItem.dataPerCol - 1;
-	return Math.min (maxRow, Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*getSamplingRatio(mapItem.mode,'row')));
+	const ratio = getSamplingRatio(mapItem.mode,'row');
+	return Math.min (maxRow, Math.floor(mapItem.currentRow + (mapLocY/colElementSize)*ratio));
 }
 
 DEV.getColFromLayerX = function (mapItem,layerX) {
@@ -767,7 +775,8 @@ DEV.getColFromLayerX = function (mapItem,layerX) {
 	const rowClassWidthPx = DET.getRowClassPixelWidth(mapItem);
 	const mapLocX = layerX - rowClassWidthPx;
 	const maxCol = mapItem.currentCol + mapItem.dataPerRow - 1;
-	return Math.min (maxCol, Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*getSamplingRatio(mapItem.mode,'col')));
+	const ratio = getSamplingRatio(mapItem.mode,'col');
+	return Math.min (maxCol, Math.floor(mapItem.currentCol + (mapLocX/rowElementSize)*ratio));
 }
 
 
