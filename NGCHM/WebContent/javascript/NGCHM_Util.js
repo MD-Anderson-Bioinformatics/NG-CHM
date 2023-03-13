@@ -723,6 +723,9 @@ UTIL.keepElementInViewport= function(elementId) {
 	const element = document.getElementById(elementId);
 	if (element !== null) {
 		const rect = element.getBoundingClientRect();
+		if (rect.bottom < window.innerHeight && element.style.height) {
+			element.style.height = '';
+		}
 		if (rect.bottom > window.innerHeight) {
 			element.style.height = (window.innerHeight - rect.top) + 'px';
 		}
