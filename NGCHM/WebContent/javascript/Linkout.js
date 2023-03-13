@@ -895,7 +895,7 @@ var linkoutsVersion = 'undefined';
 	}
 
 	function uploadAllToBuilder (data, axis) {
-	    uploadToBuilder ("all", heatMap, data, [], []);
+	    uploadToBuilder ("all", data, [], []);
 	}
 
 	function uploadSelectedToBuilder (data, axis) {
