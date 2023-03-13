@@ -589,6 +589,7 @@ UTIL.dragElement = function (elmnt) {
 	    const xPosn = e.clientX - deltaMouseElementX;
 	    elmnt.style.left = Math.min (maxLeft, Math.max (minLeft, xPosn)) + 'px';
 	    elmnt.style.top = Math.min (maxTop, Math.max (minTop, yPosn)) + 'px';
+	    elmnt.style.height = '';
 	  }
 
 	  function closeDragElement() {
