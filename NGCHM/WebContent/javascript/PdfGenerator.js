@@ -358,6 +358,7 @@ function updateShowBounds () {
 	 **********************************************************************************/
 
 	const classBarHeaderSize = 12; // This is a font size
+	const stdPDFRes = 72; // Standard PDF resolution is 72 points per inch
 
 	getPdfDocument.prototype.addPageIfNeeded = addPageIfNeeded;
 	getPdfDocument.prototype.createHeader = createHeader;
@@ -1355,8 +1356,8 @@ function updateShowBounds () {
 	    //Get Dimensions for the Summary Heat Map
 	    const { sumMapW, sumMapH } = setSummaryHeatmapDimensions(sumImgW, sumImgH, rowTopItemsLength, colTopItemsLength);
 
-	    const mapWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
-	    const mapHeightScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
+	    const mapWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/stdPDFRes * sumImgW / heatMap.getNumColumns (MAPREP.SUMMARY_LEVEL)));
+	    const mapHeightScale = Math.max (1, Math.ceil (pdfDoc.resolution/stdPDFRes * sumImgH / heatMap.getNumRows (MAPREP.SUMMARY_LEVEL)));
 
 	    const mapInfo = heatMap.getMapInformation();
 	    const headerOptions = {};
@@ -1387,7 +1388,7 @@ function updateShowBounds () {
 	    if (SUM.rCCanvas.width > 0) {
 		// Render row covariates to a renderBuffer, convert to a data URL, and add to the document.
 		const rowCovBarSize = heatMap.getScaledVisibleCovariates('row', 1.0).totalHeight();
-		const rowCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * rowClassWidth / rowCovBarSize));
+		const rowCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/stdPDFRes * rowClassWidth / rowCovBarSize));
 		const renderBuffer = SUM.buildRowCovariateRenderBuffer (rowCovWidthScale, mapHeightScale);
 		const sumRowClassData = createDataURLFromRenderBuffer (renderBuffer);
 
@@ -1404,7 +1405,7 @@ function updateShowBounds () {
 	    if (SUM.cCCanvas.height > 0) {
 		// Render column covariates to a renderBuffer, convert to a data URL, and add to document.
 		const colCovBarSize = heatMap.getScaledVisibleCovariates('column', 1.0).totalHeight();
-		const colCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * colClassHeight / colCovBarSize));
+		const colCovWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/stdPDFRes * colClassHeight / colCovBarSize));
 		const renderBuffer = SUM.buildColCovariateRenderBuffer (mapWidthScale, colCovWidthScale);
 		const sumColClassData = createDataURLFromRenderBuffer (renderBuffer);
 
@@ -1644,8 +1645,8 @@ function updateShowBounds () {
 
 		// Scale the box canvas overlay.
 		const level = DVW.getLevelFromMode (mapItem, MAPREP.DETAIL_LEVEL);
-		const mapWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * detMapW / heatMap.getNumColumns (level)));
-		const mapHeightScale = Math.max (1, Math.ceil (pdfDoc.resolution/72 * detMapH / heatMap.getNumRows (level)));
+		const mapWidthScale = Math.max (1, Math.ceil (pdfDoc.resolution/stdPDFRes * detMapW / heatMap.getNumColumns (level)));
+		const mapHeightScale = Math.max (1, Math.ceil (pdfDoc.resolution/stdPDFRes * detMapH / heatMap.getNumRows (level)));
 
 		// Create a 'form object' aka subdocument that will be used for overlaying the
 		// heat map with selection boxes etc. (Equivalent to the on-screen boxCanvas.)
