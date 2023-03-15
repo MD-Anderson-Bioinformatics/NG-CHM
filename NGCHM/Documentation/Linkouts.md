@@ -63,7 +63,7 @@ For example:
 ```javascript
 (function (linkouts) {
 
-    const baseURL = 'https://www.ncbi.nlm.nih.giv/';
+    const baseURL = 'https://www.ncbi.nlm.nih.gov/';
 
     function openEntrezIdPage (entrezIds) {
         const id = entrezids[0];
