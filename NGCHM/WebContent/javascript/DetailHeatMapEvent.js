@@ -82,7 +82,7 @@ DEV.addEvents = function (paneId) {
 	    		} else if (distance > mapItem.latestPinchDistance){ // pinch inward
 				DEV.detailDataZoomIn(mapItem);
 	    		} else if (mapItem.latestPinchDistance > distance){ // pinch outward
-				DEV.detailDataZoomOut(mapItem.chm);
+				DEV.detailDataZoomOut(mapItem);
 	    		}
 	    		mapItem.latestPinchDistance = distance;
 	    	} else if (e.touches.length == 1){
@@ -429,18 +429,17 @@ DEV.userHelpOpen = function(mapItem) {
  *********************************************************************************************/
 DEV.handleScroll = function(evt) {
 	evt.preventDefault();
-	let parentElement = evt.target.parentElement;
-	if (!parentElement.classList.contains('detail_chm')) {
-	        if (!DVW.primaryMap) return;
-		parentElement = DVW.primaryMap.chm;
-	}
-	if (scrollTime == null || evt.timeStamp - scrollTime > 150){
-		scrollTime = evt.timeStamp;
-		if (evt.wheelDelta < -30 || evt.deltaY > 0 || evt.scale < 1) { //Zoom out
-            DEV.detailDataZoomOut(parentElement);
-		} else if ((evt.wheelDelta > 30 || evt.deltaY < 0 || evt.scale > 1)){ // Zoom in
-            DEV.zoomAnimation(parentElement);
-		}	
+	const parentElement = evt.currentTarget.parentElement;
+	const isDetail = parentElement.classList.contains('detail_chm');
+	const mapItem = isDetail ? DVW.getMapItemFromChm (parentElement) : DVW.primaryMap;
+	if (!mapItem) return;  // Nothing to scroll if no detail map.
+	if (scrollTime == null || evt.timeStamp - scrollTime > 150) {
+	    scrollTime = evt.timeStamp;
+	    if (evt.wheelDelta < -30 || evt.deltaY > 0 || evt.scale < 1) { //Zoom out
+		DEV.detailDataZoomOut(mapItem);
+	    } else if ((evt.wheelDelta > 30 || evt.deltaY < 0 || evt.scale > 1)){ // Zoom in
+		DEV.zoomAnimation(mapItem);
+	    }
 	}
 	return false;
 } 		
@@ -555,9 +554,9 @@ DEV.dblClick = function(e) {
 			mapItem.currentCol = destCol;
 			
 			if (e.shiftKey) {
-				DEV.detailDataZoomOut(mapItem.chm);
+				DEV.detailDataZoomOut(mapItem);
 			} else {
-				DEV.zoomAnimation(mapItem.chm, clickRow, clickCol);
+				DEV.zoomAnimation(mapItem, clickRow, clickCol);
 			}
 			//Center the map on the cursor position
 			DVW.checkRow(mapItem);
@@ -810,7 +809,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			DET.detailHRibbon(mapItem);
 			if (mode == 'RIBBONH_DETAIL') {
 			    // Go back into 'full ribbon' mode
-			    DEV.detailDataZoomOut (mapItem.chm);
+			    DEV.detailDataZoomOut (mapItem);
 			    // Remove unwanted mode history
 			    mapItem.modeHistory.pop();
 			}
@@ -823,7 +822,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 			DET.detailVRibbon(mapItem);
 			if (mode == 'RIBBONV_DETAIL') {
 			    // Go back into 'full ribbon' mode
-			    DEV.detailDataZoomOut (mapItem.chm);
+			    DEV.detailDataZoomOut (mapItem);
 			    // Remove unwanted mode history
 			    mapItem.modeHistory.pop();
 			}
@@ -913,13 +912,13 @@ DEV.detailDataZoomIn = function (mapItem) {
      * FUNCTION - detailDataZoomOut: The purpose of this function is to handle all of
      * the processing necessary to zoom outwards on a given heat map panel.
      **********************************************************************************/
-    DEV.detailDataZoomOut = function (chm) {
-	const mapItem = DVW.getMapItemFromChm(chm);
-	const heatMap = mapItem.heatMap;
+    DEV.detailDataZoomOut = function (mapItem) {
 	if (mapItem.mode == 'FULL_MAP') {
 	    // Already in full map view. We actually can't zoom out any further.
 	    return;
 	}
+	const chm = mapItem.chm;
+	const heatMap = mapItem.heatMap;
 	UHM.hlpC();
 	LNK.labelHelpCloseAll();
 	if (!mapItem.modeHistory) mapItem.modeHistory = [];
@@ -1117,17 +1116,17 @@ DEV.detailDataZoomIn = function (mapItem) {
     }
 
     (function() {
-	DEV.createClientButtons = function (mapNumber, paneId, foobar, switchToPrimaryFn) {
+	DEV.createClientButtons = function (mapNumber, paneId, switchToPrimaryFn) {
 	    const icons = [
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    zoomButton ('primary_btn'+mapNumber, 'icon-make-primary',
-			switchToPrimaryFn.bind('chm', foobar)),
+		    zoomButton ('primary_btn'+mapNumber, 'icon-make-primary', ev => {
+			switchToPrimaryFn(findMapItem(ev));
+		    }),
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
 		    srchButton (mapNumber, 'srchPrev', paneId, '180deg', (ev) => {
-			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
-			SRCH.searchPrev (mapItem);
+			SRCH.searchPrev (findMapItem(ev));
 		    }),
 		    UTIL.newSvgButton ('icon-small-circle.srchOrient', {
 			dataset: {
@@ -1147,12 +1146,12 @@ DEV.detailDataZoomIn = function (mapItem) {
 			};
 			el.onclick = (ev) => {
 			    ev.stopPropagation();
-			    const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
 			    let button = ev.target;
 			    while (button && button.tagName.toLowerCase() != 'button') {
 				button = button.parentElement;
 			    }
 			    if (button) {
+				const mapItem = findMapItem (ev);
 				if (button.dataset.mouseDownTime && performance.now()-button.dataset.mouseDownTime < 100) {
 				    SRCH.showNextOrientation (mapItem, button);
 				} else {
@@ -1163,16 +1162,17 @@ DEV.detailDataZoomIn = function (mapItem) {
 			return el;
 		    }),
 		    srchButton (mapNumber, 'srchNext', paneId, '', (ev) => {
-			const mapItem = DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
-			SRCH.searchNext (false, mapItem);
+			SRCH.searchNext (false, findMapItem(ev));
 		    }),
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
-		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out',
-			DEV.detailDataZoomOut.bind('chm', foobar)),
-		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in',
-			DEV.zoomAnimation.bind('chm', foobar)),
+		    zoomButton ('zoomOut_btn'+mapNumber, 'icon-zoom-out', (ev) => {
+			DEV.detailDataZoomOut(findMapItem(ev));
+		    }),
+		    zoomButton ('zoomIn_btn'+mapNumber, 'icon-zoom-in', (ev) => {
+			DEV.zoomAnimation(findMapItem(ev));
+		    }),
 		]),
 
 		UTIL.newElement ('DIV.buttonSet', {}, [
@@ -1187,6 +1187,10 @@ DEV.detailDataZoomIn = function (mapItem) {
 	    ];
 	    const template = 'fit-content(0) auto auto auto fit-content(0)';
 	    return { template, icons };
+
+	    function findMapItem (ev) {
+		return DVW.getMapItemFromPane (PANE.findPaneLocation (ev.target).pane.id);
+	    }
 	};
 
 	const srchButtonAttrs = {
@@ -1246,9 +1250,7 @@ DEV.detailDataZoomIn = function (mapItem) {
 		button.classList.add ('make-primary');
 	    }
 	    button.id = btnId;
-	    button.onclick = function (e) {
-		clickFn();
-	    };
+	    button.onclick = clickFn;
 	    return button;
 	}
 
@@ -1344,8 +1346,8 @@ DEV.detailDataZoomIn = function (mapItem) {
  * FUNCTION - zoomAnimation: The purpose of this function is to perform a zoom 
  * animation when users are zooming out on a given heat map canvas.
  **********************************************************************************/
-DEV.zoomAnimation = function (chm,destRow,destCol) {
-	const mapItem = DVW.getMapItemFromChm(chm);
+DEV.zoomAnimation = function (mapItem, destRow, destCol) {
+	const chm = mapItem.chm;
 	// set proportion variables for heatmap canvas
 	const detViewW = mapItem.dataViewWidth;
 	const detViewH = mapItem.dataViewHeight;

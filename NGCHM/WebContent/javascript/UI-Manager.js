@@ -1457,7 +1457,7 @@
 	dvAction ('ZoomIn',
 	    "Zoom the primary detail view in one step",
 	    (e, mapItem) => {
-		DEV.zoomAnimation(mapItem.chm);
+		DEV.zoomAnimation(mapItem);
 	    }
 	);
 	dvAction ('ChangeZoomModeLeft',
@@ -1476,7 +1476,7 @@
 	dvAction ('ZoomOut',
 	    "Zoom the primary detail view out one step",
 	    (e, mapItem) => {
-		DEV.detailDataZoomOut(mapItem.chm);
+		DEV.detailDataZoomOut(mapItem);
 	    }
 	);
 	dvAction ('ChangeZoomModeRight',
