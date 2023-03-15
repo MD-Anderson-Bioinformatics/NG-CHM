@@ -171,7 +171,7 @@ plugins is an object with the following fields:
 <dt>site:</dt><dd>URL for site related to the plugin</dd>
 <dt>logo:</dt><dd>URL for logo related to the plugin</dd>
 <dt>linkouts:</dt><dd>An array of axis linkouts. See below.</dd>
-<dt>matrixLinkouts:</dt><dd>Ad array of matrix linkouts. See below.</dd>
+<dt>matrixLinkouts:</dt><dd>An array of matrix linkouts. See below.</dd>
 </dl>
 Each element of the linkouts field is an object with the following fields:
 <dl>
@@ -184,7 +184,8 @@ Each element of the linkouts field is an object with the following fields:
 Each element of the matrixLinkouts field is an object with the following fields:
 <dl>
 <dt>menuEntry</dt><dd>Menu entry for the linkout.</dd>
-<dt>typeName</dt><dd>Type of labels expected by the linkout.</dd>
+<dt>typeName1</dt><dd>Type of labels on one axis expected by the linkout.</dd>
+<dt>typeName2</dt><dd>Type of labels on the other axis expected by the linkout.</dd>
 <dt>selectMode</dt><dd>Either `linkouts.SINGLE_SELECT` or `linkouts.MULTI_SELECT`</dd>
 <dt>linkoutFn</dt><dd>Function called when the linkout is selected. It is passed an object with two entries (`Row` and `Column`), each of which is an array of strings. If `selectType == linkouts.SINGLE_SELECT`, each array will contain one element.</dd>
 <dt>attributes:</dt><dd>An array of attributes (strings) that this linkout requires. Defaults to none.</dd>
