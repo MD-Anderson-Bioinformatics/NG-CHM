@@ -237,8 +237,8 @@ public class NGCHM_ServerAppGenerator {
 			System.exit(1);
 		}
 
-		// Copy the favicon.
-		CompilerUtilities.copyFile (sourceDir + "ngChmIcon.ico", outputDir + "ngChmIcon.ico");
+		// Copy the SVG icons.
+		CompilerUtilities.copyFile (sourceDir + "icons.svg", outputDir + "icons.svg");
 
 		// Process chm.html
 		try {
