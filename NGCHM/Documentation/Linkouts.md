@@ -12,25 +12,49 @@ The NG-CHM linkout system provides linkouts from NG-CHMs and similar objects to 
 
 ## Linkout Categories
 
-*Hamburger* linkouts are **marohrdanz: I think it would help readers if there was a brief description of what Hamburger linkouts are for**, and are visible to users in a global "Hamburger"-type menu. They are defined using `linkouts.addHamburgerLinkout`. **marohrdanz: as best as I can tell these are plugins that are under the main help menu, under 'About Plugins' button?**
+*Hamburger* linkouts apply to the entire NG-CHM (or other object), not to any specific part of it.
+<img src="images/PluginExample-Hamburger-edited.png" alt="Image showing a custom entry in the hamburger menu." title="Example NG-CHM Custom Hamburger Linkout"
+     align="right" style="width:50%;" />
+<br clear="left"/>
+They are visible to users in a global "Gear-" or "Hamburger"-type menu. In NG-CHMs, for example, they are shown at the bottom of the Hamburger menu (see figure).  Hamburger linkouts are defined using `linkouts.addHamburgerLinkout`.
 
-*Panel* linkouts are **marohrdanz: I think it would help readers if there was a brief description of what Panel linkouts are for**, and are available to users in the panel drop-down menus. When selected, they display content in the panel iframe. They are defined using `linkouts.addPanePlugin`.
 
-*Single-axis* linkouts are **marohrdanz: I think it would help readers if there was a brief description of what single-axis linkouts are for**, and are available to users on the row and column label menus.
+*Panel* plugins are a way to integrate interactive external tools with NG-CHMs.
+<img src="images/PluginExample-Panel-edited.png" alt="Image showing custom entries in a panel menu." title="Example NG-CHM Custom Panel Plugins"
+     align="right" style="width:50%;" />
+<br clear="left"/>
+Examples are our scatter plot and pathway plugins. As shown in the figure, in NG-CHMs Panel plugins are available to users in the panel drop-down menus.  When selected, panel linkouts display content and interact with the user in the panel's iframe. They are defined using `linkouts.addPanePlugin`.
 
-*Two-axis* linkouts, aka *matrix linkouts*, **marohrdanz: I think it would help readers if there was a brief description of what Two-axis linkouts are for** are available to users in the Matrix Menu. 
+*Single-axis* linkouts enable the user to access directly external resources about either row or column labels, typically by opening an external web page.
+<img src="images/PluginExample-RowLabelMenu-edited.png" alt="Image showing custom entries in a row label menu." title="Example NG-CHM Custom Single-Axis Link Outs"
+     align="right" style="width:50%;" />
+<br clear="left"/>
+In NG-CHMs, matching single-axis linkouts are included in the row and/or column label menus.  Linkouts to a specific label are included in the top part of the menu. Linkouts to groups of labels are included in the bottom part of the menu.
 
-Both Single-axis and Two-axis linkouts are defined using `linkouts.addPlugin`, and can be one of two subcategories: *single-label* linkouts, denoted by `linkouts.SINGLE_SELECT`, or *multiple-label* linkouts denoted by `linkouts.MULTI_SELECT`.  
+*Two-axis* linkouts, aka *matrix linkouts*, enable the user to access external resources for combinations of row and column labels.
+<img src="images/PluginExample-MatrixMenu-edited.png" alt="Image showing custom entries in a matrix menu." title="Example NG-CHM Custom Two-Axis Link Outs"
+     align="right" style="width:50%;" />
+<br clear="left"/>
+In NG-CHMs, they are included in the Matrix Menu.
 
-Both Single-axis and Two-axis linkouts also require their linkout type (described directly below) to be specified.
+Both Single-axis and Two-axis label linkouts are defined using `linkouts.addPlugin`.  They can belong to one of two subcategories: *single-label* linkouts, denoted by `linkouts.SINGLE_SELECT`, or *multiple-label* linkouts denoted by `linkouts.MULTI_SELECT`.  
+
+When defining a label linkout, you specify the type(s) (described directly below) of label(s) that the linkout applies to, as well as any attributes that it requires. A label linkout is included in a menu only if the NG-CHM has the linkout's required attributes and the type(s) of the NG-CHM's axis/axes match those of the linkout.
 
 ## Linkout Types
 
-Linkout types, possibly in conjunction with attributes, determine which axis linkouts are include in the menus.  Linkout types are simply strings, such as `bio.gene.hugo` which stands for HUGO gene symbols. Types beginning with "chm." are reserved for definition by the NG-CHM system.  Types beginning with "bio." are reserved for types in Biology.
+Linkout types are strings in dot-like notation, and (along with optional attributes described directly below) determine which axis linkouts are to be included in the menus. For example `bio.gene.hugo` represent HUGO gene symbols, `bio.gene.entrezid` represent NCBI Entrez Gene Identifiers, etc.
+
+Types beginning with "chm." are reserved for definition by the NG-CHM system.  Types beginning with "bio." are reserved for types in Biology.
 
 ## Attributes
 
-Attributes are string values globally associated with the NG-CHM.  For instance, the `bio.species` attribute can be used to specify the species to which all data in the NG-CHM applies.
+<img src="images/NG-CHM-Map-Display-Properties-edited.png" alt="Image showing NG-CHM Map Attributes." title="NG-CHM Map Attributes"
+     align="right" style="width:50%;" />
+<br clear="left"/>
+Attributes are string values globally associated with the NG-CHM.  For instance, the `bio.species` attribute can be used to specify the species to which all data in the NG-CHM applies. They are displayed in the Map Info tab of the Heat Map Display Properties dialog.
+
+Map attributes are defined when building the NG-CHM.  In the NG-CHM Builder, they can be edited on the Format Heat Map page, Labels and Attributes task, with Show Advanced Features checked. In the NG-CHM R package, they are added with the `chmAddProperty` function.
 
 ## Structure of a typical `custom.js` file
 
