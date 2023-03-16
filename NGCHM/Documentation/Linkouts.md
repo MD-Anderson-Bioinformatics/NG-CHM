@@ -1,10 +1,10 @@
 # Writing Linkouts
 
-The NG-CHM linkout system is used to provide linkouts from NG-CHMs and similar objects to relevant web resources.  Important considerations in the design of the linkout system include:
+The NG-CHM linkout system provides linkouts from NG-CHMs and similar objects to relevant web resources.  Important considerations in the design of the linkout system include:
 
 * Wherever possible, linkouts aren't specific to NG-CHMs but should be usable from any "source object" with roughly comparable features.
 
-* No linkouts are directly incorporated into NG-CHMs.  Available linkouts can vary from site to site and certainly do vary over time.  It should never be necessary to rebuild/edit NG-CHMs because of changes in the available linkouts.
+* Linkouts are not directly incorporated into NG-CHMs.  Available linkouts change over time, and can vary from site to site. An NG-CHM should not have to be rebuild/edited because the avalable linkouts changed.
 
 ## Accessing the Linkout API
 
