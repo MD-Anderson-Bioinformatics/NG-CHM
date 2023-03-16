@@ -34,13 +34,16 @@ Attributes are string values globally associated with the NG-CHM.  For instance,
 ## Structure of a typical `custom.js` file
 
 ### Set version number
-Call `linkouts.setVersion` to define the file version.  In NG-CHMs, the linkouts version is displayed with other version numbers in the About and Map Properties dialogs.
+
+Call `linkouts.setVersion` to define the custom.js file version.  In NG-CHMs, the linkouts version is displayed with other version numbers in the About and Map Properties dialogs.
+
 ```javascript
 linkouts.setVersion('1.0.0');
 ```
 
 ### Describe types
-`linkouts.describeTypes` should be used to provide more information about the linkout types used in your customization file. For example:
+
+`linkouts.describeTypes` should be used to provide more information about the linkout types used in the custom.js file. For example:
 
 ```javascript
 linkouts.describeTypes([
