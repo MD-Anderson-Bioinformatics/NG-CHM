@@ -50,9 +50,11 @@ NG-CHMs currently don't display this additional type information. The NG-CHM Bui
 
 ### Specify type relations (optional)
 You can specify that one type is a subtype of another, for instance:
+
 ```javascript
-linkouts.addSubtype ('bio.gene.hugo', 'bio.pubmed');
+linkouts.addSubtype('bio.gene.hugo', 'bio.pubmed');
 ```
+
 This specifies that `'bio.gene.hugo'` is a subtype of `'bio.pubmed'`. This means that pubmed linkouts automatically apply to labels that are specified as HUGO gene symbols.
 
 ### Specify Linkouts
@@ -65,9 +67,9 @@ For example:
 
     const baseURL = 'https://www.ncbi.nlm.nih.gov/';
 
-    function openEntrezIdPage (entrezIds) {
+    function openEntrezIdPage(entrezIds) {
         const id = entrezids[0];
-        linkouts.openUrl (baseURL + 'gene/' + id, 'NCBI');
+        linkouts.openUrl(baseURL + 'gene/' + id, 'NCBI');
     }
 
     linkouts.addPlugin({
@@ -101,9 +103,11 @@ Specifies a linkout that accepts one or more labels.
 
 #### `linkouts.addHamburgerLinkout`
 Adds the hamburger linkout specified by params.
+
 ```javascript
 linkouts.addHamburgerLinkout(params);
 ```
+
 params is an object with the following fields:
 <dl>
 <dt>name</dt><dd>Internal name of the linkout</dd>
@@ -116,9 +120,11 @@ params is an object with the following fields:
 Prefer using `linkouts.addPlugin` over this function.
 
 Adds one axis-label linkout specified by by the parameters.
+
 ```javascript
-linkouts.addLinkout (name, labelType, selectType, callback, reqAttributes);
+linkouts.addLinkout(name, labelType, selectType, callback, reqAttributes);
 ```
+
 Parameters:
 <dl>
 <dt>name:</dt><dd>Name of the linkout (a string). Used in menus etc.</dd>
@@ -132,9 +138,11 @@ Parameters:
 Prefer using `linkouts.addPlugin` over this function.
 
 Adds one matrix linkout specified by the parameters.
+
 ```javascript
 linkouts.addMatrixLinkout(name, rowType, colType, selectType, callback, reqAttributes);
 ```
+
 Parameters:
 <dl>
 <dt>name:</dt><dd>Name of the linkout (a string). Used in menus etc.</dd>
@@ -147,9 +155,11 @@ Parameters:
 
 #### `linkouts.addPanePlugin`
 Add the panel plugin specified by plugin.
+
 ```javascript
-linkouts.addPanePlugin (plugin);
+linkouts.addPanePlugin(plugin);
 ```
+
 plugin is an object with the following fields:
 <dl>
 <dt>name:</dt><dd>Name of the plugin (a string). Used in menus etc.</dd>
@@ -160,9 +170,11 @@ plugin is an object with the following fields:
 
 #### `linkouts.addPlugin`
 Either adds the plugin specified by plugin or replaces an existng plugin with the same name.
+
 ```javascript
-linkouts.addPlugin (plugin);
+linkouts.addPlugin(plugin);
 ```
+
 plugins is an object with the following fields:
 <dl>
 <dt>name</dt><dd>The plugin's name</dd>
@@ -193,9 +205,11 @@ Each element of the matrixLinkouts field is an object with the following fields:
 
 #### `linkouts.describeTypes`
 Describe an array of type strings.
+
 ```javascript
-linkouts.describeTypes (typearray);
+linkouts.describeTypes(typearray);
 ```
+
 `typearray` is an array of objects, each of which includes the following fields:
 <dl>
 <dt>typeName:</dt><dd>The type (a string).</dd>
@@ -208,45 +222,53 @@ linkouts.describeTypes (typearray);
 #### `linkouts.getAttribute`
 Returns the value of the global attribute specified by attribute (a string).
 Returns undefined if no such attribute is defined.
+
 ```javascript
-const value = linkouts.getAttribute (attribute);
+const value = linkouts.getAttribute(attribute);
 ```
 
 #### `linkouts.getMapFileName`
 Returns the name of the file or other resource from which the NG-CHM or other source object was loaded. May or may not resemble the map's name.
+
 ```javascript
 const fileName = linkouts.getMapFileName();
 ```
 
 #### `linkouts.getMapName`
 Returns the name of the NG-CHM or other source object.
+
 ```javascript
 const name = linkouts.getMapName();
 ```
 
 #### `linkouts.getSourceObjectType`
 Returns the type (a string) of the source object. Returns `'chm'` for NG-CHMs.
+
 ```javascript
 const objectType = linkouts.getSourceObjectType();
 ```
 
 #### `linkouts.getSourceObjectUniqueId`
 Returns a unique identifier (a string) for the source object.
+
 ```javascript
 const uniqueId = linkouts.getSourceObjectUniqueId();
 ```
 
 #### `linkouts.getVersion`
 Returns the version string of the linkouts file (as set by `linkouts.setVersion`)
+
 ```javascript
 const version = linkouts.getVersion();
 ```
 
 #### `linkouts.openUrl`
 Opens the specified URL. If a linkouts panel is open, it will be opened in an iframe in that panel.  Otherwise it will be opened in a (new) window called name.
+
 ```javascript
-linkouts.openUrl (URL, name, options)
+linkouts.openUrl(URL, name, options)
 ```
+
 options is an object with the following optional field:
 <dl>
 <dt>noframe:</dt><dd>If truthy, do not open in a linkout panel. Needed for sites that do not permit being opened in an iframe.
@@ -254,13 +276,15 @@ options is an object with the following optional field:
 
 #### `linkouts.setVersion`
 Sets the version string of the linkouts file to version (a string).  If called multiple times, the additonal calls simply overwrite previous versions.
+
 ```javascript
-linkouts.setVersion (version);
+linkouts.setVersion(version);
 ```
 
 #### `linkouts.simplifyLabels`
 Combines the unique labels from the `Row` and `Column` entries of `labels` into a single string array.
+
 ```javascript
-const allLabels = linkouts.simplifyLabels (labels);
+const allLabels = linkouts.simplifyLabels(labels);
 ```
 
