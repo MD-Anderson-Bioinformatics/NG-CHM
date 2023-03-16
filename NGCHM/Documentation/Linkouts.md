@@ -29,6 +29,7 @@ Both Single-axis and Two-axis linkouts also require their linkout type (describe
 Linkout types, possibly in conjunction with attributes, determine which axis linkouts are include in the menus.  Linkout types are simply strings, such as `bio.gene.hugo` which stands for HUGO gene symbols. Types beginning with "chm." are reserved for definition by the NG-CHM system.  Types beginning with "bio." are reserved for types in Biology.
 
 ## Attributes
+
 Attributes are string values globally associated with the NG-CHM.  For instance, the `bio.species` attribute can be used to specify the species to which all data in the NG-CHM applies.
 
 ## Structure of a typical `custom.js` file
@@ -55,9 +56,11 @@ linkouts.describeTypes([
     },
   ]);
 ```
+
 NG-CHMs currently don't display this additional type information. The NG-CHM Builder uses `displayName` in drop-down menus for selecting row and column types. We anticipate displaying and using more of this information in future releases.  In any case, it can be a handy reference for linkout developers.
 
 ### Specify type relations (optional)
+
 You can specify that one type is a subtype of another, for instance:
 
 ```javascript
@@ -104,13 +107,19 @@ There is an additional parameter for matrix menu entries. See `linkouts.addPlugi
 ## Linkouts API
 
 ### Constants
+
 #### `linkouts.SINGLE_SELECT`
+
 Specifies a linkout that accepts a single label.
+
 #### `linkouts.MULTI_SELECT`
+
 Specifies a linkout that accepts one or more labels.
+
 ### Functions
 
 #### `linkouts.addHamburgerLinkout`
+
 Adds the hamburger linkout specified by params.
 
 ```javascript
