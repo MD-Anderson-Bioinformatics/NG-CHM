@@ -12,11 +12,17 @@ The NG-CHM linkout system provides linkouts from NG-CHMs and similar objects to 
 
 ## Linkout Categories
 
-*Hamburger* linkouts are appended to a global "Hamburger"-type menu. They are defined using `linkouts.addHamburgerLinkout`.
+*Hamburger* linkouts are **marohrdanz: I think it would help readers if there was a brief description of what Hamburger linkouts are for**, and are visible to users in a global "Hamburger"-type menu. They are defined using `linkouts.addHamburgerLinkout`. **marohrdanz: as best as I can tell these are plugins that are under the main help menu, under 'About Plugins' button?**
 
-*Panel* linkouts are displayed in panel drop-down menus. When selected, they display content in the panel iframe. They are defined using `linkouts.addPanePlugin`.
+*Panel* linkouts are **marohrdanz: I think it would help readers if there was a brief description of what Panel linkouts are for**, and are available to users in the panel drop-down menus. When selected, they display content in the panel iframe. They are defined using `linkouts.addPanePlugin`.
 
-*Single-axis* linkouts are made available on the row and column label menus, whereas *Two-axis* linkouts, aka *matrix linkouts*, are made available in the Matrix Menu.  Both are defined using `linkouts.addPlugin`. Both can be either *single-label* linkouts, denoted by `linkouts.SINGLE_SELECT`, or *multiple-label* linkouts denoted by `linkouts.MULTI_SELECT`.  Both also require the linkout types to which they apply to be specified.
+*Single-axis* linkouts are **marohrdanz: I think it would help readers if there was a brief description of what single-axis linkouts are for**, and are available to users on the row and column label menus.
+
+*Two-axis* linkouts, aka *matrix linkouts*, **marohrdanz: I think it would help readers if there was a brief description of what Two-axis linkouts are for** are available to users in the Matrix Menu. 
+
+Both Single-axis and Two-axis linkouts are defined using `linkouts.addPlugin`, and can be one of two subcategories: *single-label* linkouts, denoted by `linkouts.SINGLE_SELECT`, or *multiple-label* linkouts denoted by `linkouts.MULTI_SELECT`.  
+
+Both Single-axis and Two-axis linkouts also require their linkout type (described directly below) to be specified.
 
 ## Linkout Types
 
