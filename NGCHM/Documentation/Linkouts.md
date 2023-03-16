@@ -8,7 +8,7 @@ The NG-CHM linkout system is used to provide linkouts from NG-CHMs and similar o
 
 ## Accessing the Linkout API
 
-`window.linkout` provides the core API to the NG-CHM agnostic linkout functions.
+`window.linkouts` provides the core API to the NG-CHM agnostic linkout functions.
 
 ## Linkout Categories
 
