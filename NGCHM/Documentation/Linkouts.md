@@ -4,7 +4,7 @@ The NG-CHM linkout system provides linkouts from NG-CHMs and similar objects to 
 
 * Wherever possible, linkouts aren't specific to NG-CHMs but should be usable from any "source object" with roughly comparable features.
 
-* Linkouts are not directly incorporated into NG-CHMs.  Available linkouts change over time, and can vary from site to site. An NG-CHM should not have to be rebuild/edited because the avalable linkouts changed.
+* Linkouts are not directly incorporated into NG-CHMs.  Available linkouts change over time, and can vary from site to site. An NG-CHM should not have to be rebuild/edited because the available linkouts changed.
 
 ## Accessing the Linkout API
 
@@ -188,7 +188,7 @@ plugin is an object with the following fields:
 </dl>
 
 #### `linkouts.addPlugin`
-Either adds the plugin specified by plugin or replaces an existng plugin with the same name.
+Either adds the plugin specified by plugin or replaces an existing plugin with the same name.
 
 ```javascript
 linkouts.addPlugin(plugin);
@@ -294,7 +294,7 @@ options is an object with the following optional field:
 </dl>
 
 #### `linkouts.setVersion`
-Sets the version string of the linkouts file to version (a string).  If called multiple times, the additonal calls simply overwrite previous versions.
+Sets the version string of the linkouts file to version (a string).  If called multiple times, the additional calls simply overwrite previous versions.
 
 ```javascript
 linkouts.setVersion(version);
