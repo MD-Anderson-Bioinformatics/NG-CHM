@@ -74,6 +74,7 @@ This specifies that `'bio.gene.hugo'` is a subtype of `'bio.pubmed'`. This means
 Hamburger and label linkouts typically require helper functions. They should be enclosed in blocks or immediately-executed function expressions (IIFEs) to prevent pollution of the window namespace.
 
 For example:
+
 ```javascript
 (function (linkouts) {
 
