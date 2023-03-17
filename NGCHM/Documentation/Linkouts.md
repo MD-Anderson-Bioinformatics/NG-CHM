@@ -25,13 +25,13 @@ They are visible to users in a global "Gear-" or "Hamburger"-type menu. In NG-CH
 <br clear="left"/>
 Examples are our scatter plot and pathway plugins. As shown in the figure, in NG-CHMs Panel plugins are available to users in the panel drop-down menus.  When selected, panel linkouts display content and interact with the user in the panel's iframe. They are defined using `linkouts.addPanePlugin`.
 
-*Single-axis* linkouts enable the user to access directly external resources about either row or column labels, typically by opening an external web page.
+*Single-axis* label linkouts enable the user to access directly external resources about either row or column labels, typically by opening an external web page.
 <img src="images/PluginExample-RowLabelMenu-edited.png" alt="Image showing custom entries in a row label menu." title="Example NG-CHM Custom Single-Axis Link Outs"
      align="right" style="width:50%;" />
 <br clear="left"/>
 In NG-CHMs, matching single-axis linkouts are included in the row and/or column label menus.  Linkouts to a specific label are included in the top part of the menu. Linkouts to groups of labels are included in the bottom part of the menu.
 
-*Two-axis* linkouts, aka *matrix linkouts*, enable the user to access external resources for combinations of row and column labels.
+*Two-axis* label linkouts, aka *matrix linkouts*, enable the user to access external resources for combinations of row and column labels.
 <img src="images/PluginExample-MatrixMenu-edited.png" alt="Image showing custom entries in a matrix menu." title="Example NG-CHM Custom Two-Axis Link Outs"
      align="right" style="width:50%;" />
 <br clear="left"/>
@@ -55,6 +55,29 @@ Types beginning with "chm." are reserved for definition by the NG-CHM system.  T
 Attributes are string values globally associated with the NG-CHM.  For instance, the `bio.species` attribute can be used to specify the species to which all data in the NG-CHM applies. They are displayed in the Map Info tab of the Heat Map Display Properties dialog.
 
 Map attributes are defined when building the NG-CHM.  In the NG-CHM Builder, they can be edited on the Format Heat Map page, Labels and Attributes task, with Show Advanced Features checked. In the NG-CHM R package, they are added with the `chmAddProperty` function.
+
+## Label Linkout Targets
+
+Label linkouts typically open a browser tab/window on a URL that is constructed by a short javascript function.
+The constructed URL includes the label(s) passed to the linkout function.  Ideally, the base of the URL is a defined API provided by the linked resource that is not access restricted.
+
+In a variation of this approach, the javascript function first queries an API for information about the passed label(s) and uses information in the
+result to construct the URL to open.
+
+Note that for `MULTI-SELECT` linkouts, large selections can easily result in document URLs or APIs that exceed the maximum URL length.  Several alternatives to including all of the
+labels in the URL are possible but all require the owner of the linked resource to provide a suitable access method.
+
+We have noted three types of URL/API:
+
+* APIs that include the label(s) as query parameters: for example, `https://base-url-for-linkout/?gene=TP53`.
+
+* APIs that include a label as an element of the URL: for example, 'https://base-url-for-linkout/gene/TP53`.
+
+* APIs that include the labels(s) after a hash symbol: for example, 'https://base-url-for-linkout/#/gene/TP53'.
+
+All three URL types open a new tab/window without issues.  However, the third type does not automatically reload an existing tab/window.  The browser will update the tab's URL but the page content doesn't update.  We've found that including a random query parameter before the hash will force the page to update:
+
+* Better API for including the labels(s) after a hash symbol: 'https://base-url-for-linkout/?_=a-random-string#/gene/TP53'.
 
 ## Structure of a typical `custom.js` file
 
