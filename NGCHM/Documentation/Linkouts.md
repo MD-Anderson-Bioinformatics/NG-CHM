@@ -58,6 +58,8 @@ Map attributes are defined when building the NG-CHM.  In the NG-CHM Builder, the
 
 ## Structure of a typical `custom.js` file
 
+In NG-CHMs, all linkouts are gathered into a single javascript file, customarily called `custom.js`.  It's usually organized as detailed below.
+
 ### Set version number
 
 Call `linkouts.setVersion` to define the custom.js file version.  In NG-CHMs, the linkouts version is displayed with other version numbers in the About and Map Properties dialogs.
