@@ -12,18 +12,17 @@ The NG-CHM linkout system provides linkouts from NG-CHMs and similar objects to 
 
 ## Linkout Categories
 
-*Hamburger* linkouts apply to the entire NG-CHM (or other object), not to any specific part of it.
 <img src="images/PluginExample-Hamburger-edited.png" alt="Image showing a custom entry in the hamburger menu." title="Example NG-CHM Custom Hamburger Linkout"
      align="right" style="width:50%;" />
 <br clear="left"/>
-They are visible to users in a global "Gear-" or "Hamburger"-type menu. In NG-CHMs, for example, they are shown at the bottom of the Hamburger menu (see figure).  Hamburger linkouts are defined using `linkouts.addHamburgerLinkout`.
+*Hamburger* linkouts apply to the entire NG-CHM (or other object), not to any specific part of it.  They are visible to users in a global "Gear-" or "Hamburger"-type menu. In NG-CHMs, for example, they are shown at the bottom of the Hamburger menu (see figure).  Hamburger linkouts are defined using `linkouts.addHamburgerLinkout`.
 
 
 *Panel* plugins are a way to integrate interactive external tools with NG-CHMs.
 <img src="images/PluginExample-Panel-edited.png" alt="Image showing custom entries in a panel menu." title="Example NG-CHM Custom Panel Plugins"
      align="right" style="width:50%;" />
 <br clear="left"/>
-Examples are our scatter plot and pathway plugins. As shown in the figure, in NG-CHMs Panel plugins are available to users in the panel drop-down menus.  When selected, panel linkouts display content and interact with the user in the panel's iframe. They are defined using `linkouts.addPanePlugin`.
+Examples are our scatter plot and pathway plugins. In NG-CHMs, as shown in the figure, Panel plugins are available to users in the panel drop-down menus.  When selected, panel linkouts display content and interact with the user in the panel's iframe. They are defined using `linkouts.addPanePlugin`.
 
 *Single-axis* label linkouts enable the user to access directly external resources about either row or column labels, typically by opening an external web page.
 <img src="images/PluginExample-RowLabelMenu-edited.png" alt="Image showing custom entries in a row label menu." title="Example NG-CHM Custom Single-Axis Link Outs"
@@ -43,7 +42,7 @@ When defining a label linkout, you specify the type(s) (described directly below
 
 ## Linkout Types
 
-Linkout types are strings in dot-like notation, and (along with optional attributes described directly below) determine which axis linkouts are to be included in the menus. For example `bio.gene.hugo` represent HUGO gene symbols, `bio.gene.entrezid` represent NCBI Entrez Gene Identifiers, etc.
+Linkout types are strings in dot-like notation, and (along with optional attributes described directly below) determine which axis linkouts are to be included in the menus. For example `bio.gene.hugo` represents HUGO gene symbols, `bio.gene.entrezid` represents NCBI Entrez Gene Identifiers, etc.
 
 Types beginning with "chm." are reserved for definition by the NG-CHM system.  Types beginning with "bio." are reserved for types in Biology.
 
@@ -73,11 +72,11 @@ We have noted three types of URL/API:
 
 * APIs that include a label as an element of the URL: for example, `https://base-url-for-linkout/gene/TP53`.
 
-* APIs that include the labels(s) after a hash symbol: for example, `https://base-url-for-linkout/#/gene/TP53`.
+* APIs that include the label(s) after a hash symbol: for example, `https://base-url-for-linkout/#/gene/TP53`.
 
 All three URL types open a new tab/window without issues.  However, the third type does not automatically reload an existing tab/window.  The browser will update the tab's URL but the page content doesn't update.  We've found that including a random query parameter before the hash will force the page to update:
 
-* Better API for including the labels(s) after a hash symbol: `https://base-url-for-linkout/?_=a-random-string#/gene/TP53`.
+* Better API for including the label(s) after a hash symbol: `https://base-url-for-linkout/?_=a-random-string#/gene/TP53`.
 
 ## Structure of a typical `custom.js` file
 
@@ -85,7 +84,7 @@ In NG-CHMs, all linkouts are gathered into a single javascript file, customarily
 
 ### Set version number
 
-Call `linkouts.setVersion` to define the custom.js file version.  In NG-CHMs, the linkouts version is displayed with other version numbers in the About and Map Properties dialogs.
+Call `linkouts.setVersion` to define the custom.js file version.  In NG-CHMs, the linkouts version is displayed with other version numbers in the About dialog.
 
 ```javascript
 linkouts.setVersion('1.0.0');
@@ -156,11 +155,11 @@ There is an additional parameter for matrix menu entries. See `linkouts.addPlugi
 
 ## Linkouts API: Constants
 
-### `linkouts.SINGLE_SELECT`
+### :atom_symbol: `linkouts.SINGLE_SELECT`
 
 Specifies a linkout that accepts a single label.
 
-### `linkouts.MULTI_SELECT`
+### :atom_symbol: `linkouts.MULTI_SELECT`
 
 Specifies a linkout that accepts one or more labels.
 
@@ -204,7 +203,7 @@ Either adds the plugin specified by plugin or replaces an existing plugin with t
 linkouts.addPlugin(plugin);
 ```
 
-plugins is an object with the following fields:
+`plugin` is an object with the following fields:
 <dl>
 <dt>name</dt><dd>The plugin's name</dd>
 <dt>description</dt><dd>A short description of the plugin.</dd>
@@ -214,7 +213,7 @@ plugins is an object with the following fields:
 <dt>linkouts:</dt><dd>An array of axis linkouts. See below.</dd>
 <dt>matrixLinkouts:</dt><dd>An array of matrix linkouts. See below.</dd>
 </dl>
-Each element of the linkouts field is an object with the following fields:
+Each element of the `linkouts` field is an object with the following fields:
 <dl>
 <dt>menuEntry</dt><dd>Menu entry for the linkout.</dd>
 <dt>typeName</dt><dd>Type of labels expected by the linkout.</dd>
@@ -222,7 +221,7 @@ Each element of the linkouts field is an object with the following fields:
 <dt>linkoutFn</dt><dd>Function called when the linkout is selected. It is passed a string array. If `selectType == linkouts.SINGLE_SELECT` the array will contain one element.</dd>
 <dt>attributes:</dt><dd>An array of attributes (strings) that this linkout requires. Defaults to none.</dd>
 </dl>
-Each element of the matrixLinkouts field is an object with the following fields:
+Each element of the `matrixLinkouts` field is an object with the following fields:
 <dl>
 <dt>menuEntry</dt><dd>Menu entry for the linkout.</dd>
 <dt>typeName1</dt><dd>Type of labels on one axis expected by the linkout.</dd>
