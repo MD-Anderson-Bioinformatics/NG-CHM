@@ -71,13 +71,13 @@ We have noted three types of URL/API:
 
 * APIs that include the label(s) as query parameters: for example, `https://base-url-for-linkout/?gene=TP53`.
 
-* APIs that include a label as an element of the URL: for example, 'https://base-url-for-linkout/gene/TP53`.
+* APIs that include a label as an element of the URL: for example, `https://base-url-for-linkout/gene/TP53`.
 
-* APIs that include the labels(s) after a hash symbol: for example, 'https://base-url-for-linkout/#/gene/TP53'.
+* APIs that include the labels(s) after a hash symbol: for example, `https://base-url-for-linkout/#/gene/TP53`.
 
 All three URL types open a new tab/window without issues.  However, the third type does not automatically reload an existing tab/window.  The browser will update the tab's URL but the page content doesn't update.  We've found that including a random query parameter before the hash will force the page to update:
 
-* Better API for including the labels(s) after a hash symbol: 'https://base-url-for-linkout/?_=a-random-string#/gene/TP53'.
+* Better API for including the labels(s) after a hash symbol: `https://base-url-for-linkout/?_=a-random-string#/gene/TP53`.
 
 ## Structure of a typical `custom.js` file
 
