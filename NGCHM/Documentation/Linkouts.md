@@ -129,21 +129,19 @@ The linkout will be added to the row label menu if the rows are identifed as Ent
 
 There is an additional parameter for matrix menu entries. See `linkouts.addPlugin` for details.
 
-## Linkouts API
+## Linkouts API: Constants
 
-### Constants
-
-#### `linkouts.SINGLE_SELECT`
+### `linkouts.SINGLE_SELECT`
 
 Specifies a linkout that accepts a single label.
 
-#### `linkouts.MULTI_SELECT`
+### `linkouts.MULTI_SELECT`
 
 Specifies a linkout that accepts one or more labels.
 
-### Functions
+## Linkouts API: Functions
 
-#### `linkouts.addHamburgerLinkout`
+### :atom_symbol: `linkouts.addHamburgerLinkout`
 
 Adds the hamburger linkout specified by params.
 
@@ -159,7 +157,7 @@ params is an object with the following fields:
 <dt>action</dt><dd>Function executed when the plugin is selected. No arguments are passed to the function.</dd>
 </dl>
 
-#### `linkouts.addLinkout`
+### :atom_symbol: `linkouts.addLinkout`
 Prefer using `linkouts.addPlugin` over this function.
 
 Adds one axis-label linkout specified by by the parameters.
@@ -177,7 +175,7 @@ Parameters:
 <dt>reqAttributes:</dt><dd>An array of attributes (strings) that this linkout requires. Defaults to none.</dd>
 </dl>
 
-#### `linkouts.addMatrixLinkout`
+### :atom_symbol: `linkouts.addMatrixLinkout`
 Prefer using `linkouts.addPlugin` over this function.
 
 Adds one matrix linkout specified by the parameters.
@@ -196,7 +194,7 @@ Parameters:
 <dt>reqAttributes:</dt><dd>An array of attributes (strings) that this linkout requires. Defaults to none.</dd>
 </dl>
 
-#### `linkouts.addPanePlugin`
+### :atom_symbol: `linkouts.addPanePlugin`
 Add the panel plugin specified by plugin.
 
 ```javascript
@@ -211,7 +209,7 @@ plugin is an object with the following fields:
 <dt>params</dt><dd>An object specifying the panel's parameters. To be documented.</dd>
 </dl>
 
-#### `linkouts.addPlugin`
+### :atom_symbol: `linkouts.addPlugin`
 Either adds the plugin specified by plugin or replaces an existing plugin with the same name.
 
 ```javascript
@@ -246,7 +244,7 @@ Each element of the matrixLinkouts field is an object with the following fields:
 <dt>attributes:</dt><dd>An array of attributes (strings) that this linkout requires. Defaults to none.</dd>
 </dl>
 
-#### `linkouts.describeTypes`
+### :atom_symbol: `linkouts.describeTypes`
 Describe an array of type strings.
 
 ```javascript
@@ -262,7 +260,7 @@ linkouts.describeTypes(typearray);
 <dt>format</dt><dd>A description of the format of acceptable values of the type.</dd>
 </dl>
 
-#### `linkouts.getAttribute`
+### :atom_symbol: `linkouts.getAttribute`
 Returns the value of the global attribute specified by attribute (a string).
 Returns undefined if no such attribute is defined.
 
@@ -270,42 +268,42 @@ Returns undefined if no such attribute is defined.
 const value = linkouts.getAttribute(attribute);
 ```
 
-#### `linkouts.getMapFileName`
+### :atom_symbol: `linkouts.getMapFileName`
 Returns the name of the file or other resource from which the NG-CHM or other source object was loaded. May or may not resemble the map's name.
 
 ```javascript
 const fileName = linkouts.getMapFileName();
 ```
 
-#### `linkouts.getMapName`
+### :atom_symbol: `linkouts.getMapName`
 Returns the name of the NG-CHM or other source object.
 
 ```javascript
 const name = linkouts.getMapName();
 ```
 
-#### `linkouts.getSourceObjectType`
+### :atom_symbol: `linkouts.getSourceObjectType`
 Returns the type (a string) of the source object. Returns `'chm'` for NG-CHMs.
 
 ```javascript
 const objectType = linkouts.getSourceObjectType();
 ```
 
-#### `linkouts.getSourceObjectUniqueId`
+### :atom_symbol: `linkouts.getSourceObjectUniqueId`
 Returns a unique identifier (a string) for the source object.
 
 ```javascript
 const uniqueId = linkouts.getSourceObjectUniqueId();
 ```
 
-#### `linkouts.getVersion`
+### :atom_symbol: `linkouts.getVersion`
 Returns the version string of the linkouts file (as set by `linkouts.setVersion`)
 
 ```javascript
 const version = linkouts.getVersion();
 ```
 
-#### `linkouts.openUrl`
+### :atom_symbol: `linkouts.openUrl`
 Opens the specified URL. If a linkouts panel is open, it will be opened in an iframe in that panel.  Otherwise it will be opened in a (new) window called name.
 
 ```javascript
@@ -317,14 +315,14 @@ options is an object with the following optional field:
 <dt>noframe:</dt><dd>If truthy, do not open in a linkout panel. Needed for sites that do not permit being opened in an iframe.
 </dl>
 
-#### `linkouts.setVersion`
+### :atom_symbol: `linkouts.setVersion`
 Sets the version string of the linkouts file to version (a string).  If called multiple times, the additional calls simply overwrite previous versions.
 
 ```javascript
 linkouts.setVersion(version);
 ```
 
-#### `linkouts.simplifyLabels`
+### :atom_symbol: `linkouts.simplifyLabels`
 Combines the unique labels from the `Row` and `Column` entries of `labels` into a single string array.
 
 ```javascript
