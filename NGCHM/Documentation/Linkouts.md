@@ -19,28 +19,25 @@ This document describes how NG-CHMs can be customized using linkouts and plugins
 <img src="images/PluginExample-Hamburger-edited.png" alt="Image showing a custom entry in the hamburger menu." title="Example NG-CHM Custom Hamburger Linkout"
      align="right" style="width:50%;" />
 <br clear="left"/>
-*Hamburger* linkouts apply to the entire NG-CHM (or other object), not to any specific part of it.  They are visible to users in a global "Gear-" or "Hamburger"-type menu. In NG-CHMs, for example, they are shown at the bottom of the Hamburger menu (see figure).  Hamburger linkouts are defined using `linkouts.addHamburgerLinkout`.
+**Hamburger** linkouts apply to the entire NG-CHM (or other object), not to any specific part of it.  They are visible to users in a global "Gear-" or "Hamburger"-type menu. In NG-CHMs, for example, they are shown at the bottom of the Hamburger menu (see figure).  Hamburger linkouts are defined using `linkouts.addHamburgerLinkout`.
 
 
-*Panel* plugins are a way to integrate interactive external tools with NG-CHMs.
 <img src="images/PluginExample-Panel-edited.png" alt="Image showing custom entries in a panel menu." title="Example NG-CHM Custom Panel Plugins"
      align="right" style="width:50%;" />
 <br clear="left"/>
-Examples are our scatter plot and pathway plugins. In NG-CHMs, as shown in the figure, Panel plugins are available to users in the panel drop-down menus.  When selected, panel linkouts display content and interact with the user in the panel's iframe. They are defined using `linkouts.addPanePlugin`.
+**Panel** plugins are a way to integrate interactive external tools with NG-CHMs.  Examples are our scatter plot and pathway plugins. In NG-CHMs, as shown in the figure, Panel plugins are available to users in the panel drop-down menus.  When selected, panel linkouts display content and interact with the user in the panel's iframe. They are defined using `linkouts.addPanePlugin`.
 
-*Single-axis* label linkouts enable the user to access directly external resources about either row or column labels, typically by opening an external web page.
 <img src="images/PluginExample-RowLabelMenu-edited.png" alt="Image showing custom entries in a row label menu." title="Example NG-CHM Custom Single-Axis Link Outs"
      align="right" style="width:50%;" />
 <br clear="left"/>
-In NG-CHMs, matching single-axis linkouts are included in the row and/or column label menus.  Linkouts to a specific label are included in the top part of the menu. Linkouts to groups of labels are included in the bottom part of the menu.
+**Single-axis** label linkouts enable the user to access directly external resources about either row or column labels, typically by opening an external web page.  In NG-CHMs, matching single-axis linkouts are included in the row and/or column label menus.  Linkouts to a specific label are included in the top part of the menu. Linkouts to groups of labels are included in the bottom part of the menu.
 
-*Two-axis* label linkouts, aka *matrix linkouts*, enable the user to access external resources for combinations of row and column labels.
 <img src="images/PluginExample-MatrixMenu-edited.png" alt="Image showing custom entries in a matrix menu." title="Example NG-CHM Custom Two-Axis Link Outs"
      align="right" style="width:50%;" />
 <br clear="left"/>
-In NG-CHMs, they are included in the Matrix Menu.
+**Two-axis** label linkouts, aka **matrix** linkouts, enable the user to access external resources for combinations of row and column labels.  In NG-CHMs, they are included in the Matrix Menu.
 
-Both Single-axis and Two-axis label linkouts are defined using `linkouts.addPlugin`.  They can belong to one of two subcategories: *single-label* linkouts, denoted by `linkouts.SINGLE_SELECT`, or *multiple-label* linkouts denoted by `linkouts.MULTI_SELECT`.  
+Both Single-axis and Two-axis label linkouts are defined using `linkouts.addPlugin`.  They can belong to one of two subcategories: **single-label** linkouts, denoted by `linkouts.SINGLE_SELECT`, or **multiple-label** linkouts denoted by `linkouts.MULTI_SELECT`.  
 
 When defining a label linkout, you specify the type(s) (described directly below) of label(s) that the linkout applies to, as well as any attributes that it requires. A label linkout is included in a menu only if the NG-CHM has the linkout's required attributes and the type(s) of the NG-CHM's axis/axes match those of the linkout.
 
