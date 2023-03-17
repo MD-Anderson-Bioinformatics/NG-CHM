@@ -6,6 +6,10 @@ The NG-CHM linkout system provides linkouts from NG-CHMs and similar objects to 
 
 * Linkouts are not directly incorporated into NG-CHMs.  Available linkouts change over time, and can vary from site to site. An NG-CHM should not have to be rebuild/edited because the available linkouts changed.
 
+## Target Audience
+
+This document describes how NG-CHMs can be customized using linkouts and plugins.  The reader is assumed to be familar with NG-CHMs and able to write Javascript programs.
+
 ## Accessing the Linkout API
 
 `window.linkouts` provides the core API to the NG-CHM agnostic linkout functions.
