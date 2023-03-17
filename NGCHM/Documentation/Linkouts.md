@@ -157,43 +157,6 @@ params is an object with the following fields:
 <dt>action</dt><dd>Function executed when the plugin is selected. No arguments are passed to the function.</dd>
 </dl>
 
-### :atom_symbol: `linkouts.addLinkout`
-Prefer using `linkouts.addPlugin` over this function.
-
-Adds one axis-label linkout specified by by the parameters.
-
-```javascript
-linkouts.addLinkout(name, labelType, selectType, callback, reqAttributes);
-```
-
-Parameters:
-<dl>
-<dt>name:</dt><dd>Name of the linkout (a string). Used in menus etc.</dd>
-<dt>labelType:</dt><dd>Type of labels accepted (a string).</dd>
-<dt>selectType</dt><dd>Either `linkouts.SINGLE_SELECT` or `linkouts.MULTI_SELECT`</dd>
-<dt>callback:</dt><dd>Function called when the linkout is selected. It is passed a string array. If `selectType == linkouts.SINGLE_SELECT` the array will contain one element.</dd>
-<dt>reqAttributes:</dt><dd>An array of attributes (strings) that this linkout requires. Defaults to none.</dd>
-</dl>
-
-### :atom_symbol: `linkouts.addMatrixLinkout`
-Prefer using `linkouts.addPlugin` over this function.
-
-Adds one matrix linkout specified by the parameters.
-
-```javascript
-linkouts.addMatrixLinkout(name, rowType, colType, selectType, callback, reqAttributes);
-```
-
-Parameters:
-<dl>
-<dt>name:</dt><dd>Name of the linkout (a string). Used in menus etc.</dd>
-<dt>rowType:</dt><dd>Type of row labels accepted (a string).</dd>
-<dt>colType:</dt><dd>Type of column labels accepted (a string).</dd>
-<dt>selectType</dt><dd>Either `linkouts.SINGLE_SELECT` or `linkouts.MULTI_SELECT`</dd>
-<dt>callback:</dt><dd>Function called when the linkout is selected. It is passed an object with two entries (`Row` and `Column`), each of which is an array of strings. If `selectType == linkouts.SINGLE_SELECT`, each array will contain one element.</dd>
-<dt>reqAttributes:</dt><dd>An array of attributes (strings) that this linkout requires. Defaults to none.</dd>
-</dl>
-
 ### :atom_symbol: `linkouts.addPanePlugin`
 Add the panel plugin specified by plugin.
 
