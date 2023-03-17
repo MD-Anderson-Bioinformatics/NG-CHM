@@ -1935,7 +1935,8 @@ let	wS = `const debug = ${debug};`;
 
     MMGR.showDownloadViewerNotification = showDownloadViewerNotification;
     function showDownloadViewerNotification (title, bodyText) {
-	    UHM.initMessageBox();
+	    const msgBox = UHM.initMessageBox();
+	    msgBox.classList.add ('file-viewer');
 	    UHM.setMessageBoxHeader(title);
 	    UHM.setMessageBoxText(bodyText);
 	    UHM.setMessageBoxButton(
@@ -2227,6 +2228,24 @@ let	wS = `const debug = ${debug};`;
 	})
 	.then (blob => {
 	    saveAs(blob, heatMap.mapName+".ngchm");
+	    return true;
+	})
+	.catch (error => {
+	    if (error != 'Cancelled by user') {
+		const msgBox = UHM.newMessageBox('error-saving-ngchm');
+		msgBox.style.width = '20em';
+		UHM.setNewMessageBoxHeader (msgBox, 'Failed to save NG-CHM');
+		const txtBox = UHM.getNewMessageTextBox (msgBox);
+		txtBox.innerHTML = '<P><B>The NG-CHM was not saved.</B></P><P>The following error details were recorded:</P><P><B>' + error + '</B></P>';
+		UHM.setNewMessageBoxButton(msgBox, 'close', {
+		    type: 'text',
+		    text: 'Close',
+		    tooltip: 'Closes this dialog',
+		    default: true,
+		});
+		UHM.displayNewMessageBox(msgBox);
+	    }
+	    return false;
 	});
 
 	// Returns a promise to add all the entries in heatMap.zipFiles
@@ -2245,7 +2264,12 @@ let	wS = `const debug = ${debug};`;
 		function addEntry (fileIndex) {
 		    // Update the progressMeter.
 		    const progress = (1 + fileIndex) / (1 + zipKeys.length);
-		    if (progressMeter) progressMeter (progress);
+		    if (progressMeter) {
+			const keepGoing = progressMeter (progress);
+			if (!keepGoing) {
+			    reject('Cancelled by user');
+			}
+		    }
 
 		    if (fileIndex == zipKeys.length) {
 		      resolve (zipWriter);  /* No more files to add: resolve promise */;
@@ -2411,15 +2435,9 @@ let	wS = `const debug = ${debug};`;
 		    dls[dlNext-1] = '<option value="'+key+'">'+displayName+'</option>';
 		}
 		const panelConfig = heatMap.getPanelConfiguration();
-		const flickInfo = panelConfig ? panelConfig.flickInfo : null;
-		if (flickInfo) {
-		    FLICK.enableFlicks (dls.join(""), flickInfo.flick1 || 'dl1', flickInfo.flick2 || 'dl1');
-		    const layer = FLICK.setFlickState (flickInfo.flick_btn_state);
-		    heatMap.setCurrentDL(layer);
-		} else {
-		    FLICK.enableFlicks (dls.join(""), "dl1", orderedKeys[1]);
-		    heatMap.setCurrentDL("dl1");
-		}
+		const flickInfo = panelConfig && panelConfig.flickInfo ? panelConfig.flickInfo : {};
+		const layer = FLICK.enableFlicks (orderedKeys, dls.join(""), flickInfo);
+		heatMap.setCurrentDL(layer);
 	    } else {
 		    heatMap.setCurrentDL("dl1");
 		    FLICK.disableFlicks();

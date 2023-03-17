@@ -238,7 +238,7 @@ DMM.RemoveDetailMap = function (pane) {
 	}
 	if (wasPrime) {
 	   if (DVW.detailMaps.length > 0) {
-		DMM.switchToPrimary(DVW.detailMaps[0].chm);
+		DMM.switchToPrimary(DVW.detailMaps[0]);
 	   } else {
 	       DVW.primaryMap = null;
 	   }
@@ -262,9 +262,8 @@ DMM.getPrimaryDetailMap = function () {
  * FUNCTION:  switchToPrimary - The purpose of this function is to switch one map item from
  * Secondary to Primary and set all others to Secondary.
  *********************************************************************************************/
-DMM.switchToPrimary = function (chm) {
-	const newPrimaryLoc = PANE.findPaneLocation(chm);
-	const mapItem = DVW.getMapItemFromChm(chm);
+DMM.switchToPrimary = function (mapItem) {
+	const chm = mapItem.chm;
 	for (let i=0; i<DVW.detailMaps.length;i++ ) {
 		const item = DVW.detailMaps[i];
 		if (item.chm === chm) {
@@ -472,7 +471,7 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 		/* Clone DIV#detail_chm from DIV#templates. */
 		let chm = cloneDetailChm (mapNumber);
 		loc.pane.appendChild (chm);
-		PANE.setPaneClientIcons(loc, DEV.createClientButtons(mapNumber, paneId, loc.pane.children[1], DMM.switchToPrimary));
+		PANE.setPaneClientIcons(loc, DEV.createClientButtons(mapNumber, paneId, DMM.switchToPrimary));
 		const mapItem = DMM.addDetailMap (chm, paneId, mapNumber, isPrimary, restoreInfo ? restoreInfo.paneInfo : null);
 		// If primary is collapsed set chm detail of clone to visible
 		if (!restoreInfo && chm.style.display === 'none') {

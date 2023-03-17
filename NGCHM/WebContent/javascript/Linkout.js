@@ -31,6 +31,7 @@ var linkoutsVersion = 'undefined';
     linkouts.POSITION = "position";
     linkouts.SINGLE_SELECT = "singleSelection";
     linkouts.MULTI_SELECT = "multiSelection";
+    LNK.EMPTY_SELECT = "emptySelection";	// NOT exported
 
     linkouts.getAttribute = function (attribute){
 	return MMGR.getHeatMap().getMapInformation().attributes[attribute];
@@ -506,17 +507,19 @@ var linkoutsVersion = 'undefined';
 			row.innerHTML = "Selected " + axis.replace("Covar"," Covariate") + "s : " + axisLabelsLength;
 			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'inherit';
 			LNK.populateLabelMenu(axis,axisLabelsLength);
-	    } else if ((axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) && axis == "Matrix"){
-	    	if (axisLabelsLength["Row"] === 0) {
-			axisLabelsLength["Row"] = heatMap.getAxisLabels("Row")["labels"].length;
-	    	} else if (axisLabelsLength["Column"] === 0) {
-			axisLabelsLength["Column"] = heatMap.getAxisLabels("Column")["labels"].length;
-	    	}
-			row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
-			LNK.populateLabelMenu(axis,axisLabelsLength);
+	    } else if (axis == "Matrix") {
+		if (axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) {
+		    if (axisLabelsLength["Row"] === 0) {
+			    axisLabelsLength["Row"] = heatMap.getAxisLabels("Row")["labels"].length;
+		    } else if (axisLabelsLength["Column"] === 0) {
+			    axisLabelsLength["Column"] = heatMap.getAxisLabels("Column")["labels"].length;
+		    }
+		}
+		row.innerHTML = "Selected Rows: " + axisLabelsLength["Row"] + "<br>Selected Columns: " + axisLabelsLength["Column"];
+		LNK.populateLabelMenu(axis, axisLabelsLength);
 	    } else {
-			row.innerHTML = "Please select a " + axis.replace("Covar"," Covariate");
-			labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
+		row.innerHTML = "Please select a " + axis.replace("Covar"," Covariate");
+		labelMenuTable.getElementsByTagName("TBODY")[0].style.display = 'none';
 	    }
 	    
 	    if (labelMenu){
@@ -598,14 +601,15 @@ var linkoutsVersion = 'undefined';
 			if (linkouts[type]){ // and for every linkout that the label type has, we add the linkout to the menu
 				for (var j = 0; j < linkouts[type].length; j++){
 					var linkout = linkouts[type][j];
-					if (linkout.rowType &&  linkout.colType && type == "Matrix"){// if this is a MatrixLinkout...
+					if ((linkout.selectType == LNK.EMPTY_SELECT) || (type !== "Matrix") ||
+					    (axisLabelsLength["Row"] > 0 && axisLabelsLength["Column"] > 0)) {
+					    if (linkout.rowType && linkout.colType && type == "Matrix") {// if this is a MatrixLinkout...
 						handleMatrixLinkout(axis,table, linkout,grpLinkouts);
-					} else { 
-						if (linkout.selectType == linkouts.SINGLE_SELECT) {
-							indLinkouts.push({"linkout":linkout});
-						} else {
-							grpLinkouts.push({"linkout":linkout})
-						}
+					    } else if (linkout.selectType == linkouts.SINGLE_SELECT) {
+						    indLinkouts.push({"linkout":linkout});
+					    } else {
+						    grpLinkouts.push({"linkout":linkout})
+					    }
 					}
 				}
 			}
@@ -832,7 +836,8 @@ var linkoutsVersion = 'undefined';
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
 		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
 		if (LNK.enableBuilderUploads) {
-		    LNK.addLinkout("Upload matrix data to builder", "Matrix", linkouts.MULTI_SELECT, uploadSelectedToBuilder, null, 0);
+		    LNK.addLinkout("Upload all NG-CHM data to builder", "Matrix", LNK.EMPTY_SELECT, uploadAllToBuilder, null, 0);
+		    LNK.addLinkout("Upload selected NG-CHM data to builder", "Matrix", linkouts.MULTI_SELECT, uploadSelectedToBuilder, null, 0);
 		}
 	}
 
@@ -889,9 +894,20 @@ var linkoutsVersion = 'undefined';
 		window.open("","",'width=335,height=330,resizable=1').document.write("<b>Rows:</b><br>" + labels["Row"].join("<br>") + "<br><br><b>Columns:</b><br>" + labels["Column"].join("<br>"));
 	}
 
+	function uploadAllToBuilder (data, axis) {
+	    uploadToBuilder ("all", data, [], []);
+	}
+
 	function uploadSelectedToBuilder (data, axis) {
+	    const rowRanges = NgChm.UTIL.getContigRanges (NgChm.SRCHSTATE.getAxisSearchResults('Row'));
+	    const colRanges = NgChm.UTIL.getContigRanges (NgChm.SRCHSTATE.getAxisSearchResults('Column'));
+	    uploadToBuilder ("selected", data, rowRanges, colRanges);
+	}
+
+	function uploadToBuilder (selectType, data, rowSelection, colSelection) {
+	    const heatMap = MMGR.getHeatMap();
 	    const msgBox = UHM.newMessageBox('upload');
-	    UHM.setNewMessageBoxHeader (msgBox, "Upload selected data to NG-CHM Builder");
+	    UHM.setNewMessageBoxHeader (msgBox, "Upload " + selectType + " NG-CHM data to NG-CHM Builder");
 	    const msgBoxText = UHM.getNewMessageTextBox (msgBox);
 	    const label = UTIL.newElement ('LABEL', { 'for': 'builder-url' }, "NG-CHM Builder URL:");
 	    const util = UTIL.newElement ('INPUT', { name: 'builder-url', size: 60 });
@@ -908,16 +924,18 @@ var linkoutsVersion = 'undefined';
 	    UHM.setNewMessageBoxButton (msgBox, 'cancel', { type: 'text', text: 'Cancel', tooltip: 'Cancel upload', default: false });
 	    UHM.displayNewMessageBox (msgBox);
 
+	    if (rowSelection.length == 0) rowSelection = [[ 1, heatMap.getNumRows (MAPREP.DETAIL_LEVEL) ]];
+	    if (colSelection.length == 0) colSelection = [[ 1, heatMap.getNumColumns (MAPREP.DETAIL_LEVEL) ]];
+
 	    function sendDataToBuilder () {
 		const debug = false;
-		const heatMap = MMGR.getHeatMap();
 		const nonce = PIM.getNewNonce();
 		const url = new URL (util.value.replace(/[/]*[A-Za-z0-9-.]*.html*$/,''));
 		const builder = window.open (url.href + "/Upload_Matrix.html?adv=Y&nonce="+nonce, "_blank");
 		var established = false;
 		var numProbes = 0;
 
-		if (debug) console.log ('UploadSelectedDataToBuilder', heatMap, data, axis);
+		if (debug) console.log ('UploadDataToBuilder', heatMap, data);
 		window.addEventListener('message', processMessage, false);
 		setTimeout (sendProbe, 50);
 
@@ -940,13 +958,15 @@ var linkoutsVersion = 'undefined';
 			if (msg.data.op == 'ready') {
 			    established = true;
 			    if (debug) console.log ('Established comms with builder');
+			    // Get access window from first selected index to last selected index
+			    // for both rows and columns.
 			    const win = heatMap.getNewAccessWindow({
 				layer: heatMap.getCurrentDL(),
 				level: MAPREP.DETAIL_LEVEL,
-				firstRow: 1,
-				firstCol: 1,
-				numRows: heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
-				numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
+				firstRow: rowSelection[0][0],
+				firstCol: colSelection[0][0],
+				numRows: rowSelection[rowSelection.length-1][1] - rowSelection[0][0] + 1,
+				numCols: colSelection[colSelection.length-1][1] - colSelection[0][0] + 1,
 			    });
 			    win.onready((win) => {
 				if (debug) console.log ('Ready to send tiles');
@@ -962,6 +982,8 @@ var linkoutsVersion = 'undefined';
 				    mapData: heatMap.mapData,
 				    currentLayer: heatMap._currentDl,
 				    tiles: tiles,
+				    rowSelection: rowSelection,
+				    colSelection: colSelection,
 				};
 				// Send the NG-CHM config and summary data and all the tile data.
 				builder.postMessage ({ op: 'ngchm', nonce: nonce, ngchm: ngchm, }, url.origin );

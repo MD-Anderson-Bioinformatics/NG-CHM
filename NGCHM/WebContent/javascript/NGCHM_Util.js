@@ -555,6 +555,11 @@ UTIL.isValidURL = function (str) {
 UTIL.dragElement = function (elmnt) {
 	  let deltaMouseElementX = 0;
 	  let deltaMouseElementY = 0;
+	  const minTop = -2;
+	  let maxTop = 0;
+	  let minLeft = 0;
+	  let maxLeft = 0;
+
 	  const header = document.getElementById(elmnt.id + "Hdr") || elmnt.querySelector('.msgBoxHdr');
 	  if (header) {
 	    /* if present, the header is where you move the DIV from:*/
@@ -564,8 +569,13 @@ UTIL.dragElement = function (elmnt) {
 	  function dragMouseDown(e) {
 	    e = e || window.event;
 	    e.preventDefault();
-	    deltaMouseElementX = e.clientX - elmnt.getBoundingClientRect().x;
-	    deltaMouseElementY = e.clientY - elmnt.getBoundingClientRect().y;
+	    const bbox = elmnt.getBoundingClientRect();
+	    deltaMouseElementX = e.clientX - bbox.x;
+	    deltaMouseElementY = e.clientY - bbox.y;
+	    minLeft = - bbox.width / 2;
+	    maxLeft = window.innerWidth - bbox.width/2;
+	    const hdrBbox = header.getBoundingClientRect();
+	    maxTop = window.innerHeight - hdrBbox.height;
 	    document.onmouseup = closeDragElement;
 	    // call a function whenever the cursor moves:
 	    document.onmousemove = elementDrag;
@@ -575,8 +585,11 @@ UTIL.dragElement = function (elmnt) {
 	    e = e || window.event;
 	    e.preventDefault();
 	    // calculate the new cursor position:
-	    elmnt.style.left = (e.clientX - deltaMouseElementX) + 'px';
-	    elmnt.style.top = (e.clientY - deltaMouseElementY) + 'px';
+	    const yPosn = e.clientY - deltaMouseElementY;
+	    const xPosn = e.clientX - deltaMouseElementX;
+	    elmnt.style.left = Math.min (maxLeft, Math.max (minLeft, xPosn)) + 'px';
+	    elmnt.style.top = Math.min (maxTop, Math.max (minTop, yPosn)) + 'px';
+	    elmnt.style.height = '';
 	  }
 
 	  function closeDragElement() {
@@ -710,6 +723,9 @@ UTIL.keepElementInViewport= function(elementId) {
 	const element = document.getElementById(elementId);
 	if (element !== null) {
 		const rect = element.getBoundingClientRect();
+		if (rect.bottom < window.innerHeight && element.style.height) {
+			element.style.height = '';
+		}
 		if (rect.bottom > window.innerHeight) {
 			element.style.height = (window.innerHeight - rect.top) + 'px';
 		}

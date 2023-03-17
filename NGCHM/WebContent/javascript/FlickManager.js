@@ -18,6 +18,7 @@
 	setFlickState,
 	toggleFlickState,
 	setFlickHandler,
+	getFlickSaveState,
     };
     const FLICK = NgChm.createNS('NgChm.FLICK', exports);
 
@@ -28,16 +29,34 @@
     const flickDrop1 = document.getElementById("flick1");
     const flickDrop2 = document.getElementById("flick2");
 
-    function enableFlicks (options, value1, value2) {
+    function enableFlicks (layers, options, savedState) {
 	flickDrop1.innerHTML = options;
 	flickDrop2.innerHTML = options;
-	flickDrop1.value = value1;
-	flickDrop2.value = value2;
+
+	const flickStateOK = savedState.flick_btn_state == 'flickUp' || savedState.flick_btn_state == 'flickDown';
+	flickViewsElement.dataset.state = flickStateOK ? savedState.flick_btn_state : 'flickUp';
+	flickDrop1.value = savedState.flick1 in layers ? savedState.flick1 : layers[0];
+	if (savedState.flick2 in layers) {
+	    flickDrop2.value = savedState.flick2;
+	} else {
+	    // Make flick2 default different from flick1 value if possible.
+	    flickDrop2.value = layers.length < 2 || layers[1] == flickDrop1.value ? layers[0] : layers[1];
+	}
 	flicksElement.style.display = '';
+	return isFlickUp() ? flickDrop1.value : flickDrop2.value;
     }
 
     function disableFlicks() {
 	flicksElement.style.display = 'none';
+    }
+
+    function getFlickSaveState () {
+	const savedState = {
+	    flick_btn_state: flickViewsElement.dataset.state,
+	    flick1: flickDrop1.value,
+	    flick2: flickDrop2.value,
+	};
+	return savedState;
     }
 
     /************************************************************************************************

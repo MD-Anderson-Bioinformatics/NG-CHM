@@ -4,7 +4,7 @@
 		<title>NG-CHM</title>
 		<meta charset="utf-8"/>
 
-		<link rel="shortcut icon" href="ngChmIcon.ico">
+		<link rel="shortcut icon" type="image/png" href="images/ngChmIcon.png">
 		<link rel="stylesheet" type="text/css" href="css/NGCHM.css">
 		<meta id='viewport' name ="viewport" content="width=device-width,user-scalable=no">
 		<link rel="stylesheet" type="text/css" href="css/introjs.css"> <!--DEFER-->
@@ -236,7 +236,7 @@
 						<tr class="chmTblRow">
 							<td>
 								<div id="pdfprefprefs" style="display: block;">
-									<div style="display: inherit; width: 290px; height: 350px;">
+									<div style="display: inherit; width: 290px;">
 										<h3 style="margin-bottom:0px;">Include maps:</h3>
 										<input id="pdfInputSummaryMap" type="radio" name="pages" value="summary"> Summary<br>
 										<input id="pdfInputDetailMap" type="radio" name="pages" value="detail"> Detail<br>
@@ -249,25 +249,43 @@
 										<input id="pdfInputRow" type="checkbox" name="class" value="column" checked> Row<br>
 										<h3 style="margin-bottom:0px;">Font &amp; Paper Options:</h3>
 										<p id="pdfErrorMessage" style="display:none;color:red; font-weight:bold;margin-left: 1.0em; margin-left: 1.0em;">Please select a font between 1 and 36</p><br>
-										Font Style:&nbsp;&nbsp;<select id="pdfFontStyle">
+										<div id='font-and-paper-options'>
+										    <label for="pdfResolution">Resolution:</label>
+										    <select id="pdfResolution">
+											<option value="600 dpi">600 dpi</option>
+											<option value="300 dpi">300 dpi</option>
+											<option value="150 dpi">150 dpi</option>
+											<option value="100 dpi">100 dpi</option>
+											<option value="50 dpi">50 dpi</option>
+											<option value="custom">Custom</option>
+										    </select>
+										    <label for="pdfCustomResolution" class='hide'>DPI:</label>
+											<input id="pdfCustomResolution" class='hide' type="text" value="">
+										    <label for="pdfFontStyle">Font Style:</label>
+										    <select id="pdfFontStyle">
 											<option value="helvetica">Helvetica</option>
 											<option value="courier">Courier</option>
 											<option value="times">Times-Roman</option>
-										</select><br>
-										Paper Size:&nbsp;<select id="pdfPaperSize">
+										    </select>
+										    <label for="pdfPaperSize">Paper Size:</label>
+										    <select id="pdfPaperSize">
 											<option value="standard">Standard Letter (8.5 x 11 inches)</option>
 											<option value="A3">Ledger/Tabloid (11 x 17 inches)</option>
 											<option value="A4">A4 International (210 x 297 mm)</option>
-										</select>
-										<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait
-										<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape <br>
+										    </select>
+										    <label>Orientation:</label>
+										    <div>
+											<input id="pdfInputPortrait" type="radio" name="orientation" value="portrait"> Portrait
+											<input id="pdfInputLandscape" type="radio" name="orientation" value="Landscape" checked> Landscape
+										    </div>
+										</div>
 										<div id="pdfProgressBarDiv" style="display: none;">
 										<label for="pdfProgressBar">Progress:</label>
 										<progress id="pdfProgressBar"></progress>
 										</div>
 									</div>
 									<div id="pref_buttons" class="buttonBox">
-									    <button id="prefCreate_btn" class='default'>
+									    <button id="prefCreate_btn" class='default' data-tooltip='Click to create the PDF.'>
 										<span class="spanbuttonwrapper">
 										    <span class='button'>
 											Create PDF
@@ -328,6 +346,7 @@
 					<tbody>
 						<tr class="chmTblRow">
 							<td>
+							    <div>
 							        <!-- WIDGET EXCLUDE -->
 								<div class="ngchmLogos" style="display: none">
 									<div class="msgBoxLogoLeft">
@@ -347,11 +366,12 @@
 								    <label>Progress:</label>
 								    <progress class="msgBoxProgressBar"></progress>
 								</div>
-								<div class='msgBoxButtons buttonBox'></div>
+							    </div>
 							</td>
 						</tr>
 					</tbody>
 				</table>
+				<div class='msgBoxButtons buttonBox'></div>
 			    </div>
 			</template>
 
@@ -413,14 +433,12 @@
 				    <button id="prefLayer_btn" data-for-tab='layerPrefs' class='clickableItem'><span class='button tab-button'>Heat Map Colors</span></button>
 				    <button id="prefRowsCols_btn" data-for-tab='rowsColsPrefs' class='clickableItem'><span class='button tab-button'>Rows &amp; Cols</span></button>
 				    <button id="prefClass_btn" data-for-tab='classPrefs' class='clickableItem'><span class='button tab-button'>Covariate Bars</span></button>
-				    <button id="prefKeys_btn" data-for-tab='keyPrefs' class='clickableItem'><span class='button tab-button'>Keys</span></button>
 				</div>
 				<div id="prefPrefs" class="prefSubPanel">
 				    <div id="infoPrefs"></div>
 				    <div id="layerPrefs"></div>
 				    <div id="rowsColsPrefs"></div>
 				    <div id="classPrefs"></div>
-				    <div id="keyPrefs"></div>
 				</div>
 				<div id="prefActions">
 				    <div class="buttonRow">

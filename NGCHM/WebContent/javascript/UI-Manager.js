@@ -54,9 +54,11 @@
 				    clearInterval(awaitingPluginData);
 				    PIM.warnAboutMissingPluginData();
 				    MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
-				    .then(() => {
+				    .then((success) => {
 					UHM.messageBoxCancel();
-					showViewerSaveNotification(heatMap);
+					if (success) {
+					    showViewerSaveNotification(heatMap);
+					}
 				    });
 			    }
 		    }, 1000);
@@ -129,11 +131,8 @@
 	* Save information about the data layers (i.e. 'flick info') to mapConfig
 	*/
 	function saveFlickInfoToMapConfig() {
-		mapConfig.panel_configuration['flickInfo'] = {};
 		try {
-			mapConfig.panel_configuration.flickInfo['flick_btn_state'] = document.getElementById('flick_btn').dataset.state;
-			mapConfig.panel_configuration.flickInfo['flick1'] = document.getElementById('flick1').value;
-			mapConfig.panel_configuration.flickInfo['flick2'] = document.getElementById('flick2').value;
+			mapConfig.panel_configuration['flickInfo'] = FLICK.getFlickSaveState();
 		} catch(err) {
 			console.error(err);
 		}
@@ -164,15 +163,18 @@
      **********************************************************************************/
     function zipSaveOutdated (heatMap) {
 	    const text = "<br>This NG-CHM contains an outdated heat map configuration. It has been updated locally to be compatible with the latest version of the NG-CHM Viewer.<br><br>To avoid this notice in the future, replace your original file with the version now being displayed.<br><br>";
-	    UHM.initMessageBox();
+	    const msgBox = UHM.initMessageBox();
+	    msgBox.classList.add ('file-viewer');
 	    UHM.setMessageBoxHeader("NG-CHM File Viewer");
 	    UHM.setMessageBoxText(text);
 	    addSaveToNgchmButton(() => {
 		UHM.showMsgBoxProgressBar();
 		MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter)
-		.then(() => {
+		.then((success) => {
 		    UHM.messageBoxCancel();
-		    showViewerSaveNotification(heatMap);
+		    if (success) {
+			showViewerSaveNotification(heatMap);
+		    }
 		});
 	    });
 	    addCancelSaveButton();
@@ -749,6 +751,7 @@
 	    UHM.setMessageBoxHeader("About NG-CHM Viewer");
 	    const mapVersion = isMapLoaded ? heatMap.getMapInformation().version_id : "N/A";
 	    const messageBox = UHM.getMessageTextBox ();
+	    messageBox.style.width = '40em';
 	    let text = "<p>The NG-CHM Heat Map Viewer is a dynamic, graphical environment for exploration of clustered or non-clustered heat map data in a web browser. It supports zooming, panning, searching, covariate bars, and link-outs that enable deep exploration of patterns and associations in heat maps.</p>";
 	    messageBox.innerHTML = text;
 
@@ -779,14 +782,6 @@
 	    messageBox.appendChild (UTIL.newElement ('P', {}, [
 		"The NG-CHM Viewer can be downloaded for stand-alone use. It is also incorporated into a variety of other platforms.",
 	    ]));
-	    UHM.setMessageBoxButton('viewer', {
-		type: 'text',
-		text: 'Download viewer',
-		tooltip: 'Downloads a copy of the NG-CHM viewer',
-	    }, function () {
-		UHM.messageBoxCancel();
-		MMGR.zipAppDownload();
-	    });
 	    UHM.setMessageBoxButton('videos', {
 		type: 'text',
 		text: 'Videos',
@@ -805,9 +800,25 @@
 		UHM.messageBoxCancel ();
 		TOUR.showTour(null);
 	    });
+	    UHM.setMessageBoxButton('viewer', {
+		type: 'text',
+		text: 'Download viewer',
+		tooltip: 'Downloads a copy of the NG-CHM viewer',
+	    }, function () {
+		UHM.messageBoxCancel();
+		MMGR.zipAppDownload();
+	    });
+	    UHM.setMessageBoxButton('showkeys', {
+		type: 'text',
+		text: 'Show Keys',
+		tooltip: 'Display keyboard controls',
+	    }, function () {
+		UHM.messageBoxCancel();
+		UIMGR.showKeysDialog ();
+	    });
 	    UHM.setMessageBoxButton('plugins', {
 		type: 'text',
-		text: 'About Plugins',
+		text: 'Show Plugins',
 		tooltip: 'Displays details of loaded/available plugins',
 		disabled: !isMapLoaded,
 		disabledReason: 'no map is loaded',
@@ -872,7 +883,8 @@
 	    const heatMap = MMGR.getHeatMap();
 	    var text;
 	    UHM.closeMenu();
-	    UHM.initMessageBox();
+	    const msgBox = UHM.initMessageBox();
+	    msgBox.classList.add('save-heat-map');
 	    UHM.setMessageBoxHeader("Save Heat Map");
 	    //Have changes been made?
 	    if (heatMap.getUnAppliedChanges()) {
@@ -924,12 +936,18 @@
 
     // Adds a "Cancel" button to an initialized UHM dialog.
     //
-    // Executes UHM.messageBoxCancel when clicked by default.  If cancelFunc
-    // is supplied, executes that instead.
-    function addCancelSaveButton(cancelFunc) {
+    // Executes UHM.messageBoxCancel when clicked by default.
+    function addCancelSaveButton() {
 	UHM.setMessageBoxButton('cancelSave',
 	    { type: 'text', text: 'Cancel', },
-	    cancelFunc || UHM.messageBoxCancel);
+	    (button) => {
+		if (UHM.isProgressBarVisible()) {
+		    UHM.cancelOperation();
+		    button.disabled = true;
+		} else {
+		    UHM.messageBoxCancel();
+		}
+	    });
     }
 
     const aboutButton = document.getElementById ('introButton');
@@ -1409,7 +1427,7 @@
 	);
 	dvAction ('MoveDownPage',
 	    "Move the primary normal, horizontal, or restricted horizontal view down one page",
-	    (e, mapItem) => { mapItem.currentRow += mapItem.dataPerRow; }
+	    (e, mapItem) => { mapItem.currentRow += mapItem.dataPerCol; }
 	);
 	dvAction ('MoveRibbonDown',
 	    "Move the primary normal, horizontal, restricted horizontal, or restricted vertical ribbon view down one row",
@@ -1439,7 +1457,7 @@
 	dvAction ('ZoomIn',
 	    "Zoom the primary detail view in one step",
 	    (e, mapItem) => {
-		DEV.zoomAnimation(mapItem.chm);
+		DEV.zoomAnimation(mapItem);
 	    }
 	);
 	dvAction ('ChangeZoomModeLeft',
@@ -1458,7 +1476,7 @@
 	dvAction ('ZoomOut',
 	    "Zoom the primary detail view out one step",
 	    (e, mapItem) => {
-		DEV.detailDataZoomOut(mapItem.chm);
+		DEV.detailDataZoomOut(mapItem);
 	    }
 	);
 	dvAction ('ChangeZoomModeRight',
@@ -1541,6 +1559,12 @@
 		}
 		return;
 	    }
+	    if (e.target.id === 'pdfCustomResolution') {
+		if (e.key === 'Enter') {
+		    e.target.dispatchEvent(new Event('change'));
+		}
+		return;
+	    }
 	    if (debug) console.log ({ m: 'KeyPress', key: e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, meta: e.metaKey, e });
 	    const actionName = keyToAction.get(fullKey (e));
 	    if (!actionName) {
@@ -1589,6 +1613,41 @@
 	    if (e.metaKey) mod += 'meta-';
 	    return mod + e.key;
 	}
+
+	/**********************************************************************************
+	 * FUNCTION - showKeysDialog: Show the keys dialog.
+	 **********************************************************************************/
+	UIMGR.showKeysDialog = showKeysDialog;
+	function showKeysDialog () {
+
+	    const msgBox = UHM.newMessageBox('keynav');
+	    UHM.setNewMessageBoxHeader(msgBox, "Key Actions");
+	    const messageBox = UHM.getNewMessageTextBox (msgBox);
+	    messageBox.innerHTML = '';
+
+	    const head = UTIL.newElement ('THEAD', {}, [
+		UTIL.newElement('TR', {}, [ "Key", "Action", "Description" ].map (h => UTIL.newElement ('TH', {}, h)))
+	    ]);
+
+	    // Populating key map body.
+	    const [ keyMap, actionTab ] = UTIL.getKeyData ('keyActions');
+	    const body = UTIL.newElement ('TBODY');
+	    keyMap.forEach ((action, key) => {
+		const help = actionTab.get(action).help;
+		body.appendChild (UTIL.newElement('TR', {},
+		    [ key, action, help ].map (val => UTIL.newElement ('TD', {}, val))));
+	    });
+	    const table = UTIL.newElement ('TABLE.keyTable', {}, [ head, body ]);
+	    messageBox.appendChild (table);
+
+	    UHM.setNewMessageBoxButton(msgBox, 'close', {
+		type: 'text',
+		text: 'Close',
+		tooltip: 'Closes this dialog',
+		default: true,
+	    });
+	    UHM.displayNewMessageBox(msgBox);
+	};
 
     }
     /*********************************************************************************************/

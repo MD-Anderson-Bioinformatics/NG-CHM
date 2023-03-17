@@ -80,23 +80,6 @@
     };
 
     /*********************************************************************************************
-     * FUNCTION:  getMapItemFromEvent - The purpose of this function is to retrieve a detail heat map
-     * object using the event.
-     * FIXME: BMB: Function not used.
-     *********************************************************************************************/
-    DVW.getMapItemFromEvent = function (e) {
-	    let mapItem = null;
-	    if (e.pane !== null) {
-		    mapItem = DVW.getMapItemFromPane(e.pane);
-	    } else if (e.currentTarget !== null) {
-		    mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
-	    } else {
-		console.error ("mapItem event has neither paneId or currentTarget. Returning null.");
-	    }
-	    return mapItem;
-    };
-
-    /*********************************************************************************************
      * FUNCTION:  anyVisible - Return true if any Detail View is visible.
      *********************************************************************************************/
     DVW.anyVisible = function anyVisible () {
