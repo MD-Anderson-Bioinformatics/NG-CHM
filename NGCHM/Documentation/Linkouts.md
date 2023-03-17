@@ -204,6 +204,7 @@ linkouts.addPlugin(plugin);
 ```
 
 `plugin` is an object with the following fields:
+
 <dl>
 <dt>name</dt><dd>The plugin's name</dd>
 <dt>description</dt><dd>A short description of the plugin.</dd>
@@ -213,7 +214,9 @@ linkouts.addPlugin(plugin);
 <dt>linkouts:</dt><dd>An array of axis linkouts. See below.</dd>
 <dt>matrixLinkouts:</dt><dd>An array of matrix linkouts. See below.</dd>
 </dl>
+
 Each element of the `linkouts` field is an object with the following fields:
+
 <dl>
 <dt>menuEntry</dt><dd>Menu entry for the linkout.</dd>
 <dt>typeName</dt><dd>Type of labels expected by the linkout.</dd>
@@ -221,7 +224,9 @@ Each element of the `linkouts` field is an object with the following fields:
 <dt>linkoutFn</dt><dd>Function called when the linkout is selected. It is passed a string array. If `selectType == linkouts.SINGLE_SELECT` the array will contain one element.</dd>
 <dt>attributes:</dt><dd>An array of attributes (strings) that this linkout requires. Defaults to none.</dd>
 </dl>
+
 Each element of the `matrixLinkouts` field is an object with the following fields:
+
 <dl>
 <dt>menuEntry</dt><dd>Menu entry for the linkout.</dd>
 <dt>typeName1</dt><dd>Type of labels on one axis expected by the linkout.</dd>
