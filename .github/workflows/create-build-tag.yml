@@ -83,7 +83,7 @@ jobs:
       - name: latest commit
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ needs.make_build_tag.outputs.tag_name }}
       - name: Set up JDK for java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v2.5.1
         with:
