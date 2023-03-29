@@ -79,7 +79,7 @@ jobs:
     env:
       Artifacts_REPOSITORY: "MD-Anderson-Bioinformatics/NG-CHM-Artifacts/NG-CHM-Artifacts"
       Artifacts_BRANCH: "main"
-      JAVA_VERSION: 17
+      JAVA_VERSION: 8
     steps:
       - name: latest commit
         uses: actions/checkout@v3
