@@ -122,9 +122,15 @@ jobs:
           cp ../NGCHM/ngchmWidget-min.js viewer.standalone/
           cp ../NGCHM/ngchmEmbed-min.js viewer.standalone/
           cp ../NGCHM/WebContent/ngChmApp.html viewer.standalone/
+          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.standalone/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.standalone/build_version.txt
           cp -r ../NGCHM/WebContent/server.app viewer.build/
+          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.build/server.app/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.build/server.app/build_version.txt
           rm -rf ../NGCHM/WebContent/server.app
           cp -r ../NGCHM/WebContent/ viewer.source/
+          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.source/WebContent/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.source/WebContent/build_version.txt
       - name: Commit, tag, and push to Artifacts repo
         run: |
           cd Artifacts
