@@ -77,7 +77,7 @@ jobs:
     strategy:
       max-parallel: 1
     env:
-      Artifacts_REPOSITORY: "MD-Anderson-Bioinformatics/NG-CHM-Artifacts/NG-CHM-Artifacts"
+      Artifacts_REPOSITORY: "MD-Anderson-Bioinformatics/NG-CHM-Artifacts"
       Artifacts_BRANCH: "main"
       JAVA_VERSION: 8
     steps:
@@ -110,18 +110,21 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: ${{ env.Artifacts_REPOSITORY }}
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           ref: ${{ env.Artifacts_BRANCH }}
           path: "./Artifacts"
       - name: Copy artifacts
         run: |
           cd Artifacts
-          cp ../NGCHM/ShaidyMapGen.jar jar_files/
-          cp ../NGCHM/GalaxyMapGen.jar jar_files/
-          cp ../NGCHM/ngchmWidget-min.js javascript_files/
-          cp ../NGCHM/ngchmEmbed-min.js javascript_files/
-          cp ../NGCHM/WebContent/ngChmApp.html html_files/
-          cp -r ../NGCHM/WebContent/server.app .
+          cp ../NGCHM/ShaidyMapGen.jar shaidymapgen/
+          cp ../NGCHM/GalaxyMapGen.jar galaxymapgen/
+          cp ../NGCHM/GUIBuilderMapGen.jar guibuildermapgen/
+          cp ../NGCHM/ngchmWidget-min.js viewer.standalone/
+          cp ../NGCHM/ngchmEmbed-min.js viewer.standalone/
+          cp ../NGCHM/WebContent/ngChmApp.html viewer.standalone/
+          cp -r ../NGCHM/WebContent/server.app viewer.build/
+          rm -rf ../NGCHM/WebContent/server.app
+          cp -r ../NGCHM/WebContent/ viewer.source/
       - name: Commit, tag, and push to Artifacts repo
         run: |
           cd Artifacts
