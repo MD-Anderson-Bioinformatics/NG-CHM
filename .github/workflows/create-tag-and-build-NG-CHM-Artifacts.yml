@@ -26,6 +26,7 @@
 ##
 ##     - ShaidyMapGen.jar
 ##     - GalaxyMapGen.jar
+##     - GUIBuilderMapGen.jar
 ##     - ngchmWidget-min.js
 ##     - ngchmEmbed-min.js
 ##     - WebContent/ngChmApp.html
@@ -97,15 +98,14 @@ jobs:
         run: |
           cd NGCHM
           ant -f build_galaxymapgen.xml
-      - name: Build NG-CHM Standalone
-        ## Builds: ngchmWidget-min.js, ngchmEmbed-min.js, WebContent/ngChmApp.html, WebContent/server.app
+      - name: Build GUIBuilderMapGen.jar
+        run: |
+          cd NGCHM
+          ant -f build_guibuildermapgen.xml
+      - name: Build NG-CHM standalone files and server.app
         run: |
           cd NGCHM
           ant -f build_ngchmApp.xml
-      - name: Build BuilderMapGen.jar
-        run: |
-          cd NGCHM
-          ant -f build_mapgen.xml
       - name: Check out Artifacts repo
         uses: actions/checkout@v3
         with:

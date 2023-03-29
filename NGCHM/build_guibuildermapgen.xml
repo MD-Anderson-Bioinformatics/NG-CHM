@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="create_run_jar" name="Create Runnable Jar for Project NGCHM MapGen.jar. This JAR is utilized to provide HeatmapDataGenerator functionality to the NG-CHM GUI Builder project">
+<project default="create_run_jar" name="Create Runnable Jar for Project NGCHM GUIBuilderMapGen.jar. This JAR is utilized to provide HeatmapDataGenerator functionality to the NG-CHM GUI Builder project">
     <!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
     <!--define folder properties-->
@@ -9,7 +9,7 @@
     <property name="dir.buildfile" value="."/>
     <property name="dir.workspace" value="${dir.buildfile}"/>
     <property name="dir.jarfile" value="."/>
-    <property name="mapgen.path" value="${dir.jarfile}/MapGen.jar"/>
+    <property name="mapgen.path" value="${dir.jarfile}/GUIBuilderMapGen.jar"/>
 
 	<!-- Clean the NGCHM Project -->
     <target name="clean">
@@ -22,7 +22,7 @@
         <javac srcdir="${src.dir}" destdir="${classes.dir}"  debug="true" debuglevel="lines" classpath="./WebContent/WEB-INF/lib/json-simple-1.1.1.jar:./WebContent/WEB-INF/lib/pdfbox-2.0.4.jar:./WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar"/>
     </target>
 
-	<!-- Execute the JAVA class to build the MapGen JAR-->
+	<!-- Execute the JAVA class to build the GUIBuilderMapGen JAR-->
 	<target name="create_run_jar" depends="compile">
         <jar destfile="${mapgen.path}" filesetmanifest="mergewithoutmain">
             <manifest>
