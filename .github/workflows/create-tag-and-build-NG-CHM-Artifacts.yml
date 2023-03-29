@@ -86,7 +86,7 @@ jobs:
         with:
           ref: ${{ needs.make_build_tag.outputs.tag_name }}
       - name: Set up JDK for java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v2.5.1
+        uses: actions/setup-java@v3
         with:
           java-version: "${{ env.JAVA_VERSION }}"
           distribution: 'temurin'
