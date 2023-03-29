@@ -61,7 +61,7 @@ jobs:
       # https://github.com/marohrdanz/build-number-tag
       # Output from this step is tag name as 'build_number'.
       - name: Create Build Number Tag
-        id: make_build_tag
+        id: make_tag
         uses: marohrdanz/build-number-tag@v1.1.0
         with:
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
@@ -81,7 +81,7 @@ jobs:
       Artifacts_BRANCH: "main"
       JAVA_VERSION: 8
     steps:
-      - name: latest commit
+      - name: Checkout Tag Created In "Creating Build Number Tag" Job
         uses: actions/checkout@v3
         with:
           ref: ${{ needs.make_build_tag.outputs.tag_name }}
