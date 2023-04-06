@@ -14,8 +14,9 @@ RUN apt-get update && apt-get install -y rsync zip
 COPY NGCHM /NGCHM/
 
 ENV VIEWER=/artifacts/viewer
+ENV WC=/NGCHM/WebContent
 RUN mkdir -p ${VIEWER} &&\
-    rsync -a --delete --exclude WEB-INF --exclude META-INF NGCHM/WebContent/ ${VIEWER}/ &&\
+    rsync -a ${WC}/chm.html ${WC}/chmHelp.html ${WC}/icons.svg ${WC}/css ${WC}/images ${WC}/javascript ${VIEWER}/ &&\
     (cd ${VIEWER}/ && zip -q -r -9 NGCHM_FileApp.zip .)
 
 
