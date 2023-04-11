@@ -841,8 +841,12 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	DET.detInitGl(mapItem);
 	mapItem.updateSelection();
 	try {
-	    document.getElementById("viewport").setAttribute("content", "height=device-height");
-	    document.getElementById("viewport").setAttribute("content", "");
+	    const viewport = document.getElementById ("viewport");
+	    if (viewport) {
+		// In case viewport element is missing in widgetized applications.
+		viewport.setAttribute("content", "height=device-height");
+		viewport.setAttribute("content", "");
+	    }
 	} catch(err) {
 	    console.error("Unable to adjust viewport content attribute");
 	}
@@ -895,8 +899,12 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	clearDendroSelection(mapItem);
 	mapItem.updateSelection();
 	try {
-	    document.getElementById("viewport").setAttribute("content", "height=device-height");
-	    document.getElementById("viewport").setAttribute("content", "");
+	    const viewport = document.getElementById ("viewport");
+	    if (viewport) {
+		// In case viewport element is missing in widgetized applications.
+		viewport.setAttribute("content", "height=device-height");
+		viewport.setAttribute("content", "");
+	    }
 	} catch(err) {
 	    console.error("Unable to adjust viewport content attribute");
 	}
