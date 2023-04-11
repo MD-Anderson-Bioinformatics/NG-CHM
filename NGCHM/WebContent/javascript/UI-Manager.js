@@ -1546,7 +1546,8 @@
 	]);
 
 	UTIL.setKeyData ('keyActions', [ keyToAction, actions ]);
-	document.addEventListener ("keydown", keyNavigate);
+	const navElement = document.getElementById('NGCHMEmbed') || document;
+	navElement.addEventListener ("keydown", keyNavigate);
 
 	function keyNavigate (e) {
 	    const debug = false;
