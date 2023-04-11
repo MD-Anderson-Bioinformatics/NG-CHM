@@ -69,7 +69,13 @@
 	    <targetfile/>
 	</apply>
 	<exec executable="git" outputproperty="commithash"><arg value="rev-parse"/><arg value="--short"/><arg value="HEAD"/></exec>
-	<echo file="ngchmEmbed-min.js" append="true">/* latest commit hash: ${commithash}*/${line.separator}</echo>
+	<echo file="ngchmEmbed-min.js" append="true">/* commit hash: ${commithash} */${line.separator} </echo>
+	<exec executable="git" outputproperty="latest_tag">
+	    <arg value="describe"/>
+	    <arg value="--tags"/>
+	    <arg value="--abbrev=0"/>
+	</exec>
+	<echo file="ngchmEmbed-min.js" append="true">/* build tag: ${latest_tag} */${line.separator}</echo>
 	</target>  
 
 	<!-- Execute the JAVA NGCHM_AppGenerator to create the stand-alone viewer ngChmApp.html file -->
@@ -106,7 +112,13 @@
 	    </classpath>
 	</java>
 	<exec executable="git" outputproperty="commithash"><arg value="rev-parse"/><arg value="--short"/><arg value="HEAD"/></exec>
-	<echo file="ngchmWidget-min.js" append="true">/* latest commit hash: ${commithash}*/${line.separator}</echo>
+	<echo file="ngchmWidget-min.js" append="true">/* commit hash: ${commithash} */${line.separator}</echo>
+	<exec executable="git" outputproperty="latest_tag">
+	    <arg value="describe"/>
+	    <arg value="--tags"/>
+	    <arg value="--abbrev=0"/>
+	</exec>
+	<echo file="ngchmWidget-min.js" append="true">/* build tag: ${latest_tag} */${line.separator}</echo>
 	</target>
 
 	<!-- Target to call the steps to build just the ngChmApp.html stand-alone viewer file -->

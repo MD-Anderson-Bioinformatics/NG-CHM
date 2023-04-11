@@ -1,0 +1,144 @@
+##
+## GitHub Workflow of 2 sequential jobs:
+##
+## 1. make_build_tag
+##
+##     Adds a incremental build tag to the repo based on:
+##
+##      - Version number in CompatibilityManager.js
+##      - Existing '-build-' tags in repo
+##
+##     For example, if there are exiting tags in the repo:
+##
+##      - 2.22.1-build-4
+##      - 2.21.0-build-3
+##      - 2.20.1-build-2
+##
+##      and the version from CompatibilityManager.js is '2.22.1', the new tag
+##      will be: 2.22.1-build-5.
+##
+## 2. build_artifacts
+##
+##     Builds all artifacts from Dockerfile and checks them into the 'NG-CHM-Artifacts'
+##     repo with the same tag as the build tag from the first job.
+##
+##     Artifacts built:
+##
+##     - ShaidyMapGen.jar
+##     - GalaxyMapGen.jar
+##     - GUIBuilderMapGen.jar
+##     - ngchmWidget-min.js
+##     - ngchmEmbed-min.js
+##     - WebContent/ngChmApp.html
+##     - WebContent/server.app (directory)
+##
+
+on:
+  push:
+    branches:
+      main
+
+jobs:
+  make_build_tag:
+    runs-on: ubuntu-latest
+    name: Creating Build Number Tag
+    strategy:
+      max-parallel: 1
+    steps:
+      # https://github.com/marketplace/actions/checkout
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}
+      # https://github.com/marohrdanz/extract-version-from-file
+      # Output from this step is version from CompatibilityManager as 'version_number'.
+      - name: Get version number
+        id: get_version_number
+        uses: marohrdanz/extract-version-from-file@v1.0.0
+        with:
+          file_path: 'NGCHM/WebContent/javascript/CompatibilityManager.js'
+          start_string: 'CM.version = '
+      # https://github.com/marohrdanz/build-number-tag
+      # Output from this step is tag name as 'build_number'.
+      - name: Create Build Number Tag
+        id: make_tag
+        uses: marohrdanz/build-number-tag@v1.1.0
+        with:
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
+          prefix: '-build-'
+          version_prefix: ${{ steps.get_version_number.outputs.version_number }}
+    outputs:
+      build_number: ${{ steps.make_tag.outputs.build_number }}
+      tag_name: ${{ steps.make_tag.outputs.tag_name }}
+  build_artifacts:
+    runs-on: ubuntu-latest
+    name: Build Artifacts
+    needs: make_build_tag
+    strategy:
+      max-parallel: 1
+    env:
+      Artifacts_REPOSITORY: "MD-Anderson-Bioinformatics/NG-CHM-Artifacts"
+      Artifacts_BRANCH: "main"
+      JAVA_VERSION: 8
+    steps:
+      - name: Checkout Tag Created In "Creating Build Number Tag" Job
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ needs.make_build_tag.outputs.tag_name }}
+      - name: Set up JDK for java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: "${{ env.JAVA_VERSION }}"
+          distribution: 'temurin'
+      - name: Build ShaidyMapGen.jar
+        run: |
+          cd NGCHM
+          ant -f build_shaidyRmapgen.xml
+      - name: Build GalaxyMapGen.jar
+        run: |
+          cd NGCHM
+          ant -f build_galaxymapgen.xml
+      - name: Build GUIBuilderMapGen.jar
+        run: |
+          cd NGCHM
+          ant -f build_guibuildermapgen.xml
+      - name: Build NG-CHM standalone files and server.app
+        run: |
+          cd NGCHM
+          ant -f build_ngchmApp.xml
+      - name: Check out Artifacts repo
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.Artifacts_REPOSITORY }}
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
+          ref: ${{ env.Artifacts_BRANCH }}
+          path: "./Artifacts"
+      - name: Copy artifacts
+        run: |
+          cd Artifacts
+          cp ../NGCHM/ShaidyMapGen.jar shaidymapgen/
+          cp ../NGCHM/GalaxyMapGen.jar galaxymapgen/
+          cp ../NGCHM/GUIBuilderMapGen.jar guibuildermapgen/
+          cp ../NGCHM/ngchmWidget-min.js viewer.standalone/
+          cp ../NGCHM/ngchmEmbed-min.js viewer.standalone/
+          cp ../NGCHM/WebContent/ngChmApp.html viewer.standalone/
+          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.standalone/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.standalone/build_version.txt
+          cp -r ../NGCHM/WebContent/server.app viewer.build/
+          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.build/server.app/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.build/server.app/build_version.txt
+          rm -rf ../NGCHM/WebContent/server.app
+          cp -r ../NGCHM/WebContent/ viewer.source/
+          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.source/WebContent/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.source/WebContent/build_version.txt
+      - name: Commit, tag, and push to Artifacts repo
+        run: |
+          cd Artifacts
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          git commit -m "Build from NG-CHM tag ${{ needs.make_build_tag.outputs.tag_name }}"
+          git push origin ${{ env.Artifacts_BRANCH }}
+          git tag ${{ needs.make_build_tag.outputs.tag_name }}
+          git push origin ${{ needs.make_build_tag.outputs.tag_name }}
+

@@ -53,13 +53,13 @@ RUN mkdir -p ${STANDALONE} &&\
     cp WebContent/ngChmApp.html ${STANDALONE} &&\
     cp -R WebContent/server.app /artifacts/
 
-# Stage 4: Create Builder MapGen
+# Stage 4: Create GUIBuilderMapGen
 FROM ant AS builder
 COPY NGCHM /NGCHM/
 
 ENV BMAPGEN=/artifacts/builder
 RUN mkdir -p ${BMAPGEN} &&\
-    ant -f NGCHM/build_mapgen.xml -Dmapgen.path=${BMAPGEN}/BuilderMapGen.jar
+    ant -f NGCHM/build_guibuildermapgen.xml -Dmapgen.path=${BMAPGEN}/GUIBuilderMapGen.jar
 
 # Final stage: copy artifacts from previous stages into a minimal layer
 FROM multiarch/true:x86_64
