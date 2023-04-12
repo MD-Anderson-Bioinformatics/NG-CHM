@@ -249,6 +249,9 @@
 	    if (options.indexOf('noBuilderUploads') !== -1) {
 		LNK.enableBuilderUploads = false;
 	    }
+	    if (options.indexOf('requireFocus') !== -1) {
+		UTIL.setKeyData ('require-focus', true);
+	    }
     }
 
     /**********************************************************************************

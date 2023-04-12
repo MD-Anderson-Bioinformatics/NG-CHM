@@ -450,6 +450,7 @@
 		    }
 	    }
 	    document.getElementById("summary_canvas").addEventListener('wheel', DEV.handleScroll, UTIL.passiveCompat({capture: false, passive: false}));
+	    initializeKeyNavigation();
     };
 
     /**********************************************************************************
@@ -1316,7 +1317,7 @@
      * Handle user key press events received at the document level.
      *
      *********************************************************************************************/
-    {
+    function initializeKeyNavigation() {
 	// Table of all available keyboard actions.
 	const actions = new Map();
 
@@ -1546,7 +1547,11 @@
 	]);
 
 	UTIL.setKeyData ('keyActions', [ keyToAction, actions ]);
-	document.addEventListener ("keydown", keyNavigate);
+	let navElement = document;
+	if (UTIL.getKeyData ('require-focus')) {
+	    navElement = document.getElementById('NGCHMEmbed');
+	}
+	navElement.addEventListener ("keydown", keyNavigate);
 
 	function keyNavigate (e) {
 	    const debug = false;
@@ -1647,9 +1652,9 @@
 		default: true,
 	    });
 	    UHM.displayNewMessageBox(msgBox);
-	};
-
+	}
     }
+
     /*********************************************************************************************/
 
 	/*
