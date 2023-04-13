@@ -314,6 +314,7 @@ function updateShowBounds () {
 		createPdfButton.disabled = false;
 	    }
 	};
+	pdfCustomResolution.dataset.tooltip = 'Enter DPI value between ' + minDPI + ' and ' + maxDPI;
 	pdfCustomResolution.onchange = function (e) {
 	    if (pdfResolution.value == 'custom') checkResolution();
 	};
