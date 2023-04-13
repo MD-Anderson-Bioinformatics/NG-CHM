@@ -1083,7 +1083,7 @@ UPM.setupLayerPrefs = function(e, prefprefs) {
 		    var colorId = elementIdPrefix + "_color" + j;
 		    var breakPtInput = "&nbsp;&nbsp;<input name='"+threshId+"_breakPref' id='"+threshId+"_breakPref' value='"+threshold+"' maxlength='8' size='8'>";
 		    var colorInput = "<input class='spectrumColor' type='color' name='"+colorId+"_colorPref' id='"+colorId+"_colorPref' value='"+color+"'>";
-		    if (thresholds.length == 1) {
+		    if (thresholds.length < 3) {
 			    UHM.setTableRow(breakpts, [breakPtInput, colorInput, buttonsDiv]);
 		    } else {
 			    const delButton = UTIL.newSvgButton ('icon-big-x', {
