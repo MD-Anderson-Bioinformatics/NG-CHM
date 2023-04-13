@@ -35,8 +35,8 @@
 
 	const flickStateOK = savedState.flick_btn_state == 'flickUp' || savedState.flick_btn_state == 'flickDown';
 	flickViewsElement.dataset.state = flickStateOK ? savedState.flick_btn_state : 'flickUp';
-	flickDrop1.value = savedState.flick1 in layers ? savedState.flick1 : layers[0];
-	if (savedState.flick2 in layers) {
+	flickDrop1.value = layers.includes (savedState.flick1) ? savedState.flick1 : layers[0];
+	if (layers.includes (savedState.flick2)) {
 	    flickDrop2.value = savedState.flick2;
 	} else {
 	    // Make flick2 default different from flick1 value if possible.
