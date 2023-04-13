@@ -1927,7 +1927,7 @@ var linkoutsVersion = 'undefined';
 							UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 							return;
 						}
-						SRCH.clearAllAxisSearchItems (otherAxis);
+						SRCH.clearSearchItems (otherAxis);
 						SRCH.setAxisSearchResultsVec (otherAxis, sss[cid].data);
 						SRCH.redrawSearchResults ();
 					};
@@ -2083,7 +2083,7 @@ var linkoutsVersion = 'undefined';
 								UHM.systemMessage('Nothing to SHOW','To add to the selection: highlight labels on the appropriate axis of the NG-CHM and click "GRAB"');
 								return;
 							}
-							SRCH.clearAllAxisSearchItems (axisNameU);
+							SRCH.clearSearchItems (axisNameU);
 							SRCH.setAxisSearchResultsVec (axisNameU, sss[cid].data[idx]);
 							SRCH.redrawSearchResults ();
 						}
