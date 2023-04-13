@@ -2341,7 +2341,7 @@ DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, class
 	const rowClassBarWidth = mapItem.getScaledVisibleCovariates("row").totalHeight();
 
 	//offset value for width of row class bars
-	let offset = (rowClassBarWidth + 2)*DRAW.BYTE_PER_RGBA;
+	const offset = (rowClassBarWidth + 1)*DRAW.BYTE_PER_RGBA;
 	for (let h = 0; h < matrix.length; h++) {
 		pos += offset;
 		const row = matrix[h];
@@ -2355,6 +2355,7 @@ DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, class
 			    pos+=DRAW.BYTE_PER_RGBA;
 			}
 		}
+		pos += DRAW.BYTE_PER_RGBA;
 	}
 	return pos;
 };
