@@ -668,13 +668,13 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more
 	//than 1 pixel, scale calculates the appropriate height/width.
-	if (mapItem.mode == 'RIBBONH_DETAIL') { // mapItem.subDendroMode === 'Row') {
+	if (mapItem.mode.startsWith('RIBBONH') && mapItem.selectedStart != 0) { // mapItem.subDendroMode === 'Row') {
 	    if (mapItem.currentRow == 1 && mapItem.dataPerCol == mapItem.heatMap.getTotalRows()) {
 		setFullMap = true;
 	    } else {
 		DET.scaleViewHeight(mapItem);
 	    }
-	} else if (mapItem.mode == 'RIBBONV_DETAIL') { // subDendroMode === 'Column') {
+	} else if (mapItem.mode.startsWith('RIBBONV') && mapItem.selectedStart != 0) { // subDendroMode === 'Column') {
 	    if (mapItem.currentCol == 1 && mapItem.dataPerRow == mapItem.heatMap.getTotalCols()) {
 		setFullMap = true;
 	    } else {
@@ -685,6 +685,14 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	}
 
 	if (setFullMap) {
+	    // Clear any restricted mode and dendrograms.
+	    mapItem.selectedStart = 0;
+	    if (SUM.rowDendro) {
+		SUM.rowDendro.clearSelectedRegion();
+	    }
+	    if (SUM.colDendro) {
+		SUM.colDendro.clearSelectedRegion();
+	    }
 	    DVW.setMode(mapItem, 'FULL_MAP');
 	    DET.scaleViewHeight(mapItem);
 	    DET.scaleViewWidth(mapItem);

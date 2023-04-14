@@ -802,12 +802,12 @@ DEV.detailDataZoomIn = function (mapItem) {
 		}
 		if ((mode == 'RIBBONH') || (mode == 'RIBBONH_DETAIL')) {
 			mapItem.currentRow = row;
-			if (mode == 'RIBBONH_DETAIL') {
+			if (selectedStart != 0) {
 			    mapItem.selectedStart = selectedStart;
 			    mapItem.selectedStop = selectedStop;
 			}
 			DET.detailHRibbon(mapItem);
-			if (mode == 'RIBBONH_DETAIL') {
+			if (selectedStart != 0) {
 			    // Go back into 'full ribbon' mode
 			    DEV.detailDataZoomOut (mapItem);
 			    // Remove unwanted mode history
@@ -815,12 +815,12 @@ DEV.detailDataZoomIn = function (mapItem) {
 			}
 		} else if  ((mode == 'RIBBONV') || (mode == 'RIBBONV_DETAIL')) {
 			mapItem.currentCol = col;
-			if (mode == 'RIBBONV_DETAIL') {
+			if (selectedStart != 0) {
 			    mapItem.selectedStart = selectedStart;
 			    mapItem.selectedStop = selectedStop;
 			}
 			DET.detailVRibbon(mapItem);
-			if (mode == 'RIBBONV_DETAIL') {
+			if (selectedStart != 0) {
 			    // Go back into 'full ribbon' mode
 			    DEV.detailDataZoomOut (mapItem);
 			    // Remove unwanted mode history
