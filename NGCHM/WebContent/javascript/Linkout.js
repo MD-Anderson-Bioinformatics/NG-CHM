@@ -259,7 +259,6 @@ var linkoutsVersion = 'undefined';
 	//this function goes through searchItems and returns the proper label type for linkout functions to use
 	LNK.getLabelsByType = function(axis, linkout){
 		var searchLabels;
-		var labelDataMatrix;
 		const heatMap = MMGR.getHeatMap();
 		var labels = axis == 'Row' ? heatMap.getRowLabels()["labels"] : axis == "Column" ? heatMap.getColLabels()['labels'] :
 			axis == "ColumnCovar" ? heatMap.getColClassificationConfigOrder() : axis == "RowCovar" ? heatMap.getRowClassificationConfigOrder() :
@@ -311,9 +310,6 @@ var linkoutsVersion = 'undefined';
 					    searchLabels["Column"] = heatMap.getAxisLabels("Column")["labels"];
 				    }
 				}
-				if (linkout.title === 'Download selected matrix data to file') {
-					labelDataMatrix = createMatrixData(heatMap, searchLabels);
-				}
 			}
 		} else { // if this linkout was added using addMatrixLinkout
 			searchLabels = {"Row" : [], "Column" : []};
@@ -355,9 +351,44 @@ var linkoutsVersion = 'undefined';
 		}
 	}
 
+	function downloadAllMatrixData (selectedLabels, axis) {
+	    const heatMap = MMGR.getHeatMap();
+	    const selection = {
+		rowLabels: MMGR.getActualLabels ('row'),
+		colLabels: MMGR.getActualLabels ('column'),
+		rowItems: null,
+		colItems: null,
+	    };
+	    selection.rowItems = selection.rowLabels.map((v,i) => i+1);
+	    selection.colItems = selection.colLabels.map((v,i) => i+1);
+	    createMatrixData (heatMap, selection);
+	}
 
-	function createMatrixData (heatMap, searchLabels) {
-		//console.log ({ m: 'LNK.createMatrixData', searchLabels});
+	function downloadSelectedMatrixData (selectedLabels, axis) {
+	    const heatMap = MMGR.getHeatMap();
+	    const selection = {
+		rowLabels: selectedLabels.Row,
+		colLabels: selectedLabels.Column,
+		rowItems: getAxisItems ("Row"),
+		colItems: getAxisItems ("Column"),
+	    };
+	    createMatrixData (heatMap, selection);
+
+	    function getAxisItems (axis) {
+		const searchItems = SRCHSTATE.getAxisSearchResults (axis);
+		//Check to see if we need new searchItems because entire axis is selected by
+		//default of no items being selected on opposing axis, Otherwise, use
+		//searchItems selected.
+		if (searchItems.length > 0) {
+		    return searchItems;
+		} else  {
+		    return LNK.getEntireAxisSearchItems(selectedLabels,axis);
+		}
+	    }
+	}
+
+	function createMatrixData (heatMap, selection) {
+		//console.log ({ m: 'LNK.createMatrixData', selection});
 		const win = heatMap.getNewAccessWindow({
 		    layer: heatMap.getCurrentDL(),
 		    level: MAPREP.DETAIL_LEVEL,
@@ -367,74 +398,47 @@ var linkoutsVersion = 'undefined';
 		    numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
 		});
 		win.onready((win) => {
-		    createMatrixDataTsv(heatMap, win, searchLabels);
+		    createMatrixDataTsv(heatMap, win, selection);
 		});
 	};
 
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
-	function createMatrixDataTsv (heatMap, accessWindow, searchLabels) {
-		var matrix = new Array();
+	function createMatrixDataTsv (heatMap, accessWindow, selection) {
 
-		let rowSearchItems = SRCHSTATE.getAxisSearchResults("Row");
-		//Check to see if we need new searchItems because entire axis is selected by 
-		//default of no items being selected on opposing axis, Otherwise, use
-		//searchItems selected.
-		if (rowSearchItems.length === 0) {
-			rowSearchItems = LNK.getEntireAxisSearchItems(searchLabels,"Row");
+		const { labels: rowLabels, items: rowItems } = deGap (selection.rowLabels, selection.rowItems);
+		const { labels: colLabels, items: colItems } = deGap (selection.colLabels, selection.colItems);
+
+		const matrix = new Array();
+		// Push column headers: empty field followed by column labels.
+		matrix.push ([""].concat (colLabels));
+		// Push rows: row label followed by values for each column of that row.
+		for (let row = 0; row < rowLabels.length; row++) {
+		    const rowItem = rowItems[row];
+		    const rowValues = colItems.map (colItem => accessWindow.getValue (rowItem, colItem));
+		    matrix.push ([rowLabels[row]].concat (rowValues));
 		}
-		let colSearchItems = SRCHSTATE.getAxisSearchResults("Column");
-		if (colSearchItems.length === 0) {
-			colSearchItems = LNK.getEntireAxisSearchItems(searchLabels,"Column");
-		}
-		
-		//Load up initial array with column headers
-		let matrixCtr = 0;
-		for (var j = 0; j < searchLabels["Row"].length+1; j++) {
-			//Skip any gaps in data (matrixCtr counts rows actually written to new matrix)
-			if (searchLabels["Row"][j] !== '') {
-				matrix[matrixCtr] = new Array();
-				if (j == 0) {
-					matrix[matrixCtr].push(" ");
-					for (var i = 0; i < searchLabels["Column"].length; i++) {
-						if (searchLabels["Column"][i] !== "") {
-							matrix[matrixCtr].push(searchLabels["Column"][i])
-						}
-					}
- 				}
-				matrixCtr++;
-			}
-		}
-		
-		//Load up an array containing data values for the selected data matrix
-		var dataMatrix = new Array();
-		rowSearchItems.forEach( x => {
-			colSearchItems.forEach( y => {
-				let matrixValue = accessWindow.getValue(x,y);
-				//Skip any values representing gaps in the heat map (minValues has been rounded down by 1)
-				if (matrixValue !== MAPREP.minValues-1) {
-					dataMatrix.push(matrixValue);
-				}
-			});
-		});
-		//Fill in the remainder of the matrix with labels from searchLabels and data from dataMatrix
-		var dataIdx = 0;
-		matrixCtr = 1;
-		for (var k = 1; k <= searchLabels["Row"].length; k++) {
-			//Skip row labels representing gaps in heat map
-			if (searchLabels["Row"][k-1] !== '') {
-				matrix[matrixCtr].push(searchLabels["Row"][k-1]);
-				for (var i = 1; i < searchLabels["Column"].length+1; i++) {
-					//Skip column labels representing gaps in heat map
-					if (searchLabels["Column"][i-1] !== '') {
-						matrix[matrixCtr].push(dataMatrix[dataIdx])
-						dataIdx++;
-					}
-				}
-				matrixCtr++;
-			}
-		}
+		// Make matrix available for download.
 		downloadSelectedData (heatMap, matrix, "Matrix");
+
+		// Helper function:
+		// Remove gaps from labels and items.
+		// Gaps are indicated by an empty label ('').
+		function deGap (labels, items) {
+		    if (labels.length != items.length) {
+			console.error ('deGap: length mismatch between labels and items', labels, items);
+			return { labels: [], items: [], };
+		    }
+		    const newLabels = [];
+		    const newItems = [];
+		    for (let i = 0; i < labels.length; i++) {
+			if (labels[i] != '') {
+			    newLabels.push (labels[i]);
+			    newItems.push (items[i]);
+			}
+		    }
+		    return { labels: newLabels, items: newItems, };
+		}
 	};
 
 	//This function creates a temporary searchItems object array and
@@ -834,7 +838,8 @@ var linkoutsVersion = 'undefined';
 		LNK.addLinkout("Download covariate data for all rows", "RowCovar", linkouts.MULTI_SELECT, downloadEntireClassBar,null,0);
 		LNK.addLinkout("Download covariate data for selected rows", "RowCovar", linkouts.MULTI_SELECT, downloadPartialClassBar,null,1);
 		LNK.addLinkout("Copy selected labels to clipboard", "Matrix", linkouts.MULTI_SELECT,LNK.copySelectionToClipboard,null,0);
-		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT,null,null,0);
+		LNK.addLinkout("Download all matrix data to file", "Matrix", LNK.EMPTY_SELECT, downloadAllMatrixData, null, 0);
+		LNK.addLinkout("Download selected matrix data to file", "Matrix", linkouts.MULTI_SELECT, downloadSelectedMatrixData, null, 0);
 		if (LNK.enableBuilderUploads) {
 		    LNK.addLinkout("Upload all NG-CHM data to builder", "Matrix", LNK.EMPTY_SELECT, uploadAllToBuilder, null, 0);
 		    LNK.addLinkout("Upload selected NG-CHM data to builder", "Matrix", linkouts.MULTI_SELECT, uploadSelectedToBuilder, null, 0);
