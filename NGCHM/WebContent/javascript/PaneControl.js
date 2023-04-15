@@ -883,7 +883,7 @@
 		if (isPaneExpanded === true) {
 			menuItemDisabled ('Collapse');
 		} else if (collapsedPaneIdx >= 0) {
-			menuItem ('Expand', () => {
+			menuItem ('Uncollapse', () => {
 				collapsedPanes.splice(collapsedPaneIdx,1);
 				expandPane (findPaneLocation(icon));
 				const what = paneLoc.container.classList.contains('vertical') ? 'height' : 'width';
