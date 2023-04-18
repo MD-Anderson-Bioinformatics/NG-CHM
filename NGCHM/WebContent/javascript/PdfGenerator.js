@@ -160,7 +160,12 @@ function updateShowBounds () {
 		}
 	    } else {
 		console.error (error);
-		message = "Unexpected error detected during PDF generation: " + message + "." +
+		const showResolutionHint = message == 'Invalid string length';
+		message = "Unexpected error detected during PDF generation: " + message + ".";
+		if (showResolutionHint) {
+		    message += '<P>If this a large map, try using a smaller resolution (DPI).</P>';
+		}
+		message +=
 		   `<P>Please consider making or contributing to a bug report on our
 		    <A href='https://github.com/MD-Anderson-Bioinformatics/NG-CHM/issues?q=is%3Aissue+is%3Aopen+pdf+-label%3Aenhancement' target='_blank'>NG-CHM issues page</A>.
 		    </P>`;
@@ -314,6 +319,7 @@ function updateShowBounds () {
 		createPdfButton.disabled = false;
 	    }
 	};
+	pdfCustomResolution.dataset.tooltip = 'Enter DPI value between ' + minDPI + ' and ' + maxDPI;
 	pdfCustomResolution.onchange = function (e) {
 	    if (pdfResolution.value == 'custom') checkResolution();
 	};

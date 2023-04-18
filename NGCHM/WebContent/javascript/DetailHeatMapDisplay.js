@@ -668,13 +668,13 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more
 	//than 1 pixel, scale calculates the appropriate height/width.
-	if (mapItem.mode == 'RIBBONH_DETAIL') { // mapItem.subDendroMode === 'Row') {
+	if (mapItem.mode.startsWith('RIBBONH') && mapItem.selectedStart != 0) { // mapItem.subDendroMode === 'Row') {
 	    if (mapItem.currentRow == 1 && mapItem.dataPerCol == mapItem.heatMap.getTotalRows()) {
 		setFullMap = true;
 	    } else {
 		DET.scaleViewHeight(mapItem);
 	    }
-	} else if (mapItem.mode == 'RIBBONV_DETAIL') { // subDendroMode === 'Column') {
+	} else if (mapItem.mode.startsWith('RIBBONV') && mapItem.selectedStart != 0) { // subDendroMode === 'Column') {
 	    if (mapItem.currentCol == 1 && mapItem.dataPerRow == mapItem.heatMap.getTotalCols()) {
 		setFullMap = true;
 	    } else {
@@ -685,6 +685,14 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	}
 
 	if (setFullMap) {
+	    // Clear any restricted mode and dendrograms.
+	    mapItem.selectedStart = 0;
+	    if (SUM.rowDendro) {
+		SUM.rowDendro.clearSelectedRegion();
+	    }
+	    if (SUM.colDendro) {
+		SUM.colDendro.clearSelectedRegion();
+	    }
 	    DVW.setMode(mapItem, 'FULL_MAP');
 	    DET.scaleViewHeight(mapItem);
 	    DET.scaleViewWidth(mapItem);
@@ -2285,7 +2293,6 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 	bars.reverse().forEach (currentClassBar => {
 	    const colorMap = colorMapMgr.getColorMap("col",currentClassBar.label); // assign the proper color scheme...
 	    let classBarValues = colClassBarData[currentClassBar.label].values;
-	    const classBarLength = DVW.getCurrentDetDataPerRow(mapItem) * mapItem.dataBoxWidth;
 	    pos += fullWidth*DET.paddingHeight*DRAW.BYTE_PER_RGBA; // draw padding between class bars
 	    let start = mapItem.currentCol;
 	    const length = DVW.getCurrentDetDataPerRow(mapItem);
@@ -2295,9 +2302,9 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
 		start = Math.ceil(start/rhRate);
 	    }
 	    if (currentClassBar.bar_type === 'color_plot') {
-		pos = DET.drawColorPlotColClassBar(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar.height, classBarValues, classBarLength, colorMap);
+		pos = DET.drawColorPlotColClassBar(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, colorMap);
 	    } else {
-		pos = DET.drawScatterBarPlotColClassBar(mapItem, pixels, pos, currentClassBar.height-DET.paddingHeight, classBarValues, start, length, currentClassBar, colorMap);
+		pos = DET.drawScatterBarPlotColClassBar(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, colorMap);
 	    }
 	});
 }
@@ -2306,27 +2313,34 @@ DET.detailDrawColClassBars = function (mapItem, pixels) {
  * FUNCTION - drawColorPlotColClassBar: The purpose of this function is to column
  * color plot class bars on a given detail heat map canvas.
  **********************************************************************************/
-DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBarHeight, classBarValues, classBarLength, colorMap) {
-	const line = new Uint8Array(new ArrayBuffer(classBarLength * DRAW.BYTE_PER_RGBA)); // save a copy of the class bar
+DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, colorMap) {
+	const barLength = mapItem.dataViewWidth - DET.paddingHeight;
+	const line = new Uint8Array(new ArrayBuffer(barLength * DRAW.BYTE_PER_RGBA)); // one row of the covariate bar
+
+	// Fill the line buffer with one row of the covariate bar.
 	let loc = 0;
 	for (let k = start; k <= start + length -1; k++) {
 		const val = classBarValues[k-1];
-		const color = colorMap.getClassificationColor(val);
+		const { r, g, b, a } = colorMap.getClassificationColor(val);
 		for (let j = 0; j < mapItem.dataBoxWidth; j++) {
-			line[loc] = color['r'];
-			line[loc + 1] = color['g'];
-			line[loc + 2] = color['b'];
-			line[loc + 3] = color['a'];
+			line[loc] = r;
+			line[loc + 1] = g;
+			line[loc + 2] = b;
+			line[loc + 3] = a;
 			loc += DRAW.BYTE_PER_RGBA;
 		}
 	}
-	for (let j = 0; j < currentClassBarHeight-DET.paddingHeight; j++){ // draw the class bar into the dataBuffer
-		pos += (rowClassBarWidth + 1)*DRAW.BYTE_PER_RGBA;
+
+	// Copy currentClassBar.height - DET.paddingHeight replicates of the line buffer into the pixel buffer.
+	// Additional pixel to skip to align the column covariate bar with the heat map and dendrograms.
+	const align = 1;
+	for (let j = 0; j < currentClassBar.height-DET.paddingHeight; j++){ // draw the class bar into the dataBuffer
+		pos += (rowClassBarWidth + align)*DRAW.BYTE_PER_RGBA;
 		for (let k = 0; k < line.length; k++) {
 			pixels[pos] = line[k];
 			pos++;
 		}
-		pos+=DRAW.BYTE_PER_RGBA;
+		pos += (DET.paddingHeight - align) * DRAW.BYTE_PER_RGBA;
 	}
 	return pos;
 }
@@ -2335,13 +2349,19 @@ DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, 
  * FUNCTION - drawScatterBarPlotColClassBar: The purpose of this function is to column
  * bar and scatter plot class bars on a given detail heat map canvas.
  **********************************************************************************/
-DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, classBarValues, start, length, currentClassBar, colorMap) {
+DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, colorMap) {
 	const colors = currentClassBar.getScatterBarPlotColors ();
-	const matrix = SUM.buildScatterBarPlotMatrix(height, 1, classBarValues.slice (start-1, start-1+length), currentClassBar);
-	const rowClassBarWidth = mapItem.getScaledVisibleCovariates("row").totalHeight();
+	const matrix = SUM.buildScatterBarPlotMatrix(currentClassBar.height - DET.paddingHeight, 1, classBarValues.slice (start-1, start-1+length), currentClassBar);
 
-	//offset value for width of row class bars
-	let offset = (rowClassBarWidth + 2)*DRAW.BYTE_PER_RGBA;
+	// Additional pixel to skip to align the column covariate bar with the heat map and dendrograms.
+	const align = 1;
+	// Offset from the start of the row to the start of the column covariate bar
+	const offset = (rowClassBarWidth + align)*DRAW.BYTE_PER_RGBA;
+	// Padding required to output a total of dataViewWidth pixels for the covariate bar.
+	const padding = mapItem.dataViewWidth - length * mapItem.dataBoxWidth - align;
+	if (padding < 0) {
+	    console.error ('Negative padding in drawScatterBarPlotColClassBar', padding, mapItem.dataViewWidth, length, mapItem.dataBoxWidth);
+	}
 	for (let h = 0; h < matrix.length; h++) {
 		pos += offset;
 		const row = matrix[h];
@@ -2355,6 +2375,7 @@ DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, height, class
 			    pos+=DRAW.BYTE_PER_RGBA;
 			}
 		}
+		pos += padding * DRAW.BYTE_PER_RGBA;
 	}
 	return pos;
 };
