@@ -91,6 +91,10 @@ svg {
     display: block;
 }
 
+.collapsed .paneScreenMode {
+    display: none;
+}
+
 .paneScreenMode button {
     display: none;
 }
