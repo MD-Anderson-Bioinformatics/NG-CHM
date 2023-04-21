@@ -220,8 +220,8 @@
 	    }
 	    var endRow = Math.max(clickStartRow,clickEndRow);
 	    var endCol = Math.max(clickStartCol,clickEndCol)+1;
-	    dragSelect = true;
 	    if (DVW.primaryMap) {
+		dragSelect = true;
 		DVW.primaryMap.dataPerRow = endCol - startCol;
 		DVW.primaryMap.dataPerCol = endRow - startRow;
 		DVW.primaryMap.currentRow = startRow;
