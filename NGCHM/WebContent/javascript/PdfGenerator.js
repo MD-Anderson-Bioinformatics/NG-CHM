@@ -849,23 +849,21 @@ function updateShowBounds () {
 			barsInfo.topOff += topSkip; // ... and move the next figure to the line below
 			barsInfo.classBarFigureH = 0;
 			barsInfo.topOff += barsInfo.classBarTitleSize + 5;
-			for (var i = 0; i < barsInfo.rowBarsToDraw.length;i++){
-				var key = barsInfo.rowBarsToDraw[i];
-				var colorMap = pdfDoc.heatMap.getColorMapManager().getColorMap("row", key);
-				doc.setFontSize(barsInfo.classBarTitleSize);
-				var isDiscrete = barsInfo.rowClassBarConfig[key].color_map.type === 'discrete';
-				var colorCount = 10;
-				if (isDiscrete) {
-					colorCount = barsInfo.rowClassBarConfig[key].color_map.colors.length;
-				}
-				if (i === 0) {
-					drawLegendSubSectionHeader(pdfDoc, barsInfo, colorCount, key);
-				}
-				if (isDiscrete) {
-					getBarGraphForDiscreteClassBar(pdfDoc, key, 'row', barsInfo, barsInfo.rowClassBarConfig[key], barsInfo.rowClassBarData[key]);
-				} else {
-					getBarGraphForContinuousClassBar(pdfDoc, key, 'row', barsInfo, barsInfo.rowClassBarConfig[key], barsInfo.rowClassBarData[key]);
-				}
+			for (let i = 0; i < barsInfo.rowBarsToDraw.length;i++){
+			    const key = barsInfo.rowBarsToDraw[i];
+			    doc.setFontSize(barsInfo.classBarTitleSize);
+			    const barConfig = barsInfo.rowClassBarConfig[key];
+			    const isDiscrete = barConfig.color_map.type === 'discrete';
+			    const colorCount = isDiscrete ? barConfig.color_map.colors.length : 10;
+			    if (i === 0) {
+				drawLegendSubSectionHeader(pdfDoc, barsInfo, colorCount, key);
+			    }
+			    const barData = barsInfo.rowClassBarData[key];
+			    if (isDiscrete) {
+				getBarGraphForDiscreteClassBar(pdfDoc, key, 'row', barsInfo, barConfig, barData);
+			    } else {
+				getBarGraphForContinuousClassBar(pdfDoc, key, 'row', barsInfo, barConfig, barData);
+			    }
 			}
 		}
 	}
@@ -883,22 +881,21 @@ function updateShowBounds () {
 			barsInfo.topOff += topSkip; // ... and move the next figure to the line below
 			barsInfo.classBarFigureH = 0;
 			barsInfo.topOff += barsInfo.classBarTitleSize + 5;
-			for (var i = 0; i < barsInfo.colBarsToDraw.length;i++){
-				var key = barsInfo.colBarsToDraw[i];
-				doc.setFontSize(barsInfo.classBarTitleSize);
-				var colorCount = 10;
-				var isDiscrete = barsInfo.colClassBarConfig[key].color_map.type === 'discrete';
-				if (isDiscrete) {
-					colorCount = barsInfo.colClassBarConfig[key].color_map.colors.length;
-				}
-				if (i === 0) {
-					drawLegendSubSectionHeader(pdfDoc, barsInfo, colorCount, key, barsInfo.classBarFigureW);
-				}
-				if (isDiscrete) {
-					getBarGraphForDiscreteClassBar(pdfDoc, key, 'col', barsInfo, barsInfo.colClassBarConfig[key], barsInfo.colClassBarData[key], barsInfo.classBarFigureW, barsInfo.classBarLegendTextSize);
-				} else {
-					getBarGraphForContinuousClassBar(pdfDoc, key, 'col', barsInfo, barsInfo.colClassBarConfig[key], barsInfo.colClassBarData[key]);
-				}
+			for (let i = 0; i < barsInfo.colBarsToDraw.length;i++){
+			    const key = barsInfo.colBarsToDraw[i];
+			    doc.setFontSize(barsInfo.classBarTitleSize);
+			    const barConfig = barsInfo.colClassBarConfig[key];
+			    const isDiscrete = barConfig.color_map.type === 'discrete';
+			    const colorCount = isDiscrete ? barConfig.color_map.colors.length : 10;
+			    if (i === 0) {
+				drawLegendSubSectionHeader(pdfDoc, barsInfo, colorCount, key, barsInfo.classBarFigureW);
+			    }
+			    const barData = barsInfo.colClassBarData[key];
+			    if (isDiscrete) {
+				getBarGraphForDiscreteClassBar(pdfDoc, key, 'col', barsInfo, barConfig, barData, barsInfo.classBarFigureW, barsInfo.classBarLegendTextSize);
+			    } else {
+				getBarGraphForContinuousClassBar(pdfDoc, key, 'col', barsInfo, barConfig, barData);
+			    }
 			}
 		}
 	}
@@ -991,9 +988,9 @@ function updateShowBounds () {
 			for(var i = 0; i< classBarData.values.length; i++) {
 			    var num = classBarData.values[i];
 			    if (num !== '!CUT!') {
-			    	counts[num] = counts[num] ? counts[num]+1 : 1;
+				counts[num] = counts[num] ? counts[num]+1 : 1;
 			    } else {
-			    	cutValues++;
+				cutValues++;
 			    }
 			}
 			for (var val in counts){
@@ -1083,15 +1080,15 @@ function updateShowBounds () {
 		const classBars = heatMap.getAxisCovariateConfig(type);
 		const classBar = classBars[key];
 		//Adjustment for multi-line covariate headers
-//		if(splitTitle.length > 1) {
-//			barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
-//		}
+    //		if(splitTitle.length > 1) {
+    //			barsInfo.classBarHeaderHeight = (classBarHeaderSize*splitTitle.length)+(4*splitTitle.length)+10;   
+    //		}
 		const colorMap = heatMap.getColorMapManager().getColorMap(type, key);
 
 		// For Continuous Classifications: 
-    	// 1. Retrieve continuous threshold array from colorMapManager
-    	// 2. Retrieve threshold range size divided by 2 (1/2 range size)
-    	// 3. If remainder of half range > .75 set threshold value up to next value, Else use floor value.
+	// 1. Retrieve continuous threshold array from colorMapManager
+	// 2. Retrieve threshold range size divided by 2 (1/2 range size)
+	// 3. If remainder of half range > .75 set threshold value up to next value, Else use floor value.
 		const thresholds = colorMap.getContinuousThresholdKeys();
 		const threshSize = colorMap.getContinuousThresholdKeySize()/2;
 		var thresholdSize;
@@ -1116,7 +1113,7 @@ function updateShowBounds () {
 		}
 		for (let i = 0; i < classBarData.values.length; i++) {
 		    if (classBarData.values[i] === '!CUT!') {
-		    	cutValues++;
+			cutValues++;
 		    } else if (classBarData.values[i] !== 'null') {
 			const num = parseFloat(classBarData.values[i]);
 			if (isNaN (num)) {
@@ -1156,7 +1153,7 @@ function updateShowBounds () {
 		for (var j = 0; j < thresholds.length; j++){
 			var rgb = colorMap.getClassificationColor(thresholds[j]);
 			if (classBar.bar_type !== 'color_plot') {
-				rgb = colorMap.getClassificationColor(thresholds[thresholds.length-1]);
+			    rgb = colorMap.getClassificationColor(thresholds[thresholds.length-1]);
 			}
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
