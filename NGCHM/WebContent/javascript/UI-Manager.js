@@ -745,7 +745,7 @@
     UIMGR.widgetHelp = function() {
 	    const heatMap = MMGR.getHeatMap();
 	    const isMapLoaded = heatMap && heatMap.isMapLoaded();
-	    const logos = document.getElementById('ngchmLogos');
+	    const logos = document.getElementById('aboutLogos');
 	    // Logos are not included in the widgetized version.
 	    if (logos) { logos.style.display = ''; }
 	    UHM.initMessageBox();
