@@ -1150,11 +1150,9 @@ function updateShowBounds () {
 		var threshMaxLen = getThreshMaxLength(thresholds,barsInfo.classBarLegendTextSize);
 		// Indent threshholds from class bar title
 		barsInfo.leftOff += 10;
+		const black = { r: 0, g: 0, b: 0, };
 		for (var j = 0; j < thresholds.length; j++){
-			var rgb = colorMap.getClassificationColor(thresholds[j]);
-			if (classBar.bar_type !== 'color_plot') {
-			    rgb = colorMap.getClassificationColor(thresholds[thresholds.length-1]);
-			}
+			const rgb = classBar.bar_type === 'color_plot' ? colorMap.getClassificationColor(thresholds[j]) : black;
 			doc.setFillColor(rgb.r,rgb.g,rgb.b);
 			doc.setDrawColor(0,0,0);
 			let value = counts[j];
