@@ -148,7 +148,7 @@ function linkoutHelp () {
 	description: "Adds linkouts to Amigo gene ontology database.",
 	version: "0.1.0",
 	site: "http://amigo.geneontology.org/amigo",
-	logo: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png",
+	//logo: "http://amigo.geneontology.org/static/images/go-logo-icon.small.png",
 	linkouts: [
 	    { menuEntry: "View Amigo", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openAmigo }
 	]
@@ -162,15 +162,15 @@ function linkoutHelp () {
 
     function searchBioGPS (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://biogps.org/search/?q=" + gname, "bioGPS", { noframe: true });
+	linkouts.openUrl("https://biogps.org/search/?q=" + gname, "bioGPS", { noframe: true });
     }
 
     linkouts.addPlugin({
         name: "BioGPS",
         description: "Adds linkouts to the BioGPS gene annotation portal.",
         version: "0.1.0",
-        site: "http://biogps.org/",
-        logo: "http://biogps.org/assets/img2/biogps_logo.png",
+        site: "https://biogps.org/",
+        logo: "https://biogps.org/assets/img2/biogps_logo.png",
         linkouts: [
 	    { menuEntry: "View bioGPS", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchBioGPS }
         ]
@@ -370,7 +370,7 @@ function linkoutHelp () {
 	description: "Adds linkouts to FireBrowse.",
 	version: "0.1.0",
 	site: "http://firebrowse.org/",
-	logo: "http://firebrowse.org/img/firebrowse.png",
+	//logo: "http://firebrowse.org/img/firebrowse.png",
 	linkouts: [
             { menuEntry: "View FireBrowse", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openFireBrowseGene }
 	]
@@ -416,8 +416,8 @@ linkouts.addPlugin({
    name: "GeneCards",
    description: "Adds linkouts to the GeneCards Human Gene Card Database.",
    version: "0.1.2",
-   site: "http://www.genecards.org/",
-   logo: "http://www.genecards.org/Images/logo_genecards.png",
+   site: "https://www.genecards.org/",
+   logo: "https://www.genecards.org/Images/logo_genecards.png",
    linkouts: [
 	    { menuEntry: "View GeneCards", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchGeneCards }
    ]
@@ -590,7 +590,6 @@ linkouts.addPlugin({
 	description: "Adds linkout to search MaveDB.",
 	version: "0.1.0",
 	site: "https://www.mavedb.org",
-	logo: "https://www.mavedb.org/static/core/mavedb/ve-logo.png",
 	linkouts: [
 	    { menuEntry: "Search MaveDB", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMavedbGene }
 	]
@@ -657,8 +656,8 @@ linkouts.addPlugin({
         name: "MuPIT",
         description: "Adds linkouts to MuPIT Interactive.",
         version: "0.1.0",
-	site: "http://mupit.icm.jhu.edu/MuPIT_Interactive/",
-	logo: "http://mupit.icm.jhu.edu/MuPIT_Interactive/images/muPITlog.gif",
+	site: "https://mupit.icm.jhu.edu/MuPIT_Interactive/",
+	logo: "https://mupit.icm.jhu.edu/MuPIT_Interactive/images/muPITlog.gif",
 	linkouts: [
             { menuEntry: "View MuPIT", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: viewMupitG }
 	]
@@ -788,7 +787,6 @@ linkouts.addPlugin({
         description: "Adds linkouts to Metabolomics name",
         version: "0.1.0",
         site: "https://www.metabolomicsworkbench.org/",
-        logo: null, /* set to null to prevent name from appearing in logo column */
         linkouts: [{ menuEntry: "View Metabolomics workbench", typeName: "bio.metabolite.MW.name", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openMW },
             { menuEntry: "View PubChem", typeName: "bio.compound.pubchem", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openPubchem },
             { menuEntry: "View RefMet", typeName: "bio.metabolite.refmet", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openRefmet },
@@ -907,8 +905,8 @@ linkouts.addPlugin({
         name: "OLSVis",
 	description: "Adds linkouts to OLSVis ontolofy lookup service.",
 	version: "0.1.0",
-	site: "http://ols.wordvis.com/",
-	logo: "http://ols.wordvis.com/images/olsvis_logo.png",
+	site: "https://ols.wordvis.com/",
+	logo: "https://ols.wordvis.com/images/olsvis_logo.png",
 	linkouts: [
 	    { menuEntry: "View OLSVis", typeName: "bio.go", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openOLSVis }
 	]
@@ -1118,7 +1116,7 @@ linkouts.addPlugin({
 	description: "Adds linkouts to TumorPortal",
 	version: "0.1.0",
 	site: "http://www.tumorportal.org/",
-	logo: "http://www.tumorportal.org/assets/tplogo-b2692452952b98eee833d30f08757924.png",
+	//logo: "http://www.tumorportal.org/assets/tplogo-b2692452952b98eee833d30f08757924.png",
 	linkouts: [
             { menuEntry: "View Tumor Portal", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openTumorPortalGene }
 	]
@@ -1165,7 +1163,7 @@ linkouts.addPlugin({
 	description: "Adds linkouts to UniProt protein database.",
 	version: "0.1.1",
 	site: "https://www.uniprot.org/",
-	logo: "https://www.uniprot.org/images/logos/uniprot-rgb-optimized.svg",
+	//logo: "https://www.uniprot.org/images/logos/uniprot-rgb-optimized.svg",
 	linkouts: [
 	    { menuEntry: "View Uniprot", typeName: "bio.protein.uniprotid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openUniprot }
 	]
