@@ -745,13 +745,14 @@ DEV.handleSelectDrag = function (e) {
 	const startRow = Math.min(DEV.getRowFromLayerY(mapItem, coords.y),DEV.getRowFromLayerY(mapItem, mapItem.dragOffsetY));
 	const startCol = Math.min(DEV.getColFromLayerX(mapItem, coords.x),DEV.getColFromLayerX(mapItem, mapItem.dragOffsetX));
 	SRCH.clearSearch(e);
-	SRCH.setAxisSearchResults ("Row", startRow, endRow);
-	SRCH.setAxisSearchResults ("Column", startCol, endCol);
+	if (endRow > 0) SRCH.setAxisSearchResults ("Row", Math.max (1, startRow), endRow);
+	if (endCol > 0) SRCH.setAxisSearchResults ("Column", Math.max (1, startCol), endCol);
         SUM.drawSelectionMarks();
         SUM.drawTopItems();
         DET.updateDisplayedLabels();
         DET.drawSelections();
         SRCH.updateLinkoutSelections();
+	SRCH.showSearchResults();
     }
 }	
 

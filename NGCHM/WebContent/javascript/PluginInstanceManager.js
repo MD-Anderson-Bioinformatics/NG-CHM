@@ -172,8 +172,12 @@
 	    const pointLabelNames = [];
 	    for (let i=0; i<searchItems.length; i++) {
 		    let pointId = allLabels[searchItems[i] - 1];
-		    pointId = pointId.indexOf("|") !== -1 ? pointId.substring(0,pointId.indexOf("|")) : pointId;
-		    pointLabelNames.push(pointId);
+		    if (pointId) {
+			pointId = pointId.indexOf("|") !== -1 ? pointId.substring(0,pointId.indexOf("|")) : pointId;
+			pointLabelNames.push(pointId);
+		    } else {
+			console.error ('pointId is null');
+		    }
 	    }
 	    const lastClickText = lastClickIndex > 0 ? allLabels[lastClickIndex] : '';
 	    PIM.sendMessageToAllOtherPlugins (srcNonce, {
