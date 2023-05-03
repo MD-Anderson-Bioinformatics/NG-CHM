@@ -604,7 +604,7 @@ linkouts.addPlugin({
     function viewMiRBasePage (eids) {
 	var gid = eids[0];
 	gid = gid.substr( gid.lastIndexOf(".MIMAT") + 1 );
-	linkouts.openUrl("https://www.mirbase.org/cgi-bin/query.pl?terms=" + gid, "miRBase");
+	linkouts.openUrl("https://www.mirbase.org/textsearch.shtml?q=" + gid, "miRBase");
     }
 
     linkouts.addPlugin({

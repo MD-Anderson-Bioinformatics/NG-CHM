@@ -284,9 +284,9 @@ div.pane canvas {
 #msgBox {
     display: grid;
     grid-template-rows: auto 1fr auto;
-    max-height: calc(100% - 70px);
 }
 
+#msgBox > :nth-child(2),
 .msgBox > :nth-child(2) {
     display: block;
     overflow-y: auto;
@@ -567,6 +567,12 @@ div.paneHeader button {
 #pdfPrefs .buttonBox,
 #msgBox-for-keynav .buttonBox {
     margin-top: 2em;
+}
+
+#pdfPrefs > :nth-child(2) {
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 label[for="pdfCustomResolution"] {

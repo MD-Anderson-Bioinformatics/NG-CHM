@@ -552,7 +552,8 @@ UTIL.isValidURL = function (str) {
  * FUNCTION - dragElement: This function adds drag/move functionality to the DIV
  * passed in.
  **********************************************************************************/
-UTIL.dragElement = function (elmnt) {
+    UTIL.dragElement = function (elmnt) {
+	const ngchmHeaderHeight = document.getElementById('mdaServiceHeader').clientHeight;
 	  let deltaMouseElementX = 0;
 	  let deltaMouseElementY = 0;
 	  const minTop = -2;
@@ -589,7 +590,12 @@ UTIL.dragElement = function (elmnt) {
 	    const xPosn = e.clientX - deltaMouseElementX;
 	    elmnt.style.left = Math.min (maxLeft, Math.max (minLeft, xPosn)) + 'px';
 	    elmnt.style.top = Math.min (maxTop, Math.max (minTop, yPosn)) + 'px';
+
+	    const contentHeight = document.getElementById('content').clientHeight;
 	    elmnt.style.height = '';
+	    if (elmnt.offsetHeight > ngchmHeaderHeight + contentHeight) {
+		elmnt.style.height = (ngchmHeaderHeight + contentHeight) + 'px';
+	    }
 	  }
 
 	  function closeDragElement() {
@@ -597,7 +603,7 @@ UTIL.dragElement = function (elmnt) {
 	    document.onmouseup = null;
 	    document.onmousemove = null;
 	  }
-	}
+    };
 
 /**********************************************************************************
  * FUNCTION - roundUpDown: The purpose of this function is to take an input number
