@@ -2350,6 +2350,11 @@ DET.drawColorPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, 
  * bar and scatter plot class bars on a given detail heat map canvas.
  **********************************************************************************/
 DET.drawScatterBarPlotColClassBar = function(mapItem, pixels, pos, rowClassBarWidth, start, length, currentClassBar, classBarValues, colorMap) {
+	// Don't attempt to draw zero height (or less) covariate bar.
+	if (currentClassBar.height <= DET.paddingHeight) {
+	    return pos;
+	}
+
 	const colors = currentClassBar.getScatterBarPlotColors ();
 	const matrix = SUM.buildScatterBarPlotMatrix(currentClassBar.height - DET.paddingHeight, 1, classBarValues.slice (start-1, start-1+length), currentClassBar);
 
