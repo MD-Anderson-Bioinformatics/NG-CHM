@@ -1791,6 +1791,9 @@ iframe.nopointer {
 	background-color: #CBDBF6;
 }
 
+span.errorMessage {
+    color: red;
+}
 
 div#droptarget {
     position:  absolute;

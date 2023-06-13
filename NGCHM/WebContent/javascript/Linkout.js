@@ -387,39 +387,74 @@ var linkoutsVersion = 'undefined';
 	    }
 	}
 
-	function createMatrixData (heatMap, selection) {
-		//console.log ({ m: 'LNK.createMatrixData', selection});
-		const win = heatMap.getNewAccessWindow({
-		    layer: heatMap.getCurrentDL(),
-		    level: MAPREP.DETAIL_LEVEL,
-		    firstRow: 1,
-		    firstCol: 1,
-		    numRows: heatMap.getNumRows(MAPREP.DETAIL_LEVEL),
-		    numCols: heatMap.getNumColumns(MAPREP.DETAIL_LEVEL),
-		});
-		win.onready((win) => {
-		    createMatrixDataTsv(heatMap, win, selection);
-		});
-	};
-
 	//This function creates a two dimensional array which contains all of the row and
 	//column labels along with the data for a given selection
-	function createMatrixDataTsv (heatMap, accessWindow, selection) {
-
+	function createMatrixData (heatMap, selection) {
 		const { labels: rowLabels, items: rowItems } = deGap (selection.rowLabels, selection.rowItems);
 		const { labels: colLabels, items: colItems } = deGap (selection.colLabels, selection.colItems);
+		const minCol = Math.min.apply (null, colItems);
+		const numCols = Math.max.apply (null, colItems) - minCol + 1;
 
 		const matrix = new Array();
 		// Push column headers: empty field followed by column labels.
-		matrix.push ([""].concat (colLabels));
-		// Push rows: row label followed by values for each column of that row.
-		for (let row = 0; row < rowLabels.length; row++) {
-		    const rowItem = rowItems[row];
-		    const rowValues = colItems.map (colItem => accessWindow.getValue (rowItem, colItem));
-		    matrix.push ([rowLabels[row]].concat (rowValues));
+		matrix.push ([""].concat(colLabels).join('\t')+'\n');
+
+		let accessWindow = null; // Hold onto accessWindow until next one created to ensure tiles stay in cache.
+		let canceled = false;
+
+		const warningSize = 1000000;
+		const warningShown = rowLabels.length * colLabels.length >= warningSize;
+
+		if (warningShown) {
+		    showDownloadWarning ();
+		} else {
+		    processRow(0);
 		}
-		// Make matrix available for download.
-		downloadSelectedData (heatMap, matrix, "Matrix");
+
+		function showDownloadWarning () {
+		    UHM.initMessageBox ();
+		    UHM.setMessageBoxHeader ('Large Download Notice');
+		    UHM.setMessageBoxText ("<br>The requested download is very large.  <span class='errorMessage'>It may exhaust the browser's memory and crash the window or the browser without warning.</span><br><br>");
+		    UHM.setMessageBoxButton ('cancel', { type: 'text', text: 'Cancel', tooltip: 'Cancel the download', disableOnClick: true, default: false }, () => {
+			canceled = true;
+			UHM.messageBoxCancel();
+		    });
+		    UHM.setMessageBoxButton ('go', { type: 'text', text: 'Proceed', tooltip: 'Continue the download', disableOnClick: true, default: true }, () => {
+			UHM.showMsgBoxProgressBar ();
+			processRow (0);
+		    });
+		    UHM.displayMessageBox();
+		}
+
+		function processRow (row) {
+		    if (canceled) {
+			return;
+		    }
+		    if (warningShown) {
+			UHM.msgBoxProgressMeter (row / rowLabels.length);
+		    }
+		    if (row >= rowLabels.length) {
+			// All requested rows processed.  Make matrix available for download.
+			downloadSelectedData (heatMap, matrix, "Matrix", warningShown);
+		    } else {
+			const rowItem = rowItems[row];
+			// Get access window for this row and the columns requested.
+			accessWindow = heatMap.getNewAccessWindow({
+			    layer: heatMap.getCurrentDL(),
+			    level: MAPREP.DETAIL_LEVEL,
+			    firstRow: rowItem,
+			    firstCol: minCol,
+			    numRows: 1,
+			    numCols: numCols,
+			});
+			accessWindow.onready((win) => {
+			    const rowValues = colItems.map (colItem => win.getValue (rowItem, colItem));
+			    matrix.push ([rowLabels[row]].concat(rowValues).join('\t') + '\n');
+			    processRow(row+1);
+			});
+		    }
+		}
+
 
 		// Helper function:
 		// Remove gaps from labels and items.
@@ -878,7 +913,8 @@ var linkoutsVersion = 'undefined';
 		for (let i = 0; i < axisLabels.length; i++) {
 			covarData.push ([axisLabels[i]].concat(labels.map(lbl => classBars[lbl].values[i])));
 		}
-		downloadSelectedData (heatMap, covarData, covarAxis);
+		const rows = covarData.map (row => row.join('\t') + '\n');
+		downloadSelectedData (heatMap, rows, covarAxis, false);
 	}
 
 	function downloadPartialClassBar (labels, covarAxis) {
@@ -892,7 +928,8 @@ var linkoutsVersion = 'undefined';
 		for (let i = 0; i < axisLabels.length; i++) {
 			covarData.push ([axisLabels[i]].concat(labels.map(lbl => classBars[lbl].values[labelIndex[i]-1])));
 		}
-		downloadSelectedData (heatMap, covarData, covarAxis);
+		const rows = covarData.map (row => row.join('\t') + '\n');
+		downloadSelectedData (heatMap, rows, covarAxis, false);
 	}
 
 	LNK.copySelectionToClipboard = function(labels,axis){
@@ -1007,29 +1044,42 @@ var linkoutsVersion = 'undefined';
 	    }
 	}
 
-	// Data is a matrix: an array of arrays.
-	// Each element of data is a row.
-	// Each element of a row is a cell.
+	// Rows is an array of tab-separated row data.
 	// The first row should be column labels.
-	// The first cell in each row should be a row label.
-	function downloadSelectedData (heatMap, data, axis) {
-		let dataStr = "";
-		for (let i = 0; i < data.length; i++) {
-			const rowData = data[i].join('\t');
-			dataStr += rowData+"\n";
+	// The first field in each row should be a row label.
+	function downloadSelectedData (heatMap, rows, axis, warningShown) {
+		try {
+		    const fileName = heatMap.getMapInformation().name + "_" + axis + "_Data.tsv";
+		    download (fileName, rows, warningShown);
+		} catch (error) {
+		    console.error ('Matrix download is too large');
+		    if (warningShown) {
+			UHM.setMessageBoxHeader("Matrix Download Failed");
+			UHM.setMessageBoxText("<br>The Matrix download failed, probably because is was too large.<br>");
+		    }
 		}
-		const fileName = heatMap.getMapInformation().name + "_" + axis + "_Data.tsv";
-		download (fileName, dataStr);
 	}
 
-	function download(filename, text) {
-		var element = document.createElement('a');
-		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-		element.setAttribute('download', filename);
-		element.style.display = 'none';
-		document.body.appendChild(element);
-		element.click();
-		document.body.removeChild(element);
+	function download(filename, text, warningShown) {
+		const blob = new Blob (text, { type: 'text/plain' });
+		const reader = new FileReader();
+		reader.onerror = function (e) {
+		    console.error ('Failed to convert to data URL', e, reader);
+		    throw e;
+		};
+		reader.onload = function (e) {
+		    const element = document.createElement('a');
+		    element.setAttribute('href', reader.result);
+		    element.setAttribute('download', filename);
+		    element.style.display = 'none';
+		    document.body.appendChild(element);
+		    element.click();
+		    document.body.removeChild(element);
+		    if (warningShown) {
+			UHM.messageBoxCancel();
+		    }
+		};
+		reader.readAsDataURL (blob);
 	}
 
 	LNK.switchPaneToLinkouts = function switchPaneToLinkouts (loc) {
