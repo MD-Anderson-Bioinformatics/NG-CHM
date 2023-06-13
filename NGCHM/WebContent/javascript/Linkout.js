@@ -400,12 +400,42 @@ var linkoutsVersion = 'undefined';
 		matrix.push ([""].concat(colLabels).join('\t')+'\n');
 
 		let accessWindow = null; // Hold onto accessWindow until next one created to ensure tiles stay in cache.
-		processRow(0);
+		let canceled = false;
+
+		const warningSize = 1000000;
+		const warningShown = rowLabels.length * colLabels.length >= warningSize;
+
+		if (warningShown) {
+		    showDownloadWarning ();
+		} else {
+		    processRow(0);
+		}
+
+		function showDownloadWarning () {
+		    UHM.initMessageBox ();
+		    UHM.setMessageBoxHeader ('Large Download Notice');
+		    UHM.setMessageBoxText ("<br>The requested download is very large.  <span class='errorMessage'>It may exhaust the browser's memory and crash the window or the browser without warning.</span><br><br>");
+		    UHM.setMessageBoxButton ('cancel', { type: 'text', text: 'Cancel', tooltip: 'Cancel the download', disableOnClick: true, default: false }, () => {
+			canceled = true;
+			UHM.messageBoxCancel();
+		    });
+		    UHM.setMessageBoxButton ('go', { type: 'text', text: 'Proceed', tooltip: 'Continue the download', disableOnClick: true, default: true }, () => {
+			UHM.showMsgBoxProgressBar ();
+			processRow (0);
+		    });
+		    UHM.displayMessageBox();
+		}
 
 		function processRow (row) {
+		    if (canceled) {
+			return;
+		    }
+		    if (warningShown) {
+			UHM.msgBoxProgressMeter (row / rowLabels.length);
+		    }
 		    if (row >= rowLabels.length) {
 			// All requested rows processed.  Make matrix available for download.
-			downloadSelectedData (heatMap, matrix, "Matrix");
+			downloadSelectedData (heatMap, matrix, "Matrix", warningShown);
 		    } else {
 			const rowItem = rowItems[row];
 			// Get access window for this row and the columns requested.
@@ -884,7 +914,7 @@ var linkoutsVersion = 'undefined';
 			covarData.push ([axisLabels[i]].concat(labels.map(lbl => classBars[lbl].values[i])));
 		}
 		const rows = covarData.map (row => row.join('\t') + '\n');
-		downloadSelectedData (heatMap, rows, covarAxis);
+		downloadSelectedData (heatMap, rows, covarAxis, false);
 	}
 
 	function downloadPartialClassBar (labels, covarAxis) {
@@ -899,7 +929,7 @@ var linkoutsVersion = 'undefined';
 			covarData.push ([axisLabels[i]].concat(labels.map(lbl => classBars[lbl].values[labelIndex[i]-1])));
 		}
 		const rows = covarData.map (row => row.join('\t') + '\n');
-		downloadSelectedData (heatMap, rows, covarAxis);
+		downloadSelectedData (heatMap, rows, covarAxis, false);
 	}
 
 	LNK.copySelectionToClipboard = function(labels,axis){
@@ -1017,20 +1047,25 @@ var linkoutsVersion = 'undefined';
 	// Rows is an array of tab-separated row data.
 	// The first row should be column labels.
 	// The first field in each row should be a row label.
-	function downloadSelectedData (heatMap, rows, axis) {
+	function downloadSelectedData (heatMap, rows, axis, warningShown) {
 		try {
 		    const fileName = heatMap.getMapInformation().name + "_" + axis + "_Data.tsv";
-		    download (fileName, rows);
+		    download (fileName, rows, warningShown);
 		} catch (error) {
 		    console.error ('Matrix download is too large');
+		    if (warningShown) {
+			UHM.setMessageBoxHeader("Matrix Download Failed");
+			UHM.setMessageBoxText("<br>The Matrix download failed, probably because is was too large.<br>");
+		    }
 		}
 	}
 
-	function download(filename, text) {
+	function download(filename, text, warningShown) {
 		const blob = new Blob (text, { type: 'text/plain' });
 		const reader = new FileReader();
 		reader.onerror = function (e) {
 		    console.error ('Failed to convert to data URL', e, reader);
+		    throw e;
 		};
 		reader.onload = function (e) {
 		    const element = document.createElement('a');
@@ -1040,6 +1075,9 @@ var linkoutsVersion = 'undefined';
 		    document.body.appendChild(element);
 		    element.click();
 		    document.body.removeChild(element);
+		    if (warningShown) {
+			UHM.messageBoxCancel();
+		    }
 		};
 		reader.readAsDataURL (blob);
 	}
