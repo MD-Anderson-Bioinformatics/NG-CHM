@@ -226,6 +226,7 @@
 			// Determine delta from scroll event
 			delta = e.deltaY;
 		}
+		delta = Math.min (600, Math.max (-600, delta)); // Limit delta to range -600..600
 		let newLevel = this.zoomLevel * (1 - delta/800);
 		if (newLevel < 1 && this.zoomLevel > 1 ||
 		    newLevel > 1 && this.zoomLevel < 1) {
