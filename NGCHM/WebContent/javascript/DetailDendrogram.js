@@ -226,14 +226,14 @@
 			// Determine delta from scroll event
 			delta = e.deltaY;
 		}
-		let newLevel = this.zoomLevel - delta/800;
+		let newLevel = this.zoomLevel * (1 - delta/800);
 		if (newLevel < 1 && this.zoomLevel > 1 ||
 		    newLevel > 1 && this.zoomLevel < 1) {
 			// Pause at default zoom level.
 			this.zoomLevel = 1;
 			this.draw();
 		} else {
-			if (newLevel < 0.1) newLevel = 0.1;
+			if (newLevel < 0.0001) newLevel = 0.0001;
 			if (newLevel > 100) newLevel = 100;
 			if (newLevel !== this.zoomLevel) {
 				this.zoomLevel = newLevel;
