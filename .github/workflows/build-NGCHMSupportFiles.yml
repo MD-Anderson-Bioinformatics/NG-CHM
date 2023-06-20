@@ -7,9 +7,11 @@ name: Build artifacts for NGCHMSupportFiles
 on:
   release:
     types: [published]
+  workflow_dispatch:
+
 jobs:
   Build-ShaidyMapGen-and-ngchmWdiget-min:
-    runs-on: macOS-latest
+    runs-on: ubuntu-latest
     env:
       NGCHMSupportFiles_REPOSITORY: 'MD-Anderson-Bioinformatics/NGCHMSupportFiles'
       NGCHMSupportFiles_BRANCH: 'main'
