@@ -11,7 +11,7 @@ on:
 
 jobs:
   Build-ShaidyMapGen-and-ngchmWdiget-min:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       NGCHMSupportFiles_REPOSITORY: 'MD-Anderson-Bioinformatics/NGCHMSupportFiles'
       NGCHMSupportFiles_BRANCH: 'main'
