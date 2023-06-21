@@ -69,13 +69,13 @@ jobs:
           git add inst/java/ShaidyMapGen.jar
           git add inst/js/ngchmWidget-min.js
           git add DESCRIPTION
-          git commit -m "Update for NG-CHM Release ${{ steps.get_version.outputs.version }}"
+          git commit -m "Update for NG-CHM Release ${{ steps.get_version_number.outputs.version_number }}"
           git push origin ${{ env.NGCHMSupportFiles_BRANCH }}
       - name: Create a release in NGCHMSupportFiles repo
         uses: softprops/action-gh-release@v1
         with:
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
-          body: "Version ${{ steps.get_version.outputs.version }}"
+          body: "Version ${{ steps.get_version_number.outputs.version_number }}"
           repository: ${{ env.NGCHMSupportFiles_REPOSITORY }}
 
 
