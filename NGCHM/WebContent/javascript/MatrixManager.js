@@ -2451,13 +2451,6 @@ let	wS = `const debug = ${debug};`;
     // Configure elements of the page header and top bar that depend on the
     // loaded NGCHM.
     function configurePageHeader(heatMap) {
-	    // Show back button if collectionHome specified.
-	    const backButton = document.getElementById("back_btn");
-	    const url = UTIL.getURLParameter("collectionHome");
-	    if (url !== "") {
-		    backButton.style.display = '';
-	    }
-
 	    // Set document title if not a local file.
 	    if (heatMap.source() !== MMGR.LOCAL_SOURCE) {
 		    document.title = heatMap.getMapInformation().name;
