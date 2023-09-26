@@ -8,7 +8,7 @@
 	<property name="js.dir" value="${web.dir}javascript/"/>
 	<property name="dir.jarfile" value="./WebContent/WEB-INF/lib"/>
 	<property name="java.dir" value="./src/mda/ngchm/util/"/>
-	<property name="closure.jar" value="${dir.jarfile}/closure-compiler-v20200204.jar"/>
+	<property name="closure.jar" value="${dir.jarfile}/closure-compiler-v20230802.jar"/>
 
 	<!-- Execute a Javascript miminizer to generate a minified custom-min.js file -->
 	<target name="minimize_custom_js">
