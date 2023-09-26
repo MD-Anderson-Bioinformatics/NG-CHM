@@ -2,7 +2,7 @@
 # Requires Docker 17.06 CE or later
 #
 # Stage -1: Build ant
-FROM openjdk:8-jdk AS ant
+FROM openjdk:11-jdk AS ant
 
 RUN apt-get update && apt-get install -y ant
 
