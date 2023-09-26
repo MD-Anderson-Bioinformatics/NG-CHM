@@ -15,7 +15,7 @@ jobs:
     env:
       NGCHMSupportFiles_REPOSITORY: 'MD-Anderson-Bioinformatics/NGCHMSupportFiles'
       NGCHMSupportFiles_BRANCH: 'main'
-      JAVA_VERSION: 8
+      JAVA_VERSION: 11
     steps:
       - name: Check out release tag
         uses: actions/checkout@v3

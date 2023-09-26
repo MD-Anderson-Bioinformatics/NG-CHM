@@ -80,7 +80,7 @@ jobs:
     env:
       Artifacts_REPOSITORY: "MD-Anderson-Bioinformatics/NG-CHM-Artifacts"
       Artifacts_BRANCH: "main"
-      JAVA_VERSION: 8
+      JAVA_VERSION: 11
     steps:
       - name: Checkout Tag Created In "Creating Build Number Tag" Job
         uses: actions/checkout@v3
