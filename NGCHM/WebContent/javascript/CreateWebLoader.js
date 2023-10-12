@@ -8,14 +8,13 @@
 
 //Create a worker thread to request/receive json data and tiles.  Using a separate
 //thread allows the large I/O to overlap extended periods of heavy computation.
-//NgChm.MMGR.createWebLoader = function (fileSrc) {
 MMGR.createWebLoader = function (fileSrc) {
 
 	const debug = false;
 	const baseURL = getLoaderBaseURL (fileSrc);
 
 	// Define worker script.
-//	let wS = `"use strict";`
+	// (it was seen to cause problems to include "use strict" in wS [code string passed to web worker])
 let	wS = `const debug = ${debug};`;
 	wS += `const maxActiveRequests = 2;`; // Maximum number of tile requests that can be in flight concurrently
 	wS += `var active = 0;`;              // Number of tile requests in flight
