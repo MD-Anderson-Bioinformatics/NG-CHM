@@ -22,6 +22,8 @@ RUN mkdir -p ${VIEWER} &&\
 
 # Stage 1: Create Shaidy R MapGen
 FROM ant AS shaidy
+ARG GIT_COMMIT
+ARG GIT_LATEST_TAG
 COPY NGCHM /NGCHM/
 
 ENV SMAPGEN=/artifacts/shaidymapgen
@@ -30,6 +32,8 @@ RUN mkdir -p ${SMAPGEN} &&\
 
 # Stage 2: Create Galaxy MapGen
 FROM ant AS galaxy
+ARG GIT_COMMIT
+ARG GIT_LATEST_TAG
 COPY NGCHM /NGCHM/
 
 ENV GMAPGEN=/artifacts/galaxymapgen
@@ -39,8 +43,9 @@ RUN mkdir -p ${GMAPGEN} &&\
 
 # Stage 3: Create NG-CHM Standalone
 FROM ant AS standalone
+ARG GIT_COMMIT
+ARG GIT_LATEST_TAG
 COPY NGCHM /NGCHM/
-COPY .git /.git/
 
 ENV STANDALONE=/artifacts/standalone
 ENV SERVERAPP=/artifacts/server.app
@@ -56,6 +61,8 @@ RUN mkdir -p ${STANDALONE} &&\
 
 # Stage 4: Create GUIBuilderMapGen
 FROM ant AS builder
+ARG GIT_COMMIT
+ARG GIT_LATEST_TAG
 COPY NGCHM /NGCHM/
 
 ENV BMAPGEN=/artifacts/builder

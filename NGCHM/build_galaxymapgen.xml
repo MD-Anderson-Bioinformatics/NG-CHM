@@ -10,6 +10,7 @@
     <property name="dir.workspace" value="${dir.buildfile}"/>
     <property name="dir.jarfile" value="."/>
     <property name="mapgen.path" value="${dir.jarfile}/GalaxyMapGen.jar"/>
+    <property environment="env"/>
 
 	<!-- Clean the NGCHM Project -->
     <target name="clean">
@@ -24,22 +25,12 @@
 
 	<!-- Execute the JAVA class to build the GalaxyMapGen JAR-->
 	<target name="create_run_jar" depends="compile">
-		<exec executable="git" outputproperty="commithash">
-			<arg value="rev-parse"/>
-			<arg value="--short"/>
-			<arg value="HEAD"/>
-		</exec>
-		<exec executable="git" outputproperty="latest_tag">
-			<arg value="describe"/>
-			<arg value="--tags"/>
-			<arg value="--abbrev=0"/>
-		</exec>
         <jar destfile="${mapgen.path}" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Main-Class" value="mda.ngchm.datagenerator.GalaxyMapGen"/>
                 <attribute name="Class-Path" value="."/>
-                <attribute name="Git-Hash" value="${commithash}"/>
-                <attribute name="Git-Tag" value="${latest_tag}"/>
+                <attribute name="Git-Hash" value="${env.GIT_COMMIT}"/>
+                <attribute name="Git-Tag" value="${env.GIT_LATEST_TAG}"/>
             </manifest>
             <fileset dir="${dir.jarfile}/build/classes">
             	<exclude name="**/WEB-INF/**"/>

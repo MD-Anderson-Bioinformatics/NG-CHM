@@ -9,6 +9,7 @@
 	<property name="dir.jarfile" value="./WebContent/WEB-INF/lib"/>
 	<property name="java.dir" value="./src/mda/ngchm/util/"/>
 	<property name="closure.jar" value="${dir.jarfile}/closure-compiler-v20230802.jar"/>
+	<property environment="env"/>
 
 	<!-- Execute a Javascript miminizer to generate a minified custom-min.js file -->
 	<target name="minimize_custom_js">
@@ -68,14 +69,8 @@
 	    <mapper type="glob" from="*.js" to="ngchmEmbed-min.js"/>
 	    <targetfile/>
 	</apply>
-	<exec executable="git" outputproperty="commithash"><arg value="rev-parse"/><arg value="--short"/><arg value="HEAD"/></exec>
-	<echo file="ngchmEmbed-min.js" append="true">/* commit hash: ${commithash} */${line.separator} </echo>
-	<exec executable="git" outputproperty="latest_tag">
-	    <arg value="describe"/>
-	    <arg value="--tags"/>
-	    <arg value="--abbrev=0"/>
-	</exec>
-	<echo file="ngchmEmbed-min.js" append="true">/* build tag: ${latest_tag} */${line.separator}</echo>
+	<echo file="ngchmEmbed-min.js" append="true">/* commit hash: ${env.GIT_COMMIT} */${line.separator} </echo>
+	<echo file="ngchmEmbed-min.js" append="true">/* build tag: ${env.GIT_LATEST_TAG} */${line.separator}</echo>
 	</target>  
 
 	<!-- Execute the JAVA NGCHM_AppGenerator to create the stand-alone viewer ngChmApp.html file -->
@@ -111,14 +106,8 @@
 	        <pathelement path="build/classes"/>
 	    </classpath>
 	</java>
-	<exec executable="git" outputproperty="commithash"><arg value="rev-parse"/><arg value="--short"/><arg value="HEAD"/></exec>
-	<echo file="ngchmWidget-min.js" append="true">/* commit hash: ${commithash} */${line.separator}</echo>
-	<exec executable="git" outputproperty="latest_tag">
-	    <arg value="describe"/>
-	    <arg value="--tags"/>
-	    <arg value="--abbrev=0"/>
-	</exec>
-	<echo file="ngchmWidget-min.js" append="true">/* build tag: ${latest_tag} */${line.separator}</echo>
+	<echo file="ngchmWidget-min.js" append="true">/* commit hash: ${env.GIT_COMMIT} */${line.separator}</echo>
+	<echo file="ngchmWidget-min.js" append="true">/* build tag: ${env.GIT_LATEST_TAG} */${line.separator}</echo>
 	</target>
 
 	<!-- Target to call the steps to build just the ngChmApp.html stand-alone viewer file -->
