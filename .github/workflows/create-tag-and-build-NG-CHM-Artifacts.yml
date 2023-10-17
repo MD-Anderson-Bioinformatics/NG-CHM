@@ -73,9 +73,6 @@ jobs:
       tag_name: ${{ steps.make_tag.outputs.tag_name }}
   build_artifacts:
     runs-on: ubuntu-latest
-    env:
-      GIT_COMMIT: ${{ github.sha }}
-      GIT_LATEST_TAG: ${{ github.ref }}
     name: Build Artifacts
     needs: make_build_tag
     strategy:
@@ -84,6 +81,8 @@ jobs:
       Artifacts_REPOSITORY: "MD-Anderson-Bioinformatics/NG-CHM-Artifacts"
       Artifacts_BRANCH: "main"
       JAVA_VERSION: 11
+      GIT_COMMIT: ${{ github.sha }}
+      GIT_LATEST_TAG: ${{ github.ref }}
     steps:
       - name: Checkout Tag Created In "Creating Build Number Tag" Job
         uses: actions/checkout@v3
