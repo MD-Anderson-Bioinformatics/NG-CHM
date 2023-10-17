@@ -73,6 +73,9 @@ jobs:
       tag_name: ${{ steps.make_tag.outputs.tag_name }}
   build_artifacts:
     runs-on: ubuntu-latest
+    env:
+      GIT_COMMIT: ${{ github.sha }}
+      GIT_LATEST_TAG: ${{ github.ref }}
     name: Build Artifacts
     needs: make_build_tag
     strategy:
