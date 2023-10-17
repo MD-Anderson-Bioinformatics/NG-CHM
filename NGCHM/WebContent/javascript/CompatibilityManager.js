@@ -21,7 +21,7 @@ CM.jsonConfigStr = "{\"row_configuration\": {\"classifications\": {\"show\": \"Y
 // CURRENT VERSION NUMBER
 // WARNING: The line starting with 'CM.version = ' is used by .github/workflows/create-build-tag.yml for creating build tags
 // If making changes to the string 'CM.version = ', make corresponding changes to the 'start_string' in that action.
-CM.version = "2.24.1";	// Please increment rightmost digit for each interim version
+CM.version = "2.24.2";	// Please increment rightmost digit for each interim version
 CM.versionCheckUrl = "https://bioinformatics.mdanderson.org/versioncheck/NGCHM/";
 CM.viewerAppUrl = "https://bioinformatics.mdanderson.org/ngchm/ZipAppDownload";
 CM.classOrderStr = ".classifications_order";
