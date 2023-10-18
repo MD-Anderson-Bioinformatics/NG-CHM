@@ -16,7 +16,7 @@
 ##
 
 name: NG-CHM-Artifacts release
-## concurency group prevents race condition with NG-CHM-Artifacts_push_main.yml
+## concurrency group prevents race condition with NG-CHM-Artifacts_push_main.yml
 concurrency: artifacts
 on:
   release:
