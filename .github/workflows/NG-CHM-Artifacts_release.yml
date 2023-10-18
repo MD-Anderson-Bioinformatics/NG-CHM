@@ -1,0 +1,119 @@
+##
+##  Build artifacts for NG-CHM-Artifacts triggered by release
+##
+##     Builds all artifacts from Dockerfile, checks them into the 'NG-CHM-Artifacts',
+##     and creates corresponding release.
+##
+##     Artifacts built:
+##
+##     - ShaidyMapGen.jar
+##     - GalaxyMapGen.jar
+##     - GUIBuilderMapGen.jar
+##     - ngchmWidget-min.js
+##     - ngchmEmbed-min.js
+##     - WebContent/ngChmApp.html
+##     - WebContent/server.app (directory)
+##
+
+name: NG-CHM-Artifacts release
+## concurency group prevents race condition with NG-CHM-Artifacts_push_main.yml
+concurrency: artifacts
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build_artifacts:
+    runs-on: ubuntu-latest
+    name: NG-CHM-Artifacts release
+    strategy:
+      max-parallel: 1
+    env:
+      Artifacts_REPOSITORY: "${{ github.repository_owner }}/NG-CHM-Artifacts"
+      Artifacts_BRANCH: "main"
+      JAVA_VERSION: 11
+    steps:
+      - name: Checkout commit
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}
+      - name: Make git info available for ant build
+        run: |
+          echo "GIT_COMMIT=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
+          echo "GIT_LATEST_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
+      # https://github.com/marohrdanz/extract-version-from-file
+      # Output from this step is version from CompatibilityManager as 'version_number'.
+      - name: Get version number
+        id: get_version_number
+        uses: marohrdanz/extract-version-from-file@v1.0.0
+        with:
+          file_path: 'NGCHM/WebContent/javascript/CompatibilityManager.js'
+          start_string: 'CM.version = '
+      - name: Set up JDK for java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: "${{ env.JAVA_VERSION }}"
+          distribution: 'temurin'
+      - name: Build ShaidyMapGen.jar
+        run: |
+          cd NGCHM
+          ant -f build_shaidyRmapgen.xml
+      - name: Build GalaxyMapGen.jar
+        run: |
+          cd NGCHM
+          ant -f build_galaxymapgen.xml
+      - name: Build GUIBuilderMapGen.jar
+        run: |
+          cd NGCHM
+          ant -f build_guibuildermapgen.xml
+      - name: Build NG-CHM standalone files and server.app
+        run: |
+          cd NGCHM
+          ant -f build_ngchmApp.xml
+      - name: Check out NG-CHM-Artifacts repo
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ env.Artifacts_REPOSITORY }}
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
+          ref: ${{ env.Artifacts_BRANCH }}
+          path: "./Artifacts"
+      - name: Copy artifacts to NG-CHM-Artifacts
+        run: |
+          cd Artifacts
+          cp ../NGCHM/ShaidyMapGen.jar shaidymapgen/
+          cp ../NGCHM/GalaxyMapGen.jar galaxymapgen/
+          cp ../NGCHM/GUIBuilderMapGen.jar guibuildermapgen/
+          cp ../NGCHM/ngchmWidget-min.js viewer.standalone/
+          cp ../NGCHM/ngchmEmbed-min.js viewer.standalone/
+          cp ../NGCHM/WebContent/ngChmApp.html viewer.standalone/
+          echo "Build tag: ${{ github.ref_name }}" > viewer.standalone/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.standalone/build_version.txt
+          cp -r ../NGCHM/WebContent/server.app viewer.build/
+          echo "Build tag: ${{ github.ref_name }}" > viewer.build/server.app/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.build/server.app/build_version.txt
+          rm -rf ../NGCHM/WebContent/server.app
+          cp -r ../NGCHM/WebContent/ viewer.source/
+          echo "Build tag: ${{ github.ref_name }}" > viewer.source/WebContent/build_version.txt
+          echo "Git hash: ${{ github.sha }}" >> viewer.source/WebContent/build_version.txt
+      - name: Commit, tag, and push to NG-CHM-Artifacts repo
+        run: |
+          cd Artifacts
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          git commit -m "Build from NG-CHM tag ${{ github.ref_name }}"
+          git push origin ${{ env.Artifacts_BRANCH }}
+          git tag ${{ github.ref_name }}
+          git push origin ${{ github.ref_name }}
+      - name: Create a release in NG-CHM-Artifacts repo
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
+          body: "Version ${{ steps.get_version_number.outputs.version_number }}"
+          repository: ${{ env.Artifacts_REPOSITORY }}
+      - name: Create notice of success 
+        run: |
+          echo "::notice::Created release ${{ steps.get_version_number.outputs.version_number }} in ${{ env.Artifacts_REPOSITORY }}"
+
+
