@@ -1,9 +1,16 @@
 ##
-##  GitHub Action to build artifacts for NGCHMSupportFiles,
-##  triggered by publishing a release
+##  Build artifacts for NGCHMSupportFiles triggered by release
+##
+##     Builds selected artifacts from Dockerfile, checks them into the 'NGCHMSupportFiles',
+##     and creates corresponding release.
+##
+##     Artifacts built:
+##
+##     - ShaidyMapGen.jar
+##     - ngchmWidget-min.js
 ##
 
-name: Build artifacts for NGCHMSupportFiles
+name: NGCHMSupportFiles release
 on:
   release:
     types: [published]
@@ -12,17 +19,20 @@ on:
 jobs:
   Build-ShaidyMapGen-and-ngchmWdiget-min:
     runs-on: ubuntu-22.04
+    name: NGCHMSupportFiles release
     env:
-      NGCHMSupportFiles_REPOSITORY: 'MD-Anderson-Bioinformatics/NGCHMSupportFiles'
+      NGCHMSupportFiles_REPOSITORY: '${{ github.repository_owner }}/NGCHMSupportFiles'
       NGCHMSupportFiles_BRANCH: 'main'
       JAVA_VERSION: 11
-      GIT_COMMIT: ${{ github.sha }}
-      GIT_LATEST_TAG: ${{ github.ref }}
     steps:
-      - name: Check out release tag
+      - name: Checkout commit
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.sha }}
+      - name: Make git info available for ant build
+        run: |
+          echo "GIT_COMMIT=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
+          echo "GIT_LATEST_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
       # https://github.com/marohrdanz/extract-version-from-file
       # Output from this step is version from CompatibilityManager as 'version_number'.
       - name: Get version number
@@ -51,7 +61,7 @@ jobs:
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           ref: ${{ env.NGCHMSupportFiles_BRANCH }}
           path: './NGCHMSupportFiles'
-      - name: Copy artifacts to NGCHMSupportFiles and update NGCHMSupportFiles version
+      - name: Copy artifacts and update NGCHMSupportFiles version
         run: |
           cd NGCHMSupportFiles
           cp ../NGCHM/ShaidyMapGen.jar inst/java
@@ -79,5 +89,8 @@ jobs:
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           body: "Version ${{ steps.get_version_number.outputs.version_number }}"
           repository: ${{ env.NGCHMSupportFiles_REPOSITORY }}
+      - name: Create notice of success 
+        run: |
+          echo "::notice::Created release ${{ steps.get_version_number.outputs.version_number }} in ${{ env.NGCHMSupportFiles_REPOSITORY }}"
 
 

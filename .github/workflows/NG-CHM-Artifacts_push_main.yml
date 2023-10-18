@@ -1,7 +1,9 @@
 ##
-## GitHub Workflow of 2 sequential jobs:
+##  Create build tag, build artifacts and push to NG-CHM-Artifacts triggered by push to main
 ##
-## 1. make_build_tag
+##  This workflow has two sequential jobs:
+##
+##  1. make_build_tag
 ##
 ##     Adds a incremental build tag to the repo based on:
 ##
@@ -17,7 +19,7 @@
 ##      and the version from CompatibilityManager.js is '2.22.1', the new tag
 ##      will be: 2.22.1-build-5.
 ##
-## 2. build_artifacts
+##  2. build_artifacts
 ##
 ##     Builds all artifacts from Dockerfile and checks them into the 'NG-CHM-Artifacts'
 ##     repo with the same tag as the build tag from the first job.
@@ -33,6 +35,9 @@
 ##     - WebContent/server.app (directory)
 ##
 
+name: NG-CHM-Artifacts tag
+## concurency group prevents race condition with NG-CHM-Artifacts_release.yml
+concurrency: artifacts
 on:
   push:
     branches:
@@ -42,12 +47,11 @@ on:
 jobs:
   make_build_tag:
     runs-on: ubuntu-22.04
-    name: Creating Build Number Tag
+    name: Tag w/ build number
     strategy:
       max-parallel: 1
     steps:
-      # https://github.com/marketplace/actions/checkout
-      - name: Checkout
+      - name: Checkout commit
         uses: actions/checkout@v3
         with:
           ref: ${{ github.sha }}
@@ -61,7 +65,7 @@ jobs:
           start_string: 'CM.version = '
       # https://github.com/marohrdanz/build-number-tag
       # Output from this step is tag name as 'build_number'.
-      - name: Create Build Number Tag
+      - name: Create build tag
         id: make_tag
         uses: marohrdanz/build-number-tag@v1.1.0
         with:
@@ -73,18 +77,20 @@ jobs:
       tag_name: ${{ steps.make_tag.outputs.tag_name }}
   build_artifacts:
     runs-on: ubuntu-latest
-    name: Build Artifacts
+    name: NG-CHM-Artifacts tag
     needs: make_build_tag
     strategy:
       max-parallel: 1
     env:
-      Artifacts_REPOSITORY: "MD-Anderson-Bioinformatics/NG-CHM-Artifacts"
+      Artifacts_REPOSITORY: "${{ github.repository_owner }}/NG-CHM-Artifacts"
       Artifacts_BRANCH: "main"
       JAVA_VERSION: 11
-      GIT_COMMIT: ${{ github.sha }}
-      GIT_LATEST_TAG: ${{ github.ref }}
     steps:
-      - name: Checkout Tag Created In "Creating Build Number Tag" Job
+      - name: Make git info available for ant build
+        run: |
+          echo "GIT_COMMIT=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
+          echo "GIT_LATEST_TAG=${{ needs.make_build_tag.outputs.tag_name }}" >> $GITHUB_ENV
+      - name: Checkout build tag
         uses: actions/checkout@v3
         with:
           ref: ${{ needs.make_build_tag.outputs.tag_name }}
@@ -109,14 +115,14 @@ jobs:
         run: |
           cd NGCHM
           ant -f build_ngchmApp.xml
-      - name: Check out Artifacts repo
+      - name: Check out NG-CHM-Artifacts repo
         uses: actions/checkout@v3
         with:
           repository: ${{ env.Artifacts_REPOSITORY }}
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           ref: ${{ env.Artifacts_BRANCH }}
           path: "./Artifacts"
-      - name: Copy artifacts
+      - name: Copy artifacts to NG-CHM-Artifacts
         run: |
           cd Artifacts
           cp ../NGCHM/ShaidyMapGen.jar shaidymapgen/
@@ -134,7 +140,7 @@ jobs:
           cp -r ../NGCHM/WebContent/ viewer.source/
           echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.source/WebContent/build_version.txt
           echo "Git hash: ${{ github.sha }}" >> viewer.source/WebContent/build_version.txt
-      - name: Commit, tag, and push to Artifacts repo
+      - name: Commit, tag, and push to NG-CHM-Artifacts repo
         run: |
           cd Artifacts
           git config --local user.email "actions@github.com"
@@ -144,4 +150,5 @@ jobs:
           git push origin ${{ env.Artifacts_BRANCH }}
           git tag ${{ needs.make_build_tag.outputs.tag_name }}
           git push origin ${{ needs.make_build_tag.outputs.tag_name }}
+          echo "::notice::Created tag ${{ needs.make_build_tag.outputs.tag_name }} in ${{ env.Artifacts_REPOSITORY }}"
 
