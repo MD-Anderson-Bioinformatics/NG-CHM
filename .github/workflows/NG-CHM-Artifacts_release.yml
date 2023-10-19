@@ -1,26 +1,8 @@
 ##
-## GitHub Workflow of 2 sequential jobs:
+##  Build artifacts for NG-CHM-Artifacts triggered by release
 ##
-## 1. make_build_tag
-##
-##     Adds a incremental build tag to the repo based on:
-##
-##      - Version number in CompatibilityManager.js
-##      - Existing '-build-' tags in repo
-##
-##     For example, if there are exiting tags in the repo:
-##
-##      - 2.22.1-build-4
-##      - 2.21.0-build-3
-##      - 2.20.1-build-2
-##
-##      and the version from CompatibilityManager.js is '2.22.1', the new tag
-##      will be: 2.22.1-build-5.
-##
-## 2. build_artifacts
-##
-##     Builds all artifacts from Dockerfile and checks them into the 'NG-CHM-Artifacts'
-##     repo with the same tag as the build tag from the first job.
+##     Builds all artifacts from Dockerfile, checks them into the 'NG-CHM-Artifacts',
+##     and creates corresponding release.
 ##
 ##     Artifacts built:
 ##
@@ -33,24 +15,33 @@
 ##     - WebContent/server.app (directory)
 ##
 
+name: NG-CHM-Artifacts release
+## concurrency group prevents race condition with NG-CHM-Artifacts_push_main.yml
+concurrency: artifacts
 on:
-  push:
-    branches:
-      main
+  release:
+    types: [published]
   workflow_dispatch:
 
 jobs:
-  make_build_tag:
-    runs-on: ubuntu-22.04
-    name: Creating Build Number Tag
+  build_artifacts:
+    runs-on: ubuntu-latest
+    name: NG-CHM-Artifacts release
     strategy:
       max-parallel: 1
+    env:
+      Artifacts_REPOSITORY: "${{ github.repository_owner }}/NG-CHM-Artifacts"
+      Artifacts_BRANCH: "main"
+      JAVA_VERSION: 11
     steps:
-      # https://github.com/marketplace/actions/checkout
-      - name: Checkout
+      - name: Checkout commit
         uses: actions/checkout@v3
         with:
           ref: ${{ github.sha }}
+      - name: Make git info available for ant build
+        run: |
+          echo "GIT_COMMIT=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
+          echo "GIT_LATEST_TAG=${{ github.ref_name }}" >> $GITHUB_ENV
       # https://github.com/marohrdanz/extract-version-from-file
       # Output from this step is version from CompatibilityManager as 'version_number'.
       - name: Get version number
@@ -59,33 +50,6 @@ jobs:
         with:
           file_path: 'NGCHM/WebContent/javascript/CompatibilityManager.js'
           start_string: 'CM.version = '
-      # https://github.com/marohrdanz/build-number-tag
-      # Output from this step is tag name as 'build_number'.
-      - name: Create Build Number Tag
-        id: make_tag
-        uses: marohrdanz/build-number-tag@v1.1.0
-        with:
-          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
-          prefix: '-build-'
-          version_prefix: ${{ steps.get_version_number.outputs.version_number }}
-    outputs:
-      build_number: ${{ steps.make_tag.outputs.build_number }}
-      tag_name: ${{ steps.make_tag.outputs.tag_name }}
-  build_artifacts:
-    runs-on: ubuntu-latest
-    name: Build Artifacts
-    needs: make_build_tag
-    strategy:
-      max-parallel: 1
-    env:
-      Artifacts_REPOSITORY: "MD-Anderson-Bioinformatics/NG-CHM-Artifacts"
-      Artifacts_BRANCH: "main"
-      JAVA_VERSION: 11
-    steps:
-      - name: Checkout Tag Created In "Creating Build Number Tag" Job
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ needs.make_build_tag.outputs.tag_name }}
       - name: Set up JDK for java ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v3
         with:
@@ -107,14 +71,14 @@ jobs:
         run: |
           cd NGCHM
           ant -f build_ngchmApp.xml
-      - name: Check out Artifacts repo
+      - name: Check out NG-CHM-Artifacts repo
         uses: actions/checkout@v3
         with:
           repository: ${{ env.Artifacts_REPOSITORY }}
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           ref: ${{ env.Artifacts_BRANCH }}
           path: "./Artifacts"
-      - name: Copy artifacts
+      - name: Copy artifacts to NG-CHM-Artifacts
         run: |
           cd Artifacts
           cp ../NGCHM/ShaidyMapGen.jar shaidymapgen/
@@ -123,23 +87,33 @@ jobs:
           cp ../NGCHM/ngchmWidget-min.js viewer.standalone/
           cp ../NGCHM/ngchmEmbed-min.js viewer.standalone/
           cp ../NGCHM/WebContent/ngChmApp.html viewer.standalone/
-          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.standalone/build_version.txt
+          echo "Build tag: ${{ github.ref_name }}" > viewer.standalone/build_version.txt
           echo "Git hash: ${{ github.sha }}" >> viewer.standalone/build_version.txt
           cp -r ../NGCHM/WebContent/server.app viewer.build/
-          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.build/server.app/build_version.txt
+          echo "Build tag: ${{ github.ref_name }}" > viewer.build/server.app/build_version.txt
           echo "Git hash: ${{ github.sha }}" >> viewer.build/server.app/build_version.txt
           rm -rf ../NGCHM/WebContent/server.app
           cp -r ../NGCHM/WebContent/ viewer.source/
-          echo "Build tag: ${{ needs.make_build_tag.outputs.tag_name }}" > viewer.source/WebContent/build_version.txt
+          echo "Build tag: ${{ github.ref_name }}" > viewer.source/WebContent/build_version.txt
           echo "Git hash: ${{ github.sha }}" >> viewer.source/WebContent/build_version.txt
-      - name: Commit, tag, and push to Artifacts repo
+      - name: Commit, tag, and push to NG-CHM-Artifacts repo
         run: |
           cd Artifacts
           git config --local user.email "actions@github.com"
           git config --local user.name "GitHub Actions"
           git add .
-          git commit -m "Build from NG-CHM tag ${{ needs.make_build_tag.outputs.tag_name }}"
+          git commit -m "Build from NG-CHM tag ${{ github.ref_name }}"
           git push origin ${{ env.Artifacts_BRANCH }}
-          git tag ${{ needs.make_build_tag.outputs.tag_name }}
-          git push origin ${{ needs.make_build_tag.outputs.tag_name }}
+          git tag ${{ github.ref_name }}
+          git push origin ${{ github.ref_name }}
+      - name: Create a release in NG-CHM-Artifacts repo
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
+          body: "Version ${{ steps.get_version_number.outputs.version_number }}"
+          repository: ${{ env.Artifacts_REPOSITORY }}
+      - name: Create notice of success 
+        run: |
+          echo "::notice::Created release ${{ steps.get_version_number.outputs.version_number }} in ${{ env.Artifacts_REPOSITORY }}"
+
 
