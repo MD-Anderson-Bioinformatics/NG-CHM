@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion('2022-11-20');
+linkouts.setVersion('2023-11-21');
 
 // 2D Scatter Plot plugin:
 linkouts.addPanePlugin ({
@@ -54,6 +54,11 @@ linkouts.addPanePlugin ({
     linkouts.addSubtype ("bio.pubmed", "search");
 
     linkouts.describeTypes([
+        { typeName: "bio.exon.ensembl",
+          displayName: "Ensembl Exon Identifier",
+          description: "An Ensembl exon identifier.",
+          format: "ENSE###########"
+        },
 	{ typeName: "bio.genome.position",
 	  displayName: "Genome Position/Range",
 	  description: "Genome position/range",
@@ -89,6 +94,16 @@ linkouts.addPanePlugin ({
           displayName: "NCBI Entrez Gene Identifier",
           description: "Numeric Id representing a gene as defined by NCBI"
         },
+        { typeName: "bio.gene.ensembl",
+          displayName: "Ensembl Gene Identifier",
+          description: "An Ensembl gene identifier.",
+          format: "ENSG###########"
+        },
+        { typeName: "bio.protein.ensembl",
+          displayName: "Ensembl protein identifier",
+          description: "An Ensembl protein identifier.",
+          format: "ENSP###########"
+        },
         { typeName: "bio.protein.uniprotid",
           displayName: "Uniprot protein identifier",
           description: "A Uniprot protein identifier."
@@ -104,7 +119,8 @@ linkouts.addPanePlugin ({
         },
         { typeName: "bio.transcript.ensembl",
           displayName: "Ensembl transcript identifier",
-          description: "An Ensembl transcript identifier"
+          description: "An Ensembl transcript identifier",
+          format: "ENST###########"
         },
 	{ typeName: "bio.gdc.case.uuid",
 	  displayName: "GDC Case UUID",
@@ -571,6 +587,33 @@ linkouts.addPlugin({
             { menuEntry: "View ideogram", typeName1: ["bio.gene.hugo"], typeName2: ["bio.gene.hugo"], selectMode: linkouts.MULTI_SELECT, linkoutFn: viewIdeogramGene2 },
             { menuEntry: "View ideogram", typeName1: ["bio.mirna"], typeName2: ["bio.mirna"], selectMode: linkouts.MULTI_SELECT, linkoutFn: viewIdeogramMIRNA2 }
         ]
+    });
+}) (linkouts);
+
+//==============================================//
+// LinkedOmics Database plugin                  //
+//==============================================//
+(function(linkouts) {
+
+    function openLinkedOmicsGene (names) {
+	const gname = names[0];
+	linkouts.openUrl("https://kb.linkedomics.org/gene/" + gname, "LinkedOmics", { noframe: true });
+    };
+
+    function openLinkedOmicsIsoform (names) {
+	const pname = names[0];
+	linkouts.openUrl("https://kb.linkedomics.org/isoform/" + pname, "LinkedOmics", { noframe: true });
+    };
+
+    linkouts.addPlugin({
+        name: "LinkedOmics Database",
+	description: "Adds linkout to LinkedOmics database.",
+	version: "0.1.0",
+	site: "https://kb.linkedomics.org",
+	linkouts: [
+	    { menuEntry: "Open LinkedOmics", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openLinkedOmicsGene },
+	    { menuEntry: "Open LinkedOmics", typeName: "bio.protein.ensembl", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openLinkedOmicsIsoform },
+	]
     });
 }) (linkouts);
 
