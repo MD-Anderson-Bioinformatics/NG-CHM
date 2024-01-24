@@ -2083,7 +2083,7 @@ public class HeatmapDataGenerator {
 		}	
 
 		/*******************************************************************
-		 * METHOD: validateConfigJson
+		 * METHOD: zipDirectory
 		 *
 		 * This and following three methods perform a recursive zip of the heatmap directory.  
 		 * that the zip file contain a folder at the top level with folder name = heat map name.
