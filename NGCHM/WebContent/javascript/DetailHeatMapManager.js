@@ -19,41 +19,90 @@
     const SRCHSTATE = NgChm.importNS('NgChm.SRCHSTATE');
     const SRCH = NgChm.importNS('NgChm.SRCH');
 
-//Next available heatmap object iterator (used for subscripting new map DOM elements) 
-DMM.nextMapNumber = 1;
+    //Next available heatmap object iterator (used for subscripting new map DOM elements) 
+    DMM.nextMapNumber = 1;
 
-//Template for a Detail Heat Map object containing initialization values for all pertinent variables.
+    //Template for a Detail Heat Map object containing initialization values for all pertinent variables.
     const mapTemplate = {
-	  pane: null, chm: null, version: 'P', panelNbr: 1, mode: 'NORMAL', prevMode: 'NORMAL', currentRow: 1, currentCol: 1, dataPerRow: null, dataPerCol: null,
-	  selectedStart: 0, selectedStop: 0, colDendroCanvas: null, rowDendroCanvas: null, canvas: null, boxCanvas: null, labelElement: null, labelPostScript: null,
-	  rowLabelDiv: null, colLabelDiv: null, gl: null, uScale: null, uTranslate: null, canvasScaleArray: new Float32Array([1.0, 1.0]), canvasTranslateArray: new Float32Array([0, 0]),
-	  oldMousePos: [0, 0], offsetX: 0, offsetY: 0, pageX: 0, pageY: 0, latestTap: null, latestDoubleTap: null, latestPinchDistance: null, latestTapLocation: null,
-	  saveRow: null, saveCol: null, dataBoxHeight: null, dataBoxWidth: null, rowDendro: null, colDendro: null, dendroHeight: 105, dendroWidth: 105,
-	  dataViewHeight: DET.SIZE_NORMAL_MODE, dataViewWidth: DET.SIZE_NORMAL_MODE,
-	  labelLastClicked: {}, dragOffsetX: null, dragOffsetY: null, rowLabelLen: 0, colLabelLen: 0,
-	  rowLabelFont: 0, colLabelFont: 0,colClassLabelFont: 0, rowClassLabelFont: 0, labelElements: {}, oldLabelElements: {}, tmpLabelSizeElements: [], 
-	  labelSizeWidthCalcPool: [], labelSizeCache: {},zoomOutNormal: null, zoomOutPos: null, subDendroMode: 'none',
-	  selectedIsDendrogram: false,
-	  searchOrientation: 'row',
-	  allowedOrientations: 'any',
-	  colClassScale: 1.5,  // Allow the size of covariate bars in detail maps to vary relative to the size of the detail map.
-	  rowClassScale: 1.5,  // Constants for now. Should adjust so that absolute bar sizes do not vary excessively.
-
-	  nextDrawWindow: null,  // DrawWindow to use on next redraw.
-	  drawEventTimer: 0, // Timeout event until next window redraw
-	  drawTimeoutStartTime: 0,  // When we first wanted to redraw panel.
-
-	  //We keep a copy of the last rendered detail heat map for each layer.
-	  //This enables quickly redrawing the heatmap when flicking between layers, which
-	  //needs to be nearly instant to be effective.
-	  //The copy will be invalidated and require drawing if any parameter affecting
-	  //drawing of that heat map is changed or if a new tile that could affect it
-	  //is received.
-	  detailHeatMapCache: {},      // Last rendered detail heat map for each layer
-	  detailHeatMapLevel: {},      // Level of last rendered heat map for each layer
-	  detailHeatMapValidator: {},  // Encoded drawing parameters used to check heat map is current
-	  detailHeatMapParams: {},     // Drawing parameters for this detail view (used by PDF generator)
-	  detailHeatMapAccessWindow: null, // Last used access window (for preventing tileWindow garbage collection)
+		allowedOrientations: 'any',
+		boxCanvas: null,
+		canvas: null,
+		canvasScaleArray: new Float32Array([1.0, 1.0]),
+		canvasTranslateArray: new Float32Array([0, 0]),
+		chm: null,
+		colClassLabelFont: 0,
+		colClassScale: 1.5,  // Allow the size of covariate bars in detail maps to vary relative to the size of the detail map.
+		colDendro: null,
+		colDendroCanvas: null,
+		colLabelDiv: null,
+		colLabelFont: 0,
+		colLabelLen: 0,
+		currentCol: 1,
+		currentRow: 1,
+		dataBoxHeight: null,
+		dataBoxWidth: null,
+		dataPerCol: null,
+		dataPerRow: null,
+		dataViewHeight: DET.SIZE_NORMAL_MODE,
+		dataViewWidth: DET.SIZE_NORMAL_MODE,
+		dendroHeight: 105,
+		dendroWidth: 105,
+		dragOffsetX: null,
+		dragOffsetY: null,
+		drawEventTimer: 0, // Timeout event until next window redraw
+		drawTimeoutStartTime: 0,  // When we first wanted to redraw panel.
+		gl: null,
+		labelElement: null,
+		labelElements: {},
+		labelLastClicked: {},
+		labelPostScript: null,
+		labelSizeCache: {},
+		labelSizeWidthCalcPool: [],
+		latestDoubleTap: null,
+		latestPinchDistance: null,
+		latestTap: null,
+		latestTapLocation: null,
+		mode: 'NORMAL',
+		nextDrawWindow: null,  // DrawWindow to use on next redraw.
+		oldLabelElements: {},
+		oldMousePos: [0, 0],
+		offsetX: 0,
+		offsetY: 0,
+		pageX: 0,
+		pageY: 0,
+		panelNbr: 1,
+		pane: null,
+		prevMode: 'NORMAL',
+		rowClassLabelFont: 0,
+		rowClassScale: 1.5,  // Constants for now. Should adjust so that absolute bar sizes do not vary excessively.
+		rowDendro: null,
+		rowDendroCanvas: null,
+		rowLabelDiv: null,
+		rowLabelFont: 0,
+		rowLabelLen: 0,
+		saveCol: null,
+		saveRow: null,
+		searchOrientation: 'row',
+		selectedIsDendrogram: false,
+		selectedStart: 0,
+		selectedStop: 0,
+		tmpLabelSizeElements: [],
+		uScale: null,
+		uTranslate: null,
+		version: 'P',
+		zoomOutNormal: null,
+		zoomOutPos: null,
+		//We keep a copy of the last rendered detail heat map for each layer.
+		//This enables quickly redrawing the heatmap when flicking between layers, which
+		//needs to be nearly instant to be effective.
+		//The copy will be invalidated and require drawing if any parameter affecting
+		//drawing of that heat map is changed or if a new tile that could affect it
+		//is received.
+		detailHeatMapAccessWindow: null, // Last used access window (for preventing tileWindow garbage collection)
+		detailHeatMapCache: {},      // Last rendered detail heat map for each layer
+		detailHeatMapLevel: {},      // Level of last rendered heat map for each layer
+		detailHeatMapParams: {},     // Drawing parameters for this detail view (used by PDF generator)
+		detailHeatMapValidator: {},  // Encoded drawing parameters used to check heat map is current
     };
 
     class DetailHeatMapView {

@@ -566,7 +566,6 @@ DET.getDetailSaveState = function (dm) {
 	    'type': 'detailMap',
 	    'version': dm.version,
 	    'versionNumber': dm.panelNbr,
-	    'subDendroMode': dm.subDendroMode,
 	    'selectedStart': dm.selectedStart,
 	    'selectedStop': dm.selectedStop,
 	    'selectedIsDendrogram': dm.selectedIsDendrogram,
@@ -668,13 +667,13 @@ DET.setDetailDataHeight = function (mapItem, size) {
 
 	//For maps that have less rows/columns than the size of the detail panel, matrix elements get height / width more
 	//than 1 pixel, scale calculates the appropriate height/width.
-	if (mapItem.mode.startsWith('RIBBONH') && mapItem.selectedStart != 0) { // mapItem.subDendroMode === 'Row') {
+	if (mapItem.mode.startsWith('RIBBONH') && mapItem.selectedStart != 0) {
 	    if (mapItem.currentRow == 1 && mapItem.dataPerCol == mapItem.heatMap.getTotalRows()) {
 		setFullMap = true;
 	    } else {
 		DET.scaleViewHeight(mapItem);
 	    }
-	} else if (mapItem.mode.startsWith('RIBBONV') && mapItem.selectedStart != 0) { // subDendroMode === 'Column') {
+	} else if (mapItem.mode.startsWith('RIBBONV') && mapItem.selectedStart != 0) {
 	    if (mapItem.currentCol == 1 && mapItem.dataPerRow == mapItem.heatMap.getTotalCols()) {
 		setFullMap = true;
 	    } else {
@@ -957,7 +956,6 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	mapItem.dataPerCol = savedState.dataPerCol;
 	mapItem.dataPerRow = savedState.dataPerRow;
 	mapItem.mode = savedState.mode;
-	mapItem.subDendroMode = savedState.subDendroMode || "none";
 	mapItem.selectedStart = savedState.selectedStart || 0;
 	mapItem.selectedStop = savedState.selectedStop || 0;
 	mapItem.selectedIsDendrogram = savedState.selectedIsDendrogram || false;

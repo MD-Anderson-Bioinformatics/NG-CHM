@@ -122,7 +122,6 @@ SUM.initSummaryData = function(callbacks) {
 
 		// Set start and stop coordinates
 		if (DVW.primaryMap) {
-		    DVW.primaryMap.subDendroMode = axis;
 		    DVW.primaryMap.selectedStart = regionStart;
 		    DVW.primaryMap.selectedStop = regionStop;
 		    DVW.primaryMap.selectedIsDendrogram = true;
