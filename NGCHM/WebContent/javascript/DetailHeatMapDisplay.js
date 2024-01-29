@@ -31,24 +31,32 @@ DET.redrawUpdateTimeout = 10;	// Drawing delay in ms after a tile update (if nee
 DET.minPixelsForGrid = 20;	// minimum element size for grid lines to display
 DET.animating = false;
 
-    /*********************************************************************************************
-     * FUNCTION:  setDataViewSize - Set the display size, in canvas units, of the specified axis
-     * of the detail map view shown in mapItem.
-     *
-     * We also multiply the covariate bar scale factor for that axis by the ratio of the new to
-     * old display sizes.  This preserves the relative sizes of the covariate bars and the heat
-     * map view.
-     *********************************************************************************************/
-    DET.setDataViewSize = setDataViewSize;
-    function setDataViewSize (mapItem, axis, size) {
-	if (MMGR.isRow (axis)) {
-	    mapItem.rowClassScale *= size / mapItem.dataViewWidth;
-	    mapItem.dataViewWidth = size|0;
-	} else {
-	    mapItem.colClassScale *= size / mapItem.dataViewHeight;
-	    mapItem.dataViewHeight = size|0;
+	/**
+	 * Sets the display size, in canvas units, of the specified axis of the detail map view show in in mapItem.
+	 *
+	 * @param {Object} mapItem - The map item to update.
+	 * @param {string} axis - The axis to update ('row' or 'col').
+	 * @param {number} size - The new size for the data view.
+	 *
+	 * If the axis is 'row', the function updates `mapItem.rowClassScale` and `mapItem.dataViewWidth`.
+	 * If the axis is 'col', the function updates `mapItem.colClassScale` and `mapItem.dataViewHeight`.
+	 *
+	 * The `mapItem.rowClassScale` or `mapItem.colClassScale` is multiplied by the ratio of `size` to the
+	 * current data view width or height. These are the covariate bar scale factors for the row and column, respectively.
+	 * This mulipliation preserves the relative sizes of the covariate bars and the heat map view.
+	 *
+	 * The `mapItem.dataViewWidth` or `mapItem.dataViewHeight` is set to floor of `size`.
+	 */
+	DET.setDataViewSize = setDataViewSize;
+	function setDataViewSize (mapItem, axis, size) {
+		if (MMGR.isRow (axis)) {
+			mapItem.rowClassScale *= size / mapItem.dataViewWidth;
+			mapItem.dataViewWidth = size|0;
+		} else {
+			mapItem.colClassScale *= size / mapItem.dataViewHeight;
+			mapItem.dataViewHeight = size|0;
+		}
 	}
-    }
 
 //----------------------------------------------------------------------------------------------//
 //----------------------------------------------------------------------------------------------//
