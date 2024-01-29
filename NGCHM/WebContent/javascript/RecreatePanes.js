@@ -81,47 +81,47 @@
 	 * for the current window size.
 	 */
 	function createLayout (saveSpec, parent) {
-	    if (saveSpec.type === "pane") {
-		let el = PANE.newPane({}, "Empty", saveSpec.id);
-		el.style.width = saveSpec.width;
-		el.style.height = saveSpec.height;
-		if (saveSpec.collapsed) {
-		    // Create a 'fake' pane location.
-		    const loc = {
-			    pane: el,
-			    container: parent,
-			    paneHeader: el.getElementsByClassName('paneHeader')[0],
-			    paneTitle: el.getElementsByClassName('paneTitle')[0],
-		    };
-		    PANE.collapsePane (loc);
+		if (saveSpec.type === "pane") {
+			let el = PANE.newPane({}, "Empty", saveSpec.id);
+			el.style.width = saveSpec.width;
+			el.style.height = saveSpec.height;
+			if (saveSpec.collapsed) {
+				// Create a 'fake' pane location.
+				const loc = {
+					pane: el,
+					container: parent,
+					paneHeader: el.getElementsByClassName('paneHeader')[0],
+					paneTitle: el.getElementsByClassName('paneTitle')[0],
+				};
+				PANE.collapsePane (loc);
+			}
+			if (saveSpec.expanded) el.dataset.expandedPanel = true;
+			return el;
+		} else if (saveSpec.type === "container") {
+			let el = document.createElement ('DIV');
+			el.style.width = saveSpec.width;
+			el.style.height = saveSpec.height;
+			el.id = saveSpec.id;
+			el.classList.add("ngChmContainer");
+			if (saveSpec.vertical) el.classList.add("vertical");
+			saveSpec.children.forEach((child,idx) => {
+				if (idx > 0) {
+					const divider = document.createElement("DIV");
+					divider.classList.add('resizerHelper');
+					divider.classList.add('resizerHelper' + (saveSpec.vertical ? 'Bottom' : 'Right'));
+					const splitter = document.createElement('DIV');
+					splitter.classList.add('resizerSplitter' + (saveSpec.vertical ? 'Horizontal' : 'Vertical'));
+					divider.appendChild(splitter);
+					el.appendChild (divider);
+				}
+				const ch = createLayout (child, el);
+				el.appendChild (ch);
+			});
+			el.addEventListener('paneresize', PANE.resizeHandler);
+			return el;
+		} else {
+			console.error ("Attemping to restore unknown saveSpec object: " + saveSpec.type);
 		}
-		if (saveSpec.expanded) el.dataset.expandedPanel = true;
-		return el;
-	    } else if (saveSpec.type === "container") {
-		let el = document.createElement ('DIV');
-		el.style.width = saveSpec.width;
-		el.style.height = saveSpec.height;
-		el.id = saveSpec.id;
-		el.classList.add("ngChmContainer");
-		if (saveSpec.vertical) el.classList.add("vertical");
-		saveSpec.children.forEach((child,idx) => {
-		    if (idx > 0) {
-			const divider = document.createElement("DIV");
-			divider.classList.add('resizerHelper');
-			divider.classList.add('resizerHelper' + (saveSpec.vertical ? 'Bottom' : 'Right'));
-			const splitter = document.createElement('DIV');
-			splitter.classList.add('resizerSplitter' + (saveSpec.vertical ? 'Horizontal' : 'Vertical'));
-			divider.appendChild(splitter);
-			el.appendChild (divider);
-		    }
-		    const ch = createLayout (child, el);
-		    el.appendChild (ch);
-		});
-		el.addEventListener('paneresize', PANE.resizeHandler);
-		return el;
-	    } else {
-		console.error ("Attemping to restore unknown saveSpec object: " + saveSpec.type);
-	    }
 	}
 
 	/**

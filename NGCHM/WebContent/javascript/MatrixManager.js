@@ -293,10 +293,13 @@ let	wS = `const debug = ${debug};`;
 	constructor (heatMap, tileSpec) {
 	    const { layer, level, startRowTile, endRowTile, startColTile, endColTile } = tileSpec;
 	    const heatMapLevel = heatMap.datalevels[level];
-	    if (startRowTile < 1 || endRowTile > heatMapLevel.numTileRows ||
-	        startColTile < 1 || endColTile > heatMapLevel.numTileColumns ||
-		endRowTile < startRowTile || endColTile < startColTile) {
-		console.error ('Constructing TileWindow with out-of-range tiles', tileSpec, heatMapLevel);
+	    if (startRowTile < 1 ||
+			endRowTile > heatMapLevel.numTileRows ||
+	        startColTile < 1 ||
+			endColTile > heatMapLevel.numTileColumns ||
+		    endRowTile < startRowTile ||
+			endColTile < startColTile) {
+				console.error ('Constructing TileWindow with out-of-range tiles', tileSpec, heatMapLevel);
 	    }
 	    this.heatMap = heatMap;
 	    this.layer = layer;
@@ -361,20 +364,20 @@ let	wS = `const debug = ${debug};`;
 	}
 
 	fetchTiles () {
-	    // Initiates fetches for any tiles without data in the TileWindow.
-	    let idx = 0;
-	    for (let row = this.startRowTile; row <= this.endRowTile; row++) {
-		for (let col = this.startColTile; col <= this.endColTile; col++) {
-		    if (!this.tiles[idx]) {
-			const tileCacheName = this.layer + "." + this.level + "." + row + "." + col;
-			this.tiles[idx] = this.heatMap.tileCache.getTileCacheData(tileCacheName);
-			if (!this.tiles[idx]) {
-			    this.tiles[idx] = this.heatMap.tileCache.getTile(this.layer, this.level, row, col);
+		// Initiates fetches for any tiles without data in the TileWindow.
+		let idx = 0;
+		for (let row = this.startRowTile; row <= this.endRowTile; row++) {
+			for (let col = this.startColTile; col <= this.endColTile; col++) {
+				if (!this.tiles[idx]) {
+					const tileCacheName = this.layer + "." + this.level + "." + row + "." + col;
+					this.tiles[idx] = this.heatMap.tileCache.getTileCacheData(tileCacheName);
+					if (!this.tiles[idx]) {
+						this.tiles[idx] = this.heatMap.tileCache.getTile(this.layer, this.level, row, col);
+					}
+				}
+				idx++;
 			}
-		    }
-		    idx++;
 		}
-	    }
 	}
 
 	allTilesAvailable () {
@@ -673,14 +676,20 @@ let	wS = `const debug = ${debug};`;
     // of marginal utility.
     //
     class AccessWindow {
-	constructor (heatMap, win) {
-	    this.heatMap = heatMap;
-	    this.win = { layer: win.layer, level: win.level, firstRow: win.firstRow|0, firstCol: win.firstCol|0, numRows: win.numRows|0, numCols: win.numCols|0 };
-	    this.tileWindow = heatMap.getTileWindow (this.win);
-	    this.tileWindow.fetchTiles();
-	    this.datalevel = heatMap.datalevels[this.win.level];
-	}
-
+		constructor (heatMap, win) {
+			this.heatMap = heatMap;
+			this.win = {
+				layer: win.layer,
+				level: win.level,
+				firstRow: win.firstRow|0,
+				firstCol: win.firstCol|0,
+				numRows: win.numRows|0,
+				numCols: win.numCols|0
+			};
+			this.tileWindow = heatMap.getTileWindow(this.win);
+			this.tileWindow.fetchTiles();
+			this.datalevel = heatMap.datalevels[this.win.level];
+		}
 	// Return the value of a data element within the AccessWindow.
 	// row and column are specified in HeatMap coordinates but must be
 	// within the range of the rows and columns specified when the
@@ -1654,21 +1663,19 @@ let	wS = `const debug = ${debug};`;
     //
     // Has the effect of prefetching and preserving the thumbnail
     // level tiles for all layers.
-    function prefetchInitialTiles(heatMap) {
-	const datalayers = heatMap.mapConfig.data_configuration.map_information.data_layer;
-	heatMap.thumbnailWindowRefs =
-	    Object.keys(datalayers).map (layer =>
-		heatMap.getNewAccessWindow ({
-		    layer: layer,
-		    level: MAPREP.THUMBNAIL_LEVEL,
-		    firstRow: 1,
-		    firstCol: 1,
-		    numRows: heatMap.getNumRows(MAPREP.THUMBNAIL_LEVEL),
-		    numCols: heatMap.getNumColumns(MAPREP.THUMBNAIL_LEVEL),
-		})
-	    );
-    }
-
+	function prefetchInitialTiles(heatMap) {
+		const datalayers = heatMap.mapConfig.data_configuration.map_information.data_layer;
+		heatMap.thumbnailWindowRefs = Object.keys(datalayers).map(layer =>
+			heatMap.getNewAccessWindow({
+				layer: layer,
+				level: MAPREP.THUMBNAIL_LEVEL,
+				firstRow: 1,
+				firstCol: 1,
+				numRows: heatMap.getNumRows(MAPREP.THUMBNAIL_LEVEL),
+				numCols: heatMap.getNumColumns(MAPREP.THUMBNAIL_LEVEL),
+			})
+		);
+	}
 
     ///////////////////////////////////////////////////////////////////////////
     //

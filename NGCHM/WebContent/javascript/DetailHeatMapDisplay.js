@@ -905,7 +905,6 @@ DET.setDetailDataHeight = function (mapItem, size) {
 		mapItem.currentCol = mapItem.saveCol;
 	    }
 	}
-
 	DVW.checkRow(mapItem);
 	DVW.checkCol(mapItem);
 
@@ -955,37 +954,37 @@ DET.setDetailDataHeight = function (mapItem, size) {
      * FUNCTION: restoreFromSavedState  -  Restore detail view from saved state.
      *********************************************************************************************/
     DET.restoreFromSavedState = function (mapItem, savedState) {
-	mapItem.currentCol = savedState.currentCol;
-	mapItem.currentRow = savedState.currentRow;
-	DET.setDataViewSize (mapItem, "row", savedState.dataViewWidth + DET.dataViewBorder);
-	DET.setDataViewSize (mapItem, "column", savedState.dataViewHeight + DET.dataViewBorder);
-	mapItem.dataBoxHeight = savedState.dataBoxHeight;
-	mapItem.dataBoxWidth = savedState.dataBoxWidth;
-	mapItem.dataPerCol = savedState.dataPerCol;
-	mapItem.dataPerRow = savedState.dataPerRow;
-	mapItem.mode = savedState.mode;
-	mapItem.selectedStart = savedState.selectedStart || 0;
-	mapItem.selectedStop = savedState.selectedStop || 0;
-	mapItem.selectedIsDendrogram = savedState.selectedIsDendrogram || false;
-	// RESTORE CANVAS SIZE
-	let zoomBoxSizeIdx = DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
-	switch (savedState.mode) {
-	    case "RIBBONV":
-	    case "RIBBONV_DETAIL":
-		DET.detailVRibbon(mapItem, {});
-		break;
-	    case "RIBBONH":
-	    case "RIBBONH_DETAIL":
-		DET.detailHRibbon(mapItem, {});
-		break;
-	    case "FULL_MAP":
-		DET.detailFullMap(mapItem);
-		break;
-	    case "NORMAL":
-	    default: // Fall through. Use the 'NORMAL' case for unknown modes.
-		DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[zoomBoxSizeIdx]);
-		DET.detailNormal (mapItem, {});
-	};
+		mapItem.currentCol = savedState.currentCol;
+		mapItem.currentRow = savedState.currentRow;
+		DET.setDataViewSize (mapItem, "row", savedState.dataViewWidth + DET.dataViewBorder);
+		DET.setDataViewSize (mapItem, "column", savedState.dataViewHeight + DET.dataViewBorder);
+		mapItem.dataBoxHeight = savedState.dataBoxHeight;
+		mapItem.dataBoxWidth = savedState.dataBoxWidth;
+		mapItem.dataPerCol = savedState.dataPerCol;
+		mapItem.dataPerRow = savedState.dataPerRow;
+		mapItem.mode = savedState.mode;
+		mapItem.selectedStart = savedState.selectedStart || 0;
+		mapItem.selectedStop = savedState.selectedStop || 0;
+		mapItem.selectedIsDendrogram = savedState.selectedIsDendrogram || false;
+		// RESTORE CANVAS SIZE
+		let zoomBoxSizeIdx = DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
+		switch (savedState.mode) {
+			case "RIBBONV":
+			case "RIBBONV_DETAIL":
+				DET.detailVRibbon(mapItem, {});
+				break;
+			case "RIBBONH":
+			case "RIBBONH_DETAIL":
+				DET.detailHRibbon(mapItem, {});
+				break;
+			case "FULL_MAP":
+				DET.detailFullMap(mapItem);
+				break;
+			case "NORMAL":
+			default: // Fall through. Use the 'NORMAL' case for unknown modes.
+				DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[zoomBoxSizeIdx]);
+				DET.detailNormal (mapItem, {});
+		};
     };
 
 //----------------------------------------------------------------------------------------------//
