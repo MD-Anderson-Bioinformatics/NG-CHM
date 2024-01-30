@@ -867,62 +867,94 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	}
     };
 
-    /**********************************************************************************
-     * FUNCTION - detailNormal: The purpose of this function is to handle all of
-     * the processing necessary to return a heat map panel to normal mode.
-     * mapItem is the detail view map item.
-     **********************************************************************************/
-    DET.detailNormal = function (mapItem, restoreInfo) {
-	UHM.hlpC();
-	const previousMode = mapItem.mode;
-	DVW.setMode(mapItem,'NORMAL');
-	mapItem.setButtons();
-	if (!restoreInfo) {
-	    setDataViewSize (mapItem, "column", DET.SIZE_NORMAL_MODE);
-	    setDataViewSize (mapItem, "row", DET.SIZE_NORMAL_MODE);
-	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
-		DET.setDetailDataSize(mapItem, mapItem.dataBoxWidth);
-	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
-		DET.setDetailDataSize(mapItem,mapItem.dataBoxHeight);
-	    } else if (previousMode=='FULL_MAP') {
-		DET.setDetailDataSize(mapItem,DET.zoomBoxSizes[0]);
-	    }
+	/**
+	 * Handles processing to switch a detail map item to NORMAL mode.
+	 *
+	 * It sets the mode of the map item to 'NORMAL', and if switching from a different mode, adjusts
+	 * the size and current row/column based on the previous mode. It then checks and adjusts the current
+	 * row and column to ensure they are within the bounds of the heat map matrix. It sets the canvas
+	 * dimensions to match the current data view size, and initializes its GL context.
+	 *
+	 * @param {Object} mapItem - The detail map item to switch to normal detail mode.
+	 * @param {Object} [restoreInfo] - Optional. Basically used as a boolean: If defined, then we are restoring
+	 * the state of the map item, otherwise switching from a different mode.
+	 * @throws {Error} Will throw an error if unable to adjust viewport 'content' attribute.
+	 */
+	DET.detailNormal = function (mapItem, restoreInfo) {
+		UHM.hlpC();
+		const previousMode = mapItem.mode;
+		DVW.setMode(mapItem,'NORMAL');
+		mapItem.setButtons();
+		if (!restoreInfo) {
+			setDataViewSize (mapItem, "column", DET.SIZE_NORMAL_MODE);
+			setDataViewSize (mapItem, "row", DET.SIZE_NORMAL_MODE);
+			switch (previousMode) {
+				case 'RIBBONV':
+				case 'RIBBONV_DETAIL':
+					DET.setDetailDataSize(mapItem, mapItem.dataBoxWidth);
+					break;
+				case 'RIBBONH':
+				case 'RIBBONH_DETAIL':
+					DET.setDetailDataSize(mapItem, mapItem.dataBoxHeight);
+					break;
+				case 'FULL_MAP':
+					DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[0]);
+					break;
+			}
 
-	    //On some maps, one view (e.g. ribbon view) can show bigger data areas than will fit for other view modes.  If so, zoom back out to find a workable zoom level.
-	    const numDetailRows = mapItem.heatMap.getNumRows (MAPREP.DETAIL_LEVEL);
-	    const numDetailColumns = mapItem.heatMap.getNumColumns (MAPREP.DETAIL_LEVEL);
-	    while ((Math.floor((mapItem.dataViewHeight-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight)]) > numDetailRows) ||
-	       (Math.floor((mapItem.dataViewWidth-DET.dataViewBorder)/DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)]) > numDetailColumns)) {
-		DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth)+1]);
-	    }
+			// Sometimes when switching modes (e.g. from ribbon to normal), the data box size is too big for the current view.
+			// (i.e. the number of rows or columns to display is less than the number that would fit in the view)
+			// If so, resize the data box to fit the view.
+			const numDetailRows = mapItem.heatMap.getNumRows (MAPREP.DETAIL_LEVEL); // number of rows to display
+			const numDetailColumns = mapItem.heatMap.getNumColumns (MAPREP.DETAIL_LEVEL); // number of columns to display
+			while (true) {
+				const boxHeightIndex = DET.zoomBoxSizes.indexOf(mapItem.dataBoxHeight);
+				const boxWidthIndex = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 
-	    if ((previousMode=='RIBBONV') || (previousMode=='RIBBONV_DETAIL')) {
-		mapItem.currentRow = mapItem.saveRow;
-	    } else if ((previousMode=='RIBBONH') || (previousMode=='RIBBONH_DETAIL')) {
-		mapItem.currentCol = mapItem.saveCol;
-	    } else if (previousMode=='FULL_MAP') {
-		mapItem.currentRow = mapItem.saveRow;
-		mapItem.currentCol = mapItem.saveCol;
-	    }
-	}
-	DVW.checkRow(mapItem);
-	DVW.checkCol(mapItem);
+				// rowsFit and columnsFit are the number of rows and columns that would fit with the current box size.
+				const rowsFit = Math.floor((mapItem.dataViewHeight - DET.dataViewBorder) / DET.zoomBoxSizes[boxHeightIndex]);
+				const columnsFit = Math.floor((mapItem.dataViewWidth - DET.dataViewBorder) / DET.zoomBoxSizes[boxWidthIndex]);
 
-	setCanvasDimensions (mapItem);
-	DET.detInitGl(mapItem);
-	clearDendroSelection(mapItem);
-	mapItem.updateSelection();
-	try {
-	    const viewport = document.getElementById ("viewport");
-	    if (viewport) {
-		// In case viewport element is missing in widgetized applications.
-		viewport.setAttribute("content", "height=device-height");
-		viewport.setAttribute("content", "");
-	    }
-	} catch(err) {
-	    console.error("Unable to adjust viewport content attribute");
-	}
-    };
+				if (rowsFit > numDetailRows || columnsFit > numDetailColumns) {
+					DET.setDetailDataSize(mapItem, DET.zoomBoxSizes[boxWidthIndex + 1]);
+				} else {
+					break;
+				}
+			}
+
+			switch (previousMode) {
+				case 'RIBBONV':
+				case 'RIBBONV_DETAIL':
+					mapItem.currentRow = mapItem.saveRow;
+					break;
+				case 'RIBBONH':
+				case 'RIBBONH_DETAIL':
+					mapItem.currentCol = mapItem.saveCol;
+					break;
+				case 'FULL_MAP':
+					mapItem.currentRow = mapItem.saveRow;
+					mapItem.currentCol = mapItem.saveCol;
+					break;
+			}
+		}
+		DVW.checkRow(mapItem);
+		DVW.checkCol(mapItem);
+
+		setCanvasDimensions (mapItem);
+		DET.detInitGl(mapItem);
+		clearDendroSelection(mapItem);
+		mapItem.updateSelection();
+		try {
+			const viewport = document.getElementById ("viewport");
+			if (viewport) {
+				// In case viewport element is missing in widgetized applications.
+				viewport.setAttribute("content", "height=device-height");
+				viewport.setAttribute("content", "");
+			}
+		} catch(err) {
+			console.error("Unable to adjust viewport content attribute");
+		}
+	};
 
     DET.clearDendroSelection = clearDendroSelection;
     /* Clear any dendrogram selection / restricted region for the
