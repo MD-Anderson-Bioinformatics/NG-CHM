@@ -25,15 +25,18 @@
 	RECPANES.reconstructPanelsFromMapConfig = reconstructPanelsFromMapConfig;
 
 	/**
-	 * Reconstruct the panels from data in the mapConfig.json file
-	 *
-	 * This function combines an if/else with setTmeout in order to wait for the plugins to
-	 * complete loading before attempting to reconstruct the panel layout.
-	 * This is a hack.
-	 * TODO: Understand the NGCHM initialization code well enough to not need this hack.
-	 */
-	function reconstructPanelsFromMapConfig(initialLoc, savedState) {
-
+	* Reconstruct panels from data in mapConfig.json file
+	*
+	* This function takes a saved state and uses it to recontruct the panel layout.
+	* It replaces the current layout with the reconstructed one, adds divider controls and resize handlers,
+	* waits for plugins to load, and then populates the panels with content (e.g. detail map, summary map, plugin).
+	* If an error occurs while reconstructing the layout, it logs the error and throws an exception.
+	*
+	* @param {Object} savedState - The saved state to use when reconstructing the layout (e.g. the `panel_configuration`
+	* from mapConfig.json).
+	* @throws {string} Will throw an error if the panel layout cannot be reconstructed.
+	*/
+	function reconstructPanelsFromMapConfig(savedState) {
 	    if (debug) console.log("Reconstructing panes");
 	    RECPANES.mapConfigPanelConfiguration = Object.assign({}, savedState);
 	    try {
@@ -50,20 +53,29 @@
 
 	    CUST.waitForPlugins(populatePluginPanels);
 
-	    // Plugin panes require plugins loaded first.
-	    function populatePluginPanels () {
+		/**
+		* Populates the plugin panels with initial content. Must be called AFTER plugins are loaded.
+		*
+		* This function sets the initial content for the panels, selects any saved slections, and
+		* performs an initial search (which may override saved results), resizes the NG-CHM,
+		* and sets the heatmap's unapplied changes to false.
+		*
+		* After a delay of 500 milliseconds, it updates the selections, checks for an expanded panel
+		* and toggles its screen mode if found, resizes all panes, and hides the loader screen to display the NG-CHM.
+		*/
+		function populatePluginPanels () {
 			if (debug) console.log("Setting initial pane content");
 			setPanesContent();
-			setSelections();  // Set saved results, if any.
-			SRCH.doInitialSearch();  // Will override saved results, if requested.
+			setSelections();
+			SRCH.doInitialSearch();
 			PANE.resizeNGCHM();
 			MMGR.getHeatMap().setUnAppliedChanges(false);
 			setTimeout(() => {
 				DET.updateSelections(true);
 				const expanded = document.querySelector("DIV[data-expanded-panel]");
 				if (expanded) {
-				    delete expanded.dataset.expandedPanel;
-				    PANE.toggleScreenMode (expanded.id);
+					delete expanded.dataset.expandedPanel;
+					PANE.toggleScreenMode (expanded.id);
 				}
 				[...document.getElementsByClassName('pane')].forEach(PANE.resizePane);
 				UTIL.hideLoader(true);  // Hide loader screen, display NG-CHM.
@@ -150,13 +162,16 @@
 	 *	goes smoothly
 	 */
 	function setPanesContent() {
-
 		let panesArray = Array.from(document.getElementsByClassName("pane")).map(el => {
 			const info = getPaneInfoFromMapConfig (el.id);
 			let sortval;
-		        if (info.type == 'summaryMap') { sortval = 0; }
-		        else if (info.type == 'detailMap') { sortval = info.version == 'P' ? 1 : 2; }
-			else { sortval = 3; }
+			if (info.type == 'summaryMap') {
+				sortval = 0;
+			} else if (info.type == 'detailMap') {
+				sortval = info.version == 'P' ? 1 : 2;
+			} else {
+				sortval = 3;
+			}
 			return { id: el.id, idx: +el.id.replace('pane',''), el: el, info: info, sortval: sortval };
 		});
 		/* Order: summaryMap, primaryDetailMap, otherDetailMaps, other panes.
@@ -303,8 +318,8 @@
 		try {
 			let paneInfo = RECPANES.mapConfigPanelConfiguration[paneId];
 			if (!paneInfo) {
-			    console.warn ('Panel ' + paneId + ' has nosaved configuration');
-			    paneInfo = {};
+				console.warn ('Panel ' + paneId + ' has nosaved configuration');
+				paneInfo = {};
 			}
 			return paneInfo;
 		} catch (error) {
