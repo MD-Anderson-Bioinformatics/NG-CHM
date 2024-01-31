@@ -490,31 +490,49 @@ DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
 
 	var initialSwitchPaneToDetail = true
 
+	/**
+	* Switches a pane to display a detailed heat map.
+	*
+	* This function takes a location and an optional restore information object, and switches the pane at the given
+	* location to display a detailed heat map.
+	*
+	* If the pane is null or is already displaying a detailed heat map, the function returns early and does nothing.
+	*
+	* If this is the first time a detailed heat map is created, the function creates a detail heat map template.
+	*
+	* The function empties the pane, clones a detail heat map template, adds it to the pane,
+	* and sets up the necessary event handlers and settings.
+	*
+	* If restore information is provided, the function uses it to restore the state of the heat map.
+	*
+	* @param {Object} loc - The location of the pane to switch. Must have a 'pane' property that is a DOM element.
+	* @param {Object} [restoreInfo] - Optional. An object containing information about the state of the heat map to
+	* restore. If not provided, a new heat map is created.
+	*/
 	function switchPaneToDetail (loc, restoreInfo) {
 		if (loc.pane === null) return;  //Builder logic for panels that don't show detail
+		if (loc.pane.querySelector('.detail_chm') !== null) {
+			return;  // Cannot switch if already a detail_chm in this panel.
+		}
 		const debug = false;
 		const paneId = loc.pane.id; // paneId needed by callbacks. loc may not be valid in callback.
 		const isPrimary = restoreInfo ? restoreInfo.isPrimary : (DVW.primaryMap === null);
 		const mapNumber = restoreInfo ? restoreInfo.mapNumber : DMM.nextMapNumber;
 
 		PANE.clearExistingDialogs(paneId);
+
 		if (initialSwitchPaneToDetail) {
-			// First time detail NGCHM created.
 			constructDetailMapDOMTemplate()
 			initialSwitchPaneToDetail = false;
 		}
 
-		if (loc.pane.querySelector('.detail_chm') !== null) {
-			// Cannot switch if already a detail_chm in this panel.
-			return;
-		}
 		PANE.emptyPaneLocation (loc);
 		if (restoreInfo) {
-		    if (mapNumber >= DMM.nextMapNumber) {
-			DMM.nextMapNumber = mapNumber+1;
-		    }
+			if (mapNumber >= DMM.nextMapNumber) {
+				DMM.nextMapNumber = mapNumber+1;
+			}
 		} else {
-		    DMM.nextMapNumber++;
+			DMM.nextMapNumber++;
 		}
 
 		/* Clone DIV#detail_chm from DIV#templates. */
