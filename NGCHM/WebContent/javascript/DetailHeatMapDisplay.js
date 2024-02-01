@@ -982,24 +982,32 @@ DET.setDetailDataHeight = function (mapItem, size) {
 	}
     }
 
-    /*********************************************************************************************
-     * FUNCTION: restoreFromSavedState  -  Restore detail view from saved state.
-     *********************************************************************************************/
+	/**
+	 * Restore a detail view from a saved state.
+	 *
+	 * @param {Object} mapItem - The map item object to restore.
+	 * @param {Object} savedState - The saved state to restore from.
+	 *
+	 * This function will modify the mapItem object to match the savedState object.
+	 * If a property in savedState is undefined, a default value will be used.
+	 */
     DET.restoreFromSavedState = function (mapItem, savedState) {
-		mapItem.currentCol = savedState.currentCol;
-		mapItem.currentRow = savedState.currentRow;
-		DET.setDataViewSize (mapItem, "row", savedState.dataViewWidth + DET.dataViewBorder);
-		DET.setDataViewSize (mapItem, "column", savedState.dataViewHeight + DET.dataViewBorder);
-		mapItem.dataBoxHeight = savedState.dataBoxHeight;
-		mapItem.dataBoxWidth = savedState.dataBoxWidth;
-		mapItem.dataPerCol = savedState.dataPerCol;
-		mapItem.dataPerRow = savedState.dataPerRow;
-		mapItem.mode = savedState.mode;
+		mapItem.dataViewHeight = savedState.dataViewHeight || DET.SIZE_NORMAL_MODE - DET.dataViewBorder;
+		mapItem.dataViewWidth = savedState.dataViewWidth || DET.SIZE_NORMAL_MODE - DET.dataViewBorder;
+		mapItem.currentCol = savedState.currentCol || 1;
+		mapItem.currentRow = savedState.currentRow || 1;
+		DET.setDataViewSize(mapItem, "row", mapItem.dataViewWidth + DET.dataViewBorder);
+		DET.setDataViewSize(mapItem, "column", mapItem.dataViewHeight + DET.dataViewBorder);
+		mapItem.dataPerCol = savedState.dataPerCol || 2;  // assumes at least two rows
+		mapItem.dataPerRow = savedState.dataPerRow || 2;  // assumes at least two cols
+		mapItem.dataBoxHeight = savedState.dataBoxHeight || DET.getNearestBoxSize(mapItem, "row", mapItem.dataPerRow + 1);
+		mapItem.dataBoxWidth = savedState.dataBoxWidth || DET.getNearestBoxSize(mapItem, "column", mapItem.dataPerCol + 1);
+		mapItem.mode = savedState.mode || 'NORMAL';
 		mapItem.selectedStart = savedState.selectedStart || 0;
 		mapItem.selectedStop = savedState.selectedStop || 0;
 		mapItem.selectedIsDendrogram = savedState.selectedIsDendrogram || false;
 		// RESTORE CANVAS SIZE
-		let zoomBoxSizeIdx = DET.zoomBoxSizes.indexOf(savedState.dataBoxWidth);
+		let zoomBoxSizeIdx = DET.zoomBoxSizes.indexOf(mapItem.dataBoxWidth);
 		switch (savedState.mode) {
 			case "RIBBONV":
 			case "RIBBONV_DETAIL":
