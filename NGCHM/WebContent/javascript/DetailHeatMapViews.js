@@ -211,7 +211,7 @@ DVW.getCurrentDetCol = function(mapItem) {
  * view where the value needs to be scaled in one dimension.
  **********************************************************************************/
 DVW.getCurrentDetDataPerRow = function(mapItem) {
-	// make sure dataPerCol is the correct value. 
+	// make sure dataPerRow is the correct value.
 	let	detDataPerRow = mapItem.dataPerRow;
 	if ((mapItem.mode == 'RIBBONH') || (mapItem.mode == 'FULL_MAP')) {
 		if (mapItem.selectedStart >= 1) {

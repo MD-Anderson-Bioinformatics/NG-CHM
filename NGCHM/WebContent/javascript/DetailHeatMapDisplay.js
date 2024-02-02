@@ -43,7 +43,7 @@ DET.animating = false;
 	 *
 	 * The `mapItem.rowClassScale` or `mapItem.colClassScale` is multiplied by the ratio of `size` to the
 	 * current data view width or height. These are the covariate bar scale factors for the row and column, respectively.
-	 * This mulipliation preserves the relative sizes of the covariate bars and the heat map view.
+	 * This multiplication preserves the relative sizes of the covariate bars and the heat map view.
 	 *
 	 * The `mapItem.dataViewWidth` or `mapItem.dataViewHeight` is set to floor of `size`.
 	 */
