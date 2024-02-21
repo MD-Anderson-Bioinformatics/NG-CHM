@@ -24,6 +24,8 @@ package mda.ngchm.datagenerator;
 
 import static mda.ngchm.datagenerator.ImportConstants.EMPTY;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -803,9 +805,16 @@ public class ShaidyRMapGen {
 			}
 			fileout.println("\t],");
 
-			fileout.println("\t\"output_location\": \"" + sub.getAbsolutePath().replaceAll("[\\\\]+","\\\\\\\\") + "\"");
-			fileout.println("}");
-			
+			fileout.println("\t\"output_location\": \"" + sub.getAbsolutePath().replaceAll("[\\\\]+","\\\\\\\\") + "\",");
+
+			// Add the panel_layout and panels to the file.
+			Gson gson = new GsonBuilder().setPrettyPrinting().create(); // use gson to pretty print
+			JSONObject panel_layout = (JSONObject)chmRJson.get("panel_layout");
+			String pretty_panel_layout = gson.toJson(panel_layout).replaceAll("(?m)^", "\t\t"); // leading tabs to match ouput format above
+			fileout.println("\t\"panel_layout\":\n" + pretty_panel_layout + ",");
+			JSONArray panels = (JSONArray)chmRJson.get("panels");
+			String pretty_panels = gson.toJson(panels).replaceAll("(?m)^", "\t\t"); // leading tabs to match output format above
+			fileout.println("\t\"panels\":\n" + pretty_panels + "\n}"); // closing '}' at end of json
 			fileout.close();
 			LOG.debug("Finished writing heatmapProperties.json: " + viewerMapDir + File.separator + "heatmapProperties.json");
 
