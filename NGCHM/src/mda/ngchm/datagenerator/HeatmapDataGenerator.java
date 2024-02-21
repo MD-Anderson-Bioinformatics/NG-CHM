@@ -1084,7 +1084,9 @@ public class HeatmapDataGenerator {
 	        writeLabelConfig(fw, iData, false);
 	        writeConfigDendrogram(fw, iData, false);
 	        writeConfigClassifications(fw, iData, false);
-	        fw.write(BRACE_CLOSE+BRACE_CLOSE);
+	        fw.write(BRACE_CLOSE + COMMA);
+	        writePanelConfiguration(fw, iData);
+	        fw.write(BRACE_CLOSE);
 	    } catch (Exception ex) {
 			System.out.println("Exception Writing mapConfig.JSON file: " + ex.toString());  
 	        throw ex;
@@ -1092,6 +1094,19 @@ public class HeatmapDataGenerator {
 	    	fw.close();
 	    	writer.close();
 	    }
+	}
+
+	/**
+	 * Writes the panel configuration to the specified output stream writer.
+	 *
+	 * @param fw The output stream writer to write the panel configuration to.
+	 * @param iData The import data containing the panel configuration.
+	 * @throws Exception If an error occurs while writing the panel configuration.
+	 */
+	private static void writePanelConfiguration(OutputStreamWriter fw, ImportData iData) throws Exception {
+		LOG.debug(iData.panelConfiguration);
+		fw.write(PANEL_CONFIG_LABEL);
+		fw.write(iData.panelConfiguration.toString());
 	}
 				           
 	/*******************************************************************
