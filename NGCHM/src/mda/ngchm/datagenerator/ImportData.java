@@ -34,7 +34,11 @@ import org.json.simple.parser.ParseException;
 
 import static mda.ngchm.datagenerator.ImportConstants.*;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class ImportData { 
+	private static final Logger LOG = LogManager.getLogger(ImportData.class);
 	public String chmName;
 	public String builderVersion;
 	public String chmDescription;
@@ -69,9 +73,11 @@ public class ImportData {
 	 ******************************************************************/
 	public ImportData(String[] fileInfo) throws Exception
 	{
+		LOG.debug("Reading file: " + fileInfo[0]);
 		if (fileInfo.length > 1) {
 			for (int i=1;i< fileInfo.length;i++) {
 				String infoItem = fileInfo[i];
+				LOG.debug("InfoItem: " + infoItem);
 				if (infoItem.equals(GENERATE_PDF)) {
 					generatePDF = true;
 				} else if (infoItem.equals(GENERATE_FULL_PDF)) {

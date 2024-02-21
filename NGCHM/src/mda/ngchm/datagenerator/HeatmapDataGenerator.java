@@ -12,7 +12,6 @@
  ******************************************************************/
 
 package mda.ngchm.datagenerator;
-
 import java.awt.Color;
 import java.awt.Graphics; 
 import java.awt.Graphics2D;
@@ -50,9 +49,12 @@ import java.io.OutputStreamWriter;
 import mda.ngchm.datagenerator.ImportData;
 import static mda.ngchm.datagenerator.ImportConstants.*;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class HeatmapDataGenerator {
 
+	private static final Logger LOG = LogManager.getLogger(HeatmapDataGenerator.class);
 	/*******************************************************************
 	 * METHOD: main
 	 *
@@ -97,6 +99,8 @@ public class HeatmapDataGenerator {
 	 ******************************************************************/
 	public static String processHeatMap(String[] args) {
 		System.out.println("START Data Generator Heat Map Generation: " + new Date()); 
+		LOG.info("START Data Generator Heat Map Generation");
+		LOG.debug("args: " + Arrays.toString(args));
 		String errMsg = EMPTY;
 		       
 		//Used to keep pdfBox warning messages out of the log (specifically for Galaxy)
@@ -1056,6 +1060,7 @@ public class HeatmapDataGenerator {
 		OutputStreamWriter fw = null;
 		try {
 			writer = new DataOutputStream(new FileOutputStream(iData.outputDir+File.separator+MAP_CONFIG_FILE));
+			LOG.debug("Writing mapConfig.json: " + iData.outputDir + File.separator + MAP_CONFIG_FILE);
 			fw = new OutputStreamWriter(writer, UTF8);
 			//Write out data configuration JSON section
 	        fw.write(BRACE_OPEN+DATA_CONFIG_LABEL+BRACE_OPEN);
