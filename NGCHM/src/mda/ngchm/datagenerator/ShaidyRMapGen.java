@@ -31,7 +31,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -42,15 +43,16 @@ import org.json.simple.parser.ParseException;
 //various configuration / data files produced by R and stored in different directories into a
 //heatmap.json and runs HeatmapDataGenerator to create the files needed by the NGCHM viewer.
 public class ShaidyRMapGen {
+	private static final Logger LOG = LogManager.getLogger(ShaidyRMapGen.class);
 	private static String BUILDER_VER = "ShaidyR 2.1.1";
 	private static String FILE_SEP = File.separator + File.separator; // On windows "\" path separator characters need to be doubled in json strings
-	
 	
 	private static StringBuffer errors = new StringBuffer();
 	private static StringBuffer warnings = new StringBuffer();
 	
 	//Parse the "chm.json" file produced by R
 	private static JSONObject getChmJson(String chmJson) throws IOException, ParseException {
+		LOG.debug("Reading chm.json file: " + chmJson);
 		BufferedReader br = new BufferedReader(new FileReader(chmJson));
         JSONParser parser = new JSONParser();
         JSONObject jsonObject  = (JSONObject) parser.parse(br);
@@ -805,6 +807,7 @@ public class ShaidyRMapGen {
 			fileout.println("}");
 			
 			fileout.close();
+			LOG.debug("Finished writing heatmapProperties.json: " + viewerMapDir + File.separator + "heatmapProperties.json");
 
 			if (errors.length() > 0) {
 				System.out.println("FATAL Errors Found ShaidyRMapGen Terminating");
