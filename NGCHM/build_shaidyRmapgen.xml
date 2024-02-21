@@ -19,7 +19,7 @@
 	<!-- Build all JAVA class files -->
     <target name="compile">
         <mkdir dir="${classes.dir}"/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}" classpath="./WebContent/WEB-INF/lib/json-simple-1.1.1.jar:./WebContent/WEB-INF/lib/pdfbox-2.0.4.jar:./WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar:./WebContent/WEB-INF/lib/log4j-api-2.22.1.jar:./WebContent/WEB-INF/lib/log4j-core-2.22.1.jar"/>
+				<javac srcdir="${src.dir}" destdir="${classes.dir}" classpath="./WebContent/WEB-INF/lib/json-simple-1.1.1.jar:./WebContent/WEB-INF/lib/pdfbox-2.0.4.jar:./WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar:./WebContent/WEB-INF/lib/log4j-api-2.22.1.jar:./WebContent/WEB-INF/lib/log4j-core-2.22.1.jar:./WebContent/WEB-INF/lib/gson-2.10.1.jar"/>
     </target>
 
 	<!-- Execute the JAVA class to build the ShaidyRMapGen JAR-->
@@ -47,6 +47,7 @@
             <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/log4j-api-2.22.1.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/log4j-core-2.22.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/gson-2.10.1.jar"/>
          </jar>
     </target>
 
@@ -57,7 +58,7 @@
                nowarn="on"
                debug="true"
                debuglevel="lines,source"
-               classpath="./WebContent/WEB-INF/lib/json-simple-1.1.1.jar:./WebContent/WEB-INF/lib/pdfbox-2.0.4.jar:./WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar:./WebContent/WEB-INF/lib/log4j-api-2.22.1.jar:./WebContent/WEB-INF/lib/log4j-core-2.22.1.jar"/>
+								classpath="./WebContent/WEB-INF/lib/json-simple-1.1.1.jar:./WebContent/WEB-INF/lib/pdfbox-2.0.4.jar:./WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar:./WebContent/WEB-INF/lib/log4j-api-2.22.1.jar:./WebContent/WEB-INF/lib/log4j-core-2.22.1.jar:./WebContent/WEB-INF/lib/gson-2.10.1.jar"/>
     </target>
 
     <target name="debug_create_jar" depends="debug_compile" description="create JAR file for development/debugging">
@@ -85,6 +86,7 @@
             <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/pdfbox-app-2.0.4.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/log4j-api-2.22.1.jar"/>
             <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/log4j-core-2.22.1.jar"/>
+            <zipfileset excludes="META-INF/*.SF" src="${dir.jarfile}/WebContent/WEB-INF/lib/gson-2.10.1.jar"/>
             <fileset file="WebContent/WEB-INF/lib/log4j2.xml"/>
         </jar>
     </target>
