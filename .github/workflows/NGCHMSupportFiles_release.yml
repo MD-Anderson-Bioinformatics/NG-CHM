@@ -26,7 +26,7 @@ jobs:
       JAVA_VERSION: 11
     steps:
       - name: Checkout commit
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.4
         with:
           ref: ${{ github.sha }}
       - name: Make git info available for ant build
@@ -42,7 +42,7 @@ jobs:
           file_path: 'NGCHM/WebContent/javascript/CompatibilityManager.js'
           search_string: 'CM.version = '
       - name: Set up JDK for java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.2.1
         with:
           java-version: "${{ env.JAVA_VERSION }}"
           distribution: 'temurin'
@@ -55,7 +55,7 @@ jobs:
           cd NGCHM
           ant -f build_ngchmApp.xml
       - name: Check out NGCHMSupportFiles repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.4
         with:
           repository: ${{ env.NGCHMSupportFiles_REPOSITORY }}
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
@@ -84,7 +84,7 @@ jobs:
           git commit -m "Update for NG-CHM Release ${{ steps.get_version_number.outputs.version_number }}"
           git push origin ${{ env.NGCHMSupportFiles_BRANCH }}
       - name: Create a release in NGCHMSupportFiles repo
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.0.4
         with:
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           body: "Version ${{ steps.get_version_number.outputs.version_number }}"
