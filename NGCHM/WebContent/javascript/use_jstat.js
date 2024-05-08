@@ -11,11 +11,11 @@ Function to get basic statistics for a set of values
 		        }
 */
 function getStats(dist) {
-	var mu = jStat.mean(dist) // mean
-	var std = jStat.stdev(dist, true) // standard deviation.  true for sample standard deviation, i.e. unbiasted estimator, i.e. (n-1) in denominator
-	var variance = std * std // variance
-	var n = dist.length
-	return {mu: mu, std: std, variance: variance, n: n}
+  var mu = jStat.mean(dist); // mean
+  var std = jStat.stdev(dist, true); // standard deviation.  true for sample standard deviation, i.e. unbiasted estimator, i.e. (n-1) in denominator
+  var variance = std * std; // variance
+  var n = dist.length;
+  return { mu: mu, std: std, variance: variance, n: n };
 }
 /*
 	Function to return test statistic for Welch's t-test
@@ -30,7 +30,7 @@ function getStats(dist) {
 		tvalue
 */
 function Welch_tValue(s1, s2) {
-	return (s1.mu - s2.mu) / Math.sqrt( s1.variance / s1.n + s2.variance / s2.n )
+  return (s1.mu - s2.mu) / Math.sqrt(s1.variance / s1.n + s2.variance / s2.n);
 }
 /*
 	Function to return degrees of freedom for two sets with different variances
@@ -41,7 +41,11 @@ function Welch_tValue(s1, s2) {
 		number of values free to vary
 */
 function degreesOfFreedom(s1, s2) {
-	return Math.pow( (s1.variance) / s1.n + (s2.variance / s2.n), 2) / ( Math.pow( s1.variance / s1.n, 2)/(s1.n-1) + Math.pow( s2.variance / s2.n, 2)/(s2.n-1)  ) 
+  return (
+    Math.pow(s1.variance / s1.n + s2.variance / s2.n, 2) /
+    (Math.pow(s1.variance / s1.n, 2) / (s1.n - 1) +
+      Math.pow(s2.variance / s2.n, 2) / (s2.n - 1))
+  );
 }
 /*
 	Function to calculate pvalue
@@ -52,6 +56,5 @@ function degreesOfFreedom(s1, s2) {
 		p-value
 */
 function pValue(tvalue, dof) {
-	return jStat.studentt.cdf(-Math.abs(tvalue), dof) * 2
+  return jStat.studentt.cdf(-Math.abs(tvalue), dof) * 2;
 }
-

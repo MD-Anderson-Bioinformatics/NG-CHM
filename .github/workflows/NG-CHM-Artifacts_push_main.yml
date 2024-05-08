@@ -52,22 +52,22 @@ jobs:
       max-parallel: 1
     steps:
       - name: Checkout commit
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.4
         with:
           ref: ${{ github.sha }}
       # https://github.com/marohrdanz/extract-version-from-file
       # Output from this step is version from CompatibilityManager as 'version_number'.
       - name: Get version number
         id: get_version_number
-        uses: marohrdanz/extract-version-from-file@v1.0.0
+        uses: marohrdanz/extract-version-from-file@v2.0.0
         with:
           file_path: 'NGCHM/WebContent/javascript/CompatibilityManager.js'
-          start_string: 'CM.version = '
+          search_string: 'CM.version = '
       # https://github.com/marohrdanz/build-number-tag
       # Output from this step is tag name as 'build_number'.
       - name: Create build tag
         id: make_tag
-        uses: marohrdanz/build-number-tag@v1.1.0
+        uses: marohrdanz/build-number-tag@v1.1.1
         with:
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
           prefix: '-build-'
@@ -91,11 +91,11 @@ jobs:
           echo "GIT_COMMIT=`echo ${{ github.sha }} | cut -c1-7`" >> $GITHUB_ENV
           echo "GIT_LATEST_TAG=${{ needs.make_build_tag.outputs.tag_name }}" >> $GITHUB_ENV
       - name: Checkout build tag
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.4
         with:
           ref: ${{ needs.make_build_tag.outputs.tag_name }}
       - name: Set up JDK for java ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.2.1
         with:
           java-version: "${{ env.JAVA_VERSION }}"
           distribution: 'temurin'
@@ -116,7 +116,7 @@ jobs:
           cd NGCHM
           ant -f build_ngchmApp.xml
       - name: Check out NG-CHM-Artifacts repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.4
         with:
           repository: ${{ env.Artifacts_REPOSITORY }}
           token: ${{ secrets.DQS_DEV_BCB_ACTIONS_TOKEN }}
