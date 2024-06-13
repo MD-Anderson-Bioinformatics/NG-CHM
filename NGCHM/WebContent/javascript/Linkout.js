@@ -645,13 +645,19 @@ var linkoutsVersion = "undefined";
     }
   };
 
-  LNK.labelHelpCloseAll = function () {
-    LNK.labelHelpClose("Matrix");
-    LNK.labelHelpClose("Column");
-    LNK.labelHelpClose("Row");
+  LNK.labelHelpCloseAll = function (ev) {
+    ev = ev || {};
+    LNK.labelHelpClose("Matrix", ev);
+    LNK.labelHelpClose("Column", ev);
+    LNK.labelHelpClose("Row", ev);
   };
 
-  LNK.labelHelpClose = function (axis) {
+  LNK.labelHelpClose = function (axis, ev) {
+    if (ev.ctrlKey || ev.metaKey) {
+      // Prevent extra ctrl-click event sent by Safari from closing newly opened label menus.
+      // See issue #539.
+      return;
+    }
     var labelMenu =
       axis !== "Matrix"
         ? document.getElementById(axis + "LabelMenu")
@@ -669,7 +675,7 @@ var linkoutsVersion = "undefined";
   LNK.labelHelpOpen = function (axis, e) {
     menuOpenCanvas = e.currentTarget;
     const heatMap = MMGR.getHeatMap();
-    LNK.labelHelpCloseAll();
+    LNK.labelHelpCloseAll(e);
     //Get the label item that the user clicked on (by axis) and save that value for use in LNK.selection
     var index = e.target.dataset.index;
     LNK.selection = "";
@@ -774,8 +780,8 @@ var linkoutsVersion = "undefined";
     );
     closeMenu.addEventListener(
       "click",
-      function () {
-        LNK.labelHelpClose(axis);
+      function (ev) {
+        LNK.labelHelpClose(axis, ev);
       },
       false,
     );
@@ -789,8 +795,8 @@ var linkoutsVersion = "undefined";
     labelMenu.appendChild(closeMenu);
     var tableBody = table.createTBody();
     tableBody.classList.add("labelMenuBody");
-    var labelHelpCloseAxis = function () {
-      LNK.labelHelpClose(axis);
+    var labelHelpCloseAxis = function (ev) {
+      LNK.labelHelpClose(axis, ev);
     };
     document.addEventListener("click", labelHelpCloseAxis);
     labelMenu.addEventListener(
