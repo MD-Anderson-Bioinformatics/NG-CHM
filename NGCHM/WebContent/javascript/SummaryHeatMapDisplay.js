@@ -494,6 +494,7 @@
       colors: colorMap.getColors(),
       thresholds: colorMap.getThresholds(),
       missingColor: colorMap.getMissingColor(),
+      cutsColor: colorMap.getCutsColor(),
     };
 
     const summaryProps = {
