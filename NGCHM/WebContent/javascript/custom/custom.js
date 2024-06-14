@@ -399,7 +399,7 @@ function linkoutHelp () {
   function openDecipher(names) {
     var gname = names[0];
     linkouts.openUrl(
-      "https://decipher.sanger.ac.uk/search?q=" + gname,
+      "https://deciphergenomics.org/search?q=" + gname,
       "Decipher",
       { noframe: true },
     );
@@ -461,6 +461,7 @@ function linkoutHelp () {
         "&q=" +
         gname,
       "Ensembl",
+      { noframe: true },
     );
   }
 
@@ -473,6 +474,7 @@ function linkoutHelp () {
         "&q=" +
         tname,
       "Ensembl",
+      { noframe: true },
     );
   }
 
@@ -510,6 +512,7 @@ function linkoutHelp () {
     linkouts.openUrl(
       "http://firebrowse.org/viewGene.html?gene=" + gname + "&search=" + gname,
       "FireBrowse",
+      { noframe: true },
     );
   }
 
@@ -573,6 +576,7 @@ function linkoutHelp () {
     linkouts.openUrl(
       "http://www.genecards.org/Search/Keyword?queryString=" + labels[0],
       "GeneCards",
+      { noframe: true },
     );
   }
 
@@ -596,6 +600,8 @@ function linkoutHelp () {
 //==============================================//
 //GeneVisible plugin                                 //
 //==============================================//
+if (false) {
+    // Moved to Genevestigator and requires account to access.
 (function (linkouts) {
   function openGenevisiblePeptide(names) {
     var gname = names[0];
@@ -635,6 +641,7 @@ function linkoutHelp () {
     ],
   });
 })(linkouts);
+}
 
 //==============================================//
 // Google plugin                                //
@@ -985,6 +992,7 @@ function linkoutHelp () {
     linkouts.openUrl(
       "http://mupit.icm.jhu.edu/MuPIT_Interactive?gene=" + glist,
       "MuPIT",
+      { noframe: true },
     );
   }
 
@@ -1256,6 +1264,7 @@ function linkoutHelp () {
         "&Search=" +
         "Search",
       "ClinicalTrials",
+      { noframe: true },
     );
   }
 
@@ -1267,6 +1276,7 @@ function linkoutHelp () {
         "&Search=" +
         "Search",
       "ClinicalTrials",
+      { noframe: true },
     );
   }
 
@@ -1763,6 +1773,7 @@ function linkoutHelp () {
     linkouts.openUrl(
       "http://vega.sanger.ac.uk/" + species + "/psychic?site=vega&q=" + gname,
       "Vega",
+      { noframe: true },
     );
   }
 
