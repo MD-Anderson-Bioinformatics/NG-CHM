@@ -598,52 +598,6 @@ function linkoutHelp () {
 })(linkouts);
 
 //==============================================//
-//GeneVisible plugin                                 //
-//==============================================//
-if (false) {
-    // Moved to Genevestigator and requires account to access.
-(function (linkouts) {
-  function openGenevisiblePeptide(names) {
-    var gname = names[0];
-    linkouts.openUrl(
-      "https://genevisible.com/tissues/HS/UniProt/" + gname,
-      "GeneVisible",
-    );
-  }
-
-  function openGenevisibleHugo(names) {
-    var gname = names[0];
-    linkouts.openUrl(
-      "https://genevisible.com/tissues/HS/Gene%20Symbol/" + gname,
-      "GeneVisible",
-    );
-  }
-
-  linkouts.addPlugin({
-    name: "GeneVisible",
-    description: "Adds linkouts to the GeneVisible portal.",
-    version: "0.1.2",
-    site: "https://genevisible.com",
-    logo: "https://genevisible.com/img/genevisible_logo.svgz",
-    linkouts: [
-      {
-        menuEntry: "View GeneVisible",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openGenevisibleHugo,
-      },
-      {
-        menuEntry: "View GeneVisible",
-        typeName: "bio.protein.uniprotid",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openGenevisiblePeptide,
-      },
-    ],
-  });
-})(linkouts);
-}
-
-//==============================================//
 // Google plugin                                //
 //==============================================//
 (function (linkouts) {
