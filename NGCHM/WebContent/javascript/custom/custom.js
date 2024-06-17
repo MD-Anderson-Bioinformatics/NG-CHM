@@ -399,7 +399,7 @@ function linkoutHelp () {
   function openDecipher(names) {
     var gname = names[0];
     linkouts.openUrl(
-      "https://decipher.sanger.ac.uk/search?q=" + gname,
+      "https://deciphergenomics.org/search?q=" + gname,
       "Decipher",
       { noframe: true },
     );
@@ -461,6 +461,7 @@ function linkoutHelp () {
         "&q=" +
         gname,
       "Ensembl",
+      { noframe: true },
     );
   }
 
@@ -473,6 +474,7 @@ function linkoutHelp () {
         "&q=" +
         tname,
       "Ensembl",
+      { noframe: true },
     );
   }
 
@@ -510,6 +512,7 @@ function linkoutHelp () {
     linkouts.openUrl(
       "http://firebrowse.org/viewGene.html?gene=" + gname + "&search=" + gname,
       "FireBrowse",
+      { noframe: true },
     );
   }
 
@@ -573,6 +576,7 @@ function linkoutHelp () {
     linkouts.openUrl(
       "http://www.genecards.org/Search/Keyword?queryString=" + labels[0],
       "GeneCards",
+      { noframe: true },
     );
   }
 
@@ -588,49 +592,6 @@ function linkoutHelp () {
         typeName: "bio.gene.hugo",
         selectMode: linkouts.SINGLE_SELECT,
         linkoutFn: searchGeneCards,
-      },
-    ],
-  });
-})(linkouts);
-
-//==============================================//
-//GeneVisible plugin                                 //
-//==============================================//
-(function (linkouts) {
-  function openGenevisiblePeptide(names) {
-    var gname = names[0];
-    linkouts.openUrl(
-      "https://genevisible.com/tissues/HS/UniProt/" + gname,
-      "GeneVisible",
-    );
-  }
-
-  function openGenevisibleHugo(names) {
-    var gname = names[0];
-    linkouts.openUrl(
-      "https://genevisible.com/tissues/HS/Gene%20Symbol/" + gname,
-      "GeneVisible",
-    );
-  }
-
-  linkouts.addPlugin({
-    name: "GeneVisible",
-    description: "Adds linkouts to the GeneVisible portal.",
-    version: "0.1.2",
-    site: "https://genevisible.com",
-    logo: "https://genevisible.com/img/genevisible_logo.svgz",
-    linkouts: [
-      {
-        menuEntry: "View GeneVisible",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openGenevisibleHugo,
-      },
-      {
-        menuEntry: "View GeneVisible",
-        typeName: "bio.protein.uniprotid",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openGenevisiblePeptide,
       },
     ],
   });
@@ -985,6 +946,7 @@ function linkoutHelp () {
     linkouts.openUrl(
       "http://mupit.icm.jhu.edu/MuPIT_Interactive?gene=" + glist,
       "MuPIT",
+      { noframe: true },
     );
   }
 
@@ -1256,6 +1218,7 @@ function linkoutHelp () {
         "&Search=" +
         "Search",
       "ClinicalTrials",
+      { noframe: true },
     );
   }
 
@@ -1267,6 +1230,7 @@ function linkoutHelp () {
         "&Search=" +
         "Search",
       "ClinicalTrials",
+      { noframe: true },
     );
   }
 
@@ -1763,6 +1727,7 @@ function linkoutHelp () {
     linkouts.openUrl(
       "http://vega.sanger.ac.uk/" + species + "/psychic?site=vega&q=" + gname,
       "Vega",
+      { noframe: true },
     );
   }
 
