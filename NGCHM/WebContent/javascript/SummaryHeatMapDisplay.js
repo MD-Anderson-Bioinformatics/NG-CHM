@@ -438,7 +438,8 @@ SUM.buildSummaryTexture = function() {
 	const pixelColorScheme = {
 		colors: colorMap.getColors(),
 		thresholds: colorMap.getThresholds(),
-		missingColor: colorMap.getMissingColor()
+		missingColor: colorMap.getMissingColor(),
+		cutsColor: colorMap.getCutsColor(),
 	};
 
 	const summaryProps = {
