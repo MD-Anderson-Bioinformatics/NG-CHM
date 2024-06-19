@@ -305,7 +305,7 @@ function linkoutHelp () {
 
     function openDecipher (names) {
 	var gname = names[0];
-	linkouts.openUrl("https://decipher.sanger.ac.uk/search?q=" + gname, "Decipher", { noframe: true });
+	linkouts.openUrl("https://deciphergenomics.org/search?q=" + gname, "Decipher", { noframe: true });
     }
 
     linkouts.addPlugin({
@@ -347,13 +347,13 @@ function linkoutHelp () {
     function searchEnsemblForGene (names) {
 	const gname = names[0];
 	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-	linkouts.openUrl("https://ensembl.org/Multi/psychic?site=ensembl&species="+species+"&q=" + gname, "Ensembl");
+	linkouts.openUrl("https://ensembl.org/Multi/psychic?site=ensembl&species="+species+"&q=" + gname, "Ensembl", { noframe: true },);
     }
 
     function searchEnsemblForTranscript (names) {
 	const tname = names[0];
 	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-	linkouts.openUrl("https://ensembl.org/Multi/psychic?site=ensembl&species="+species+"&q=" + tname, "Ensembl");
+	linkouts.openUrl("https://ensembl.org/Multi/psychic?site=ensembl&species="+species+"&q=" + tname, "Ensembl", { noframe: true },);
     }
 
     linkouts.addPlugin({
@@ -378,7 +378,7 @@ function linkoutHelp () {
 
     function openFireBrowseGene (names) {
 	var gname = names[0];
-	linkouts.openUrl("http://firebrowse.org/viewGene.html?gene=" + gname + "&search=" + gname, "FireBrowse");
+	linkouts.openUrl("http://firebrowse.org/viewGene.html?gene=" + gname + "&search=" + gname, "FireBrowse", { noframe: true },);
     }
 
     linkouts.addPlugin({
@@ -425,7 +425,7 @@ function linkoutHelp () {
 (function(linkouts) {
 
   function searchGeneCards(labels){
-	    linkouts.openUrl("http://www.genecards.org/Search/Keyword?queryString=" + labels[0], "GeneCards");
+	    linkouts.openUrl("http://www.genecards.org/Search/Keyword?queryString=" + labels[0], "GeneCards", { noframe: true },);
   }
 
 linkouts.addPlugin({
@@ -437,35 +437,6 @@ linkouts.addPlugin({
    linkouts: [
 	    { menuEntry: "View GeneCards", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: searchGeneCards }
    ]
-});
-}) (linkouts);
-
-//==============================================//
-//GeneVisible plugin                                 //
-//==============================================//
-(function(linkouts) {
-
-  function openGenevisiblePeptide (names) {
-  	var gname = names[0];
-  	linkouts.openUrl("https://genevisible.com/tissues/HS/UniProt/" + gname, "GeneVisible");
-      }
-
-      function openGenevisibleHugo (names) {
-  	var gname = names[0];
-  	linkouts.openUrl("https://genevisible.com/tissues/HS/Gene%20Symbol/" + gname, "GeneVisible");
-      }
-
-
-linkouts.addPlugin({
-   name: "GeneVisible",
-	description: "Adds linkouts to the GeneVisible portal.",
-	version: "0.1.2",
-	site: "https://genevisible.com",
-	logo: "https://genevisible.com/img/genevisible_logo.svgz",
-	linkouts: [
-	            { menuEntry: "View GeneVisible", typeName: "bio.gene.hugo", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGenevisibleHugo },
-	            { menuEntry: "View GeneVisible", typeName: "bio.protein.uniprotid", selectMode: linkouts.SINGLE_SELECT, linkoutFn: openGenevisiblePeptide }
-	]
 });
 }) (linkouts);
 
@@ -692,7 +663,7 @@ linkouts.addPlugin({
     function viewMupitG (genes) {
 	genes = genes.sort().filter(function(el,i,a){return i==a.indexOf(el);});
 	var glist = encodeURIComponent(genes[0]);
-	linkouts.openUrl("http://mupit.icm.jhu.edu/MuPIT_Interactive?gene=" + glist, "MuPIT");
+	linkouts.openUrl("http://mupit.icm.jhu.edu/MuPIT_Interactive?gene=" + glist, "MuPIT", { noframe: true },);
     };
 
     linkouts.addPlugin({
@@ -874,12 +845,12 @@ linkouts.addPlugin({
 
     function searchClinicalTrialsForOne (labels) {
 	var gname = labels[0];
-	linkouts.openUrl("https://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials");
+	linkouts.openUrl("https://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials", { noframe: true },);
     }
 
     function searchClinicalTrials (labels) {
 	var gname = labels.join("+AND+");
-	linkouts.openUrl("https://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials");
+	linkouts.openUrl("https://clinicaltrials.gov/ct2/results?term=" + gname + "&Search=" + "Search", "ClinicalTrials", { noframe: true },);
     }
 
     linkouts.addPlugin({
@@ -1221,7 +1192,7 @@ linkouts.addPlugin({
     function searchVega (names) {
 	const gname = names[0];
 	const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-	linkouts.openUrl("http://vega.sanger.ac.uk/" + species + "/psychic?site=vega&q=" + gname, "Vega");
+	linkouts.openUrl("http://vega.sanger.ac.uk/" + species + "/psychic?site=vega&q=" + gname, "Vega", { noframe: true },);
     }
 
     linkouts.addPlugin({
