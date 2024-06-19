@@ -572,7 +572,7 @@ DEV.dblClick = function(e) {
  *********************************************************************************************/
 DEV.matrixRightClick = function (e) {
 	e.preventDefault();
-	LNK.labelHelpClose("Matrix");
+	LNK.labelHelpClose("Matrix", e);
     LNK.labelHelpOpen("Matrix",e);
     let selection = window.getSelection();
     selection.removeAllRanges();
@@ -1109,7 +1109,7 @@ DEV.detailDataZoomIn = function (mapItem) {
     function labelRightClick (e) {
 	e.preventDefault();
 	const axis = e.target.dataset.axis;
-	LNK.labelHelpClose(axis);
+	LNK.labelHelpClose(axis, e);
 	LNK.labelHelpOpen(axis,e);
 	let selection = window.getSelection();
 	selection.removeAllRanges();
