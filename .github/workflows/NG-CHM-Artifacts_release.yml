@@ -89,6 +89,7 @@ jobs:
           cp ../NGCHM/WebContent/ngChmApp.html viewer.standalone/
           echo "Build tag: ${{ github.ref_name }}" > viewer.standalone/build_version.txt
           echo "Git hash: ${{ github.sha }}" >> viewer.standalone/build_version.txt
+          git rm viewer.build/server.app/javascript/*.js # rm old minified js files
           cp -r ../NGCHM/WebContent/server.app viewer.build/
           echo "Build tag: ${{ github.ref_name }}" > viewer.build/server.app/build_version.txt
           echo "Git hash: ${{ github.sha }}" >> viewer.build/server.app/build_version.txt
