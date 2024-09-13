@@ -494,6 +494,9 @@ public class ShaidyRMapGen {
 					fileout.println("\t\t\"grid_color\" : \"" + gridColor + "\",");
 				}	
 				String cutsColor = (String)layer.get("cuts_color");
+				if (!cutsColor.startsWith("#")) {
+					cutsColor = ColorMapGenerator.hexForColor(cutsColor);
+				}
 				if (cutsColor != null) {
 					fileout.println("\t\t\"cuts_color\" : \"" + cutsColor + "\",");
 				}	
