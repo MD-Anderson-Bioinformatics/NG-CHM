@@ -1551,7 +1551,31 @@ var linkoutsVersion = "undefined";
         }
       }
       // Add new pane plugin if no plugin with the same name already exists.
-      panePlugins.push(pp);
+
+      // If the plugin handles special coordinates, add them as separate plugins.
+      if (pp.params.handlesSpecialCoordinates === true) {
+        pp.params.disable = true; /* disable because functionality of plugin will be handled by the "generalPlugin" sub item below*/
+        panePlugins.push(pp); /* TODO: this is inefficient... we are adding the plugin twice */
+        let specialCoordinates = getSpecialCoordinatesList();
+        /* Create a plugin for each of the special coordinate */
+        specialCoordinates.forEach((sc) => {
+          let specialPlugin = deepClone(pp);
+          specialPlugin.name = sc.name + " (" + sc.rowOrColumn + ")";
+          specialPlugin.params.disable = false;
+          specialPlugin.params.onlySend = true; /* only send the special coordinates to the plugin */
+          specialPlugin.params.rowOrColumn = sc.rowOrColumn;
+          specialPlugin.params.specialCoordinates = sc;
+          specialPlugin.params.subItem = true;
+          panePlugins.push(specialPlugin);
+        })
+        let generalPlugin = deepClone(pp);
+        generalPlugin.name = "Other";
+        generalPlugin.params.disable = false;
+        generalPlugin.params.subItem = true;
+        panePlugins.push(generalPlugin);
+      } else {
+        panePlugins.push(pp);
+      }
       return pp;
     };
 
@@ -1560,6 +1584,27 @@ var linkoutsVersion = "undefined";
         return panePlugins.find((a) => a.name === name);
       });
     };
+    /**
+     * Creates a deep copy of the provided object or array.
+     *
+     * @param {Object|Array} obj - The object or array to be deep cloned.
+     * @returns {Object|Array} A deep copy of the provided object or array.
+     */
+     function deepClone(obj) {
+       if (obj === null || typeof obj !== "object") {
+         return obj;
+       }
+       if (Array.isArray(obj)) {
+         return obj.map(deepClone);
+       }
+       const clone = {};
+       for (let key in obj) {
+         if (obj.hasOwnProperty(key)) {
+           clone[key] = deepClone(obj[key]);
+         }
+       }
+       return clone;
+     }
   })();
 
   // Switch the empty pane identified by PaneLocation loc to a new
@@ -2402,8 +2447,22 @@ var linkoutsVersion = "undefined";
       onlyContinuous,
     ) {
       let defaultIndex = 0;
-      for (let [cv, cvProperties] of Object.entries(axisConfig)) {
-        if (cv === defaultOpt) defaultIndex = selectElement.children.length;
+      let entriesToAddToDropDown = [];
+      if (plugin.params.onlySend && onlyContinuous) { // only send continuous covariates matching plugin.params.onlySend
+        const keys = Object.keys(axisConfig);
+        const filteredKeys = keys.filter((key) => key.includes(plugin.params.specialCoordinates.name));
+        entriesToAddToDropDown = Object.fromEntries(
+          Object.entries(axisConfig).filter(([key, value]) =>
+            key.includes(plugin.params.specialCoordinates.name)
+          )
+        );
+      } else { // send all covariates
+        entriesToAddToDropDown = axisConfig;
+      }
+      for (let [cv, cvProperties] of Object.entries(entriesToAddToDropDown)) {
+        if (cv === defaultOpt) {
+          defaultIndex = selectElement.children.length;
+        }
         if (cvProperties.color_map.type === "continuous") {
           selectElement.add(optionNode("covariate", cv));
         } else if (!onlyContinuous) {
@@ -2461,21 +2520,21 @@ var linkoutsVersion = "undefined";
         axis1Config = heatMap.getAxisCovariateConfig(axis);
         const axis1cvOrder = heatMap.getAxisCovariateOrder(axis);
         otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
-        defaultCoord = axis1cvOrder.filter((x) => /\.coordinate\.1/.test(x));
-        defaultCoord =
-          defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, "");
-        defaultCovar = axis1cvOrder.filter(
-          (x) => !/\.coordinate\.\d+$/.test(x),
-        );
-        defaultCovar =
-          defaultCovar.length === 0
-            ? null
-            : defaultCovar[defaultCovar.length - 1];
+        if (plugin.params.onlySend) {
+          defaultCoord = plugin.params.specialCoordinates.name + ".coordinate.";
+        } else {
+          defaultCoord = axis1cvOrder.filter((x) => /\.coordinate\.1/.test(x));
+          defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, "");
+        }
+        defaultCovar = axis1cvOrder.filter((x) => !/\.coordinate\.\d+$/.test(x));
+        defaultCovar = defaultCovar.length === 0 ? null : defaultCovar[defaultCovar.length - 1];
       }
 
       let selectedAxis;
       if (lastApplied[0].hasOwnProperty("axis")) {
         selectedAxis = lastApplied[0].axis;
+      } else if (plugin.hasOwnProperty("params") && plugin.params.hasOwnProperty("specialCoordinates")) {
+        selectedAxis = plugin.params.specialCoordinates.rowOrColumn;
       } else {
         selectedAxis = MMGR.isRow(axisParams[axisId].axisName)
           ? "row"
@@ -3763,6 +3822,9 @@ var linkoutsVersion = "undefined";
         UTIL.newButton("CLOSE", {}, { click: closePanel }),
       ]),
     );
+    if (plugin.hasOwnProperty("params") && plugin.params.hasOwnProperty("specialCoordinates")) {
+      applyPanel(); // apply panel if special cordinates were in NG-CHM
+    }
 
     PANE.insertPopupNearIcon(panel, icon);
   }
@@ -4208,6 +4270,41 @@ var linkoutsVersion = "undefined";
       // Regenerate the linkout menus.
       CUST.definePluginLinkouts();
     }
+  }
+  /**
+   *
+   * Retrieves a list of special coordinates from the heatmap's column and row coordinate bars.
+   * Special coordinates are identified by the pattern ".coordinate.<number>" and are returned as unique objects
+   * with their names and whether they belong to a row or column.
+   *
+   * @returns {Array<Object>} An array of objects representing the special coordinates.
+   *                          Each object has the following properties:
+   *                          - {string} name: The name of the coordinate without the ".coordinate.<number>" suffix.
+   *                          - {string} rowOrColumn: Indicates whether the coordinate belongs to a "row" or "column".
+   *
+   * @example
+   * // Example usage:
+   * const specialCoords = getSpecialCoordinatesList();
+   * console.log(specialCoords);
+   * // Output might look like:
+   * // [
+   * //   { name: 'PCA', rowOrColumn: 'column' },
+   * //   { name: 'UMAP', rowOrColumn: 'column' },
+   * //   { name: 'PCA', rowOrColumn: 'row' }
+   * // ]
+   */
+  function getSpecialCoordinatesList() {
+    let columnCovariateNames = MMGR.getHeatMap().getColClassificationConfigOrder();
+    let specialColumnCoords = columnCovariateNames.filter((x) => /\.coordinate\.\d+$/.test(x)) /* get only "*.coordinate.<number>" */
+                              .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
+                              .map((x) => ({name: x, rowOrColumn: "column"})); /* create object with name and rowOrColumn properties */
+    let rowCovariateNames = MMGR.getHeatMap().getRowClassificationConfigOrder();
+    let specialRowCoords = rowCovariateNames.filter((x) => /\.coordinate\.\d+$/.test(x)) /* get only "*.coordinate.<number>" */
+                           .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
+                           .map((x) => ({name: x, rowOrColumn: "row"})); /* create object with name and rowOrColumn properties */
+    let specialCoords = specialColumnCoords.concat(specialRowCoords);
+    specialCoords = [...new Set(specialCoords)]; /* remove duplicates */
+    return specialCoords;
   }
 
   CUST.waitForPlugins(() => {

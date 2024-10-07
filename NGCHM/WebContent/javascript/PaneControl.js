@@ -952,6 +952,30 @@
       mi.innerText = text;
       menu.appendChild(mi);
     }
+    /**
+     * Creates a new menu sub-item and appends it to the menu.
+     *
+     * @param {string} text - The text to be displayed on the menu sub-item.
+     * @param {Function} callback - The function to be called when the menu sub-item is clicked.
+     */
+    function menuSubItem(text, callback) {
+      const msi = UTIL.newElement("DIV.menuSubItem.menuItem");
+      msi.onclick = () => { callback(); };
+      msi.innerText = text;
+      menu.appendChild(msi);
+    }
+
+    /**
+     * Creates a new menu item with sub-items and appends it to the menu.
+     *
+     * @param {string} text - The text to be displayed on the menu item.
+     */
+    function menuItemWSubItems(text) {
+      const mi = UTIL.newElement("DIV.menuItem.withSubItems");
+      mi.innerText = text;
+      menu.appendChild(mi);
+    }
+
 
     function menuSeparator() {
       const mb = UTIL.newElement("DIV.menuItemBorder");
@@ -973,9 +997,17 @@
           resizePane(loc.pane);
         });
       });
-      // Add plugin options.
+      // Add plugin options. (i.e. the list of plugins)
       paneExtraOptions.forEach((opt) => {
-        if (opt.enabled()) {
+        if (opt.enabled() && opt.data.params.disable) { // plugin with special coordinates
+          menuItemWSubItems(opt.name, () => {});
+        } else if (opt.enabled() && opt.data.params.subItem) { // one of those special coordinates
+          menuSubItem(opt.name, () => {
+            const loc = findPaneLocation(icon);
+            emptyPaneLocation(loc);
+            opt.switcher(loc, opt.data);
+          });
+        } else {
           menuItem(opt.name, () => {
             const loc = findPaneLocation(icon);
             emptyPaneLocation(loc);
