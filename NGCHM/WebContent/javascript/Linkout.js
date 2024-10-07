@@ -96,6 +96,7 @@ var linkoutsVersion = "undefined";
     );
   };
 
+  /* Called in the custom.js to add a linkout */
   linkouts.addPanePlugin = function (p) {
     LNK.registerPanePlugin(p);
   };
@@ -1551,7 +1552,32 @@ var linkoutsVersion = "undefined";
         }
       }
       // Add new pane plugin if no plugin with the same name already exists.
-      panePlugins.push(pp);
+
+      // If the plugin handles special coordinates, add them as separate plugins.
+      if (pp.params.handlesSpecialCoordinates === true) {
+        pp.disabled = true; /* disable because functionality of plugin will be handled by the "generalPlugin" sub item below*/
+        panePlugins.push(pp); /* TODO: this is mildly inefficient: we are adding the plugin twice */
+        let specialCoordinates = getSpecialCoordinatesList();
+        /* Create a plugin for each of the special coordinates */
+        specialCoordinates.forEach((sc) => {
+          let specialPlugin = deepClone(pp);
+          specialPlugin.name = pp.name + ": " + sc.name + " (" + sc.rowOrColumn + ")";
+          specialPlugin.nameInPaneMenu = sc.name + " (" + sc.rowOrColumn + ")";
+          specialPlugin.disabled = false;
+          specialPlugin.rowOrColumn = sc.rowOrColumn;
+          specialPlugin.specialCoordinates = sc;
+          specialPlugin.subItem = true;
+          panePlugins.push(specialPlugin);
+        })
+        let generalPlugin = deepClone(pp);
+        generalPlugin.name = pp.name + ": Other ...";
+        generalPlugin.nameInPaneMenu = "Other ...";
+        generalPlugin.disabled = false;
+        generalPlugin.subItem = true;
+        panePlugins.push(generalPlugin);
+      } else {
+        panePlugins.push(pp);
+      }
       return pp;
     };
 
@@ -1560,6 +1586,27 @@ var linkoutsVersion = "undefined";
         return panePlugins.find((a) => a.name === name);
       });
     };
+    /**
+     * Creates a deep copy of the provided object or array.
+     *
+     * @param {Object|Array} obj - The object or array to be deep cloned.
+     * @returns {Object|Array} A deep copy of the provided object or array.
+     */
+     function deepClone(obj) {
+       if (obj === null || typeof obj !== "object") {
+         return obj;
+       }
+       if (Array.isArray(obj)) {
+         return obj.map(deepClone);
+       }
+       const clone = {};
+       for (let key in obj) {
+         if (obj.hasOwnProperty(key)) {
+           clone[key] = deepClone(obj[key]);
+         }
+       }
+       return clone;
+     }
   })();
 
   // Switch the empty pane identified by PaneLocation loc to a new
@@ -2373,10 +2420,11 @@ var linkoutsVersion = "undefined";
       }
     }
 
-    function optionNode(type, value) {
+    function optionNode(type, value, disabled = false) {
       const optNode = UTIL.newElement("OPTION");
       optNode.appendChild(UTIL.newTxt(value));
       optNode.dataset.type = type;
+      if (disabled) optNode.disabled = true;
       return optNode;
     }
 
@@ -2385,38 +2433,55 @@ var linkoutsVersion = "undefined";
       return "Selected " + (MMGR.isRow(axis) ? "columns" : "rows") + uname;
     }
 
-    /** Add covariate options to dropdown
-
-			@function addCovariateOptions
-			@param {} defaultOpt
-			@param {Object} axisConfig
-			@param {Object} selectElement
-			@param {Object} selectedElementsOption
-			@param {Boolean} onlyContinuous if true, only add continuous covariates to dropdown.
-		*/
+    /**
+     * Adds covariate options to select element (e.g. in gear menu)
+     *
+     * @function addCovariateOptions
+     * @param {string|null} defaultOptText - Text of default option to be selected. If null, Grap/Show option is selected.
+     * @param {Object} covariatesConfig - Covariates info, e.g. output of `heatMap.getAxisCovariateConfig()`
+     * @param {HTMLSelectElement} selectElement - The select element to which the options will be added.
+     * @param {string} grabshowOptText - The text to display for user to select rows/cols via GRAB/SHOW.
+     * @param {boolean} onlyContinuous - If true, only continuous covariates are added.
+     * @returns {HTMLOptionElement} The option element for user to select rows/cols via GRAB/SHOW.
+     */
     function addCovariateOptions(
-      defaultOpt,
-      axisConfig,
+      defaultOptText,
+      covariatesConfig,
       selectElement,
-      selectedElementsOption,
+      grabShowOptText,
       onlyContinuous,
     ) {
       let defaultIndex = 0;
-      for (let [cv, cvProperties] of Object.entries(axisConfig)) {
-        if (cv === defaultOpt) defaultIndex = selectElement.children.length;
+      let covariatesForDropDown = [];
+      if (plugin.hasOwnProperty("specialCoordinates") &&
+          plugin.specialCoordinates.hasOwnProperty("name") &&
+          onlyContinuous
+        ) { // put only continuous special coordinates in dropdown
+        covariatesForDropDown = Object.fromEntries(
+          Object.entries(covariatesConfig).filter(([cvText, cvProperties]) =>
+            cvText.includes(plugin.specialCoordinates.name)
+          )
+        );
+      } else { // put all covariates in dropdown
+        covariatesForDropDown = covariatesConfig;
+      }
+      for (let [cvText, cvProperties] of Object.entries(covariatesForDropDown)) {
+        if (cvText === defaultOptText) {
+          defaultIndex = selectElement.children.length;
+        }
         if (cvProperties.color_map.type === "continuous") {
-          selectElement.add(optionNode("covariate", cv));
+          selectElement.add(optionNode("covariate", cvText));
         } else if (!onlyContinuous) {
-          selectElement.add(optionNode("covariate", cv));
+          selectElement.add(optionNode("covariate", cvText));
         }
       }
-      if (defaultOpt === null) defaultIndex = selectElement.children.length;
-      const selOpt = optionNode("data", selectedElementsOption);
-      if (defaultOpt === selectedElementsOption)
+      if (defaultOptText === null) defaultIndex = selectElement.children.length;
+      const grabShowOpt = optionNode("data", grabShowOptText);
+      if (defaultOptText === grabShowOptText)
         defaultIndex = selectElement.children.length;
-      selectElement.add(selOpt);
+      selectElement.add(grabShowOpt);
       selectElement.selectedIndex = defaultIndex;
-      return selOpt;
+      return grabShowOpt; /* return GRAB/SHOW option, even though it might not be the selected one */
     }
 
     const optionsBox = UTIL.newElement("DIV.optionsBox");
@@ -2454,6 +2519,18 @@ var linkoutsVersion = "undefined";
       let defaultCoord;
       let defaultCovar;
 
+      /**
+       * This function sets the values of the variables scoped outside of the function:
+       *
+       *   thisAxis
+       *   axis1Config
+       *   otherAxis
+       *   defaultCoord
+       *   defaultCovar
+       *
+       * @function setAxis
+       * @param {string} axis - The axis to set (e.g., "Row" or "Column").
+       */
       function setAxis(axis) {
         const heatMap = MMGR.getHeatMap();
         thisAxis = axis;
@@ -2461,9 +2538,13 @@ var linkoutsVersion = "undefined";
         axis1Config = heatMap.getAxisCovariateConfig(axis);
         const axis1cvOrder = heatMap.getAxisCovariateOrder(axis);
         otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
-        defaultCoord = axis1cvOrder.filter((x) => /\.coordinate\.1/.test(x));
-        defaultCoord =
-          defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, "");
+        if (plugin.hasOwnProperty("specialCoordinates") && plugin.specialCoordinates.hasOwnProperty("name")){
+          defaultCoord = plugin.specialCoordinates.name + ".coordinate.";
+        } else {
+          defaultCoord = axis1cvOrder.filter((x) => /\.coordinate\.1/.test(x));
+          defaultCoord =
+            defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, "");
+        }
         defaultCovar = axis1cvOrder.filter(
           (x) => !/\.coordinate\.\d+$/.test(x),
         );
@@ -2476,6 +2557,8 @@ var linkoutsVersion = "undefined";
       let selectedAxis;
       if (lastApplied[0].hasOwnProperty("axis")) {
         selectedAxis = lastApplied[0].axis;
+      } else if (plugin.hasOwnProperty("specialCoordinates") && plugin.specialCoordinates.hasOwnProperty("rowOrColumn")) {
+        selectedAxis = plugin.specialCoordinates.rowOrColumn;
       } else {
         selectedAxis = MMGR.isRow(axisParams[axisId].axisName)
           ? "row"
@@ -3763,9 +3846,12 @@ var linkoutsVersion = "undefined";
         UTIL.newButton("CLOSE", {}, { click: closePanel }),
       ]),
     );
+    if (plugin.hasOwnProperty("specialCoordinates")) {
+      applyPanel(); // If plugin is a special cordinates plugin, save user from having to click APPLY
+    }
 
     PANE.insertPopupNearIcon(panel, icon);
-  }
+  } // bottom of newGearDialog
 
   /**
 		Processes messages from plugins
@@ -4122,6 +4208,7 @@ var linkoutsVersion = "undefined";
     }
   })();
 
+  /* Used when dragging and dropping a plugin */
   LNK.loadLinkoutSpec = function loadLinkoutSpec(kind, spec) {
     console.log({ m: "loadLinkoutSpec", kind, spec });
     if (kind === "panel-plugin") {
@@ -4208,6 +4295,43 @@ var linkoutsVersion = "undefined";
       // Regenerate the linkout menus.
       CUST.definePluginLinkouts();
     }
+  }
+  /**
+   *
+   * Retrieves a list of special coordinates from the heatmap's column and row coordinate bars.
+   * Special coordinates are identified by the pattern ".coordinate.<number>" and are returned as unique objects
+   * with their names and whether they belong to a row or column.
+   *
+   * @returns {Array<Object>} An array of objects representing the special coordinates.
+   *                          Each object has the following properties:
+   *                          - {string} name: The name of the coordinate without the ".coordinate.<number>" suffix.
+   *                          - {string} rowOrColumn: Indicates whether the coordinate belongs to a "row" or "column".
+   *
+   * @example
+   * // Example usage:
+   * const specialCoords = getSpecialCoordinatesList();
+   * console.log(specialCoords);
+   * // Output might look like:
+   * // [
+   * //   { name: 'PCA', rowOrColumn: 'column' },
+   * //   { name: 'UMAP', rowOrColumn: 'column' },
+   * //   { name: 'PCA', rowOrColumn: 'row' }
+   * // ]
+   */
+  function getSpecialCoordinatesList() {
+    let columnCovariateNames = MMGR.getHeatMap().getColClassificationConfigOrder();
+    let specialColumnCoords = columnCovariateNames.filter((x) => /\.coordinate\.\d+$/.test(x)) /* get only "*.coordinate.<number>" */
+                              .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
+    let uniqueColumnCoords = [...new Set(specialColumnCoords)] /* remove duplicates */
+                              .map((x) => ({name: x, rowOrColumn: "column"})); /* create object with name and rowOrColumn properties */
+    let rowCovariateNames = MMGR.getHeatMap().getRowClassificationConfigOrder();
+    let specialRowCoords = rowCovariateNames.filter((x) => /\.coordinate\.\d+$/.test(x)) /* get only "*.coordinate.<number>" */
+                           .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
+    let uniqueRowCoords = [...new Set(specialRowCoords)] /* remove duplicates */
+                           .map((x) => ({name: x, rowOrColumn: "row"})); /* create object with name and rowOrColumn properties */
+    let specialCoords = uniqueColumnCoords.concat(uniqueRowCoords);
+    specialCoords = [...new Set(specialCoords)]; /* remove duplicates */
+    return specialCoords;
   }
 
   CUST.waitForPlugins(() => {

@@ -511,6 +511,25 @@ div.paneHeader button {
 	height: 1em;
 }
 
+/* menuItem withSubItems are not clickable
+ * Example: "2D Scatter Plot" with special coordinate sub items.
+ * */
+.menuItem.withSubItems{
+	background-color: #ffffff;
+	cursor: default;
+}
+.menuItem.withSubItems:hover{
+	background-color: #ffffff;
+}
+
+/* The sub items are clickable
+ * Example, "PCA (row)" 2D scatter plot
+ * */
+.menuSubItem{
+	padding: 1px 10px 1px 30px;
+	cursor: pointer;
+}
+
 .gearPanel {
 	position: absolute;
 	border-radius: 10px;
