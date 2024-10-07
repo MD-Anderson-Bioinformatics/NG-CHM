@@ -1541,6 +1541,23 @@ var linkoutsVersion = "undefined";
       }
     }
 
+    /* temporary function to deep clone an object */
+    function deepClone(obj) {
+     if (obj === null || typeof obj !== "object") {
+       return obj;
+     }
+     if (Array.isArray(obj)) {
+       return obj.map(deepClone);
+     }
+     const clone = {};
+     for (let key in obj) {
+       if (obj.hasOwnProperty(key)) {
+         clone[key] = deepClone(obj[key]);
+       }
+     }
+     return clone;
+   }
+
     LNK.registerPanePlugin = function (p) {
       const pp = new PanePlugin(p);
       // Replace any existing plugin with the same name.
@@ -1552,6 +1569,16 @@ var linkoutsVersion = "undefined";
       }
       // Add new pane plugin if no plugin with the same name already exists.
       panePlugins.push(pp);
+      if (pp.params.handlesSpecialCoordinates === true) {
+        let specialCoordinates = getSpecialCoordinatesList();
+        specialCoordinates.forEach((sc) => {
+          let specialP = deepClone(pp);
+          specialP.name = sc;
+          specialP.params.subItem = true;
+          specialP.params.onlySend = sc;
+          panePlugins.push(specialP);
+        })
+      }
       return pp;
     };
 
@@ -1568,6 +1595,10 @@ var linkoutsVersion = "undefined";
     if (restoreInfo) {
       pluginRestoreInfo[loc.pane.id] = restoreInfo;
     }
+    let mymap = MMGR.getHeatMap();
+    let colClassifications = mymap.getColClassificationConfig();
+    let colClassificationsOrder = mymap.getColClassificationConfigOrder();
+
     switchToPlugin(loc, plugin.name);
     MMGR.getHeatMap().setUnAppliedChanges(true);
     const params = plugin.params;
@@ -2402,8 +2433,22 @@ var linkoutsVersion = "undefined";
       onlyContinuous,
     ) {
       let defaultIndex = 0;
-      for (let [cv, cvProperties] of Object.entries(axisConfig)) {
-        if (cv === defaultOpt) defaultIndex = selectElement.children.length;
+      let entriesToAddToDropDown = [];
+      if (plugin.params.onlySend && onlyContinuous) { // only send continuous covariates matching plugin.params.onlySend
+        const keys = Object.keys(axisConfig);
+        const filteredKeys = keys.filter((key) => key.includes(plugin.params.onlySend));
+        entriesToAddToDropDown = Object.fromEntries(
+          Object.entries(axisConfig).filter(([key, value]) =>
+            key.includes(plugin.params.onlySend)
+          )
+        );
+      } else { // send all covariates
+        entriesToAddToDropDown = axisConfig;
+      }
+      for (let [cv, cvProperties] of Object.entries(entriesToAddToDropDown)) {
+        if (cv === defaultOpt) {
+          defaultIndex = selectElement.children.length;
+        }
         if (cvProperties.color_map.type === "continuous") {
           selectElement.add(optionNode("covariate", cv));
         } else if (!onlyContinuous) {
@@ -2461,16 +2506,14 @@ var linkoutsVersion = "undefined";
         axis1Config = heatMap.getAxisCovariateConfig(axis);
         const axis1cvOrder = heatMap.getAxisCovariateOrder(axis);
         otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
-        defaultCoord = axis1cvOrder.filter((x) => /\.coordinate\.1/.test(x));
-        defaultCoord =
-          defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, "");
-        defaultCovar = axis1cvOrder.filter(
-          (x) => !/\.coordinate\.\d+$/.test(x),
-        );
-        defaultCovar =
-          defaultCovar.length === 0
-            ? null
-            : defaultCovar[defaultCovar.length - 1];
+        if (plugin.params.onlySend) {
+          defaultCoord = plugin.params.onlySend + ".coordinate.";
+        } else {
+          defaultCoord = axis1cvOrder.filter((x) => /\.coordinate\.1/.test(x));
+          defaultCoord = defaultCoord.length === 0 ? null : defaultCoord[0].replace(/1$/, "");
+        }
+        defaultCovar = axis1cvOrder.filter((x) => !/\.coordinate\.\d+$/.test(x));
+        defaultCovar = defaultCovar.length === 0 ? null : defaultCovar[defaultCovar.length - 1];
       }
 
       let selectedAxis;
@@ -4209,6 +4252,24 @@ var linkoutsVersion = "undefined";
       CUST.definePluginLinkouts();
     }
   }
+  /**
+   * Retrieves a list of special coordinates from the column and row classification configuration orders.
+   * 
+   * This function combines the column and row covariate names, filters out entries that match the pattern 
+   * ".coordinate.<number>", removes the ".coordinate.<number>" suffix, and returns a unique list of these 
+   * special coordinates.
+   *
+   * @returns {string[]} An array of unique special coordinates.
+  */
+  function getSpecialCoordinatesList() {
+    let columnCovariateNames = MMGR.getHeatMap().getColClassificationConfigOrder();
+    let rowCovariateNames = MMGR.getHeatMap().getRowClassificationConfigOrder();
+    let covariateBarNames = columnCovariateNames.concat(rowCovariateNames);
+    let specialCoords = covariateBarNames.filter((x) => /\.coordinate\.\d+$/.test(x));
+    specialCoords = specialCoords.map((x) => x.replace(/\.coordinate\.\d+$/, ""));
+    specialCoords = [...new Set(specialCoords)];
+    return specialCoords;
+  }
 
   CUST.waitForPlugins(() => {
     const panePlugins = LNK.getPanePlugins();
@@ -4219,6 +4280,18 @@ var linkoutsVersion = "undefined";
         LNK.switchPaneToPlugin,
         plugin,
       );
+      /*if (plugin.params.handlesSpecialCoordinates === true) {
+        let specialCoordinates = getSpecialCoordinatesList();
+        specialCoordinates.forEach((specialCoordinate) => {
+          plugin.params.subItem == true;
+          PANE.registerPaneExtraOption(
+            specialCoordinate + " " + plugin.name,
+            () => true,
+            LNK.switchPaneToPlugin,
+            plugin
+          );
+        })
+      }*/
     });
   });
 })(); // end of big IIFE

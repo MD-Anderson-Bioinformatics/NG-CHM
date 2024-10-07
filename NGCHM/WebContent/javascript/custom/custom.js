@@ -7,8 +7,8 @@ linkouts.setVersion("2023-11-21");
 linkouts.addPanePlugin({
   name: "2D ScatterPlot",
   helpText: "Creates a two-dimensional scatter plot",
-  params: {},
-  src: "https://www.ngchm.net/Plugins/ScatterPlot/index.html",
+  params: {handlesSpecialCoordinates: true},
+  src: "http://localhost/~<uname>/ScatterPlotPlugin/",
 });
 
 //3D Scatter Plot plugin:

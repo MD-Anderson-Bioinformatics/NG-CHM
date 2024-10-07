@@ -937,6 +937,15 @@
       menu.appendChild(mh);
     }
 
+    function menuSubItem(text, callback) {
+      const msi = UTIL.newElement("DIV.menuSubItem.menuItem");
+      msi.onclick = () => {
+        callback(findPaneLocation(icon));
+      };
+      msi.innerText = text;
+      menu.appendChild(msi);
+    }
+
     function menuItem(text, callback) {
       const mi = UTIL.newElement("DIV.menuItem");
       mi.onclick = () => {
@@ -973,9 +982,15 @@
           resizePane(loc.pane);
         });
       });
-      // Add plugin options.
+      // Add plugin options. (i.e. the list of plugins)
       paneExtraOptions.forEach((opt) => {
-        if (opt.enabled()) {
+        if (opt.enabled() && opt.data.params.subItem) {
+          menuSubItem(opt.name, () => {
+            const loc = findPaneLocation(icon);
+            emptyPaneLocation(loc);
+            opt.switcher(loc, opt.data);
+          });
+        } else {
           menuItem(opt.name, () => {
             const loc = findPaneLocation(icon);
             emptyPaneLocation(loc);
