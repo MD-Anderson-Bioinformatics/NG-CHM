@@ -96,6 +96,7 @@ var linkoutsVersion = "undefined";
     );
   };
 
+  /* Called in the custom.js to add a linkout */
   linkouts.addPanePlugin = function (p) {
     LNK.registerPanePlugin(p);
   };
@@ -1544,12 +1545,13 @@ var linkoutsVersion = "undefined";
     LNK.registerPanePlugin = function (p) {
       const pp = new PanePlugin(p);
       // Replace any existing plugin with the same name.
-      for (let idx = 0; idx < panePlugins.length; idx++) {
-        if (panePlugins[idx].name === pp.name) {
-          panePlugins[idx] = pp;
-          return pp;
-        }
-      }
+      // marohrdanz: ask bmbroom if/why this is necessary
+      //for (let idx = 0; idx < panePlugins.length; idx++) {
+      //  if (panePlugins[idx].name === pp.name) {
+      //    panePlugins[idx] = pp;
+      //    return pp;
+      //  }
+      //}
       // Add new pane plugin if no plugin with the same name already exists.
 
       // If the plugin handles special coordinates, add them as separate plugins.
@@ -1560,7 +1562,8 @@ var linkoutsVersion = "undefined";
         /* Create a plugin for each of the special coordinate */
         specialCoordinates.forEach((sc) => {
           let specialPlugin = deepClone(pp);
-          specialPlugin.name = sc.name + " (" + sc.rowOrColumn + ")";
+          specialPlugin.name = sc.name;
+          specialPlugin.params.nameInPaneMenu = sc.name + " (" + sc.rowOrColumn + ")";
           specialPlugin.params.disable = false;
           specialPlugin.params.onlySend = true; /* only send the special coordinates to the plugin */
           specialPlugin.params.rowOrColumn = sc.rowOrColumn;
@@ -1569,7 +1572,7 @@ var linkoutsVersion = "undefined";
           panePlugins.push(specialPlugin);
         })
         let generalPlugin = deepClone(pp);
-        generalPlugin.name = "Other";
+        generalPlugin.params.nameInPaneMenu = "Other ...";
         generalPlugin.params.disable = false;
         generalPlugin.params.subItem = true;
         panePlugins.push(generalPlugin);
@@ -1580,9 +1583,11 @@ var linkoutsVersion = "undefined";
     };
 
     LNK.getPanePlugins = function () {
-      return Array.from(new Set(panePlugins.map((a) => a.name))).map((name) => {
-        return panePlugins.find((a) => a.name === name);
-      });
+      return panePlugins;
+     // marohrdanz: ask bmbroom why two plugins can't have the same name
+     // return Array.from(new Set(panePlugins.map((a) => a.name))).map((name) => {
+     //   return panePlugins.find((a) => a.name === name);
+     // });
     };
     /**
      * Creates a deep copy of the provided object or array.
@@ -2418,10 +2423,11 @@ var linkoutsVersion = "undefined";
       }
     }
 
-    function optionNode(type, value) {
+    function optionNode(type, value, disabled = false) {
       const optNode = UTIL.newElement("OPTION");
       optNode.appendChild(UTIL.newTxt(value));
       optNode.dataset.type = type;
+      if (disabled) optNode.disabled = true;
       return optNode;
     }
 
@@ -2459,6 +2465,10 @@ var linkoutsVersion = "undefined";
       } else { // send all covariates
         entriesToAddToDropDown = axisConfig;
       }
+      if (defaultOpt === null) { // then add placeholder option and make it default
+        selectElement.add(optionNode("covariate", "Choose a coordinate", true));
+        defaultIndex = 0;
+      }
       for (let [cv, cvProperties] of Object.entries(entriesToAddToDropDown)) {
         if (cv === defaultOpt) {
           defaultIndex = selectElement.children.length;
@@ -2469,8 +2479,7 @@ var linkoutsVersion = "undefined";
           selectElement.add(optionNode("covariate", cv));
         }
       }
-      if (defaultOpt === null) defaultIndex = selectElement.children.length;
-      const selOpt = optionNode("data", selectedElementsOption);
+      const selOpt = optionNode("data", selectedElementsOption); // option for user to select rows/cols for GRAB/SHOW
       if (defaultOpt === selectedElementsOption)
         defaultIndex = selectElement.children.length;
       selectElement.add(selOpt);
@@ -4184,6 +4193,7 @@ var linkoutsVersion = "undefined";
     }
   })();
 
+  /* Used when dragging and dropping a plugin */
   LNK.loadLinkoutSpec = function loadLinkoutSpec(kind, spec) {
     console.log({ m: "loadLinkoutSpec", kind, spec });
     if (kind === "panel-plugin") {
@@ -4297,12 +4307,14 @@ var linkoutsVersion = "undefined";
     let columnCovariateNames = MMGR.getHeatMap().getColClassificationConfigOrder();
     let specialColumnCoords = columnCovariateNames.filter((x) => /\.coordinate\.\d+$/.test(x)) /* get only "*.coordinate.<number>" */
                               .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
+    let uniqueColumnCoords = [...new Set(specialColumnCoords)] /* remove duplicates */
                               .map((x) => ({name: x, rowOrColumn: "column"})); /* create object with name and rowOrColumn properties */
     let rowCovariateNames = MMGR.getHeatMap().getRowClassificationConfigOrder();
     let specialRowCoords = rowCovariateNames.filter((x) => /\.coordinate\.\d+$/.test(x)) /* get only "*.coordinate.<number>" */
                            .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
+    let uniqueRowCoords = [...new Set(specialRowCoords)] /* remove duplicates */
                            .map((x) => ({name: x, rowOrColumn: "row"})); /* create object with name and rowOrColumn properties */
-    let specialCoords = specialColumnCoords.concat(specialRowCoords);
+    let specialCoords = uniqueColumnCoords.concat(uniqueRowCoords);
     specialCoords = [...new Set(specialCoords)]; /* remove duplicates */
     return specialCoords;
   }

@@ -1002,7 +1002,7 @@
         if (opt.enabled() && opt.data.params.disable) { // plugin with special coordinates
           menuItemWSubItems(opt.name, () => {});
         } else if (opt.enabled() && opt.data.params.subItem) { // one of those special coordinates
-          menuSubItem(opt.name, () => {
+          menuSubItem(opt.data.params.nameInPaneMenu, () => {
             const loc = findPaneLocation(icon);
             emptyPaneLocation(loc);
             opt.switcher(loc, opt.data);
