@@ -288,19 +288,31 @@
       })(linkoutFn);
     } else if (selectMode === linkouts.MULTI_SELECT) {
       linkoutFn = (function (lofn) {
-        return function (labels) {
-          var idx = labels.indexOf("-");
-          if (idx >= 0) labels.splice(idx, 1);
-          if (labels.length === 0) {
-            //console.log("No information known for any selected label"); //alert
-            UHM.systemMessage(
-              "NG-CHM Plug-in",
-              "No information known for any selected label.",
-            );
-          } else {
-            lofn(labels);
+        if (lofn.constructor.name === "AsyncFunction") { // plugin callback is async so check function is async
+          return async function (labels) {
+            var idx = labels.indexOf("-");
+            if (idx >= 0) labels.splice(idx, 1);
+            if (labels.length === 0) {
+              UHM.systemMessage("NG-CHM Plug-in", "No information known for any selected label.");
+            } else {
+              try {
+                await lofn(labels);
+              } catch (e) {
+                UHM.linkoutError(e);
+              }
+            }
           }
-        };
+        } else { // plugin callback is sync so check function is sync
+          return function (labels) {
+            var idx = labels.indexOf("-");
+            if (idx >= 0) labels.splice(idx, 1);
+            if (labels.length === 0) {
+              UHM.systemMessage("NG-CHM Plug-in", "No information known for any selected label.");
+            } else {
+              lofn(labels);
+            }
+          };
+        }
       })(linkoutFn);
     } else {
       console.log("Unknown selectMode: " + selectMode); //alert
