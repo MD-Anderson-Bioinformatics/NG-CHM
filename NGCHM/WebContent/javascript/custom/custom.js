@@ -154,6 +154,40 @@ linkouts.addPanePlugin({
       description: "A text string used to search for something",
     },
   ]);
+
+  /**
+   * Retrieves the UniProt primary accession number for a given gene name.
+   *
+   * @async
+   * @function getUniprotID
+   * @param {string} geneName - The name of the gene to search for.
+   * @returns {Promise<string>} A promise that resolves to the UniProt primary accession number.
+   * @throws {Error} Throws an error if unable to retrieve the UniProt primary accession number.
+   *
+   * NOTE:
+   *
+   *   - only using reviewed human proteins (reviewed:true in url)
+   *   - only considering human proteins (organism_name:human in url)
+   *   - only considering first result (data.results[0]) (in general, there should be only one result)
+   *
+   * UniProt API reference information:
+   *    https://www.uniprot.org/help/api_queries
+   *    https://www.uniprot.org/help/query-fields
+   */
+   linkouts.getUniprotID = async function(geneName) {
+     try {
+       const url = "https://rest.uniprot.org/uniprotkb/search?query=(gene:" + encodeURIComponent(geneName) +
+                  ")%20AND%20(reviewed:true)%20AND%20(organism_name:human)&fields=accession";
+       const response = await fetch(url);
+       const data = await response.json();
+       const primaryAccession = data.results[0].primaryAccession;
+       return primaryAccession;
+     } catch (error) {
+       console.error(error);
+       throw new Error("Unable to retrieve UniProt primary accession number for " + encodeURIComponent(geneName) + ".");
+     }
+   };
+
 })(linkouts);
 
 /*BEGIN Sample Hamburger Linkout Functions
@@ -285,49 +319,12 @@ function linkoutHelp () {
    */
   async function openCanSARdotAI(names) {
     const gname = names[0];
-    const primaryAccession = await getUniprotID(gname);
+    const primaryAccession = await linkouts.getUniprotID(gname);
     const cansarURL = "https://cansar.ai/target/" + encodeURIComponent(primaryAccession) + "/synopsis"
     linkouts.openUrl(cansarURL, "CansarAI", { noframe: true });
   }
 
-  /*
-   * Query UniProt to get primary accession number.
-   *
-   * CanSAR.ai references proteins via UniProt accession number.
-   * This function queries UniProt with a gene name and returns a primary accession
-   * number (if available). Note:
-   *
-   *   - only using reviewed human proteins (reviewed:true in url)
-   *   - only considering human proteins (organism_name:human in url)
-   *   - only considering first result (data.results[0]) (in general, there should be only one result)
-   *
-   * UniProt API reference information:
-   *    https://www.uniprot.org/help/api_queries
-   *    https://www.uniprot.org/help/query-fields
-   */
-  async function getUniprotID(geneName) {
-    let data;
-    let errorMsg = "Cannot open canSAR.ai: Unable to retrieve UniProt primary accession number for " +
-                 encodeURIComponent(geneName) + ".";
-    try {
-      const url = "https://rest.uniprot.org/uniprotkb/search?query=(gene:" + encodeURIComponent(geneName) +
-               ")%20AND%20(reviewed:true)%20AND%20(organism_name:human)&fields=accession";
-      const response = await fetch(url);
-      data = await response.json();
-    } catch (error) {
-      console.error(error)
-      throw new Error(errorMsg);
-    }
-    return new Promise((resolve, reject) => {
-      try {
-        const primaryAccession = data.results[0].primaryAccession;
-        resolve(primaryAccession);
-      } catch (error) {
-        console.error(error)
-        reject(errorMsg);
-      }
-    });
-  }
+
 
 })(linkouts);
 
