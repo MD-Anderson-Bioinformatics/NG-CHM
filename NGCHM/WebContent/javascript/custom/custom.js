@@ -297,7 +297,11 @@ function linkoutHelp () {
 (function (linkouts) {
   linkouts.addPlugin({
     name: "canSAR.ai",
-    description: "Opens canSAR.ai for protein corresponding to gene.<br>(Queries UniProt for primary accession number of protien corresponding to gene.)",
+    description: "Adds linkout to canSAR.ai for either of:" +
+         "<ul>" +
+           "<li>primary accession number (UniProt)<br>canSAR.ai is indexed by primary accession number</li>" +
+           "<li>gene name<br>queries UniProt for primary accession number of protein corresponding to gene</li>" +
+         "</ul>",
     version: "0.1.0",
     site: "https://cansar.ai",
     logo: "https://cansar.ai/img/logo.svg",
@@ -306,24 +310,35 @@ function linkoutHelp () {
         menuEntry: "View canSAR.ai",
         typeName: "bio.gene.hugo",
         selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openCanSARdotAI,
+        linkoutFn: openCanSAR_gene,
+      },
+      {
+        menuEntry: "View canSAR.ai",
+        typeName: "bio.protein.uniprotid",
+        selectMode: linkouts.SINGLE_SELECT,
+        linkoutFn: openCanSAR_uniprotID,
       }
     ]
   })
 
-  /*
+  /**
    * Open canSAR.ai for a gene name.
-   *
-   * This function is asynchronous because it queries UniProt to get the primary accession number
-   * for the protein corresponding to the gene input argument.
    */
-  async function openCanSARdotAI(names) {
+  async function openCanSAR_gene(names) {
     const gname = names[0];
     const primaryAccession = await linkouts.getUniprotID(gname);
     const cansarURL = "https://cansar.ai/target/" + encodeURIComponent(primaryAccession) + "/synopsis"
     linkouts.openUrl(cansarURL, "CansarAI", { noframe: true });
   }
 
+  /**
+   * Open canSAR.ai for a UniProt ID (primary accession number).
+   */
+  function openCanSAR_uniprotID(ids) {
+    const primaryAccession = ids[0];
+    const cansarURL = "https://cansar.ai/target/" + encodeURIComponent(primaryAccession) + "/synopsis"
+    linkouts.openUrl(cansarURL, "CansarAI", { noframe: true });
+  }
 
 
 })(linkouts);
