@@ -260,36 +260,59 @@
           selectMode,
       );
 
-    // Wrap linkout in a check function.
+    // Wrap linkout in a check function that displays error message if no labels or if first label is '-'.
+    // If the linkout callback is async, then check function is async. Otherwise, the check function is sync.
     if (selectMode === linkouts.SINGLE_SELECT) {
       linkoutFn = (function (lofn) {
-        return function (labels) {
-          if (labels.length === 0 || labels[0] === "-") {
-            //console.log("No information known for the selected label"); //alert
-            UHM.systemMessage(
-              "NG-CHM Plug-in",
-              "No information known for the selected label.",
-            );
-          } else {
-            lofn(labels);
+        if (lofn.constructor.name === "AsyncFunction") { // plugin callback is async so check function is async
+          return async function (labels) {
+            if (labels.length === 0 || labels[0] === "-") {
+              UHM.systemMessage("NG-CHM Plug-in", "No information known for the selected label.");
+            } else {
+              try {
+                await lofn(labels);
+              } catch (e) {
+                UHM.linkoutError(e);
+              }
+            }
           }
-        };
+        } else { // plugin callback is sync so check function is sync
+          return function (labels) {
+            if (labels.length === 0 || labels[0] === "-") {
+              UHM.systemMessage("NG-CHM Plug-in", "No information known for the selected label.");
+            } else {
+              lofn(labels);
+            }
+          }
+        }
       })(linkoutFn);
     } else if (selectMode === linkouts.MULTI_SELECT) {
       linkoutFn = (function (lofn) {
-        return function (labels) {
-          var idx = labels.indexOf("-");
-          if (idx >= 0) labels.splice(idx, 1);
-          if (labels.length === 0) {
-            //console.log("No information known for any selected label"); //alert
-            UHM.systemMessage(
-              "NG-CHM Plug-in",
-              "No information known for any selected label.",
-            );
-          } else {
-            lofn(labels);
+        if (lofn.constructor.name === "AsyncFunction") { // plugin callback is async so check function is async
+          return async function (labels) {
+            var idx = labels.indexOf("-");
+            if (idx >= 0) labels.splice(idx, 1);
+            if (labels.length === 0) {
+              UHM.systemMessage("NG-CHM Plug-in", "No information known for any selected label.");
+            } else {
+              try {
+                await lofn(labels);
+              } catch (e) {
+                UHM.linkoutError(e);
+              }
+            }
           }
-        };
+        } else { // plugin callback is sync so check function is sync
+          return function (labels) {
+            var idx = labels.indexOf("-");
+            if (idx >= 0) labels.splice(idx, 1);
+            if (labels.length === 0) {
+              UHM.systemMessage("NG-CHM Plug-in", "No information known for any selected label.");
+            } else {
+              lofn(labels);
+            }
+          };
+        }
       })(linkoutFn);
     } else {
       console.log("Unknown selectMode: " + selectMode); //alert
