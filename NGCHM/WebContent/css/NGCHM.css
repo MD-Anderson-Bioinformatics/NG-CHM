@@ -498,6 +498,7 @@ div.paneHeader button {
 
 .menuItem:hover {
      background-color: LightGray;
+     cursor: pointer; /* hint to user this is clickable */
 }
 
 .menuItem.disabled:hover {
