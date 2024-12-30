@@ -1555,9 +1555,13 @@ var linkoutsVersion = "undefined";
 
       // If the plugin handles special coordinates, add them as separate plugins.
       if (pp.params.handlesSpecialCoordinates === true) {
-        pp.disabled = true; /* disable because functionality of plugin will be handled by the "generalPlugin" sub item below*/
-        panePlugins.push(pp); /* TODO: this is mildly inefficient: we are adding the plugin twice */
         let specialCoordinates = getSpecialCoordinatesList();
+        if (specialCoordinates.length === 0) { // no special coordinates in NG-CHM, so treat like regular plugin
+          panePlugins.push(pp);
+          return pp;
+        }
+        pp.disabled = true; /* disable because functionality of plugin will be handled by the "generalPlugin" sub item below*/
+        panePlugins.push(pp);
         /* Create a plugin for each of the special coordinates */
         specialCoordinates.forEach((sc) => {
           let specialPlugin = deepClone(pp);
