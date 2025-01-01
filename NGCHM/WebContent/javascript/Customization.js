@@ -466,6 +466,7 @@
     head.appendChild(script);
 
     var scriptList;
+    const scriptVersions = [];
 
     function initScript() {
       const ScriptSeparator = ';';
@@ -477,6 +478,7 @@
       // Terminate when all scripts have been loaded.
       if (idx >= scriptList.length) {
 	console.log ("All customization scripts loaded");
+	linkouts.setVersion (scriptVersions.join("; "));
 	CUST.definePluginLinkouts();
 	return;
       }
@@ -485,22 +487,28 @@
 	head.appendChild(script);
       }
 
+      linkouts.setVersion ("undefined");
       script.type = "text/javascript";
       script.src = scriptList[idx];
       // Most browsers:
       script.onload = function() {
-	console.log ("Loaded custom script " + scriptList[idx]);
+	const version = linkouts.getVersion();
+	scriptVersions.push (version);
+	console.log (`Loaded custom script ${scriptList[idx]} version ${version}`);
 	initNextScript(idx+1);
       };
       // Internet explorer:
       script.onreadystatechange = function () {
         if (this.readyState == "complete") {
-	  console.log ("Loaded custom script " + scriptList[idx]);
+	  const version = linkouts.getVersion();
+	  scriptVersions.push (version);
+	  console.log (`Loaded custom script ${scriptList[idx]} version ${version}`);
 	  initNextScript(idx+1);
         }
       };
       script.onerror = function () {
-        console.warn("Loading of " + scriptList[idx] + " failed.");
+	scriptVersions.push ("error");
+	console.warn(`Loading of custom script ${scriptList[idx]} failed.`);
 	initNextScript(idx+1);
       };
     }
