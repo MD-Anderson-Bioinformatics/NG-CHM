@@ -477,14 +477,14 @@
     function initNextScript(idx) {
       // Terminate when all scripts have been loaded.
       if (idx >= scriptList.length) {
-	console.log ("All customization scripts loaded");
-	linkouts.setVersion (scriptVersions.join("; "));
-	CUST.definePluginLinkouts();
-	return;
+        console.log ("All customization scripts loaded");
+        linkouts.setVersion (scriptVersions.join("; "));
+        CUST.definePluginLinkouts();
+        return;
       }
       if (idx > 0) {
-	script = document.createElement("script");
-	head.appendChild(script);
+        script = document.createElement("script");
+        head.appendChild(script);
       }
 
       linkouts.setVersion ("undefined");
@@ -492,24 +492,24 @@
       script.src = scriptList[idx];
       // Most browsers:
       script.onload = function() {
-	const version = linkouts.getVersion();
-	scriptVersions.push (version);
-	console.log (`Loaded custom script ${scriptList[idx]} version ${version}`);
-	initNextScript(idx+1);
+        const version = linkouts.getVersion();
+        scriptVersions.push (version);
+        console.log (`Loaded custom script ${scriptList[idx]} version ${version}`);
+        initNextScript(idx+1);
       };
       // Internet explorer:
       script.onreadystatechange = function () {
         if (this.readyState == "complete") {
-	  const version = linkouts.getVersion();
-	  scriptVersions.push (version);
-	  console.log (`Loaded custom script ${scriptList[idx]} version ${version}`);
-	  initNextScript(idx+1);
+          const version = linkouts.getVersion();
+          scriptVersions.push (version);
+          console.log (`Loaded custom script ${scriptList[idx]} version ${version}`);
+          initNextScript(idx+1);
         }
       };
       script.onerror = function () {
-	scriptVersions.push ("error");
-	console.warn(`Loading of custom script ${scriptList[idx]} failed.`);
-	initNextScript(idx+1);
+        scriptVersions.push ("error");
+        console.warn(`Loading of custom script ${scriptList[idx]} failed.`);
+        initNextScript(idx+1);
       };
     }
   };
