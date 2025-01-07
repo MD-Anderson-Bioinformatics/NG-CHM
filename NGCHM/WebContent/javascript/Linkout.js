@@ -1590,29 +1590,29 @@ var linkoutsVersion = "undefined";
         return panePlugins.find((a) => a.name === name);
       });
     };
-    /**
-     * Creates a deep copy of the provided object or array.
-     *
-     * @param {Object|Array} obj - The object or array to be deep cloned.
-     * @returns {Object|Array} A deep copy of the provided object or array.
-     */
-     function deepClone(obj) {
-       if (obj === null || typeof obj !== "object") {
-         return obj;
-       }
-       if (Array.isArray(obj)) {
-         return obj.map(deepClone);
-       }
-       const clone = {};
-       for (let key in obj) {
-         if (obj.hasOwnProperty(key)) {
-           clone[key] = deepClone(obj[key]);
-         }
-       }
-       return clone;
-     }
   })();
 
+  /**
+   * Creates a deep copy of the provided object or array.
+   *
+   * @param {Object|Array} obj - The object or array to be deep cloned.
+   * @returns {Object|Array} A deep copy of the provided object or array.
+   */
+   function deepClone(obj) {
+     if (obj === null || typeof obj !== "object") {
+       return obj;
+     }
+     if (Array.isArray(obj)) {
+       return obj.map(deepClone);
+     }
+     const clone = {};
+     for (let key in obj) {
+       if (obj.hasOwnProperty(key)) {
+         clone[key] = deepClone(obj[key]);
+       }
+     }
+     return clone;
+   }
   // Switch the empty pane identified by PaneLocation loc to a new
   // instance of the specified panel plugin.
   LNK.switchPaneToPlugin = function (loc, plugin, restoreInfo) {
@@ -1650,9 +1650,7 @@ var linkoutsVersion = "undefined";
 	*/
   function getDiscCovariateColors(axis, label, values, colorMapMgr) {
     const colorMap = colorMapMgr.getColorMap(axis, label);
-    const uniqueClassValues = Array.from(
-      new Set(MMGR.getHeatMap().getAxisCovariateData(axis)[label].values),
-    );
+    const uniqueClassValues = Array.from(new Set(values));
     const classColors = [];
     for (let i = 0; i < uniqueClassValues.length; i++) {
       if (uniqueClassValues[i] !== "!CUT!") {
@@ -2284,6 +2282,20 @@ var linkoutsVersion = "undefined";
         console.log("Unknown coco data type " + ctype);
       }
     }
+    if (axis.covariates[0].covName === "All Black") { // add dummy data for 'All Black' option
+      let allBlackColorMap = {
+        Class: "All Black",
+        Color: "#000000",
+      }
+      let allBlackColors = Array.from({length: heatMap.getTotalElementsForAxis(axis.axisName)}, () => "#000000");
+      let allBlackCovariate = Array.from({length: heatMap.getTotalElementsForAxis(axis.axisName)}, () => "All Black");
+      cocodata["covariateColorMap"] = [];
+      cocodata["covariateColorMap"].push([allBlackColorMap]);
+      cocodata["covariateColors"] = [];
+      cocodata["covariateColors"].push(allBlackColors);
+      cocodata["covariates"] = [];
+      cocodata["covariates"].push(allBlackCovariate);
+    }
     //console.log ({ m: 'setAxisCoCoData', axis, coco, cocodata });
   }
 
@@ -2446,6 +2458,7 @@ var linkoutsVersion = "undefined";
      * @param {HTMLSelectElement} selectElement - The select element to which the options will be added.
      * @param {string} grabshowOptText - The text to display for user to select rows/cols via GRAB/SHOW.
      * @param {boolean} onlyContinuous - If true, only continuous covariates are added.
+     * @param {boolean} addAllBlackOption - If true, an "All Black" option is added to the dropdown.
      * @returns {HTMLOptionElement} The option element for user to select rows/cols via GRAB/SHOW.
      */
     function addCovariateOptions(
@@ -2454,6 +2467,7 @@ var linkoutsVersion = "undefined";
       selectElement,
       grabShowOptText,
       onlyContinuous,
+      addAllBlackOption = false,
     ) {
       let defaultIndex = 0;
       let covariatesForDropDown = [];
@@ -2469,6 +2483,16 @@ var linkoutsVersion = "undefined";
       } else { // put all covariates in dropdown
         covariatesForDropDown = covariatesConfig;
       }
+      if (addAllBlackOption == true) {
+        covariatesForDropDown["All Black"] = { // Add an "All Black" option for dropdown
+          "color_map": {
+            "type": "discrete",
+            "colors": ["#FFFFFF"],
+            "thresholds": ["All Black"],
+            "missing": "#FFFFFF",
+          }
+        }
+      }
       for (let [cvText, cvProperties] of Object.entries(covariatesForDropDown)) {
         if (cvText === defaultOptText) {
           defaultIndex = selectElement.children.length;
@@ -2479,7 +2503,13 @@ var linkoutsVersion = "undefined";
           selectElement.add(optionNode("covariate", cvText));
         }
       }
-      if (defaultOptText === null) defaultIndex = selectElement.children.length;
+      let allBlackOpt = Array.from(selectElement.children).filter((opt) => opt.text === "All Black");
+      if (defaultOptText === null && allBlackOpt.length > 0) {
+        let allBlackOptIndex = Array.from(selectElement.children).findIndex((opt) => opt.text === "All Black");
+        defaultIndex = allBlackOptIndex;
+      } else if (defaultOptText === null) {
+        defaultIndex = selectElement.children.length;
+      }
       const grabShowOpt = optionNode("data", grabShowOptText);
       if (defaultOptText === grabShowOptText)
         defaultIndex = selectElement.children.length;
@@ -2622,18 +2652,20 @@ var linkoutsVersion = "undefined";
               defaultOpt = selectedElementsOption;
             } else if (selParams.type === "covariate" && selParams.covName) {
               defaultOpt = selParams.covName;
-            } else if (selectorName === "Coordinate") {
+            } else if (selectorName === "Coordinate") { // NOTE: `selectorName` comes from the plugin config
               defaultOpt = defaultCoord ? defaultCoord + (cid + 1) : null;
             } else {
               defaultOpt = defaultCovar;
             }
             let onlyContinuous = selectorName === "Coordinate";
-            sss[cid].selOpt = addCovariateOptions(
+            let deepCloneOfAxis1Config = deepClone(axis1Config);
+            sss[cid].selOpt = addCovariateOptions( // in createLinearSelectors
               defaultOpt,
-              axis1Config,
+              deepCloneOfAxis1Config,
               selectEl,
               selectedElementsOption,
               onlyContinuous,
+              true, // add "All Black" option to covariates dropdown
             );
           }
           updateAxis();
@@ -2853,7 +2885,7 @@ var linkoutsVersion = "undefined";
             } else {
               defaultOpt = defaultCovar;
             }
-            sss[cid].selOpt = addCovariateOptions(
+            sss[cid].selOpt = addCovariateOptions( // in createGroupSelectors
               defaultOpt,
               axis1Config,
               selectEl,

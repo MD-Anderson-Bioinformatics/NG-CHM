@@ -997,7 +997,7 @@
           resizePane(loc.pane);
         });
       });
-      // Add plugin options to pane menu. (i.e. the plugin menu and sub-menu items)
+      // Add plugin menu items and any sub-menu items to pane menu.
       paneExtraOptions.forEach((opt) => {
         if (opt.enabled() && opt.data.disabled) {
           menuItemWSubItems(opt.name); // <-- disabled, because sub-items are what user should click on
