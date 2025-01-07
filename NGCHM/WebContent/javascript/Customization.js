@@ -455,7 +455,7 @@
     const heatMap = MMGR.getHeatMap();
     CUST.beforeLoadCustom(heatMap);
     const head = document.getElementsByTagName("head")[0];
-    const script = document.createElement("script");
+    let script = document.createElement("script");
     if (CFG.custom_specified) {
       initScript();
     } else {
@@ -465,20 +465,51 @@
     }
     head.appendChild(script);
 
+    var scriptList;
+    const scriptVersions = [];
+
     function initScript() {
+      const ScriptSeparator = ';';
+      scriptList = CFG.custom_script.split(ScriptSeparator).map(x => x.trim()).filter(x => x != '');
+      initNextScript (0);
+    }
+
+    function initNextScript(idx) {
+      // Terminate when all scripts have been loaded.
+      if (idx >= scriptList.length) {
+        console.log ("All customization scripts loaded");
+        linkouts.setVersion (scriptVersions.join("; "));
+        CUST.definePluginLinkouts();
+        return;
+      }
+      if (idx > 0) {
+        script = document.createElement("script");
+        head.appendChild(script);
+      }
+
+      linkouts.setVersion ("undefined");
       script.type = "text/javascript";
-      script.src = CFG.custom_script;
+      script.src = scriptList[idx];
       // Most browsers:
-      script.onload = CUST.definePluginLinkouts;
+      script.onload = function() {
+        const version = linkouts.getVersion();
+        scriptVersions.push (version);
+        console.log (`Loaded custom script ${scriptList[idx]} version ${version}`);
+        initNextScript(idx+1);
+      };
       // Internet explorer:
       script.onreadystatechange = function () {
         if (this.readyState == "complete") {
-          CUST.definePluginLinkouts();
+          const version = linkouts.getVersion();
+          scriptVersions.push (version);
+          console.log (`Loaded custom script ${scriptList[idx]} version ${version}`);
+          initNextScript(idx+1);
         }
       };
       script.onerror = function () {
-        console.warn("Loading of " + CFG.custom_script + " failed.");
-        CUST.definePluginLinkouts();
+        scriptVersions.push ("error");
+        console.warn(`Loading of custom script ${scriptList[idx]} failed.`);
+        initNextScript(idx+1);
       };
     }
   };
