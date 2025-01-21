@@ -173,6 +173,9 @@
       if (value == "!CUT!") {
         return { r: 255, g: 255, b: 255, a: 255 };
       }
+      if (value === "All Black") {
+        return { r: 0, g: 0, b: 0, a: 255 };
+      }
       if (type == "discrete") {
         for (var i = 0; i < thresholds.length; i++) {
           if (value == thresholds[i]) {
