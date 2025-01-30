@@ -67,259 +67,265 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.util.Base64;
-import java.util.Date;
-
-import java.util.List;
-import java.util.ArrayList;
+import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
 import mda.ngchm.util.CompilerUtilities;
 
 public class NGCHM_ServerAppGenerator {
 
+  /*******************************************************************
+   * METHOD: createChunk
+   *
+   * This method concatenates a list of optionally minimized Javascript
+   * strings into a file written to outDir.
+   *
+   * The name of the output file is formed by concatenating the supplied prefix,
+   * the SHA-1 digest of the file's contents, and the supplied suffix.
+   *
+   * The list of strings is cleared.
+   * The name of the generated file is returned.
+   *
+   ******************************************************************/
+  public static String createChunk(
+    List<String> pieces,
+    String outDir,
+    String prefix,
+    String suffix
+  ) throws IOException {
+    String tmpFile = outDir + prefix + "tmp" + suffix;
+    BufferedWriter cw = new BufferedWriter(new FileWriter(tmpFile));
 
-	/*******************************************************************
-	 * METHOD: createChunk
-	 *
-	 * This method concatenates a list of optionally minimized Javascript
-	 * strings into a file written to outDir.
-	 *
-	 * The name of the output file is formed by concatenating the supplied prefix,
-	 * the SHA-1 digest of the file's contents, and the supplied suffix.
-	 *
-	 * The list of strings is cleared.
-	 * The name of the generated file is returned.
-	 *
-	 ******************************************************************/
-	public static String createChunk (List<String> pieces, String outDir, String prefix, String suffix)
-		throws IOException
-	{
-		String tmpFile = outDir + prefix + "tmp" + suffix;
-		BufferedWriter cw = new BufferedWriter(new FileWriter(tmpFile));
+    /* Output all chunk pieces to chunk file. */
+    for (int i = 0; i < pieces.size(); i++) {
+      cw.write(pieces.get(i));
+    }
+    cw.close();
+    pieces.clear();
 
-		/* Output all chunk pieces to chunk file. */
-		for (int i = 0; i < pieces.size(); i++) {
-			cw.write(pieces.get(i));
-		}
-		cw.close();
-		pieces.clear();
+    /* Rename chunk file to include its digest in name. */
+    String digest = CompilerUtilities.getFileDigest(tmpFile);
+    String chunkFile = prefix + digest + suffix;
+    File tmp = new File(tmpFile);
+    File chunk = new File(outDir + "/" + chunkFile);
+    if (chunk.exists()) {
+      // Preserve date etc. of the existing file.
+      tmp.delete();
+    } else {
+      tmp.renameTo(chunk);
+    }
 
-		/* Rename chunk file to include its digest in name. */
-		String digest = CompilerUtilities.getFileDigest(tmpFile);
-		String chunkFile = prefix + digest + suffix;
-		File tmp = new File(tmpFile);
-		File chunk = new File(outDir + "/" + chunkFile);
-		if (chunk.exists()) {
-		    // Preserve date etc. of the existing file.
-		    tmp.delete();
-		} else {
-		    tmp.renameTo(chunk);
-		}
+    return chunkFile;
+  }
 
-		return chunkFile;
-	}
+  /*******************************************************************
+   * METHOD: injectInlineCSS
+   *
+   * This method copies cssFile from srcDir to serverDir and a new name
+   * that includes the digest of the file's contents.
+   *
+   * Any images referenced by the cssFile are copied from srcDir to serverDir.
+   *
+   * A link element referencing the new css file is output to the BufferedWriter
+   * for the chm.html file being output.
+   *
+   ******************************************************************/
+  public static void injectInlineCSS(
+    String cssFile,
+    String srcDir,
+    String serverDir,
+    BufferedWriter bw
+  ) {
+    try {
+      String srcFile = srcDir + "/" + cssFile;
+      BufferedReader br = new BufferedReader(new FileReader(srcFile));
+      String line = br.readLine();
+      while (line != null) {
+        CompilerUtilities.copyLineAndImages(line, srcDir, serverDir);
+        line = br.readLine();
+      }
+      br.close();
+      String digest = CompilerUtilities.getFileDigest(srcFile);
+      String digestFile = "css/ngchm-" + digest + ".css";
+      CompilerUtilities.copyFile(srcFile, serverDir + "/" + digestFile);
 
-	/*******************************************************************
-	 * METHOD: injectInlineCSS
-	 *
-	 * This method copies cssFile from srcDir to serverDir and a new name
-	 * that includes the digest of the file's contents.
-	 *
-	 * Any images referenced by the cssFile are copied from srcDir to serverDir.
-	 *
-	 * A link element referencing the new css file is output to the BufferedWriter
-	 * for the chm.html file being output.
-	 *
-	 ******************************************************************/
-	public static void injectInlineCSS (String cssFile, String srcDir, String serverDir, BufferedWriter bw)
-	{
-		try {
-			String srcFile = srcDir + "/" + cssFile;
-			BufferedReader br = new BufferedReader(new FileReader(srcFile));
-			String line = br.readLine();
-			while (line != null) {
-				CompilerUtilities.copyLineAndImages (line, srcDir, serverDir);
-				line = br.readLine();
-			}
-			br.close();
-			String digest = CompilerUtilities.getFileDigest(srcFile);
-			String digestFile = "css/ngchm-" + digest + ".css";
-			CompilerUtilities.copyFile (srcFile, serverDir + "/" + digestFile);
+      bw.write("<link rel='stylesheet' type='text/css' href='" + digestFile + "'>\n");
+    } catch (Exception e) {
+      System.out.println("NGCHM_ServerAppGenerator failed when processing " + cssFile);
+      e.printStackTrace();
+      System.exit(1);
+    }
+  }
 
-			bw.write("<link rel='stylesheet' type='text/css' href='" +  digestFile + "'>\n");
-		} catch (Exception e) {
-			System.out.println("NGCHM_ServerAppGenerator failed when processing " + cssFile);
-			e.printStackTrace();
-			System.exit(1);
-		}
-	}
+  /*******************************************************************
+   * METHOD: outputChunk
+   *
+   * This method outputs a minified Javascript module for the current
+   * chunk of accumulated Javascript.
+   *
+   * A script element including the new Javascript file is appended to
+   * the BufferedWriter for the chm.html file being output.
+   *
+   ******************************************************************/
+  public static void outputChunk(List<String> pieces, String outputDir, BufferedWriter bw)
+    throws FileNotFoundException, IOException {
+    String chunkFile = createChunk(pieces, outputDir, "javascript/ngchm-", ".js");
+    bw.write("<script defer src='" + chunkFile + "'></script>\n");
+  }
 
-	/*******************************************************************
-	 * METHOD: outputChunk
-	 *
-	 * This method outputs a minified Javascript module for the current
-	 * chunk of accumulated Javascript.
-	 *
-	 * A script element including the new Javascript file is appended to
-	 * the BufferedWriter for the chm.html file being output.
-	 *
-	 ******************************************************************/
-	public static void outputChunk (List<String> pieces, String outputDir, BufferedWriter bw)
-		throws FileNotFoundException, IOException
-	{
-		String chunkFile = createChunk (pieces, outputDir, "javascript/ngchm-", ".js");
-		bw.write("<script defer src='" + chunkFile + "'></script>\n");
-	}
+  public static void copyFileToWriter(String src, BufferedWriter bw)
+    throws FileNotFoundException, IOException {
+    BufferedReader br = new BufferedReader(new FileReader(src));
+    String jsLine = br.readLine();
+    while (jsLine != null) {
+      bw.write(jsLine + "\n");
+      jsLine = br.readLine();
+    }
+    br.close();
+  }
 
-	public static void copyFileToWriter (String src, BufferedWriter bw)
-		throws FileNotFoundException, IOException
-	{
-		BufferedReader br = new BufferedReader(new FileReader(src));
-		String jsLine = br.readLine();
-		while (jsLine != null) {
-			bw.write(jsLine+"\n");
-			jsLine = br.readLine();
-		}
-		br.close();
-	}
+  /*******************************************************************
+   * METHOD: main
+   *
+   * This method is the driver for the entire server-app html file
+   * build process.
+   *
+   ******************************************************************/
+  public static void main(String[] args) {
+    System.out.println("BEGIN NGCHM_ServerAppGenerator  " + new Date());
 
-	/*******************************************************************
-	 * METHOD: main
-	 *
-	 * This method is the driver for the entire server-app html file
-	 * build process.
-	 *
-	 ******************************************************************/
-	public static void main(String[] args) {
-		System.out.println("BEGIN NGCHM_ServerAppGenerator  " + new Date());
+    if (args.length < 3) {
+      System.out.println(
+        "Usage: NGCHM_ServerAppGenerator <web directory> <output directory> <closure.jar path>"
+      );
+      System.exit(1);
+    }
+    final String sourceDir = args[0];
+    final String outputDir = args[1];
+    final String closureJar = args[2];
 
-		if (args.length < 3) {
-			System.out.println("Usage: NGCHM_ServerAppGenerator <web directory> <output directory> <closure.jar path>");
-			System.exit(1);
-		}
-		final String sourceDir = args[0];
-		final String outputDir = args[1];
-		final String closureJar = args[2];
+    if (sourceDir.equals(outputDir)) {
+      System.out.println("Error: <web directory> must differ from <output directory>");
+      System.exit(1);
+    }
 
-		if (sourceDir.equals(outputDir)) {
-			System.out.println("Error: <web directory> must differ from <output directory>");
-			System.exit(1);
-		}
+    // Check that the output directories exist and maken them if not.
+    CompilerUtilities.testDirectory(outputDir);
+    CompilerUtilities.testDirectory(outputDir + "/images");
+    CompilerUtilities.testDirectory(outputDir + "/css");
+    CompilerUtilities.testDirectory(outputDir + "/javascript");
 
-		// Check that the output directories exist and maken them if not.
-		CompilerUtilities.testDirectory (outputDir);
-		CompilerUtilities.testDirectory (outputDir + "/images");
-		CompilerUtilities.testDirectory (outputDir + "/css");
-		CompilerUtilities.testDirectory (outputDir + "/javascript");
+    List<String> chunkPieces = new ArrayList<String>(100);
 
-		List<String> chunkPieces = new ArrayList<String>(100);
+    // Process custom javascript early so we know the name of the minified custom.js.
+    // We will add a ngchm-custom-file data attribute to the document body so that the
+    // Javascript can determine its location.
+    String customFile = "";
+    try {
+      String srcFile = sourceDir + "/javascript/custom/custom.js";
+      chunkPieces.add(CompilerUtilities.minifyFile(srcFile, outputDir, closureJar));
+      customFile = createChunk(chunkPieces, outputDir, "javascript/custom-", ".js");
+    } catch (Exception e) {
+      System.out.println(
+        "NGCHM_ServerAppGenerator failed when processing javascript/custom/custom.js"
+      );
+      e.printStackTrace();
+      System.exit(1);
+    }
 
-		// Process custom javascript early so we know the name of the minified custom.js.
-		// We will add a ngchm-custom-file data attribute to the document body so that the
-		// Javascript can determine its location.
-		String customFile = "";
-		try {
-			String srcFile = sourceDir + "/javascript/custom/custom.js";
-			chunkPieces.add (CompilerUtilities.minifyFile (srcFile, outputDir, closureJar));
-			customFile = createChunk (chunkPieces, outputDir, "javascript/custom-", ".js");
-		} catch (Exception e) {
-			System.out.println("NGCHM_ServerAppGenerator failed when processing javascript/custom/custom.js");
-			e.printStackTrace();
-			System.exit(1);
-		}
+    // Copy the SVG icons.
+    CompilerUtilities.copyFile(sourceDir + "icons.svg", outputDir + "icons.svg");
 
-		// Copy the SVG icons.
-		CompilerUtilities.copyFile (sourceDir + "icons.svg", outputDir + "icons.svg");
+    // Process chm.html
+    try {
+      BufferedReader br = new BufferedReader(new FileReader(sourceDir + "chm.html"));
+      BufferedWriter bw = new BufferedWriter(new FileWriter(outputDir + "chm.html"));
+      StringBuffer scriptedLines = new StringBuffer();
+      StringBuffer cssLines = new StringBuffer();
+      boolean isScript = false;
 
-		// Process chm.html
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(sourceDir + "chm.html" ));
-			BufferedWriter bw = new BufferedWriter(new FileWriter(outputDir + "chm.html" ));
-			StringBuffer scriptedLines = new StringBuffer();
-			StringBuffer cssLines = new StringBuffer();
-			boolean isScript = false;
+      String line = br.readLine();
+      while (line != null) {
+        if (line.contains("text/Javascript")) {
+          //Beginning of embedded Javascript in chm.html
+          scriptedLines.append("/* BEGIN chm.html Javascript: */\n");
+          isScript = true;
+        } else if (isScript && line.contains("</script>")) {
+          //End of embedded Javascript in chm.html
+          scriptedLines.append("/* END chm.html Javascript: */\n\n");
+          isScript = false;
+          chunkPieces.add(
+            CompilerUtilities.minifyString(scriptedLines.toString(), outputDir, closureJar)
+          );
+        } else if (isScript) {
+          scriptedLines.append(line + "\n");
+        } else if (line.contains("NEW CHUNK") && (chunkPieces.size() > 0)) {
+          outputChunk(chunkPieces, outputDir, bw);
+        } else if (line.contains("src=\"javascript")) {
+          // Add to current chunk.
+          String jsFile = CompilerUtilities.getJavascriptFileName(line);
+          String content = CompilerUtilities.readFileAsString(sourceDir, outputDir, jsFile);
+          if (line.contains("PRESERVE")) {
+            chunkPieces.add(content);
+          } else {
+            chunkPieces.add(CompilerUtilities.minifyString(content, outputDir, closureJar));
+          }
+        } else if (line.contains("<link rel=\"stylesheet")) {
+          String cssFile = CompilerUtilities.getCSSFileName(line);
+          if (line.contains("DEFER")) {
+            // Save css to be added into html file later.
+            cssLines.append(CompilerUtilities.readStyleAsString(sourceDir, outputDir, cssFile));
+          } else {
+            injectInlineCSS(cssFile, sourceDir, outputDir, bw);
+          }
+        } else if (line.contains("<body")) {
+          if (customFile.length() > 0) {
+            line = line.replace("<body", "<body data-ngchm-custom-file='" + customFile + "'");
+          }
+          line = line.replace("<body", "<body data-ngchm-mode='server-app'");
+          bw.write(line + "\n");
+        } else if (line.contains("</body>")) {
+          // Write any remaining javascript just before closing body tag.
+          if (chunkPieces.size() > 0) {
+            outputChunk(chunkPieces, outputDir, bw);
+          }
+          // Inject any deferred CSS.
+          if (cssLines.length() > 0) {
+            chunkPieces.add(CompilerUtilities.minifyDeferredCSS(cssLines, outputDir, closureJar));
+            outputChunk(chunkPieces, outputDir, bw);
+          }
+          copyFileToWriter(sourceDir + "/icons.svg", bw);
+          // Close the body.
+          bw.write(line + "\n");
+        } else {
+          //This is standard HTML, write out to html string
+          line = line.replaceAll("icons.svg", "");
+          CompilerUtilities.copyLineAndImages(line, sourceDir, outputDir);
+          bw.write(line + "\n");
+        }
+        line = br.readLine();
+      }
+      bw.close();
+      br.close();
+    } catch (Exception e) {
+      System.out.println("NGCHM_ServerAppGenerator failed when processing chm.html");
+      e.printStackTrace();
+      System.exit(1);
+    }
 
-			String line = br.readLine();
-			while (line != null) {
-				if (line.contains("text/Javascript")) {
-					//Beginning of embedded Javascript in chm.html
-					scriptedLines.append("/* BEGIN chm.html Javascript: */\n");
-					isScript = true;
-				} else if (isScript && line.contains("</script>")) {
-					//End of embedded Javascript in chm.html
-					scriptedLines.append("/* END chm.html Javascript: */\n\n");
-					isScript = false;
-					chunkPieces.add (CompilerUtilities.minifyString (scriptedLines.toString(), outputDir, closureJar));
-				} else if (isScript) {
-					scriptedLines.append(line + "\n");
-				} else if (line.contains("NEW CHUNK") && (chunkPieces.size() > 0)) {
-					outputChunk (chunkPieces, outputDir, bw);
-				} else if (line.contains("src=\"javascript")){
-					// Add to current chunk.
-					String jsFile = CompilerUtilities.getJavascriptFileName (line);
-					String content = CompilerUtilities.readFileAsString (sourceDir, outputDir, jsFile);
-					if (line.contains("PRESERVE")) {
-						chunkPieces.add (content);
-					} else {
-						chunkPieces.add (CompilerUtilities.minifyString(content, outputDir, closureJar));
-					}
-				}  else if (line.contains("<link rel=\"stylesheet")) {
-					String cssFile = CompilerUtilities.getCSSFileName (line);
-					if (line.contains("DEFER")) {
-						// Save css to be added into html file later.
-						cssLines.append (CompilerUtilities.readStyleAsString(sourceDir, outputDir, cssFile));
-					} else {
-						injectInlineCSS (cssFile, sourceDir, outputDir, bw);
-					}
-				} else if (line.contains("<body")) {
-					if (customFile.length() > 0) {
-						line = line.replace ("<body", "<body data-ngchm-custom-file='" + customFile + "'");
-					}
-					line = line.replace ("<body", "<body data-ngchm-mode='server-app'");
-					bw.write(line+"\n");
-				} else if (line.contains("</body>")) {
-					// Write any remaining javascript just before closing body tag.
-					if (chunkPieces.size() > 0) {
-						outputChunk (chunkPieces, outputDir, bw);
-					}
-					// Inject any deferred CSS.
-					if (cssLines.length() > 0) {
-						chunkPieces.add(CompilerUtilities.minifyDeferredCSS (cssLines, outputDir, closureJar));
-						outputChunk (chunkPieces, outputDir, bw);
-					}
-					copyFileToWriter (sourceDir + "/icons.svg", bw);
-					// Close the body.
-					bw.write(line+"\n");
-				} else {
-					//This is standard HTML, write out to html string
-					line = line.replaceAll ("icons.svg", "");
-					CompilerUtilities.copyLineAndImages (line, sourceDir, outputDir);
-					bw.write(line+"\n");
-				}
-				line = br.readLine();
-			}
-			bw.close();
-			br.close();
-		} catch (Exception e) {
-			System.out.println("NGCHM_ServerAppGenerator failed when processing chm.html");
-			e.printStackTrace();
-			System.exit(1);
-		}
+    System.out.println("END NGCHM_ServerAppGenerator " + new Date());
+    CompilerUtilities.outputImageCounts();
 
-		System.out.println("END NGCHM_ServerAppGenerator " + new Date());
-		CompilerUtilities.outputImageCounts ();
-
-		System.exit(0);
-
-	}
-
+    System.exit(0);
+  }
 }
