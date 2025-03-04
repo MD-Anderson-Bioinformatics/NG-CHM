@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion("2023-11-21");
+linkouts.setVersion("2025-03-04");
 
 // 2D Scatter Plot plugin:
 linkouts.addPanePlugin({
@@ -461,6 +461,16 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuItems = [];
+  if (species == "Home_sapiens") {
+    menuItems.push ({
+      menuEntry: "View Cosmic",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.SINGLE_SELECT,
+      linkoutFn: openCosmicGene,
+    });
+  }
   linkouts.addPlugin({
     name: "COSMIC",
     description:
@@ -468,14 +478,7 @@ function linkoutHelp () {
     version: "0.1.1",
     site: "https://cancer.sanger.ac.uk/cosmic",
     logo: "https://cancer.sanger.ac.uk/cancergenome/gfx/logo_cosmic.png",
-    linkouts: [
-      {
-        menuEntry: "View Cosmic",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openCosmicGene,
-      },
-    ],
+    linkouts: menuItems,
   });
 })(linkouts);
 
@@ -492,20 +495,23 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuItems = [];
+  if (species == "Home_sapiens") {
+    menuItems.push({
+      menuEntry: "View Decipher",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.SINGLE_SELECT,
+      linkoutFn: openDecipher,
+    });
+  }
   linkouts.addPlugin({
     name: "Decipher",
     description: "Adds linkouts to the Decipher database",
     version: "0.1.0",
     site: "https://decipher.sanger.ac.uk/",
     logo: "https://decipher.sanger.ac.uk/img/decipher-logo.png",
-    linkouts: [
-      {
-        menuEntry: "View Decipher",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openDecipher,
-      },
-    ],
+    linkouts: menuItems,
   });
 })(linkouts);
 
@@ -518,20 +524,23 @@ function linkoutHelp () {
       "https://depmap.org/portal/gene/" + ids[0] + "?tab=overview",
     );
   }
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuItems = [];
+  if (species == "Homo_sapiens") {
+      menuItems.push ({
+	  menuEntry: "View depmap",
+	  typeName: "bio.gene.hugo",
+	  selectMode: linkouts.SINGLE_SELECT,
+	  linkoutFn: openDepMap,
+      });
+  }
   linkouts.addPlugin({
     name: "DepMap",
     description: "Adds linkouts to the DepMap Portal",
     version: "0.1.0",
     site: "https://depmap.org/portal/",
     logo: "https://depmap.org/portal/static/img/nav_footer/banner_logo_depmapportal.svg",
-    linkouts: [
-      {
-        menuEntry: "View depmap",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openDepMap,
-      },
-    ],
+    linkouts: menuItems,
   });
 })(linkouts);
 
@@ -846,6 +855,37 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuEntries = [];
+  const matrixMenuEntries = [];
+  if (species == "Home_sapiens") {
+    menuEntries.push({
+      menuEntry: "View ideogram",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: viewIdeogramGene,
+    });
+    menuEntries.push({
+      menuEntry: "View ideogram",
+      typeName: "bio.mirna",
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: viewIdeogramMIRNA,
+    });
+    matrixMenuEntries.push({
+      menuEntry: "View ideogram",
+      typeName1: ["bio.gene.hugo"],
+      typeName2: ["bio.gene.hugo"],
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: viewIdeogramGene2,
+    });
+    matrixMenuEntries.push({
+      menuEntry: "View ideogram",
+      typeName1: ["bio.mirna"],
+      typeName2: ["bio.mirna"],
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: viewIdeogramMIRNA2,
+    });
+  }
   linkouts.addPlugin({
     name: "Ideogram Viewer",
     description:
@@ -853,36 +893,8 @@ function linkoutHelp () {
     version: "0.1.1",
     site: "https://bioinformatics.mdanderson.org/public-software/ideogramviewer/",
     logo: "https://bioinformatics.mdanderson.org//public-software/ideogramviewer/IdeogramViewerLogo.png",
-    linkouts: [
-      {
-        menuEntry: "View ideogram",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: viewIdeogramGene,
-      },
-      {
-        menuEntry: "View ideogram",
-        typeName: "bio.mirna",
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: viewIdeogramMIRNA,
-      },
-    ],
-    matrixLinkouts: [
-      {
-        menuEntry: "View ideogram",
-        typeName1: ["bio.gene.hugo"],
-        typeName2: ["bio.gene.hugo"],
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: viewIdeogramGene2,
-      },
-      {
-        menuEntry: "View ideogram",
-        typeName1: ["bio.mirna"],
-        typeName2: ["bio.mirna"],
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: viewIdeogramMIRNA2,
-      },
-    ],
+    linkouts: menuEntries,
+    matrixLinkouts: matrixMenuEntries,
   });
 })(linkouts);
 
