@@ -463,7 +463,7 @@ function linkoutHelp () {
 
   const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
   const menuItems = [];
-  if (species == "Home_sapiens") {
+  if (species == "Homo_sapiens") {
     menuItems.push ({
       menuEntry: "View Cosmic",
       typeName: "bio.gene.hugo",
@@ -497,7 +497,7 @@ function linkoutHelp () {
 
   const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
   const menuItems = [];
-  if (species == "Home_sapiens") {
+  if (species == "Homo_sapiens") {
     menuItems.push({
       menuEntry: "View Decipher",
       typeName: "bio.gene.hugo",
@@ -858,7 +858,7 @@ function linkoutHelp () {
   const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
   const menuEntries = [];
   const matrixMenuEntries = [];
-  if (species == "Home_sapiens") {
+  if (species == "Homo_sapiens") {
     menuEntries.push({
       menuEntry: "View ideogram",
       typeName: "bio.gene.hugo",
