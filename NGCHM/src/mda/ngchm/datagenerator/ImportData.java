@@ -60,6 +60,7 @@ public class ImportData {
   public String detailHeight = "100";
   public List<Float[][]> pdfMatrices = new ArrayList<Float[][]>();
   public List<BufferedImage> matrixImages = new ArrayList<BufferedImage>();
+  public JSONObject panelConfiguration = new JSONObject(); // to hold 'panel_configuration' key in mapConfig.json
 
   /*******************************************************************
    * CONSTRUCTOR: ImportData
@@ -288,6 +289,7 @@ public class ImportData {
           }
         }
       }
+      panelConfiguration = (JSONObject) jsonObject.get("panel_configuration");
       propsFile.close();
     } catch (FileNotFoundException e) {
       System.out.println("heatmapProperties.JSON file not found. Terminating HeatmapDataGenerator");

@@ -111,6 +111,9 @@ public final class ImportConstants {
   public static String LOW_BOUND_LABEL = "\"low_bound\" :";
   public static String HIGH_BOUND_LABEL = "\"high_bound\" :";
 
+  // panel configuration constants
+  public static String PANEL_CONFIG_LABEL = "\"panel_configuration\" :";
+
   //PDF Generation Constants
   public static int US_LETTER_WIDTH = 612;
   public static int US_LETTER_HEIGHT = 792;

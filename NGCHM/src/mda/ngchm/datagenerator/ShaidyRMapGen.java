@@ -936,12 +936,17 @@ public class ShaidyRMapGen {
         }
       }
       fileout.println("\t],");
-
-      fileout.println(
+      fileout.print(
         "\t\"output_location\": \"" + sub.getAbsolutePath().replaceAll("[\\\\]+", "\\\\\\\\") + "\""
       );
+      JSONObject panel_configuration = (JSONObject)chmRJson.get("panel_configuration");
+      if (panel_configuration != null) {
+        fileout.println(",");
+        fileout.println("\t\"panel_configuration\": " + panel_configuration.toString() );
+      } else {
+        warnings.append("Info: No panel layout provided (NGCHM R <= 1.0.4 does not provide panel info).\n");
+      }
       fileout.println("}");
-
       fileout.close();
 
       if (errors.length() > 0) {

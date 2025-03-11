@@ -1188,7 +1188,9 @@ public class HeatmapDataGenerator {
       writeLabelConfig(fw, iData, false);
       writeConfigDendrogram(fw, iData, false);
       writeConfigClassifications(fw, iData, false);
-      fw.write(BRACE_CLOSE + BRACE_CLOSE);
+      // Write out panel configuration JSON section
+      writePanelConfiguration(fw, iData);
+      fw.write(BRACE_CLOSE);
     } catch (Exception ex) {
       System.out.println("Exception Writing mapConfig.JSON file: " + ex.toString());
       throw ex;
@@ -1197,6 +1199,26 @@ public class HeatmapDataGenerator {
       writer.close();
     }
   }
+
+   /**
+    * Writes the panel configuration (if available) to the specified output stream writer.
+    *
+    * If no panel configuration, writes closing brace only.
+    * Note: NGCHM R package version <= 1.0.4 does not have panel info.
+    *
+    * @param fw The output stream writer to write the panel configuration to.
+    * @param iData The import data containing the panel configuration.
+    */
+   private static void writePanelConfiguration(OutputStreamWriter fw, ImportData iData) throws Exception {
+     if (iData.panelConfiguration == null || iData.panelConfiguration.isEmpty()) {
+       fw.write(BRACE_CLOSE);
+       return;
+     }
+     fw.write(BRACE_CLOSE + COMMA);
+     fw.write(PANEL_CONFIG_LABEL);
+     fw.write(iData.panelConfiguration.toString());
+     return;
+   }
 
   /*******************************************************************
    * METHOD: writeMapInformation
