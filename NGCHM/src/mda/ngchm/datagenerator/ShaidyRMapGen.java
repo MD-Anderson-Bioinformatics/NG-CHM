@@ -41,7 +41,7 @@ import org.json.simple.parser.ParseException;
 //heatmap.json and runs HeatmapDataGenerator to create the files needed by the NGCHM viewer.
 public class ShaidyRMapGen {
 
-  private static String BUILDER_VER = "ShaidyR 2.1.1";
+  private static String BUILDER_VER = "ShaidyR 2.2.1";
   private static String FILE_SEP = File.separator + File.separator; // On windows "\" path separator characters need to be doubled in json strings
 
   private static StringBuffer errors = new StringBuffer();
