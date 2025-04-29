@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion("2023-11-21");
+linkouts.setVersion("2025-03-04");
 
 // 2D Scatter Plot plugin:
 linkouts.addPanePlugin({
@@ -461,6 +461,16 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuItems = [];
+  if (species == "Homo_sapiens") {
+    menuItems.push ({
+      menuEntry: "View Cosmic",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.SINGLE_SELECT,
+      linkoutFn: openCosmicGene,
+    });
+  }
   linkouts.addPlugin({
     name: "COSMIC",
     description:
@@ -468,14 +478,7 @@ function linkoutHelp () {
     version: "0.1.1",
     site: "https://cancer.sanger.ac.uk/cosmic",
     logo: "https://cancer.sanger.ac.uk/cancergenome/gfx/logo_cosmic.png",
-    linkouts: [
-      {
-        menuEntry: "View Cosmic",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openCosmicGene,
-      },
-    ],
+    linkouts: menuItems,
   });
 })(linkouts);
 
@@ -492,20 +495,23 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuItems = [];
+  if (species == "Homo_sapiens") {
+    menuItems.push({
+      menuEntry: "View Decipher",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.SINGLE_SELECT,
+      linkoutFn: openDecipher,
+    });
+  }
   linkouts.addPlugin({
     name: "Decipher",
     description: "Adds linkouts to the Decipher database",
     version: "0.1.0",
     site: "https://decipher.sanger.ac.uk/",
     logo: "https://decipher.sanger.ac.uk/img/decipher-logo.png",
-    linkouts: [
-      {
-        menuEntry: "View Decipher",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openDecipher,
-      },
-    ],
+    linkouts: menuItems,
   });
 })(linkouts);
 
@@ -518,20 +524,23 @@ function linkoutHelp () {
       "https://depmap.org/portal/gene/" + ids[0] + "?tab=overview",
     );
   }
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuItems = [];
+  if (species == "Homo_sapiens") {
+      menuItems.push ({
+	  menuEntry: "View depmap",
+	  typeName: "bio.gene.hugo",
+	  selectMode: linkouts.SINGLE_SELECT,
+	  linkoutFn: openDepMap,
+      });
+  }
   linkouts.addPlugin({
     name: "DepMap",
     description: "Adds linkouts to the DepMap Portal",
     version: "0.1.0",
     site: "https://depmap.org/portal/",
     logo: "https://depmap.org/portal/static/img/nav_footer/banner_logo_depmapportal.svg",
-    linkouts: [
-      {
-        menuEntry: "View depmap",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openDepMap,
-      },
-    ],
+    linkouts: menuItems,
   });
 })(linkouts);
 
@@ -745,20 +754,23 @@ function linkoutHelp () {
       noframe: true,
     });
   }
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuEntries = [];
+  if (species == "Homo_sapiens") {
+      menuEntries.push ({
+        menuEntry: "View GTEx",
+        typeName: "bio.gene.hugo",
+        selectMode: linkouts.SINGLE_SELECT,
+        linkoutFn: openGTExPortal,
+      });
+  }
   linkouts.addPlugin({
     name: "GTEx Portal",
     description: "Adds linkouts to the GTEx Portal",
     version: "0.1.0",
     site: "https://gtexportal.org/home/",
     logo: "https://gtexportal.org/img/gtex2.1a2a339c.png",
-    linkouts: [
-      {
-        menuEntry: "View GTEx",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openGTExPortal,
-      },
-    ],
+    linkouts: menuEntries,
   });
 })(linkouts);
 
@@ -846,6 +858,37 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuEntries = [];
+  const matrixMenuEntries = [];
+  if (species == "Homo_sapiens") {
+    menuEntries.push({
+      menuEntry: "View ideogram",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: viewIdeogramGene,
+    });
+    menuEntries.push({
+      menuEntry: "View ideogram",
+      typeName: "bio.mirna",
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: viewIdeogramMIRNA,
+    });
+    matrixMenuEntries.push({
+      menuEntry: "View ideogram",
+      typeName1: ["bio.gene.hugo"],
+      typeName2: ["bio.gene.hugo"],
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: viewIdeogramGene2,
+    });
+    matrixMenuEntries.push({
+      menuEntry: "View ideogram",
+      typeName1: ["bio.mirna"],
+      typeName2: ["bio.mirna"],
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: viewIdeogramMIRNA2,
+    });
+  }
   linkouts.addPlugin({
     name: "Ideogram Viewer",
     description:
@@ -853,36 +896,8 @@ function linkoutHelp () {
     version: "0.1.1",
     site: "https://bioinformatics.mdanderson.org/public-software/ideogramviewer/",
     logo: "https://bioinformatics.mdanderson.org//public-software/ideogramviewer/IdeogramViewerLogo.png",
-    linkouts: [
-      {
-        menuEntry: "View ideogram",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: viewIdeogramGene,
-      },
-      {
-        menuEntry: "View ideogram",
-        typeName: "bio.mirna",
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: viewIdeogramMIRNA,
-      },
-    ],
-    matrixLinkouts: [
-      {
-        menuEntry: "View ideogram",
-        typeName1: ["bio.gene.hugo"],
-        typeName2: ["bio.gene.hugo"],
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: viewIdeogramGene2,
-      },
-      {
-        menuEntry: "View ideogram",
-        typeName1: ["bio.mirna"],
-        typeName2: ["bio.mirna"],
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: viewIdeogramMIRNA2,
-      },
-    ],
+    linkouts: menuEntries,
+    matrixLinkouts: matrixMenuEntries,
   });
 })(linkouts);
 
@@ -908,25 +923,28 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuEntries = [];
+  if (species == "Homo_sapiens") {
+      menuEntries.push ({
+        menuEntry: "Open LinkedOmics",
+        typeName: "bio.gene.hugo",
+        selectMode: linkouts.SINGLE_SELECT,
+        linkoutFn: openLinkedOmicsGene,
+      });
+      menuEntries.push ({
+        menuEntry: "Open LinkedOmics",
+        typeName: "bio.protein.ensembl",
+        selectMode: linkouts.SINGLE_SELECT,
+        linkoutFn: openLinkedOmicsIsoform,
+      });
+  }
   linkouts.addPlugin({
     name: "LinkedOmics Database",
     description: "Adds linkout to LinkedOmics database.",
     version: "0.1.0",
     site: "https://kb.linkedomics.org",
-    linkouts: [
-      {
-        menuEntry: "Open LinkedOmics",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openLinkedOmicsGene,
-      },
-      {
-        menuEntry: "Open LinkedOmics",
-        typeName: "bio.protein.ensembl",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openLinkedOmicsIsoform,
-      },
-    ],
+    linkouts: menuEntries,
   });
 })(linkouts);
 
@@ -938,7 +956,7 @@ function linkoutHelp () {
     const gname = names[0];
     const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
     linkouts.openUrl(
-      "https://mavedb.org/search/?organism=" + species + "&search=" + gname,
+      "https://mavedb.org/search/?target-organism-name=" + species.replace('_','+') + "&search=" + gname,
       "MaveDB",
       { noframe: true },
     );
@@ -1037,20 +1055,23 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuEntries = [];
+  if (species == "Homo_sapiens") {
+      menuEntries.push ({
+        menuEntry: "View MuPIT",
+        typeName: "bio.gene.hugo",
+        selectMode: linkouts.SINGLE_SELECT,
+        linkoutFn: viewMupitG,
+      });
+  }
   linkouts.addPlugin({
     name: "MuPIT",
     description: "Adds linkouts to MuPIT Interactive.",
     version: "0.1.0",
     site: "https://mupit.icm.jhu.edu/MuPIT_Interactive/",
     logo: "https://mupit.icm.jhu.edu/MuPIT_Interactive/images/muPITlog.gif",
-    linkouts: [
-      {
-        menuEntry: "View MuPIT",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: viewMupitG,
-      },
-    ],
+    linkouts: menuEntries,
   });
 })(linkouts);
 
@@ -1321,57 +1342,62 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuEntries = [];
+  if (species == "Homo_sapiens") {
+    menuEntries.push ({
+      menuEntry: "View NCBI ClinVar",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.SINGLE_SELECT,
+      linkoutFn: openClinVar,
+    });
+    menuEntries.push ({
+      menuEntry: "View NCBI Gene",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.SINGLE_SELECT,
+      linkoutFn: openNCBIGenePage,
+    });
+    menuEntries.push ({
+      menuEntry: "View NCBI Entrez ID",
+      typeName: "bio.gene.entrezid",
+      selectMode: linkouts.SINGLE_SELECT,
+      linkoutFn: openNCBIEntrezIDPage,
+    });
+    menuEntries.push ({
+      menuEntry: "Search ClinicalTrials.gov",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.SINGLE_SELECT,
+      linkoutFn: searchClinicalTrialsForOne,
+    });
+    menuEntries.push ({
+      menuEntry: "Search ClinicalTrials.gov for all",
+      typeName: "bio.gene.hugo",
+      selectMode: linkouts.MULTI_SELECT,
+      linkoutFn: searchClinicalTrials,
+    });
+  }
+  // linkouts that pass along bio.species
+  menuEntries.push ({
+    menuEntry: "Search NCBI Databases",
+    typeName: "bio.gene.hugo",
+    selectMode: linkouts.SINGLE_SELECT,
+    linkoutFn: searchNCBIDatabases,
+  });
+  // linkouts for GEO Accession identifiers
+  menuEntries.push ({
+    menuEntry: "View GEO Accession",
+    typeName: "bio.geo.acc",
+    selectMode: linkouts.SINGLE_SELECT,
+    linkoutFn: openGEOAccession,
+  });
+
   linkouts.addPlugin({
     name: "NCBI",
     description: "Adds linkouts to resources provided by the NCBI.",
     version: "0.1.0",
     site: "https://www.ncbi.nlm.nih.gov/",
     logo: "https://www.ncbi.nlm.nih.gov/portal/portal3rc.fcgi/4013172/img/3242381",
-    linkouts: [
-      {
-        menuEntry: "View NCBI ClinVar",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openClinVar,
-      },
-      {
-        menuEntry: "View NCBI Gene",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openNCBIGenePage,
-      },
-      {
-        menuEntry: "View NCBI Entrez ID",
-        typeName: "bio.gene.entrezid",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openNCBIEntrezIDPage,
-      },
-      {
-        menuEntry: "Search NCBI Databases",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: searchNCBIDatabases,
-      },
-      {
-        menuEntry: "Search ClinicalTrials.gov",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: searchClinicalTrialsForOne,
-      },
-      {
-        menuEntry: "Search ClinicalTrials.gov for all",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.MULTI_SELECT,
-        linkoutFn: searchClinicalTrials,
-      },
-      // linkouts for GEO Accession identifiers
-      {
-        menuEntry: "View GEO Accession",
-        typeName: "bio.geo.acc",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openGEOAccession,
-      },
-    ],
+    linkouts: menuEntries,
   });
 })(linkouts);
 
@@ -1729,20 +1755,24 @@ function linkoutHelp () {
     );
   }
 
+  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  const menuEntries = [];
+  if (species == "Homo_sapiens") {
+      menuEntries.push ({
+        menuEntry: "View Tumor Portal",
+        typeName: "bio.gene.hugo",
+        selectMode: linkouts.SINGLE_SELECT,
+        linkoutFn: openTumorPortalGene,
+      });
+  }
+
   linkouts.addPlugin({
     name: "TumorPortal",
     description: "Adds linkouts to TumorPortal",
     version: "0.1.0",
     site: "http://www.tumorportal.org/",
     //logo: "http://www.tumorportal.org/assets/tplogo-b2692452952b98eee833d30f08757924.png",
-    linkouts: [
-      {
-        menuEntry: "View Tumor Portal",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openTumorPortalGene,
-      },
-    ],
+    linkouts: menuEntries,
   });
 })(linkouts);
 
