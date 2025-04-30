@@ -1312,6 +1312,10 @@
       return showDendro;
     };
 
+    HeatMap.prototype.getTopItems = function getTopItems (axis, opts = {}) {
+        return (this.getAxisConfig(axis).top_items || []).sort();
+    };
+
     HeatMap.prototype.setReadOnly = function () {
       this.mapConfig.data_configuration.map_information.read_only = "Y";
     };
