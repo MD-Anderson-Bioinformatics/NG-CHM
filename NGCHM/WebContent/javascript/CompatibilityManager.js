@@ -46,64 +46,63 @@
    * the heatmaps mapConfig file is updated to permanently add the new properties.
    **********************************************************************************/
   CM.CompatibilityManager = function (mapConfig) {
-    var foundUpdate = false;
-    var jsonConfig = JSON.parse(CM.jsonConfigStr);
-    //Construct comparison object tree from default configuration
-    var configObj = {};
-    CM.buildConfigComparisonObject(jsonConfig, "", configObj, mapConfig);
-    //Construct comparison object tree from the heatmap's configuration
-    var mapObj = {};
-    CM.buildConfigComparisonObject(mapConfig, "", mapObj);
+    let foundUpdate = false;
 
-    //Loop thru the default configuration object tree searching for matching
-    //config items in the heatmap's config obj tree.
-    for (var key in configObj) {
-      var searchItem = key;
+    // Construct a flattened entry map from the standard map configuration.
+    // Each key is a flattened path to the entry in the standard map config.
+    // Example entry: ".col_configuration.dendrogram.show" with value "ALL".
+    //
+    // The input mapConfig is used to replicate the prototype entries in the
+    // standardMapConfig for each data layer and classification bar that
+    // mapConfig contains.
+    //
+    const standardMapConfig = JSON.parse(CM.jsonConfigStr);
+    const standardMapEntries = buildConfigComparisonObject(standardMapConfig, mapConfig);
 
-      //Check to see if we are processing one of the 2 classifications_order entries
-      var classOrderFound = false;
-      if (searchItem.includes(CM.classOrderStr)) {
-        searchItem += ".0";
-        classOrderFound = true;
+    // Construct a flattened entry map from the heatmap's configuration, for comparison.
+    const mapConfigEntries = buildConfigComparisonObject(mapConfig);
+
+    // For any standardMapEntries that are not present in mapConfigEntries, add its
+    // value to the corresponding sub-object of mapConfig.
+    for (let [propertyPath, propertyValue] of standardMapEntries.entries()) {
+
+      // If we are processing one of the 2 classifications_order entries in
+      // the prototypical standard map.
+      const classOrderFound = propertyPath.includes(CM.classOrderStr);
+      if (classOrderFound) {
+        propertyPath += ".0";
       }
-      var searchValue = configObj[key];
-      var found = false;
-      for (var key in mapObj) {
-        if (key === searchItem) {
-          found = true;
-          break;
-        }
-      }
-      //If config object not found in heatmap config, add object with default
-      if (!found) {
-        if (!classOrderFound) {
-          var searchPath = searchItem.substring(1, searchItem.lastIndexOf("."));
-          var newItem = searchItem.substring(
-            searchItem.lastIndexOf(".") + 1,
-            searchItem.length,
-          );
-          var parts = searchPath.split(".");
-          //Here we search any entries for classification bars to reconstruct bar labels that have been
-          //split apart due to the period character being contained in the label.
-          if (parts[1] === "classifications") {
-            parts[2] = CM.trimClassLabel(parts);
-          }
-          var obj = mapConfig;
-          for (let i = 0; i < parts.length; i++) {
-            obj = obj[parts[i]];
-          }
-          //For adding empty array for top_items
-          if (searchValue == "[]") {
-            searchValue = [];
-          }
-          obj[newItem] = searchValue;
-          foundUpdate = true;
-        } else {
-          //If we are processing for missing classification order, check to see if there
-          //are any classifications defined before requiring an update.
-          if (CM.hasClasses(mapConfig, searchItem)) {
+
+      // If a standard config entry is missing in the heatmap config, add an entry to mapConfig
+      // with the value from the standard config entry and set foundUpdate to true.
+      if (!mapConfigEntries.has(propertyPath)) {
+        if (classOrderFound) {
+          // If we are processing for missing classification order, check to see if there
+          // are any classifications defined before requiring an update.
+          if (hasClasses(mapConfig, propertyPath)) {
             foundUpdate = true;
           }
+        } else {
+          // Find:
+          // - the path to the subobject of mapConfig to update, and
+          // - the name of the property within that subobject to add.
+          const subobjectPath = propertyPath.substring(1, propertyPath.lastIndexOf("."));
+          const propertyName = propertyPath.substring(
+            propertyPath.lastIndexOf(".") + 1,
+            propertyPath.length,
+          );
+          // Split the subobjectPath into its component paths.
+          const parts = subobjectPath.split(".");
+          // Repair any entries for classification bars whose bar labels were
+          // split apart because they contained a period character.
+          if (parts[1] === "classifications") {
+            parts[2] = rebuildClassLabel(parts);
+          }
+          // Find the subobject in mapConfig to update.
+          const obj = getObjectPart(mapConfig, parts);
+          // Set the item's value.
+          obj[propertyName] = propertyValue;
+          foundUpdate = true;
         }
       }
     }
@@ -111,25 +110,27 @@
     return foundUpdate;
   };
 
+  function getObjectPart (obj, parts) {
+    for (let i = 0; i < parts.length; i++) {
+      obj = obj[parts[i]];
+    }
+    return obj;
+  }
+
   /**********************************************************************************
-   * FUNCTION - trimClassLabel: The purpose of this function is to determine if the
+   * FUNCTION - rebuildClassLabel: The purpose of this function is to determine if the
    * classification label contains the period (.) character and combine the pieces, that
    * have been previously split on that character, back into a single string.
+   *
+   * On entry, parts will have the form:
+   * [ prefix, "classifications", labelpart1, labelpart2, ... labelpartN ]
+   *
+   * The return value will be "labelpart1.labelpart2. ... .labelpartN".
+   *
    * *******************************************************************************/
-  CM.trimClassLabel = function (parts) {
-    var classLabel = "";
-    if (parts.length > 3) {
-      var remItem = "";
-      for (var i = parts.length - 1; i >= 3; i--) {
-        remItem = "." + parts[i] + remItem;
-        parts.splice(i, 1);
-      }
-      classLabel = parts[2] + remItem;
-    } else {
-      classLabel = parts[2];
-    }
-    return classLabel;
-  };
+  function rebuildClassLabel (parts) {
+    return parts.slice(2).join(".");
+  }
 
   /**********************************************************************************
    * FUNCTION - hasClasses: The purpose of this function is determine, IF column or
@@ -137,7 +138,7 @@
    * if classification_order is NOT found, we only need to update the auto save
    * the heatmap's config if classifications exist.
    * *******************************************************************************/
-  CM.hasClasses = function (config, item) {
+  function hasClasses (config, item) {
     if (item.includes(".row_configuration.")) {
       if (Object.keys(config.row_configuration.classifications).length > 0) {
         return true;
@@ -148,76 +149,92 @@
       }
     }
     return false;
-  };
+  }
 
   /**********************************************************************************
-   * FUNCTION - buildConfigComparisonObject: The purpose of this function is to construct
-   * a 2 column "comparison" object from either the default heatmap properties OR the
-   * heatmap properties of the map that is currently being opened.
+   * FUNCTION - buildConfigComparisonObject:
+   *
+   * Returns a map from flattened entry names in obj to their values.
+   * For instance, if obj contains { items: { target: '123' }}, then the returned
+   * map will contain an entry '.items.target' => '123'.
+   *
+   * obj is either
+   * + the default heatmap properties, OR
+   * + the heatmap properties of the map that is currently being opened.
    *
    * For the current map, the full path to each configuration item is added, along
    * with its associated value, to the comparison object.
    *
-   * For the default configuration, an additional step is performed using the contents
-   * of the current map.  The default configuration does not know how many data layers
-   * and/or classification bars that the current heatmap has.  So we loop thru the
-   * current heatmap's list of layers/classes and add a default layer/class config for
-   * each layer/class to the default configuration comparison tree.
+   * If obj is the default heatmap properties:
+   * + It does not know how many data layers and/or classification bars there are in
+   *   the current heatmap.
+   * + It contains a prototype entry for each.
+   * + So, the heatmap properties of the map being opened should be passed in mapConfig.
+   * + We loop through the layers/classes in mapConfig and add a copy of each default
+   *   layer/class config for each to the returned map.
    **********************************************************************************/
-  CM.buildConfigComparisonObject = function (obj, stack, configObj, mapConfig) {
-    for (var property in obj) {
-      if (obj.hasOwnProperty(property)) {
-        if (typeof obj[property] == "object") {
-          if (typeof mapConfig === "undefined" && property === "top_items") {
-            configObj[stack + "." + property] = obj[property];
+  function buildConfigComparisonObject (obj, mapConfig) {
+    // Initialize configMap.  Populate it recursively.
+    const configMap = new Map();
+    buildRecursively (obj, "");
+    return configMap;
+
+    // Populates configMap recursively.
+    // - obj is the current subobject.
+    // - stack is the path to that subobject.
+    function buildRecursively (obj, stack) {
+      for (var property in obj) {
+        if (obj.hasOwnProperty(property)) {
+          // Path to the current property.
+          const jsonPath = stack + "." + property;
+          if (typeof obj[property] == "object") {
+            // Recursively add sub objects.
+            buildRecursively (obj[property], jsonPath);
+          } else if (typeof mapConfig === "undefined") {
+            // If no mapConfig, use the input path.
+            configMap.set(jsonPath, obj[property]);
           } else {
-            CM.buildConfigComparisonObject(
-              obj[property],
-              stack + "." + property,
-              configObj,
-              mapConfig,
-            );
-          }
-        } else {
-          var jsonPath = stack + "." + property;
-          //If we are processing the default config object tree, use the heatmap's config object to retrieve
-          //and insert keys for each data layer or classification bar that exists in the heatmap.
-          if (typeof mapConfig !== "undefined") {
+            // If mapConfig is provided, we insert a copy of the input property for each data layer or
+            // classification bar in mapConfig.
+            //
+            // The name of the data layer or classification bar is inserted into the path before the
+            // current item's name.
+            //
             if (stack.indexOf("row_configuration.classifications") > -1) {
+              // Insert a copy of the current property for each row covariate in mapConfig.
               let classes = mapConfig.row_configuration.classifications;
               for (let key in classes) {
                 let jsonPathNew = stack + "." + key + "." + property;
-                configObj[jsonPathNew] = obj[property];
+                configMap.set(jsonPathNew, obj[property]);
               }
-            } else if (
-              stack.indexOf("col_configuration.classifications") > -1
-            ) {
+            } else if (stack.indexOf("col_configuration.classifications") > -1) {
+              // Insert a copy of the current property for each column covariate in mapConfig.
               let classes = mapConfig.col_configuration.classifications;
               for (let key in classes) {
                 let jsonPathNew = stack + "." + key + "." + property;
-                configObj[jsonPathNew] = obj[property];
+                configMap.set(jsonPathNew, obj[property]);
               }
             } else if (stack.indexOf("data_layer") > -1) {
-              let layers =
-                mapConfig.data_configuration.map_information.data_layer;
+              // Insert a copy of the current property for each data layer.
+              // - For the data layer name, append the data layer index to the base name in mapConfig.
+              let layers = mapConfig.data_configuration.map_information.data_layer;
               for (let key in layers) {
                 let jsonPathNew = stack + "." + key + "." + property;
                 let value = obj[property];
                 if (property === "name") {
                   value = value + " " + key;
                 }
-                configObj[jsonPathNew] = value;
+                configMap.set(jsonPathNew, value);
               }
             } else {
-              configObj[jsonPath] = obj[property];
+              // None of the above.  Insert the property value at its input path.
+              configMap.set(jsonPath, obj[property]);
             }
-          } else {
-            configObj[jsonPath] = obj[property];
           }
         }
       }
     }
-  };
+  }
 
   /************************************************
    * mapData compatibility fixes
