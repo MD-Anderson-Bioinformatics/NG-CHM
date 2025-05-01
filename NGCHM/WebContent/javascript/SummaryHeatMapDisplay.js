@@ -194,8 +194,8 @@
       if (!SUM.rowDendro) {
         SUM.rowDendro = new SUMDDR.SummaryRowDendrogram(heatMap, ddrCallbacks);
       }
-      SUM.colTopItems = heatMap.getTopItems("column");
-      SUM.rowTopItems = heatMap.getTopItems("row");
+      SUM.colTopItems = heatMap.getTopItems("column", { count: 10 });
+      SUM.rowTopItems = heatMap.getTopItems("row", { count: 10 });
 
       SUM.matrixWidth = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
       SUM.matrixHeight = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
