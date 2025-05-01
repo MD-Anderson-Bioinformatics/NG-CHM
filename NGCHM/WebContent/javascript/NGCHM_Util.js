@@ -266,6 +266,21 @@
     return button;
   };
 
+  // Create a new select element.
+  UTIL.newSelect = function newSelect(values, contents) {
+    if (values.length != contents.length) {
+      console.error ("UTIL.newSelect: values and contents do not have the same length", { values, contents });
+    }
+    const select = UTIL.newElement("SELECT");
+    for (let ii = 0; ii < values.length; ii++) {
+      const option = UTIL.newElement("OPTION");
+      option.value = values[ii];
+      option.innerText = contents[ii];
+      select.appendChild (option);
+    }
+    return select;
+  };
+
   /**********************************************************************************
    * FUNCTION - showTab: This function shows the tab identified by buttonId and hides
    * all the other tabs in the group.

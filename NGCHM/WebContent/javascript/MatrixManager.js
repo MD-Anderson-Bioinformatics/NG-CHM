@@ -914,8 +914,28 @@
       return this.mapConfig.col_configuration;
     };
 
-    HeatMap.prototype.getAxisCovariateConfig = function (axis) {
-      return this.getAxisConfig(axis).classifications;
+    // Returns an array of the covariate configurations for the specified axis.
+    // If filters is specified, it is an object containing one or more filter
+    // specifications.  Only covariates that match all filters are returned.
+    // The following filters are implemented:
+    // - type: "continuous" or "discrete".
+    // - show: "Y" or "N".
+    HeatMap.prototype.getAxisCovariateConfig = function (axis, filters) {
+      const classifications = this.getAxisConfig(axis).classifications;
+      // Short-cut if no filters.
+      if (!filters) return classifications;
+
+      let matches = Object.entries(classifications);
+      Object.entries(filters).forEach(([filter, value]) => {
+        if (filter == "type") {
+          matches = matches.filter (([filter,covar]) => covar.color_map.type == value);
+        } else if (filter == "show") {
+          matches = matches.filter (([filter,covar]) => covar.show == value);
+        } else {
+          console.error ("Unknown covariate filter", { filter, value });
+        }
+      });
+      return Object.fromEntries(matches);
     };
 
     HeatMap.prototype.getAxisCovariateOrder = function (axis) {
@@ -1324,8 +1344,55 @@
       return showDendro;
     };
 
-    HeatMap.prototype.getTopItems = function getTopItems (axis, opts = {}) {
-        return (this.getAxisConfig(axis).top_items || []).sort();
+    // Returns an array of the top item labels on the specified axis.
+    // The top items are those with the highest value of the top_items_cv
+    // entry in the axis config.
+    //
+    // If specified, options limit the returned top items.  The only
+    // option implemented to date is:
+    // - count: N, returns at most the top count items.
+    //
+    HeatMap.prototype.getTopItems = function getTopItems (axis, options = {}) {
+      const cfg = this.getAxisConfig(axis);
+      const cv = cfg.top_items_cv;
+      // If top_items_cv is not selected, return an empty array.
+      if (cv == "") return [];
+      // Cache the descending order of each covariate in a map added to the
+      // heatmap object.  Each cache entry will be an array of index entries
+      // into the axis's label list, such that the covariates values are
+      // not missing and in descending order.
+      //
+      // When it is possible to modify the values of a covariate interactively,
+      // we will need to implement a method to invalidate the the corresponding
+      // cache entry.
+      if (!this["__cvOrder"+axis]) this["__cvOrder"+axis] = new Map();
+      const wm = this["__cvOrder"+axis];
+      // Retrieve the indices of the top items, or create it if needed.
+      let cvOrder;
+      if (wm.has(cv)) {
+        cvOrder = wm.get (cv);
+      } else {
+        // Create an array of indices, remove the indices of missing values,
+        // and sort the remainder by descending value of the covariate.
+        //
+        // We use an array of random values to break ties in large blocks of
+        // labels with the same covariate values. (Imagine a covariate with
+        // a very limited integer range.)  When returning a limited number of
+        // top items, this returns a broad selection of the labels rather than
+        // just a prefix (or suffix) of that block.
+        const cvData = this.getAxisCovariateData (axis)[cv].values;
+        cvOrder = cvData.map((value,index) => index);
+        const rand = cvData.map(value => Math.random());
+        cvOrder = cvOrder.filter(idx => cvData[idx] != "NA");
+        cvOrder.sort((a,b) => (cvData[b]-cvData[a]) || (rand[b]-rand[a]));
+        wm.set (cv, cvOrder);
+      }
+      if (options.hasOwnProperty('count')) {
+        cvOrder = cvOrder.slice(0, options.count);
+      }
+      const labels = this.getAxisLabels(axis).labels;
+      const selected = cvOrder.map(index => labels[index]);
+      return selected.sort();
     };
 
     HeatMap.prototype.setReadOnly = function () {
@@ -2840,6 +2907,7 @@
         const status = getMapStatus(heatMap);
         status.mapUpdatedOnLoad = true;
       }
+      checkAxes(heatMap);
       heatMap.sendCallBack(MMGR.Event_JSON);
     }
 
@@ -2849,9 +2917,23 @@
         status.mapUpdatedOnLoad = true;
       }
       heatMap.mapConfig = mc;
-      addDataLayers(heatMap);
-      configureFlick(heatMap);
+      checkAxes(heatMap);
       heatMap.sendCallBack(MMGR.Event_JSON);
+    }
+
+    // Perform compatibility checks required once *both* mapConfig and mapData are available.
+    function checkAxes (heatMap) {
+        if (heatMap.mapData != null && heatMap.mapConfig != null) {
+          const status = getMapStatus(heatMap);
+          if (COMPAT.checkAxis (heatMap.mapConfig, heatMap.mapData, "row")) {
+            status.mapUpdatedOnLoad = true;
+          }
+          if (COMPAT.checkAxis (heatMap.mapConfig, heatMap.mapData, "col")) {
+            status.mapUpdatedOnLoad = true;
+          }
+          addDataLayers(heatMap);
+          configureFlick(heatMap);
+        }
     }
 
     MMGR.mapUpdatedOnLoad = function (heatMap) {
