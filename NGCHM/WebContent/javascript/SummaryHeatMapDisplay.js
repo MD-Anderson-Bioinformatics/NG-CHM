@@ -1132,7 +1132,7 @@
       var key = classBarConfigOrder[j];
       var currentClassBar = classBarsConfig[key];
       if (currentClassBar.show === "Y") {
-        var covLabel = MMGR.getLabelText(key, "COL", true);
+        var covLabel = heatMap.getLabelText(key, "COL", true);
         var covPct = parseInt(currentClassBar.height) / totalHeight;
         //scaled width of current bar
         var barWidth = SUM.rowClassBarWidth * covPct;
@@ -1183,7 +1183,7 @@
     //find the first, middle, and last vertical positions for the bar legend being drawn
     var topPos = beginClasses + prevHeight;
     var midPos = topPos + (currentClassBar.height - 15) / 2 - 1;
-    var midVal = MMGR.getLabelText(key, "ROW", true);
+    var midVal = MMGR.getHeatMap().getLabelText(key, "ROW", true);
     //Create div and place mid legend value
     SUM.setLabelDivElement(key + "ColLabel", midVal, midPos, leftPos, false);
   };
@@ -2042,7 +2042,7 @@
 
         // Helper function. Determine maximum width of top items on the specified axis.
         function calcTopItemsMaxWidth(axis) {
-          const shownLabels = MMGR.getShownLabels(axis);
+          const shownLabels = MMGR.getHeatMap().shownLabels(axis);
           const topItems = getTopItemLabelIndices(axis);
           let maxWidth = 0;
           topItems.forEach((ti) => {
@@ -2302,7 +2302,7 @@
       // function above).
       function placeTopItemLabels(canvas, topItemPosns, axis, otherAxisPosn) {
         const isRow = MMGR.isRow(axis);
-        const shownLabels = MMGR.getShownLabels(axis);
+        const shownLabels = MMGR.getHeatMap().shownLabels(axis);
         topItemPosns.forEach((tip) => {
           const item = document.createElement("Div");
           item.classList.add("topItems");
@@ -2335,7 +2335,7 @@
     // Return an array of the label indices of the top items on the specified axis.
     function getTopItemLabelIndices(axis) {
       const topItems = MMGR.isRow(axis) ? SUM.rowTopItems : SUM.colTopItems;
-      const mapLabels = MMGR.getActualLabels(axis);
+      const mapLabels = MMGR.getHeatMap().actualLabels(axis);
       // Trim top items, filter out empty items, uniqify.
       const uniqTopItems = topItems
         .map((l) => l.trim())

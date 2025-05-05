@@ -653,7 +653,6 @@
     SUM.rowTopItemsHeight = 0;
     DMM.nextMapNumber = 1;
     DEV.setMouseDown(false);
-    MMGR.initAxisLabels();
     UTIL.removeElementsByClass("DynamicLabel");
     SRCH.clearAllCurrentSearchItems();
   }
@@ -1946,13 +1945,14 @@
     function vanodiSelectLabels(instance, msg) {
       const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
       const pluginLabels = msg.selection.pointIds.map((l) => l.toUpperCase()); // labels from plugin
+      const heatMap = MMGR.getHeatMap();
       var heatMapAxisLabels;
       if (pluginLabels.length > 0 && pluginLabels[0].indexOf("|") !== -1) {
         // Plugin sent full labels
-        heatMapAxisLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
+        heatMapAxisLabels = heatMap.axisLabels(axis).labels;
       } else {
         // Plugin sent actual labels (or actual and full are identical).
-        heatMapAxisLabels = MMGR.getActualLabels(axis);
+        heatMapAxisLabels = heatMap.actualLabels(axis);
       }
       heatMapAxisLabels = heatMapAxisLabels.map((l) => l.toUpperCase());
       var setSelected = new Set(pluginLabels); // make a set for faster access below, and avoiding use of indexOf
@@ -1984,7 +1984,7 @@
     "mouseover",
     function vanodiMouseover(instance, msg) {
       const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
-      const allLabels = MMGR.getActualLabels(axis);
+      const allLabels = MMGR.getHeatMap().actualLabels(axis);
       const pointId = msg.selection.pointId;
       const ptIdx = allLabels.indexOf(pointId) + 1;
       SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);

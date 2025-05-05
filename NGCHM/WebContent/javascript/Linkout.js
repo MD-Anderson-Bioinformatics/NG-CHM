@@ -466,8 +466,8 @@ var linkoutsVersion = "undefined";
   function downloadAllMatrixData(selectedLabels, axis) {
     const heatMap = MMGR.getHeatMap();
     const selection = {
-      rowLabels: MMGR.getActualLabels("row"),
-      colLabels: MMGR.getActualLabels("column"),
+      rowLabels: heatMap.actualLabels("row"),
+      colLabels: heatMap.actualLabels("column"),
       rowItems: null,
       colItems: null,
     };
@@ -1011,7 +1011,7 @@ var linkoutsVersion = "undefined";
         LNK.selection.indexOf("|") > 0
           ? LNK.selection.substring(0, LNK.selection.indexOf("|"))
           : LNK.selection;
-      labelVal = MMGR.getLabelText(labelVal, axis);
+      labelVal = MMGR.getHeatMap().getLabelText(labelVal, axis);
       cell.innerHTML = "<b>Linkouts for: " + labelVal + "</b>";
     }
   };
@@ -2018,7 +2018,7 @@ var linkoutsVersion = "undefined";
       });
       data.axes.push({
         fullLabels: filterGaps(fullLabels, gapIndices),
-        actualLabels: filterGaps(MMGR.getActualLabels(axisName), gapIndices),
+        actualLabels: filterGaps(heatMap.actualLabels(axisName), gapIndices),
         selectedLabels: selectedLabels,
       });
       for (let idx = 0; idx < axis.cocos.length; idx++) {
@@ -2072,9 +2072,10 @@ var linkoutsVersion = "undefined";
       );
       return false;
     }
+    const heatMap = MMGR.getHeatMap();
     var otherAxisName = MMGR.isRow(msg.axisName) ? "column" : "row";
-    var otherAxisLabels = MMGR.getActualLabels(otherAxisName);
-    var heatMapAxisLabels = MMGR.getActualLabels(msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
+    var otherAxisLabels = heatMap.actualLabels(otherAxisName);
+    var heatMapAxisLabels = heatMap.actualLabels(msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
     heatMapAxisLabels = heatMapAxisLabels.map((l) => l.toUpperCase());
     var axisIdx = [];
     const pluginLabels = [];
@@ -4077,7 +4078,7 @@ var linkoutsVersion = "undefined";
         PIM.sendMessageToPlugin({
           nonce: msg.nonce,
           op: "labels",
-          labels: MMGR.getActualLabels(msg.axisName),
+          labels: MMGR.getHeatMap().actualLabels(msg.axisName),
         });
       } else {
         console.log({

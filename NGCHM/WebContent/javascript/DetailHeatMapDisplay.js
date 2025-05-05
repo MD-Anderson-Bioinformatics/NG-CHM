@@ -1663,7 +1663,7 @@
         bars.forEach((bar) => {
           addTmpLabelForSizeCalc(
             mapItem,
-            legendText + MMGR.getLabelText(bar.label, otherAxis),
+            legendText + mapItem.heatMap.getLabelText(bar.label, otherAxis),
             barLabelFont,
           );
         });
@@ -1775,7 +1775,7 @@
       const firstLabel = MMGR.isRow(axis)
         ? mapItem.currentRow
         : mapItem.currentCol;
-      const shownLabels = MMGR.getShownLabels(axis);
+      const shownLabels = mapItem.heatMap.shownLabels(axis);
       for (let i = firstLabel; i < firstLabel + numLabels; i++) {
         addTmpLabelForSizeCalc(mapItem, shownLabels[i - 1], fontSize);
       }
@@ -2025,8 +2025,8 @@
       }
 
       // Calculate label independent constants.
-      const actualLabels = MMGR.getActualLabels(axis);
-      const shownLabels = MMGR.getShownLabels(axis);
+      const actualLabels = mapItem.heatMap.actualLabels(axis);
+      const shownLabels = mapItem.heatMap.shownLabels(axis);
       const firstLabelIdx = isRow ? mapItem.currentRow : mapItem.currentCol;
       const rotate = isRow ? "F" : "T";
       const labelDivAxis = isRow ? "Row" : "Column"; // Must match SearchState.js/searchResults
@@ -2095,7 +2095,7 @@
             DET.maxLabelSize,
           );
           if (availableSpace >= mapItem.rowClassLabelFont) {
-            const labelText = MMGR.getLabelText(currentClassBar.label, "COL");
+            const labelText = mapItem.heatMap.getLabelText(currentClassBar.label, "COL");
             DET.addLabelDiv(
               mapItem,
               mapItem.labelElement,
@@ -2193,7 +2193,7 @@
               (barHeightScaled - mapItem.colClassLabelFont) / 2 - 3,
               0,
             );
-            const labelText = MMGR.getLabelText(currentClassBar.label, "ROW");
+            const labelText = mapItem.heatMap.getLabelText(currentClassBar.label, "ROW");
             DET.addLabelDiv(
               mapItem,
               mapItem.labelElement,

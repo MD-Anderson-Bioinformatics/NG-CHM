@@ -2260,83 +2260,85 @@
   /* Submodule for caching Actual/Shown labels.
    */
   (function () {
-    var actualAxisLabels;
-    var shownAxisLabels;
-    var shownAxisLabelParams;
 
-    MMGR.initAxisLabels = function () {
-      actualAxisLabels = {};
-      shownAxisLabels = { ROW: [], COLUMN: [] };
-      shownAxisLabelParams = { ROW: {}, COLUMN: {} };
+    HeatMap.prototype.initAxisLabels = function initAxisLabels () {
+      this.actualAxisLabels = {};
+      this.shownAxisLabels = { ROW: [], COLUMN: [] };
+      this.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
     };
-    MMGR.initAxisLabels();
 
-    MMGR.getActualLabels = function (axis) {
+    // Returns an array of the "actual" labels for the specified axis
+    // of the NG-CHM.  The "actual" labels currently consist of the
+    // text before the first vertical bar in the "full" labels.
+    HeatMap.prototype.actualLabels = function actualLabels (axis) {
       axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
-      if (!actualAxisLabels.hasOwnProperty(axis)) {
-        const labels = MMGR.getHeatMap().getAxisLabels(axis)["labels"];
-        actualAxisLabels[axis] = labels.map((text) => {
+      if (!this.actualAxisLabels.hasOwnProperty(axis)) {
+        const labels = this.getAxisLabels(axis)["labels"];
+        this.actualAxisLabels[axis] = labels.map((text) => {
           return text === undefined ? undefined : text.split("|")[0];
         });
       }
-      return actualAxisLabels[axis];
+      return this.actualAxisLabels[axis];
     };
-    MMGR.getShownLabels = function (axis) {
+
+    // Returns an array of the "shown" labels for the specified axis of
+    // the NG-CHM. The "shown" labels are the "actual" labels abbreviated,
+    // if needed, to be no longer than the maximum label display length for
+    // the specified axis.
+    HeatMap.prototype.shownLabels = function shownLabels (axis) {
       axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
-      const config = MMGR.getHeatMap().getAxisConfig(axis);
+      const config = this.getAxisConfig(axis);
       // Recalculate shown labels if parameters affecting them have changed.
       if (
-        shownAxisLabelParams[axis].label_display_length !==
+        this.shownAxisLabelParams[axis].label_display_length !==
           config.label_display_length ||
-        shownAxisLabelParams[axis].label_display_method !==
+        this.shownAxisLabelParams[axis].label_display_method !==
           config.label_display_method
       ) {
-        shownAxisLabelParams[axis].label_display_length =
+        this.shownAxisLabelParams[axis].label_display_length =
           config.label_display_length;
-        shownAxisLabelParams[axis].label_display_method =
+        this.shownAxisLabelParams[axis].label_display_method =
           config.label_display_method;
-        const labels = MMGR.getActualLabels(axis);
-        shownAxisLabels[axis] = labels.map((text) => {
-          return text === undefined ? "" : MMGR.getLabelText(text, axis);
+        const labels = this.actualLabels(axis);
+        this.shownAxisLabels[axis] = labels.map((text) => {
+          return text === undefined ? "" : this.getLabelText(text, axis);
         });
       }
-      return shownAxisLabels[axis];
+      return this.shownAxisLabels[axis];
     };
-  })();
 
-  /**********************************************************************************
-   * FUNCTION - getLabelText: The purpose of this function examine label text and
-   * shorten the text if the label exceeds the 20 character allowable length.  If the
-   * label is in excess, the first 9 and last 8 characters will be written out
-   * separated by ellipsis (...);
-   **********************************************************************************/
-  MMGR.getLabelText = function (text, type, builder) {
-    const heatMap = MMGR.getHeatMap();
-    var size = parseInt(heatMap.getColConfig().label_display_length);
-    var elPos = heatMap.getColConfig().label_display_method;
-    if (type.toUpperCase() === "ROW") {
-      size = parseInt(heatMap.getRowConfig().label_display_length);
-      elPos = heatMap.getRowConfig().label_display_method;
-    }
-    //Done for displaying labels on Summary side in builder
-    if (typeof builder !== "undefined") {
-      /* FIXME: BMB */
-      size = 16;
-    }
-    if (text.length > size) {
-      if (elPos === "END") {
-        text = text.substr(0, size - 3) + "...";
-      } else if (elPos === "MIDDLE") {
-        text =
-          text.substr(0, size / 2 - 1) +
-          "..." +
-          text.substr(text.length - (size / 2 - 2), text.length);
-      } else {
-        text = "..." + text.substr(text.length - (size - 3), text.length);
+    /**********************************************************************************
+     * FUNCTION - getLabelText: The purpose of this function examine label text and
+     * shorten the text if the label exceeds the 20 character allowable length.  If the
+     * label is in excess, the first 9 and last 8 characters will be written out
+     * separated by ellipsis (...);
+     **********************************************************************************/
+    HeatMap.prototype.getLabelText = function getLabelText (text, axis, builder) {
+      axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
+      const config = this.getAxisConfig(axis);
+      let size = parseInt(config.label_display_length);
+      const elPos = config.label_display_method;
+      //Done for displaying labels on Summary side in builder
+      if (typeof builder !== "undefined") {
+        /* FIXME: BMB */
+        size = 16;
       }
-    }
-    return text;
-  };
+      if (text.length > size) {
+        if (elPos === "END") {
+          text = text.substr(0, size - 3) + "...";
+        } else if (elPos === "MIDDLE") {
+          text =
+            text.substr(0, size / 2 - 1) +
+            "..." +
+            text.substr(text.length - (size / 2 - 2), text.length);
+        } else {
+          text = "..." + text.substr(text.length - (size - 3), text.length);
+        }
+      }
+      return text;
+    };
+
+  })();
 
   /**********************************************************************************
    * FUNCTION - zipAppDownload: The user clicked on the "Download Viewer" button.
@@ -2933,6 +2935,7 @@
           }
           addDataLayers(heatMap);
           configureFlick(heatMap);
+          heatMap.initAxisLabels();
         }
     }
 
