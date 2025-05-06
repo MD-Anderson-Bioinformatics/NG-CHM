@@ -20,7 +20,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 public final class ImportConstants {
 
   //Version #
-  public static String CURRENT_GENERATOR_VERSION = "2.1.0";
+  public static String CURRENT_GENERATOR_VERSION = "2.2.0";
 
   //turn debugging on/off
   public static boolean DEBUG = false;
@@ -110,6 +110,9 @@ public final class ImportConstants {
   public static String BG_COLOR_LABEL = "\"bg_color\" :";
   public static String LOW_BOUND_LABEL = "\"low_bound\" :";
   public static String HIGH_BOUND_LABEL = "\"high_bound\" :";
+
+  // panel configuration constants
+  public static String PANEL_CONFIG_LABEL = "\"panel_configuration\" :";
 
   //PDF Generation Constants
   public static int US_LETTER_WIDTH = 612;
