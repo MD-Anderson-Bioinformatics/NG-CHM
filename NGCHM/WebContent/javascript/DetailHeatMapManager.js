@@ -456,15 +456,15 @@
     }
   };
 
-  LNK.addLinkout(
+  LNK.addMatrixLinkout(
     "Set selection as detail view",
-    "Matrix",
+    [], [],
     linkouts.MULTI_SELECT,
     setSelectionAsDetailView,
     null,
     0,
   );
-  function setSelectionAsDetailView(searchLabels, axis) {
+  function setSelectionAsDetailView(searchLabels) {
     const menuOpenCanvas = LNK.getMenuOpenCanvas();
     if (menuOpenCanvas) {
       const mapItem = DVW.getMapItemFromCanvas(menuOpenCanvas);

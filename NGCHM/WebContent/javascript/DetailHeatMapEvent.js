@@ -699,9 +699,9 @@
    * click on a given detail panel.
    *********************************************************************************************/
   DEV.matrixRightClick = function (e) {
+    const mapItem = DVW.getMapItemFromCanvas(e.currentTarget);
     e.preventDefault();
-    LNK.labelHelpClose("Matrix", e);
-    LNK.labelHelpOpen("Matrix", e);
+    LNK.openLinkoutMenu(mapItem.heatMap, "Matrix", e);
     let selection = window.getSelection();
     selection.removeAllRanges();
     return false;
@@ -970,7 +970,7 @@
    **********************************************************************************/
   DEV.detailDataZoomIn = function (mapItem) {
     UHM.hlpC();
-    LNK.labelHelpCloseAll();
+    LNK.closeAllLinkoutMenus();
     if (!mapItem.modeHistory) mapItem.modeHistory = [];
     if (mapItem.mode == "FULL_MAP") {
       let mode = mapItem.mode,
@@ -1134,7 +1134,7 @@
     const chm = mapItem.chm;
     const heatMap = mapItem.heatMap;
     UHM.hlpC();
-    LNK.labelHelpCloseAll();
+    LNK.closeAllLinkoutMenus();
     if (!mapItem.modeHistory) mapItem.modeHistory = [];
     mapItem.modeHistory.push({
       mode: mapItem.mode,
@@ -1366,10 +1366,11 @@
    *********************************************************************************************/
   DEV.labelRightClick = labelRightClick;
   function labelRightClick(e) {
+    const loc = PANE.findPaneLocation (e.currentTarget);
+    const mapItem = DVW.getMapItemFromPane(loc.pane.id);
     e.preventDefault();
     const axis = e.target.dataset.axis;
-    LNK.labelHelpClose(axis, e);
-    LNK.labelHelpOpen(axis, e);
+    LNK.openLinkoutMenu(mapItem.heatMap, axis, e);
     let selection = window.getSelection();
     selection.removeAllRanges();
     return false;
