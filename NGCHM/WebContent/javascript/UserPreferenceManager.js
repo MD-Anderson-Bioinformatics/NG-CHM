@@ -463,17 +463,7 @@
         "rowDendroHeightPref",
       ).value;
     }
-    var rowTopItems = document
-      .getElementById("rowTopItems")
-      .value.split(/[;, \r\n]+/);
-    //Flush top items array
-    heatMap.getRowConfig().top_items = [];
-    //Fill top items array from prefs element contents
-    for (var i = 0; i < rowTopItems.length; i++) {
-      if (rowTopItems[i] !== "") {
-        heatMap.getRowConfig().top_items.push(rowTopItems[i]);
-      }
-    }
+
     var colDendroConfig = heatMap.getColDendroConfig();
     var colOrganization = heatMap.getColOrganization();
     var colOrder = colOrganization["order_method"];
@@ -484,15 +474,11 @@
         "colDendroHeightPref",
       ).value;
     }
-    var colTopItems = document
-      .getElementById("colTopItems")
-      .value.split(/[;, \r\n]+/);
-    heatMap.getColConfig().top_items = [];
-    for (var i = 0; i < colTopItems.length; i++) {
-      if (colTopItems[i] !== "") {
-        heatMap.getColConfig().top_items.push(colTopItems[i]);
-      }
+
+    for (let axis of [ "row", "col" ]) {
+      heatMap.getAxisConfig(axis).top_items_cv = document.getElementById(axis+"TopItems").value;
     }
+
     // Apply Covariate Bar Preferences
     var rowClassBars = heatMap.getRowClassificationConfig();
     for (var key in rowClassBars) {
@@ -2729,13 +2715,7 @@
       rowLabelAbbrevSelect,
     ]);
 
-    var topRowItemData = heatMap.getRowConfig().top_items.toString();
-    var topRowItems =
-      "<textarea name='rowTopItems' id='rowTopItems' rows='3' cols='80'>" +
-      topRowItemData +
-      "</textarea>";
-    UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Top Rows:"]);
-    UHM.setTableRow(prefContents, [topRowItems], 2);
+    addTopItemsSelector (prefContents, heatMap, "row", "Rows");
 
     UHM.addBlankRow(prefContents);
     UHM.setTableRow(prefContents, ["COLUMN INFORMATION:"], 2);
@@ -2795,16 +2775,22 @@
       "&nbsp;&nbsp;Trim Label Text From:",
       colLabelAbbrevSelect,
     ]);
-    var topColItemData = heatMap.getColConfig().top_items.toString();
-    var topColItems =
-      "<textarea name='colTopItems' id='colTopItems' rows='3' cols='80'>" +
-      topColItemData +
-      "</textarea>";
-    UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Top Columns:"]);
-    UHM.setTableRow(prefContents, [topColItems], 2);
+
+    addTopItemsSelector (prefContents, heatMap, "col", "Columns");
+
     rowcolprefs.appendChild(prefContents);
 
     return rowcolprefs;
+
+    function addTopItemsSelector (prefContents, heatMap, axis, pluralAxisName) {
+      const covars = heatMap.getAxisCovariateConfig (axis, { type: "continuous" });
+      const covarNames = Object.keys(covars);
+      const selector = UTIL.newSelect ([""].concat(covarNames), ["Not Selected"].concat(covarNames));
+      selector.id = axis+"TopItems";
+      selector.value = heatMap.getAxisConfig(axis).top_items_cv;
+      UHM.setTableRow(prefContents, [`&nbsp;&nbsp;Top ${pluralAxisName}:`, selector]);
+    }
+
   };
 
   /**********************************************************************************
@@ -2968,18 +2954,13 @@
         resetVal.colDendroConfig.height;
       UPM.dendroColShowChange();
     }
-    document.getElementById("rowLabelSizePref").value =
-      resetVal.rowConfig.label_display_length;
-    document.getElementById("colLabelSizePref").value =
-      resetVal.colConfig.label_display_length;
-    document.getElementById("rowLabelAbbrevPref").value =
-      resetVal.rowConfig.label_display_method;
-    document.getElementById("colLabelAbbrevPref").value =
-      resetVal.colConfig.label_display_method;
-    document.getElementById("rowTopItems").value =
-      resetVal.rowConfig.top_items.toString();
-    document.getElementById("colTopItems").value =
-      resetVal.colConfig.top_items.toString();
+
+    for (let axis of [ "row", "col" ]) {
+      const axisResetVal = resetVal[axis+"Config"];
+      document.getElementById(axis+"LabelSizePref").value = axisResetVal.label_display_length;
+      document.getElementById(axis+"LabelAbbrevPref").value = axisResetVal.label_display_method;
+      document.getElementById(axis+"TopItems").value = axisResetVal.top_items_cv;
+    }
 
     // Reset the Data Matrix panel items
     for (var dl in resetVal.matrix.data_layer) {
