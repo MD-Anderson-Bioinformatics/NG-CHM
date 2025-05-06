@@ -20,7 +20,7 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 public final class ImportConstants {
 
   //Version #
-  public static String CURRENT_GENERATOR_VERSION = "2.1.0";
+  public static String CURRENT_GENERATOR_VERSION = "2.2.0";
 
   //turn debugging on/off
   public static boolean DEBUG = false;
