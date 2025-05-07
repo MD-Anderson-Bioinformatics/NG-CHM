@@ -6,6 +6,8 @@
   const CM = NgChm.createNS("NgChm.CM");
 
   const UTIL = NgChm.importNS("NgChm.UTIL");
+  const debugCM = UTIL.getURLParameter("debug").split(",").includes("compatibility");
+
 
   // This string contains the entire configuration.json file.  This was previously located in a JSON file stored with the application code
   // but has been placed here at the top of the CompatibilityManager class so that the configuration can be utilized in File Mode.
@@ -118,8 +120,18 @@
   //   covariate bar from the top_items, set top_items_cv to its name, and remove top_items.
   //
   CM.checkAxis = function checkAxis (mapConfig, mapData, axis) {
+    let changed = false;
     const axisConfig = mapConfig[axis+"_configuration"];
     const classData =  mapData[axis+"_data"];
+    // Fix label types that were erroneously joined by ".bar.".
+    const newLabels = classData.label.label_type.map((x) => x.split(".bar.")).flat();
+    if (newLabels.length != classData.label.label_type.length) {
+      if (debugCM) {
+        console.log("CM.checkAxis", { axis, labelTypes: classData.label.label_type, newLabels });
+      }
+      classData.label.label_type = newLabels;
+      changed = true;
+    }
     if (axisConfig.top_items_cv == "" && axisConfig.top_items && axisConfig.top_items.length > 0) {
       let suffix = "";
       while (axisConfig.classifications.hasOwnProperty ("LabelPriority" + suffix)) {
@@ -144,10 +156,13 @@
       axisConfig.classifications_order.push(topClass);
       classData.classifications[topClass] = { values: classData.label.labels.map (label => axisConfig.top_items.includes(label) ? "1" : "NA") };
       axisConfig.top_items_cv = topClass;
+      if (debugCM) {
+        console.log("CM.checkAxis", { axis, topClass, top_items: axisConfig.top_items });
+      }
       delete axisConfig.top_items;
-      return true;
+      changed = true;
     }
-    return false;
+    return changed;
   };
 
   function getObjectPart (obj, parts) {
