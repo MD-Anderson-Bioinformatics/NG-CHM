@@ -34,7 +34,7 @@ linkouts.addLinkout("View miRBase Page", "MIRNA_SYM", linkouts.SINGLE_SELECT,vie
 NgChm.LNK.addMatrixLinkout("View scatter plot", ["GENE_SYM","GENE_ID"], ["GENE_SYM","GENE_ID"], linkouts.MULTI_SELECT,scatterplot,["dataset"]);
 NgChm.LNK.addMatrixLinkout("View cordist plot", ["GENE_SYM","GENE_ID"], ["GENE_SYM","GENE_ID"], linkouts.MULTI_SELECT,cordistplot,["dataset"]);
 // this is here to prevent duplicate linkouts for maps with GeneSym and GeneID labelTypes
-if (NgChm.heatMap.getColLabels().label_type.indexOf("GENE_ID") == -1 && NgChm.heatMap.getRowLabels().label_type.indexOf("GENE_ID") == -1){
+if (!hasLabelType("col","GENE_ID") && !hasLabelType("row", "GENE_ID")){
 	NgChm.LNK.addMatrixLinkout("View scatter plot", "GENE_SYM", "GENE_SYM", linkouts.MULTI_SELECT,scatterplot,["dataset"]);
 	NgChm.LNK.addMatrixLinkout("View cordist plot", "GENE_SYM", "GENE_SYM", linkouts.MULTI_SELECT,cordistplot,["dataset"]);
 }
@@ -53,6 +53,10 @@ NgChm.LNK.addMatrixLinkout("View cordist plot", "GENE_SYM_ID", "GENE_SYM_ID", li
 //========================//
 // functions defined here //
 //========================//
+
+function hasLabelType (axis, type) {
+  return NgChm.heatMap.getLabelTypes(axis).filter((tt) => tt.type == type).length > 0;
+}
 
 function pointsplot(labels){
 	var dataset = linkouts.getAttribute('dataset');

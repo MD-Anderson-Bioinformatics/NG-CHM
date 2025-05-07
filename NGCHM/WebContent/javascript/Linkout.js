@@ -1,6 +1,6 @@
 /*************************************************************
  * Linkouts will be added to the Row/Column Menus according to
- * the label_type attributes (found in the mapData.json file).
+ * the labelTypes attributes (found in the mapData.json file).
  * These attributes will drive the input paramaters for the
  * linkout functions. (Provided by getLabelsByType)
  *
@@ -387,6 +387,11 @@ var linkoutsVersion = "undefined";
     }
   };
 
+  // Returns TRUE iff there is a matrix linkout with the specified name.
+  LNK.isMatrixLinkout = function isMatrixLinkout (name) {
+    return matrixLinkouts.map(linkout => linkout.name).includes(name);
+  };
+
   // Return the labels from heatMap required by the specified linkout (and axis if applicable).
   //
   function getLabelsByType (heatMap, linkout, axis) {
@@ -405,7 +410,7 @@ var linkoutsVersion = "undefined";
     function getAxisLinkoutLabels (axis, labelType, selectType) {
       // Build an array of the individual types required.
       const types = getRequiredTypes (labelType); // split 'types' into an array if a combined label type is requested
-      const axisLabelTypes = axis.includes("Covar") ? [axis] : heatMap.getAxisLabels(axis).label_type;
+      const axisLabelTypes = axis.includes("Covar") ? [axis] : heatMap.getLabelTypes(axis).map(type => type.type);
       const formatIndex = types.map (type => axisLabelTypes.indexOf(type));
 
       // formatIndex should not contain any missing (negative) indices.
@@ -436,7 +441,7 @@ var linkoutsVersion = "undefined";
       function getRequiredTypes (labelType) {
         if (Array.isArray(labelType)) {
           if (labelType.length == 0) {
-            return heatMap.getAxisLabels(axis.replace("Covar","")).label_type;
+            return heatMap.getLabelTypes(axis.replace("Covar","")).map(type=>type.type);
           } else {
             return labelType;
           }
@@ -845,8 +850,8 @@ var linkoutsVersion = "undefined";
     const indLinkouts = [];
     const grpLinkouts = [];
 
-    const rowLabelTypes = heatMap.getRowLabels().label_type;
-    const colLabelTypes = heatMap.getColLabels().label_type;
+    const rowLabelTypes = heatMap.getLabelTypes("row").map(type=>type.type);
+    const colLabelTypes = heatMap.getLabelTypes("col").map(type=>type.type);
 
     if (axis.includes("Row") || axis.includes("Column")) {
       // This handles Row, RowCovar, Column, and ColumnCovar "axes".
@@ -970,18 +975,15 @@ var linkoutsVersion = "undefined";
   }
 
   // Helper functions to add header comment lines to help box
-  function addTextRowToTable (table, type, axis) {
+  function addTextRowToTable (heatMap, table, type, axis) {
     var body = table.getElementsByClassName("labelMenuBody")[0];
     var row = body.insertRow();
     var cell = row.insertCell();
     if (type === "multi") {
       cell.innerHTML = "<b>Linkouts for entire selection:</b>";
     } else {
-      var labelVal =
-        LNK.selection.indexOf("|") > 0
-          ? LNK.selection.substring(0, LNK.selection.indexOf("|"))
-          : LNK.selection;
-      labelVal = MMGR.getHeatMap().getLabelText(labelVal, axis);
+      let labelVal = heatMap.getVisibleLabel (LNK.selection, axis);
+      labelVal = heatMap.getLabelText(labelVal, axis);
       cell.innerHTML = "<b>Linkouts for: " + labelVal + "</b>";
     }
   };
@@ -1011,10 +1013,10 @@ var linkoutsVersion = "undefined";
         if (linkout.selectType === "multiSelection") {
           //Don't add a subsection header for multi links IF only one link has been selected
           if (LNK.hasSelection(axis)) {
-            addTextRowToTable(table, "multi", axis);
+            addTextRowToTable(heatMap, table, "multi", axis);
           }
         } else {
-          addTextRowToTable(table, "ind", axis);
+          addTextRowToTable(heatMap, table, "ind", axis);
         }
         addedHeader = true;
       }
@@ -1082,10 +1084,10 @@ var linkoutsVersion = "undefined";
         if (addedHeader === false) {
           if (linkout.selectType === "multiSelection") {
             if (LNK.hasSelection(axis)) {
-              addTextRowToTable(table, "multi", axis);
+              addTextRowToTable(heatMap, table, "multi", axis);
             }
           } else {
-            addTextRowToTable(table, "ind", axis);
+            addTextRowToTable(heatMap, table, "ind", axis);
           }
           addedHeader = true;
         }

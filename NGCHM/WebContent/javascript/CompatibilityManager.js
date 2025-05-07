@@ -123,15 +123,6 @@
     let changed = false;
     const axisConfig = mapConfig[axis+"_configuration"];
     const classData =  mapData[axis+"_data"];
-    // Fix label types that were erroneously joined by ".bar.".
-    const newLabels = classData.label.label_type.map((x) => x.split(".bar.")).flat();
-    if (newLabels.length != classData.label.label_type.length) {
-      if (debugCM) {
-        console.log("CM.checkAxis", { axis, labelTypes: classData.label.label_type, newLabels });
-      }
-      classData.label.label_type = newLabels;
-      changed = true;
-    }
     if (axisConfig.top_items_cv == "" && axisConfig.top_items && axisConfig.top_items.length > 0) {
       let suffix = "";
       while (axisConfig.classifications.hasOwnProperty ("LabelPriority" + suffix)) {
@@ -297,14 +288,26 @@
    ***********************************************/
   CM.mapDataCompatibility = function (mapData) {
     let updated = false;
-    if (!Array.isArray(mapData.col_data.label.label_type)) {
-      var valArr = UTIL.convertToArray(mapData.col_data.label.label_type);
-      mapData.col_data.label.label_type = valArr;
-      updated = true;
-    }
-    if (!Array.isArray(mapData.row_data.label.label_type)) {
-      var valArr = UTIL.convertToArray(mapData.row_data.label.label_type);
-      mapData.row_data.label.label_type = valArr;
+    fixAxisTypes ("Column", mapData.col_data);
+    fixAxisTypes ("Row", mapData.row_data);
+    function fixAxisTypes (axis, axisData) {
+      // If labelTypes is defined, it is up to date.
+      if (axisData.label.labelTypes) return;
+
+      // Get old label type(s).
+      let types = axisData.label.label_type;
+      // Update to an array if needed.
+      if (!Array.isArray(types)) types = [types];
+      // Fix label types that were erroneously joined by ".bar.".
+      types = types.map((x) => x.split(".bar.")).flat();
+      // Convert to object and add visibility.
+      types = types.map((type,idx) => ({ type: type, visible: idx == 0 }));
+
+      if (debugCM) {
+        console.log("CM.checkAxis", { axis, oldLabelTypes: classData.label.label_type, newLabelTypes: types });
+      }
+      axisData.label.labelTypes = types;
+      delete axisData.label.label_type;
       updated = true;
     }
     return updated;

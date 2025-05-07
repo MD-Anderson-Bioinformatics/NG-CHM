@@ -1518,6 +1518,20 @@
       return this.mapData.col_data.label;
     };
 
+    HeatMap.prototype.getLabelTypes = function (axis) {
+      const labels = this.getAxisLabels (axis);
+      return copyLabelTypes (labels.labelTypes);
+    };
+
+    HeatMap.prototype.setLabelTypes = function (axis, labelTypes) {
+      const labels = this.getAxisLabels (axis);
+      return labels.labelTypes = copyLabelTypes (labelTypes);
+    };
+
+    function copyLabelTypes (types) {
+      return types.map((obj) => ({ type: obj.type, visible: obj.visible }));
+    }
+
     HeatMap.prototype.getDendrogramData = function (axis) {
       const data = isRow(axis)
         ? this.mapData.row_data.dendrogram
@@ -2269,16 +2283,25 @@
 
     // Returns an array of the "actual" labels for the specified axis
     // of the NG-CHM.  The "actual" labels currently consist of the
-    // text before the first vertical bar in the "full" labels.
+    // visible text fields of the "full" labels.
     HeatMap.prototype.actualLabels = function actualLabels (axis) {
       axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
       if (!this.actualAxisLabels.hasOwnProperty(axis)) {
         const labels = this.getAxisLabels(axis)["labels"];
-        this.actualAxisLabels[axis] = labels.map((text) => {
-          return text === undefined ? undefined : text.split("|")[0];
-        });
+        const types = this.getLabelTypes(axis);
+        this.actualAxisLabels[axis] = labels.map(visibleParts);
+
+        function visibleParts (label) {
+          return label.split('|').filter((part,idx) => types[idx] && types[idx].visible).join("|");
+        }
       }
       return this.actualAxisLabels[axis];
+    };
+
+    // Return the visible label for the specified full label and axis.
+    HeatMap.prototype.getVisibleLabel = function getVisibleLabel (fullLabel, axis) {
+      const types = this.getLabelTypes(axis);
+      return fullLabel.split('|').filter((part,idx) => types[idx] && types[idx].visible).join("|");
     };
 
     // Returns an array of the "shown" labels for the specified axis of

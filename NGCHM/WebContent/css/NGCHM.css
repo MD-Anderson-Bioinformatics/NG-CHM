@@ -280,6 +280,10 @@ div.pane canvas {
     opacity: 25%;
 }
 
+.upm_label_type {
+  width: 15em;
+}
+
 .msgBox,
 #msgBox {
     display: grid;
@@ -1163,7 +1167,7 @@ th.breakpointContainer {
 }
 
 #prefs {
-	width: 420px;
+	min-width: 420px;
 	overflow: hidden;
 	position: absolute;
 	background-color: var(--dialog-body-background);

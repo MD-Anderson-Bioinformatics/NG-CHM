@@ -119,13 +119,6 @@
       UPM.hasClasses = true;
     }
 
-    // If helpPrefs element already exists, the user is pressing the gear button
-    // when preferences are already open. Disregard.
-    var helpExists = document.getElementById("rowsColsprefs");
-    if (helpExists !== null) {
-      return;
-    }
-
     //If first time thru, save the dataLayer colorMap
     //This is done because the colorMap must be edited to add/delete breakpoints while retaining their state
     if (UPM.bkpColorMaps === null) {
@@ -180,7 +173,7 @@
       UPM.showLayerPrefs();
     } else if (errorMsg != null && errorMsg[1] === "infoPrefs") {
       UPM.showInfoPrefs();
-    } else if (errorMsg != null && errorMsg[1] === "rowColPrefs") {
+    } else if (errorMsg != null && errorMsg[1] === "rowsColsPrefs") {
       UPM.showRowsColsPrefs();
     } else if (UPM.searchPerformed) {
       UPM.searchPerformed = false;
@@ -376,6 +369,7 @@
         enableApplyButton();
       } else {
         UPM.prefsApply();
+        heatMap.initAxisLabels();
         heatMap.setUnAppliedChanges(true);
         UPM.prefsSuccess();
         enableApplyButton();
@@ -477,6 +471,7 @@
 
     for (let axis of [ "row", "col" ]) {
       heatMap.getAxisConfig(axis).top_items_cv = document.getElementById(axis+"TopItems").value;
+      return applyLabelTypeInputs(heatMap, axis);
     }
 
     // Apply Covariate Bar Preferences
@@ -587,20 +582,6 @@
   UPM.prefsValidate = function () {
     const heatMap = MMGR.getHeatMap();
 
-    if (
-      document.getElementById("rowTopItems").value.split(/[;, ]+/).length > 10
-    ) {
-      return ["ALL", "rowColPrefs", "ERROR: Top Row entries cannot exceed 10"];
-    }
-    if (
-      document.getElementById("colTopItems").value.split(/[;, ]+/).length > 10
-    ) {
-      return [
-        "ALL",
-        "rowColPrefs",
-        "ERROR: Top Column entries cannot exceed 10",
-      ];
-    }
     return (
       UPM.prefsValidateForNumeric() ||
       validateDataLayers() ||
@@ -625,7 +606,7 @@
           if (errorMsg != null) return errorMsg;
         }
       }
-      return null;
+      return validateLabelTypeInputs(heatMap, axis);
     }
   };
 
@@ -2649,17 +2630,14 @@
     const rowcolprefs = document.getElementById("rowsColsPrefs");
     var prefContents = document.createElement("TABLE");
     UHM.addBlankRow(prefContents);
-    UHM.setTableRow(prefContents, ["ROW INFORMATION:"], 2);
+    UHM.setTableRow(prefContents, ["ROW INFORMATION:"], 3);
     var rowLabels = heatMap.getRowLabels();
     var rowOrganization = heatMap.getRowOrganization();
     var rowOrder = rowOrganization["order_method"];
     var totalRows =
       heatMap.getTotalRows() - heatMap.getMapInformation().map_cut_rows;
     UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Total Rows:", totalRows]);
-    UHM.setTableRow(prefContents, [
-      "&nbsp;&nbsp;Labels Type:",
-      rowLabels["label_type"],
-    ]);
+    addLabelTypeInputs(prefContents, heatMap, "Row");
     UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Ordering Method:", rowOrder]);
     function dendroShowOptions() {
       return [
@@ -2718,7 +2696,7 @@
     addTopItemsSelector (prefContents, heatMap, "row", "Rows");
 
     UHM.addBlankRow(prefContents);
-    UHM.setTableRow(prefContents, ["COLUMN INFORMATION:"], 2);
+    UHM.setTableRow(prefContents, ["COLUMN INFORMATION:"], 3);
 
     var colLabels = heatMap.getColLabels();
     var colOrganization = heatMap.getColOrganization();
@@ -2726,10 +2704,7 @@
     var totalCols =
       heatMap.getTotalCols() - heatMap.getMapInformation().map_cut_cols;
     UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Total Columns:", totalCols]);
-    UHM.setTableRow(prefContents, [
-      "&nbsp;&nbsp;Labels Type:",
-      colLabels["label_type"],
-    ]);
+    addLabelTypeInputs(prefContents, heatMap, "Col");
     UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Ordering Method:", colOrder]);
     if (colOrder === "Hierarchical") {
       UHM.setTableRow(prefContents, [
@@ -2790,8 +2765,80 @@
       selector.value = heatMap.getAxisConfig(axis).top_items_cv;
       UHM.setTableRow(prefContents, [`&nbsp;&nbsp;Top ${pluralAxisName}:`, selector]);
     }
-
   };
+
+  // Add Label Type rows for the specified axis of heatMap to the userPreferencesTable.
+  function addLabelTypeInputs (userPreferencesTable, heatMap, axisName) {
+    axisName = MMGR.isRow(axisName) ? "Row" : "Col";
+    const axisTypes = heatMap.getLabelTypes (axisName);
+    axisTypes.forEach((type,idx) => {
+      const idbase = `upm_${axisName}_label_part_${idx}`;
+      const typeInput = UTIL.newElement('INPUT.upm_label_type', {
+        type: "text",
+        name: idbase + "_type",
+        id: idbase + "_type",
+        value: type.type
+      });
+      const showType = UTIL.newElement('INPUT', {
+        type: "checkbox",
+        name: idbase + "_show",
+        id: idbase + "_show",
+      });
+      showType.checked = type.visible;
+      UHM.setTableRow(userPreferencesTable, [idx == 0 ? "&nbsp;&nbsp;Labels Type(s):" : "", typeInput, showType]);
+    });
+  }
+
+  // Reset the label type inputs to the values in savedLabelTypes.
+  function resetLabelTypeInputs (axisName, savedLabelTypes) {
+    axisName = MMGR.isRow(axisName) ? "Row" : "Col";
+    savedLabelTypes.forEach((type, idx) => {
+      const idbase = `upm_${axisName}_label_part_${idx}`;
+      const typeInput = document.getElementById(idbase+"_type");
+      typeInput.value = type.type;
+      const checkBox = document.getElementById(idbase+"_show");
+      checkBox.checked = type.visible;
+    });
+  }
+
+  // Validate the label type inputs for the specified axis.
+  // Returns null if the label type inputs pass all checks.
+  // Returns an error message with relevant details if at least one check fails.
+  function validateLabelTypeInputs (heatMap, axisName) {
+    axisName = MMGR.isRow(axisName) ? "Row" : "Col";
+    const axisLabelTypes = heatMap.getLabelTypes(axisName);
+    let foundEmpty = false;
+    const checkedParts = axisLabelTypes.filter((type,idx) => {
+      const idbase = `upm_${axisName}_label_part_${idx}`;
+      if (document.getElementById(idbase+"_type").value == "") {
+        foundEmpty = true;
+      }
+      const checkBox = document.getElementById(idbase+"_show");
+      return checkBox.checked;
+    });
+    let errMsg = "";
+    if (foundEmpty) errMsg += " None can be empty.";
+    if (checkedParts.length == 0) errMsg += " At least one must be visible.";
+    if (errMsg) {
+      return [ "ALL", "rowsColsPrefs", `ERROR: ${axisName} types: ${errMsg}` ];
+    }
+    return null;
+  }
+
+  // Saves the values of the label type inputs for the specified axis to heatMap.
+  // Only call this function if validateLabelTypeInputs has been called and no
+  // issues were found.
+  function applyLabelTypeInputs (heatMap, axisName) {
+    axisName = MMGR.isRow(axisName) ? "Row" : "Col";
+    const axisLabelTypes = heatMap.getLabelTypes(axisName);
+    axisLabelTypes.forEach((type,idx) => {
+      const idbase = `upm_${axisName}_label_part_${idx}`;
+      type.type = document.getElementById(idbase+"_type").value;
+      type.visible = document.getElementById(idbase+"_show").checked;
+    });
+    heatMap.setLabelTypes(axisName, axisLabelTypes);
+  }
+
 
   /**********************************************************************************
    * FUNCTION - showDendroSelections: The purpose of this function is to set the
@@ -2929,6 +2976,8 @@
       colDendroConfig: colDendroConfig,
       rowConfig: rowConfig,
       colConfig: colConfig,
+      rowLabelTypes: heatMap.getLabelTypes('row'),
+      colLabelTypes: heatMap.getLabelTypes('col'),
       matrix: matrix,
       rowClassification: rowClassification,
       colClassification: colClassification,
@@ -2960,6 +3009,7 @@
       document.getElementById(axis+"LabelSizePref").value = axisResetVal.label_display_length;
       document.getElementById(axis+"LabelAbbrevPref").value = axisResetVal.label_display_method;
       document.getElementById(axis+"TopItems").value = axisResetVal.top_items_cv;
+      resetLabelTypeInputs(axis, resetVal[axis+"LabelTypes"]);
     }
 
     // Reset the Data Matrix panel items
