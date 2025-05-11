@@ -949,6 +949,18 @@
       );
     };
 
+    // Returns a generator over all covariates on both axes.  The returned
+    // values are objects with two entries: axis (row or col) and key.
+    //
+    HeatMap.prototype.genAllCovars = function* genAllCovars () {
+      for (const axis of [ "row", "col" ]) {
+        const covariates = this.getAxisCovariateOrder(axis);
+        for (const key of covariates) {
+          yield ({ axis, key });
+        }
+      };
+    };
+
     // Return an array of the display parameters of all visible covariate bars on an axis.
     // Hidden bars have no parameters.  The order of entries is fixed but not
     // specified.
