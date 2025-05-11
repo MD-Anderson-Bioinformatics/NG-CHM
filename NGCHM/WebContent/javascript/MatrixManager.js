@@ -938,6 +938,22 @@
       return Object.fromEntries(matches);
     };
 
+    HeatMap.prototype.addCovariate = function (axis, covariateName, covariateDetails) {
+      const cfg = this.getAxisConfig(axis);
+      if (cfg.classifications_order.includes (covariateName)) {
+        console.warn ("HeatMap.addCovariate: covariate already exists", { axis, covariateName, axisConfig: cfg });
+      } else {
+        cfg.classifications_order.push(covariateName);
+      }
+      cfg.classifications[covariateName] = covariateDetails;
+      const cvData = this.getAxisCovariateData (axis);
+      const emptyData = {
+        values: new Array(this.getNumRows('d')).fill("NA"),
+        svalues: new Array(this.getNumRows('s')).fill("NA"),
+      };
+      cvData[covariateName] = emptyData;
+    };
+
     HeatMap.prototype.getAxisCovariateOrder = function (axis) {
       return isRow(axis)
         ? this.getRowClassificationOrder()
@@ -2842,6 +2858,12 @@
               promise = addTextContents(
                 entry.filename,
                 JSON.stringify(mapConf || heatMap.mapConfig),
+              );
+            } else if (keyVal.indexOf("mapData") >= 0) {
+              // For mapData, add the potentially modified data.
+              promise = addTextContents(
+                entry.filename,
+                JSON.stringify(heatMap.mapData),
               );
             } else {
               // Directly add all other text zip entries to the new zip file.
