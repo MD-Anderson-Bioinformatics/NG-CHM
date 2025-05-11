@@ -320,7 +320,7 @@
             coveredHeight +=
               (mapItem.canvas.clientHeight * currentBar.height) /
               mapItem.canvas.height;
-            if (coveredHeight >= mapItem.offsetY) {
+            if (Math.ceil(coveredHeight) >= mapItem.offsetY) {
               hoveredBar = key;
               hoveredBarValues = heatMap.getColClassificationData()[key].values;
               break;
@@ -348,7 +348,7 @@
             coveredWidth +=
               (mapItem.canvas.clientWidth * currentBar.height) /
               mapItem.canvas.width;
-            if (coveredWidth >= mapItem.offsetX) {
+            if (Math.ceil(coveredWidth) >= mapItem.offsetX) {
               hoveredBar = key;
               hoveredBarValues = heatMap.getRowClassificationData()[key].values;
               break;
