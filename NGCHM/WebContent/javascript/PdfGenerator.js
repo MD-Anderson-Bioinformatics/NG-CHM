@@ -17,6 +17,8 @@
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const PANE = NgChm.importNS("NgChm.Pane");
 
+  const contMissingValues = [ "null", "NA" ];
+
   PDF.rowDendoWidth = null;
   PDF.rowDendroHeight = null;
   PDF.colDendroWidth = null;
@@ -1474,7 +1476,7 @@
       for (let i = 0; i < classBarData.values.length; i++) {
         if (classBarData.values[i] === "!CUT!") {
           cutValues++;
-        } else if (classBarData.values[i] !== "null") {
+        } else if (!contMissingValues.includes(classBarData.values[i])) {
           const num = parseFloat(classBarData.values[i]);
           if (isNaN(num)) {
             console.warn(
