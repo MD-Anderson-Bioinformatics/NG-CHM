@@ -1304,6 +1304,10 @@
       return this.mapConfig.col_configuration.dendrogram;
     };
 
+    HeatMap.prototype.getAxisDendroConfig = function (axis) {
+      return this.getAxisConfig(axis).dendrogram;
+    };
+
     HeatMap.prototype.setRowDendrogramShow = function (value) {
       this.mapConfig.row_configuration.dendrogram.show = value;
     };

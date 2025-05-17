@@ -352,13 +352,25 @@
       return colorMap;
     };
 
-    this.setColorMap = function (colorMapName, colorMap, type) {
+    this.getColorMapJSON = function (type, colorMapName) {
       const colorMapIdx = type === "data" ? 0 : type === "row" ? 1 : 2;
-      const existingColorMap =
-        colorMapCollection[colorMapIdx][colorMapName].color_map;
-      existingColorMap.colors = colorMap.getColors();
-      existingColorMap.thresholds = colorMap.getThresholds();
-      existingColorMap.missing = colorMap.getMissingColor();
+      return JSON.stringify(colorMapCollection[colorMapIdx][colorMapName].color_map);
+    };
+
+    this.setColorMap = function (type, colorMapName, colorMap) {
+      const colorMapIdx = type === "data" ? 0 : type === "row" ? 1 : 2;
+      let newMap;
+      if (colorMap instanceof CMM.ColorMap) {
+        newMap = {
+          type: colorMap.getType(),
+          colors: colorMap.getColors(),
+          thresholds: colorMap.getThresholds(),
+          missing: colorMap.getMissingColor(),
+        };
+      } else {
+        newMap = colorMap;
+      }
+      Object.assign (colorMapCollection[colorMapIdx][colorMapName].color_map, newMap);
     };
   };
 
