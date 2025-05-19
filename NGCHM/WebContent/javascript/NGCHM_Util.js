@@ -28,6 +28,10 @@
     return UTIL.getURLParameter("debug").split(",").includes(what);
   };
 
+  UTIL.getFeatureFlag = function getFeatureFlag (what) {
+    return UTIL.getURLParameter("feature").split(",").includes(what);
+  };
+
   UTIL.capitalize = function capitalize(str) {
     return str.substr(0, 1).toUpperCase() + str.substr(1);
   };
