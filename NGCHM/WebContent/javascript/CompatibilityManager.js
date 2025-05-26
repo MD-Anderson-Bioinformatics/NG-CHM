@@ -13,10 +13,10 @@
   // but has been placed here at the top of the CompatibilityManager class so that the configuration can be utilized in File Mode.
   CM.jsonConfigStr =
     '{"row_configuration": {"classifications": {"show": "Y","height": 15,"bar_type": "color_plot","fg_color": "#000000","bg_color": "#FFFFFF","low_bound": "0","high_bound": "100"},"classifications_order": 1,"organization": {"agglomeration_method": "unknown",' +
-    '"order_method": "unknown","distance_metric": "unknown"},"dendrogram": {"show": "ALL","height": "100"},"label_display_length": "20","label_display_method": "END","top_items_cv": ""},' +
+    '"order_method": "unknown","distance_metric": "unknown"},"dendrogram": {"show": "ALL","height": "100"},"label_display_length": "20","label_display_method": "END","top_items":"","top_items_cv": "--text-entry--"},' +
     '"col_configuration": {"classifications": {"show": "Y","height": 15,"bar_type": "color_plot","fg_color": "#000000","bg_color": "#FFFFFF","low_bound": "0","high_bound": "100"},"classifications_order": 1,' +
     '"organization": {"agglomeration_method": "unknown","order_method": "unknown","distance_metric": "unknown"},' +
-    '"dendrogram": {"show": "ALL","height": "100"},"label_display_length": "20","label_display_method": "END","top_items_cv": ""},"data_configuration": {"map_information": {"data_layer": {' +
+    '"dendrogram": {"show": "ALL","height": "100"},"label_display_length": "20","label_display_method": "END","top_items":"","top_items_cv": "--text-entry--"},"data_configuration": {"map_information": {"data_layer": {' +
     '"name": "Data Layer","grid_show": "Y","grid_color": "#FFFFFF","selection_color": "#00FF38","cuts_color": "#FFFFFF' +
     '"},"name": "CHM Name","description": "' +
     'Full length description of this heatmap","summary_width": "50","builder_version": "NA","summary_height": "100","detail_width": "50","detail_height": "100","read_only": "N","version_id": "1.0.0","map_cut_rows": "0","map_cut_cols": "0"}}}';
@@ -110,50 +110,6 @@
     }
 
     return foundUpdate;
-  };
-
-  // Checks the specified axis in mapConfig and mapData for compatibility issues and
-  // updates mapConfig and mapData appropriately.
-  //
-  // Checks performed:
-  // + If there is no top_items_cv entry but there is a top_items entry, create a continuous
-  //   covariate bar from the top_items, set top_items_cv to its name, and remove top_items.
-  //
-  CM.checkAxis = function checkAxis (mapConfig, mapData, axis) {
-    let changed = false;
-    const axisConfig = mapConfig[axis+"_configuration"];
-    const classData =  mapData[axis+"_data"];
-    if (axisConfig.top_items_cv == "" && axisConfig.top_items && axisConfig.top_items.length > 0) {
-      let suffix = "";
-      while (axisConfig.classifications.hasOwnProperty ("LabelPriority" + suffix)) {
-        suffix = +suffix + 1;
-      }
-      const topClass = "LabelPriority" + suffix;
-      axisConfig.classifications[topClass] = {
-        bar_type: "color_plot",
-        bg_color: "#ffffff",
-        fg_color: "#000000",
-        height: "15",
-        low_bound: "1.0",
-        high_bound: "2.0",
-        show: "N",
-        color_map: {
-          type: "continuous",
-          thresholds: [ 1, 2 ],
-          colors: [ "#ffffff", "#ff0000" ],
-          missing: "#b3b3b3",
-        }
-      };
-      axisConfig.classifications_order.push(topClass);
-      classData.classifications[topClass] = { values: classData.label.labels.map (label => axisConfig.top_items.includes(label) ? "1" : "NA") };
-      axisConfig.top_items_cv = topClass;
-      if (debugCM) {
-        console.log("CM.checkAxis", { axis, topClass, top_items: axisConfig.top_items });
-      }
-      delete axisConfig.top_items;
-      changed = true;
-    }
-    return changed;
   };
 
   function getObjectPart (obj, parts) {

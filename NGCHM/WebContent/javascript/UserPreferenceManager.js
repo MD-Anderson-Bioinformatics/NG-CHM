@@ -2582,8 +2582,13 @@
         if (["row_DendroShowPref", "col_DendroShowPref"].includes(target.id)) {
           startChange();
           dendroShowChange(target.dataset.axis);
-        }
-        if (target.classList.contains('ngchm-upm-input')) {
+        } else if (target.id == KAID("row","TopItems")) {
+          startChange();
+          KAE("row","TopItemsTextRow").style.display = KAE("row","TopItems").value == "--text-entry--" ? "" : "none";
+        } else if (target.id == KAID("col","TopItems")) {
+          startChange();
+          KAE("col","TopItemsTextRow").style.display = KAE("col","TopItems").value == "--text-entry--" ? "" : "none";
+        } else if (target.classList.contains('ngchm-upm-input')) {
           startChange();
           break;
         }
@@ -2595,21 +2600,35 @@
     // Helper functions.
 
     function addTopItemsSelector(prefContents, axis, pluralAxisName) {
+      const axisConfig = UPM.heatMap.getAxisConfig(axis);
       const covars = UPM.heatMap.getAxisCovariateConfig(axis, {
         type: "continuous",
       });
       const covarNames = Object.keys(covars);
       const selector = UTIL.newSelect(
-        [""].concat(covarNames),
-        ["Not Selected"].concat(covarNames),
+        ["","--text-entry--"].concat(covarNames), // Values
+        ["Not Selected", "Manual Entry"].concat(covarNames), // Option texts
       );
       selector.id = KAID(axis,"TopItems");
       selector.classList.add('ngchm-upm-input');
-      selector.value = UPM.heatMap.getAxisConfig(axis).top_items_cv;
+      selector.value = axisConfig.top_items_cv;
       UHM.setTableRow(prefContents, [
         `&nbsp;&nbsp;Top ${pluralAxisName}:`,
         selector,
       ]);
+      const id = KAID(axis,"TopItemsText");
+      const topItemsText = UTIL.newElement("TEXTAREA.ngchm-upm-input.ngchm-upm-top-items-text", {
+        id: id,
+        name: id,
+        rows: 3,
+      });
+      topItemsText.value = axisConfig.top_items;
+      const tr = UHM.setTableRow(prefContents, [
+        `&nbsp;&nbsp;Top ${pluralAxisName} Input:`,
+        topItemsText,
+      ]);
+      tr.id = KAID(axis,"TopItemsTextRow");
+      tr.style.display = selector.value == "--text-entry--" ? "" : "none";
     }
 
     function dendroShowOptions() {
@@ -2727,6 +2746,8 @@
       KAE(axis,"LabelSizePref").value = axisResetVal.label_display_length;
       KAE(axis,"LabelAbbrevPref").value = axisResetVal.label_display_method;
       KAE(axis,"TopItems").value = axisResetVal.top_items_cv;
+      KAE(axis,"TopItemsText").value = axisResetVal.top_items;
+      KAE(axis,"TopItemsTextRow").style.display = axisResetVal.top_items_cv == "--text-entry--" ? "" : "none";
     }
   };
 
@@ -2746,6 +2767,12 @@
       axisConfig.label_display_method = KAE(axis,"LabelAbbrevPref").value;
       // Top items preferences.
       axisConfig.top_items_cv = KAE(axis,"TopItems").value;
+      axisConfig.top_items = [];
+      for (const item of KAE(axis,"TopItemsText").value.split(/[;, \r\n]+/)) {
+        if (item !== "") {
+          axisConfig.top_items.push(item);
+        }
+      }
     }
 
     // ------------------------------------------------------------------------

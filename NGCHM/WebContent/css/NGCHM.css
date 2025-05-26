@@ -1886,6 +1886,11 @@ div#droptarget.visible {
     padding-right: 0.2em;
 }
 
+.chmTblRow textarea.ngchm-upm-top-items-text {
+  width: 100%;
+  margin-left: 0;
+}
+
 .histogram {
   display: grid;
   margin-top: 2em;

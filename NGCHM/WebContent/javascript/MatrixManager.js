@@ -1361,6 +1361,8 @@
       const cv = cfg.top_items_cv;
       // If top_items_cv is not selected, return an empty array.
       if (cv == "") return [];
+      // If top_items_cv is to use the text entry field.
+      if (cv == "--text-entry--") return (cfg.top_items || []).sort();
       // Cache the descending order of each covariate in a map added to the
       // heatmap object.  Each cache entry will be an array of index entries
       // into the axis's label list, such that the covariates values are
@@ -2953,13 +2955,6 @@
     // Perform compatibility checks required once *both* mapConfig and mapData are available.
     function checkAxes (heatMap) {
         if (heatMap.mapData != null && heatMap.mapConfig != null) {
-          const status = getMapStatus(heatMap);
-          if (COMPAT.checkAxis (heatMap.mapConfig, heatMap.mapData, "row")) {
-            status.mapUpdatedOnLoad = true;
-          }
-          if (COMPAT.checkAxis (heatMap.mapConfig, heatMap.mapData, "col")) {
-            status.mapUpdatedOnLoad = true;
-          }
           addDataLayers(heatMap);
           configureFlick(heatMap);
           heatMap.initAxisLabels();
