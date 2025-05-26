@@ -2641,13 +2641,15 @@
 
     function genLabelSizeSelect(axis) {
       const sizes = [10, 15, 20, 25, 30, 35, 40];
-      return (
-        `<select class='ngchm-upm-input' name='${axis}_LabelSizePref' id='${axis}_LabelSizePref'>` +
-        sizes
-          .map((size) => `<option value='${size}'>${size} Characters</option>`)
-          .join() +
-        "</select>"
-      );
+      const id = KAID(axis,"LabelSizePref");
+      const sizeInput = UTIL.newElement('INPUT.ngchm-upm-input', {
+        type: "number",
+        id: id,
+        name: id,
+        min: 10,
+        max: 99,
+      });
+      return sizeInput;
     }
     function genLabelAbbrevSelect(axis) {
       return (
@@ -2700,6 +2702,13 @@
     for (const axis of ["row", "col"]) {
       let errorMsg = validateLabelTypeInputs(axis);
       if (errorMsg) return errorMsg;
+      const sizePref = KAE(axis,"LabelSizePref").value;
+      if (sizePref < 10) {
+        return ["ALL", "rowsColsPrefs", `ERROR: ${axis} label size too small (min: 10)`];
+      }
+      if (sizePref > 99) {
+        return ["ALL", "rowsColsPrefs", `ERROR: ${axis} label size too large (max: 99)`];
+      }
     }
     return null;
 
