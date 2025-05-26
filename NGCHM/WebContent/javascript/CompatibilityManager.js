@@ -300,16 +300,33 @@
       if (!Array.isArray(types)) types = [types];
       // Fix label types that were erroneously joined by ".bar.".
       types = types.map((x) => x.split(".bar.")).flat();
-      // Convert to object and add visibility.
+      // Convert type entries to objects and add visibility.
       types = types.map((type,idx) => ({ type: type, visible: idx == 0 }));
-
-      if (debugCM) {
-        console.log("CM.checkAxis", { axis, oldLabelTypes: classData.label.label_type, newLabelTypes: types });
+      // Ensure we have as many types as fields.
+      const numTypes = arrayMax(axisData.label.labels.map(numFields));
+      while (types.length < numTypes) {
+        types.push({ type: "none", visible: false });
       }
+      // Update axis type.
       axisData.label.labelTypes = types;
       delete axisData.label.label_type;
       updated = true;
     }
     return updated;
+
+    // Helper functions.
+    // Return the number of vertical bar (|) separated fields in a label.
+    function numFields(label) {
+      return label.split('|').length;
+    }
+
+    // Return the maximum value in an array.
+    function arrayMax(arr) {
+      let max = arr[0];
+      for (const val of arr.slice(1)) {
+        if (val > max) max = val;
+      }
+      return max;
+    }
   };
 })();
