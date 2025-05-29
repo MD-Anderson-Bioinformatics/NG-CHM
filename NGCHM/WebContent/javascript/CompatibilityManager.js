@@ -9,17 +9,59 @@
   const debugCM = UTIL.getURLParameter("debug").split(",").includes("compatibility");
 
 
-  // This string contains the entire configuration.json file.  This was previously located in a JSON file stored with the application code
+  // jsonConfigStr contains the entire configuration.json file.  This was previously located in a JSON file stored with the application code
   // but has been placed here at the top of the CompatibilityManager class so that the configuration can be utilized in File Mode.
-  CM.jsonConfigStr =
-    '{"row_configuration": {"classifications": {"show": "Y","height": 15,"bar_type": "color_plot","fg_color": "#000000","bg_color": "#FFFFFF","low_bound": "0","high_bound": "100"},"classifications_order": 1,"organization": {"agglomeration_method": "unknown",' +
-    '"order_method": "unknown","distance_metric": "unknown"},"dendrogram": {"show": "ALL","height": "100"},"label_display_length": "20","label_display_method": "END","top_items":"","top_items_cv": "--text-entry--"},' +
-    '"col_configuration": {"classifications": {"show": "Y","height": 15,"bar_type": "color_plot","fg_color": "#000000","bg_color": "#FFFFFF","low_bound": "0","high_bound": "100"},"classifications_order": 1,' +
-    '"organization": {"agglomeration_method": "unknown","order_method": "unknown","distance_metric": "unknown"},' +
-    '"dendrogram": {"show": "ALL","height": "100"},"label_display_length": "20","label_display_method": "END","top_items":"","top_items_cv": "--text-entry--"},"data_configuration": {"map_information": {"data_layer": {' +
-    '"name": "Data Layer","grid_show": "Y","grid_color": "#FFFFFF","selection_color": "#00FF38","cuts_color": "#FFFFFF' +
-    '"},"name": "CHM Name","description": "' +
-    'Full length description of this heatmap","summary_width": "50","builder_version": "NA","summary_height": "100","detail_width": "50","detail_height": "100","read_only": "N","version_id": "1.0.0","map_cut_rows": "0","map_cut_cols": "0"}}}';
+  const axisConfigStr = `{
+    "classifications": {
+      "show": "Y",
+      "height": 15,
+      "bar_type": "color_plot",
+      "fg_color": "#000000",
+      "bg_color": "#FFFFFF",
+      "low_bound": "0",
+      "high_bound": "100"
+    },
+    "classifications_order": 1,
+    "organization": {
+      "agglomeration_method": "unknown",
+      "order_method": "unknown",
+      "distance_metric": "unknown"
+    },
+    "dendrogram": {
+      "show": "ALL",
+      "height": "100"
+    },
+    "label_display_length": "20",
+    "label_display_method": "END",
+    "top_items": [],
+    "top_items_cv": "--text-entry--"
+  }`;
+  const jsonConfigStr = `{
+    "row_configuration": ${axisConfigStr},
+    "col_configuration": ${axisConfigStr},
+    "data_configuration": {
+      "map_information": {
+        "data_layer": {
+          "name": "Data Layer",
+          "grid_show": "Y",
+          "grid_color": "#FFFFFF",
+          "selection_color": "#00FF38",
+          "cuts_color": "#FFFFFF"
+        },
+        "name": "CHM Name",
+        "description": "Full length description of this heatmap",
+        "summary_width": "50",
+        "builder_version": "NA",
+        "summary_height": "100",
+        "detail_width": "50",
+        "detail_height": "100",
+        "read_only": "N",
+        "version_id": "1.0.0",
+        "map_cut_rows": "0",
+        "map_cut_cols": "0"
+      }
+    }
+  }`;
 
   // CURRENT VERSION NUMBER
   // WARNING: The line starting with 'CM.version = ' is used by .github/workflows/create-build-tag.yml for creating build tags
@@ -58,7 +100,7 @@
     // standardMapConfig for each data layer and classification bar that
     // mapConfig contains.
     //
-    const standardMapConfig = JSON.parse(CM.jsonConfigStr);
+    const standardMapConfig = JSON.parse(jsonConfigStr);
     const standardMapEntries = buildConfigComparisonObject(standardMapConfig, mapConfig);
 
     // Construct a flattened entry map from the heatmap's configuration, for comparison.
