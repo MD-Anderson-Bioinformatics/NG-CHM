@@ -142,7 +142,7 @@
     const presets = [];
     const names = [];
     for (const preset of presetPalettes.get(colorMapType? colorMapType : "Data Layer")) {
-      presets.push(genPreset(key, clickHandler, preset.colors, preset.missing, colorMapAxis, colorMapType));
+      presets.push(genPreset(key, clickHandler, preset, colorMapAxis, colorMapType));
       names.push(`&nbsp;<b>${preset.name}</b>`);
       if (names.length == 3) {
         prefTable.addRow(presets.slice());
@@ -167,10 +167,10 @@
    * A unique id is assigned to each new preset to assist automated tests.
    */
   var presetId = 0;
-  function genPreset(key, clickHandler, colors, missingColor, axis, mapType) {
+  function genPreset(key, clickHandler, preset, axis, mapType) {
     ++presetId;
-    const gradient = "linear-gradient(to right, " + colors.join(", ") + ")";
-    const onclick = genHandler (key, colors, missingColor, axis, mapType);
+    const gradient = "linear-gradient(to right, " + preset.colors.join(", ") + ")";
+    const onclick = genHandler (key, preset, axis, mapType);
     const colorsEl = UTIL.newElement(
       "DIV.presetPalette",
       { id: "preset" + presetId, style: { background: gradient } },
@@ -182,7 +182,7 @@
     );
     const missingEl = UTIL.newElement(
       "DIV.presetPaletteMissingColor",
-      { style: { background: missingColor } },
+      { style: { background: preset.missing } },
       null,
       function (el) {
         el.onclick = onclick;
@@ -193,9 +193,9 @@
       colorsEl,
       missingEl,
     ]);
-    function genHandler (key, colors, missingColor, axis, mapType) {
+    function genHandler (key, preset, axis, mapType) {
       return function () {
-        clickHandler(key, colors, missingColor, axis, mapType);
+        clickHandler(key, preset, axis, mapType);
       }
     }
   }

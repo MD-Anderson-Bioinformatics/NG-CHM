@@ -1374,11 +1374,12 @@
    **********************************************************************************/
   function setupLayerBreaksToPreset(
     key,
-    colors,
-    missingColor,
+    preset,
     axis,
     type,
   ) {
+    const colors = preset.colors;
+    const missingColor = preset.missing;
     if (debug) console.log ("setupLayerBreaksToPreset:", {key, colors, missingColor, axis, type });
     startChange();
     const keyaxis = key + (typeof axis == "undefined" ? "" : "_" + axis);
