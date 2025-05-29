@@ -42,6 +42,11 @@
       colors: ["#000000", "#A0A0A0", "#FFFFFF"],
       missing: "#EBEB00",
     },
+    {
+      name: "Heat",
+      colors: [[0,100,100], [60,100,100], [60,0,100]].map(hsv => UTIL.hsvToRgb.apply(null,hsv)),
+      missing: "#000000",
+    },
   ]);
   presetPalettes.set ("Discrete", [
     {
@@ -111,6 +116,11 @@
           "#de9ed6",
         ],
         missing: "#ffffff",
+    },
+    {
+      name: "Cyan Yellow",
+      colors: new Array(121).fill(0).map ((v,idx) => UTIL.hsvToRgb (180-idx, 80, 80)),
+      missing: "#000000",
     },
   ]);
   presetPalettes.set ("Continuous", [

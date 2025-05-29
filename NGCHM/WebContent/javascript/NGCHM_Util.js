@@ -517,30 +517,71 @@
     ];
 
     //blend colors
-    var color3 = [
+    const color3 = [
       (1 - percentage) * color1[0] + percentage * color2[0],
       (1 - percentage) * color1[1] + percentage * color2[1],
       (1 - percentage) * color1[2] + percentage * color2[2],
     ];
-    //Convert to hex
-    color3 =
-      "#" +
-      UTIL.intToHex(color3[0]) +
-      UTIL.intToHex(color3[1]) +
-      UTIL.intToHex(color3[2]);
-    // return hex
-    return color3;
+    return rgbToHex.apply (null, color3);
+
   };
+
+  // Convert r,g,b to hex string.
+  // Each of r,g,b is in the range 0 to 255.
+  UTIL.rgbToHex = rgbToHex;
+  function rgbToHex (r, g, b) {
+    const hex = "#" + intToHex(r) + intToHex(g) + intToHex(b);
+    return hex;
+  }
 
   /**********************************************************************************
    * FUNCTION - intToHex: The purpose of this function is to convert integer
    * value into a hex value;
    **********************************************************************************/
-  UTIL.intToHex = function (num) {
+  UTIL.intToHex = intToHex;
+  function intToHex (num) {
     var hex = Math.round(num).toString(16);
     if (hex.length == 1) hex = "0" + hex;
     return hex;
-  };
+  }
+
+  // Convert hue (range 0 to 360), sat (range 0 to 100), and val (range 0 to 100)
+  // to a hex encoded rgb string.
+  UTIL.hsvToRgb = hsvToRgb;
+  function hsvToRgb(hue, sat, val) {
+    hue /= 60;  // Scale to 0..6
+    sat /= 100; // Scale to 0..1
+    val /= 100; // Scale to 0..1
+    const sector = Math.floor(hue);
+    const frac = hue - sector;
+
+    const p = 1 - sat;
+    const q = 1 - frac * sat;
+    const t = 1 - (1 - frac) * sat;
+
+    // Scale rgb results to half-open range [0..256).
+    val *= 256 - 1e-10;
+    const rgb = rotate(sector).map(c => Math.floor(c*val));
+    const hex = rgbToHex.apply (null, rgb);
+    return hex;
+
+    function rotate (sector) {
+      switch (sector % 6) {
+        case 0:
+          return [1,t,p];
+        case 1:
+          return [q,1,p];
+        case 2:
+          return [p,1,t];
+        case 3:
+          return [p,q,1];
+        case 4:
+          return [t,p,1];
+        case 5:
+          return [1,p,q];
+      }
+    }
+  }
 
   /**********************************************************************************
    * FUNCTION - convertToArray: The purpose of this function is to convert a single
