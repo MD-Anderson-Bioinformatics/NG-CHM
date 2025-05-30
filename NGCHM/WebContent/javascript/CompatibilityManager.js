@@ -6,8 +6,7 @@
   const CM = NgChm.createNS("NgChm.CM");
 
   const UTIL = NgChm.importNS("NgChm.UTIL");
-  const debugCM = UTIL.getURLParameter("debug").split(",").includes("compatibility");
-
+  const debugCM = UTIL.getDebugFlag("compatibility");
 
   // jsonConfigStr contains the entire configuration.json file.  This was previously located in a JSON file stored with the application code
   // but has been placed here at the top of the CompatibilityManager class so that the configuration can be utilized in File Mode.

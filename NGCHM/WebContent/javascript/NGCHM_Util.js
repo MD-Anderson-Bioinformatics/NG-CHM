@@ -24,6 +24,10 @@
   UTIL.mapId = UTIL.getURLParameter("map");
   UTIL.mapNameRef = UTIL.getURLParameter("name");
 
+  UTIL.getDebugFlag = function getDebugFlag (what) {
+    return UTIL.getURLParameter("debug").split(",").includes(what);
+  };
+
   UTIL.capitalize = function capitalize(str) {
     return str.substr(0, 1).toUpperCase() + str.substr(1);
   };

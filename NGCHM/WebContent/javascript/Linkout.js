@@ -63,7 +63,7 @@ var linkoutsVersion = "undefined";
     return UTIL.mapId;
   };
 
-  const debugLinkoutCallbacks = UTIL.getURLParameter("debug").split(",").includes("linkouts");
+  const debugLinkoutCallbacks = UTIL.getDebugFlag("linkouts");
 
   //adds axis linkout objects to the linkouts global variable
   linkouts.addLinkout = function (

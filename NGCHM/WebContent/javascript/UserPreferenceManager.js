@@ -21,6 +21,8 @@
   const CMM = NgChm.importNS("NgChm.CMM");
   const COMPAT = NgChm.importNS("NgChm.CM");
 
+  const debug = UTIL.getDebugFlag("upm");
+
   // The DIV that contains the entire Preferences Manager.
   const prefspanel = document.getElementById("prefs");
 
@@ -932,7 +934,7 @@
 
     // Add a change event handler for this tab.
     this.tabDiv.addEventListener("change", (ev) => {
-      console.log("DataLayersTab: Change handler", { target: ev.target });
+      if (debug) console.log("DataLayersTab: Change handler", { target: ev.target });
       for (const target of this.targetGen(ev)) {
         if (target.id == "dlPref_list") {
           showDataLayerPanel();
@@ -1361,7 +1363,7 @@
     axis,
     type,
   ) {
-    console.log ("setupLayerBreaksToPreset:", {key, colors, missingColor, axis, type });
+    if (debug) console.log ("setupLayerBreaksToPreset:", {key, colors, missingColor, axis, type });
     startChange();
     const keyaxis = key + (typeof axis == "undefined" ? "" : "_" + axis);
 
@@ -1391,11 +1393,11 @@
       for (let j = 0; j < i; j++) {
         const threshId = "breakPt" + j;
         const colorId = "color" + j;
-        console.log ("Getting breakpoint value", { elementId: `${keyaxis}_${threshId}_breakPref` });
+        if (debug) console.log ("Getting breakpoint value", { elementId: `${keyaxis}_${threshId}_breakPref` });
         const breakpoint = KAE(keyaxis,threshId,"breakPref").value;
         KAE(keyaxis,colorId,"colorPref").value = csTemp.getRgbToHex(csTemp.getColor(breakpoint));
       }
-      console.log ("Getting missing color", { elementId: keyaxis + "_missingColorPref" });
+      if (debug) console.log ("Getting missing color", { elementId: keyaxis + "_missingColorPref" });
       KAE(keyaxis,"missing","colorPref").value =
         csTemp.getRgbToHex(csTemp.getColor("Missing"));
     } else {
@@ -1611,7 +1613,7 @@
 
     // Add a click handler for the entire tab.
     this.tabDiv.addEventListener("click", (ev) => {
-      console.log("CovariatesPrefsTab: Click handler", { target: ev.target });
+      if (debug) console.log("CovariatesPrefsTab: Click handler", { target: ev.target });
       for (const target of this.targetGen(ev)) {
         if (target.id == "all_searchPref_btn") {
           // The user clicked on the filter covariates button.
@@ -1622,7 +1624,7 @@
     });
     // Add a change handler for the entire tab.
     this.tabDiv.addEventListener("change", (ev) => {
-      console.log("CovariatesPrefsTab: Change handler", { target: ev.target });
+      if (debug) console.log("CovariatesPrefsTab: Change handler", { target: ev.target });
       for (const target of this.targetGen(ev)) {
         if (target.classList.contains("ngchm-upm-show-covariate")) {
           // A "Show" checkbox on a covariate row changed.
@@ -2343,7 +2345,7 @@
     for (const { axis, key } of UPM.heatMap.genAllCovars()) {
       const showElement = KAE(key,axis,"showPref");
       const heightElement = KAE(key,axis,"heightPref");
-      console.log ("applyTabPrefs: ", { key, axis, show: showElement.value, height:heightElement.value, type: colorMapMan.getColorMap(axis,key).getType() });
+      if (debug) console.log ("applyTabPrefs: ", { key, axis, show: showElement.value, height:heightElement.value, type: colorMapMan.getColorMap(axis,key).getType() });
       if (heightElement.value === "0") {
         showElement.checked = false;
       }
@@ -2577,7 +2579,7 @@
     rowcolprefs.appendChild(prefContents);
 
     this.tabDiv.addEventListener("change", (ev) => {
-      console.log("RowsColsTab: Change handler", { target: ev.target });
+      if (debug) console.log("RowsColsTab: Change handler", { target: ev.target });
       for (const target of this.targetGen(ev)) {
         if (["row_DendroShowPref", "col_DendroShowPref"].includes(target.id)) {
           startChange();
