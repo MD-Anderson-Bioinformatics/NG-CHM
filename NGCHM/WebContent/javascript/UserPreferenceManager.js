@@ -1421,9 +1421,9 @@
       // if the breakpoints are not changeable (covariate bar)...
       if (type == "Discrete") {
         // if colors can be mapped directly
+        const colors = preset.getColorArray (i);
         for (let j = 0; j < i; j++) {
-          // in case there are more breakpoints than predef colors, we cycle back
-          KAE(keyaxis,"color"+j,"colorPref").value = colors[j % colors.length];
+          KAE(keyaxis,"color"+j,"colorPref").value = colors[j];
         }
         KAE(keyaxis,"missing","colorPref").value = missingColor;
       } else {

@@ -494,41 +494,47 @@
 
   /**********************************************************************************
    * FUNCTION - blendTwoColors: The purpose of this function is to blend two 6-character
-   * hex color code values into a single value that is half way between.
+   * hex color code values into a single value between the two.
+   * Color1 and color2 can be either hex color strings or arrays of color values.
+   * Percentage is the proportion of color2 to include (default 0.5).
    **********************************************************************************/
-  UTIL.blendTwoColors = function (color1, color2) {
+  UTIL.blendTwoColors = function (color1, color2, percentage) {
     // check input
-    color1 = color1 || "#000000";
-    color2 = color2 || "#ffffff";
-    var percentage = 0.5;
+    if (!color1) {
+      console.warn("UTIL.blendTwoColors: missing color1. Using black.");
+      color1 = "#000000";
+    }
+    if (!color2) {
+      console.warn("UTIL.blendTwoColors: missing color2. Using white.");
+      color2 = "#ffffff";
+    }
+    // Convert colors to rgb arrays if given as hex strings.
+    if (!Array.isArray(color1)) color1 = hexToInts (color1);
+    if (!Array.isArray(color2)) color2 = hexToInts (color2);
+    if (typeof percentage == "undefined") percentage = 0.5;
 
-    //convert colors to rgb
-    color1 = color1.substring(1);
-    color2 = color2.substring(1);
-    color1 = [
-      parseInt(color1[0] + color1[1], 16),
-      parseInt(color1[2] + color1[3], 16),
-      parseInt(color1[4] + color1[5], 16),
-    ];
-    color2 = [
-      parseInt(color2[0] + color2[1], 16),
-      parseInt(color2[2] + color2[3], 16),
-      parseInt(color2[4] + color2[5], 16),
-    ];
-
-    //blend colors
+    // Blend colors
     const color3 = [
       (1 - percentage) * color1[0] + percentage * color2[0],
       (1 - percentage) * color1[1] + percentage * color2[1],
       (1 - percentage) * color1[2] + percentage * color2[2],
     ];
+    // Return as hex string.
     return rgbToHex.apply (null, color3);
-
   };
+
+  // Convert a hex color string such as "#0077ff" to
+  // an array of three ints each in the range [0..255].
+  function hexToInts (hex) {
+    return [
+      parseInt(hex[1] + hex[2], 16),
+      parseInt(hex[3] + hex[4], 16),
+      parseInt(hex[5] + hex[6], 16),
+    ];
+  }
 
   // Convert r,g,b to hex string.
   // Each of r,g,b is in the range 0 to 255.
-  UTIL.rgbToHex = rgbToHex;
   function rgbToHex (r, g, b) {
     const hex = "#" + intToHex(r) + intToHex(g) + intToHex(b);
     return hex;
@@ -538,9 +544,8 @@
    * FUNCTION - intToHex: The purpose of this function is to convert integer
    * value into a hex value;
    **********************************************************************************/
-  UTIL.intToHex = intToHex;
   function intToHex (num) {
-    var hex = Math.round(num).toString(16);
+    let hex = Math.round(num).toString(16);
     if (hex.length == 1) hex = "0" + hex;
     return hex;
   }
@@ -581,6 +586,29 @@
           return [1,p,q];
       }
     }
+  }
+
+  // FUNCTION pick - evenly pick N data points from the range [0..M-1].
+  //
+  // Returns an array of length N.
+  // Each element of the array is an integer in the range [0..M-1].
+  // The values of the array start at 0 and do not decrease.
+  UTIL.pick = pick;
+  function pick (N, M) {
+    const points = [0];
+    const base = Math.floor (M/(N-1));
+    const derror = M/(N-1) - base;
+    let error = derror;
+    for (let ii = 1; ii < N; ii++) {
+      let inc = base;
+      if (error >= 1) {
+        inc++;
+        error -= 1;
+      }
+      error += derror;
+      points.push (Math.min(points[points.length-1] + inc, M-1));
+    }
+    return points;
   }
 
   /**********************************************************************************
