@@ -1088,7 +1088,7 @@
     const paletteTable = TABLE.createTable({ columns: 3 });
     paletteTable.content.style.width = 'fit-content';
     paletteTable.addIndent();
-    PALETTES.addPredefinedPalettes(paletteTable, mapName, setupLayerBreaksToPreset);
+    PALETTES.addPredefinedPalettes(paletteTable, mapName, setColorPrefsToPreset);
     layerPrefs.appendChild(paletteTable.content);
 
     //-------------------------------------------------------------------------
@@ -1367,89 +1367,66 @@
   }
 
   /**********************************************************************************
-   * FUNCTION setupLayerBreaksToPreset: This function will be executed when the user
-   * selects a predefined color scheme. It will fill the first and last breakpoints with the
-   * predefined colors and interpolate the breakpoints in between.
-   * "preset" is an array of the colors in HEX of the predefined color scheme
+   * FUNCTION setColorPrefsToPreset: This function will be executed when the user
+   * selects a predefined color scheme. It will set the color preferences based on the
+   * preset.
+   *
+   * For discrete color preferences: it will set the colors directly from the preset.
+   *
+   * For continuous color preferences: it will interpolate the colors from the preset
+   * based on the breakpoints.
    **********************************************************************************/
-  function setupLayerBreaksToPreset(
+  function setColorPrefsToPreset(
     key,
     preset,
     axis,
     type,
   ) {
-    const colors = preset.colors;
-    const missingColor = preset.missing;
-    if (debug) console.log ("setupLayerBreaksToPreset:", {key, colors, missingColor, axis, type });
+    if (debug) console.log ("setColorPrefsToPreset:", {key, preset, axis, type });
     startChange();
     const keyaxis = key + (typeof axis == "undefined" ? "" : "_" + axis);
 
-    // Find the number of breakpoints in the color preference.
-    let i = 0;
-    while (KAE_OPT(keyaxis, "color" + ++i, "colorPref")) {}
-    const lastShown = i - 1;
+    // Find the number of breakpoints/colors in the color preference.
+    let numColorPrefs = 0;
+    while (KAE_OPT(keyaxis, "color" + ++numColorPrefs, "colorPref")) {}
 
-    // create dummy colorScheme
-    const thresh = [];
-    if (KAE_OPT(keyaxis,"breakPt0","breakPref")) {
-      // if the breakpoints are changeable (data layer)...
-      const firstBP = KAE(keyaxis,"breakPt0","breakPref").value;
-      const lastBP = KAE(keyaxis,"breakPt"+lastShown,"breakPref").value;
+    // Get that many colors.
+    const colors = type == "Discrete" ? preset.getColorArray(numColorPrefs) : getContColors ();
+
+    // Set the color preferences.
+    for (let j = 0; j < numColorPrefs; j++) {
+      KAE(keyaxis,"color"+j,"colorPref").value = colors[j];
+    }
+    KAE(keyaxis,"missing","colorPref").value = preset.missing;
+
+    // Helper function.
+    // Get the colors for a continuous color scheme (data layer or continuous covariate).
+    function getContColors() {
+      // Determine the total range of the breakpoints.
+      const firstBP = Number(KAE(keyaxis,"breakPt0","breakPref").value);
+      const lastBP = Number(KAE(keyaxis,"breakPt"+(numColorPrefs-1),"breakPref").value);
       const range = lastBP - firstBP;
-      for (let j = 0; j < colors.length; j++) {
-        thresh[j] = Number(firstBP) + j * (range / (colors.length - 1));
+
+      // Create a temporary color map for interpolating the color scheme colors.
+      const thresh = [];
+      for (let j = 0; j < preset.colors.length; j++) {
+        thresh[j] = firstBP + j * (range / (preset.colors.length - 1));
       }
       const colorScheme = {
         type: "continuous",
-        colors: colors,
+        colors: preset.colors,
         thresholds: thresh,
-        missing: missingColor,
+        missing: preset.missing,
       };
       const csTemp = new CMM.ColorMap(UPM.heatMap, colorScheme);
 
-      for (let j = 0; j < i; j++) {
-        const threshId = "breakPt" + j;
-        const colorId = "color" + j;
-        if (debug) console.log ("Getting breakpoint value", { elementId: `${keyaxis}_${threshId}_breakPref` });
-        const breakpoint = KAE(keyaxis,threshId,"breakPref").value;
-        KAE(keyaxis,colorId,"colorPref").value = csTemp.getRgbToHex(csTemp.getColor(breakpoint));
+      // Get the interpolated colors at each breakpoint.
+      const colors = [];
+      for (let j = 0; j < numColorPrefs; j++) {
+        const breakpoint = KAE(keyaxis,"breakPt"+j,"breakPref").value;
+        colors.push (csTemp.getRgbToHex(csTemp.getColor(breakpoint)));
       }
-      if (debug) console.log ("Getting missing color", { elementId: keyaxis + "_missingColorPref" });
-      KAE(keyaxis,"missing","colorPref").value =
-        csTemp.getRgbToHex(csTemp.getColor("Missing"));
-    } else {
-      // if the breakpoints are not changeable (covariate bar)...
-      if (type == "Discrete") {
-        // if colors can be mapped directly
-        const colors = preset.getColorArray (i);
-        for (let j = 0; j < i; j++) {
-          KAE(keyaxis,"color"+j,"colorPref").value = colors[j];
-        }
-        KAE(keyaxis,"missing","colorPref").value = missingColor;
-      } else {
-        // if colors need to be blended
-        const colorMapMgr = UPM.heatMap.getColorMapManager();
-        const colorMap = colorMapMgr.getColorMap(axis, key);
-        const thresholds = colorMap.getThresholds();
-        const range = thresholds[thresholds.length - 1] - thresholds[0];
-        for (let j = 0; j < colors.length; j++) {
-          thresh[j] = Number(thresholds[0]) + j * (range / (colors.length - 1));
-        }
-        const colorScheme = {
-          type: "continuous",
-          colors: colors,
-          thresholds: thresh,
-          missing: missingColor,
-        };
-        const csTemp = new CMM.ColorMap(UPM.heatMap, colorScheme);
-        for (let j = 0; j < thresholds.length; j++) {
-          const breakpoint = thresholds[j];
-          KAE(keyaxis,"color"+j,"colorPref").value =
-            csTemp.getRgbToHex(csTemp.getColor(breakpoint));
-        }
-        KAE(keyaxis,"missing","colorPref").value =
-          csTemp.getRgbToHex(csTemp.getColor("Missing"));
-      }
+      return colors;
     }
   }
 
@@ -1963,7 +1940,7 @@
     ]);
 
     prefTableCB.addBlankSpace(3);
-    PALETTES.addPredefinedPalettes(prefTableCB, key, setupLayerBreaksToPreset, axis, typ);
+    PALETTES.addPredefinedPalettes(prefTableCB, key, setColorPrefsToPreset, axis, typ);
 
     helpprefsCB.style.height = prefContentsCB.rows.length;
     helpprefsCB.appendChild(prefContentsCB);
