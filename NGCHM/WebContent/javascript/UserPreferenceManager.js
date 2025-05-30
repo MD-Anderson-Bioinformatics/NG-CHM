@@ -1072,13 +1072,7 @@
     prefTable.addBlankSpace();
     prefTable.addRow([
       "Missing Color:",
-      "<input class='spectrumColor' type='color' name='" +
-        mapName +
-        "_missing_colorPref' id='" +
-        mapName +
-        "_missing_colorPref' value='" +
-        colorMap.getMissingColor() +
-        "'>",
+      createColorInput (KAID(mapName,"missing","colorPref"), colorMap.getMissingColor()),
       "",
     ]);
     prefTable.addBlankSpace(2);
@@ -1095,55 +1089,19 @@
     const propsTable = TABLE.createTable({ columns: 4 });
     propsTable.content.style.width = 'fit-content';
     propsTable.addIndent();
-    let gridShow =
-      "<input class='ngchm-upm-input' name='" +
-      mapName +
-      "_gridPref' id='" +
-      mapName +
-      "_gridPref' type='checkbox' ";
-    if (layer.grid_show == "Y") {
-      gridShow = gridShow + "checked";
-    }
-    gridShow = gridShow + " >";
-
-    let gridColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      mapName +
-      "_gridColorPref' id='" +
-      mapName +
-      "_gridColorPref' value='" +
-      layer.grid_color +
-      "'>";
-
-    let selectionColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      mapName +
-      "_selectionColorPref' id='" +
-      mapName +
-      "_selectionColorPref' value='" +
-      layer.selection_color +
-      "'>";
-    let gapColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      mapName +
-      "_gapColorPref' id='" +
-      mapName +
-      "_gapColorPref' value='" +
-      layer.cuts_color +
-      "'>";
 
     propsTable.addBlankSpace(3);
     propsTable.addRow([
       "Grid Lines:",
-      gridColorInput,
+      createColorInput(KAID(mapName,"gridColorPref"), layer.grid_color),
       "Grid Show:",
-      gridShow,
+      createCheckBox(KAID(mapName,"gridPref"), layer.grid_show == "Y"),
     ], { fontWeight: [ "bold", "", "bold", "" ] });
     propsTable.addRow([
       "Selection Color:",
-      selectionColorInput,
+      createColorInput(KAID(mapName,"selectionColorPref"), layer.selection_color),
       "Gap Color:",
-      gapColorInput,
+      createColorInput(KAID(mapName,"gapColorPref"), layer.cuts_color),
     ], { fontWeight: [ "bold", "", "bold", "" ] });
     layerPrefs.appendChild(propsTable.content);
 
@@ -1226,22 +1184,9 @@
       var threshold = thresholds[j];
       var color = colors[j];
       var colorId = elementIdPrefix + "_color" + j;
-      var breakPtInput =
-        "&nbsp;&nbsp;<input class='ngchm-upm-input' name='" +
-        threshId +
-        "_breakPref' id='" +
-        threshId +
-        "_breakPref' value='" +
-        threshold +
-        "' maxlength='8' size='8'>";
-      var colorInput =
-        "<input class='spectrumColor' type='color' name='" +
-        colorId +
-        "_colorPref' id='" +
-        colorId +
-        "_colorPref' value='" +
-        color +
-        "'>";
+      const breakPtInput =
+        "&nbsp;&nbsp;" + createNumericInput(KAID(threshId,"breakPref"), threshold, 8);
+      const colorInput = createColorInput(KAID(colorId,"colorPref"), color);
       if (thresholds.length < 3) {
         UHM.setTableRow(breakpts, [breakPtInput, colorInput, buttonsDiv]);
       } else {
@@ -1824,38 +1769,7 @@
 
     UHM.setTableRow(prefContents, ["&nbsp;Covariate Type: ", "<b>" + typ + "</b>"]);
     UHM.addBlankRow(prefContents, 2);
-    var bgColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      keyaxis +
-      "_bgColorPref' id='" +
-      keyaxis +
-      "_bgColorPref' value='" +
-      classBar.bg_color +
-      "'>";
-    var fgColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      keyaxis +
-      "_fgColorPref' id='" +
-      keyaxis +
-      "_fgColorPref' value='" +
-      classBar.fg_color +
-      "'>";
-    var lowBound =
-      "<input name='" +
-      keyaxis +
-      "_lowBoundPref' id='" +
-      keyaxis +
-      "_lowBoundPref' value='" +
-      classBar.low_bound +
-      "' maxlength='10' size='8'>&emsp;";
-    var highBound =
-      "<input name='" +
-      keyaxis +
-      "_highBoundPref' id='" +
-      keyaxis +
-      "_highBoundPref' value='" +
-      classBar.high_bound +
-      "' maxlength='10' size='8'>&emsp;";
+
     if (typ === "Discrete") {
       UHM.setTableRow(prefContents, [
         "&nbsp;Bar Type: ",
@@ -1890,8 +1804,6 @@
     }
 
     UHM.addBlankRow(prefContents);
-    var helpprefsCB = UTIL.newElement("DIV");
-    helpprefsCB.id = keyaxis + "_breakPrefsCB";
     const prefTableCB = TABLE.createTable({ columns: 3 });
     const prefContentsCB = prefTableCB.content;
     if (typ === "Discrete") {
@@ -1899,22 +1811,10 @@
         "&nbsp;<u>Category</u>",
         "<b><u>" + "Color" + "</b></u>",
       ]);
-      for (var j = 0; j < thresholds.length; j++) {
-        var threshold = thresholds[j];
-        var color = colors[j];
-        var threshId = keyaxis + "_breakPt" + j;
-        var colorId = keyaxis + "_color" + j;
-        var colorInput =
-          "<input class='spectrumColor' type='color' name='" +
-          colorId +
-          "_colorPref' id='" +
-          colorId +
-          "_colorPref' value='" +
-          color +
-          "'>";
+      for (let j = 0; j < thresholds.length; j++) {
         UHM.setTableRow(prefContentsCB, [
-          "&nbsp;&nbsp;" + threshold,
-          colorInput,
+          "&nbsp;&nbsp;" + thresholds[j],
+          createColorInput(KAID(keyaxis,"color"+j,"colorPref"), colors[j]),
         ]);
       }
     } else {
@@ -1930,32 +1830,35 @@
     UHM.addBlankRow(prefContentsCB);
     UHM.setTableRow(prefContentsCB, [
       "&nbsp;Missing Color:",
-      "<input class='spectrumColor' type='color' name='" +
-        keyaxis +
-        "_missing_colorPref' id='" +
-        keyaxis +
-        "_missing_colorPref' value='" +
-        colorMap.getMissingColor() +
-        "'>",
+      createColorInput(KAID(keyaxis,"missing","colorPref"), colorMap.getMissingColor()),
     ]);
 
     prefTableCB.addBlankSpace(3);
     PALETTES.addPredefinedPalettes(prefTableCB, key, setColorPrefsToPreset, axis, typ);
 
+    const helpprefsCB = UTIL.newElement("DIV");
+    helpprefsCB.id = KAID(keyaxis,"breakPrefsCB");
     helpprefsCB.style.height = prefContentsCB.rows.length;
     helpprefsCB.appendChild(prefContentsCB);
-    var helpprefsBB = UTIL.newElement("DIV");
-    helpprefsBB.id = keyaxis + "_breakPrefsBB";
+
+    const helpprefsBB = UTIL.newElement("DIV");
+    helpprefsBB.id = KAID(keyaxis,"breakPrefsBB");
     var prefContentsBB = document.createElement("TABLE");
-    UHM.setTableRow(prefContentsBB, ["&nbsp;&nbsp;Lower Bound:", lowBound]);
-    UHM.setTableRow(prefContentsBB, ["&nbsp;&nbsp;Upper Bound:", highBound]);
+    UHM.setTableRow(prefContentsBB, [
+      "&nbsp;&nbsp;Lower Bound:",
+      createNumericInput (KAID(keyaxis,"lowBoundPref"), classBar.low_bound, 8, 10),
+    ]);
+    UHM.setTableRow(prefContentsBB, [
+      "&nbsp;&nbsp;Upper Bound:",
+      createNumericInput (KAID(keyaxis,"highBoundPref"), classBar.high_bound, 8, 10),
+    ]);
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Foreground Color:",
-      fgColorInput,
+      createColorInput (KAID(keyaxis,"fgColorPref"), classBar.fg_color),
     ]);
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Background Color:",
-      bgColorInput,
+      createColorInput (KAID(keyaxis,"bgColorPref"), classBar.bg_color),
     ]);
     UHM.addBlankRow(prefContentsBB);
     helpprefsBB.appendChild(prefContentsBB);
@@ -2890,4 +2793,24 @@
       heightPref.disabled = false;
     }
   }
+
+  // Create a color input with the given id and initial color.
+  function createColorInput (id, color) {
+    const input = `<input class='spectrumColor' type='color' name='${id}' id='${id}' value='${color}'>`;
+    return input;
+  }
+
+  // Create a checkbox input with the given id and initial checked state.
+  function createCheckBox (id, checked) {
+    checked = checked ? "checked" : "";
+    return `<input class='ngchm-upm-input' name='${id}' id='${id}' type='checkbox' ${checked}>`;
+  }
+
+  // Create a numeric input with the given id, initial value, size, and maximum length.
+  function createNumericInput (id, value, size, maxlength) {
+    if (!size) size = 8;
+    if (!maxlength) maxlength = size;
+    return `<input class='ngchm-upm-input' name='${id}' id='${id}' value='${value}' maxlength='${maxlength}' size='${size}'>`;
+  }
+
 })();
