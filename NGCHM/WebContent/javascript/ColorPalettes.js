@@ -47,8 +47,13 @@
       colors: [[0,100,100], [60,100,100], [60,0,100]].map(hsv => UTIL.hsvToRgb.apply(null,hsv)),
       missing: "#000000",
     }),
+    new ColorPreset({
+      name: "Heat 2",
+      colors: [[0,100,0], [0,100,100], [60,100,100], [60,0,100]].map(hsv => UTIL.hsvToRgb.apply(null,hsv)),
+      missing: "#000000",
+    }),
   ]);
-  presetPalettes.set ("Discrete", [
+  presetPalettes.set ("discrete", [
     new ColorPreset({
       name: "Palette 1",
       colors: [
@@ -130,7 +135,7 @@
       interpolation: "ramp",
     }),
   ]);
-  presetPalettes.set ("Continuous", [
+  presetPalettes.set ("continuous", [
     new ColorPreset ({
       name: "Greyscale",
       colors: ["#FFFFFF", "#000000"],
@@ -186,7 +191,7 @@
 
   // Add the predefined color schemes put here
   // colorMapAxis: "row", "col", or undefined (for data layer),
-  // colorMapType: "Discrete", "Continuous", or undefined (for data layer)
+  // colorMapType: "discrete", "continuous", or undefined (for data layer)
   function addPredefinedPalettes(prefTable, key, clickHandler, colorMapAxis, colorMapType) {
     prefTable.addRow( ["Choose a pre-defined color palette:"], { underline: true });
     prefTable.addBlankSpace();
