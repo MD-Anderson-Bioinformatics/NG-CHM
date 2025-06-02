@@ -50,6 +50,9 @@
   Object.setPrototypeOf(RowsColsTab.prototype, PreferencesTab.prototype);
   Object.setPrototypeOf(CovariatesPrefsTab.prototype, PreferencesTab.prototype);
 
+  // Define prototype chain for ColorSchemeTable.
+  Object.setPrototypeOf(ColorSchemeTable.prototype, TABLE.Table.prototype);
+
   // Create an instance of each tab.  These calls create the tab instances but do not
   // populate the body of the tabs.  For that, see method setupTab below.
   //
@@ -589,28 +592,19 @@
    * first error is found, an error  message (string array containing error information)
    * is created and returned to the prefsApply function.
    **********************************************************************************/
-  function prefsValidateBreakPoints(colorMapAxis, colorMapName, prefPanel) {
+  function prefsValidateBreakPoints(axis, key, prefPanel) {
     const colorMapMgr = UPM.heatMap.getColorMapManager();
-    const colorMap = colorMapMgr.getColorMap(colorMapAxis, colorMapName);
+    const colorMap = colorMapMgr.getColorMap(axis, key);
     var thresholds = colorMap.getThresholds();
     var charBreak = false;
     var dupeBreak = false;
     var breakOrder = false;
     var prevBreakValue = MAPREP.minValues;
     var errorMsg = null;
-    const elementIdPrefix =
-      colorMapName +
-      (colorMapAxis == "data" ? "" : "_" + colorMapAxis) +
-      "_breakPt";
     //Loop thru colormap thresholds and validate for order and duplicates
-    for (var i = 0; i < thresholds.length; i++) {
-      const breakElementId = elementIdPrefix + i + "_breakPref";
-      const breakElement = document.getElementById(breakElementId);
-      if (!breakElement) {
-        console.error("Unable to find breakElement for " + breakElementId);
-        continue;
-      }
-      //If current breakpoint is not numeric
+    for (let i = 0; i < thresholds.length; i++) {
+      const breakElement = getBreakPrefElement(key, axis, i);
+      // If current breakpoint is not numeric
       if (isNaN(breakElement.value) || breakElement.value === "") {
         charBreak = true;
         break;
@@ -623,8 +617,8 @@
       }
       //Loop thru thresholds, skipping current element, searching for a match to the
       //current selection.  If found, throw duplicate error
-      for (var j = 0; j < thresholds.length; j++) {
-        var be = document.getElementById(elementIdPrefix + j + "_breakPref");
+      for (let j = 0; j < thresholds.length; j++) {
+        const be = getBreakPrefElement(key, axis, j);
         if (be !== null) {
           if (i != j) {
             if (Number(breakElement.value) === Number(be.value)) {
@@ -637,28 +631,13 @@
       prevBreakValue = breakElement.value;
     }
     if (charBreak) {
-      errorMsg = [
-        colorMapName,
-        prefPanel,
-        "ERROR: Breakpoints must be numeric",
-        colorMapAxis,
-      ];
+      errorMsg = [key, prefPanel, "ERROR: Breakpoints must be numeric", axis];
     }
     if (breakOrder) {
-      errorMsg = [
-        colorMapName,
-        prefPanel,
-        "ERROR: Breakpoints must be in increasing order",
-        colorMapAxis,
-      ];
+      errorMsg = [key, prefPanel, "ERROR: Breakpoints must be in increasing order", axis];
     }
     if (dupeBreak) {
-      errorMsg = [
-        colorMapName,
-        prefPanel,
-        "ERROR: Duplicate breakpoint found",
-        colorMapAxis,
-      ];
+      errorMsg = [key, prefPanel, "ERROR: Duplicate breakpoint found", axis];
     }
 
     return errorMsg;
@@ -671,20 +650,16 @@
    * is created and returned to the prefsApply function.
    **********************************************************************************/
   // This function isn't being called!!!????
-  function prefsValidateBreakColors(colorMapName, type, prefPanel) {
+  function prefsValidateBreakColors(colorMapName, axis, prefPanel) {
     const colorMapMgr = UPM.heatMap.getColorMapManager();
     const colorMap = colorMapMgr.getColorMap(type, colorMapName);
-    var key = colorMapName;
-    if (type !== "data") {
-      key = key + "_" + type;
-    }
-    var thresholds = colorMap.getThresholds();
-    var colors = colorMap.getColors();
-    var dupeColor = false;
-    for (var i = 0; i < colors.length; i++) {
-      for (var j = 0; j < thresholds.length; j++) {
-        var ce = KAE(key, "color" + j, "colorPref");
+    const thresholds = colorMap.getThresholds();
+    const colors = colorMap.getColors();
+    let dupeColor = false;
+    for (let i = 0; i < colors.length; i++) {
+      for (let j = 0; j < thresholds.length; j++) {
         if (i != j) {
+          const ce = getColorPrefElement(colorMapName, axis, j);
           if (colorElement.value === ce.value) {
             dupeColor = true;
             break;
@@ -693,7 +668,7 @@
       }
     }
     if (dupeColor) {
-      return [key, prefPanel, "ERROR: Duplicate color setting found above"];
+      return [colorMapName, prefPanel, "ERROR: Duplicate color setting found above"];
     }
 
     return null;
@@ -703,20 +678,18 @@
    * FUNCTION prefsApplyBreaks: Apply all user entered changes to the colors
    * and breakpoints of the specified color map.
    **********************************************************************************/
-  function prefsApplyBreaks(colorMapName, colorMapAxis) {
+  function prefsApplyBreaks(colorMapName, axis) {
     const colorMapMgr = UPM.heatMap.getColorMapManager();
-    const colorMap = colorMapMgr.getColorMap(colorMapAxis, colorMapName);
-    const newColors = getNewBreakColors(colorMapAxis, colorMapName);
+    const colorMap = colorMapMgr.getColorMap(axis, colorMapName);
+    const newColors = getNewBreakColors(axis, colorMapName);
     colorMap.setColors(newColors);
     if (colorMap.getType() != "discrete") {
-      const newThresholds = getNewBreakThresholds(colorMapAxis, colorMapName);
+      const newThresholds = getNewBreakThresholds(axis, colorMapName);
       colorMap.setThresholds(newThresholds);
     }
-    const key =
-      colorMapName + (colorMapAxis == "data" ? "" : "_" + colorMapAxis);
-    const missingElement = KAE(key,"missing","colorPref");
+    const missingElement = KAE(colorMapName, axis, "missing", "colorPref");
     colorMap.setMissingColor(missingElement.value);
-    colorMapMgr.setColorMap(colorMapAxis, colorMapName, colorMap);
+    colorMapMgr.setColorMap(axis, colorMapName, colorMap);
   }
 
   /**********************************************************************************
@@ -736,7 +709,7 @@
     const colorMap = colorMapMgr.getColorMap(colorMapAxis, colorMapName);
     const thresholds = colorMap.getThresholds();
     const newColors = [];
-    let prevColorElement = getColorPrefElement(colorMapAxis, colorMapName, 0);
+    let prevColorElement = getColorPrefElement(colorMapName, colorMapAxis, 0);
     if (pos == 0 && action == "add") {
       // Insert a color before the first color.
       newColors.push(UTIL.blendTwoColors("#000000", prevColorElement.value));
@@ -746,7 +719,7 @@
       newColors.push(prevColorElement.value); // color0
     }
     for (let j = 1; j < thresholds.length; j++) {
-      const colorElement = getColorPrefElement(colorMapAxis, colorMapName, j);
+      const colorElement = getColorPrefElement(colorMapName, colorMapAxis, j);
       //In case there are now less elements than the thresholds list on Reset.
       if (colorElement !== null) {
         //If being called from modifyDataLayerBreaks
@@ -754,9 +727,7 @@
           if (action === "add") {
             if (j === pos) {
               //Blend previous and current breakpoint colors to get new color.
-              newColors.push(
-                UTIL.blendTwoColors(prevColorElement.value, colorElement.value),
-              );
+              newColors.push(UTIL.blendTwoColors(prevColorElement.value, colorElement.value));
             }
             newColors.push(colorElement.value);
           } else {
@@ -781,8 +752,7 @@
     //default behavior that happens when a map is built but must be managed as
     //users change preferences and bar types.
     if (colorMapAxis !== "data") {
-      const classBar =
-        UPM.heatMap.getAxisCovariateConfig(colorMapAxis)[colorMapName];
+      const classBar = UPM.heatMap.getAxisCovariateConfig(colorMapAxis)[colorMapName];
       if (classBar.bar_type != "color_plot") {
         newColors[1] = classBar.fg_color;
       }
@@ -790,7 +760,7 @@
       //Potentially on a data layer reset, there could be more color points than contained in the thresholds object
       //because a user may have deleted a breakpoint and then hit "reset". So we check for up to 50 preferences.
       for (let k = thresholds.length; k < 50; k++) {
-        const colorElement = getColorPrefElement(colorMapAxis, colorMapName, k);
+        const colorElement = getColorPrefElement(colorMapName, colorMapAxis, k);
         if (colorElement !== null) {
           newColors.push(colorElement.value);
         }
@@ -799,12 +769,28 @@
     return newColors;
   }
 
+  // Return the id of the colorPref element at the specified position in the specified
+  // color map (or null if none).
+  function getColorPrefId(key, axis, position) {
+    return KAID(key, axis, "color" + position, "colorPref");
+  }
+
   // Return the colorPref element at the specified position in the specified
   // color map (or null if none).
-  function getColorPrefElement(colorMapAxis, colorMapName, position) {
-    let id = colorMapName;
-    if (colorMapAxis != "data") id += "_" + colorMapAxis;
-    return KAE_OPT(id,"color"+position,"colorPref");
+  function getColorPrefElement(key, axis, position) {
+    return KAE_OPT(key, axis, "color" + position, "colorPref");
+  }
+
+  // Return the id of the breakpoint at the specified position in the specified
+  // color map (or null if none).
+  function getBreakPrefId(key, axis, position) {
+    return KAID(key, axis, "breakPt" + position, "breakPref");
+  }
+
+  // Return the breakpoint element at the specified position in the specified
+  // color map (or null if none).
+  function getBreakPrefElement(key, axis, position) {
+    return KAE_OPT(key, axis, "breakPt" + position, "breakPref");
   }
 
   /**********************************************************************************
@@ -819,13 +805,9 @@
   function getNewBreakThresholds(colorMapAxis, colorMapName, pos, action) {
     const colorMapMgr = UPM.heatMap.getColorMapManager();
     const colorMap = colorMapMgr.getColorMap(colorMapAxis, colorMapName);
-    let elementIdPrefix = colorMapName;
-    if (colorMapAxis != "data") elementIdPrefix += "_" + colorMapAxis;
     const thresholds = colorMap.getThresholds();
     const newThresholds = [];
-    let prevBreakElement = document.getElementById(
-      elementIdPrefix + "_breakPt0_breakPref",
-    );
+    let prevBreakElement = getBreakPrefElement(colorMapName, colorMapAxis, 0);
     let prevBreakValue = Number(prevBreakElement.value);
     if (pos == 0 && action == "add") {
       newThresholds.push(prevBreakValue - 1);
@@ -834,9 +816,7 @@
       newThresholds.push(prevBreakValue);
     }
     for (let j = 1; j < thresholds.length; j++) {
-      const breakElement = document.getElementById(
-        elementIdPrefix + "_breakPt" + j + "_breakPref",
-      );
+      const breakElement = getBreakPrefElement(colorMapName, colorMapAxis, j);
       const breakValue = Number(breakElement.value);
       //In case there are now less elements than the thresholds list on Reset.
       if (breakElement !== null) {
@@ -868,7 +848,7 @@
     //Potentially on a data layer reset, there could be more color points than contained in the thresholds object
     //because a user may have deleted a breakpoint and then hit "reset". So we check for up to 50 preferences.
     for (let k = thresholds.length; k < 50; k++) {
-      const breakElement = KAE_OPT(elementIdPrefix,"breakPt" + k,"breakPref");
+      const breakElement = getBreakPrefElement(colorMapName, colorMapAxis, k);
       if (breakElement !== null) {
         newThresholds.push(breakElement.value);
       }
@@ -884,59 +864,29 @@
    * for each data layer, containing breakpoints/colors, are added.
    **********************************************************************************/
   function MapLayersTab() {
-    PreferencesTab.call(this, "prefLayer_btn", "layerPrefs");
+    PreferencesTab.call(this, "ngchm-upm-layersTab-btn", "ngchm-upm-layersTab");
   }
 
   MapLayersTab.prototype.prepareErrorView = function (errorMsg) {
     // errorMsg[0] : layer name
     // Show the view of the layer containing the error.
-    showDataLayerPanel(errorMsg[0]);
+    this.showDataLayer(errorMsg[0]);
   };
 
   MapLayersTab.prototype.prepareView = function () {
     // Show the view of the heatMap's current layer.
-    showDataLayerPanel(UPM.heatMap.getCurrentDL());
+    this.showDataLayer(UPM.heatMap.getCurrentDL());
   };
 
   MapLayersTab.prototype.setupTab = function setupLayersTab() {
-    const layerprefs = document.getElementById("layerPrefs");
-    const prefContents = document.createElement("TABLE");
     const dataLayers = UPM.heatMap.getDataLayers();
 
-    // Create the data-layer select dropdown.
-    UHM.addBlankRow(prefContents);
-    const dlSelect = UTIL.newElement(
-      "SELECT#dlPref_list",
-      { name: "dlPref_list" },
-    );
+    this.tabDiv.appendChild(createDataLayerSelect(dataLayers));
 
-    // Re-order options in datalayer order (which is lost on JSON save)
-    const dls = new Array(Object.keys(dataLayers).length);
-    const orderedKeys = new Array(Object.keys(dataLayers).length);
+    // Loop over the data layers, creating a preferences div for each layer.
+    // All are hidden initially. Switching to the tab will display one of them.
     for (let key in dataLayers) {
-      const dlNext = key.substring(2, key.length);
-      orderedKeys[dlNext - 1] = key;
-      let displayName = dataLayers[key].name;
-      if (displayName.length > 20) {
-        displayName = displayName.substring(0, 17) + "...";
-      }
-      dls[dlNext - 1] = UTIL.newElement("OPTION", { value: key }, displayName);
-    }
-    for (let i = 0; i < dls.length; i++) {
-      dlSelect.appendChild(dls[i]);
-    }
-
-    // Add the data-layer drop-down.
-    UHM.setTableRow(prefContents, ["&nbsp;Data Layer: ", dlSelect]);
-    UHM.addBlankRow(prefContents, 2);
-    layerprefs.appendChild(prefContents);
-    UHM.addBlankRow(prefContents);
-
-    // Loop over the data layers, creating a panel div for each layer.
-    for (let key in dataLayers) {
-      const breakprefs = setupLayerBreaks("data", key);
-      breakprefs.style.display = "none";
-      layerprefs.appendChild(breakprefs);
+      this.createLayerPreferences(key);
     }
 
     // Add a keydown event handler for this tab.
@@ -952,21 +902,60 @@
 
     // Add a change event handler for this tab.
     this.tabDiv.addEventListener("change", (ev) => {
-      if (debug) console.log("DataLayersTab: Change handler", { target: ev.target });
+      if (debug || debugEvents) {
+        console.log("DataLayersTab: Change handler", { target: ev.target });
+      }
       for (const target of this.targetGen(ev)) {
         if (target.id == "dlPref_list") {
-          showDataLayerPanel();
+          // Change this visible layer preferences div.
+          this.showDataLayer();
           break;
         }
-        if (target.classList.contains('spectrumColor')
-        || target.classList.contains('ngchm-upm-input')) {
+        if (
+          target.classList.contains("spectrumColor") ||
+          target.classList.contains("ngchm-upm-input")
+        ) {
+          // Note the user changed something in a layer preferences div.
           startChange();
           break;
         }
       }
     });
 
-    return layerprefs;
+    return this.tabDiv;
+
+    // Helper function.
+
+    // Create and return the data-layer select dropdown.
+    function createDataLayerSelect(dataLayers) {
+      const dropdown = UTIL.newElement("DIV.ngchm-upm-layer-select");
+
+      const label = UTIL.newElement("LABEL", { for: "dlPref_list" }, "Data Layer:");
+      const select = UTIL.newElement("SELECT", {
+        id: "dlPref_list",
+        name: "dlPref_list"
+      });
+      dropdown.appendChild(label);
+      dropdown.appendChild(select);
+
+      // Create layer options in numeric order (which is lost on JSON save).
+      for (const key of Object.keys(dataLayers).sort(layerCmp)) {
+        let displayName = dataLayers[key].name;
+        if (displayName.length > 20) {
+          displayName = displayName.substring(0, 17) + "...";
+        }
+        select.appendChild(UTIL.newElement("OPTION", { value: key }, displayName));
+      }
+      return dropdown;
+
+      // Helper function.
+      // Compare two layer names for use by sort.
+      function layerCmp(a, b) {
+        // Layer names consist of "dl" followed by a number.
+        // Compares the numbers numerically.
+        return Number(a.substr(2)) - Number(b.substr(2));
+      }
+    }
   };
 
   // METHOD MapLayersTab.validateTab: validate user preference settings on the
@@ -983,28 +972,19 @@
   // METHOD MapLayersTab.resetTabPrefs: reset the Data Layer preference items.
   //
   MapLayersTab.prototype.resetTabPrefs = function resetLayersTabPrefs(resetVal) {
-    for (let dl in resetVal.matrix.data_layer) {
-      const layer = resetVal.matrix.data_layer[dl];
+    for (let layerName in resetVal.matrix.data_layer) {
+      const layer = resetVal.matrix.data_layer[layerName];
 
       // Reset the color map values.
-      const cm = layer.color_map;
-      const dlTable = KAE("breakPrefsTable",dl);
-      fillBreaksTable(dlTable, "data", dl, cm.thresholds, cm.colors);
-      const missingColor = KAE(dl,"missing","colorPref");
-      missingColor.value = cm.missing;
+      const dlTable = getColorScheme("data", layerName);
+      dlTable.fillContinuousColorTable(layer.color_map);
+      dlTable.setMissingColor(layer.color_map.missing);
 
       // Reset the other data layer values.
-      const gridColor = KAE(dl,"gridColorPref");
-      gridColor.value = layer.grid_color;
-      const gridShow = KAE(dl,"gridPref");
-      gridShow.checked = layer.grid_show == "Y";
-      const selectionColor = KAE(dl,"selectionColorPref");
-      selectionColor.value = layer.selection_color;
-      const gapColor = KAE(dl,"gapColorPref");
-      gapColor.value = layer.cuts_color;
+      resetGridPreferences(layerName, layer);
 
       // Load the preview histogram for the layer.
-      loadColorPreviewDiv(dl);
+      loadColorPreviewDiv(layerName);
     }
   };
 
@@ -1013,205 +993,133 @@
   //
   MapLayersTab.prototype.applyTabPrefs = function applyLayersTabPrefs() {
     // Apply Data Layer Preferences
-    const dataLayers = UPM.heatMap.getDataLayers();
-    for (let key in dataLayers) {
+    for (let layerName in UPM.heatMap.getDataLayers()) {
       // Apply the color map changes.
-      prefsApplyBreaks(key, "data");
+      prefsApplyBreaks(layerName, "data");
 
       // Apply the other data layer values.
-      const showGrid = KAE(key,"gridPref");
-      const gridColor = KAE(key,"gridColorPref");
-      const selectionColor = KAE(key,"selectionColorPref");
-      const gapColor = KAE(key,"gapColorPref");
-      UPM.heatMap.setLayerGridPrefs(
-        key,
-        showGrid.checked,
-        gridColor.value,
-        selectionColor.value,
-        gapColor.value,
-      );
+      applyGridPreferences(layerName);
 
       // Load the preview histogram for the layer.
-      loadColorPreviewDiv(key);
+      loadColorPreviewDiv(layerName);
     }
   };
 
   /**********************************************************************************
-   * FUNCTION setupLayerBreaks: Construct a DIV
-   * containing a list of breakpoints/colors for a given matrix data layer.
+   * METHOD createLayerPreferences: Construct a DIV containing all of the preferences
+   * for the specified data layer and add it to the tab, replacing any existing div
+   * for that layer.
+   *
+   * This function will be called repeatedly to create a DIV for each data layer. At any
+   * time, exactly one of the resulting DIVs will be visible, depending on the value of
+   * the layers dropdown on the LayerPreferencesTab.  It will be displayed immediately
+   * below that dropdown.
+   *
+   * This function should only be called after the layers dropdown has been added to the
+   * tab, so that it will appear below it.  The order in which the layer preferences are
+   * added (and replaced) does not matter, since at most one is ever visible at a time.
+   *
    **********************************************************************************/
-  function setupLayerBreaks(colorMapAxis, mapName) {
-    const layerPrefs = UTIL.newElement("DIV#breakPrefs_" + mapName);
+  MapLayersTab.prototype.createLayerPreferences = function createLayerPreferences(layerName) {
+    // Create a DIV for the layer preferences.
+    const layerPrefsId = KAID("layerPrefs", layerName);
+    const layerPrefs = UTIL.newElement("DIV");
+    layerPrefs.id = layerPrefsId;
+
+    // Remove the existing div for the layer, if any.
+    const oldLayerPrefs = document.getElementById(layerPrefsId);
+    if (oldLayerPrefs) {
+      // If replacing a layer prefs, keep the same visibility.
+      layerPrefs.style.display = oldLayerPrefs.style.display;
+      this.tabDiv.removeChild(oldLayerPrefs);
+    } else {
+      // A new layers prefs is not visible until switched to.
+      layerPrefs.style.display = "none";
+    }
+
     // The layerPrefs division consists of four subparts:
     // - the layer's continuous color scheme
     // - a continuous color palette table
-    // - the layer properties table
-    // - the histogram preview.
+    // - the grid properties table
+    // - the preview histogram.
 
+    // 1. Create the continuous color scheme.
     const colorMapMgr = UPM.heatMap.getColorMapManager();
-    const colorMap = colorMapMgr.getColorMap(colorMapAxis, mapName);
+    const colorMap = colorMapMgr.getColorMap("data", layerName);
+    const colorScheme = createColorMapInput(layerName, "data", colorMap);
+    layerPrefs.appendChild(colorScheme);
 
-    const thresholds = colorMap.getThresholds();
-    const colors = colorMap.getColors();
-    const dataLayers = UPM.heatMap.getDataLayers();
-    const layer = dataLayers[mapName];
-
-    const prefTable = TABLE.createTable({ columns: 3 });
-    prefTable.addIndent();
-
-    prefTable.addBlankSpace(2);
-    prefTable.addRow([
-      "Breakpoint",
-      "Color",
-      "&nbsp;",
-    ], { underline: [true,true,false], fontWeight: [ "bold", "bold", "" ] });
-    prefTable.addBlankSpace();
-
-    const breakpts = UTIL.newElement("TABLE#breakPrefsTable_" + mapName);
-    fillBreaksTable(breakpts, "data", mapName, thresholds, colors);
-    prefTable.addRow([breakpts]);
-
-    prefTable.addBlankSpace();
-    prefTable.addRow([
-      "Missing Color:",
-      createColorInput (KAID(mapName,"missing","colorPref"), colorMap.getMissingColor()),
-      "",
-    ]);
-    prefTable.addBlankSpace(2);
-    layerPrefs.appendChild(prefTable.content);
-
-    //-------------------------------------------------------------------------
+    // 2. Create the color palette table.
     const paletteTable = TABLE.createTable({ columns: 3 });
-    paletteTable.content.style.width = 'fit-content';
+    paletteTable.content.style.width = "fit-content";
     paletteTable.addIndent();
-    PALETTES.addPredefinedPalettes(paletteTable, mapName, setColorPrefsToPreset);
+    PALETTES.addPredefinedPalettes(paletteTable, layerName, setColorPrefsToPreset, "data", "");
     layerPrefs.appendChild(paletteTable.content);
 
-    //-------------------------------------------------------------------------
-    const propsTable = TABLE.createTable({ columns: 4 });
-    propsTable.content.style.width = 'fit-content';
-    propsTable.addIndent();
+    // 3. Create the grid properties table.
+    const gridProps = createGridPropsInput(layerName);
+    layerPrefs.appendChild(gridProps.content);
 
-    propsTable.addBlankSpace(3);
-    propsTable.addRow([
-      "Grid Lines:",
-      createColorInput(KAID(mapName,"gridColorPref"), layer.grid_color),
-      "Grid Show:",
-      createCheckBox(KAID(mapName,"gridPref"), layer.grid_show == "Y"),
-    ], { fontWeight: [ "bold", "", "bold", "" ] });
-    propsTable.addRow([
-      "Selection Color:",
-      createColorInput(KAID(mapName,"selectionColorPref"), layer.selection_color),
-      "Gap Color:",
-      createColorInput(KAID(mapName,"gapColorPref"), layer.cuts_color),
-    ], { fontWeight: [ "bold", "", "bold", "" ] });
-    layerPrefs.appendChild(propsTable.content);
-
-    //-------------------------------------------------------------------------
+    // 4. Create the preview histogram.
 
     const header = UTIL.newElement("DIV.histogram-header");
     header.appendChild(document.createTextNode("Color Histogram:"));
     const updateButton = UTIL.newElement(
-        "DIV.buttonGroup.histogram-update",
-        {},
-        UTIL.newElement(
-          "BUTTON",
-          { type: "button" },
-          UTIL.newElement("SPAN.button", {}, "Update"),
-          function (el) {
-            el.onclick = function () {
-              loadColorPreviewDiv(mapName);
-            };
-            return el;
-          },
-        ),
-      );
+      "DIV.buttonGroup.histogram-update",
+      {},
+      UTIL.newElement(
+        "BUTTON",
+        { type: "button" },
+        UTIL.newElement("SPAN.button", {}, "Update"),
+        function (el) {
+          el.onclick = function () {
+            loadColorPreviewDiv(layerName);
+          };
+          return el;
+        }
+      )
+    );
 
-    const histogram = UTIL.newElement ("DIV.histogram");
+    const histogram = UTIL.newElement("DIV.histogram");
     histogram.appendChild(header);
     histogram.appendChild(updateButton);
 
     const previewDiv = UTIL.newElement("DIV.histogram-preview");
-    previewDiv.id = "previewWrapper" + mapName;
+    previewDiv.id = "previewWrapper" + layerName;
     histogram.appendChild(previewDiv);
 
     setTimeout(
-      function (mapName) {
-        loadColorPreviewDiv(mapName, true);
+      function (layerName) {
+        loadColorPreviewDiv(layerName, true);
       },
       100,
-      mapName,
+      layerName
     );
     layerPrefs.appendChild(histogram);
 
-    return layerPrefs;
-  }
+    // Add the layer preferences to the end of the tab.
+    this.tabDiv.appendChild(layerPrefs);
+  };
 
-  function fillBreaksTable(
-    breakpts,
-    colorMapAxis,
-    layerName,
-    thresholds,
-    colors,
-  ) {
-    // Remove any existing elements.
-    while (breakpts.firstChild) {
-      breakpts.removeChild(breakpts.firstChild);
+  /**********************************************************************************
+   * METHOD showDataLayer: Show the specified data layer panel.
+   *
+   * If selLayer is specified, set the layer drop down to that value.
+   * Now show the selected layer panel and hide all others.
+   *
+   **********************************************************************************/
+  MapLayersTab.prototype.showDataLayer = function showDataLayer(selLayer) {
+    const layerBtn = document.getElementById("dlPref_list");
+    // Change the selected panel to selLayer if provided.
+    if (typeof selLayer != "undefined") {
+      layerBtn.value = selLayer;
     }
-    const elementIdPrefix =
-      layerName + (colorMapAxis == "data" ? "" : "_" + colorMapAxis);
-    for (let j = 0; j <= thresholds.length; j++) {
-      const threshId = elementIdPrefix + "_breakPt" + j;
-      const buttonsDiv = UTIL.newElement("DIV.colorTableButtons");
-      const addButton = UTIL.newSvgButton(
-        "icon-plus",
-        {
-          id: threshId + "_breakAdd",
-        },
-        function (el) {
-          el.onclick = (function (j, layerName) {
-            return function () {
-              startChange();
-              modifyDataLayerBreaks(colorMapAxis, layerName, j, "add");
-            };
-          })(j, layerName);
-          return el;
-        },
-      );
-      buttonsDiv.appendChild(addButton);
-      if (j == thresholds.length) {
-        UHM.setTableRow(breakpts, [null, null, buttonsDiv]);
-        break;
-      }
-      var threshold = thresholds[j];
-      var color = colors[j];
-      var colorId = elementIdPrefix + "_color" + j;
-      const breakPtInput =
-        "&nbsp;&nbsp;" + createNumericInput(KAID(threshId,"breakPref"), threshold, 8);
-      const colorInput = createColorInput(KAID(colorId,"colorPref"), color);
-      if (thresholds.length < 3) {
-        UHM.setTableRow(breakpts, [breakPtInput, colorInput, buttonsDiv]);
-      } else {
-        const delButton = UTIL.newSvgButton(
-          "icon-big-x",
-          {
-            id: threshId + "_breakDel",
-          },
-          function (el) {
-            el.onclick = (function (j, layerName) {
-              return function () {
-                startChange();
-                modifyDataLayerBreaks(colorMapAxis, layerName, j, "delete");
-              };
-            })(j, layerName);
-            return el;
-          },
-        );
-        buttonsDiv.appendChild(delButton);
-        UHM.setTableRow(breakpts, [breakPtInput, colorInput, buttonsDiv]);
-      }
+    // Show the selected panel. Hide all others.
+    for (let i = 0; i < layerBtn.length; i++) {
+      const prefs = KAE("layerPrefs", layerBtn.options[i].value);
+      prefs.style.display = layerBtn.options[i].selected ? "block" : "none";
     }
-  }
+  };
 
   /**********************************************************************************
    * FUNCTION getTempCM: This function  will create a dummy color map object to be
@@ -1230,8 +1138,8 @@
       tempCM.missing = colorMap.getMissingColor();
     } else {
       for (let i = 0; ; i++) {
-        const bp = KAE_OPT(mapName,"breakPt" + i,"breakPref");
-        const color = KAE_OPT(mapName,"color" + i,"colorPref");
+        const bp = getBreakPrefElement(mapName, "data", i);
+        const color = getColorPrefElement(mapName, "data", i);
         if (!bp || !color) {
           // Reached end of breakpoints and/or colors.
           break;
@@ -1239,7 +1147,7 @@
         tempCM.colors.push(color.value);
         tempCM.thresholds.push(bp.value);
       }
-      const missing = KAE(mapName,"missing","colorPref");
+      const missing = KAE(mapName, "data", "missing", "colorPref");
       tempCM.missing = missing.value;
     }
     return tempCM;
@@ -1323,35 +1231,31 @@
    * For continuous color preferences: it will interpolate the colors from the preset
    * based on the breakpoints.
    **********************************************************************************/
-  function setColorPrefsToPreset(
-    key,
-    preset,
-    axis,
-    type,
-  ) {
-    if (debug) console.log ("setColorPrefsToPreset:", {key, preset, axis, type });
+  function setColorPrefsToPreset(key, preset, axis, type) {
+    if (debug || debugColors) {
+      console.log("setColorPrefsToPreset:", { key, preset, axis, type });
+    }
     startChange();
-    const keyaxis = key + (typeof axis == "undefined" ? "" : "_" + axis);
 
     // Find the number of breakpoints/colors in the color preference.
     let numColorPrefs = 0;
-    while (KAE_OPT(keyaxis, "color" + ++numColorPrefs, "colorPref")) {}
+    while (getColorPrefElement(key, axis, ++numColorPrefs)) {}
 
     // Get that many colors.
-    const colors = type == "Discrete" ? preset.getColorArray(numColorPrefs) : getContColors ();
+    const colors = type == "discrete" ? preset.getColorArray(numColorPrefs) : getContColors();
 
     // Set the color preferences.
     for (let j = 0; j < numColorPrefs; j++) {
-      KAE(keyaxis,"color"+j,"colorPref").value = colors[j];
+      getColorPrefElement(key, axis, j).value = colors[j];
     }
-    KAE(keyaxis,"missing","colorPref").value = preset.missing;
+    KAE(key, axis, "missing", "colorPref").value = preset.missing;
 
     // Helper function.
     // Get the colors for a continuous color scheme (data layer or continuous covariate).
     function getContColors() {
       // Determine the total range of the breakpoints.
-      const firstBP = Number(KAE(keyaxis,"breakPt0","breakPref").value);
-      const lastBP = Number(KAE(keyaxis,"breakPt"+(numColorPrefs-1),"breakPref").value);
+      const firstBP = Number(getBreakPrefElement(key, axis, 0).value);
+      const lastBP = Number(getBreakPrefElement(key, axis, numColorPrefs - 1).value);
       const range = lastBP - firstBP;
 
       // Create a temporary color map for interpolating the color scheme colors.
@@ -1363,95 +1267,69 @@
         type: "continuous",
         colors: preset.colors,
         thresholds: thresh,
-        missing: preset.missing,
+        missing: preset.missing
       };
       const csTemp = new CMM.ColorMap(UPM.heatMap, colorScheme);
 
       // Get the interpolated colors at each breakpoint.
       const colors = [];
       for (let j = 0; j < numColorPrefs; j++) {
-        const breakpoint = KAE(keyaxis,"breakPt"+j,"breakPref").value;
-        colors.push (csTemp.getRgbToHex(csTemp.getColor(breakpoint)));
+        const breakpoint = getBreakPrefElement(key, axis, j).value;
+        colors.push(csTemp.getRgbToHex(csTemp.getColor(breakpoint)));
       }
       return colors;
     }
   }
 
-  /**********************************************************************************
-   * FUNCTION showDataLayerPanel: Show the specified data layer panel.
-   *
-   * If selLayer is specified, set the layer drop down to that value.
-   * Now show the selected layer panel and hide all others.
-   *
-   **********************************************************************************/
-  function showDataLayerPanel(selLayer) {
-    const layerBtn = document.getElementById("dlPref_list");
-    // Change the selected panel to selLayer if provided.
-    if (typeof selLayer != "undefined") {
-      layerBtn.value = selLayer;
-    }
-    // Show the selected panel. Hide all others.
-    for (let i = 0; i < layerBtn.length; i++) {
-      const layerVal = layerBtn.options[i].value;
-      const layerDiv = KAE("breakPrefs",layerVal);
-      const layerSel = layerBtn.options[i].selected;
-      if (layerSel) {
-        layerDiv.style.display = "block";
-      } else {
-        layerDiv.style.display = "none";
-      }
-    }
-  }
+  // Create an input for the specified layer's grid properties.
+  // Also includes the layer's selection color and gap color.
+  //
+  function createGridPropsInput(layerName) {
+    const gridProps = TABLE.createTable({ columns: 4 });
+    gridProps.content.style.width = "fit-content";
+    gridProps.addIndent();
+    const layer = UPM.heatMap.getDataLayers()[layerName];
 
-  /**********************************************************************************
-   * FUNCTION modifyDataLayerBreaks: Add or remove a breakpoint from a data layer
-   * color map.
-   *
-   * - action is either "add" or "delete"
-   * - pos is the index to perform the action.
-   **********************************************************************************/
-  function modifyDataLayerBreaks(colorMapAxis, colorMapName, pos, action) {
-    // Get the modified breaks and colors.
-    const newThresholds = getNewBreakThresholds(
-      colorMapAxis,
-      colorMapName,
-      pos,
-      action,
+    gridProps.addBlankSpace(3);
+    gridProps.addRow(
+      [
+        "Grid Lines:",
+        createColorInput(KAID(layerName, "gridColorPref"), layer.grid_color),
+        "Grid Show:",
+        createCheckBox(KAID(layerName, "gridPref"), layer.grid_show == "Y")
+      ],
+      { fontWeight: ["bold", "", "bold", ""] }
     );
-    const newColors = getNewBreakColors(
-      colorMapAxis,
-      colorMapName,
-      pos,
-      action,
+    gridProps.addRow(
+      [
+        "Selection Color:",
+        createColorInput(KAID(layerName, "selectionColorPref"), layer.selection_color),
+        "Gap Color:",
+        createColorInput(KAID(layerName, "gapColorPref"), layer.cuts_color)
+      ],
+      { fontWeight: ["bold", "", "bold", ""] }
     );
-    // Change them in the color map.
-    const colorMapMgr = UPM.heatMap.getColorMapManager();
-    const colorMap = colorMapMgr.getColorMap(colorMapAxis, colorMapName);
-    colorMap.setThresholds(newThresholds);
-    colorMap.setColors(newColors);
-    colorMapMgr.setColorMap(colorMapAxis, colorMapName, colorMap);
-    // Remove the old color breaks.
-    const oldBreakPrefs = getDataLayerBreakPrefs(colorMapAxis, colorMapName);
-    if (oldBreakPrefs) {
-      oldBreakPrefs.remove();
-    }
-    // Insert a new color break prefs.
-    if (colorMapAxis == "data") {
-      const newBreakPrefs = setupLayerBreaks(colorMapAxis, colorMapName);
-      newBreakPrefs.style.display = "block";
-      document.getElementById("layerPrefs").appendChild(newBreakPrefs);
-    } else {
-      setupCovariateBreaks(colorMapAxis, colorMapName);
-    }
+    return gridProps;
   }
 
-  // Return the break prefs element for the specified colorMapAxis and colorMapName.
-  function getDataLayerBreakPrefs(colorMapAxis, colorMapName) {
-    let breakPrefsId = "breakPrefs_" + colorMapName;
-    if (colorMapAxis != "data") breakPrefsId += "_" + colorMapAxis;
-    return document.getElementById(breakPrefsId);
+  // Reset the "grid" preferences for the specified layer from the given resetVals.
+  function resetGridPreferences(layerName, resetVals) {
+    KAE(layerName, "gridPref").checked = resetVals.grid_show == "Y";
+    KAE(layerName, "gridColorPref").value = resetVals.grid_color;
+    KAE(layerName, "selectionColorPref").value = resetVals.selection_color;
+    KAE(layerName, "gapColorPref").value = resetVals.cuts_color;
   }
 
+  // Apply the "grid" preferences for the specified layer.
+  function applyGridPreferences(layerName) {
+    UPM.heatMap.setLayerGridPrefs(
+      layerName,
+      KAE(layerName, "gridPref").checked,
+      KAE(layerName, "gridColorPref").value,
+      KAE(layerName, "selectionColorPref").value,
+      KAE(layerName, "gapColorPref").value
+    );
+  }
   // ===================================================================================
   // COVARIATE PREFERENCE PROCESSING FUNCTIONS
   //
@@ -1560,7 +1438,7 @@
 
     // Add a click handler for the entire tab.
     this.tabDiv.addEventListener("click", (ev) => {
-      if (debug) console.log("CovariatesPrefsTab: Click handler", { target: ev.target });
+      if (debug || debugEvents) console.log("CovariatesPrefsTab: Click handler", { target: ev.target });
       for (const target of this.targetGen(ev)) {
         if (target.id == "all_searchPref_btn") {
           // The user clicked on the filter covariates button.
@@ -1584,7 +1462,10 @@
 
     // Add a change handler for the entire tab.
     this.tabDiv.addEventListener("change", (ev) => {
-      if (debug) console.log("CovariatesPrefsTab: Change handler", { target: ev.target });
+      if (debug || debugEvents)
+        console.log("CovariatesPrefsTab: Change handler", {
+          target: ev.target
+        });
       for (const target of this.targetGen(ev)) {
         if (target.classList.contains("ngchm-upm-show-covariate")) {
           // A "Show" checkbox on a covariate row changed.
@@ -1618,7 +1499,10 @@
             this.showClassBreak();
           }
           break;
-        } else if (target.classList.contains('spectrumColor')) {
+        } else if (
+          target.classList.contains("spectrumColor") ||
+          target.classList.contains("ngchm-upm-input")
+        ) {
           startChange();
           break;
         }
@@ -1660,96 +1544,93 @@
    * containing a list of all covariate bars with informational data and user preferences
    * that are common to all bars (show/hide and size).
    **********************************************************************************/
-  CovariatesPrefsTab.prototype.setupAllClassesPrefs =
-    function setupAllClassesPrefs() {
-      const allprefs = UTIL.newElement("DIV#breakPrefs_ALL");
-      const prefContents = UTIL.newElement("TABLE#tableAllClasses");
+  CovariatesPrefsTab.prototype.setupAllClassesPrefs = function setupAllClassesPrefs() {
+    const allprefs = UTIL.newElement("DIV#breakPrefs_ALL");
+    const prefContents = UTIL.newElement("TABLE#tableAllClasses");
 
-      UHM.addBlankRow(prefContents);
-      const thisTab = this;
+    UHM.addBlankRow(prefContents);
+    const thisTab = this;
 
-      // Create a pair of buttons for adjusting the size of all covariates.
-      const buttons = UTIL.newElement("DIV.icon_group", {}, [
-        UTIL.newSvgButton(
-          "icon-minus",
-          {
-            dataset: {
-              tooltip:
-                "Decrease the size of all selected covariate bars by one",
-            },
-          },
-          function (el) {
-            el.onclick = function () {
-              startChange();
-              decrementAllHeights();
-            };
-            return el;
-          },
-        ),
-        UTIL.newSvgButton(
-          "icon-plus",
-          {
-            dataset: {
-              tooltip:
-                "Increase the size of all selected covariate bars by one",
-            },
-          },
-          function (el) {
-            el.onclick = function () {
-              startChange();
-              incrementAllHeights();
-            };
-            return el;
-          },
-        ),
-      ]);
-      // Add the pair of size adjusting buttons to the table.
-      UHM.setTableRow(prefContents, [
-        "&nbsp;&nbsp;&nbsp;",
-        "&nbsp;&nbsp;&nbsp;",
-        "<b>Adjust All Heights: </b>",
-        buttons,
-      ]);
-      // Create the header for the "Show" column.
-      // Includes the "all_showPref" checkbox.
-      const showHeader = UTIL.newFragment([
-        UTIL.newElement(
-          "INPUT#all_showPref",
-          {
-            name: "all_showPref",
-            type: "checkbox",
-          },
-          null,
-          function (el) {
-            el.onchange = function () {
-              startChange();
-              thisTab.showAllBars();
-            };
-            return el;
-          },
-        ),
-        UTIL.newElement("B", {}, UTIL.newElement("U", {}, "Show")),
-      ]);
-      // Add the header row to the table.
-      UHM.setTableRow(prefContents, [
-        "&nbsp;<u>" + "Covariate" + "</u>",
-        "<b><u>" + "Position" + "</u></b>",
-        showHeader,
-        "<b><u>" + "Height" + "</u></b>",
-      ]);
-      // Add a row to the table of all covariates that pass the filter.
-      const covariates = {
-        row: UPM.heatMap.getRowClassificationConfig(),
-        col: UPM.heatMap.getColClassificationConfig(),
-      };
-      for (const { axis, key } of UPM.heatMap.genAllCovars()) {
-        if (this.filterShow(key)) {
-          this.addCovariateRow(prefContents, key, axis, covariates[axis][key]);
+    // Create a pair of buttons for adjusting the size of all covariates.
+    const buttons = UTIL.newElement("DIV.icon_group", {}, [
+      UTIL.newSvgButton(
+        "icon-minus",
+        {
+          dataset: {
+            tooltip: "Decrease the size of all selected covariate bars by one"
+          }
+        },
+        function (el) {
+          el.onclick = function () {
+            startChange();
+            decrementAllHeights();
+          };
+          return el;
         }
-      }
-      allprefs.appendChild(prefContents);
-      return allprefs;
+      ),
+      UTIL.newSvgButton(
+        "icon-plus",
+        {
+          dataset: {
+            tooltip: "Increase the size of all selected covariate bars by one"
+          }
+        },
+        function (el) {
+          el.onclick = function () {
+            startChange();
+            incrementAllHeights();
+          };
+          return el;
+        }
+      )
+    ]);
+    // Add the pair of size adjusting buttons to the table.
+    UHM.setTableRow(prefContents, [
+      "&nbsp;&nbsp;&nbsp;",
+      "&nbsp;&nbsp;&nbsp;",
+      "<b>Adjust All Heights: </b>",
+      buttons
+    ]);
+    // Create the header for the "Show" column.
+    // Includes the "all_showPref" checkbox.
+    const showHeader = UTIL.newFragment([
+      UTIL.newElement(
+        "INPUT#all_showPref",
+        {
+          name: "all_showPref",
+          type: "checkbox"
+        },
+        null,
+        function (el) {
+          el.onchange = function () {
+            startChange();
+            thisTab.showAllBars();
+          };
+          return el;
+        }
+      ),
+      UTIL.newElement("B", {}, UTIL.newElement("U", {}, "Show"))
+    ]);
+    // Add the header row to the table.
+    UHM.setTableRow(prefContents, [
+      "&nbsp;<u>" + "Covariate" + "</u>",
+      "<b><u>" + "Position" + "</u></b>",
+      showHeader,
+      "<b><u>" + "Height" + "</u></b>"
+    ]);
+    // Add a row to the table of all covariates that pass the filter.
+    const covariates = {
+      row: UPM.heatMap.getRowClassificationConfig(),
+      col: UPM.heatMap.getColClassificationConfig()
     };
+    for (const { axis, key } of UPM.heatMap.genAllCovars()) {
+      if (this.filterShow(key)) {
+        this.addCovariateRow(prefContents, key, axis, covariates[axis][key]);
+      }
+    }
+    allprefs.appendChild(prefContents);
+    return allprefs;
+  };
 
   CovariatesPrefsTab.prototype.addCovariateRow = function addCovariateRow(
     prefContents,
@@ -1806,101 +1687,80 @@
     const keyaxis = key + "_" + axis;
     const colorMapMgr = UPM.heatMap.getColorMapManager();
     const colorMap = colorMapMgr.getColorMap(axis, key);
-    var thresholds = colorMap.getThresholds();
-    var colors = colorMap.getColors();
 
     // Create the covariatePrefPanel.
     const covariatePrefPanel = UTIL.newElement("DIV");
     covariatePrefPanel.id = "breakPrefs_" + keyaxis;
 
-    const prefTable = TABLE.createTable({ columns: 3 });
-    const prefContents = prefTable.content;
-    UHM.addBlankRow(prefContents);
+    // Create the bar type preferences for:
+    // - axis (fixed)
+    // - bar type (fixed: discrete or continuous)
+    // - plot type (color plot vs bar/scatter plot)
+    // For discrete covariates plot type is fixed (to color plot).
+    // For continuous covariates: plot type can be changed.
 
-    var pos = UTIL.toTitleCase(axis);
-    var typ = UTIL.toTitleCase(colorMap.getType());
-    const barPlot = UTIL.toTitleCase(classBar.bar_type.replace("_", " "));
-    UHM.setTableRow(prefContents, [
-      "&nbsp;Axis: ",
-      "<b>" + pos + "</b>",
-    ]);
+    const barTypePrefs = TABLE.createTable({ columns: 3 });
+    {
+      barTypePrefs.addBlankSpace();
+      barTypePrefs.addIndent();
 
-    UHM.setTableRow(prefContents, ["&nbsp;Covariate Type: ", "<b>" + typ + "</b>"]);
-    UHM.addBlankRow(prefContents, 2);
+      // Create fixed Axis: row.
+      const breakpointsType = UTIL.toTitleCase(colorMap.getType());
+      const barPlot = UTIL.toTitleCase(classBar.bar_type.replace("_", " "));
+      barTypePrefs.addRow(["Axis:", UTIL.toTitleCase(axis)], {
+        fontWeight: ["bold", "bold"]
+      });
 
-    if (typ === "Discrete") {
-      UHM.setTableRow(prefContents, [
-        "&nbsp;Bar Type: ",
-        "<b>" + barPlot + "</b>",
-      ]);
-    } else {
-      const typeOptionsId = KAID(key,axis,"barTypePref");
-      const typeOptionsSelect = UTIL.newElement(
-        "SELECT",
-        {
-          id: typeOptionsId,
-          name: typeOptionsId,
-        },
-        [
-          UTIL.newElement("OPTION", { value: "bar_plot" }, "Bar Plot"),
-          UTIL.newElement("OPTION", { value: "color_plot" }, "Color Plot"),
-          UTIL.newElement("OPTION", { value: "scatter_plot" }, "Scatter Plot"),
-        ],
-        function (el) {
-          el.onchange = function () {
-            startChange();
-            showPlotTypeProperties(key, axis);
-          };
-          el.value = "color_plot";
-          return el;
-        },
-      );
-      UHM.setTableRow(prefContents, [
-        "&nbsp;&nbsp;Bar Type:",
-        typeOptionsSelect,
-      ]);
-    }
+      barTypePrefs.addRow(["Covariate Type:", breakpointsType], {
+        fontWeight: ["bold", "bold"]
+      });
+      barTypePrefs.addBlankSpace(2);
 
-    UHM.addBlankRow(prefContents);
-    const prefTableCB = TABLE.createTable({ columns: 3 });
-    const prefContentsCB = prefTableCB.content;
-    if (typ === "Discrete") {
-      UHM.setTableRow(prefContentsCB, [
-        "&nbsp;<u>Category</u>",
-        "<b><u>" + "Color" + "</b></u>",
-      ]);
-      for (let j = 0; j < thresholds.length; j++) {
-        UHM.setTableRow(prefContentsCB, [
-          "&nbsp;&nbsp;" + thresholds[j],
-          createColorInput(KAID(keyaxis,"color"+j,"colorPref"), colors[j]),
-        ]);
+      if (breakpointsType === "Discrete") {
+        // Fixed bar plot type.  Only color_plot.
+        barTypePrefs.addRow(["Bar Type:", barPlot], {
+          fontWeight: ["bold", "bold"]
+        });
+      } else {
+        // Variable bar plot type: color_plot, bar_plot, or scatter_plot.
+        const typeOptionsId = KAID(key, axis, "barTypePref");
+        const typeOptionsSelect = UTIL.newElement(
+          "SELECT",
+          {
+            id: typeOptionsId,
+            name: typeOptionsId
+          },
+          [
+            UTIL.newElement("OPTION", { value: "bar_plot" }, "Bar Plot"),
+            UTIL.newElement("OPTION", { value: "color_plot" }, "Color Plot"),
+            UTIL.newElement("OPTION", { value: "scatter_plot" }, "Scatter Plot")
+          ],
+          function (el) {
+            el.onchange = function () {
+              startChange();
+              showPlotTypeProperties(key, axis);
+            };
+            el.value = "color_plot";
+            return el;
+          }
+        );
+        barTypePrefs.addRow(["Bar Type:", typeOptionsSelect]);
       }
-    } else {
-      UHM.setTableRow(prefContentsCB, [
-        "&nbsp;<u>Breakpoint</u>",
-        "<b><u>" + "Color" + "</b></u>",
-      ]);
-      UHM.addBlankRow(prefContentsCB);
-      const colorScheme = document.createElement("TABLE");
-      fillBreaksTable(colorScheme, axis, key, thresholds, colors);
-      UHM.setTableRow(prefContentsCB, [colorScheme], 3);
+      barTypePrefs.addBlankSpace();
     }
-    UHM.addBlankRow(prefContentsCB);
-    UHM.setTableRow(prefContentsCB, [
-      "&nbsp;Missing Color:",
-      createColorInput(KAID(keyaxis,"missing","colorPref"), colorMap.getMissingColor()),
-    ]);
 
-    prefTableCB.addBlankSpace(3);
-    PALETTES.addPredefinedPalettes(prefTableCB, key, setColorPrefsToPreset, axis, typ);
+    const colorScheme = createColorMapInput(key, axis, colorMap);
 
-    const helpprefsCB = UTIL.newElement("DIV");
-    helpprefsCB.id = KAID(keyaxis,"breakPrefsCB");
-    helpprefsCB.style.height = prefContentsCB.rows.length;
-    helpprefsCB.appendChild(prefContentsCB);
+    const presets = TABLE.createTable({ columns: 3 });
+    PALETTES.addPredefinedPalettes(presets, key, setColorPrefsToPreset, axis, colorMap.getType());
 
-    const helpprefsBB = UTIL.newElement("DIV");
-    helpprefsBB.id = KAID(keyaxis,"breakPrefsBB");
+    const colorPlotPrefs = UTIL.newElement("DIV");
+    colorPlotPrefs.id = KAID(keyaxis, "breakPrefsCB");
+    colorPlotPrefs.appendChild(colorScheme);
+    colorPlotPrefs.appendChild(presets.content);
+
+    const barScatterPlotPrefs = UTIL.newElement("DIV");
+    barScatterPlotPrefs.id = KAID(keyaxis, "breakPrefsBB");
     var prefContentsBB = document.createElement("TABLE");
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Lower Bound:",
@@ -1919,35 +1779,34 @@
       createColorInput (KAID(keyaxis,"bgColorPref"), classBar.bg_color),
     ]);
     UHM.addBlankRow(prefContentsBB);
-    helpprefsBB.appendChild(prefContentsBB);
+    barScatterPlotPrefs.appendChild(prefContentsBB);
 
-    covariatePrefPanel.appendChild(prefContents);
-    covariatePrefPanel.appendChild(helpprefsCB);
-    covariatePrefPanel.appendChild(helpprefsBB);
+    covariatePrefPanel.appendChild(barTypePrefs.content);
+    covariatePrefPanel.appendChild(colorPlotPrefs);
+    covariatePrefPanel.appendChild(barScatterPlotPrefs);
     if (classBar.bar_type === "color_plot") {
-      helpprefsBB.style.display = "none";
-      helpprefsCB.style.display = "block";
+      barScatterPlotPrefs.style.display = "none";
+      colorPlotPrefs.style.display = "block";
     } else {
-      helpprefsCB.style.display = "none";
-      helpprefsBB.style.display = "block";
+      colorPlotPrefs.style.display = "none";
+      barScatterPlotPrefs.style.display = "block";
     }
     return covariatePrefPanel;
   }
 
-  function setupCovariateBreaks(colorMapAxis, covariateName) {
-    const bars = UPM.heatMap.getAxisCovariateConfig(colorMapAxis);
-    const breakPrefs = setupClassBreaks(
-      covariateName,
-      colorMapAxis,
-      bars[covariateName],
-    );
+  // Create the preferences panel for the specified axis and covariate.
+  // Append it to the covariate preferences tab.
+  function addCovariatePrefs(axis, covariateName) {
+    const bars = UPM.heatMap.getAxisCovariateConfig(axis);
+    const breakPrefs = setupClassBreaks(covariateName, axis, bars[covariateName]);
 
     const classPrefs = document.getElementById("classPrefs");
     classPrefs.append(breakPrefs);
   }
 
-  // Show the color plot options or the bar/scatter plot options, depending
-  // on the value of the barType preference.
+  // Show the color plot options or the bar/scatter plot options for the
+  // specified axis and covariate, depending on the value of the covariate's
+  // barType preference.
   function showPlotTypeProperties(key, axis) {
     const bbDiv = KAE(key,axis,"breakPrefsBB"); // Color plot options.
     const cbDiv = KAE(key,axis,"breakPrefsCB"); // Bar and scatter plot options.
@@ -2154,66 +2013,61 @@
    * array containing a list of all options that are NOT being displayed.  This list
    * is used to hide rows on the ALL covariates panel.
    **********************************************************************************/
-  CovariatesPrefsTab.prototype.addClassPrefOptions =
-    function addClassPrefOptions() {
-      // Empty covariate dropdown.
-      const classSelect = document.getElementById("classPref_list");
-      classSelect.options.length = 0;
+  CovariatesPrefsTab.prototype.addClassPrefOptions = function addClassPrefOptions() {
+    // Empty covariate dropdown.
+    const classSelect = document.getElementById("classPref_list");
+    classSelect.options.length = 0;
 
-      // Initialize the lists of hidden covariates to return.
-      const hiddenOpts = {
-        row: new Array(),
-        col: new Array(),
-      };
+    // Initialize the lists of hidden covariates to return.
+    const hiddenOpts = {
+      row: new Array(),
+      col: new Array()
+    };
 
-      // Add an ALL option if there's at least one covariate bar.
-      if (this.hasClasses) {
-        classSelect.options[classSelect.options.length] = new Option(
-          "ALL",
-          "ALL",
-        );
-      }
+    // Add an ALL option if there's at least one covariate bar.
+    if (this.hasClasses) {
+      classSelect.options[classSelect.options.length] = new Option("ALL", "ALL");
+    }
 
-      // Add entries for creating new covariates.
-      // Moving a covariate between axes will be, in general:
-      // - very large and complex to implement, and
-      // - probably of very little practical utility.
-      // So, we won't provide that capability.
-      // So, the user has to create new covariate bars on the appropriate
-      // axis.
-      classSelect.options[classSelect.options.length] = new Option(
-        "Add new row covariate",
-        "NEW-row",
-      );
-      classSelect.options[classSelect.options.length] = new Option(
-        "Add new column covariate",
-        "NEW-col",
-      );
+    // Add entries for creating new covariates.
+    // Moving a covariate between axes will be, in general:
+    // - very large and complex to implement, and
+    // - probably of very little practical utility.
+    // So, we won't provide that capability.
+    // So, the user has to create new covariate bars on the appropriate
+    // axis.
+    classSelect.options[classSelect.options.length] = new Option(
+      "Add new row covariate",
+      "NEW-row"
+    );
+    classSelect.options[classSelect.options.length] = new Option(
+      "Add new column covariate",
+      "NEW-col"
+    );
 
-      // Add options for every covariate that passes the filter.
-      // Add covariates that don't pass the filter to hiddenOpts.
-      //
-      if (this.hasClasses) {
-        for (const { axis, key } of UPM.heatMap.genAllCovars()) {
-          if (this.filterShow(key)) {
-            const displayName =
-              key.length <= 20 ? key : key.substring(0, 17) + "...";
-            classSelect.options[classSelect.options.length] = new Option(
-              displayName,
-              key+"_"+axis,
-            );
-          } else {
-            hiddenOpts[axis].push(key);
-          }
-          const barTypeEl = KAE_OPT(key,axis,"barTypePref");
-          if (barTypeEl) {
-            const classBars = UPM.heatMap.getAxisConfig(axis).classifications;
-            barTypeEl.value = classBars[key].bar_type;
-          }
+    // Add options for every covariate that passes the filter.
+    // Add covariates that don't pass the filter to hiddenOpts.
+    //
+    if (this.hasClasses) {
+      for (const { axis, key } of UPM.heatMap.genAllCovars()) {
+        if (this.filterShow(key)) {
+          const displayName = key.length <= 20 ? key : key.substring(0, 17) + "...";
+          classSelect.options[classSelect.options.length] = new Option(
+            displayName,
+            key + "_" + axis
+          );
+        } else {
+          hiddenOpts[axis].push(key);
+        }
+        const barTypeEl = KAE_OPT(key, axis, "barTypePref");
+        if (barTypeEl) {
+          const classBars = UPM.heatMap.getAxisConfig(axis).classifications;
+          barTypeEl.value = classBars[key].bar_type;
         }
       }
-      return hiddenOpts;
-    };
+    }
+    return hiddenOpts;
+  };
 
   /**********************************************************************************
    * FUNCTION filterShow: The purpose of this function is to determine whether a
@@ -2309,7 +2163,7 @@
 
         if (bar.color_map.type == "discrete") {
           for (let i = 0; i < bar.color_map.colors.length; i++) {
-            KAE(key,axis,"color"+i,"colorPref").value = bar.color_map.colors[i];
+            getColorPrefElement(key, axis, i).value = bar.color_map.colors[i];
           }
         } else {
           KAE(key,axis,"barTypePref").value = bar.bar_type;
@@ -2320,9 +2174,28 @@
             KAE(key,axis,"fgColorPref").value = bar.fg_color;
             KAE(key,axis,"bgColorPref").value = bar.bg_color;
           } else {
-            // It's a normal color plot.
+            // It's a continuous color_plot.
             for (let i = 0; i < bar.color_map.colors.length; i++) {
-              KAE(key,axis,"color"+i,"colorPref").value = bar.color_map.colors[i];
+              const el = getColorPrefElement(key, axis, i);
+              if (el && !el.classList.contains("ngchm-upm-last-breakpoint")) {
+                // Set value and color of existing breakpoints.
+                el.value = bar.color_map.colors[i];
+                getBreakPrefElement(key, axis, i).value = bar.color_map.thresholds[i];
+              } else {
+                // If the user deleted one or more breakpoints, we need to recreate them.
+                const scheme = getColorScheme(axis, key);
+                scheme.setInsertPosn(scheme.findInsertPoint());
+                scheme.addBreakpoint(i, bar.color_map.thresholds[i], bar.color_map.colors[i], true);
+              }
+            }
+            // Remove any excess breakpoints (caused by adding breakpoints before clicking reset).
+            for (let i = bar.color_map.colors.length; ; i++) {
+              let el = getColorPrefElement(key, axis, i);
+              if (!el || el.classList.contains("ngchm-upm-last-breakpoint")) break;
+              while (el.tagName != "TR") {
+                el = el.parentElement;
+              }
+              el.remove();
             }
           }
         }
@@ -2335,9 +2208,16 @@
   CovariatesPrefsTab.prototype.applyTabPrefs = function applyCovariatesPrefs() {
     const colorMapMan = UPM.heatMap.getColorMapManager();
     for (const { axis, key } of UPM.heatMap.genAllCovars()) {
-      const showElement = KAE(key,axis,"showPref");
-      const heightElement = KAE(key,axis,"heightPref");
-      if (debug) console.log ("applyTabPrefs: ", { key, axis, show: showElement.value, height:heightElement.value, type: colorMapMan.getColorMap(axis,key).getType() });
+      const showElement = KAE(key, axis, "showPref");
+      const heightElement = KAE(key, axis, "heightPref");
+      if (debug || debugCovars)
+        console.log("applyTabPrefs: ", {
+          key,
+          axis,
+          show: showElement.value,
+          height: heightElement.value,
+          type: colorMapMan.getColorMap(axis, key).getType()
+        });
       if (heightElement.value === "0") {
         showElement.checked = false;
       }
@@ -2571,7 +2451,7 @@
     rowcolprefs.appendChild(prefContents);
 
     this.tabDiv.addEventListener("change", (ev) => {
-      if (debug) console.log("RowsColsTab: Change handler", { target: ev.target });
+      if (debug || debugEvents) console.log("RowsColsTab: Change handler", { target: ev.target });
       for (const target of this.targetGen(ev)) {
         if (["row_DendroShowPref", "col_DendroShowPref"].includes(target.id)) {
           startChange();
@@ -2581,8 +2461,9 @@
           KAE("row","TopItemsTextRow").style.display = KAE("row","TopItems").value == "--text-entry--" ? "" : "none";
         } else if (target.id == KAID("col","TopItems")) {
           startChange();
-          KAE("col","TopItemsTextRow").style.display = KAE("col","TopItems").value == "--text-entry--" ? "" : "none";
-        } else if (target.classList.contains('ngchm-upm-input')) {
+          KAE("col", "TopItemsTextRow").style.display =
+            KAE("col", "TopItems").value == "--text-entry--" ? "" : "none";
+        } else if (target.classList.contains("ngchm-upm-input")) {
           startChange();
           break;
         }
@@ -2895,4 +2776,280 @@
     return `<input class='ngchm-upm-input' name='${id}' id='${id}' value='${value}' maxlength='${maxlength}' size='${size}'>`;
   }
 
+  /**********************************************************************************
+   * The following functions implement color scheme inputs. Color scheme inputs are
+   * included in the preferences DIV for each layer in the mapLayersTab and in each
+   * covariate preferences DIV in the covariatesPrefsTab.
+   *
+   * Color scheme inputs are implemented as three-column tables (breakpoint/category,
+   * color, and control buttons) wrapped in a DIV.ngchm-upm-color-scheme.
+   *
+   * A colors scheme table consists of a header row, zero or more breakpoint rows, and
+   * a missing color row.
+   * - continuous color schemes allow breakpoints to be added or removed (if more than two).
+   * - discrete color schemes currently do not.
+   *
+   * Changes to a (continuous) color scheme may involve the addition or removal of
+   * breakpoints, either during editing or when resetting preferences.
+   *
+   * Class ColorSchemeTable is used to manage the three-column preferences tables. It is
+   * a subclass of TABLES.Table.  It adds the color scheme's "key" (data layer/covariate)
+   * and "axis" to the table's state, and includes specialized methods for adding
+   * breakpoints to the table and removing them.
+   *
+   **********************************************************************************/
+
+  // CLASS ColorSchemeTable
+  //
+  function ColorSchemeTable(axis, key, content) {
+    TABLE.Table.call(this, { columns: 3 }, content);
+    this.axis = axis;
+    this.key = key;
+    this.addIndent();
+  }
+
+  // Create a new colorSchemeTable and TABLE element for the specified axis and key.
+  function createColorScheme(axis, key) {
+    const table = new ColorSchemeTable(axis, key);
+    table.content.id = KAID("colorSchemeTable", axis, key);
+    table.content.style.width = "fit-content";
+    return table;
+  }
+
+  // Create a new colorSchemeTable for the specified axis and key to manage an existing
+  // TABLE element.
+  function getColorScheme(axis, key) {
+    return new ColorSchemeTable(axis, key, KAE("colorSchemeTable", axis, key));
+  }
+
+  // Create a new ColorMapInput for the specified key and axis, initialized by the
+  // provided colorMap.  Returns the DIV.ngchm-upm-color-scheme that wraps the
+  // TABLE element.
+  //
+  // Classes on the table rows (...-colorscheme-heading, ...-breakpoint, and ...-missing-breakpoint)
+  // can be used via CSS to control presentation.
+  //
+  function createColorMapInput(key, axis, colorMap) {
+    if (debug || debugColors) {
+      console.log("createColorMapInput", { key, axis });
+    }
+    // Create the colorSchemeDIV and enclosed TABLE element.
+    const colorSchemeDiv = UTIL.newElement("DIV.ngchm-upm-color-scheme");
+    const colorScheme = createColorScheme(axis, key);
+    colorSchemeDiv.appendChild(colorScheme.content);
+
+    // Determine if we are making a discrete or continuous color scheme.
+    const isDiscrete = colorMap.getType() === "discrete";
+
+    // Add the color table heading (of class ngchm-upm-colorscheme-heading).
+    const head = colorScheme.addRow([isDiscrete ? "Category" : "Breakpoint", "Color", ""], {
+      underline: [true, true, false],
+      fontWeight: ["bold", "bold", ""]
+    });
+    head.classList.add("ngchm-upm-colorscheme-heading");
+
+    // Add the breakpoint rows.
+    if (isDiscrete) {
+      // My current thoughts are that this will become much more
+      // similar to the continuous case.
+      colorScheme.addIndent();
+      const thresholds = colorMap.getThresholds();
+      const colors = colorMap.getColors();
+      for (let j = 0; j < thresholds.length; j++) {
+        colorScheme.addRow([
+          thresholds[j],
+          createColorInput(getColorPrefId(key, axis, j), colors[j])
+        ]);
+      }
+      colorScheme.popIndent();
+    } else {
+      colorScheme.fillContinuousColorTable(colorMap);
+    }
+
+    // Add the missing color row (of class ngchm-upm-missing-breakpoint).
+    const missing = colorScheme.addRow([
+      "Missing:",
+      createColorInput(KAID(key, axis, "missing", "colorPref"), colorMap.getMissingColor())
+    ]);
+    missing.classList.add("ngchm-upm-missing-breakpoint");
+
+    return colorSchemeDiv;
+  }
+
+  // Set the missing color preference for the current colorScheme to the
+  // specified color.
+  ColorSchemeTable.prototype.setMissingColor = function setMissingColor(color) {
+    KAE(this.key, this.axis, "missing", "colorPref").value = color;
+  };
+
+  // For a continuous color table, remove any existing breakpoints, and insert
+  // breakpoints for all the breakpoints in the specified colorMap.
+  ColorSchemeTable.prototype.fillContinuousColorTable = fillContinuousColorTable;
+  function fillContinuousColorTable(colorMap) {
+    const thresholds =
+      colorMap instanceof CMM.ColorMap ? colorMap.getThresholds() : colorMap.thresholds;
+    const colors = colorMap instanceof CMM.ColorMap ? colorMap.getColors() : colorMap.colors;
+    // Remove any existing breakpoints (excluding the "missing" breakpoint).
+    this.removeBreakpoints();
+    // Set where to insert the new breakpoints.
+    this.setInsertPosn(this.findInsertPoint());
+    // The new breakpoints can be deleted only if there are more than 2.
+    const deleteAble = thresholds.length > 2;
+    // Add the new breakpoints.
+    if (debug || debugColors) {
+      console.log("fillContinuousColorTable", {
+        colorMap,
+        thresholds,
+        colors,
+        deleteAble
+      });
+    }
+    for (let j = 0; j < thresholds.length; j++) {
+      this.addBreakpoint(j, thresholds[j], colors[j], deleteAble);
+    }
+    // Append a blank "breakpoint" with just an add button after all the actual breakpoints.
+    // Mark it with class ngchm-upm-last-breakpoint so we can find it again later.
+    const lastbp = this.addBreakpoint(thresholds.length, null, null, false);
+    lastbp.classList.add("ngchm-upm-last-breakpoint");
+    return;
+  }
+
+  // Remove all existing breakpoints (not including the "missing" breakpoint)
+  // from the colorSchemeTable.
+  ColorSchemeTable.prototype.removeBreakpoints = removeBreakpoints;
+  function removeBreakpoints() {
+    if (debug || debugColors) {
+      console.log("removeBreakpoints", { key: this.key, axis: this.axis });
+    }
+    const tbody = this.content.getElementsByTagName("tbody")[0];
+    if (tbody && tbody.children) {
+      const breakpoints = [];
+      // Find any old breakpoints.
+      for (const child of tbody.children) {
+        if (child.classList.contains("ngchm-upm-breakpoint")) {
+          breakpoints.push(child);
+        }
+      }
+      // Remove them.
+      for (const bp of breakpoints) {
+        tbody.removeChild(bp);
+      }
+    }
+  }
+
+  // Find the row before which to insert additional breakpoints.
+  // Two cases:
+  // 1. We are just missing one or more breakpoints and we
+  //    want to insert before the last-breakpoint (the empty
+  //    breakpoint for appending new rows).
+  // 2. All the breakpoints have been removed, including the
+  //    last-breakpoint, so we want to insert before the
+  //    missing-breakpoint.
+  ColorSchemeTable.prototype.findInsertPoint = function findInsertPoint() {
+    const tbody = this.content.getElementsByTagName("tbody")[0];
+    if (tbody && tbody.children) {
+      for (let ii = 0; ii < tbody.children.length; ii++) {
+        const classList = tbody.children[ii].classList;
+        if (
+          classList.contains("ngchm-upm-last-breakpoint") ||
+          classList.contains("ngchm-upm-missing-breakpoint")
+        ) {
+          return ii;
+        }
+      }
+    }
+    // Append to table.
+    return -1;
+  };
+
+  // Add a numeric breakpoint to the continuous colorSchemeTable.
+  // If threshold and color are null, we are inserting the special
+  // "last" breakpoint that just has an "add breakpoint" button.
+  ColorSchemeTable.prototype.addBreakpoint = addBreakpoint;
+  function addBreakpoint(index, threshold, color, deleteAble) {
+    const row = this.addRow([
+      // The breakpoint input.
+      threshold == null
+        ? ""
+        : createNumericInput(getBreakPrefId(this.key, this.axis, index), threshold, 8),
+      // The color input.
+      color == null ? "" : createColorInput(getColorPrefId(this.key, this.axis, index), color),
+      // The add/delete breakpoint buttons.
+      buttonBar(this, index, deleteAble)
+    ]);
+    row.classList.add("ngchm-upm-breakpoint");
+    return row;
+    // Helper functions.
+    // Create a breakpoint buttons bar.
+    function buttonBar(scheme, index, addDeleteButton) {
+      const buttons = UTIL.newElement("DIV.colorTableButtons");
+      buttons.appendChild(bpButton(scheme, index, "icon-plus", "add"));
+      if (addDeleteButton) {
+        buttons.appendChild(bpButton(scheme, index, "icon-big-x", "delete"));
+      }
+      return buttons;
+    }
+    // Create a breakpoint button.
+    function bpButton(scheme, index, icon, action) {
+      const button = UTIL.newSvgButton(icon);
+      button.id = KAID(scheme.key, scheme.axis, "breakPt" + index, action, "button");
+      button.onclick = CB(scheme.axis, scheme.key, index, action);
+      return button;
+    }
+    // Return a function to perform the specified action ("add" or "delete")
+    // for the breakpoint specified by axis, key, and index.
+    function CB(axis, key, index, action) {
+      return function () {
+        if (debug || debugEvents || debugColors) {
+          console.log ("Color scheme breakpoint button press", { axis, key, index, action });
+        }
+        startChange();
+        modifyDataLayerBreaks(axis, key, index, action);
+      };
+    }
+  }
+
+  /**********************************************************************************
+   * FUNCTION modifyDataLayerBreaks: Add or remove a breakpoint from a data layer
+   * color map.  Called when the user clicks on one of the add or remove breakpoint buttons.
+   *
+   * - action is either "add" or "delete"
+   * - pos is the breakpoint index at which to perform the action.
+   **********************************************************************************/
+  function modifyDataLayerBreaks(colorMapAxis, colorMapName, pos, action) {
+    // Get the modified breaks and colors.
+    if (debug || debugColors) {
+      console.log("modifyDataLayerBreaks", {
+        colorMapAxis,
+        colorMapName,
+        pos,
+        action
+      });
+    }
+    // Get the modified threholds and colors.
+    const newThresholds = getNewBreakThresholds(colorMapAxis, colorMapName, pos, action);
+    const newColors = getNewBreakColors(colorMapAxis, colorMapName, pos, action);
+
+    // Change them in the color map.
+    const colorMapMgr = UPM.heatMap.getColorMapManager();
+    const colorMap = colorMapMgr.getColorMap(colorMapAxis, colorMapName);
+    colorMap.setThresholds(newThresholds);
+    colorMap.setColors(newColors);
+    colorMapMgr.setColorMap(colorMapAxis, colorMapName, colorMap);
+
+    // Change them in the UI.
+    // This removes and recreates the entire panel containing the
+    // modified color scheme table.
+    if (colorMapAxis == "data") {
+      // Replace the layer preferences panel.
+      mapLayersTab.createLayerPreferences(colorMapName);
+    } else {
+      // Replace the covariate preferences panel.
+      const oldCovariatePrefs = KAE_OPT("breakPrefs", colorMapName, colorMapAxis);
+      if (oldCovariatePrefs) {
+        oldCovariatePrefs.remove();
+      }
+      addCovariatePrefs(colorMapAxis, colorMapName);
+    }
+  }
 })();

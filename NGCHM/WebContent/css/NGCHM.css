@@ -1227,6 +1227,45 @@ th.breakpointContainer {
     position: relative;
 }
 
+.ngchm-upm-layer-select {
+  color: var(--chm-table-color);
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding-left: 0.28em;
+  padding-top: 0.5em;
+  padding-bottom: 1em;
+}
+
+.ngchm-upm-layer-select label {
+  padding-right: 0.5em;
+}
+
+.ngchm-upm-layer-select select {
+  padding: 0.25em;
+}
+
+.ngchm-upm-color-scheme {
+  width: fit-content;
+  margin-bottom: 1em;
+}
+
+.ngchm-upm-breakpoint-heading td {
+  padding-bottom: 0.5em;
+}
+
+.ngchm-upm-breakpoint-heading td:last-child {
+  /* Ensure breakpoint buttons in this column have enough space. */
+  min-width: 45px;
+}
+
+.ngchm-upm-missing-breakpoint td {
+  padding-top: 0.5em;
+}
+
+.ngchm-upm-last-breakpoint .colorTableButtons {
+  height: 0px;
+}
+
 .colorTableButtons button {
     display: inline-block;
     padding: 4px;
