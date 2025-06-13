@@ -2926,12 +2926,12 @@
     function bpButton(scheme, index, icon, action) {
       const button = UTIL.newSvgButton(icon);
       button.id = KAID(scheme.key, scheme.axis, "breakPt" + index, action, "button");
-      button.onclick = CB(scheme.axis, scheme.key, index, action);
+      button.onclick = genCallback(scheme.axis, scheme.key, index, action);
       return button;
     }
     // Return a function to perform the specified action ("add" or "delete")
     // for the breakpoint specified by axis, key, and index.
-    function CB(axis, key, index, action) {
+    function genCallback(axis, key, index, action) {
       return function () {
         if (debug || debugEvents || debugColors) {
           console.log ("Color scheme breakpoint button press", { axis, key, index, action });
