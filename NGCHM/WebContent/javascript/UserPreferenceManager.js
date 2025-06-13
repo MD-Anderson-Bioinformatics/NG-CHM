@@ -1053,7 +1053,7 @@
     const paletteTable = TABLE.createTable({ columns: 3 });
     paletteTable.content.style.width = "fit-content";
     paletteTable.addIndent();
-    PALETTES.addPredefinedPalettes(paletteTable, layerName, setColorPrefsToPreset, "data", "");
+    PALETTES.addPredefinedPalettes(paletteTable, layerName, setColorPrefsToPreset, "data", "continuous");
     layerPrefs.appendChild(paletteTable.content);
 
     // 3. Create the grid properties table.
