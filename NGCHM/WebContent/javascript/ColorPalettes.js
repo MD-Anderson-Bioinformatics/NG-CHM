@@ -14,44 +14,46 @@
 
   const presetPalettes = new Map();
 
-  presetPalettes.set ("Data Layer", [
+  presetPalettes.set("continuous", [
     new ColorPreset({
       name: "Blue Red",
       colors: ["#0000FF", "#FFFFFF", "#FF0000"],
-      missing: "#000000",
-    }),
-    new ColorPreset({
-      name: "Rainbow",
-      colors: [
-        "#FF0000",
-        "#FF8000",
-        "#FFFF00",
-        "#00FF00",
-        "#0000FF",
-        "#FF00FF",
-      ],
-      missing: "#000000",
+      missing: "#000000"
     }),
     new ColorPreset({
       name: "Green Red",
       colors: ["#00FF00", "#000000", "#FF0000"],
-      missing: "#FFFFFF",
+      missing: "#ffffff"
+    }),
+    new ColorPreset({
+      name: "Rainbow",
+      colors: ["#FF0000", "#FF8000", "#FFFF00", "#00FF00", "#0000FF", "#FF00FF"],
+      missing: "#000000"
     }),
     new ColorPreset({
       name: "Greyscale",
-      colors: ["#000000", "#A0A0A0", "#FFFFFF"],
-      missing: "#EBEB00",
+      colors: ["#FFFFFF", "#000000"],
+      missing: "#FF0000"
     }),
     new ColorPreset({
       name: "Heat",
-      colors: [[0,100,100], [60,100,100], [60,0,100]].map(hsv => UTIL.hsvToRgb.apply(null,hsv)),
-      missing: "#000000",
+      colors: [
+        [0, 100, 100],
+        [60, 100, 100],
+        [60, 0, 100]
+      ].map((hsv) => UTIL.hsvToRgb.apply(null, hsv)),
+      missing: "#000000"
     }),
     new ColorPreset({
       name: "Heat 2",
-      colors: [[0,100,0], [0,100,100], [60,100,100], [60,0,100]].map(hsv => UTIL.hsvToRgb.apply(null,hsv)),
-      missing: "#000000",
-    }),
+      colors: [
+        [0, 100, 0],
+        [0, 100, 100],
+        [60, 100, 100],
+        [60, 0, 100]
+      ].map((hsv) => UTIL.hsvToRgb.apply(null, hsv)),
+      missing: "#00ffff"
+    })
   ]);
   presetPalettes.set("discrete", [
     new ColorPreset({
@@ -97,7 +99,7 @@
       missing: "#ffffff"
     }),
     new ColorPreset({
-      name: "Palette3 3",
+      name: "Palette 3",
       colors: [
         "#393b79",
         "#637939",
@@ -123,6 +125,12 @@
       missing: "#ffffff"
     }),
     new ColorPreset({
+      name: "Greyscale",
+      colors: [ "#ffffff", "#555555" ],
+      missing: "#ff0000",
+      interpolation: "ramp"
+    }),
+    new ColorPreset({
       name: "Cyan Yellow",
       colors: new Array(121).fill(0).map((v, idx) => UTIL.hsvToRgb(180 - idx, 80, 80)),
       missing: "#000000",
@@ -136,25 +144,8 @@
         [300, 100, 100]
       ].map((hsv) => UTIL.hsvToRgb.apply(null, hsv)),
       missing: "#000000",
-      interpolation: "ramp",
-    }),
-  ]);
-  presetPalettes.set ("continuous", [
-    new ColorPreset ({
-      name: "Greyscale",
-      colors: ["#FFFFFF", "#000000"],
-      missing: "#FF0000",
-    }),
-    new ColorPreset({
-      name: "Rainbow",
-      colors: ["#FF0000", "#FF8000", "#FFFF00", "#00FF00", "#0000FF", "#FF00FF"],
-      missing: "#000000",
-    }),
-    new ColorPreset ({
-      name: "Green Red",
-      colors: ["#00FF00", "#000000", "#FF0000"],
-      missing: "#ffffff",
-    }),
+      interpolation: "ramp"
+    })
   ]);
 
   function ColorPreset(props) {
@@ -179,8 +170,8 @@
           colors.push(this.colors[idx]);
         } else {
           const c1 = this.colors[idx];
-          const c2 = this.colors[idx+1];
-          colors.push(UTIL.blendTwoColors (this.colors[idx], this.colors[idx+1], posn-idx));
+          const c2 = this.colors[idx + 1];
+          colors.push(UTIL.blendTwoColors(c1, c2, posn - idx));
         }
       }
     } else {
@@ -194,8 +185,8 @@
   };
 
   // Add the predefined color schemes put here
-  // colorMapAxis: "row", "col", or undefined (for data layer),
-  // colorMapType: "discrete", "continuous", or undefined (for data layer)
+  // colorMapAxis: "row" or "col".
+  // colorMapType: "discrete" or "continuous".
   function addPredefinedPalettes(prefTable, key, clickHandler, colorMapAxis, colorMapType) {
     prefTable.addRow(["Choose a pre-defined color palette:"], { underline: true });
     prefTable.addBlankSpace();
@@ -205,7 +196,7 @@
     // Add rows of at most three palettes per row.
     const presets = [];
     const names = [];
-    for (const preset of presetPalettes.get(colorMapType? colorMapType : "Data Layer")) {
+    for (const preset of presetPalettes.get(colorMapType)) {
       presets.push(genPreset(key, clickHandler, preset, colorMapAxis, colorMapType));
       names.push(`&nbsp;<b>${preset.name}</b>`);
       if (names.length == 3) {
