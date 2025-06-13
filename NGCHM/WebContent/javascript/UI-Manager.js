@@ -42,10 +42,7 @@
     PIM.requestDataFromPlugins();
     var success = true;
     if (heatMap.source() === MMGR.WEB_SOURCE) {
-      success = MMGR.zipMapProperties(
-        heatMap,
-        JSON.stringify(heatMap.mapConfig),
-      );
+      success = MMGR.zipMapProperties(heatMap, JSON.stringify(heatMap.mapConfig));
       showViewerSaveNotification(heatMap);
       UHM.messageBoxCancel();
     } else {
@@ -59,7 +56,7 @@
           MMGR.zipSaveMapProperties(
             heatMap,
             addSaveStateToMapConfig(),
-            UHM.msgBoxProgressMeter,
+            UHM.msgBoxProgressMeter
           ).then((success) => {
             UHM.messageBoxCancel();
             if (success) {
@@ -119,7 +116,7 @@
       const pane = SUM.chmElement && SUM.chmElement.parentElement;
       if (pane && pane.classList.contains("pane")) {
         mapConfig.panel_configuration[pane.id] = {
-          type: "summaryMap",
+          type: "summaryMap"
         };
       }
     }
@@ -145,20 +142,17 @@
     }
 
     function saveSelectionsToMapConfig() {
-      mapConfig.panel_configuration["selections"] =
-        SRCHSTATE.getSearchSaveState();
+      mapConfig.panel_configuration["selections"] = SRCHSTATE.getSearchSaveState();
       if (SUM.rowDendro) {
         const bars = SUM.rowDendro.saveSelectedBars();
         if (bars.length > 0) {
-          mapConfig.panel_configuration["selections"]["selectedRowDendroBars"] =
-            bars;
+          mapConfig.panel_configuration["selections"]["selectedRowDendroBars"] = bars;
         }
       }
       if (SUM.colDendro) {
         const bars = SUM.colDendro.saveSelectedBars();
         if (bars.length > 0) {
-          mapConfig.panel_configuration["selections"]["selectedColDendroBars"] =
-            bars;
+          mapConfig.panel_configuration["selections"]["selectedColDendroBars"] = bars;
         }
       }
     }
@@ -178,16 +172,14 @@
     UHM.setMessageBoxText(text);
     addSaveToNgchmButton(() => {
       UHM.showMsgBoxProgressBar();
-      MMGR.zipSaveMapProperties(
-        heatMap,
-        addSaveStateToMapConfig(),
-        UHM.msgBoxProgressMeter,
-      ).then((success) => {
-        UHM.messageBoxCancel();
-        if (success) {
-          showViewerSaveNotification(heatMap);
+      MMGR.zipSaveMapProperties(heatMap, addSaveStateToMapConfig(), UHM.msgBoxProgressMeter).then(
+        (success) => {
+          UHM.messageBoxCancel();
+          if (success) {
+            showViewerSaveNotification(heatMap);
+          }
         }
-      });
+      );
     });
     addCancelSaveButton();
     UHM.displayMessageBox();
@@ -248,10 +240,7 @@
     UIMGR.changeDataLayer = function changeDataLayer(change) {
       const heatMap = MMGR.getHeatMap();
       // Associated the flick element with an AccessWindow for the summary level for this layer.
-      summaryWindows[change.flickElement] = getSummaryAccessWindow(
-        heatMap,
-        change.layer,
-      );
+      summaryWindows[change.flickElement] = getSummaryAccessWindow(heatMap, change.layer);
       // Redraw the UI if the currently visible layer changed.
       if (change.redrawRequired) {
         heatMap.setCurrentDL(change.layer);
@@ -266,16 +255,10 @@
     UIMGR.initializeSummaryWindows = function (heatMap) {
       const flickState = FLICK.getFlickState();
       const first = flickState.shift();
-      summaryWindows[first.element] = getSummaryAccessWindow(
-        heatMap,
-        first.layer,
-      );
+      summaryWindows[first.element] = getSummaryAccessWindow(heatMap, first.layer);
       setTimeout(() => {
         flickState.forEach((alt) => {
-          summaryWindows[alt.element] = getSummaryAccessWindow(
-            heatMap,
-            alt.layer,
-          );
+          summaryWindows[alt.element] = getSummaryAccessWindow(heatMap, alt.layer);
         });
       });
     };
@@ -287,7 +270,7 @@
         firstRow: 1,
         firstCol: 1,
         numRows: heatMap.getNumRows(MAPREP.SUMMARY_LEVEL),
-        numCols: heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL),
+        numCols: heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL)
       });
     }
   })();
@@ -309,10 +292,7 @@
       UIMGR.initializeSummaryWindows(heatMap);
 
       //If any new configs were added to the heatmap's config, save the config file.
-      if (
-        MMGR.mapUpdatedOnLoad(heatMap) &&
-        heatMap.getMapInformation().read_only !== "Y"
-      ) {
+      if (MMGR.mapUpdatedOnLoad(heatMap) && heatMap.getMapInformation().read_only !== "Y") {
         var success = autoSaveHeatMap(heatMap);
       }
       heatMap.setSelectionColors();
@@ -326,9 +306,7 @@
         }
         if (DVW.detailMaps.length > 0) {
           for (let i = 0; i < DVW.detailMaps.length; i++) {
-            PANE.emptyPaneLocation(
-              PANE.findPaneLocation(DVW.detailMaps[i].chm),
-            );
+            PANE.emptyPaneLocation(PANE.findPaneLocation(DVW.detailMaps[i].chm));
           }
         }
       }
@@ -397,7 +375,7 @@
           //SRCH.showSearchResults,
           SRCH.redrawSearchResults();
         },
-        callDetailDrawFunction: DET.callDetailDrawFunction,
+        callDetailDrawFunction: DET.callDetailDrawFunction
       });
       const initialLoc = PANE.initializePanes();
       const panelConfig = MMGR.getHeatMap().getPanelConfiguration();
@@ -405,12 +383,7 @@
         RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig);
       } else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
         const s = PANE.splitPane(false, initialLoc);
-        PANE.setPanePropWidths(
-          MMGR.getHeatMap().getDividerPref(),
-          s.child2,
-          s.child1,
-          s.divider,
-        );
+        PANE.setPanePropWidths(MMGR.getHeatMap().getDividerPref(), s.child2, s.child1, s.divider);
         SMM.switchPaneToSummary(PANE.findPaneLocation(s.child2));
         setTimeout(() => {
           DMM.switchPaneToDetail(PANE.findPaneLocation(s.child1));
@@ -441,11 +414,7 @@
     setDragPanels();
 
     // See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
-    if (
-      UTIL.mapId === "" &&
-      UTIL.mapNameRef === "" &&
-      MMGR.embeddedMapName === null
-    ) {
+    if (UTIL.mapId === "" && UTIL.mapNameRef === "" && MMGR.embeddedMapName === null) {
       //In local mode, need user to select the zip file with data (required by browser security)
       var chmFileItem = document.getElementById("fileButton");
       document.getElementById("menuFileOpen").style.display = "";
@@ -477,7 +446,7 @@
         MMGR.createHeatMap(dataSource, mapName, [
           UIMGR.configurePanelInterface,
           SUM.processSummaryMapUpdate,
-          DET.processDetailMapUpdate,
+          DET.processDetailMapUpdate
         ]);
       }
     }
@@ -486,7 +455,7 @@
       .addEventListener(
         "wheel",
         DEV.handleScroll,
-        UTIL.passiveCompat({ capture: false, passive: false }),
+        UTIL.passiveCompat({ capture: false, passive: false })
       );
     initializeKeyNavigation();
   };
@@ -598,12 +567,8 @@
     MMGR.createHeatMap(
       MMGR.FILE_SOURCE,
       "",
-      [
-        UIMGR.configurePanelInterface,
-        SUM.processSummaryMapUpdate,
-        DET.processDetailMapUpdate,
-      ],
-      chmFile,
+      [UIMGR.configurePanelInterface, SUM.processSummaryMapUpdate, DET.processDetailMapUpdate],
+      chmFile
     );
     if (typeof sizeBuilderView !== "undefined" && sizeBuilderView) {
       UTIL.showDetailPane = false;
@@ -781,7 +746,7 @@
     UHM.setNewMessageBoxButton(msgBox, "close", {
       type: "text",
       text: "Close",
-      tooltip: "Closes this dialog",
+      tooltip: "Closes this dialog"
     });
     UHM.displayNewMessageBox(msgBox);
   }
@@ -800,9 +765,7 @@
     }
     UHM.initMessageBox();
     UHM.setMessageBoxHeader("About NG-CHM Viewer");
-    const mapVersion = isMapLoaded
-      ? heatMap.getMapInformation().version_id
-      : "N/A";
+    const mapVersion = isMapLoaded ? heatMap.getMapInformation().version_id : "N/A";
     const messageBox = UHM.getMessageTextBox();
     messageBox.style.width = "40em";
     let text =
@@ -810,23 +773,19 @@
     messageBox.innerHTML = text;
 
     messageBox.appendChild(
-      UTIL.newElement(
-        "P",
-        {},
-        "Links to additional NG-CHM information and help:",
-      ),
+      UTIL.newElement("P", {}, "Links to additional NG-CHM information and help:")
     );
     const links = UTIL.newElement("UL");
     addLink(
       links,
       "https://bioinformatics.mdanderson.org/public-software/ngchm/",
-      "NG-CHM Project Page",
+      "NG-CHM Project Page"
     );
     addLink(links, "https://www.ngchm.net", "NG-CHM News and Updates");
     addLink(
       links,
       "https://bioinformatics.mdanderson.org/public-software/ngchm/#video-tutorials",
-      "Video tutorials",
+      "Video tutorials"
     );
     messageBox.appendChild(links);
 
@@ -847,29 +806,29 @@
           "A",
           {
             href: "https://doi.org/10.12688/f1000research.20590.2",
-            target: "_blank",
+            target: "_blank"
           },
-          ["F1000Research 2019, 8 (ISCB Comm J):1750"],
+          ["F1000Research 2019, 8 (ISCB Comm J):1750"]
         ),
-        ".",
-      ]),
+        "."
+      ])
     );
     messageBox.appendChild(
       UTIL.newElement("P", {}, [
-        "The NG-CHM Viewer can be downloaded for stand-alone use. It is also incorporated into a variety of other platforms.",
-      ]),
+        "The NG-CHM Viewer can be downloaded for stand-alone use. It is also incorporated into a variety of other platforms."
+      ])
     );
     UHM.setMessageBoxButton(
       "videos",
       {
         type: "text",
         text: "Videos",
-        tooltip: "Shows NG-CHM Tutorial Videos",
+        tooltip: "Shows NG-CHM Tutorial Videos"
       },
       function () {
         UHM.messageBoxCancel();
         showTutorialVideos();
-      },
+      }
     );
     UHM.setMessageBoxButton(
       "tour",
@@ -878,36 +837,36 @@
         text: "Take a tour",
         tooltip: "Displays an interactive tour of the user interface elements",
         disabled: !isMapLoaded,
-        disabledReason: "no map is loaded",
+        disabledReason: "no map is loaded"
       },
       function () {
         UHM.messageBoxCancel();
         TOUR.showTour(null);
-      },
+      }
     );
     UHM.setMessageBoxButton(
       "viewer",
       {
         type: "text",
         text: "Download viewer",
-        tooltip: "Downloads a copy of the NG-CHM viewer",
+        tooltip: "Downloads a copy of the NG-CHM viewer"
       },
       function () {
         UHM.messageBoxCancel();
         MMGR.zipAppDownload();
-      },
+      }
     );
     UHM.setMessageBoxButton(
       "showkeys",
       {
         type: "text",
         text: "Show Keys",
-        tooltip: "Display keyboard controls",
+        tooltip: "Display keyboard controls"
       },
       function () {
         UHM.messageBoxCancel();
         UIMGR.showKeysDialog();
-      },
+      }
     );
     UHM.setMessageBoxButton(
       "plugins",
@@ -916,24 +875,24 @@
         text: "Show Plugins",
         tooltip: "Displays details of loaded/available plugins",
         disabled: !isMapLoaded,
-        disabledReason: "no map is loaded",
+        disabledReason: "no map is loaded"
       },
       function () {
         UHM.messageBoxCancel();
         localFunctions.openLinkoutHelp();
-      },
+      }
     );
     UHM.setMessageBoxButton("close", {
       type: "text",
       text: "Close",
       tooltip: "Closes this dialog",
-      default: true,
+      default: true
     });
     UHM.displayMessageBox();
 
     function addLink(links, href, text) {
       const LI = UTIL.newElement("LI", {}, [
-        UTIL.newElement("A", { href, target: "_blank" }, [text]),
+        UTIL.newElement("A", { href, target: "_blank" }, [text])
       ]);
       links.appendChild(LI);
     }
@@ -941,7 +900,7 @@
     function addVersion(versions, name, value) {
       const row = UTIL.newElement("TR", {}, [
         UTIL.newElement("TD", {}, name + ":"),
-        UTIL.newElement("TD", {}, value),
+        UTIL.newElement("TD", {}, value)
       ]);
       versions.appendChild(row);
     }
@@ -1013,7 +972,7 @@
           UHM.setMessageBoxButton(
             "saveOriginal",
             { type: "text", text: "Save original" },
-            saveHeatMapToServer,
+            saveHeatMapToServer
           );
           addCancelSaveButton();
         }
@@ -1039,9 +998,9 @@
         type: "text",
         text: "Save to .ngchm",
         disableOnClick: true,
-        default: true,
+        default: true
       },
-      saveFunc || saveHeatMapToNgchm,
+      saveFunc || saveHeatMapToNgchm
     );
   }
 
@@ -1049,18 +1008,14 @@
   //
   // Executes UHM.messageBoxCancel when clicked by default.
   function addCancelSaveButton() {
-    UHM.setMessageBoxButton(
-      "cancelSave",
-      { type: "text", text: "Cancel" },
-      (button) => {
-        if (UHM.isProgressBarVisible()) {
-          UHM.cancelOperation();
-          button.disabled = true;
-        } else {
-          UHM.messageBoxCancel();
-        }
-      },
-    );
+    UHM.setMessageBoxButton("cancelSave", { type: "text", text: "Cancel" }, (button) => {
+      if (UHM.isProgressBarVisible()) {
+        UHM.cancelOperation();
+        button.disabled = true;
+      } else {
+        UHM.messageBoxCancel();
+      }
+    });
   }
 
   const aboutButton = document.getElementById("introButton");
@@ -1162,11 +1117,7 @@
           tdName.style.fontWeight = "bold";
           tdName.innerHTML =
             typeof plugin.site !== "undefined"
-              ? "<a href='" +
-                plugin.site +
-                "' target='_blank'>" +
-                plugin.name +
-                "</a>"
+              ? "<a href='" + plugin.site + "' target='_blank'>" + plugin.name + "</a>"
               : plugin.name;
           var tdDesc = tr.insertCell(2);
           tdDesc.className = "chmTblCell";
@@ -1181,8 +1132,7 @@
         tr.className = "chmTblRow";
         var tdLogo = tr.insertCell(0);
         tdLogo.className = "chmTblCell";
-        tdLogo.innerHTML =
-          "<B>NO AVAILABLE PLUGINS WERE FOUND FOR THIS HEATMAP</B>";
+        tdLogo.innerHTML = "<B>NO AVAILABLE PLUGINS WERE FOUND FOR THIS HEATMAP</B>";
       }
       return pluginTbl;
     }
@@ -1234,11 +1184,7 @@
         tdName.style.fontWeight = "bold";
         tdName.innerHTML =
           typeof plugin.site !== "undefined"
-            ? "<a href='" +
-              plugin.site +
-              "' target='_blank'>" +
-              plugin.name +
-              "</a>"
+            ? "<a href='" + plugin.site + "' target='_blank'>" + plugin.name + "</a>"
             : plugin.name;
         var tdDesc = tr.insertCell(2);
         tdDesc.className = "chmTblCell";
@@ -1253,7 +1199,7 @@
      * Row or column label types are passed into this function.
      **********************************************************************************/
     function isPluginFound(plugin, labels) {
-      labels = labels.map ((type) => type.type);
+      labels = labels.map((type) => type.type);
       var pluginFound = false;
       if (plugin.name === "TCGA") {
         for (var l = 0; l < labels.length; l++) {
@@ -1299,7 +1245,7 @@
     function isPluginMatrix(plugin) {
       if (typeof plugin.linkouts !== "undefined") {
         for (const linkout of plugin.linkouts) {
-          if (LNK.isMatrixLinkout (linkout.menuEntry)) {
+          if (LNK.isMatrixLinkout(linkout.menuEntry)) {
             return true;
           }
         }
@@ -1417,9 +1363,7 @@
     if (mapItem.selectedIsDendrogram) {
       mapItem.selectedIsDendrogram = false;
       if (mapItem == DVW.primaryMap) {
-        const dendro = mapItem.mode.startsWith("RIBBONV")
-          ? SUM.rowDendro
-          : SUM.colDendro;
+        const dendro = mapItem.mode.startsWith("RIBBONV") ? SUM.rowDendro : SUM.colDendro;
         if (dendro) {
           dendro.clearSelectedRegion();
         }
@@ -1437,47 +1381,34 @@
       "<br>" +
         "The summary panel dendrogram selection was lost due to keyboard movement of the focus region. " +
         "Click UNDO to undo the keyboard movement and restore the dendrogram selection. " +
-        "Otherwise, hit Enter or click OK to just close this dialog.",
+        "Otherwise, hit Enter or click OK to just close this dialog."
     );
     const undoFunction = function undoFunction(restoreInfo) {
       if (debug)
-        console.log(
-          "Undoing keyboard movement and dendrogram selection loss.",
-          restoreInfo,
-        );
+        console.log("Undoing keyboard movement and dendrogram selection loss.", restoreInfo);
       UHM.messageBoxCancel();
       restoreInfo.mapItem.selectedIsDendrogram = true;
       restoreInfo.mapItem.selectedStart = restoreInfo.selectedStart;
       restoreInfo.mapItem.selectedStop = restoreInfo.selectedStop;
       DET.callDetailDrawFunction(restoreInfo.mode, restoreInfo.mapItem);
       if (restoreInfo.mapItem == DVW.primaryMap) {
-        const dendro = restoreInfo.mode.startsWith("RIBBONV")
-          ? SUM.rowDendro
-          : SUM.colDendro;
+        const dendro = restoreInfo.mode.startsWith("RIBBONV") ? SUM.rowDendro : SUM.colDendro;
         if (dendro) {
-          dendro.setRibbonModeBar(
-            restoreInfo.selectedStart,
-            restoreInfo.selectedStop,
-          );
+          dendro.setRibbonModeBar(restoreInfo.selectedStart, restoreInfo.selectedStop);
         }
       }
     }.bind(null, {
       mapItem: mapItem,
       mode: mapItem.mode,
       selectedStart: mapItem.selectedStart,
-      selectedStop: mapItem.selectedStop,
+      selectedStop: mapItem.selectedStop
     });
-    UHM.setMessageBoxButton(
-      "undo",
-      { type: "text", text: "Undo" },
-      "Undo button",
-      undoFunction,
-    );
+    UHM.setMessageBoxButton("undo", { type: "text", text: "Undo" }, "Undo button", undoFunction);
     UHM.setMessageBoxButton(
       "ok",
       { type: "text", text: "OK", default: true },
       "OK button",
-      UHM.messageBoxCancel,
+      UHM.messageBoxCancel
     );
     UHM.displayMessageBox();
   }
@@ -1496,14 +1427,14 @@
       "Move the primary normal, vertical, or restricted vertical ribbon view one column to the left",
       (e, mapItem) => {
         mapItem.currentCol--;
-      },
+      }
     );
     dvAction(
       "MoveLeftPage",
       "Move the primary normal, vertical, or restricted vertical ribbon view one page to the left",
       (e, mapItem) => {
         mapItem.currentCol -= mapItem.dataPerRow;
-      },
+      }
     );
     dvAction(
       "MoveRibbonLeft",
@@ -1514,17 +1445,14 @@
           mapItem.currentCol > 1
         ) {
           mapItem.currentCol -= 1;
-        } else if (
-          mapItem.mode.startsWith("RIBBONH") &&
-          mapItem.selectedStart > 1
-        ) {
+        } else if (mapItem.mode.startsWith("RIBBONH") && mapItem.selectedStart > 1) {
           mapItem.currentCol -= 1;
           clearSelectedDendrogram(mapItem);
           mapItem.selectedStart -= 1;
           mapItem.selectedStop -= 1;
           DET.callDetailDrawFunction(mapItem.mode);
         }
-      },
+      }
     );
     dvAction(
       "ExpandRibbonLeft",
@@ -1537,21 +1465,21 @@
           mapItem.dataPerRow += 1;
           DET.callDetailDrawFunction(mapItem.mode);
         }
-      },
+      }
     );
     dvAction(
       "MoveRightOne",
       "Move the primary normal, vertical, or restricted vertical ribbon view one column to the right",
       (e, mapItem) => {
         mapItem.currentCol++;
-      },
+      }
     );
     dvAction(
       "MoveRightPage",
       "Move the primary normal, vertical, or restricted vertical ribbon view one page to the right",
       (e, mapItem) => {
         mapItem.currentCol += mapItem.dataPerRow;
-      },
+      }
     );
     dvAction(
       "MoveRibbonRight",
@@ -1566,8 +1494,7 @@
         } else if (
           mapItem.mode.startsWith("RIBBONH") &&
           mapItem.selectedStart > 0 &&
-          mapItem.selectedStop <
-            mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)
+          mapItem.selectedStop < mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)
         ) {
           mapItem.currentCol += 1;
           clearSelectedDendrogram(mapItem);
@@ -1575,7 +1502,7 @@
           mapItem.selectedStop += 1;
           DET.callDetailDrawFunction(mapItem.mode);
         }
-      },
+      }
     );
     dvAction(
       "ExpandRibbonRight",
@@ -1584,29 +1511,28 @@
         if (
           mapItem.mode.startsWith("RIBBONH") &&
           mapItem.selectedStart > 0 &&
-          mapItem.selectedStop <
-            mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)
+          mapItem.selectedStop < mapItem.heatMap.getNumColumns(MAPREP.DETAIL_LEVEL)
         ) {
           clearSelectedDendrogram(mapItem);
           mapItem.selectedStop += 1;
           mapItem.dataPerRow += 1;
           DET.callDetailDrawFunction(mapItem.mode);
         }
-      },
+      }
     );
     dvAction(
       "MoveUpOne",
       "Move the primary normal, horizontal, or restricted horizontal ribbon view up one row",
       (e, mapItem) => {
         mapItem.currentRow--;
-      },
+      }
     );
     dvAction(
       "MoveUpPage",
       "Move the primary normal, horizontal, or restricted horizontal ribbon view up one page",
       (e, mapItem) => {
         mapItem.currentRow -= mapItem.dataPerCol;
-      },
+      }
     );
     dvAction(
       "MoveRibbonUp",
@@ -1617,17 +1543,14 @@
           mapItem.currentRow > 1
         ) {
           mapItem.currentRow -= 1;
-        } else if (
-          mapItem.mode.startsWith("RIBBONV") &&
-          mapItem.selectedStart > 1
-        ) {
+        } else if (mapItem.mode.startsWith("RIBBONV") && mapItem.selectedStart > 1) {
           mapItem.currentRow -= 1;
           clearSelectedDendrogram(mapItem);
           mapItem.selectedStart -= 1;
           mapItem.selectedStop -= 1;
           DET.callDetailDrawFunction(mapItem.mode);
         }
-      },
+      }
     );
     dvAction(
       "ExpandRibbonUp",
@@ -1640,21 +1563,21 @@
           mapItem.dataPerCol += 1;
           DET.callDetailDrawFunction(mapItem.mode);
         }
-      },
+      }
     );
     dvAction(
       "MoveDownOne",
       "Move the primary normal, horizontal, or restricted horizontal view down one row",
       (e, mapItem) => {
         mapItem.currentRow++;
-      },
+      }
     );
     dvAction(
       "MoveDownPage",
       "Move the primary normal, horizontal, or restricted horizontal view down one page",
       (e, mapItem) => {
         mapItem.currentRow += mapItem.dataPerCol;
-      },
+      }
     );
     dvAction(
       "MoveRibbonDown",
@@ -1662,8 +1585,7 @@
       (e, mapItem) => {
         if (
           (mapItem.mode == "NORMAL" || mapItem.mode.startsWith("RIBBONH")) &&
-          mapItem.currentRow + mapItem.dataPerCol <
-            mapItem.heatMap.getNumRows(MAPREP.DETAIL_LEVEL)
+          mapItem.currentRow + mapItem.dataPerCol < mapItem.heatMap.getNumRows(MAPREP.DETAIL_LEVEL)
         ) {
           mapItem.currentRow += 1;
         } else if (
@@ -1677,7 +1599,7 @@
           mapItem.selectedStop += 1;
           DET.callDetailDrawFunction(mapItem.mode);
         }
-      },
+      }
     );
     dvAction(
       "ExpandRibbonDown",
@@ -1693,15 +1615,11 @@
           mapItem.dataPerCol += 1;
           DET.callDetailDrawFunction(mapItem.mode);
         }
-      },
+      }
     );
-    dvAction(
-      "ZoomIn",
-      "Zoom the primary detail view in one step",
-      (e, mapItem) => {
-        DEV.zoomAnimation(mapItem);
-      },
-    );
+    dvAction("ZoomIn", "Zoom the primary detail view in one step", (e, mapItem) => {
+      DEV.zoomAnimation(mapItem);
+    });
     dvAction(
       "ChangeZoomModeLeft",
       "Change zoom modes: Vertical ribbon -> horizontal ribbon -> normal",
@@ -1720,15 +1638,11 @@
             break;
         }
         DET.callDetailDrawFunction(newMode);
-      },
+      }
     );
-    dvAction(
-      "ZoomOut",
-      "Zoom the primary detail view out one step",
-      (e, mapItem) => {
-        DEV.detailDataZoomOut(mapItem);
-      },
-    );
+    dvAction("ZoomOut", "Zoom the primary detail view out one step", (e, mapItem) => {
+      DEV.detailDataZoomOut(mapItem);
+    });
     dvAction(
       "ChangeZoomModeRight",
       "Change zoom modes: Normal -> horizontal ribbon -> vertical ribbon",
@@ -1747,7 +1661,7 @@
             break;
         }
         DET.callDetailDrawFunction(newMode);
-      },
+      }
     );
 
     stdAction("ToggleLayers", "Toggle between the two selected layers", (e) => {
@@ -1758,9 +1672,7 @@
 
     stdAction("CloseDialog", "Close any open dialog window", (e) => {
       if (UHM.messageBoxIsVisible()) {
-        const defaultButton = document.querySelector(
-          ".msgBoxButtons button.default",
-        );
+        const defaultButton = document.querySelector(".msgBoxButtons button.default");
         if (defaultButton) {
           defaultButton.onclick();
         } else {
@@ -1830,7 +1742,7 @@
           shift: e.shiftKey,
           alt: e.altKey,
           meta: e.metaKey,
-          e,
+          e
         });
       const actionName = keyToAction.get(fullKey(e));
       if (!actionName) {
@@ -1845,11 +1757,7 @@
       }
       if (action.needsDV && !DVW.primaryMap) {
         if (debug)
-          console.log(
-            "Action " +
-              actionName +
-              " needs primary detail view, but it does not exist",
-          );
+          console.log("Action " + actionName + " needs primary detail view, but it does not exist");
         return;
       }
       e.preventDefault();
@@ -1899,10 +1807,8 @@
         UTIL.newElement(
           "TR",
           {},
-          ["Key", "Action", "Description"].map((h) =>
-            UTIL.newElement("TH", {}, h),
-          ),
-        ),
+          ["Key", "Action", "Description"].map((h) => UTIL.newElement("TH", {}, h))
+        )
       ]);
 
       // Populating key map body.
@@ -1914,8 +1820,8 @@
           UTIL.newElement(
             "TR",
             {},
-            [key, action, help].map((val) => UTIL.newElement("TD", {}, val)),
-          ),
+            [key, action, help].map((val) => UTIL.newElement("TD", {}, val))
+          )
         );
       });
       const table = UTIL.newElement("TABLE.keyTable", {}, [head, body]);
@@ -1925,7 +1831,7 @@
         type: "text",
         text: "Close",
         tooltip: "Closes this dialog",
-        default: true,
+        default: true
       });
       UHM.displayNewMessageBox(msgBox);
     }
@@ -1936,59 +1842,53 @@
   /*
 		Process message from plugins to highlight points selected in plugin
 	*/
-  LNK.defineVanodiMessageHandler(
-    "selectLabels",
-    function vanodiSelectLabels(instance, msg) {
-      const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
-      const pluginLabels = msg.selection.pointIds.map((l) => l.toUpperCase()); // labels from plugin
-      const heatMap = MMGR.getHeatMap();
-      var heatMapAxisLabels;
-      if (pluginLabels.length > 0 && pluginLabels[0].indexOf("|") !== -1) {
-        // Plugin sent full labels
-        heatMapAxisLabels = heatMap.axisLabels(axis).labels;
-      } else {
-        // Plugin sent actual labels (or actual and full are identical).
-        heatMapAxisLabels = heatMap.actualLabels(axis);
+  LNK.defineVanodiMessageHandler("selectLabels", function vanodiSelectLabels(instance, msg) {
+    const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
+    const pluginLabels = msg.selection.pointIds.map((l) => l.toUpperCase()); // labels from plugin
+    const heatMap = MMGR.getHeatMap();
+    var heatMapAxisLabels;
+    if (pluginLabels.length > 0 && pluginLabels[0].indexOf("|") !== -1) {
+      // Plugin sent full labels
+      heatMapAxisLabels = heatMap.axisLabels(axis).labels;
+    } else {
+      // Plugin sent actual labels (or actual and full are identical).
+      heatMapAxisLabels = heatMap.actualLabels(axis);
+    }
+    heatMapAxisLabels = heatMapAxisLabels.map((l) => l.toUpperCase());
+    var setSelected = new Set(pluginLabels); // make a set for faster access below, and avoiding use of indexOf
+    SRCH.clearSearchItems(axis);
+    var indexes = [];
+    for (var i = 0; i < heatMapAxisLabels.length; i++) {
+      // loop over all labels
+      if (setSelected.has(heatMapAxisLabels[i])) {
+        // if set of selected points has label, add index to array of indexes
+        indexes.push(i + 1);
       }
-      heatMapAxisLabels = heatMapAxisLabels.map((l) => l.toUpperCase());
-      var setSelected = new Set(pluginLabels); // make a set for faster access below, and avoiding use of indexOf
-      SRCH.clearSearchItems(axis);
-      var indexes = [];
-      for (var i = 0; i < heatMapAxisLabels.length; i++) {
-        // loop over all labels
-        if (setSelected.has(heatMapAxisLabels[i])) {
-          // if set of selected points has label, add index to array of indexes
-          indexes.push(i + 1);
-        }
-      }
-      if (indexes.length > 0) {
-        SRCH.setAxisSearchResultsVec(axis, indexes);
-        DET.labelLastClicked[axis] = indexes[indexes.length - 1];
-      }
-      DET.updateDisplayedLabels();
-      SUM.redrawSelectionMarks();
-      DET.updateSelections();
-      SRCH.showSearchResults();
-      PIM.postSelectionToPlugins(axis, msg.selection.clickType, 0, msg.nonce);
-    },
-  );
+    }
+    if (indexes.length > 0) {
+      SRCH.setAxisSearchResultsVec(axis, indexes);
+      DET.labelLastClicked[axis] = indexes[indexes.length - 1];
+    }
+    DET.updateDisplayedLabels();
+    SUM.redrawSelectionMarks();
+    DET.updateSelections();
+    SRCH.showSearchResults();
+    PIM.postSelectionToPlugins(axis, msg.selection.clickType, 0, msg.nonce);
+  });
 
   /*
 		Process message from scatter plot to highlight single point under mouse on plot
 	*/
-  LNK.defineVanodiMessageHandler(
-    "mouseover",
-    function vanodiMouseover(instance, msg) {
-      const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
-      const allLabels = MMGR.getHeatMap().actualLabels(axis);
-      const pointId = msg.selection.pointId;
-      const ptIdx = allLabels.indexOf(pointId) + 1;
-      SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
-      DET.labelLastClicked[axis] = ptIdx;
-      DET.updateDisplayedLabels();
-      DET.updateSelections();
-      SRCH.showSearchResults();
-      SUM.redrawSelectionMarks();
-    },
-  );
+  LNK.defineVanodiMessageHandler("mouseover", function vanodiMouseover(instance, msg) {
+    const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
+    const allLabels = MMGR.getHeatMap().actualLabels(axis);
+    const pointId = msg.selection.pointId;
+    const ptIdx = allLabels.indexOf(pointId) + 1;
+    SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
+    DET.labelLastClicked[axis] = ptIdx;
+    DET.updateDisplayedLabels();
+    DET.updateSelections();
+    SRCH.showSearchResults();
+    SUM.redrawSelectionMarks();
+  });
 })();
