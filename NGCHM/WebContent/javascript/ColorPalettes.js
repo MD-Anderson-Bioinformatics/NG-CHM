@@ -7,7 +7,7 @@
 
   // Define the NgChm Color Palettes namespace.
   const PALETTES = NgChm.createNS("NgChm.PALETTES");
-  PALETTES.addPredefinedPalettes = addPredefinedPalettes;  // Export this function.
+  PALETTES.addPredefinedPalettes = addPredefinedPalettes; // Export this function.
 
   // Import other namespaces we need.
   const UTIL = NgChm.importNS("NgChm.UTIL");
@@ -53,7 +53,7 @@
       missing: "#000000",
     }),
   ]);
-  presetPalettes.set ("discrete", [
+  presetPalettes.set("discrete", [
     new ColorPreset({
       name: "Palette 1",
       colors: [
@@ -66,9 +66,9 @@
         "#e377c2",
         "#7f7f7f",
         "#bcbd22",
-        "#17becf",
+        "#17becf"
       ],
-      missing: "#ffffff",
+      missing: "#ffffff"
     }),
     new ColorPreset({
       name: "Palette 2",
@@ -92,9 +92,9 @@
         "#bcbd22",
         "#dbdb8d",
         "#17becf",
-        "#9edae5",
+        "#9edae5"
       ],
-      missing: "#ffffff",
+      missing: "#ffffff"
     }),
     new ColorPreset({
       name: "Palette 3",
@@ -118,19 +118,23 @@
         "#cedb9c",
         "#e7cb94",
         "#e7969c",
-        "#de9ed6",
+        "#de9ed6"
       ],
-      missing: "#ffffff",
+      missing: "#ffffff"
     }),
     new ColorPreset({
       name: "Cyan Yellow",
-      colors: new Array(121).fill(0).map ((v,idx) => UTIL.hsvToRgb (180-idx, 80, 80)),
+      colors: new Array(121).fill(0).map((v, idx) => UTIL.hsvToRgb(180 - idx, 80, 80)),
       missing: "#000000",
-      interpolation: "spread",
+      interpolation: "spread"
     }),
     new ColorPreset({
       name: "Green Magenta",
-      colors: [[100,100,100], [200,10,100], [300,100,100]].map(hsv => UTIL.hsvToRgb.apply(null,hsv)),
+      colors: [
+        [100, 100, 100],
+        [200, 10, 100],
+        [300, 100, 100]
+      ].map((hsv) => UTIL.hsvToRgb.apply(null, hsv)),
       missing: "#000000",
       interpolation: "ramp",
     }),
@@ -153,25 +157,25 @@
     }),
   ]);
 
-  function ColorPreset (props) {
+  function ColorPreset(props) {
     this.name = props.name;
     this.colors = props.colors;
     this.missing = props.missing || "#000000";
     this.interpolation = props.interpolation || "cycle";
   }
   // Return an array of n colors.
-  ColorPreset.prototype.getColorArray = function getColorArray (n) {
+  ColorPreset.prototype.getColorArray = function getColorArray(n) {
     const colors = [];
     if (this.interpolation == "spread") {
       // Pick colors evenly from preset.
-      for (const idx of UTIL.pick (n, this.colors.length)) {
+      for (const idx of UTIL.pick(n, this.colors.length)) {
         colors.push(this.colors[idx]);
       }
     } else if (this.interpolation == "ramp") {
       for (let j = 0; j < n; j++) {
-        const posn = j/(n-1) * (this.colors.length-1);
+        const posn = (j / (n - 1)) * (this.colors.length - 1);
         const idx = Math.floor(posn);
-        if (idx == this.colors.length-1) {
+        if (idx == this.colors.length - 1) {
           colors.push(this.colors[idx]);
         } else {
           const c1 = this.colors[idx];
@@ -183,7 +187,7 @@
       // Pick colors sequentially from preset.
       // If more than the number of predefined colors, we just cycle back (for now).
       for (let j = 0; j < n; j++) {
-        colors.push (this.colors[j % this.colors.length]);
+        colors.push(this.colors[j % this.colors.length]);
       }
     }
     return colors;
@@ -193,7 +197,7 @@
   // colorMapAxis: "row", "col", or undefined (for data layer),
   // colorMapType: "discrete", "continuous", or undefined (for data layer)
   function addPredefinedPalettes(prefTable, key, clickHandler, colorMapAxis, colorMapType) {
-    prefTable.addRow( ["Choose a pre-defined color palette:"], { underline: true });
+    prefTable.addRow(["Choose a pre-defined color palette:"], { underline: true });
     prefTable.addBlankSpace();
     prefTable.addIndent();
 
@@ -206,14 +210,14 @@
       names.push(`&nbsp;<b>${preset.name}</b>`);
       if (names.length == 3) {
         prefTable.addRow(presets.slice());
-        prefTable.addRow(names.slice(), { fontWeight: 'bold' });
+        prefTable.addRow(names.slice(), { fontWeight: "bold" });
         presets.length = 0;
         names.length = 0;
       }
     }
     if (names.length > 0) {
       prefTable.addRow(presets.slice());
-      prefTable.addRow(names.slice(), { fontWeight: 'bold' });
+      prefTable.addRow(names.slice(), { fontWeight: "bold" });
     }
     prefTable.popIndent();
   }
@@ -230,7 +234,7 @@
   function genPreset(key, clickHandler, preset, axis, mapType) {
     ++presetId;
     const gradient = "linear-gradient(to right, " + preset.colors.join(", ") + ")";
-    const onclick = genHandler (key, preset, axis, mapType);
+    const onclick = genHandler(key, preset, axis, mapType);
     const colorsEl = UTIL.newElement(
       "DIV.presetPalette",
       { id: "preset" + presetId, style: { background: gradient } },
@@ -238,7 +242,7 @@
       function (el) {
         el.onclick = onclick;
         return el;
-      },
+      }
     );
     const missingEl = UTIL.newElement(
       "DIV.presetPaletteMissingColor",
@@ -247,17 +251,13 @@
       function (el) {
         el.onclick = onclick;
         return el;
-      },
+      }
     );
-    return UTIL.newElement("DIV", { style: { display: "flex" } }, [
-      colorsEl,
-      missingEl,
-    ]);
-    function genHandler (key, preset, axis, mapType) {
+    return UTIL.newElement("DIV", { style: { display: "flex" } }, [colorsEl, missingEl]);
+    function genHandler(key, preset, axis, mapType) {
       return function () {
         clickHandler(key, preset, axis, mapType);
-      }
+      };
     }
   }
-
 })();
