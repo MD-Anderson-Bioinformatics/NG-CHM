@@ -1186,6 +1186,19 @@
       return this.getDataLayers()[this.getCurrentDL()];
     };
 
+    HeatMap.prototype.getSortedLayers = function getSortedLayers () {
+      return Object.entries(this.getDataLayers()).sort(layerCmp);
+      //
+      // Helper function.
+      // Compare two layer keys for use by sort.
+      function layerCmp(a, b) {
+        // Object entries are a tuple: [ key, layer ].
+        // Layer keys consist of "dl" followed by a number.
+        // Compares the numbers numerically.
+        return Number(a[0].substr(2)) - Number(b[0].substr(2));
+      }
+    };
+
     HeatMap.prototype.getDividerPref = function () {
       return this.mapConfig.data_configuration.map_information.summary_width;
     };
