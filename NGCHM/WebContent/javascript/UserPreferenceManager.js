@@ -875,14 +875,14 @@
   };
 
   MapLayersTab.prototype.setupTab = function setupLayersTab() {
-    const dataLayers = UPM.heatMap.getDataLayers();
+    const sortedLayers = UPM.heatMap.getSortedLayers();
 
-    this.tabDiv.appendChild(createDataLayerSelect(dataLayers));
+    this.tabDiv.appendChild(createDataLayerSelect(sortedLayers));
 
     // Loop over the data layers, creating a preferences div for each layer.
     // All are hidden initially. Switching to the tab will display one of them.
-    for (let key in dataLayers) {
-      this.createLayerPreferences(key);
+    for (const entry of sortedLayers) {
+      this.createLayerPreferences(entry[0]);
     }
 
     // Add a keydown event handler for this tab.
@@ -923,7 +923,7 @@
     // Helper function.
 
     // Create and return the data-layer select dropdown.
-    function createDataLayerSelect(dataLayers) {
+    function createDataLayerSelect(sortedLayers) {
       const dropdown = UTIL.newElement("DIV.ngchm-upm-layer-select");
 
       const label = UTIL.newElement("LABEL", { for: "dlPref_list" }, "Data Layer:");
@@ -934,23 +934,14 @@
       dropdown.appendChild(label);
       dropdown.appendChild(select);
 
-      // Create layer options in numeric order (which is lost on JSON save).
-      for (const key of Object.keys(dataLayers).sort(layerCmp)) {
-        let displayName = dataLayers[key].name;
+      for (const [key, layer] of sortedLayers) {
+        let displayName = layer.name;
         if (displayName.length > 20) {
           displayName = displayName.substring(0, 17) + "...";
         }
         select.appendChild(UTIL.newElement("OPTION", { value: key }, displayName));
       }
       return dropdown;
-
-      // Helper function.
-      // Compare two layer names for use by sort.
-      function layerCmp(a, b) {
-        // Layer names consist of "dl" followed by a number.
-        // Compares the numbers numerically.
-        return Number(a.substr(2)) - Number(b.substr(2));
-      }
     }
   };
 
