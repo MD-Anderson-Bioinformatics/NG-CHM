@@ -938,7 +938,24 @@
       return Object.fromEntries(matches);
     };
 
-    HeatMap.prototype.addCovariate = function (axis, covariateName, covariateDetails) {
+    HeatMap.prototype.addCovariate = function (axis, covariateName, dataType) {
+      const colorMapObj = {
+        type: dataType,
+        thresholds: dataType == "discrete" ? [] : [0, 100],
+        colors: dataType == "discrete" ? [] : ["#fefefe", "#3f3f3f"],
+        missing: "#111111"
+      };
+      const covariateDetails = {
+        bar_type: "color_plot",
+        bg_color: "#fefefe",
+        color_map: colorMapObj,
+        fg_color: "#888888",
+        height: 10,
+        high_bound: "100",
+        low_bound: "0",
+        show: "Y",
+        missingColor: "#212121"
+      };
       const cfg = this.getAxisConfig(axis);
       if (cfg.classifications_order.includes (covariateName)) {
         console.warn ("HeatMap.addCovariate: covariate already exists", { axis, covariateName, axisConfig: cfg });
@@ -947,11 +964,65 @@
       }
       cfg.classifications[covariateName] = covariateDetails;
       const cvData = this.getAxisCovariateData (axis);
-      const emptyData = {
-        values: new Array(this.getNumRows('d')).fill("NA"),
-        svalues: new Array(this.getNumRows('s')).fill("NA"),
-      };
+      const numDetailElements = this.getNumAxisElements(axis, 'd');
+      const emptyData = { values: new Array(numDetailElements).fill("NA") };
+      const numSummaryElements = this.getNumAxisElements(axis, 's');
+      if (numSummaryElements != numDetailElements) {
+        emptyData.svalues = new Array(numSummaryElements).fill("NA");
+      }
       cvData[covariateName] = emptyData;
+      return covariateDetails;
+    };
+
+    HeatMap.prototype.summarizeCovariate = function (axis, covariateName, dataType) {
+      const cvData = this.getAxisCovariateData (axis)[covariateName];
+      if (!cvData.hasOwnProperty('svalues')) {
+        // Nothin to do if no summary values.
+        return;
+      }
+      // The "trickiest" park of this function is getting the number of detail values
+      // for each summary value correct.  Rather than risk having two separate loops
+      // (one for discrete, the other for continuous covariates) that could diverge
+      // over time, I kept just a single loop and handle the discrete and continuous
+      // cases separately within the loop.
+      const scale = cvData.values.length / cvData.svalues.length;
+      let didx = 0;
+      for (let ii = 0; ii < cvData.svalues.length; ii++) {
+        const dlim = Math.floor(scale * (ii+1) - 1e-10);
+        let discCounts = new Map();  // For discrete covariates.
+        let total = 0.0; // For continuous covariate. Total of non-Nan values.
+        let count = 0; // For continuous covariate. Number of non-NaN values.
+        while (didx < dlim) {
+          const dval = cvData.values[didx++];
+          if (dataType == "discrete") {
+            // Increment the number of times we've seen this value.
+            discCounts.set(dval, (discCounts.get(dval) || 0) + 1);
+          } else {
+            if (!isNaN(dval)) {
+              // Total the non-NaN values.
+              total += dval;
+              count++;
+            }
+          }
+        }
+        if (dataType == "discrete") {
+          let modeCount = 0;
+          let modeVal;
+          // Determine which discrete value occurs most often.
+          // There must be at least one entry, so modeVal will be defined.
+          // It is possible for modeVal to be NaN.  Assumes all missing values
+          // are represented the same way in the covariate.
+          for (const [val,count] of discCounts) {
+            if (count > modeCount) {
+              modeCount = count;
+              modeVal = val;
+            }
+          }
+          cvData.svalues[ii] = modeVal;
+        } else {
+          cvData.svalues[ii] = count == 0 ? NaN : total/count;
+        }
+      }
     };
 
     HeatMap.prototype.getAxisCovariateOrder = function (axis) {

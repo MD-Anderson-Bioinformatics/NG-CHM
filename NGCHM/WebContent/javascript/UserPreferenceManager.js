@@ -1488,24 +1488,7 @@
   };
 
   CovariatesPrefsTab.prototype.setupNewCovariate = function setupNewCovariate(axis, name) {
-    const colorMapObj = {
-      type: "continuous",
-      thresholds: [1, 2],
-      colors: ["#fefefe", "#3f3f3f"],
-      missing: "#111111"
-    };
-    const newBarDetails = {
-      bar_type: "color_plot",
-      bg_color: "#fefefe",
-      color_map: colorMapObj,
-      fg_color: "#888888",
-      height: 10,
-      high_bound: "100",
-      low_bound: "0",
-      show: "Y",
-      missingColor: "#212121"
-    };
-    UPM.heatMap.addCovariate(axis, name, newBarDetails);
+    const newBarDetails = UPM.heatMap.addCovariate(axis, name, "continuous");
     const newPrefs = setupClassBreaks(name, axis, newBarDetails);
     const prefContents = document.getElementById("tableAllClasses");
     this.addCovariateRow(prefContents, name, axis, newBarDetails);
