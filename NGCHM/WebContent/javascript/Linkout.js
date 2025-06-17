@@ -1,6 +1,6 @@
 /*************************************************************
  * Linkouts will be added to the Row/Column Menus according to
- * the label_type attributes (found in the mapData.json file).
+ * the labelTypes attributes (found in the mapData.json file).
  * These attributes will drive the input paramaters for the
  * linkout functions. (Provided by getLabelsByType)
  *
@@ -31,7 +31,7 @@ var linkoutsVersion = "undefined";
   linkouts.POSITION = "position";
   linkouts.SINGLE_SELECT = "singleSelection";
   linkouts.MULTI_SELECT = "multiSelection";
-  LNK.EMPTY_SELECT = "emptySelection"; // NOT exported
+  const EMPTY_SELECT = "emptySelection"; // NOT exported
 
   linkouts.getAttribute = function (attribute) {
     return MMGR.getHeatMap().getMapInformation().attributes[attribute];
@@ -63,6 +63,8 @@ var linkoutsVersion = "undefined";
     return UTIL.mapId;
   };
 
+  const debugLinkoutCallbacks = UTIL.getDebugFlag("linkouts");
+
   //adds axis linkout objects to the linkouts global variable
   linkouts.addLinkout = function (
     name,
@@ -72,7 +74,12 @@ var linkoutsVersion = "undefined";
     reqAttributes,
     index,
   ) {
-    LNK.addLinkout(name, labelType, selectType, callback, reqAttributes, index);
+    // Cannot pass heatMap object to external callback function.
+    const cb = function (heatMap, labels, axis) {
+      if (debugLinkoutCallbacks) console.log ("AxisLinkout callback", { name, labels, axis });
+      callback (labels, axis);
+    };
+    LNK.addLinkout(name, labelType, selectType, cb, reqAttributes, index);
   };
 
   //adds matrix linkout objects to the linkouts global variable
@@ -85,12 +92,17 @@ var linkoutsVersion = "undefined";
     reqAttributes,
     index,
   ) {
+    // Cannot pass heatMap object to external callback function.
+    const cb = function (heatMap, labels, axis) {
+      if (debugLinkoutCallbacks) console.log ("MatrixLinkout callback", { name, labels, axis });
+      callback (labels, axis);
+    };
     LNK.addMatrixLinkout(
       name,
       rowType,
       colType,
       selectType,
-      callback,
+      cb,
       reqAttributes,
       index,
     );
@@ -156,8 +168,6 @@ var linkoutsVersion = "undefined";
   const SRCH = NgChm.importNS("NgChm.SRCH");
   const PANE = NgChm.importNS("NgChm.Pane");
   const UHM = NgChm.importNS("NgChm.UHM");
-  const DVW = NgChm.importNS("NgChm.DVW");
-  const DET = NgChm.importNS("NgChm.DET");
   const PIM = NgChm.importNS("NgChm.PIM");
   const CMM = NgChm.importNS("NgChm.CMM");
 
@@ -237,8 +247,9 @@ var linkoutsVersion = "undefined";
     LNK.hamburgerLinkCtr++;
   };
 
-  //the linkout object
-  LNK.linkout = function (
+  // The axis linkout class.
+  // Create an instance using new.
+  function AxisLinkout (
     title,
     labelType,
     selectType,
@@ -252,7 +263,9 @@ var linkoutsVersion = "undefined";
     this.callback = callback;
   };
 
-  LNK.matrixLinkout = function (
+  // The matrix linkout class.
+  // Create an instance using new.
+  function MatrixLinkout (
     title,
     rowType,
     colType,
@@ -268,7 +281,12 @@ var linkoutsVersion = "undefined";
     this.callback = callback;
   };
 
-  //this function is used to add standard linkouts to the row/col, covariate, and matrix menu
+  const matrixLinkouts = [];      // An array for all matrix linkouts.
+  const linkoutsDB = new Map();   // A map from linkout types to an array of linkouts for all axis linkouts.
+
+  const NullTypeKey = "---null---";
+
+  // This function is used to add standard linkouts to the row/col, covariate menus.
   // labelType will decide which menu to place the linkout in.
   // selectType decides when the linkout is executable. (passing in null or undefined, or false will allow the function to be executable for all selection types)
   LNK.addLinkout = function (
@@ -279,35 +297,70 @@ var linkoutsVersion = "undefined";
     reqAttributes,
     index,
   ) {
-    var linkout = new LNK.linkout(
+    if (!Array.isArray(labelType)) labelType = labelType.split("|");
+    const linkout = new AxisLinkout(
       name,
       labelType,
       selectType,
       reqAttributes,
       callback,
     );
-    if (!linkouts[labelType]) {
-      linkouts[labelType] = [linkout];
+    // If labelType includes multiple types (all of which are required), save it under one type,
+    // independent of the order of the types given.
+    const key = labelType.length == "0" ? NullTypeKey : labelType.sort()[0];
+    if (!linkoutsDB.has(key)) {
+      // Create the first linkout for that type.
+      linkoutsDB.set(key, [linkout]);
     } else {
+      // Get the array of linkouts for that type.
+      const linkoutsForType = linkoutsDB.get(key);
       if (index !== undefined) {
-        linkouts[labelType].splice(index, 0, linkout);
+        // Replace the existing linkout at index.
+        //linkoutsForType.splice(index, 0, linkout);
+        console.error ("addLinkout: obsolete attempt to replace a specific linkout", { linkout, index });
+        return;
       } else {
-        LNK.dupeLinkout(linkouts[labelType], linkout);
-        linkouts[labelType].push(linkout);
+        // Append to the array of linkouts for that type.
+        // But first remove any existing linkout with the same title.
+        removeExistingLinkout(linkoutsForType, linkout);
+        linkoutsForType.push(linkout);
       }
     }
   };
 
-  //Check to see if the linkout being added already exists.  This would be in a case where a secondary custom.js is being used (embedded NG-CHM)
-  //If so, delete the existing linkout and allow the new linkout to be added in its place.
-  LNK.dupeLinkout = function (linkouts, linkout) {
-    for (var i = 0; i < linkouts.length; i++) {
-      var curLink = linkouts[i];
-      if (curLink.title === linkout.title) {
+  // Check to see if there is already a linkout with the same title and the same type
+  // requirements as the one being added.
+  // This would be in a case where a secondary custom.js is being used (embedded NG-CHM).
+  // If so, delete the existing linkout to allow the new linkout to be added.
+  function removeExistingLinkout (linkouts, linkout) {
+    const labelType = canonical(linkout.labelType);
+    for (let i = 0; i < linkouts.length; i++) {
+      if (linkouts[i].title === linkout.title && canonical(linkouts[i].labelType) == labelType) {
         linkouts.splice(i, 1);
+        return;
       }
     }
-  };
+  }
+
+  // Similar to removeExistingLinkout, but in this case there can be multiple
+  // entries with the same titles but with different row and column type requirements.
+  function removeExistingMatrixLinkout (linkouts, linkout) {
+    const rowType = canonical(linkout.rowType);
+    const colType = canonical(linkout.colType);
+    for (let i = 0; i < linkouts.length; i++) {
+      if (linkouts[i].title === linkout.title && canonical(linkouts[i].rowType) == rowType && canonical(linkouts[i].colType) == colType) {
+        linkouts.splice(i, 1);
+        return;
+      }
+    }
+  }
+
+  // Sort label type into a canonical order, so we treat "typea|typeb" the same as
+  // "typeb|typea".
+  function canonical (labelType) {
+    if (!Array.isArray(labelType)) labelType = labelType.split("|");
+    return labelType.sort().join("|");
+  }
 
   LNK.addMatrixLinkout = function (
     name,
@@ -318,156 +371,104 @@ var linkoutsVersion = "undefined";
     reqAttributes,
     index,
   ) {
-    // this function is used to add linkouts to the matrix menu when the linkout needs a specific criteria for the row and column (ie: same attribute)
-    var linkout = new LNK.matrixLinkout(
+    const linkout = new MatrixLinkout(
       name,
-      rowType,
-      colType,
+      Array.isArray(rowType) ? rowType : rowType.split("|"),
+      Array.isArray(colType) ? colType : colType.split("|"),
       selectType,
       reqAttributes,
       callback,
     );
-    if (!linkouts["Matrix"]) {
-      linkouts["Matrix"] = [linkout];
+    if (index !== undefined) {
+      matrixLinkouts.splice(index, 0, linkout);
     } else {
-      if (index !== undefined) {
-        linkouts["Matrix"].splice(index, 0, linkout);
-      } else {
-        linkouts["Matrix"].push(linkout);
-      }
+      removeExistingMatrixLinkout(matrixLinkouts, linkout);
+      matrixLinkouts.push(linkout);
     }
   };
 
-  //this function goes through searchItems and returns the proper label type for linkout functions to use
-  LNK.getLabelsByType = function (axis, linkout) {
-    var searchLabels;
-    const heatMap = MMGR.getHeatMap();
-    var labels =
-      axis == "Row"
-        ? heatMap.getRowLabels()["labels"]
-        : axis == "Column"
-          ? heatMap.getColLabels()["labels"]
-          : axis == "ColumnCovar"
-            ? heatMap.getColClassificationConfigOrder()
-            : axis == "RowCovar"
-              ? heatMap.getRowClassificationConfigOrder()
-              : [
-                  heatMap.getRowLabels()["labels"],
-                  heatMap.getColLabels()["labels"],
-                ];
+  // Returns TRUE iff there is a matrix linkout with the specified name.
+  LNK.isMatrixLinkout = function isMatrixLinkout (name) {
+    return matrixLinkouts.map(linkout => linkout.name).includes(name);
+  };
 
-    var types;
+  // Return the labels from heatMap required by the specified linkout (and axis if applicable).
+  //
+  function getLabelsByType (heatMap, linkout, axis) {
 
     if (linkout.labelType) {
-      // if this is a standard linkout (ie: added using addLinkout and not addMatrixLinkout)
-      types = linkout.labelType.split("|"); // split 'types' into an array if a combined label type is requested
-      if (!Array.isArray(types)) {
-        // make sure it's an array!
-        types = [types];
-      }
-
-      // matrix and class bar linkouts can only access the visible labeltype right now. TODO: find a way to let matrix and class bar linkouts access specific labeltypes.
-      var formatIndex = [];
-      for (var i = 0; i < types.length; i++) {
-        var type = types[i];
-        formatIndex[i] =
-          !type || axis == "Matrix"
-            ? 0
-            : axis == "Row"
-              ? heatMap.getRowLabels()["label_type"].indexOf(type)
-              : axis == "Column"
-                ? heatMap.getColLabels()["label_type"].indexOf(type)
-                : 0;
-      }
-      if (axis !== "Matrix") {
-        searchLabels = [];
-        //IF the linkout is single select, load ONLY the item that was clicked on to searchLabels.
-        if (linkout.selectType === linkouts.SINGLE_SELECT) {
-          searchLabels.push(generateSearchLabel(LNK.selection, formatIndex));
-        } else {
-          //ELSE the linkout is multi select, load all selected items to searchLabels (not necessarily the item that was clicked on)
-          SRCHSTATE.getAxisSearchResults(axis).forEach((i) => {
-            if (axis.includes("Covar")) {
-              // Covariate linkouts have not been tested very extensively. May need revision in future.
-              searchLabels.push(generateSearchLabel(labels[i], formatIndex));
-            } else {
-              searchLabels.push(
-                generateSearchLabel(labels[i - 1], formatIndex),
-              );
-            }
-          });
-        }
-      } else {
-        searchLabels = { Row: [], Column: [] };
-        SRCHSTATE.getAxisSearchResults("Row").forEach((i) => {
-          searchLabels["Row"].push(
-            generateSearchLabel(labels[0][i - 1], [formatIndex[0]]),
-          );
-        });
-        SRCHSTATE.getAxisSearchResults("Column").forEach((i) => {
-          searchLabels["Column"].push(
-            generateSearchLabel(labels[1][i - 1], [formatIndex[0]]),
-          );
-        });
-        if (linkout.title !== "Copy selected labels to clipboard") {
-          const heatMap = MMGR.getHeatMap();
-          if (searchLabels["Row"].length === 0) {
-            searchLabels["Row"] = heatMap.getAxisLabels("Row")["labels"];
-          }
-          if (searchLabels["Column"].length === 0) {
-            searchLabels["Column"] = heatMap.getAxisLabels("Column")["labels"];
-          }
-        }
-      }
+      // Single-axis linkout.
+      return getAxisLinkoutLabels(axis, linkout.labelType, linkout.selectType);
     } else {
-      // if this linkout was added using addMatrixLinkout
-      searchLabels = { Row: [], Column: [] };
-      types = { row: linkout.rowType, col: linkout.colType };
-      var formatIndex = { row: [], col: [] };
-      if (!Array.isArray(types.row)) types.row = [types.row];
-      if (!Array.isArray(types.col)) types.col = [types.col];
-      // Build the formatIndex array to help build the labels
-      for (var i = 0; i < types.row.length; i++) {
-        var type = types.row[i];
-        formatIndex.row[i] = heatMap.getRowLabels()["label_type"].indexOf(type);
-      }
-      for (var i = 0; i < types.col.length; i++) {
-        var type = types.col[i];
-        formatIndex.col[i] = heatMap.getColLabels()["label_type"].indexOf(type);
-      }
-      // Build the searchLabels and put them into the return object
-      SRCHSTATE.getAxisSearchResults("Row").forEach((i) => {
-        searchLabels["Row"].push(
-          generateSearchLabel(labels[0][i - 1], formatIndex.row),
-        );
-      });
-      SRCHSTATE.getAxisSearchResults("Column").forEach((i) => {
-        searchLabels["Column"].push(
-          generateSearchLabel(labels[1][i - 1], formatIndex.col),
-        );
-      });
+      // Matrix linkout.
+      return {
+        Row: getAxisLinkoutLabels("Row", linkout.rowType, linkout.selectType),
+        Column: getAxisLinkoutLabels("Column", linkout.colType, linkout.selectType),
+      };
     }
-    return searchLabels;
 
-    // This is a helper function that will create the proper label types
-    // 'label' is the full row/column label, and 'indexes' is an array that tells you how  to put the searchLabel together
-    function generateSearchLabel(label, indexes) {
-      var searchLabel = "";
-      if (label !== undefined) {
-        for (var i = 0; i < indexes.length; i++) {
-          searchLabel += label.split("|")[indexes[i]] + "|";
+    function getAxisLinkoutLabels (axis, labelType, selectType) {
+      // Build an array of the individual types required.
+      const types = getRequiredTypes (labelType); // split 'types' into an array if a combined label type is requested
+      const axisLabelTypes = axis.includes("Covar") ? [axis] : heatMap.getLabelTypes(axis).map(type => type.type);
+      const formatIndex = types.map (type => axisLabelTypes.indexOf(type));
+
+      // formatIndex should not contain any missing (negative) indices.
+      formatIndex.forEach ((value, idx) => {
+        if (value < 0) {
+          console.error ("getAxisLinkoutLabels: missing type", { axis, labelType, missingType: types[idx], axisLabelTypes });
         }
-        searchLabel = searchLabel.slice(0, -1); // remove the last character (the extra "|")
+      });
+
+      if (selectType === linkouts.SINGLE_SELECT) {
+        return [generateLinkoutLabel(LNK.selection, formatIndex)];
+      } else {
+        const srchResults = SRCHSTATE.getAxisSearchResults(axis);
+        if (axis.includes("Covar")) {
+          const labels = heatMap.getAxisCovariateOrder(axis.replace("Covar",""));
+          return srchResults.map(idx => generateLinkoutLabel(labels[idx], formatIndex));
+        } else {
+          const labels = heatMap.getAxisLabels(axis).labels;
+          return srchResults.map(idx => generateLinkoutLabel(labels[idx-1], formatIndex));
+        }
       }
+
+      // Return an array of the individual label types specified by labelType.
+      // Normally involves splitting a string at the vertical bar character.
+      // Special cases:
+      // - labelType is a non-empty array. Just return it.
+      // - labelType is an empty array. Return an array of all types in the data.
+      function getRequiredTypes (labelType) {
+        if (Array.isArray(labelType)) {
+          if (labelType.length == 0) {
+            return heatMap.getLabelTypes(axis.replace("Covar","")).map(type=>type.type);
+          } else {
+            return labelType;
+          }
+        } else {
+          return labelType.split("|");
+        }
+      }
+    }
+
+    // This is a helper function to create labels consisting of the specified
+    // parts of the given full label, separated by vertical bars.
+    // 'indexes' is an array, each element of which is the index (zero-based)
+    // of the desired part of the full label.
+    // For example, if fullLabel = "part0|part1|part2|part3" and indexes=[3,1],
+    // then the function will return "part3|part1".
+    function generateLinkoutLabel(fullLabel, indexes) {
+      if (fullLabel === undefined) return "";
+      const parts = fullLabel.split("|");
+      const searchLabel = indexes.map(idx => parts[idx]).join("|");
       return searchLabel;
     }
-  };
+  }
 
-  function downloadAllMatrixData(selectedLabels, axis) {
-    const heatMap = MMGR.getHeatMap();
+  function downloadAllMatrixData(heatMap) {
     const selection = {
-      rowLabels: MMGR.getActualLabels("row"),
-      colLabels: MMGR.getActualLabels("column"),
+      rowLabels: heatMap.actualLabels("row"),
+      colLabels: heatMap.actualLabels("column"),
       rowItems: null,
       colItems: null,
     };
@@ -476,8 +477,7 @@ var linkoutsVersion = "undefined";
     createMatrixData(heatMap, selection);
   }
 
-  function downloadSelectedMatrixData(selectedLabels, axis) {
-    const heatMap = MMGR.getHeatMap();
+  function downloadSelectedMatrixData(heatMap, selectedLabels) {
     const selection = {
       rowLabels: selectedLabels.Row,
       colLabels: selectedLabels.Column,
@@ -637,32 +637,34 @@ var linkoutsVersion = "undefined";
 
   LNK.createLabelMenus = function () {
     if (!document.getElementById("RowLabelMenu")) {
-      LNK.createLabelMenu("Column"); // create the menu divs if they don't exist yet
-      LNK.createLabelMenu("ColumnCovar");
-      LNK.createLabelMenu("Row");
-      LNK.createLabelMenu("RowCovar");
-      LNK.createLabelMenu("Matrix");
-      LNK.getDefaultLinkouts();
+      createLabelMenu("Column"); // create the menu divs if they don't exist yet
+      createLabelMenu("ColumnCovar");
+      createLabelMenu("Row");
+      createLabelMenu("RowCovar");
+      createLabelMenu("Matrix");
+      defineDefaultLinkouts();
     }
   };
 
-  LNK.labelHelpCloseAll = function (ev) {
+  LNK.closeAllLinkoutMenus = function (ev) {
     ev = ev || {};
-    LNK.labelHelpClose("Matrix", ev);
-    LNK.labelHelpClose("Column", ev);
-    LNK.labelHelpClose("Row", ev);
+    closeLinkoutMenu("Matrix", ev);
+    closeLinkoutMenu("Column", ev);
+    closeLinkoutMenu("ColumnCovar", ev);
+    closeLinkoutMenu("Row", ev);
+    closeLinkoutMenu("RowCovar", ev);
   };
 
-  LNK.labelHelpClose = function (axis, ev) {
+  function closeLinkoutMenu (axis, ev) {
     if (ev.ctrlKey || ev.metaKey) {
       // Prevent extra ctrl-click event sent by Safari from closing newly opened label menus.
       // See issue #539.
       return;
     }
-    var labelMenu =
-      axis !== "Matrix"
-        ? document.getElementById(axis + "LabelMenu")
-        : document.getElementById("MatrixMenu");
+    const labelMenu =
+      axis === "Matrix"
+        ? document.getElementById("MatrixMenu")
+        : document.getElementById(axis + "LabelMenu");
     var tableBody = labelMenu.getElementsByTagName("TBODY")[0];
     var tempClass = tableBody.className;
     var newTableBody = document.createElement("TBODY");
@@ -673,10 +675,9 @@ var linkoutsVersion = "undefined";
     }
   };
 
-  LNK.labelHelpOpen = function (axis, e) {
+  LNK.openLinkoutMenu = function (heatMap, axis, e) {
     menuOpenCanvas = e.currentTarget;
-    const heatMap = MMGR.getHeatMap();
-    LNK.labelHelpCloseAll(e);
+    LNK.closeAllLinkoutMenus(e);
     //Get the label item that the user clicked on (by axis) and save that value for use in LNK.selection
     var index = e.target.dataset.index;
     LNK.selection = "";
@@ -690,10 +691,10 @@ var linkoutsVersion = "undefined";
       LNK.selection = heatMap.getColClassificationConfigOrder()[index];
     }
 
-    var labelMenu =
-      axis !== "Matrix"
-        ? document.getElementById(axis + "LabelMenu")
-        : document.getElementById("MatrixMenu");
+    const labelMenu =
+      axis === "Matrix"
+        ? document.getElementById("MatrixMenu")
+        : document.getElementById(axis + "LabelMenu");
     var labelMenuTable =
       axis !== "Matrix"
         ? document.getElementById(axis + "LabelMenuTable")
@@ -714,7 +715,7 @@ var linkoutsVersion = "undefined";
         "s : " +
         axisLabelsLength;
       labelMenuTable.getElementsByTagName("TBODY")[0].style.display = "inherit";
-      LNK.populateLabelMenu(axis, axisLabelsLength);
+      populateLabelMenu(heatMap, axis, axisLabelsLength);
     } else if (axis == "Matrix") {
       if (axisLabelsLength["Row"] > 0 || axisLabelsLength["Column"] > 0) {
         if (axisLabelsLength["Row"] === 0) {
@@ -730,7 +731,7 @@ var linkoutsVersion = "undefined";
         axisLabelsLength["Row"] +
         "<br>Selected Columns: " +
         axisLabelsLength["Column"];
-      LNK.populateLabelMenu(axis, axisLabelsLength);
+      populateLabelMenu(heatMap, axis, axisLabelsLength);
     } else {
       row.innerHTML = "Please select a " + axis.replace("Covar", " Covariate");
       labelMenuTable.getElementsByTagName("TBODY")[0].style.display = "none";
@@ -754,7 +755,7 @@ var linkoutsVersion = "undefined";
   };
 
   //creates the divs for the label menu
-  LNK.createLabelMenu = function (axis) {
+  function createLabelMenu (axis) {
     var labelMenu =
       axis !== "Matrix"
         ? UHM.getDivElement(axis + "LabelMenu")
@@ -782,7 +783,7 @@ var linkoutsVersion = "undefined";
     closeMenu.addEventListener(
       "click",
       function (ev) {
-        LNK.labelHelpClose(axis, ev);
+        closeLinkoutMenu(axis, ev);
       },
       false,
     );
@@ -797,7 +798,7 @@ var linkoutsVersion = "undefined";
     var tableBody = table.createTBody();
     tableBody.classList.add("labelMenuBody");
     var labelHelpCloseAxis = function (ev) {
-      LNK.labelHelpClose(axis, ev);
+      closeLinkoutMenu(axis, ev);
     };
     document.addEventListener("click", labelHelpCloseAxis);
     labelMenu.addEventListener(
@@ -843,97 +844,95 @@ var linkoutsVersion = "undefined";
   };
 
   //adds the row linkouts and the column linkouts to the menus
-  LNK.populateLabelMenu = function (axis, axisLabelsLength) {
-    const heatMap = MMGR.getHeatMap();
-    var table =
-      axis !== "Matrix"
-        ? document.getElementById(axis + "LabelMenuTable")
-        : document.getElementById("MatrixMenuTable");
-    var labelType =
-      axis == "Row"
-        ? heatMap.getRowLabels()["label_type"]
-        : axis == "Column"
-          ? heatMap.getColLabels()["label_type"]
-          : axis == "ColumnCovar"
-            ? ["ColumnCovar"]
-            : axis == "RowCovar"
-              ? ["RowCovar"]
-              : ["Matrix"];
-    var linkoutsKeys = Object.keys(linkouts);
-    //Arrays here are used to store linkouts by type (e.g. individual OR group)
-    var indLinkouts = [];
-    var grpLinkouts = [];
-    var itemInSelection = axis !== "Matrix" && LNK.itemInSelection(axis);
-    for (var i = 0; i < labelType.length; i++) {
-      // for every labeltype that the map has...
-      var type = labelType[i];
-      if (linkouts[type]) {
-        // and for every linkout that the label type has, we add the linkout to the menu
-        for (var j = 0; j < linkouts[type].length; j++) {
-          var linkout = linkouts[type][j];
-          if (
-            linkout.selectType == LNK.EMPTY_SELECT ||
-            type !== "Matrix" ||
-            (axisLabelsLength["Row"] > 0 && axisLabelsLength["Column"] > 0)
-          ) {
-            if (linkout.rowType && linkout.colType && type == "Matrix") {
-              // if this is a MatrixLinkout...
-              handleMatrixLinkout(axis, table, linkout, grpLinkouts);
-            } else if (linkout.selectType == linkouts.SINGLE_SELECT) {
-              indLinkouts.push({ linkout: linkout });
-            } else {
-              grpLinkouts.push({ linkout: linkout });
-            }
-          }
-        }
-      }
-      // add combined labels to the linkout menu
-      var combinedLinkouts = []; // list of all  combined linkouts starting with this given type
-      for (var j = 0; j < linkoutsKeys.length; j++) {
-        if (linkoutsKeys[j].includes(type + "|")) {
-          // if the linkout contains a
-          combinedLinkouts.push(linkoutsKeys[j]);
-        }
-      }
+  function populateLabelMenu (heatMap, axis, axisLabelsLength) {
 
-      for (var j = 0; j < combinedLinkouts.length; j++) {
-        var type = combinedLinkouts[j];
-        var typelist = type.split("|");
-        var add = true;
-        for (var ii = 0; ii < typelist.length; ii++) {
-          if (!labelType.includes(typelist[ii])) {
-            add = false;
-            continue;
-          }
-        }
-        if (linkouts[type] && add) {
-          // and for every linkout that the label type has, we add the linkout to the menu
-          for (var j = 0; j < linkouts[type].length; j++) {
-            var linkout = linkouts[type][j];
-            if (linkout.selectType == linkouts.SINGLE_SELECT) {
-              indLinkouts.push({ linkout: linkout });
-            } else {
-              grpLinkouts.push({ linkout: linkout });
+    // Arrays here are used to store linkouts by type (e.g. individual OR group)
+    const indLinkouts = [];
+    const grpLinkouts = [];
+
+    const rowLabelTypes = heatMap.getLabelTypes("row").map(type=>type.type);
+    const colLabelTypes = heatMap.getLabelTypes("col").map(type=>type.type);
+
+    if (axis.includes("Row") || axis.includes("Column")) {
+      // This handles Row, RowCovar, Column, and ColumnCovar "axes".
+      // The labelTypes for RowCovar and ColumnCovar are ["RowCovar"] and ["ColumnCovar"] respectively.
+      // For Row and Column, we get them from the labels on the corresponding axis of the heatMap.
+      const labelTypes = axis.includes("Covar") ? [axis] : axis == "Row" ? rowLabelTypes : colLabelTypes;
+      // For every labeltype that the map has...
+      [NullTypeKey].concat(labelTypes).forEach((key) => {
+        if (linkoutsDB.has(key)) {
+          // Add linkout saved under that key but only if the map has all the required types.
+          linkoutsDB.get(key).forEach((linkout) => {
+            if (includesAll (labelTypes, linkout.labelType)) {
+              addLinkoutToSection (linkout);
             }
-          }
+          });
         }
-      }
+      });
+    } else if (axis === "Matrix") {
+      matrixLinkouts.filter(validRegion).filter(hasAllAxisLabelTypes).forEach((linkout) => {
+        grpLinkouts.push({ linkout: linkout });
+      });
+    } else {
+      throw new Error ("populateLabelMenu: Unknown 'axis'", { axis });
     }
+
+    // Helper function.
+    // - linkout is of type "Matrix".
+    // Returns true iff the heatMap includes all of the linkout's required row and column types.
+    function hasAllAxisLabelTypes(linkout) {
+      return includesAll (rowLabelTypes, asArray(linkout.rowType)) &&
+             includesAll (colLabelTypes, asArray(linkout.colType));
+    }
+
+    // Helper function.
+    // - linkout is of type "Matrix".
+    // Returns true iff the heatMap has a valid selection for the linkout.
+    function validRegion (linkout) {
+      return linkout.selectType == EMPTY_SELECT ||
+             (axisLabelsLength["Row"] > 0 && axisLabelsLength["Column"] > 0);
+    }
+
+    // Helper function.
+    // - values and required are arrays.
+    // Returns true iff values includes all the elements of required.
+    function includesAll (values, required) {
+      // Remove all required values that are present in values.
+      // If none are left, all are included.
+      return required.filter((rq) => !values.includes(rq)).length == 0;
+    }
+
+    // Helper function: add linkout to either the individual or group linkout sections.
+    function addLinkoutToSection (linkout) {
+      const section = linkout.selectType == linkouts.SINGLE_SELECT ? indLinkouts : grpLinkouts;
+      section.push({ linkout: linkout });
+    }
+
+    // *****************************************************************************
+
+    // Populate either the MatrixMenuTable or the axisLabelMenuTable.
+
+    const table =
+      axis === "Matrix"
+        ? document.getElementById("MatrixMenuTable")
+        : document.getElementById(axis + "LabelMenuTable");
+
     if (axis === "Matrix") {
-      for (var l = 0; l < grpLinkouts.length; l++) {
-        LNK.addMenuItemToTable(axis, table, grpLinkouts[l].linkout, true);
-      }
+      grpLinkouts.forEach((linkout) => {
+        addMenuItemToTable(heatMap, "Matrix", table, linkout.linkout, true);
+      });
     } else {
       const covar = axis.indexOf("Covar") != -1;
       if (!covar) {
         // Always add clipboard link at top of list
-        LNK.addMenuItemToTable(axis, table, grpLinkouts[0].linkout, true);
+        addMenuItemToTable(heatMap, axis, table, grpLinkouts[0].linkout, true);
       }
       const firstGroupLinkout = covar ? 0 : 1;
       if (indLinkouts.length > 0 && LNK.selection !== undefined) {
         let addedHeader = false;
         for (let k = 0; k < indLinkouts.length; k++) {
-          addedHeader = LNK.addMenuItemToTable(
+          addedHeader = addMenuItemToTable(
+            heatMap,
             axis,
             table,
             indLinkouts[k].linkout,
@@ -954,7 +953,8 @@ var linkoutsVersion = "undefined";
             // if there are no selected labels on that axis.
             continue;
           }
-          addedHeader = LNK.addMenuItemToTable(
+          addedHeader = addMenuItemToTable(
+            heatMap,
             axis,
             table,
             grpLinkouts[l].linkout,
@@ -966,65 +966,38 @@ var linkoutsVersion = "undefined";
     //Add blank row so links don't overlay close button
     var body = table.getElementsByClassName("labelMenuBody")[0];
     body.insertRow();
-
-    // Helper functions for populateLabelMenu
-    function handleMatrixLinkout(axis, table, linkout, grpLinkouts) {
-      var rowLabelTypes = heatMap.getRowLabels().label_type;
-      var colLabelTypes = heatMap.getColLabels().label_type;
-      if (Array.isArray(linkout.rowType)) {
-        // if there are mutliple rowTypes required
-        for (var i = 0; i < linkout.rowType.length; i++) {
-          if (rowLabelTypes.indexOf(linkout.rowType[i]) == -1) {
-            return;
-          }
-        }
-      } else {
-        if (rowLabelTypes.indexOf(linkout.rowType) == -1) {
-          return;
-        }
-      }
-      if (Array.isArray(linkout.colType)) {
-        // if there are mutliple colTypes required
-        for (var i = 0; i < linkout.colType.length; i++) {
-          if (colLabelTypes.indexOf(linkout.colType[i]) == -1) {
-            return;
-          }
-        }
-      } else {
-        if (colLabelTypes.indexOf(linkout.colType) == -1) {
-          return;
-        }
-      }
-      grpLinkouts.push({ linkout: linkout });
-    }
   };
 
+  // Helper function. If thing is an array, return thing. Otherwise, return
+  // an array containing thing.
+  function asArray (thing) {
+    return Array.isArray(thing) ? thing : [thing];
+  }
+
   // Helper functions to add header comment lines to help box
-  LNK.addTextRowToTable = function (table, type, axis) {
+  function addTextRowToTable (heatMap, table, type, axis) {
     var body = table.getElementsByClassName("labelMenuBody")[0];
     var row = body.insertRow();
     var cell = row.insertCell();
     if (type === "multi") {
       cell.innerHTML = "<b>Linkouts for entire selection:</b>";
     } else {
-      var labelVal =
-        LNK.selection.indexOf("|") > 0
-          ? LNK.selection.substring(0, LNK.selection.indexOf("|"))
-          : LNK.selection;
-      labelVal = MMGR.getLabelText(labelVal, axis);
+      let labelVal = heatMap.getVisibleLabel (LNK.selection, axis);
+      labelVal = heatMap.getLabelText(labelVal, axis);
       cell.innerHTML = "<b>Linkouts for: " + labelVal + "</b>";
     }
   };
 
-  LNK.addMenuItemToTable = function (axis, table, linkout, addedHeader) {
-    const heatMap = MMGR.getHeatMap();
-    var body = table.getElementsByClassName("labelMenuBody")[0];
+  function addMenuItemToTable (heatMap, axis, table, linkout, addedHeader) {
 
-    var functionWithParams = function () {
+    const functionWithParams = function () {
       // this is the function that gets called when the linkout is clicked
-      var input = LNK.getLabelsByType(axis, linkout);
-      if (linkout.callback !== null) linkout.callback(input, axis); // linkout functions will have inputs that correspond to the labelType used in the addlinkout function used to make them.
+      const labels = getLabelsByType(heatMap, linkout, axis);
+      if (linkout.callback !== null) linkout.callback(heatMap, labels, axis); // linkout functions will have inputs that correspond to the labelType used in the addlinkout function used to make them.
     };
+
+    const body = table.getElementsByClassName("labelMenuBody")[0];
+
     //Add indentation to linkout title if the link does not contain the word "clipboard" and it is not a Matrix linkout
     var linkTitle =
       linkout.title.indexOf("clipboard") > 0 && axis !== "Matrix"
@@ -1040,10 +1013,10 @@ var linkoutsVersion = "undefined";
         if (linkout.selectType === "multiSelection") {
           //Don't add a subsection header for multi links IF only one link has been selected
           if (LNK.hasSelection(axis)) {
-            LNK.addTextRowToTable(table, "multi", axis);
+            addTextRowToTable(heatMap, table, "multi", axis);
           }
         } else {
-          LNK.addTextRowToTable(table, "ind", axis);
+          addTextRowToTable(heatMap, table, "ind", axis);
         }
         addedHeader = true;
       }
@@ -1111,10 +1084,10 @@ var linkoutsVersion = "undefined";
         if (addedHeader === false) {
           if (linkout.selectType === "multiSelection") {
             if (LNK.hasSelection(axis)) {
-              LNK.addTextRowToTable(table, "multi", axis);
+              addTextRowToTable(heatMap, table, "multi", axis);
             }
           } else {
-            LNK.addTextRowToTable(table, "ind", axis);
+            addTextRowToTable(heatMap, table, "ind", axis);
           }
           addedHeader = true;
         }
@@ -1134,38 +1107,15 @@ var linkoutsVersion = "undefined";
     return addedHeader;
   };
 
-  LNK.selectionError = function (e) {
-    var message =
-      "<br>Please select only one label in this axis to use the following linkout:<br><br><b>" +
-      e.currentTarget.innerHTML +
-      "</b>";
-    UHM.linkoutError(message);
-  };
+  function defineDefaultLinkouts () {
 
-  LNK.getDefaultLinkouts = function () {
-    const heatMap = MMGR.getHeatMap();
-    var colLabelType = heatMap.getColLabels().label_type;
-    var rowLabelType = heatMap.getRowLabels().label_type;
-    //	LNK.addLinkout("Copy " + (colLabelType[0].length < 20 ? colLabelType[0] : "Column Labels") +" to Clipboard", colLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
     LNK.addLinkout(
       "Copy selected labels to clipboard",
-      colLabelType[0],
+      [],
       linkouts.MULTI_SELECT,
-      LNK.copyToClipBoard,
+      copyToClipBoard,
       null,
-      0,
-    ); // text changed from the full label type to just "Column/Row Label" to prevent misreading of this linkout
-    if (rowLabelType[0] !== colLabelType[0]) {
-      //		LNK.addLinkout("Copy " + (rowLabelType[0].length < 20 ? rowLabelType[0] : "Row Labels") + " to Clipboard", rowLabelType[0], linkouts.MULTI_SELECT, LNK.copyToClipBoard,null,0);
-      LNK.addLinkout(
-        "Copy selected labels to clipboard",
-        rowLabelType[0],
-        linkouts.MULTI_SELECT,
-        LNK.copyToClipBoard,
-        null,
-        0,
-      );
-    }
+    );
 
     LNK.addLinkout(
       "Download covariate data for all columns",
@@ -1173,7 +1123,6 @@ var linkoutsVersion = "undefined";
       linkouts.MULTI_SELECT,
       downloadEntireClassBar,
       null,
-      0,
     );
     LNK.addLinkout(
       "Download covariate data for selected columns",
@@ -1181,7 +1130,6 @@ var linkoutsVersion = "undefined";
       linkouts.MULTI_SELECT,
       downloadPartialClassBar,
       null,
-      1,
     );
     LNK.addLinkout(
       "Download covariate data for all rows",
@@ -1189,7 +1137,6 @@ var linkoutsVersion = "undefined";
       linkouts.MULTI_SELECT,
       downloadEntireClassBar,
       null,
-      0,
     );
     LNK.addLinkout(
       "Download covariate data for selected rows",
@@ -1197,48 +1144,42 @@ var linkoutsVersion = "undefined";
       linkouts.MULTI_SELECT,
       downloadPartialClassBar,
       null,
-      1,
     );
-    LNK.addLinkout(
+    LNK.addMatrixLinkout(
       "Copy selected labels to clipboard",
-      "Matrix",
+      [], [],
       linkouts.MULTI_SELECT,
-      LNK.copySelectionToClipboard,
+      copySelectionToClipboard,
       null,
-      0,
     );
-    LNK.addLinkout(
+    LNK.addMatrixLinkout(
       "Download all matrix data to file",
-      "Matrix",
-      LNK.EMPTY_SELECT,
+      [], [],
+      EMPTY_SELECT,
       downloadAllMatrixData,
       null,
-      0,
     );
-    LNK.addLinkout(
+    LNK.addMatrixLinkout(
       "Download selected matrix data to file",
-      "Matrix",
+      [], [],
       linkouts.MULTI_SELECT,
       downloadSelectedMatrixData,
       null,
-      0,
     );
     if (LNK.enableBuilderUploads) {
-      LNK.addLinkout(
+      LNK.addMatrixLinkout(
         "Upload all NG-CHM data to builder",
-        "Matrix",
-        LNK.EMPTY_SELECT,
+        [], [],
+        EMPTY_SELECT,
         uploadAllToBuilder,
         null,
-        0,
       );
-      LNK.addLinkout(
+      LNK.addMatrixLinkout(
         "Upload selected NG-CHM data to builder",
-        "Matrix",
+        [], [],
         linkouts.MULTI_SELECT,
         uploadSelectedToBuilder,
         null,
-        0,
       );
     }
   };
@@ -1260,14 +1201,13 @@ var linkoutsVersion = "undefined";
   // DEFAULT FUNCTIONS //
   //===================//
 
-  LNK.copyToClipBoard = function (labels, axis) {
+  function copyToClipBoard (heatMap, labels, axis) {
     window
       .open("", "", "width=335,height=330,resizable=1")
       .document.write(labels.join("<br>"));
-  };
+  }
 
-  function downloadEntireClassBar(labels, covarAxis) {
-    const heatMap = MMGR.getHeatMap();
+  function downloadEntireClassBar(heatMap, labels, covarAxis) {
     const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
     const axisLabels = heatMap.getAxisLabels(axis)["labels"];
     const classBars = heatMap.getAxisCovariateData(axis);
@@ -1282,8 +1222,7 @@ var linkoutsVersion = "undefined";
     downloadSelectedData(heatMap, rows, covarAxis, false);
   }
 
-  function downloadPartialClassBar(labels, covarAxis) {
-    const heatMap = MMGR.getHeatMap();
+  function downloadPartialClassBar(heatMap, labels, covarAxis) {
     const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
     const axisLabels = SRCHSTATE.getSearchLabelsByAxis(axis);
     const labelIndex = SRCHSTATE.getAxisSearchResults(axis);
@@ -1301,7 +1240,7 @@ var linkoutsVersion = "undefined";
     downloadSelectedData(heatMap, rows, covarAxis, false);
   }
 
-  LNK.copySelectionToClipboard = function (labels, axis) {
+  function copySelectionToClipboard (heatMap, labels, axis) {
     window
       .open("", "", "width=335,height=330,resizable=1")
       .document.write(
@@ -1312,22 +1251,21 @@ var linkoutsVersion = "undefined";
       );
   };
 
-  function uploadAllToBuilder(data, axis) {
-    uploadToBuilder("all", data, [], []);
+  function uploadAllToBuilder(heatMap, data, axis) {
+    uploadToBuilder(heatMap, "all", data, [], []);
   }
 
-  function uploadSelectedToBuilder(data, axis) {
+  function uploadSelectedToBuilder(heatMap, data, axis) {
     const rowRanges = NgChm.UTIL.getContigRanges(
       NgChm.SRCHSTATE.getAxisSearchResults("Row"),
     );
     const colRanges = NgChm.UTIL.getContigRanges(
       NgChm.SRCHSTATE.getAxisSearchResults("Column"),
     );
-    uploadToBuilder("selected", data, rowRanges, colRanges);
+    uploadToBuilder(heatMap, "selected", data, rowRanges, colRanges);
   }
 
-  function uploadToBuilder(selectType, data, rowSelection, colSelection) {
-    const heatMap = MMGR.getHeatMap();
+  function uploadToBuilder(heatMap, selectType, data, rowSelection, colSelection) {
     const msgBox = UHM.newMessageBox("upload");
     UHM.setNewMessageBoxHeader(
       msgBox,
@@ -2018,7 +1956,7 @@ var linkoutsVersion = "undefined";
       });
       data.axes.push({
         fullLabels: filterGaps(fullLabels, gapIndices),
-        actualLabels: filterGaps(MMGR.getActualLabels(axisName), gapIndices),
+        actualLabels: filterGaps(heatMap.actualLabels(axisName), gapIndices),
         selectedLabels: selectedLabels,
       });
       for (let idx = 0; idx < axis.cocos.length; idx++) {
@@ -2072,9 +2010,10 @@ var linkoutsVersion = "undefined";
       );
       return false;
     }
+    const heatMap = MMGR.getHeatMap();
     var otherAxisName = MMGR.isRow(msg.axisName) ? "column" : "row";
-    var otherAxisLabels = MMGR.getActualLabels(otherAxisName);
-    var heatMapAxisLabels = MMGR.getActualLabels(msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
+    var otherAxisLabels = heatMap.actualLabels(otherAxisName);
+    var heatMapAxisLabels = heatMap.actualLabels(msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
     heatMapAxisLabels = heatMapAxisLabels.map((l) => l.toUpperCase());
     var axisIdx = [];
     const pluginLabels = [];
@@ -4077,7 +4016,7 @@ var linkoutsVersion = "undefined";
         PIM.sendMessageToPlugin({
           nonce: msg.nonce,
           op: "labels",
-          labels: MMGR.getActualLabels(msg.axisName),
+          labels: MMGR.getHeatMap().actualLabels(msg.axisName),
         });
       } else {
         console.log({

@@ -914,8 +914,28 @@
       return this.mapConfig.col_configuration;
     };
 
-    HeatMap.prototype.getAxisCovariateConfig = function (axis) {
-      return this.getAxisConfig(axis).classifications;
+    // Returns an array of the covariate configurations for the specified axis.
+    // If filters is specified, it is an object containing one or more filter
+    // specifications.  Only covariates that match all filters are returned.
+    // The following filters are implemented:
+    // - type: "continuous" or "discrete".
+    // - show: "Y" or "N".
+    HeatMap.prototype.getAxisCovariateConfig = function (axis, filters) {
+      const classifications = this.getAxisConfig(axis).classifications;
+      // Short-cut if no filters.
+      if (!filters) return classifications;
+
+      let matches = Object.entries(classifications);
+      Object.entries(filters).forEach(([filter, value]) => {
+        if (filter == "type") {
+          matches = matches.filter (([filter,covar]) => covar.color_map.type == value);
+        } else if (filter == "show") {
+          matches = matches.filter (([filter,covar]) => covar.show == value);
+        } else {
+          console.error ("Unknown covariate filter", { filter, value });
+        }
+      });
+      return Object.fromEntries(matches);
     };
 
     HeatMap.prototype.getAxisCovariateOrder = function (axis) {
@@ -947,6 +967,18 @@
       return Object.entries(this.getAxisCovariateConfig(axis)).map(
         ([key, config]) => (config.show === "Y" ? config.bar_type : 0),
       );
+    };
+
+    // Returns a generator over all covariates on both axes.  The returned
+    // values are objects with two entries: axis (row or col) and key.
+    //
+    HeatMap.prototype.genAllCovars = function* genAllCovars () {
+      for (const axis of [ "row", "col" ]) {
+        const covariates = this.getAxisCovariateOrder(axis);
+        for (const key of covariates) {
+          yield ({ axis, key });
+        }
+      };
     };
 
     // Return an array of the display parameters of all visible covariate bars on an axis.
@@ -1272,6 +1304,10 @@
       return this.mapConfig.col_configuration.dendrogram;
     };
 
+    HeatMap.prototype.getAxisDendroConfig = function (axis) {
+      return this.getAxisConfig(axis).dendrogram;
+    };
+
     HeatMap.prototype.setRowDendrogramShow = function (value) {
       this.mapConfig.row_configuration.dendrogram.show = value;
     };
@@ -1310,6 +1346,59 @@
         showDendro = false;
       }
       return showDendro;
+    };
+
+    // Returns an array of the top item labels on the specified axis.
+    // The top items are those with the highest value of the top_items_cv
+    // entry in the axis config.
+    //
+    // If specified, options limit the returned top items.  The only
+    // option implemented to date is:
+    // - count: N, returns at most the top count items.
+    //
+    HeatMap.prototype.getTopItems = function getTopItems (axis, options = {}) {
+      const cfg = this.getAxisConfig(axis);
+      const cv = cfg.top_items_cv;
+      // If top_items_cv is not selected, return an empty array.
+      if (cv == "") return [];
+      // If top_items_cv is to use the text entry field.
+      if (cv == "--text-entry--") return (cfg.top_items || []).sort();
+      // Cache the descending order of each covariate in a map added to the
+      // heatmap object.  Each cache entry will be an array of index entries
+      // into the axis's label list, such that the covariates values are
+      // not missing and in descending order.
+      //
+      // When it is possible to modify the values of a covariate interactively,
+      // we will need to implement a method to invalidate the the corresponding
+      // cache entry.
+      if (!this["__cvOrder"+axis]) this["__cvOrder"+axis] = new Map();
+      const wm = this["__cvOrder"+axis];
+      // Retrieve the indices of the top items, or create it if needed.
+      let cvOrder;
+      if (wm.has(cv)) {
+        cvOrder = wm.get (cv);
+      } else {
+        // Create an array of indices, remove the indices of missing values,
+        // and sort the remainder by descending value of the covariate.
+        //
+        // We use an array of random values to break ties in large blocks of
+        // labels with the same covariate values. (Imagine a covariate with
+        // a very limited integer range.)  When returning a limited number of
+        // top items, this returns a broad selection of the labels rather than
+        // just a prefix (or suffix) of that block.
+        const cvData = this.getAxisCovariateData (axis)[cv].values;
+        cvOrder = cvData.map((value,index) => index);
+        const rand = cvData.map(value => Math.random());
+        cvOrder = cvOrder.filter(idx => cvData[idx] != "NA");
+        cvOrder.sort((a,b) => (cvData[b]-cvData[a]) || (rand[b]-rand[a]));
+        wm.set (cv, cvOrder);
+      }
+      if (options.hasOwnProperty('count')) {
+        cvOrder = cvOrder.slice(0, options.count);
+      }
+      const labels = this.getAxisLabels(axis).labels;
+      const selected = cvOrder.map(index => labels[index]);
+      return selected.sort();
     };
 
     HeatMap.prototype.setReadOnly = function () {
@@ -1434,6 +1523,20 @@
     HeatMap.prototype.getColLabels = function () {
       return this.mapData.col_data.label;
     };
+
+    HeatMap.prototype.getLabelTypes = function (axis) {
+      const labels = this.getAxisLabels (axis);
+      return copyLabelTypes (labels.labelTypes);
+    };
+
+    HeatMap.prototype.setLabelTypes = function (axis, labelTypes) {
+      const labels = this.getAxisLabels (axis);
+      return labels.labelTypes = copyLabelTypes (labelTypes);
+    };
+
+    function copyLabelTypes (types) {
+      return types.map((obj) => ({ type: obj.type, visible: obj.visible }));
+    }
 
     HeatMap.prototype.getDendrogramData = function (axis) {
       const data = isRow(axis)
@@ -2177,83 +2280,94 @@
   /* Submodule for caching Actual/Shown labels.
    */
   (function () {
-    var actualAxisLabels;
-    var shownAxisLabels;
-    var shownAxisLabelParams;
 
-    MMGR.initAxisLabels = function () {
-      actualAxisLabels = {};
-      shownAxisLabels = { ROW: [], COLUMN: [] };
-      shownAxisLabelParams = { ROW: {}, COLUMN: {} };
+    HeatMap.prototype.initAxisLabels = function initAxisLabels () {
+      this.actualAxisLabels = {};
+      this.shownAxisLabels = { ROW: [], COLUMN: [] };
+      this.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
     };
-    MMGR.initAxisLabels();
 
-    MMGR.getActualLabels = function (axis) {
+    // Returns an array of the "actual" labels for the specified axis
+    // of the NG-CHM.  The "actual" labels currently consist of the
+    // visible text fields of the "full" labels.
+    HeatMap.prototype.actualLabels = function actualLabels (axis) {
       axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
-      if (!actualAxisLabels.hasOwnProperty(axis)) {
-        const labels = MMGR.getHeatMap().getAxisLabels(axis)["labels"];
-        actualAxisLabels[axis] = labels.map((text) => {
-          return text === undefined ? undefined : text.split("|")[0];
-        });
+      if (!this.actualAxisLabels.hasOwnProperty(axis)) {
+        const labels = this.getAxisLabels(axis)["labels"];
+        const types = this.getLabelTypes(axis);
+        this.actualAxisLabels[axis] = labels.map(visibleParts);
+
+        function visibleParts (label) {
+          return label.split('|').filter((part,idx) => types[idx] && types[idx].visible).join("|");
+        }
       }
-      return actualAxisLabels[axis];
+      return this.actualAxisLabels[axis];
     };
-    MMGR.getShownLabels = function (axis) {
+
+    // Return the visible label for the specified full label and axis.
+    HeatMap.prototype.getVisibleLabel = function getVisibleLabel (fullLabel, axis) {
+      const types = this.getLabelTypes(axis);
+      return fullLabel.split('|').filter((part,idx) => types[idx] && types[idx].visible).join("|");
+    };
+
+    // Returns an array of the "shown" labels for the specified axis of
+    // the NG-CHM. The "shown" labels are the "actual" labels abbreviated,
+    // if needed, to be no longer than the maximum label display length for
+    // the specified axis.
+    HeatMap.prototype.shownLabels = function shownLabels (axis) {
       axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
-      const config = MMGR.getHeatMap().getAxisConfig(axis);
+      const config = this.getAxisConfig(axis);
       // Recalculate shown labels if parameters affecting them have changed.
       if (
-        shownAxisLabelParams[axis].label_display_length !==
+        this.shownAxisLabelParams[axis].label_display_length !==
           config.label_display_length ||
-        shownAxisLabelParams[axis].label_display_method !==
+        this.shownAxisLabelParams[axis].label_display_method !==
           config.label_display_method
       ) {
-        shownAxisLabelParams[axis].label_display_length =
+        this.shownAxisLabelParams[axis].label_display_length =
           config.label_display_length;
-        shownAxisLabelParams[axis].label_display_method =
+        this.shownAxisLabelParams[axis].label_display_method =
           config.label_display_method;
-        const labels = MMGR.getActualLabels(axis);
-        shownAxisLabels[axis] = labels.map((text) => {
-          return text === undefined ? "" : MMGR.getLabelText(text, axis);
+        const labels = this.actualLabels(axis);
+        this.shownAxisLabels[axis] = labels.map((text) => {
+          return text === undefined ? "" : this.getLabelText(text, axis);
         });
       }
-      return shownAxisLabels[axis];
+      return this.shownAxisLabels[axis];
     };
-  })();
 
-  /**********************************************************************************
-   * FUNCTION - getLabelText: The purpose of this function examine label text and
-   * shorten the text if the label exceeds the 20 character allowable length.  If the
-   * label is in excess, the first 9 and last 8 characters will be written out
-   * separated by ellipsis (...);
-   **********************************************************************************/
-  MMGR.getLabelText = function (text, type, builder) {
-    const heatMap = MMGR.getHeatMap();
-    var size = parseInt(heatMap.getColConfig().label_display_length);
-    var elPos = heatMap.getColConfig().label_display_method;
-    if (type.toUpperCase() === "ROW") {
-      size = parseInt(heatMap.getRowConfig().label_display_length);
-      elPos = heatMap.getRowConfig().label_display_method;
-    }
-    //Done for displaying labels on Summary side in builder
-    if (typeof builder !== "undefined") {
-      /* FIXME: BMB */
-      size = 16;
-    }
-    if (text.length > size) {
-      if (elPos === "END") {
-        text = text.substr(0, size - 3) + "...";
-      } else if (elPos === "MIDDLE") {
-        text =
-          text.substr(0, size / 2 - 1) +
-          "..." +
-          text.substr(text.length - (size / 2 - 2), text.length);
-      } else {
-        text = "..." + text.substr(text.length - (size - 3), text.length);
+    /**********************************************************************************
+     * FUNCTION - getLabelText: The purpose of this function examine label text and
+     * shorten the text if the label exceeds the 20 character allowable length.  If the
+     * label is in excess, the first 9 and last 8 characters will be written out
+     * separated by ellipsis (...);
+     **********************************************************************************/
+    HeatMap.prototype.getLabelText = function getLabelText (text, axis, builder) {
+      axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
+      const config = this.getAxisConfig(axis);
+      let size = parseInt(config.label_display_length);
+      const elPos = config.label_display_method;
+      //Done for displaying labels on Summary side in builder
+      if (typeof builder !== "undefined") {
+        /* FIXME: BMB */
+        size = 16;
       }
-    }
-    return text;
-  };
+      if (text.length > size) {
+        if (elPos === "END") {
+          text = text.substr(0, size - 3) + "...";
+        } else if (elPos === "MIDDLE") {
+          text =
+            text.substr(0, size / 2 - 1) +
+            "..." +
+            text.substr(text.length - (size / 2 - 2), text.length);
+        } else {
+          text = "..." + text.substr(text.length - (size - 3), text.length);
+        }
+      }
+      return text;
+    };
+
+  })();
 
   /**********************************************************************************
    * FUNCTION - zipAppDownload: The user clicked on the "Download Viewer" button.
@@ -2824,6 +2938,7 @@
         const status = getMapStatus(heatMap);
         status.mapUpdatedOnLoad = true;
       }
+      checkAxes(heatMap);
       heatMap.sendCallBack(MMGR.Event_JSON);
     }
 
@@ -2833,9 +2948,17 @@
         status.mapUpdatedOnLoad = true;
       }
       heatMap.mapConfig = mc;
-      addDataLayers(heatMap);
-      configureFlick(heatMap);
+      checkAxes(heatMap);
       heatMap.sendCallBack(MMGR.Event_JSON);
+    }
+
+    // Perform compatibility checks required once *both* mapConfig and mapData are available.
+    function checkAxes (heatMap) {
+        if (heatMap.mapData != null && heatMap.mapConfig != null) {
+          addDataLayers(heatMap);
+          configureFlick(heatMap);
+          heatMap.initAxisLabels();
+        }
     }
 
     MMGR.mapUpdatedOnLoad = function (heatMap) {

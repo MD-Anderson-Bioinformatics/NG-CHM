@@ -653,7 +653,6 @@
     SUM.rowTopItemsHeight = 0;
     DMM.nextMapNumber = 1;
     DEV.setMouseDown(false);
-    MMGR.initAxisLabels();
     UTIL.removeElementsByClass("DynamicLabel");
     SRCH.clearAllCurrentSearchItems();
   }
@@ -1107,15 +1106,15 @@
       const heatMap = MMGR.getHeatMap();
       var validPluginCtr = 0;
       var pluginTbl = document.createElement("TABLE");
-      var rowLabels = heatMap.getRowLabels().label_type;
-      var colLabels = heatMap.getColLabels().label_type;
+      const rowTypes = heatMap.getLabelTypes("row");
+      const colTypes = heatMap.getLabelTypes("col");
       pluginTbl.insertRow().innerHTML = UHM.formatBlankRow();
       var tr = pluginTbl.insertRow();
       var tr = pluginTbl.insertRow();
       for (var i = 0; i < CUST.customPlugins.length; i++) {
         var plugin = CUST.customPlugins[i];
-        var rowPluginFound = isPluginFound(plugin, rowLabels);
-        var colPluginFound = isPluginFound(plugin, colLabels);
+        var rowPluginFound = isPluginFound(plugin, rowTypes);
+        var colPluginFound = isPluginFound(plugin, colTypes);
         var matrixPluginFound = isPluginMatrix(plugin);
         var axesFound =
           matrixPluginFound && rowPluginFound && colPluginFound
@@ -1254,6 +1253,7 @@
      * Row or column label types are passed into this function.
      **********************************************************************************/
     function isPluginFound(plugin, labels) {
+      labels = labels.map ((type) => type.type);
       var pluginFound = false;
       if (plugin.name === "TCGA") {
         for (var l = 0; l < labels.length; l++) {
@@ -1297,19 +1297,14 @@
      * a given plugin is also a Matrix plugin.
      **********************************************************************************/
     function isPluginMatrix(plugin) {
-      var pluginMatrix = false;
       if (typeof plugin.linkouts !== "undefined") {
-        for (var k = 0; k < plugin.linkouts.length; k++) {
-          var pluginName = plugin.linkouts[k].menuEntry;
-          for (var l = 0; l < linkouts.Matrix.length; l++) {
-            var matrixName = linkouts.Matrix[l].title;
-            if (pluginName === matrixName) {
-              pluginMatrix = true;
-            }
+        for (const linkout of plugin.linkouts) {
+          if (LNK.isMatrixLinkout (linkout.menuEntry)) {
+            return true;
           }
         }
       }
-      return pluginMatrix;
+      return false;
     }
 
     /**********************************************************************************
@@ -1946,13 +1941,14 @@
     function vanodiSelectLabels(instance, msg) {
       const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
       const pluginLabels = msg.selection.pointIds.map((l) => l.toUpperCase()); // labels from plugin
+      const heatMap = MMGR.getHeatMap();
       var heatMapAxisLabels;
       if (pluginLabels.length > 0 && pluginLabels[0].indexOf("|") !== -1) {
         // Plugin sent full labels
-        heatMapAxisLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
+        heatMapAxisLabels = heatMap.axisLabels(axis).labels;
       } else {
         // Plugin sent actual labels (or actual and full are identical).
-        heatMapAxisLabels = MMGR.getActualLabels(axis);
+        heatMapAxisLabels = heatMap.actualLabels(axis);
       }
       heatMapAxisLabels = heatMapAxisLabels.map((l) => l.toUpperCase());
       var setSelected = new Set(pluginLabels); // make a set for faster access below, and avoiding use of indexOf
@@ -1984,7 +1980,7 @@
     "mouseover",
     function vanodiMouseover(instance, msg) {
       const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
-      const allLabels = MMGR.getActualLabels(axis);
+      const allLabels = MMGR.getHeatMap().actualLabels(axis);
       const pointId = msg.selection.pointId;
       const ptIdx = allLabels.indexOf(pointId) + 1;
       SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);

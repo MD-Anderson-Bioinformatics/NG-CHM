@@ -24,6 +24,10 @@
   UTIL.mapId = UTIL.getURLParameter("map");
   UTIL.mapNameRef = UTIL.getURLParameter("name");
 
+  UTIL.getDebugFlag = function getDebugFlag (what) {
+    return UTIL.getURLParameter("debug").split(",").includes(what);
+  };
+
   UTIL.capitalize = function capitalize(str) {
     return str.substr(0, 1).toUpperCase() + str.substr(1);
   };
@@ -264,6 +268,21 @@
       button.addEventListener(h[0], h[1]);
     }
     return button;
+  };
+
+  // Create a new select element.
+  UTIL.newSelect = function newSelect(values, contents) {
+    if (values.length != contents.length) {
+      console.error ("UTIL.newSelect: values and contents do not have the same length", { values, contents });
+    }
+    const select = UTIL.newElement("SELECT");
+    for (let ii = 0; ii < values.length; ii++) {
+      const option = UTIL.newElement("OPTION");
+      option.value = values[ii];
+      option.innerText = contents[ii];
+      select.appendChild (option);
+    }
+    return select;
   };
 
   /**********************************************************************************

@@ -295,7 +295,7 @@
    * the header column, detail column, and the number of columns to span as inputs.
    **********************************************************************************/
   UHM.setTableRow = function (tableObj, tdArray, colSpan, align) {
-    var tr = tableObj.insertRow();
+    const tr = tableObj.insertRow();
     tr.className = "chmTblRow";
     for (var i = 0; i < tdArray.length; i++) {
       var td = tr.insertCell(i);
@@ -317,6 +317,7 @@
         td.align = align;
       }
     }
+    return tr;
   };
 
   /**********************************************************************************

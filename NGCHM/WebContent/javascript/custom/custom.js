@@ -561,6 +561,16 @@ function linkoutHelp () {
     );
   }
 
+  function openEnsemblGene(names) {
+    const ensgid = names[0];
+    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+    linkouts.openUrl(
+      "https://ensembl.org/" + species + "/Gene/Summary?db=core;g=" + ensgid,
+      "Ensembl",
+      { noframe: true },
+    );
+  }
+
   function searchEnsemblForTranscript(names) {
     const tname = names[0];
     const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
@@ -587,6 +597,13 @@ function linkoutHelp () {
         typeName: "bio.gene.hugo",
         selectMode: linkouts.SINGLE_SELECT,
         linkoutFn: searchEnsemblForGene,
+      },
+      // linkout for ensembl gene id
+      {
+        menuEntry: "Open Ensembl Page",
+        typeName: "bio.gene.ensembl",
+        selectMode: linkouts.SINGLE_SELECT,
+        linkoutFn: openEnsemblGene,
       },
       // linkouts for transcript ids
       {

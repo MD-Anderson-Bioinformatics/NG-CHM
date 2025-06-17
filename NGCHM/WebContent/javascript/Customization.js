@@ -148,6 +148,7 @@
   }
 
   function initLabelTypes(typeList) {
+    typeList = typeList.map((type) => type.type); // Ignore visibility.
     CUST.superTypes = {};
     CUST.subTypes = {};
 
@@ -371,22 +372,22 @@
 
   // Executed before custom.js is loaded.
   CUST.beforeLoadCustom = function (heatMap) {
-    var colTypes = heatMap.getColLabels().label_type;
-    var rowTypes = heatMap.getRowLabels().label_type;
+    var colTypes = heatMap.getLabelTypes("col");
+    var rowTypes = heatMap.getLabelTypes("row");
     if (CUST.verbose) {
       console.log("Column types:");
       colTypes.forEach(function (ty) {
-        console.log(ty);
+        console.log(ty.type);
       });
       console.log("Row types:");
       rowTypes.forEach(function (ty) {
-        console.log(ty);
+        console.log(ty.type);
       });
     }
 
     CUST.customPlugins = [];
     CUST.linkoutTypes = [];
-    initLabelTypes([].concat(colTypes, rowTypes));
+    initLabelTypes([].concat(colTypes, rowTypes).flat());
   };
 
   var pluginsLoaded = false;
