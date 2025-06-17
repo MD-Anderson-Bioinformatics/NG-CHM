@@ -228,6 +228,13 @@
 					<canvas id='summary_row_select_canvas' class='selection_canvas' style='padding-left:2px;'></canvas>
 					<div id='sumlabelDiv' style="display: inline-block"></div>
 				</div>
+        <template id="emptyMsgBoxTemplate" style="display: none; position: absolute;">
+          <div class="msgBox">
+            <div class="msgBoxHdr"></div>
+            <div class="msgBoxBody"></div>
+            <div class='msgBoxButtons buttonBox'></div>
+          </div>
+        </template>
 			</div>
 			<div id="pdfPrefs" class="hide">
 			    <div class="prefsHdr" id="pdfPrefsHdr"><span>PDF Generation</span></div>
@@ -494,6 +501,8 @@
 		<script src="javascript/NGCHM_Util.js"></script>
 		<script src="javascript/CompatibilityManager.js"></script>
 		<script src="javascript/UI-Table.js"></script>
+		<script src="javascript/CommandParser.js"></script>
+		<script src="javascript/ExecCommand.js"></script>
 		<script src="javascript/ColorPalettes.js"></script>
 		<script src="javascript/FlickManager.js"></script>
 		<script src="javascript/UserHelpManager.js"></script>
@@ -522,13 +531,18 @@
 		<script src="javascript/PdfGenerator.js"></script>
 		<script src="javascript/RecreatePanes.js"></script>
 		<script src="javascript/lib/zip.min.js"></script> <!--PRESERVE already minimized-->
+		<script src="javascript/CommandMode.js"></script>
 		<script src="javascript/UI-Manager.js"></script> <!-- requires zip -->
+		<script src="javascript/HeatMapCommands.js"></script>
+		<script src="javascript/CovariateCommands.js"></script>
+		<script src="javascript/SearchCommands.js"></script>
 		<!-- NEW CHUNK -->
 		<script src="javascript/lib/intro.min.js"></script> <!--PRESERVE already minimized-->
 		<script src="javascript/lib/jstat.min.js"></script> <!--PRESERVE already minimized-->
 		<script src="javascript/use_jstat.js"></script>
 		<script src="javascript/lib/jspdf.umd.min.js"></script> <!--PRESERVE-->
 		<script src="javascript/lib/FileSaver.min.js"></script> <!--PRESERVE-->
+    <script src="javascript/lib/lexer/lexer-master/lexer.js"></script>
 		<!-- NEW CHUNK -->
 		<script src="javascript/API.js"></script>  <!-- requires jspdf -->
 		<script type="text/Javascript">

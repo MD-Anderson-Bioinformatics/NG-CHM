@@ -1692,6 +1692,12 @@
       return isRow(axis) ? level.totalRows : level.totalColumns;
     };
 
+    //Return the number of rows or columns for the given level
+    HeatMap.prototype.getNumAxisElements = function (axis, level) {
+      const l = this.datalevels[level];
+      return MMGR.isRow(axis) ? l.totalRows : l.totalColumns;
+    };
+
     //Return the number of rows for a given level
     HeatMap.prototype.getNumRows = function (level) {
       return this.datalevels[level].totalRows;
@@ -1860,21 +1866,30 @@
       return this.fileSrc;
     };
 
-    // unAppliedChanges is true iff the map has been changed
-    // but not saved.
-    //
     // setUnAppliedChanges (true) is called when something
-    // changes the map configuration.
+    // changes the heatmap.
     //
     // setUnAppliedChanges (false) is called when something
-    // saves or resets the map configuration.
-    HeatMap.prototype.setUnAppliedChanges = function (value) {
-      this.unAppliedChanges = value;
+    // saves the heatmap.
+    //
+    // The version number is also used to help determine when
+    // redraws are needed.
+    HeatMap.prototype.getVersion = function () {
+      return this.version;
+    };
+    HeatMap.prototype.setUnAppliedChanges = function (changed) {
+      if (changed) {
+        // Note change.
+        this.version++;
+      } else {
+        // Note the current version has been saved.
+        this.savedVersion = this.version;
+      }
     };
 
-    // Return the current value of unAppliedChanges.
+    // Return true if the heatmap has changed since it was last saved.
     HeatMap.prototype.getUnAppliedChanges = function () {
-      return this.unAppliedChanges;
+      return this.version != this.savedVersion;
     };
 
     // Call the users call back function to let them know the chm is initialized or updated.
@@ -2056,7 +2071,8 @@
   // Used to get HeatMapLevel object.
   function HeatMap(heatMapName, updateCallbacks, fileSrc, chmFile, compat) {
     this.initialized = false; // True once the minimum components have loaded.
-    this.unAppliedChanges = false; // True iff map has unsaved changes.
+    this.version = 0; // Update to indicate need to save or redraw.
+    this.savedVersion = 0; // Last version that was saved.
     this.mapName = heatMapName; // Name of the map.
     this.mapConfig = null; // Map configuration.
     this.mapData = null; // Map data (excluding tiles).
@@ -3096,6 +3112,11 @@
     // Return the current heat map.
     MMGR.getHeatMap = function getHeatMap() {
       return heatMap;
+    };
+
+    // Return all heat maps.
+    MMGR.getAllHeatMaps = function getAllHeatMaps() {
+      return [heatMap];  // Only 1 for now.
     };
 
     /*

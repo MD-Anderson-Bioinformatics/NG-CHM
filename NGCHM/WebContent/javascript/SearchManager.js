@@ -80,6 +80,10 @@
     // Perform initial search if search parameter has been specified.
     // To be called after initialization of the panels.
     const searchParam = UTIL.getURLParameter("search");
+    SRCH.searchForString (searchParam);
+  };
+
+  SRCH.searchForString = function searchForString (searchParam) {
     if (searchParam !== "") {
       let searchElement = document.getElementById("search_text");
       searchElement.value = searchParam;
@@ -274,7 +278,7 @@
       const cats = [...document.getElementsByClassName("srchCovCheckBox")]
         .filter((cb) => cb.checked)
         .map((cb) => cb.value);
-      results = getSelectedDiscreteSelections(axis, cats, classDataValues);
+      results = SRCH.getSelectedDiscreteSelections(cats, classDataValues);
       saveCovarState(searchOn.value);
     } else {
       searchElement = document.getElementById("search_cov_cont");
@@ -307,9 +311,8 @@
    * FUNCTION - continuousCovarSearch returns the indices of elements that match
    * searchString on the specified axis for a continuous covariate covar.
    ***********************************************************************************/
-  SRCH.continuousCovarSearch = function (axis, covar, searchString) {
+  SRCH.continuousCovarSearch = function (heatMap, axis, covar, searchString) {
     axis = MMGR.isRow(axis) ? "Row" : "Column";
-    const heatMap = MMGR.getHeatMap();
     const classDataValues = heatMap.getAxisCovariateData(axis)[covar].values;
 
     const searchExprs = parseContinuousSearchString(
@@ -323,14 +326,14 @@
   };
 
   /**********************************************************************************
-   * Internal FUNCTION - getSelectedDiscreteSelections: The purpose of this function is to
+   * FUNCTION - getSelectedDiscreteSelections: The purpose of this function is to
    * find rows/cols that match the discrete category selections checked by the user.
    * It iterates the classDataValues data configuration for a given covariate bar
    * for either a direct match on category or, if missing is selected, missing values
    * on the covariate bar. If a value match is found, an item is added to the
    * searchResults array for the appropriate axis.
    ***********************************************************************************/
-  function getSelectedDiscreteSelections(axis, cats, classDataValues) {
+  SRCH.getSelectedDiscreteSelections = function getSelectedDiscreteSelections(cats, classDataValues) {
     const includeMissing = cats.indexOf("missing") > -1;
     const results = [];
     classDataValues.forEach((value, index) => {
@@ -342,7 +345,7 @@
       }
     });
     return results;
-  }
+  };
 
   /**********************************************************************************
    * FUNCTION - validateContinuousSearch: The purpose of this function it to validate
@@ -1108,10 +1111,11 @@
    * items on a particular axis.
    ***********************************************************************************/
   SRCH.clearSearchItems = function (clickAxis) {
-    SRCHSTATE.clearAllAxisSearchItems(clickAxis);
-    if (clickAxis === "Row") {
+    SRCHSTATE.clearAllAxisSearchItems(UTIL.capitalize(clickAxis));
+    clickAxis = clickAxis.toLowerCase();
+    if (clickAxis === "row") {
       SUM.rowDendro.clearSelectedBars();
-    } else if (clickAxis === "Column") {
+    } else if (clickAxis === "column") {
       SUM.colDendro.clearSelectedBars();
     }
     let markLabels = document.getElementsByClassName("MarkLabel");
