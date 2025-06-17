@@ -24,6 +24,7 @@ var linkoutsVersion = "undefined";
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const UTIL = NgChm.importNS("NgChm.UTIL");
+  const EXEC = NgChm.importNS("NgChm.EXEC");
 
   linkouts.VISIBLE_LABELS = "visibleLabels";
   linkouts.HIDDEN_LABELS = "hiddenLabels";
@@ -157,6 +158,10 @@ var linkoutsVersion = "undefined";
   // Describe plugin types.
   linkouts.describeTypes = function (typelist) {
     CUST.describeTypes(typelist);
+  };
+
+  linkouts.execCommand = function (args) {
+    return EXEC.execCommand (args, UTIL.consoleOutput);
   };
 
   /*******************************************
@@ -1941,15 +1946,8 @@ var linkoutsVersion = "undefined";
       const axisName = MMGR.isRow(axis.axisName) ? "Row" : "Column";
       const fullLabels = heatMap.getAxisLabels(axisName).labels;
       const searchItemsIdx = SRCHSTATE.getAxisSearchResults(axisName);
-      let selectedLabels = [];
-      for (let i = 0; i < searchItemsIdx.length; i++) {
-        let selectedLabel = fullLabels[searchItemsIdx[i] - 1];
-        selectedLabel =
-          selectedLabel.indexOf("|") !== -1
-            ? selectedLabel.substring(0, selectedLabel.indexOf("|"))
-            : selectedLabel;
-        selectedLabels.push(selectedLabel);
-      }
+      const actualLabels = heatMap.actualLabels (axisName);
+      const selectedLabels = searchItemsIdx.map(idx => actualLabels[idx-1]);
       const gapIndices = [];
       fullLabels.forEach((value, index) => {
         if (value === "") gapIndices.push(index);
@@ -3034,6 +3032,7 @@ var linkoutsVersion = "undefined";
               const selectedCov =
                 selectEl.options[selectEl.selectedIndex].value;
               const [isValid, searchResults] = SRCH.continuousCovarSearch(
+                MMGR.getHeatMap(),
                 thisAxis,
                 selectedCov,
                 e.target.value,
@@ -3927,7 +3926,7 @@ var linkoutsVersion = "undefined";
       if (config) {
         data.axes.forEach((ax, idx) => {
           if (config.axes[idx].axisName) {
-            ax.selectedLabels = getSelectedLabels(config.axes[idx].axisName);
+            ax.selectedLabels = getSelectedLabels(MMGR.getHeatMap(), config.axes[idx].axisName);
           }
         });
         pluginInstance.params = config;
@@ -3951,18 +3950,13 @@ var linkoutsVersion = "undefined";
     }
   }
 
-  function getSelectedLabels(axis) {
-    const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
+  function getSelectedLabels(heatMap, axis) {
+    const allLabels = heatMap.actualLabels(axis); // Visible parts of labels chosen by user.
     const searchItems = SRCHSTATE.getAxisSearchResults(axis); // axis == 'Row' or 'Column'
-    let selectedLabels = [];
-    searchItems.forEach((si, idx) => {
-      let pointId = allLabels[si - 1];
-      pointId =
-        pointId.indexOf("|") !== -1
-          ? pointId.substring(0, pointId.indexOf("!"))
-          : pointId;
-      selectedLabels.push(pointId);
-    });
+    const selectedLabels = [];
+    for (const selectionIndex of searchItems) {
+      selectedLabels.push(allLabels[selectionIndex-1]);
+    }
     return selectedLabels;
   }
 

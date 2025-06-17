@@ -734,7 +734,7 @@
   //
 
   // Create a new message box.
-  UHM.newMessageBox = function (name) {
+  UHM.newMessageBox = function (name, templateId) {
     const id = "msgBox-for-" + name;
     const existing = document.getElementById(id);
     if (existing) {
@@ -742,7 +742,7 @@
     }
 
     const msgBox = document
-      .querySelector("template#msgBoxTemplate")
+      .querySelector("template#" + (templateId || "msgBoxTemplate"))
       .content.querySelector("div")
       .cloneNode(true);
     msgBox.classList.add("hide");
