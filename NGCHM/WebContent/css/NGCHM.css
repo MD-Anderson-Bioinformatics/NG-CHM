@@ -902,8 +902,9 @@ button#layers_open_close[data-state='closed'] div.closed {
     display: inline-block;
     background-color: #ccc;
     position: absolute;
-    left: -8px;
+    left: 0px;
     top: -8px;
+    border: 1px solid var(--chm-table-color);
 }
 
 .chmTblRow {

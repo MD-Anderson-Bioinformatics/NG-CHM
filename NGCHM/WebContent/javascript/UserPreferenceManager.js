@@ -22,6 +22,11 @@
   const COMPAT = NgChm.importNS("NgChm.CM");
 
   const debug = UTIL.getDebugFlag("upm");
+  const debugLayers = UTIL.getDebugFlag("upm-layers");
+  const debugAxes = UTIL.getDebugFlag("upm-axes");
+  const debugCovars = UTIL.getDebugFlag("upm-covars");
+  const debugColors = UTIL.getDebugFlag("upm-colors");
+  const debugEvents = UTIL.getDebugFlag("upm-events");
 
   // The DIV that contains the entire Preferences Manager.
   const prefspanel = document.getElementById("prefs");
@@ -932,6 +937,17 @@
       layerprefs.appendChild(breakprefs);
     }
 
+    // Add a keydown event handler for this tab.
+    this.tabDiv.addEventListener("keydown", (ev) => {
+      if (debug || debugEvents) console.log("DataLayersTab: KeyDown handler", { target: ev.target });
+      for (const target of this.targetGen(ev)) {
+        if (target.classList.contains("ngchm-upm-input")) {
+          startChange();
+          break;
+        }
+      }
+    });
+
     // Add a change event handler for this tab.
     this.tabDiv.addEventListener("change", (ev) => {
       if (debug) console.log("DataLayersTab: Change handler", { target: ev.target });
@@ -1622,6 +1638,19 @@
         }
       }
     });
+    // Add a keydown handler for the entire tab.
+    this.tabDiv.addEventListener("keydown", (ev) => {
+      if (debug || debugEvents) {
+        console.log("CovariatesPrefsTab: KeyDown handler", { target: ev.target });
+      }
+      for (const target of this.targetGen(ev)) {
+        if (target.classList.contains("ngchm-upm-input")) {
+          startChange();
+          break;
+        }
+      }
+    });
+
     // Add a change handler for the entire tab.
     this.tabDiv.addEventListener("change", (ev) => {
       if (debug) console.log("CovariatesPrefsTab: Change handler", { target: ev.target });
@@ -2596,6 +2625,17 @@
         }
       }
     });
+
+    this.tabDiv.addEventListener("keydown", (ev) => {
+      if (debug || debugEvents) console.log("RowsColsTab: KeyDown handler", { target: ev.target });
+      for (const target of this.targetGen(ev)) {
+        if (target.classList.contains("ngchm-upm-top-items-text")) {
+          startChange();
+          break;
+        }
+      }
+    });
+
     return rowcolprefs;
 
     // ------------------------------------------------------------------------

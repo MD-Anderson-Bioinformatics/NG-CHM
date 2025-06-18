@@ -368,22 +368,6 @@
   };
 
   /**********************************************************************************
-   * FUNCTION - ReverseObject: The purpose of this function is to reverse the order
-   * of key elements in an object.
-   **********************************************************************************/
-  UTIL.reverseObject = function (Obj) {
-    var TempArr = [];
-    var NewObj = [];
-    for (var Key in Obj) {
-      TempArr.push(Key);
-    }
-    for (var i = TempArr.length - 1; i >= 0; i--) {
-      NewObj[TempArr[i]] = [];
-    }
-    return NewObj;
-  };
-
-  /**********************************************************************************
    * FUNCTION - isScreenZoomed: The purpose of this function is to determine if the
    * browser zoom level, set by the user, is zoomed (other than 100%)
    **********************************************************************************/
