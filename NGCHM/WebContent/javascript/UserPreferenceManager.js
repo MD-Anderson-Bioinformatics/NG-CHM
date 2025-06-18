@@ -1435,8 +1435,9 @@
 
     // Add a click handler for the entire tab.
     this.tabDiv.addEventListener("click", (ev) => {
-      if (debug || debugEvents)
+      if (debug || debugEvents) {
         console.log("CovariatesPrefsTab: Click handler", { target: ev.target });
+      }
       for (const target of this.targetGen(ev)) {
         if (target.id == "all_searchPref_btn") {
           // The user clicked on the filter covariates button.
@@ -1460,10 +1461,11 @@
 
     // Add a change handler for the entire tab.
     this.tabDiv.addEventListener("change", (ev) => {
-      if (debug || debugEvents)
+      if (debug || debugEvents) {
         console.log("CovariatesPrefsTab: Change handler", {
           target: ev.target
         });
+      }
       for (const target of this.targetGen(ev)) {
         if (target.classList.contains("ngchm-upm-show-covariate")) {
           // A "Show" checkbox on a covariate row changed.
