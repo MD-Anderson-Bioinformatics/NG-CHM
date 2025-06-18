@@ -1053,7 +1053,13 @@
     const paletteTable = TABLE.createTable({ columns: 3 });
     paletteTable.content.style.width = "fit-content";
     paletteTable.addIndent();
-    PALETTES.addPredefinedPalettes(paletteTable, layerName, setColorPrefsToPreset, "data", "continuous");
+    PALETTES.addPredefinedPalettes(
+      paletteTable,
+      layerName,
+      setColorPrefsToPreset,
+      "data",
+      "continuous"
+    );
     layerPrefs.appendChild(paletteTable.content);
 
     // 3. Create the grid properties table.
@@ -1433,7 +1439,9 @@
 
     // Add a click handler for the entire tab.
     this.tabDiv.addEventListener("click", (ev) => {
-      if (debug || debugEvents) console.log("CovariatesPrefsTab: Click handler", { target: ev.target });
+      if (debug || debugEvents) {
+        console.log("CovariatesPrefsTab: Click handler", { target: ev.target });
+      }
       for (const target of tabTargetGen(ev)) {
         if (target.id == "all_searchPref_btn") {
           // The user clicked on the filter covariates button.
@@ -1445,10 +1453,11 @@
 
     // Add a change handler for the entire tab.
     this.tabDiv.addEventListener("change", (ev) => {
-      if (debug || debugEvents)
+      if (debug || debugEvents) {
         console.log("CovariatesPrefsTab: Change handler", {
           target: ev.target
         });
+      }
       for (const target of tabTargetGen(ev)) {
         if (target.classList.contains("ngchm-upm-show-covariate")) {
           // A "Show" checkbox on a covariate row changed.
@@ -2918,7 +2927,7 @@
     function genCallback(axis, key, index, action) {
       return function () {
         if (debug || debugEvents || debugColors) {
-          console.log ("Color scheme breakpoint button press", { axis, key, index, action });
+          console.log("Color scheme breakpoint button press", { axis, key, index, action });
         }
         startChange();
         modifyDataLayerBreaks(axis, key, index, action);
