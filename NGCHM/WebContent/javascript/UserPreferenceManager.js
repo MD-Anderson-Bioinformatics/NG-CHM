@@ -158,9 +158,7 @@
   // METHOD PreferencesTab.prepareErrorView : show the tab view that includes errorMsg.
   //
   // By default, no specific actions are required to show the view containing the error.
-  PreferencesTab.prototype.prepareErrorView = function prepareErrorView(
-    errorMsg,
-  ) {};
+  PreferencesTab.prototype.prepareErrorView = function prepareErrorView(errorMsg) {};
 
   // METHOD PreferencesTab.show : show this tab and hide its siblings.
   //
@@ -186,9 +184,9 @@
   // the event.target and proceeding up through its parents, up to
   // and including the tab's highest div.  The caller should stop processing
   // the generator's results when an applicable element is found.
-  PreferencesTab.prototype.targetGen = function* targetGen (event) {
+  PreferencesTab.prototype.targetGen = function* targetGen(event) {
     for (let target = event.target; target; target = target.parentElement) {
-      yield (target);
+      yield target;
       if (target === this.tabDiv) {
         break;
       }
@@ -206,15 +204,15 @@
   // Define a click handler for each of the Preferences Manager UI elements.
   (function () {
     // Two ways to open the Preferences Manager.
-    KAE ("colorMenu_btn").onclick = () => openPreferencesManager();
-    KAE ("menuGear").onclick = () => openPreferencesManager();
+    KAE("colorMenu_btn").onclick = () => openPreferencesManager();
+    KAE("menuGear").onclick = () => openPreferencesManager();
 
     // Two ways to close the Preferences Manager.
-    KAE ("redX_btn").onclick = () => closePreferencesManager();
-    KAE ("prefClose_btn").onclick = () => closePreferencesManager();
+    KAE("redX_btn").onclick = () => closePreferencesManager();
+    KAE("prefClose_btn").onclick = () => closePreferencesManager();
 
     // Move the Preferences Manager position.
-    KAE ("prefsMove_btn").onclick = () => movePreferencesManager();
+    KAE("prefsMove_btn").onclick = () => movePreferencesManager();
 
     // Define handlers for the Apply and Reset buttons.
     applyButton.onclick = () => applyAllPreferences(false);
@@ -230,9 +228,9 @@
   clearGlobalVariables();
 
   function clearGlobalVariables() {
-    UPM.heatMap = null;          // The heatMap in the open Preferences Manager (UPM).
-    UPM.bkpColorMaps = null;     // A backup copy of the heatMap's color maps, used by reset.
-    UPM.resetValJSON = null;     // A backup copy of the UPM's options, used by reset.
+    UPM.heatMap = null; // The heatMap in the open Preferences Manager (UPM).
+    UPM.bkpColorMaps = null; // A backup copy of the heatMap's color maps, used by reset.
+    UPM.resetValJSON = null; // A backup copy of the UPM's options, used by reset.
   }
 
   /*===================================================================================
@@ -330,7 +328,7 @@
   //
   // We make deep copies of the color map states by saving them as JSON.
   //
-  function preserveColorMaps () {
+  function preserveColorMaps() {
     if (UPM.bkpColorMaps === null) {
       UPM.bkpColorMaps = { layers: new Map(), row: new Map(), col: new Map() };
       const colorMapMgr = UPM.heatMap.getColorMapManager();
@@ -346,7 +344,7 @@
 
   // FUNCTION restoreColorMaps: Undo any color map changes by restoring the
   // NG-CHM's colormaps from bkpColorMaps.
-  function restoreColorMaps () {
+  function restoreColorMaps() {
     if (UPM.bkpColorMaps !== null) {
       const colorMapMgr = UPM.heatMap.getColorMapManager();
       const dataLayers = UPM.heatMap.getDataLayers();
@@ -421,7 +419,7 @@
         }
       }
       console.error("UPM.editPreferences: unable to show error: bad tab id", {
-        errorMsg,
+        errorMsg
       });
     }
   }
@@ -444,9 +442,7 @@
 
     document.getElementById("prefsMove_btn").dataset.state = "moveLeft";
     prefspanel.style.left =
-      UTIL.containerElement.getBoundingClientRect().right -
-      prefspanel.offsetWidth +
-      "px";
+      UTIL.containerElement.getBoundingClientRect().right - prefspanel.offsetWidth + "px";
   }
 
   /**********************************************************************************
@@ -464,7 +460,7 @@
       // Add new error message node before the buttons row (first child of prefActions).
       prefActions.insertBefore(
         UTIL.newElement("DIV.errorMessage", {}, UTIL.newTxt(errorMsgTxt)),
-        prefActions.firstChild,
+        prefActions.firstChild
       );
     }
   }
@@ -484,9 +480,7 @@
       moveBtn.dataset.state = "moveLeft";
       prefspanel.style.right = "";
       prefspanel.style.left =
-        UTIL.containerElement.getBoundingClientRect().right -
-        prefspanel.offsetWidth +
-        "px";
+        UTIL.containerElement.getBoundingClientRect().right - prefspanel.offsetWidth + "px";
     }
   }
 
@@ -494,11 +488,11 @@
   //
   function saveResetVals() {
     const resetVals = {
-      matrix: UPM.heatMap.getMapInformation(),
+      matrix: UPM.heatMap.getMapInformation()
     };
-    for (const axis of [ "row", "col" ]) {
-      resetVals[axis+"Config"] = UPM.heatMap.getAxisConfig(axis);
-      resetVals[axis+"LabelTypes"] = UPM.heatMap.getLabelTypes(axis);  // Comes from mapData.
+    for (const axis of ["row", "col"]) {
+      resetVals[axis + "Config"] = UPM.heatMap.getAxisConfig(axis);
+      resetVals[axis + "LabelTypes"] = UPM.heatMap.getLabelTypes(axis); // Comes from mapData.
     }
     // Turn resetVals into a string so the values don't change as the user changes
     // stuff in the preferences manager.
@@ -508,6 +502,8 @@
   // FUNCTION resetAllPreferences: Reset the heatMap state and the UI to the saved values.
   //
   function resetAllPreferences() {
+    // Restore all colorMaps.
+    restoreColorMaps();
     const resetVal = JSON.parse(UPM.resetValJSON);
     // Reset all of the UI preferences.
     for (const tab of allTabs) {
@@ -1174,10 +1170,7 @@
     const wrapper = document.getElementById("previewWrapper" + mapName);
 
     UPM.heatMap.getSummaryHist(mapName, lowBP, highBP).then((hist) => {
-      var svg =
-        "<svg class='preview-svg' id='previewSVG" +
-        mapName +
-        "' width='110' height='100'>";
+      var svg = "<svg class='preview-svg' id='previewSVG" + mapName + "' width='110' height='100'>";
       for (var i = 0; i < hist.bins.length; i++) {
         var rect =
           "<rect x='" +
@@ -1351,7 +1344,7 @@
   {
     let nextNumber = 0;
     Object.defineProperty(CovariatesPrefsTab.prototype, "nextNumber", {
-      get: () => nextNumber++,
+      get: () => nextNumber++
     });
   }
 
@@ -1386,19 +1379,19 @@
     const filterButton = UTIL.newElement(
       "BUTTON#all_searchPref_btn.text-button",
       {
-        align: "top",
+        align: "top"
       },
-      [UTIL.newElement("SPAN.button", {}, "Filter Covariates")],
+      [UTIL.newElement("SPAN.button", {}, "Filter Covariates")]
     );
     prefsTable.addRow([filterInput, filterButton], {
       colSpan: [2, 1],
-      align: ["right", "left"],
+      align: ["right", "left"]
     });
     prefsTable.addBlankSpace(2);
 
     // Add the covariate selection dropdown.
     const classSelect = UTIL.newElement("SELECT#classPref_list", {
-      name: "classPref_list",
+      name: "classPref_list"
     });
     prefsTable.addRow(["Covariate Bar: ", classSelect]);
     prefsTable.addBlankSpace();
@@ -1408,7 +1401,7 @@
     // covariate selection dropdown.
     const covariates = {
       row: UPM.heatMap.getRowClassificationConfig(),
-      col: UPM.heatMap.getColClassificationConfig(),
+      col: UPM.heatMap.getColClassificationConfig()
     };
     this.hasClasses = false;
     for (const { axis, key } of UPM.heatMap.genAllCovars()) {
@@ -1429,9 +1422,7 @@
 
     this.emptyNotice = null;
     if (!this.hasClasses) {
-      this.emptyNotice = prefsTable.addRow([
-        "This Heat Map contains no covariate bars",
-      ]);
+      this.emptyNotice = prefsTable.addRow(["This Heat Map contains no covariate bars"]);
     }
 
     this.addClassPrefOptions();
@@ -1483,10 +1474,7 @@
             const key = name + "_" + axis;
             // Add an entry for the new covariate to the covariate drop down.
             const classSelect = document.getElementById("classPref_list");
-            classSelect.options[classSelect.options.length] = new Option(
-              name,
-              key,
-            );
+            classSelect.options[classSelect.options.length] = new Option(name, key);
             classSelect.value = key;
             // Create a DIV for the new covariate.
             const newCovar = this.setupNewCovariate(axis, name);
@@ -1511,15 +1499,12 @@
     return this.tabDiv;
   };
 
-  CovariatesPrefsTab.prototype.setupNewCovariate = function setupNewCovariate(
-    axis,
-    name,
-  ) {
+  CovariatesPrefsTab.prototype.setupNewCovariate = function setupNewCovariate(axis, name) {
     const colorMapObj = {
       type: "continuous",
       thresholds: [1, 2],
       colors: ["#fefefe", "#3f3f3f"],
-      missing: "#111111",
+      missing: "#111111"
     };
     const newBarDetails = {
       bar_type: "color_plot",
@@ -1530,7 +1515,7 @@
       high_bound: "100",
       low_bound: "0",
       show: "Y",
-      missingColor: "#212121",
+      missingColor: "#212121"
     };
     UPM.heatMap.addCovariate(axis, name, newBarDetails);
     const newPrefs = setupClassBreaks(name, axis, newBarDetails);
@@ -1636,7 +1621,7 @@
     prefContents,
     key,
     axis,
-    currentClassBar,
+    currentClassBar
   ) {
     const keyaxis = key + "_" + axis;
     const showPref = keyaxis + "_showPref";
@@ -1645,7 +1630,7 @@
       {
         id: showPref,
         name: showPref,
-        type: "checkbox",
+        type: "checkbox"
       },
       null,
       function (el) {
@@ -1653,7 +1638,7 @@
           el.checked = true;
         }
         return el;
-      },
+      }
     );
     const heightPref = keyaxis + "_heightPref";
     const colHeight = UTIL.newElement("INPUT", {
@@ -1661,7 +1646,7 @@
       name: heightPref,
       maxlength: 2,
       size: 2,
-      value: currentClassBar.height,
+      value: currentClassBar.height
     });
 
     var displayName = key;
@@ -1672,7 +1657,7 @@
       "&nbsp;&nbsp;" + displayName,
       UTIL.toTitleCase(axis),
       colShow,
-      colHeight,
+      colHeight
     ]);
     tr.dataset.key = key;
     tr.dataset.axis = axis;
@@ -1764,19 +1749,19 @@
     var prefContentsBB = document.createElement("TABLE");
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Lower Bound:",
-      createNumericInput (KAID(keyaxis,"lowBoundPref"), classBar.low_bound, 8, 10),
+      createNumericInput(KAID(keyaxis, "lowBoundPref"), classBar.low_bound, 8, 10)
     ]);
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Upper Bound:",
-      createNumericInput (KAID(keyaxis,"highBoundPref"), classBar.high_bound, 8, 10),
+      createNumericInput(KAID(keyaxis, "highBoundPref"), classBar.high_bound, 8, 10)
     ]);
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Foreground Color:",
-      createColorInput (KAID(keyaxis,"fgColorPref"), classBar.fg_color),
+      createColorInput(KAID(keyaxis, "fgColorPref"), classBar.fg_color)
     ]);
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Background Color:",
-      createColorInput (KAID(keyaxis,"bgColorPref"), classBar.bg_color),
+      createColorInput(KAID(keyaxis, "bgColorPref"), classBar.bg_color)
     ]);
     UHM.addBlankRow(prefContentsBB);
     barScatterPlotPrefs.appendChild(prefContentsBB);
@@ -1808,9 +1793,9 @@
   // specified axis and covariate, depending on the value of the covariate's
   // barType preference.
   function showPlotTypeProperties(key, axis) {
-    const bbDiv = KAE(key,axis,"breakPrefsBB"); // Color plot options.
-    const cbDiv = KAE(key,axis,"breakPrefsCB"); // Bar and scatter plot options.
-    if (KAE(key,axis,"barTypePref").value === "color_plot") {
+    const bbDiv = KAE(key, axis, "breakPrefsBB"); // Color plot options.
+    const cbDiv = KAE(key, axis, "breakPrefsCB"); // Bar and scatter plot options.
+    if (KAE(key, axis, "barTypePref").value === "color_plot") {
       bbDiv.style.display = "none";
       cbDiv.style.display = "block";
     } else {
@@ -1916,10 +1901,7 @@
    * function is also called when an error is trappped, opening the covariate DIV
    * that contains the erroneous data entry.
    **********************************************************************************/
-  CovariatesPrefsTab.prototype.showClassBreak = function showClassBreak(
-    selClass,
-    selAxis,
-  ) {
+  CovariatesPrefsTab.prototype.showClassBreak = function showClassBreak(selClass, selAxis) {
     const classBtn = document.getElementById("classPref_list");
     if (typeof selClass != "undefined") {
       classBtn.value = selClass + (selAxis ? "_" + selAxis : "");
@@ -1994,9 +1976,7 @@
     const table = document.getElementById("tableAllClasses");
     for (let i = 0; i < table.rows.length; i++) {
       const row = table.rows[i];
-      const hidden =
-        row.dataset.axis &&
-        hiddenItems[row.dataset.axis].includes(row.dataset.key);
+      const hidden = row.dataset.axis && hiddenItems[row.dataset.axis].includes(row.dataset.key);
       if (hidden) {
         row.classList.add("hide");
       } else {
@@ -2112,29 +2092,17 @@
         const keyaxis = key + "_" + axis;
         const heightPref = parseInt(KAE(keyaxis, "heightPref").value);
         if (isNaN(heightPref) || heightPref < 0 || heightPref > 100) {
-          return [
-            "ALL",
-            "classPrefs",
-            "ERROR: Bar heights must be between 0 and 100",
-          ];
+          return ["ALL", "classPrefs", "ERROR: Bar heights must be between 0 and 100"];
         }
         const barType = KAE_OPT(keyaxis, "barTypePref");
         if (barType !== null && barType.value !== "color_plot") {
           const lowBoundElement = KAE(keyaxis, "lowBoundPref");
           if (isNaN(lowBoundElement.value)) {
-            return [
-              keyaxis,
-              "classPrefs",
-              "ERROR: Covariate bar low bound must be numeric",
-            ];
+            return [keyaxis, "classPrefs", "ERROR: Covariate bar low bound must be numeric"];
           }
           const highBoundElement = KAE(keyaxis, "highBoundPref");
           if (isNaN(highBoundElement.value)) {
-            return [
-              keyaxis,
-              "classPrefs",
-              "ERROR: Covariate bar high bound must be numeric",
-            ];
+            return [keyaxis, "classPrefs", "ERROR: Covariate bar high bound must be numeric"];
           }
           const bgColorElement = KAE(keyaxis, "bgColorPref");
           const fgColorElement = KAE(keyaxis, "fgColorPref");
@@ -2142,7 +2110,7 @@
             return [
               keyaxis,
               "classPrefs",
-              "ERROR: Duplicate foreground and background colors found",
+              "ERROR: Duplicate foreground and background colors found"
             ];
           }
         }
@@ -2153,26 +2121,26 @@
 
   CovariatesPrefsTab.prototype.resetTabPrefs = function resetCovariateTabPrefs(resetVal) {
     // Reset the Covariate preference items.
-    for (const axis of [ "row", "col" ]) {
-      const axisSavedCovariate = resetVal[axis+"Config"].classifications;
+    for (const axis of ["row", "col"]) {
+      const axisSavedCovariate = resetVal[axis + "Config"].classifications;
       for (let key in axisSavedCovariate) {
         const bar = axisSavedCovariate[key];
-        KAE(key,axis,"showPref").checked = bar.show == "Y";
-        KAE(key,axis,"heightPref").value = bar.height;
-        KAE(key,axis,"missing_colorPref").value = bar.color_map.missing;
+        KAE(key, axis, "showPref").checked = bar.show == "Y";
+        KAE(key, axis, "heightPref").value = bar.height;
+        KAE(key, axis, "missing_colorPref").value = bar.color_map.missing;
 
         if (bar.color_map.type == "discrete") {
           for (let i = 0; i < bar.color_map.colors.length; i++) {
             getColorPrefElement(key, axis, i).value = bar.color_map.colors[i];
           }
         } else {
-          KAE(key,axis,"barTypePref").value = bar.bar_type;
-          showPlotTypeProperties(key,axis);
-          if (["bar_plot","scatter_plot"].includes(bar.bar_type)) {
-            KAE(key,axis,"lowBoundPref").value = bar.low_bound;
-            KAE(key,axis,"highBoundPref").value = bar.high_bound;
-            KAE(key,axis,"fgColorPref").value = bar.fg_color;
-            KAE(key,axis,"bgColorPref").value = bar.bg_color;
+          KAE(key, axis, "barTypePref").value = bar.bar_type;
+          showPlotTypeProperties(key, axis);
+          if (["bar_plot", "scatter_plot"].includes(bar.bar_type)) {
+            KAE(key, axis, "lowBoundPref").value = bar.low_bound;
+            KAE(key, axis, "highBoundPref").value = bar.high_bound;
+            KAE(key, axis, "fgColorPref").value = bar.fg_color;
+            KAE(key, axis, "bgColorPref").value = bar.bg_color;
           } else {
             // It's a continuous color_plot.
             for (let i = 0; i < bar.color_map.colors.length; i++) {
@@ -2221,21 +2189,16 @@
       if (heightElement.value === "0") {
         showElement.checked = false;
       }
-      UPM.heatMap.setClassificationPrefs(
-        key,
-        axis,
-        showElement.checked,
-        heightElement.value,
-      );
+      UPM.heatMap.setClassificationPrefs(key, axis, showElement.checked, heightElement.value);
       if (colorMapMan.getColorMap(axis, key).getType() === "continuous") {
         UPM.heatMap.setClassBarScatterPrefs(
           key,
           axis,
-          KAE(key,axis,"barTypePref").value,
-          KAE(key,axis,"lowBoundPref").value,
-          KAE(key,axis,"highBoundPref").value,
-          KAE(key,axis,"fgColorPref").value,
-          KAE(key,axis,"bgColorPref").value,
+          KAE(key, axis, "barTypePref").value,
+          KAE(key, axis, "lowBoundPref").value,
+          KAE(key, axis, "highBoundPref").value,
+          KAE(key, axis, "fgColorPref").value,
+          KAE(key, axis, "bgColorPref").value
         );
       }
       prefsApplyBreaks(key, axis);
@@ -2258,8 +2221,8 @@
     const id = parts.join("_");
     const el = document.getElementById(id);
     if (el) return el;
-    console.error ("KAE: Could not find element " + id);
-    throw new Error ("KAE: Could not find element " +id);
+    console.error("KAE: Could not find element " + id);
+    throw new Error("KAE: Could not find element " + id);
   }
   // Like KAE, but just return null if no such element. The caller is expected
   // to handle a null return.
@@ -2290,45 +2253,29 @@
 
     UHM.setTableRowX(prefContents, ["ABOUT:"], ["header"], [{ colSpan: 2 }]);
     UHM.setTableRowX(prefContents, ["Name:", mapInfo.name]);
-    UHM.setTableRowX(prefContents, [
-      "Size:",
-      totalRows + " rows by " + totalCols + " columns",
-    ]);
+    UHM.setTableRowX(prefContents, ["Size:", totalRows + " rows by " + totalCols + " columns"]);
     UHM.setTableRowX(prefContents, ["Description:", mapInfo.description]);
-    UHM.setTableRowX(prefContents, [
-      "Build time:",
-      mapInfo.attributes["chm.info.build.time"],
-    ]);
+    UHM.setTableRowX(prefContents, ["Build time:", mapInfo.attributes["chm.info.build.time"]]);
     UHM.setTableRowX(prefContents, ["Read Only:", mapInfo.read_only]);
 
     UHM.setTableRowX(prefContents, ["VERSIONS:"], ["header"], [{ colSpan: 2 }]);
     UHM.setTableRowX(prefContents, ["Viewer Version:", COMPAT.version]);
     UHM.setTableRowX(prefContents, ["Map Version:", mapInfo.version_id]);
-    UHM.setTableRowX(prefContents, [
-      "Builder Version:",
-      mapInfo.builder_version,
-    ]);
+    UHM.setTableRowX(prefContents, ["Builder Version:", mapInfo.builder_version]);
 
     UHM.setTableRowX(prefContents, ["LAYERS:"], ["header"], [{ colSpan: 2 }]);
     for (let dl in mapInfo.data_layer) {
       UHM.setTableRowX(prefContents, [dl + ":", mapInfo.data_layer[dl].name]);
     }
 
-    UHM.setTableRowX(
-      prefContents,
-      ["ATTRIBUTES:"],
-      ["header"],
-      [{ colSpan: 2 }],
-    );
+    UHM.setTableRowX(prefContents, ["ATTRIBUTES:"], ["header"], [{ colSpan: 2 }]);
     const omit = [/^chm/, /^!/];
     const pass = [/^chm.info.external.url/, /^!extraparam/];
     for (let attr in mapInfo.attributes) {
       if (!matchAny(attr, omit) || matchAny(attr, pass)) {
         let attrVal = mapInfo.attributes[attr];
         if (/.external.url/.test(attr)) {
-          attrVal = UTIL.newElement("A", { href: attrVal, target: "_blank" }, [
-            attrVal,
-          ]);
+          attrVal = UTIL.newElement("A", { href: attrVal, target: "_blank" }, [attrVal]);
         }
         UHM.setTableRowX(prefContents, [attr + ":", attrVal]);
       }
@@ -2393,25 +2340,18 @@
       const axisOrganization = axisConfig.organization;
       const axisOrder = axisOrganization["order_method"];
       const totalElements =
-        UPM.heatMap.getTotalElementsForAxis(axis) -
-        mapInfo["map_cut_" + axis + "s"];
-      UHM.setTableRow(prefContents, [
-        `&nbsp;&nbsp;Total ${camelAxis}s:`,
-        totalElements,
-      ]);
+        UPM.heatMap.getTotalElementsForAxis(axis) - mapInfo["map_cut_" + axis + "s"];
+      UHM.setTableRow(prefContents, [`&nbsp;&nbsp;Total ${camelAxis}s:`, totalElements]);
       addLabelTypeInputs(prefContents, UPM.heatMap, axis);
-      UHM.setTableRow(prefContents, [
-        "&nbsp;&nbsp;Ordering Method:",
-        axisOrder,
-      ]);
+      UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Ordering Method:", axisOrder]);
       if (axisOrder === "Hierarchical") {
         UHM.setTableRow(prefContents, [
           "&nbsp;&nbsp;Agglomeration Method:",
-          axisOrganization["agglomeration_method"],
+          axisOrganization["agglomeration_method"]
         ]);
         UHM.setTableRow(prefContents, [
           "&nbsp;&nbsp;Distance Metric:",
-          axisOrganization["distance_metric"],
+          axisOrganization["distance_metric"]
         ]);
         const dendroShowSelect = UTIL.newElement(
           "SELECT.ngchm-upm-input",
@@ -2420,31 +2360,25 @@
           function (el) {
             el.dataset.axis = axis;
             return el;
-          },
+          }
         );
-        UHM.setTableRow(prefContents, [
-          "&nbsp;&nbsp;Show Dendrogram:",
-          dendroShowSelect,
-        ]);
+        UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Show Dendrogram:", dendroShowSelect]);
         const dendroHeightSelect =
           `<select class='ngchm-upm-input' name='${axis}_DendroHeightPref' id='${axis}_DendroHeightPref'>` +
           dendroHeightOptions +
           "</select>";
-        UHM.setTableRow(prefContents, [
-          "&nbsp;&nbsp;Dendrogram Height:",
-          dendroHeightSelect,
-        ]);
+        UHM.setTableRow(prefContents, ["&nbsp;&nbsp;Dendrogram Height:", dendroHeightSelect]);
       }
       UHM.setTableRow(prefContents, [
         "&nbsp;&nbsp;Maximum Label Length:",
-        genLabelSizeSelect(axis),
+        genLabelSizeSelect(axis)
       ]);
       UHM.setTableRow(prefContents, [
         "&nbsp;&nbsp;Trim Label Text From:",
-        genLabelAbbrevSelect(axis),
+        genLabelAbbrevSelect(axis)
       ]);
 
-      addTopItemsSelector(prefContents, axis, camelAxis+"s");
+      addTopItemsSelector(prefContents, axis, camelAxis + "s");
       UHM.addBlankRow(prefContents);
     }
 
@@ -2456,10 +2390,11 @@
         if (["row_DendroShowPref", "col_DendroShowPref"].includes(target.id)) {
           startChange();
           dendroShowChange(target.dataset.axis);
-        } else if (target.id == KAID("row","TopItems")) {
+        } else if (target.id == KAID("row", "TopItems")) {
           startChange();
-          KAE("row","TopItemsTextRow").style.display = KAE("row","TopItems").value == "--text-entry--" ? "" : "none";
-        } else if (target.id == KAID("col","TopItems")) {
+          KAE("row", "TopItemsTextRow").style.display =
+            KAE("row", "TopItems").value == "--text-entry--" ? "" : "none";
+        } else if (target.id == KAID("col", "TopItems")) {
           startChange();
           KAE("col", "TopItemsTextRow").style.display =
             KAE("col", "TopItems").value == "--text-entry--" ? "" : "none";
@@ -2488,32 +2423,29 @@
     function addTopItemsSelector(prefContents, axis, pluralAxisName) {
       const axisConfig = UPM.heatMap.getAxisConfig(axis);
       const covars = UPM.heatMap.getAxisCovariateConfig(axis, {
-        type: "continuous",
+        type: "continuous"
       });
       const covarNames = Object.keys(covars);
       const selector = UTIL.newSelect(
-        ["","--text-entry--"].concat(covarNames), // Values
-        ["Not Selected", "Manual Entry"].concat(covarNames), // Option texts
+        ["", "--text-entry--"].concat(covarNames), // Values
+        ["Not Selected", "Manual Entry"].concat(covarNames) // Option texts
       );
-      selector.id = KAID(axis,"TopItems");
-      selector.classList.add('ngchm-upm-input');
+      selector.id = KAID(axis, "TopItems");
+      selector.classList.add("ngchm-upm-input");
       selector.value = axisConfig.top_items_cv;
-      UHM.setTableRow(prefContents, [
-        `&nbsp;&nbsp;Top ${pluralAxisName}:`,
-        selector,
-      ]);
-      const id = KAID(axis,"TopItemsText");
+      UHM.setTableRow(prefContents, [`&nbsp;&nbsp;Top ${pluralAxisName}:`, selector]);
+      const id = KAID(axis, "TopItemsText");
       const topItemsText = UTIL.newElement("TEXTAREA.ngchm-upm-input.ngchm-upm-top-items-text", {
         id: id,
         name: id,
-        rows: 3,
+        rows: 3
       });
       topItemsText.value = axisConfig.top_items;
       const tr = UHM.setTableRow(prefContents, [
         `&nbsp;&nbsp;Top ${pluralAxisName} Input:`,
-        topItemsText,
+        topItemsText
       ]);
-      tr.id = KAID(axis,"TopItemsTextRow");
+      tr.id = KAID(axis, "TopItemsTextRow");
       tr.style.display = selector.value == "--text-entry--" ? "" : "none";
     }
 
@@ -2521,19 +2453,19 @@
       return [
         UTIL.newElement("OPTION", { value: "ALL" }, "Summary and Detail"),
         UTIL.newElement("OPTION", { value: "SUMMARY" }, "Summary Only"),
-        UTIL.newElement("OPTION", { value: "NONE" }, "Hide"),
+        UTIL.newElement("OPTION", { value: "NONE" }, "Hide")
       ];
     }
 
     function genLabelSizeSelect(axis) {
       const sizes = [10, 15, 20, 25, 30, 35, 40];
-      const id = KAID(axis,"LabelSizePref");
-      const sizeInput = UTIL.newElement('INPUT.ngchm-upm-input', {
+      const id = KAID(axis, "LabelSizePref");
+      const sizeInput = UTIL.newElement("INPUT.ngchm-upm-input", {
         type: "number",
         id: id,
         name: id,
         min: 10,
-        max: 99,
+        max: 99
       });
       return sizeInput;
     }
@@ -2556,18 +2488,18 @@
         type: "text",
         name: idbase + "_type",
         id: idbase + "_type",
-        value: type.type,
+        value: type.type
       });
       const showType = UTIL.newElement("INPUT.ngchm-upm-input", {
         type: "checkbox",
         name: idbase + "_show",
-        id: idbase + "_show",
+        id: idbase + "_show"
       });
       showType.checked = type.visible;
       UHM.setTableRow(userPreferencesTable, [
         idx == 0 ? "&nbsp;&nbsp;Labels Type(s):" : "",
         typeInput,
-        showType,
+        showType
       ]);
     });
   }
@@ -2577,9 +2509,9 @@
     axisName = MMGR.isRow(axisName) ? "Row" : "Col";
     savedLabelTypes.forEach((type, idx) => {
       const idbase = `upm_${axisName}_label_part_${idx}`;
-      const typeInput = KAE(idbase,"type");
+      const typeInput = KAE(idbase, "type");
       typeInput.value = type.type;
-      const checkBox = KAE(idbase,"show");
+      const checkBox = KAE(idbase, "show");
       checkBox.checked = type.visible;
     });
   }
@@ -2588,7 +2520,7 @@
     for (const axis of ["row", "col"]) {
       let errorMsg = validateLabelTypeInputs(axis);
       if (errorMsg) return errorMsg;
-      const sizePref = KAE(axis,"LabelSizePref").value;
+      const sizePref = KAE(axis, "LabelSizePref").value;
       if (sizePref < 10) {
         return ["ALL", "rowsColsPrefs", `ERROR: ${axis} label size too small (min: 10)`];
       }
@@ -2610,10 +2542,10 @@
       let foundEmpty = false;
       const checkedParts = axisLabelTypes.filter((type, idx) => {
         const idbase = `upm_${axisName}_label_part_${idx}`;
-        if (KAE(idbase,"type").value == "") {
+        if (KAE(idbase, "type").value == "") {
           foundEmpty = true;
         }
-        return KAE(idbase,"show").checked;
+        return KAE(idbase, "show").checked;
       });
       let errMsg = "";
       if (foundEmpty) errMsg += " None can be empty.";
@@ -2631,18 +2563,19 @@
       resetLabelTypeInputs(axis, resetVal[axis + "LabelTypes"]);
       const axisResetVal = resetVal[axis + "Config"];
       // Reset dendrogram options.
-      if (KAE_OPT(axis,"DendroShowPref") !== null) {
+      if (KAE_OPT(axis, "DendroShowPref") !== null) {
         const dendroSaveVals = axisResetVal.dendrogram;
-        KAE(axis,"DendroShowPref").value = dendroSaveVals.show;
-        KAE(axis,"DendroHeightPref").value = dendroSaveVals.height;
+        KAE(axis, "DendroShowPref").value = dendroSaveVals.show;
+        KAE(axis, "DendroHeightPref").value = dendroSaveVals.height;
         dendroShowChange(axis);
       }
       // Reset axis label options.
-      KAE(axis,"LabelSizePref").value = axisResetVal.label_display_length;
-      KAE(axis,"LabelAbbrevPref").value = axisResetVal.label_display_method;
-      KAE(axis,"TopItems").value = axisResetVal.top_items_cv;
-      KAE(axis,"TopItemsText").value = axisResetVal.top_items;
-      KAE(axis,"TopItemsTextRow").style.display = axisResetVal.top_items_cv == "--text-entry--" ? "" : "none";
+      KAE(axis, "LabelSizePref").value = axisResetVal.label_display_length;
+      KAE(axis, "LabelAbbrevPref").value = axisResetVal.label_display_method;
+      KAE(axis, "TopItems").value = axisResetVal.top_items_cv;
+      KAE(axis, "TopItemsText").value = axisResetVal.top_items;
+      KAE(axis, "TopItemsTextRow").style.display =
+        axisResetVal.top_items_cv == "--text-entry--" ? "" : "none";
     }
   };
 
@@ -2654,16 +2587,16 @@
       applyLabelTypeInputs(axis);
       // Dendrogram preferences.
       if (axisConfig.organization.order_method === "Hierarchical") {
-        axisConfig.dendrogram.show = KAE(axis,"DendroShowPref").value;
-        axisConfig.dendrogram.height = KAE(axis,"DendroHeightPref").value;
+        axisConfig.dendrogram.show = KAE(axis, "DendroShowPref").value;
+        axisConfig.dendrogram.height = KAE(axis, "DendroHeightPref").value;
       }
       // Apply Label Sizing Preferences.
-      axisConfig.label_display_length = KAE(axis,"LabelSizePref").value;
-      axisConfig.label_display_method = KAE(axis,"LabelAbbrevPref").value;
+      axisConfig.label_display_length = KAE(axis, "LabelSizePref").value;
+      axisConfig.label_display_method = KAE(axis, "LabelAbbrevPref").value;
       // Top items preferences.
-      axisConfig.top_items_cv = KAE(axis,"TopItems").value;
+      axisConfig.top_items_cv = KAE(axis, "TopItems").value;
       axisConfig.top_items = [];
-      for (const item of KAE(axis,"TopItemsText").value.split(/[;, \r\n]+/)) {
+      for (const item of KAE(axis, "TopItemsText").value.split(/[;, \r\n]+/)) {
         if (item !== "") {
           axisConfig.top_items.push(item);
         }
@@ -2681,8 +2614,8 @@
       const axisLabelTypes = UPM.heatMap.getLabelTypes(axisName);
       axisLabelTypes.forEach((type, idx) => {
         const idbase = `upm_${axisName}_label_part_${idx}`;
-        type.type = KAE(idbase,"type").value;
-        type.visible = KAE(idbase,"show").checked;
+        type.type = KAE(idbase, "type").value;
+        type.visible = KAE(idbase, "show").checked;
       });
       UPM.heatMap.setLabelTypes(axisName, axisLabelTypes);
     }
@@ -2698,10 +2631,10 @@
       const rowOrder = axisConfig.organization.order_method;
       if (rowOrder === "Hierarchical") {
         const dendroShowVal = axisConfig.dendrogram.show;
-        KAE(axis,"DendroShowPref").value = dendroShowVal;
-        const heightPref = KAE(axis,"DendroHeightPref");
+        KAE(axis, "DendroShowPref").value = dendroShowVal;
+        const heightPref = KAE(axis, "DendroHeightPref");
         if (dendroShowVal === "NONE") {
-          const opt = heightPref.options[6];  // options[6] is what the NA option below becomes.
+          const opt = heightPref.options[6]; // options[6] is what the NA option below becomes.
           if (typeof opt != "undefined") {
             heightPref.options[6].remove();
           }
@@ -2722,10 +2655,10 @@
    * FUNCTION showLabelSelections: Set the label length and truncation preferences.
    **********************************************************************************/
   function showLabelSelections() {
-    for (const axis of [ "row", "col" ]) {
+    for (const axis of ["row", "col"]) {
       const axisConfig = UPM.heatMap.getAxisConfig(axis);
-      KAE(axis,"LabelSizePref").value = axisConfig.label_display_length;
-      KAE(axis,"LabelAbbrevPref").value = axisConfig.label_display_method;
+      KAE(axis, "LabelSizePref").value = axisConfig.label_display_length;
+      KAE(axis, "LabelAbbrevPref").value = axisConfig.label_display_method;
     }
   }
 
@@ -2737,8 +2670,8 @@
    *   to the default value of 100 and enable the dropdown.
    **********************************************************************************/
   function dendroShowChange(axis) {
-    const newValue = KAE(axis,"DendroShowPref").value;
-    const heightPref = KAE(axis,"DendroHeightPref");
+    const newValue = KAE(axis, "DendroShowPref").value;
+    const heightPref = KAE(axis, "DendroHeightPref");
     if (newValue === "NONE") {
       // Append an NA option (becomes options[6]) to the height-pref dropdown.
       const option = document.createElement("option");
@@ -2748,7 +2681,7 @@
       heightPref.value = "10";
       heightPref.disabled = true;
     } else if (heightPref.disabled) {
-      const opt = heightPref.options[6];  // options[6] is what the NA element becomes.
+      const opt = heightPref.options[6]; // options[6] is what the NA element becomes.
       if (typeof opt != "undefined") {
         heightPref.options[6].remove();
       }
@@ -2758,19 +2691,19 @@
   }
 
   // Create a color input with the given id and initial color.
-  function createColorInput (id, color) {
+  function createColorInput(id, color) {
     const input = `<input class='spectrumColor' type='color' name='${id}' id='${id}' value='${color}'>`;
     return input;
   }
 
   // Create a checkbox input with the given id and initial checked state.
-  function createCheckBox (id, checked) {
+  function createCheckBox(id, checked) {
     checked = checked ? "checked" : "";
     return `<input class='ngchm-upm-input' name='${id}' id='${id}' type='checkbox' ${checked}>`;
   }
 
   // Create a numeric input with the given id, initial value, size, and maximum length.
-  function createNumericInput (id, value, size, maxlength) {
+  function createNumericInput(id, value, size, maxlength) {
     if (!size) size = 8;
     if (!maxlength) maxlength = size;
     return `<input class='ngchm-upm-input' name='${id}' id='${id}' value='${value}' maxlength='${maxlength}' size='${size}'>`;
