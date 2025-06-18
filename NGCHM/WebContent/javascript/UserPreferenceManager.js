@@ -22,6 +22,11 @@
   const COMPAT = NgChm.importNS("NgChm.CM");
 
   const debug = UTIL.getDebugFlag("upm");
+  const debugLayers = UTIL.getDebugFlag("upm-layers");
+  const debugAxes = UTIL.getDebugFlag("upm-axes");
+  const debugCovars = UTIL.getDebugFlag("upm-covars");
+  const debugColors = UTIL.getDebugFlag("upm-colors");
+  const debugEvents = UTIL.getDebugFlag("upm-events");
 
   // The DIV that contains the entire Preferences Manager.
   const prefspanel = document.getElementById("prefs");
