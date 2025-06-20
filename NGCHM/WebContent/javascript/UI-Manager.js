@@ -13,6 +13,7 @@
   const COMPAT = NgChm.importNS("NgChm.CM");
   const FLICK = NgChm.importNS("NgChm.FLICK");
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
+  const HEAT = NgChm.importNS("NgChm.HEAT");
   const SUM = NgChm.importNS("NgChm.SUM");
   const SMM = NgChm.importNS("NgChm.SMM");
   const PDF = NgChm.importNS("NgChm.PDF");
@@ -286,7 +287,7 @@
     var firstTime = true;
 
     UIMGR.configurePanelInterface = function configurePanelInterface(event) {
-      if (event !== MMGR.Event_INITIALIZED) {
+      if (event !== HEAT.Event_INITIALIZED) {
         return;
       }
 
@@ -584,7 +585,7 @@
    * panel for the builder in cases where ONLY the summary panel is being drawn.
    **********************************************************************************/
   function builderViewSizing(event) {
-    if (typeof event !== "undefined" && event !== MMGR.Event_INITIALIZED) {
+    if (typeof event !== "undefined" && event !== HEAT.Event_INITIALIZED) {
       return;
     }
 
@@ -946,7 +947,7 @@
     UHM.setMessageBoxHeader("Save Heat Map");
     //Have changes been made?
     if (heatMap.getUnAppliedChanges()) {
-      if (heatMap.isFileMode() || typeof NgChm.galaxy !== "undefined") {
+      if (heatMap.source() == MMGR.FILE_SOURCE || typeof NgChm.galaxy !== "undefined") {
         // FIXME: BMB.  Improve Galaxy detection.
         if (typeof NgChm.galaxy !== "undefined") {
           text =
