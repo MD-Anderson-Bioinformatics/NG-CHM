@@ -1891,7 +1891,7 @@
 		Process message from plugins to highlight points selected in plugin
 	*/
   LNK.defineVanodiMessageHandler("selectLabels", function vanodiSelectLabels(instance, msg) {
-    const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
+    const axis = MAPREP.isRow(msg.selection.axis) ? "Row" : "Column";
     const pluginLabels = msg.selection.pointIds.map((l) => l.toUpperCase()); // labels from plugin
     const heatMap = MMGR.getHeatMap();
     var heatMapAxisLabels;
@@ -1928,7 +1928,7 @@
 		Process message from scatter plot to highlight single point under mouse on plot
 	*/
   LNK.defineVanodiMessageHandler("mouseover", function vanodiMouseover(instance, msg) {
-    const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
+    const axis = MAPREP.isRow(msg.selection.axis) ? "Row" : "Column";
     const allLabels = MMGR.getHeatMap().actualLabels(axis);
     const pointId = msg.selection.pointId;
     const ptIdx = allLabels.indexOf(pointId) + 1;

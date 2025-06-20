@@ -706,7 +706,7 @@
    *********************************************************************************************/
   function getSamplingRatio(mode, axis) {
     const heatMap = MMGR.getHeatMap();
-    const isRow = MMGR.isRow(axis);
+    const isRow = MAPREP.isRow(axis);
     let level;
     switch (mode) {
       case "RIBBONH":
