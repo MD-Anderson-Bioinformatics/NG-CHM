@@ -2451,7 +2451,7 @@
 
   // Add Label Type rows for the specified axis of heatMap to the userPreferencesTable.
   function addLabelTypeInputs(userPreferencesTable, heatMap, axisName) {
-    axisName = MMGR.isRow(axisName) ? "Row" : "Col";
+    axisName = MAPREP.isRow(axisName) ? "Row" : "Col";
     const axisTypes = heatMap.getLabelTypes(axisName);
     axisTypes.forEach((type, idx) => {
       const idbase = `upm_${axisName}_label_part_${idx}`;
@@ -2477,7 +2477,7 @@
 
   // Reset the label type inputs to the values in savedLabelTypes.
   function resetLabelTypeInputs(axisName, savedLabelTypes) {
-    axisName = MMGR.isRow(axisName) ? "Row" : "Col";
+    axisName = MAPREP.isRow(axisName) ? "Row" : "Col";
     savedLabelTypes.forEach((type, idx) => {
       const idbase = `upm_${axisName}_label_part_${idx}`;
       const typeInput = KAE(idbase, "type");
@@ -2508,7 +2508,7 @@
     // Returns null if the label type inputs pass all checks.
     // Returns an error message with relevant details if at least one check fails.
     function validateLabelTypeInputs(axisName) {
-      axisName = MMGR.isRow(axisName) ? "Row" : "Col";
+      axisName = MAPREP.isRow(axisName) ? "Row" : "Col";
       const axisLabelTypes = UPM.heatMap.getLabelTypes(axisName);
       let foundEmpty = false;
       const checkedParts = axisLabelTypes.filter((type, idx) => {
@@ -2581,7 +2581,7 @@
     // Only call this function if validateLabelTypeInputs has been called and no
     // issues were found.
     function applyLabelTypeInputs(axisName) {
-      axisName = MMGR.isRow(axisName) ? "Row" : "Col";
+      axisName = MAPREP.isRow(axisName) ? "Row" : "Col";
       const axisLabelTypes = UPM.heatMap.getLabelTypes(axisName);
       axisLabelTypes.forEach((type, idx) => {
         const idbase = `upm_${axisName}_label_part_${idx}`;
