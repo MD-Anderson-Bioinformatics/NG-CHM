@@ -6,6 +6,8 @@
 (function () {
   "use strict";
 
+  const debug = false;
+
   var sequenceNo = 1; // In case of multiple embedded maps.
 
   const iframeInfo = {}; // Map info needed by embedded map callback.
@@ -40,6 +42,10 @@
     expandable: false,
     // Optional onload function on generated iframe
     onload: null,
+    ngChmOptions: {},
+  };
+  const defaultNgChmOptions = {
+    sourceType: "zip",
   };
 
   // Exported function to be called to embed an NGCHM.
@@ -80,29 +86,41 @@
       ngchmIFrame.onload = P.onload;
     }
     // Save details required by iFrame initialization callback.
-    iframeInfo[ngchmIFrame.name] = { srcType, srcSpec };
+    iframeInfo[ngchmIFrame.name] = Object.assign({}, defaultNgChmOptions, P.ngChmOptions, { srcType, srcSpec, });
     //Add Iframe to required DIV
     embeddedParent.appendChild(ngchmIFrame);
     //Construct a fully configured embedded iframe and add it to the html page
     const doc = ngchmIFrame.contentWindow.document;
     doc.open();
+    doc.write(
+      `<!DOCTYPE html><HTML><HEAD><META id="viewport" name="viewport" content="width=device-width,user-scalable=no"></HEAD>`);
     if (P.expandable === true) {
       ngchmIFrame.style = P.thumbStyle;
-      doc.write(
-        `<!DOCTYPE html><HTML><HEAD><META id="viewport" name="viewport" content="width=device-width,user-scalable=no"></HEAD><BODY style='margin:0px;width:100vw;height: 100vh;display: flex;flex-direction: column;'><div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='${P.thumbStyle}'><img id='NGCHMEmbedButton' src='${P.thumbnail}' alt='Show Heat Map' onclick='NgChm.API.showEmbedded(this,"${P.style}","${P.customJS}");' /><div class='NGCHMEmbedOverlay' onclick='NgChm.API.showEmbedded(this,"${P.style}","${P.customJS}");' ><div id='NGCHMEmbedOverText'>Expand<br>Map</div></div></div><div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'><div><img id='NGCHMEmbedButton' src='data:image/png;base64,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' alt='Collapse Heat Map' onclick='NgChm.API.hideEmbed("${P.thumbStyle}");' /></div></div><br/><div id='NGCHMEmbed' style='${P.embedStyle}'></div>`,
-      );
-      S(`src='${P.widgetPath}'`);
+      doc.write(`
+        <BODY style='margin:0px;width:100vw;height: 100vh;display: flex;flex-direction: column;'>
+          <div id='NGCHMEmbedWrapper' class='NGCHMEmbedWrapper' style='${P.thumbStyle}'>
+            <img id='NGCHMEmbedButton' src='${P.thumbnail}' alt='Show Heat Map' onclick='NgChm.API.showEmbedded(this,"${P.style}","${P.customJS}");' />
+            <div class='NGCHMEmbedOverlay' onclick='NgChm.API.showEmbedded(this,"${P.style}","${P.customJS}");'>
+              <div id='NGCHMEmbedOverText'>Expand<br>Map</div>
+            </div>
+          </div>
+          <div id='NGCHMEmbedCollapse' style='display: none;width: 100px; height: 20px;'>
+            <div>
+              <img id='NGCHMEmbedButton' src='data:image/png;base64,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' alt='Collapse Heat Map' onclick='NgChm.API.hideEmbed("${P.thumbStyle}");' />
+            </div>
+          </div>
+          <br/>`);
+      doc.write(`<div id='NGCHMEmbed' style='${P.embedStyle}'></div>`);
+      addWidget();
     } else {
       ngchmIFrame.style = P.style;
-      doc.write(`<!DOCTYPE html><HTML>`);
-      doc.write(
-        `<META id="viewport" name="viewport" content="width=device-width,user-scalable=no">`,
-      );
-      doc.write(`<BODY>`);
-      doc.write(
-        `<div style='${P.docStyle}'><div id='NGCHMEmbed' style='${P.embedStyle}'></div></div>`,
-      );
-      S(`src='${P.widgetPath}'`);
+      doc.write(`
+      <BODY>
+        <div style='${P.docStyle}'></div>
+          <div id='NGCHMEmbed' style='${P.embedStyle}'></div>
+        </div>
+      `);
+      addWidget();
       if (P.customJS !== "") {
         S(`src='${P.customJS}'`);
       }
@@ -110,6 +128,12 @@
     S("", `window.parent.embedNGCHM.setUpFrame("${ngchmIFrame.name}");`);
     doc.write(`</BODY></HTML>`);
     doc.close();
+    // Helper functions.
+    // Add the widget.
+    function addWidget() {
+      S(`src='${P.widgetPath}'`);
+    }
+    // Add a script element.
     function S(a, b = "") {
       doc.write(`<script ${a}>${b}<` + "/script>");
     }
@@ -150,14 +174,17 @@
         return;
       }
     }
+    if (debug) {
+      console.log ("Calling API.embedCHM", { info });
+    }
     if (info.srcType === "blob") {
-      API.embedCHM(info.srcSpec);
+      API.embedCHM(info.srcSpec, info);
     } else if (info.srcType === "base64") {
-      API.embedCHM(API.b64toBlob(info.srcSpec));
+      API.embedCHM(API.b64toBlob(info.srcSpec), info);
     } else if (info.srcType === "fileName") {
-      API.embedCHM(info.srcSpec);
+      API.embedCHM(info.srcSpec, info);
     } else if (info.srcType === "url") {
-      API.embedCHM(info.srcSpec);
+      API.embedCHM(info.srcSpec, info);
     } else {
       alert("Unknown type of embedded NGCHM: " + info.srcType);
     }
