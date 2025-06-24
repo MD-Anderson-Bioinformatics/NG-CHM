@@ -902,8 +902,9 @@ button#layers_open_close[data-state='closed'] div.closed {
     display: inline-block;
     background-color: #ccc;
     position: absolute;
-    left: -8px;
+    left: 0px;
     top: -8px;
+    border: 1px solid var(--chm-table-color);
 }
 
 .chmTblRow {
@@ -1224,6 +1225,45 @@ th.breakpointContainer {
 .colorTableButtons {
     height: 28px;
     position: relative;
+}
+
+.ngchm-upm-layer-select {
+  color: var(--chm-table-color);
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding-left: 0.28em;
+  padding-top: 0.5em;
+  padding-bottom: 1em;
+}
+
+.ngchm-upm-layer-select label {
+  padding-right: 0.5em;
+}
+
+.ngchm-upm-layer-select select {
+  padding: 0.25em;
+}
+
+.ngchm-upm-color-scheme {
+  width: fit-content;
+  margin-bottom: 1em;
+}
+
+.ngchm-upm-breakpoint-heading td {
+  padding-bottom: 0.5em;
+}
+
+.ngchm-upm-breakpoint-heading td:last-child {
+  /* Ensure breakpoint buttons in this column have enough space. */
+  min-width: 45px;
+}
+
+.ngchm-upm-missing-breakpoint td {
+  padding-top: 0.5em;
+}
+
+.ngchm-upm-last-breakpoint .colorTableButtons {
+  height: 0px;
 }
 
 .colorTableButtons button {
