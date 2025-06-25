@@ -297,6 +297,7 @@
     {
       const { level, firstRow, firstCol, numRows, numCols } = drawWin;
       mapItem.detailHeatMapParams[layer] = {
+        version: mapItem.heatMap.getVersion(),
         drawWin: { layer, level, firstRow, firstCol, numRows, numCols }, // Just the window params.
         params: params,
       };
