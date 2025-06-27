@@ -637,7 +637,6 @@
     return valArr;
   };
 
-  UTIL.isBuilderView = false;
   UTIL.containerElement = document.getElementById("ngChmContainer");
 
   /**********************************************************************************

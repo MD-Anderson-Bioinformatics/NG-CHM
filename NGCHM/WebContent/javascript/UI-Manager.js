@@ -408,11 +408,10 @@
    * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
    * viewer.
    **********************************************************************************/
-  UIMGR.onLoadCHM = function (sizeBuilderView) {
+  UIMGR.onLoadCHM = function () {
     // Flush summary cache before possibly replacing current CHM with a new map.
     SUM.summaryHeatMapCache = {};
 
-    UTIL.isBuilderView = sizeBuilderView;
     //Run startup checks that enable startup warnings button.
     setDragPanels();
 
@@ -467,14 +466,14 @@
    * FUNCTION - loadLocalModeCHM: This function is called when running in local file mode and
    * with the heat map embedded in a "widgetized" web page.
    **********************************************************************************/
-  function loadLocalModeCHM(sizeBuilderView) {
+  function loadLocalModeCHM() {
     //Special case for embedded version where a blob is passed in.
     if (MMGR.embeddedMapName instanceof Blob) {
-      loadBlobModeCHM(sizeBuilderView);
+      loadBlobModeCHM();
       return;
     }
     if (UTIL.isValidURL(MMGR.embeddedMapName) === true) {
-      loadCHMFromURL(sizeBuilderView);
+      loadCHMFromURL();
       return;
     }
     //Else, fetch the .ngchm file
@@ -495,7 +494,7 @@
             // check if the file is a .ngchm file
             UHM.invalidFileFormat();
           } else {
-            displayFileModeCHM(chmFile, sizeBuilderView);
+            displayFileModeCHM(chmFile);
           }
         }
       }
@@ -507,7 +506,7 @@
    * FUNCTION - loadCHMFromURL: Works kind of like local mode but works when javascript
    * passes in the ngchm as a blob.
    **********************************************************************************/
-  function loadCHMFromURL(sizeBuilderView) {
+  function loadCHMFromURL() {
     var xhr = new XMLHttpRequest();
     xhr.open("GET", MMGR.embeddedMapName, true);
     xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
@@ -516,7 +515,7 @@
       if (this.status == 200) {
         var myBlob = this.response;
         resetCHM();
-        displayFileModeCHM(myBlob, sizeBuilderView);
+        displayFileModeCHM(myBlob);
       }
     };
     xhr.send();
@@ -526,10 +525,10 @@
    * FUNCTION - loadCHMFromBlob: Works kind of like local mode but works when javascript
    * passes in the ngchm as a blob.
    **********************************************************************************/
-  function loadBlobModeCHM(sizeBuilderView) {
+  function loadBlobModeCHM() {
     var chmFile = new File([MMGR.embeddedMapName], "ngchm");
     resetCHM();
-    displayFileModeCHM(chmFile, sizeBuilderView);
+    displayFileModeCHM(chmFile);
   }
 
   /**********************************************************************************
@@ -564,7 +563,7 @@
    * FUNCTION - displayFileModeCHM: This function performs functions shared by the
    * stand-alone and widgetized "file" versions of the application.
    **********************************************************************************/
-  function displayFileModeCHM(chmFile, sizeBuilderView) {
+  function displayFileModeCHM(chmFile) {
     resetCHM();
     initDisplayVars();
     MMGR.createHeatMap(
@@ -573,27 +572,6 @@
       [UIMGR.configurePanelInterface, SUM.processSummaryMapUpdate, DET.processDetailMapUpdate],
       chmFile
     );
-    if (typeof sizeBuilderView !== "undefined" && sizeBuilderView) {
-      UTIL.showDetailPane = false;
-      PANE.showPaneHeader = false;
-      MMGR.getHeatMap().addEventListener(builderViewSizing);
-    }
-  }
-
-  /**********************************************************************************
-   * FUNCTION - builderViewSizing: This function handles the resizing of the summary
-   * panel for the builder in cases where ONLY the summary panel is being drawn.
-   **********************************************************************************/
-  function builderViewSizing(event) {
-    if (typeof event !== "undefined" && event !== HEAT.Event_INITIALIZED) {
-      return;
-    }
-
-    const header = document.getElementById("mdaServiceHeader");
-    if (!header.classList.contains("hide")) {
-      header.classList.add("hide");
-      window.onresize();
-    }
   }
 
   /**********************************************************************************
@@ -651,15 +629,13 @@
   // To preserve compatibility with old API:
   Object.assign(UTIL, { embedCHM, showEmbed, showEmbedded });
 
-  function embedCHM(map, repository, sizeBuilderView) {
+  function embedCHM(map, repository) {
     MMGR.embeddedMapName = map;
     MMGR.localRepository = repository || ".";
     //Reset dendros for local/widget load
     SUM.colDendro = null;
     SUM.rowDendro = null;
-    //	DET.colDendro = null;
-    //	DET.rowDendro = null;
-    UIMGR.onLoadCHM(sizeBuilderView);
+    UIMGR.onLoadCHM();
   }
 
   /**********************************************************************************
