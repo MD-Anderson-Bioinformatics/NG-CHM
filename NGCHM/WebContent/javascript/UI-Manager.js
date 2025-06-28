@@ -35,6 +35,12 @@
   const TOUR = NgChm.importNS("NgChm.TOUR");
   const EXEC = NgChm.importNS("NgChm.EXEC");
 
+  const debugEmbed = UTIL.getDebugFlag("ui-embed");
+  const srcInfo = {
+    embedded: false,
+    options: {},
+  };
+
   const localFunctions = {};
 
   /***
@@ -74,7 +80,7 @@
 
   function autoSaveHeatMap(heatMap) {
     let success = true;
-    if (MMGR.embeddedMapName === null) {
+    if (!srcInfo.embedded) {
       heatMap.setRowClassificationOrder();
       heatMap.setColClassificationOrder();
       if (heatMap.source() !== MMGR.FILE_SOURCE) {
@@ -416,7 +422,13 @@
     setDragPanels();
 
     // See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
-    if (UTIL.mapId === "" && UTIL.mapNameRef === "" && MMGR.embeddedMapName === null) {
+    if (debugEmbed) {
+      console.log ("onLoadCHM: checking srcInfo:", {
+        srcInfo,
+      });
+    }
+
+    if (UTIL.mapId === "" && UTIL.mapNameRef === "" && !srcInfo.embedded) {
       //In local mode, need user to select the zip file with data (required by browser security)
       var chmFileItem = document.getElementById("fileButton");
       document.getElementById("menuFileOpen").style.display = "";
@@ -429,7 +441,7 @@
       //Run from a web server.
       var mapName = UTIL.mapId;
       var dataSource = MMGR.WEB_SOURCE;
-      if (MMGR.embeddedMapName !== null && ngChmWidgetMode !== "web") {
+      if (srcInfo.embedded && srcInfo.options.widgetMode !== "web") {
         mapName = MMGR.embeddedMapName;
         dataSource = MMGR.FILE_SOURCE;
         var embedButton = document.getElementById("NGCHMEmbedButton");
@@ -467,12 +479,15 @@
    * with the heat map embedded in a "widgetized" web page.
    **********************************************************************************/
   function loadLocalModeCHM() {
+    if (debugEmbed) {
+      console.log ("loadLocalModeCHM: ", { srcInfo });
+    }
     //Special case for embedded version where a blob is passed in.
     if (MMGR.embeddedMapName instanceof Blob) {
       loadBlobModeCHM();
       return;
     }
-    if (UTIL.isValidURL(MMGR.embeddedMapName) === true) {
+    if (UTIL.isValidURL(MMGR.embeddedMapName)) {
       loadCHMFromURL();
       return;
     }
@@ -630,6 +645,8 @@
   Object.assign(UTIL, { embedCHM, showEmbed, showEmbedded });
 
   function embedCHM(map, repository) {
+    srcInfo.embedded = true;
+    srcInfo.options.widgetMode = 'file';
     MMGR.embeddedMapName = map;
     MMGR.localRepository = repository || ".";
     //Reset dendros for local/widget load
@@ -643,6 +660,7 @@
    * user clicks on the embedded map image.
    **********************************************************************************/
   function showEmbed(baseDiv, dispWidth, dispHeight, customJS) {
+    console.warn ("OBSOLETE showEmbed: ", { baseDiv, dispWidth, dispHeight, customJS });
     var embeddedWrapper = document.getElementById("NGCHMEmbedWrapper");
     UTIL.embedThumbWidth = embeddedWrapper.style.width;
     UTIL.embedThumbHeight = embeddedWrapper.style.height;
@@ -679,17 +697,20 @@
   }
 
   /**********************************************************************************
-   * FUNCTION - showEmbed: This function shows the embedded heat map when the
-   * user clicks on the embedded map image.  It is used by NGCHM_Embed.js from
-   * the minimized file ngchmEmbed-min.js
+   * FUNCTION - showEmbedded: This function shows an expandable embedded heat map when the
+   * user clicks on the embedded map image to show the NG-CHM.  It is used by
+   * NGCHM_Embed.js from the minimized file ngchmEmbed-min.js
    **********************************************************************************/
   function showEmbedded(baseDiv, iframeStyle, customJS) {
-    var embeddedWrapper = document.getElementById("NGCHMEmbedWrapper");
+    if (debugEmbed) {
+      console.log ("showEmbedded: ", { baseDiv, iframeStyle, customJS });
+    }
+    const embeddedWrapper = document.getElementById("NGCHMEmbedWrapper");
     UTIL.embedThumbWidth = embeddedWrapper.style.width;
     UTIL.embedThumbHeight = embeddedWrapper.style.height;
-    var embeddedCollapse = document.getElementById("NGCHMEmbedCollapse");
-    var embeddedMap = document.getElementById("NGCHMEmbed");
-    var iFrame = window.frameElement; // reference to iframe element container
+    const embeddedCollapse = document.getElementById("NGCHMEmbedCollapse");
+    const embeddedMap = document.getElementById("NGCHMEmbed");
+    const iFrame = window.frameElement; // reference to iframe element container
     iFrame.className = "ngchm";
     iFrame.style = iframeStyle;
     iFrame.style.display = "flex";
@@ -1298,11 +1319,11 @@
         var boxHeight = contHeight * 0.92;
         linkBox.style.height = boxHeight;
         var boxTextHeight = boxHeight * 0.8;
-        if (MMGR.embeddedMapName !== null) {
+        if (srcInfo.embedded) {
           boxTextHeight = boxHeight * 0.6;
         }
         if (boxHeight < 400) {
-          if (MMGR.embeddedMapName !== null) {
+          if (srcInfo.embedded) {
             boxTextHeight = boxHeight * 0.6;
           } else {
             boxTextHeight = boxHeight * 0.7;
