@@ -932,59 +932,70 @@
   }
 
   /**********************************************************************************
-   * FUNCTION - saveHeatMapChanges: This function handles all of the tasks necessary
-   * display a modal window whenever the user requests to save heat map changes.
+   * FUNCTION - saveHeatMapChanges: Display a modal window whenever the user requests
+   * to save heat map changes.
    **********************************************************************************/
   function saveHeatMapChanges() {
     const heatMap = MMGR.getHeatMap();
-    var text;
     UHM.closeMenu();
     const msgBox = UHM.initMessageBox();
     msgBox.classList.add("save-heat-map");
     UHM.setMessageBoxHeader("Save Heat Map");
-    //Have changes been made?
-    if (heatMap.getUnAppliedChanges()) {
-      if (heatMap.source() == MMGR.FILE_SOURCE || typeof NgChm.galaxy !== "undefined") {
-        // FIXME: BMB.  Improve Galaxy detection.
-        if (typeof NgChm.galaxy !== "undefined") {
-          text =
-            "<br>Changes to the heatmap cannot be saved in the Galaxy history.  Your modifications to the heatmap may be written to a downloaded NG-CHM file.";
-        } else {
-          text =
-            "<br>You have elected to save changes made to this NG-CHM heat map file.<br><br>You may save them to a new NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-        }
-        UHM.setMessageBoxText(text);
-        addSaveToNgchmButton();
-        addCancelSaveButton();
-      } else {
-        // If so, is read only?
-        if (heatMap.isReadOnly()) {
-          text =
-            "<br>You have elected to save changes made to this READ-ONLY heat map. READ-ONLY heat maps cannot be updated.<br><br>However, you may save these changes to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-          UHM.setMessageBoxText(text);
-          addSaveToNgchmButton();
-          addCancelSaveButton();
-        } else {
-          text =
-            "<br>You have elected to save changes made to this heat map.<br><br>You have the option to save these changes to the original map OR to save them to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-          UHM.setMessageBoxText(text);
-          addSaveToNgchmButton();
-          UHM.setMessageBoxButton(
-            "saveOriginal",
-            { type: "text", text: "Save original" },
-            saveHeatMapToServer
-          );
-          addCancelSaveButton();
-        }
-      }
+
+    // Find a reason, if any, we can't save to the server.
+    const whyNot = checkSavingPermitted();
+
+    // Set the message box text depending on whether saving is permitted.
+    let msgBoxText = "<br>";
+    if (whyNot) {
+      msgBoxText += `The heatmap cannot be saved because ${whyNot}.<br><br>However, you may`;
     } else {
-      text =
-        "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-      UHM.setMessageBoxText(text);
-      addSaveToNgchmButton();
-      addCancelSaveButton();
+      msgBoxText += "You may either save these changes to the original map or ";
     }
+    msgBoxText += " save a copy of the map as an NG-CHM file. An NG-CHM file can be opened using the NG-CHM File Viewer application.<br><br>";
+    UHM.setMessageBoxText(msgBoxText);
+
+    // Add the message box buttons and display it.
+    addSaveToNgchmButton();
+    if (!whyNot) {
+      // Add a saveOriginal button iff saving is permitted.
+      UHM.setMessageBoxButton(
+        "saveOriginal",
+        { type: "text", text: "Save original" },
+        saveHeatMapToServer
+      );
+    }
+    addCancelSaveButton();
     UHM.displayMessageBox();
+    return;
+
+    // Helper function.
+    // Return null iff saving permitted, otherwise reason.
+    function checkSavingPermitted() {
+      if (!heatMap.getUnAppliedChanges()) {
+        return "there are no changes at this time";
+      }
+      // FIXME: BMB.  Improve Galaxy detection.
+      if (typeof NgChm.galaxy !== "undefined") {
+        return "changes cannot be saved in the Galaxy history";
+      }
+      if (heatMap.isReadOnly()) {
+        return "the NG-CHM is marked READ-ONLY";
+      }
+      // Final check. Does the fileSource permit saving?
+      switch (heatMap.source()) {
+        case MMGR.WEB_SOURCE:
+          return null;
+        case MMGR.LOCAL_SOURCE:
+          return "the NG-CHM server is read only";
+        case MMGR.FILE_SOURCE:
+          return "browsers cannot automatically overwrite files";
+        default:
+          // This should never happen.
+          console.error ("Unknown type of NG-CHM server: " + heatMap.source());
+          return "the type of the NG-CHM server is not recognized";
+      }
+    }
   }
 
   // Adds a "Save to .ngchm" button to an initialized UHM dialog.
