@@ -805,22 +805,4 @@
     createWebLoader(MMGR.WEB_SOURCE);
   }
 
-  // Special tooltip with content populated from the loaded heat map.
-  document.getElementById("mapName").addEventListener(
-    "mouseover",
-    (ev) => {
-      const heatMap = MMGR.getHeatMap();
-      UHM.hlp(
-        ev.target,
-        "Map Name: " +
-          (heatMap !== null
-            ? heatMap.getMapInformation().name
-            : "Not yet available") +
-          "<br><br>Description: " +
-          (heatMap !== null ? heatMap.getMapInformation().description : "N/A"),
-        350,
-      );
-    },
-    { passive: true },
-  );
 })();
