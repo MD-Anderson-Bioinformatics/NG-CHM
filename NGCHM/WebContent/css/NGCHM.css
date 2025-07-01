@@ -20,6 +20,7 @@
 	--selected-button-color: #00abcd;
 	--disabled-button-color: #7f7f7f;
 	--button-background-color: #efefef;
+  --ngchm-error-color: #DC143C;
 
 	box-sizing: border-box;
 }
@@ -902,8 +903,9 @@ button#layers_open_close[data-state='closed'] div.closed {
     display: inline-block;
     background-color: #ccc;
     position: absolute;
-    left: -8px;
+    left: 0px;
     top: -8px;
+    border: 1px solid var(--chm-table-color);
 }
 
 .chmTblRow {
@@ -1224,6 +1226,45 @@ th.breakpointContainer {
 .colorTableButtons {
     height: 28px;
     position: relative;
+}
+
+.ngchm-upm-layer-select {
+  color: var(--chm-table-color);
+  font-weight: bold;
+  font-size: 0.8rem;
+  padding-left: 0.28em;
+  padding-top: 0.5em;
+  padding-bottom: 1em;
+}
+
+.ngchm-upm-layer-select label {
+  padding-right: 0.5em;
+}
+
+.ngchm-upm-layer-select select {
+  padding: 0.25em;
+}
+
+.ngchm-upm-color-scheme {
+  width: fit-content;
+  margin-bottom: 1em;
+}
+
+.ngchm-upm-breakpoint-heading td {
+  padding-bottom: 0.5em;
+}
+
+.ngchm-upm-breakpoint-heading td:last-child {
+  /* Ensure breakpoint buttons in this column have enough space. */
+  min-width: 45px;
+}
+
+.ngchm-upm-missing-breakpoint td {
+  padding-top: 0.5em;
+}
+
+.ngchm-upm-last-breakpoint .colorTableButtons {
+  height: 0px;
 }
 
 .colorTableButtons button {
@@ -1960,6 +2001,31 @@ div#droptarget.visible {
   top: 100px;
   margin-top: 5px;
   font-size: 10px;
+}
+
+#msgBox-for-command-dialog .msgBoxBody {
+  min-width: 400px;
+  margin: 0.5em;
+}
+
+#msgBox-for-command-dialog textarea {
+  width: calc(100% - 6px);
+  height: 3em;
+}
+
+#ngchm-cmd-output {
+  background-color: white;
+  min-height: 20em;
+  padding: 0.5em;
+}
+
+#ngchm-cmd-output span {
+  display: block;
+  min-height: 0.5em;
+}
+
+.ngchm-cmd-error {
+  color: var(--ngchm-error-color);
 }
 
 /* Use opacity:0 instead of display:none for elements that will be faded in

@@ -279,11 +279,6 @@
     });
   }
 
-  MMGR.isRow = isRow;
-  function isRow(axis) {
-    return axis && axis.toLowerCase() === "row";
-  }
-
   ///////////////////////////////////////////////////////////////////////////
   //
   // BEGIN class TileWindow.
@@ -903,7 +898,7 @@
     };
 
     HeatMap.prototype.getAxisConfig = function (axis) {
-      return isRow(axis) ? this.getRowConfig() : this.getColConfig();
+      return MAPREP.isRow(axis) ? this.getRowConfig() : this.getColConfig();
     };
 
     HeatMap.prototype.getRowConfig = function () {
@@ -938,8 +933,95 @@
       return Object.fromEntries(matches);
     };
 
+    HeatMap.prototype.addCovariate = function (axis, covariateName, dataType) {
+      const colorMapObj = {
+        type: dataType,
+        thresholds: dataType == "discrete" ? [] : [0, 100],
+        colors: dataType == "discrete" ? [] : ["#fefefe", "#3f3f3f"],
+        missing: "#111111"
+      };
+      const covariateDetails = {
+        bar_type: "color_plot",
+        bg_color: "#fefefe",
+        color_map: colorMapObj,
+        fg_color: "#888888",
+        height: 10,
+        high_bound: "100",
+        low_bound: "0",
+        show: "Y",
+        missingColor: "#212121"
+      };
+      const cfg = this.getAxisConfig(axis);
+      if (cfg.classifications_order.includes (covariateName)) {
+        console.warn ("HeatMap.addCovariate: covariate already exists", { axis, covariateName, axisConfig: cfg });
+      } else {
+        cfg.classifications_order.push(covariateName);
+      }
+      cfg.classifications[covariateName] = covariateDetails;
+      const cvData = this.getAxisCovariateData (axis);
+      const numDetailElements = this.getNumAxisElements(axis, 'd');
+      const emptyData = { values: new Array(numDetailElements).fill("NA") };
+      const numSummaryElements = this.getNumAxisElements(axis, 's');
+      if (numSummaryElements != numDetailElements) {
+        emptyData.svalues = new Array(numSummaryElements).fill("NA");
+      }
+      cvData[covariateName] = emptyData;
+      return covariateDetails;
+    };
+
+    HeatMap.prototype.summarizeCovariate = function (axis, covariateName, dataType) {
+      const cvData = this.getAxisCovariateData (axis)[covariateName];
+      if (!cvData.hasOwnProperty('svalues')) {
+        // Nothin to do if no summary values.
+        return;
+      }
+      // The "trickiest" park of this function is getting the number of detail values
+      // for each summary value correct.  Rather than risk having two separate loops
+      // (one for discrete, the other for continuous covariates) that could diverge
+      // over time, I kept just a single loop and handle the discrete and continuous
+      // cases separately within the loop.
+      const scale = cvData.values.length / cvData.svalues.length;
+      let didx = 0;
+      for (let ii = 0; ii < cvData.svalues.length; ii++) {
+        const dlim = Math.floor(scale * (ii+1) - 1e-10);
+        let discCounts = new Map();  // For discrete covariates.
+        let total = 0.0; // For continuous covariate. Total of non-Nan values.
+        let count = 0; // For continuous covariate. Number of non-NaN values.
+        while (didx < dlim) {
+          const dval = cvData.values[didx++];
+          if (dataType == "discrete") {
+            // Increment the number of times we've seen this value.
+            discCounts.set(dval, (discCounts.get(dval) || 0) + 1);
+          } else {
+            if (!isNaN(dval)) {
+              // Total the non-NaN values.
+              total += dval;
+              count++;
+            }
+          }
+        }
+        if (dataType == "discrete") {
+          let modeCount = 0;
+          let modeVal;
+          // Determine which discrete value occurs most often.
+          // There must be at least one entry, so modeVal will be defined.
+          // It is possible for modeVal to be NaN.  Assumes all missing values
+          // are represented the same way in the covariate.
+          for (const [val,count] of discCounts) {
+            if (count > modeCount) {
+              modeCount = count;
+              modeVal = val;
+            }
+          }
+          cvData.svalues[ii] = modeVal;
+        } else {
+          cvData.svalues[ii] = count == 0 ? NaN : total/count;
+        }
+      }
+    };
+
     HeatMap.prototype.getAxisCovariateOrder = function (axis) {
-      return isRow(axis)
+      return MAPREP.isRow(axis)
         ? this.getRowClassificationOrder()
         : this.getColClassificationOrder();
     };
@@ -1099,7 +1181,7 @@
      * - containsLegend, which returns true iff there's a bar with a bar/scatter plot legend.
      */
     HeatMap.prototype.getScaledVisibleCovariates = function (axis, scale) {
-      const axisConfig = isRow(axis)
+      const axisConfig = MAPREP.isRow(axis)
         ? this.mapConfig.row_configuration
         : this.mapConfig.col_configuration;
       const order = axisConfig.hasOwnProperty("classifications_order")
@@ -1138,7 +1220,7 @@
     /* Returns true iff there are hidden covariates on the specified axis of the heat map.
      */
     HeatMap.prototype.hasHiddenCovariates = function (axis) {
-      const axisConfig = isRow(axis)
+      const axisConfig = MAPREP.isRow(axis)
         ? this.mapConfig.row_configuration
         : this.mapConfig.col_configuration;
       const order = axisConfig.hasOwnProperty("classifications_order")
@@ -1170,6 +1252,19 @@
       return this.getDataLayers()[this.getCurrentDL()];
     };
 
+    HeatMap.prototype.getSortedLayers = function getSortedLayers () {
+      return Object.entries(this.getDataLayers()).sort(layerCmp);
+      //
+      // Helper function.
+      // Compare two layer keys for use by sort.
+      function layerCmp(a, b) {
+        // Object entries are a tuple: [ key, layer ].
+        // Layer keys consist of "dl" followed by a number.
+        // Compares the numbers numerically.
+        return Number(a[0].substr(2)) - Number(b[0].substr(2));
+      }
+    };
+
     HeatMap.prototype.getDividerPref = function () {
       return this.mapConfig.data_configuration.map_information.summary_width;
     };
@@ -1197,7 +1292,7 @@
       showVal,
       heightVal,
     ) {
-      if (isRow(axis)) {
+      if (MAPREP.isRow(axis)) {
         this.mapConfig.row_configuration.classifications[classname].show =
           showVal ? "Y" : "N";
         this.mapConfig.row_configuration.classifications[classname].height =
@@ -1219,7 +1314,7 @@
       fgColorVal,
       bgColorVal,
     ) {
-      if (isRow(axis)) {
+      if (MAPREP.isRow(axis)) {
         this.mapConfig.row_configuration.classifications[classname].bar_type =
           barType;
         if (typeof lowBound !== "undefined") {
@@ -1494,7 +1589,7 @@
     /***********  Methods for accessing mapData ****************/
 
     HeatMap.prototype.getAxisCovariateData = function (axis) {
-      return isRow(axis)
+      return MAPREP.isRow(axis)
         ? this.mapData.row_data.classifications
         : this.mapData.col_data.classifications;
     };
@@ -1509,7 +1604,7 @@
 
     //Get Axis Labels
     HeatMap.prototype.getAxisLabels = function (axis) {
-      return isRow(axis)
+      return MAPREP.isRow(axis)
         ? this.mapData.row_data.label
         : this.mapData.col_data.label;
     };
@@ -1539,7 +1634,7 @@
     }
 
     HeatMap.prototype.getDendrogramData = function (axis) {
-      const data = isRow(axis)
+      const data = MAPREP.isRow(axis)
         ? this.mapData.row_data.dendrogram
         : this.mapData.col_data.dendrogram;
       return (data || []).map((entry) => {
@@ -1589,7 +1684,13 @@
     //Return the total number of rows/columns on the specified axis.
     HeatMap.prototype.getTotalElementsForAxis = function (axis) {
       const level = this.datalevels[MAPREP.DETAIL_LEVEL];
-      return isRow(axis) ? level.totalRows : level.totalColumns;
+      return MAPREP.isRow(axis) ? level.totalRows : level.totalColumns;
+    };
+
+    //Return the number of rows or columns for the given level
+    HeatMap.prototype.getNumAxisElements = function (axis, level) {
+      const l = this.datalevels[level];
+      return MAPREP.isRow(axis) ? l.totalRows : l.totalColumns;
     };
 
     //Return the number of rows for a given level
@@ -1760,21 +1861,30 @@
       return this.fileSrc;
     };
 
-    // unAppliedChanges is true iff the map has been changed
-    // but not saved.
-    //
     // setUnAppliedChanges (true) is called when something
-    // changes the map configuration.
+    // changes the heatmap.
     //
     // setUnAppliedChanges (false) is called when something
-    // saves or resets the map configuration.
-    HeatMap.prototype.setUnAppliedChanges = function (value) {
-      this.unAppliedChanges = value;
+    // saves the heatmap.
+    //
+    // The version number is also used to help determine when
+    // redraws are needed.
+    HeatMap.prototype.getVersion = function () {
+      return this.version;
+    };
+    HeatMap.prototype.setUnAppliedChanges = function (changed) {
+      if (changed) {
+        // Note change.
+        this.version++;
+      } else {
+        // Note the current version has been saved.
+        this.savedVersion = this.version;
+      }
     };
 
-    // Return the current value of unAppliedChanges.
+    // Return true if the heatmap has changed since it was last saved.
     HeatMap.prototype.getUnAppliedChanges = function () {
-      return this.unAppliedChanges;
+      return this.version != this.savedVersion;
     };
 
     // Call the users call back function to let them know the chm is initialized or updated.
@@ -1956,7 +2066,8 @@
   // Used to get HeatMapLevel object.
   function HeatMap(heatMapName, updateCallbacks, fileSrc, chmFile, compat) {
     this.initialized = false; // True once the minimum components have loaded.
-    this.unAppliedChanges = false; // True iff map has unsaved changes.
+    this.version = 0; // Update to indicate need to save or redraw.
+    this.savedVersion = 0; // Last version that was saved.
     this.mapName = heatMapName; // Name of the map.
     this.mapConfig = null; // Map configuration.
     this.mapData = null; // Map data (excluding tiles).
@@ -2291,7 +2402,7 @@
     // of the NG-CHM.  The "actual" labels currently consist of the
     // visible text fields of the "full" labels.
     HeatMap.prototype.actualLabels = function actualLabels (axis) {
-      axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
+      axis = MAPREP.isRow(axis) ? "ROW" : "COLUMN";
       if (!this.actualAxisLabels.hasOwnProperty(axis)) {
         const labels = this.getAxisLabels(axis)["labels"];
         const types = this.getLabelTypes(axis);
@@ -2315,7 +2426,7 @@
     // if needed, to be no longer than the maximum label display length for
     // the specified axis.
     HeatMap.prototype.shownLabels = function shownLabels (axis) {
-      axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
+      axis = MAPREP.isRow(axis) ? "ROW" : "COLUMN";
       const config = this.getAxisConfig(axis);
       // Recalculate shown labels if parameters affecting them have changed.
       if (
@@ -2343,7 +2454,7 @@
      * separated by ellipsis (...);
      **********************************************************************************/
     HeatMap.prototype.getLabelText = function getLabelText (text, axis, builder) {
-      axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
+      axis = MAPREP.isRow(axis) ? "ROW" : "COLUMN";
       const config = this.getAxisConfig(axis);
       let size = parseInt(config.label_display_length);
       const elPos = config.label_display_method;
@@ -2843,6 +2954,12 @@
                 entry.filename,
                 JSON.stringify(mapConf || heatMap.mapConfig),
               );
+            } else if (keyVal.indexOf("mapData") >= 0) {
+              // For mapData, add the potentially modified data.
+              promise = addTextContents(
+                entry.filename,
+                JSON.stringify(heatMap.mapData),
+              );
             } else {
               // Directly add all other text zip entries to the new zip file.
               promise = zipCopyText(entry);
@@ -2990,6 +3107,11 @@
     // Return the current heat map.
     MMGR.getHeatMap = function getHeatMap() {
       return heatMap;
+    };
+
+    // Return all heat maps.
+    MMGR.getAllHeatMaps = function getAllHeatMaps() {
+      return [heatMap];  // Only 1 for now.
     };
 
     /*

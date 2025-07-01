@@ -15,4 +15,9 @@
   MAPREP.RIBBON_VERT_LEVEL = "rv";
   MAPREP.RIBBON_HOR_LEVEL = "rh";
   MAPREP.DETAIL_LEVEL = "d";
+
+  MAPREP.isRow = function isRow(axis) {
+    return axis && axis.toLowerCase() === "row";
+  };
+
 })();

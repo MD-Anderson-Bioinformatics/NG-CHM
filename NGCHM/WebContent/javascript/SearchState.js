@@ -5,6 +5,8 @@
   //Define Namespace for NgChm SearchState
   const SRCHSTATE = NgChm.createNS("NgChm.SRCHSTATE");
 
+  const UTIL = NgChm.importNS("NgChm.UTIL");
+  const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const MMGR = NgChm.importNS("NgChm.MMGR");
 
   /***********************************************************
@@ -69,7 +71,7 @@
    * specified axis.
    ***********************************************************************************/
   SRCHSTATE.getAxisSearchResults = function (axis) {
-    if (MMGR.isRow(axis)) axis = "Row";
+    if (MAPREP.isRow(axis)) axis = "Row";
     if (axis == "column") axis = "Column";
     return Object.keys(searchResults[axis]).map((val) => +val);
   };
@@ -197,6 +199,7 @@
    * on the specified axis.
    ***********************************************************************************/
   SRCHSTATE.setAxisSearchResultsVec = function (axis, vec) {
+    axis = UTIL.capitalize (axis);
     const axisResults = searchResults[axis];
     const gaps = getGaps(axis);
     vec.forEach((i) => {

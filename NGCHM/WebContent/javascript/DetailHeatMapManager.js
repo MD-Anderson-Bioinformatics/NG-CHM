@@ -155,7 +155,7 @@
     getScaledVisibleCovariates(axis) {
       return this.heatMap.getScaledVisibleCovariates(
         axis,
-        MMGR.isRow(axis) ? this.rowClassScale : this.colClassScale,
+        MAPREP.isRow(axis) ? this.rowClassScale : this.colClassScale,
       );
     }
 
@@ -163,14 +163,14 @@
      * FUNCTION:  getCovariateBarLabelFont - Return the font to use for covariate bars on the specified axis.
      *********************************************************************************************/
     getCovariateBarLabelFont(axis) {
-      return MMGR.isRow(axis) ? this.rowClassLabelFont : this.colClassLabelFont;
+      return MAPREP.isRow(axis) ? this.rowClassLabelFont : this.colClassLabelFont;
     }
 
     /*********************************************************************************************
      * FUNCTION:  setCovariateBarLabelFont - Set the font to use for covariate bars on the specified axis.
      *********************************************************************************************/
     setCovariateBarLabelFont(axis, font) {
-      if (MMGR.isRow(axis)) {
+      if (MAPREP.isRow(axis)) {
         this.rowClassLabelFont = font;
       } else {
         this.colClassLabelFont = font;
