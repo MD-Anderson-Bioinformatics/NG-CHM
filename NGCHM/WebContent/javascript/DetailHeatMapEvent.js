@@ -306,8 +306,8 @@
       // Based on the axis, determine:
       // - the index of the element (1-based) the user clicked on.
       // - the offset of the mouse click in canvas units.
-      var itemIndex;
-      var clickOffset;
+      let itemIndex;
+      let clickOffset;
       if (axis === "col") {
         itemIndex = Math.floor(
           mapItem.currentCol +
