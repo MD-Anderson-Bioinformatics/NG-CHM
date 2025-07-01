@@ -160,8 +160,12 @@ var linkoutsVersion = "undefined";
     CUST.describeTypes(typelist);
   };
 
+  var showLinkoutOutput = false;
+  linkouts.showLinkoutOutput = function (show) {
+    showLinkoutOutput = show;
+  };
   linkouts.execCommand = function (args) {
-    return EXEC.execCommand (args, UTIL.consoleOutput);
+    return EXEC.execCommand (args, UTIL.consoleOutput, showLinkoutOutput);
   };
 
   /*******************************************
