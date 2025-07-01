@@ -68,6 +68,19 @@
     this.tabId = tabId;
     this.tabDiv = document.getElementById(tabId);
     this.button.onclick = (ev) => this.show(ev);
+    //
+    // Add a keydown event handler for the tab.
+    // A keydown event on any element with class "ngchm-upm-input" within
+    // the tab will signify a change.
+    this.tabDiv.addEventListener("keydown", (ev) => {
+      if (debug || debugEvents) console.log(`${tabId}: KeyDown handler`, { target: ev.target });
+      for (const target of this.targetGen(ev)) {
+        if (target.classList.contains("ngchm-upm-input")) {
+          startChange();
+          break;
+        }
+      }
+    });
   }
 
   // VIRTUAL METHOD PreferencesTab.setupTab : populate the tab.
@@ -937,17 +950,6 @@
       layerprefs.appendChild(breakprefs);
     }
 
-    // Add a keydown event handler for this tab.
-    this.tabDiv.addEventListener("keydown", (ev) => {
-      if (debug || debugEvents) console.log("DataLayersTab: KeyDown handler", { target: ev.target });
-      for (const target of this.targetGen(ev)) {
-        if (target.classList.contains("ngchm-upm-input")) {
-          startChange();
-          break;
-        }
-      }
-    });
-
     // Add a change event handler for this tab.
     this.tabDiv.addEventListener("change", (ev) => {
       if (debug) console.log("DataLayersTab: Change handler", { target: ev.target });
@@ -1635,18 +1637,6 @@
           // The user clicked on the filter covariates button.
           this.filterClassPrefs();
           return;
-        }
-      }
-    });
-    // Add a keydown handler for the entire tab.
-    this.tabDiv.addEventListener("keydown", (ev) => {
-      if (debug || debugEvents) {
-        console.log("CovariatesPrefsTab: KeyDown handler", { target: ev.target });
-      }
-      for (const target of this.targetGen(ev)) {
-        if (target.classList.contains("ngchm-upm-input")) {
-          startChange();
-          break;
         }
       }
     });
@@ -2620,16 +2610,6 @@
           startChange();
           KAE("col","TopItemsTextRow").style.display = KAE("col","TopItems").value == "--text-entry--" ? "" : "none";
         } else if (target.classList.contains('ngchm-upm-input')) {
-          startChange();
-          break;
-        }
-      }
-    });
-
-    this.tabDiv.addEventListener("keydown", (ev) => {
-      if (debug || debugEvents) console.log("RowsColsTab: KeyDown handler", { target: ev.target });
-      for (const target of this.targetGen(ev)) {
-        if (target.classList.contains("ngchm-upm-top-items-text")) {
           startChange();
           break;
         }
