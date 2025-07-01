@@ -6,6 +6,7 @@
   const DET = NgChm.createNS("NgChm.DET");
 
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
+  const HEAT = NgChm.importNS("NgChm.HEAT");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const CMM = NgChm.importNS("NgChm.CMM");
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
@@ -44,7 +45,7 @@
    *********************************************************************************************/
   DET.setDataViewSize = setDataViewSize;
   function setDataViewSize(mapItem, axis, size) {
-    if (MMGR.isRow(axis)) {
+    if (MAPREP.isRow(axis)) {
       mapItem.rowClassScale *= size / mapItem.dataViewWidth;
       mapItem.dataViewWidth = size | 0;
     } else {
@@ -80,7 +81,7 @@
    * This callback draws the summary heat map.
    *********************************************************************************************/
   DET.processDetailMapUpdate = function (event, tile) {
-    if (event !== MMGR.Event_INITIALIZED) {
+    if (event !== HEAT.Event_INITIALIZED) {
       DET.flushDrawingCache(tile);
     }
   };
@@ -297,6 +298,7 @@
     {
       const { level, firstRow, firstCol, numRows, numCols } = drawWin;
       mapItem.detailHeatMapParams[layer] = {
+        version: mapItem.heatMap.getVersion(),
         drawWin: { layer, level, firstRow, firstCol, numRows, numCols }, // Just the window params.
         params: params,
       };
@@ -610,7 +612,7 @@
       mapItem.heatMap.getTotalCols(),
     );
     const dataViewSize =
-      (MMGR.isRow(axis) ? mapItem.dataViewHeight : mapItem.dataViewWidth) -
+      (MAPREP.isRow(axis) ? mapItem.dataViewHeight : mapItem.dataViewWidth) -
       DET.dataViewBorder;
     let boxSize = 0;
     for (let i = DET.zoomBoxSizes.length - 1; i >= 0; i--) {
@@ -1658,7 +1660,7 @@
       const barLabelFont = calcCovariateBarLabelFont(mapItem, axis, bars);
       mapItem.setCovariateBarLabelFont(axis, barLabelFont);
       if (barLabelFont > 0 && barLabelFont < DET.maxLabelSize) {
-        const otherAxis = MMGR.isRow(axis) ? "COL" : "ROW";
+        const otherAxis = MAPREP.isRow(axis) ? "COL" : "ROW";
         const legendText = bars.containsLegend() ? "XXX" : "";
         bars.forEach((bar) => {
           addTmpLabelForSizeCalc(
@@ -1681,7 +1683,7 @@
     // For the specified axis, determine the scaling factor between the mapItem's canvas size in canvas
     // coordinates and its size in CSS coordinates.
     let scale;
-    if (MMGR.isRow(axis)) {
+    if (MAPREP.isRow(axis)) {
       scale =
         mapItem.canvas.clientWidth /
         (mapItem.dataViewWidth + bars.totalHeight());
@@ -1750,11 +1752,11 @@
    ************************************************************************************************/
   function calcAxisLabelsLen(mapItem, axis, fontSize) {
     // Calculate the sizes (in canvas coordinates) of the dendrogram, covariate bars, and map.
-    const otherAxis = MMGR.isRow(axis) ? "column" : "row";
+    const otherAxis = MAPREP.isRow(axis) ? "column" : "row";
     const barsHeight = mapItem
       .getScaledVisibleCovariates(otherAxis)
       .totalHeight();
-    const mapSize = MMGR.isRow(axis)
+    const mapSize = MAPREP.isRow(axis)
       ? mapItem.dataViewHeight
       : mapItem.dataViewWidth;
 
@@ -1763,16 +1765,16 @@
 
     // Determine the space available for each label by dividing the client size (in CSS coordinates) by the number
     // of labels.
-    const clientSize = MMGR.isRow(axis)
+    const clientSize = MAPREP.isRow(axis)
       ? mapItem.canvas.clientHeight
       : mapItem.canvas.clientWidth;
-    const numLabels = MMGR.isRow(axis)
+    const numLabels = MAPREP.isRow(axis)
       ? mapItem.dataPerCol
       : mapItem.dataPerRow;
     const skip = (clientSize * mapFraction) / numLabels;
 
     if (skip > UTIL.minLabelSize) {
-      const firstLabel = MMGR.isRow(axis)
+      const firstLabel = MAPREP.isRow(axis)
         ? mapItem.currentRow
         : mapItem.currentCol;
       const shownLabels = mapItem.heatMap.shownLabels(axis);
@@ -1790,7 +1792,7 @@
    * to accommodate labels on both axes.
    ************************************************************************************************/
   function calcLabelDiv(mapItem, axis) {
-    let maxLen = MMGR.isRow(axis) ? mapItem.rowLabelLen : mapItem.colLabelLen;
+    let maxLen = MAPREP.isRow(axis) ? mapItem.rowLabelLen : mapItem.colLabelLen;
     let w;
 
     for (let ii = 0; ii < mapItem.tmpLabelSizeElements.length; ii++) {
@@ -1807,7 +1809,7 @@
         maxLen = w;
       }
     }
-    if (MMGR.isRow(axis)) {
+    if (MAPREP.isRow(axis)) {
       if (maxLen > mapItem.rowLabelLen) mapItem.rowLabelLen = maxLen;
     } else {
       if (maxLen > mapItem.colLabelLen) mapItem.colLabelLen = maxLen;
@@ -1840,10 +1842,10 @@
   const fontSizeMap = new Map();
   function calcAxisLabelFontSize(mapItem, axis) {
     // Determine the sizes of the three view components: data view, dendrogram, and covariate bars.
-    const dataViewSize = MMGR.isRow(axis)
+    const dataViewSize = MAPREP.isRow(axis)
       ? mapItem.dataViewHeight
       : mapItem.dataViewWidth;
-    const otherAxis = MMGR.isRow(axis) ? "column" : "row";
+    const otherAxis = MAPREP.isRow(axis) ? "column" : "row";
     const barsHeight = mapItem
       .getScaledVisibleCovariates(otherAxis)
       .totalHeight();
@@ -1852,10 +1854,10 @@
     const mapFraction = dataViewSize / (dataViewSize + barsHeight);
 
     // Determine font size from CSS size of map, map fraction used by data view, and number of labels.
-    const numLabels = MMGR.isRow(axis)
+    const numLabels = MAPREP.isRow(axis)
       ? mapItem.dataPerCol
       : mapItem.dataPerRow;
-    const clientSize = MMGR.isRow(axis)
+    const clientSize = MAPREP.isRow(axis)
       ? mapItem.canvas.clientHeight
       : mapItem.canvas.clientWidth;
     const skip = Math.floor((clientSize * mapFraction) / numLabels); // Min space between labels.
@@ -1982,7 +1984,7 @@
    *
    ************************************************************************************************/
   function drawAxisLabels(mapItem, axis, fontSize) {
-    const isRow = MMGR.isRow(axis);
+    const isRow = MAPREP.isRow(axis);
 
     // Determine the size (in canvas coordinates) of the map and the covariate bars.
     const otherAxis = isRow ? "column" : "row";
@@ -2269,7 +2271,7 @@
   function drawCovariateBarLegends(mapItem, axis) {
     const bars = mapItem.getScaledVisibleCovariates(axis);
     const totalHeight = bars.totalHeight();
-    const drawBarLegend = MMGR.isRow(axis)
+    const drawBarLegend = MAPREP.isRow(axis)
       ? DET.drawRowClassBarLegend
       : DET.drawColClassBarLegend;
     let prevHeight = 0;
@@ -3240,17 +3242,17 @@
     const debug = false;
     const origScale = Math.max(
       1.0,
-      MMGR.isRow(axis) ? mapItem.rowClassScale : mapItem.colClassScale,
+      MAPREP.isRow(axis) ? mapItem.rowClassScale : mapItem.colClassScale,
     );
     let bars = mapItem.heatMap.getScaledVisibleCovariates(axis, origScale);
     if (bars.length === 0) return;
 
     // Aim for larger covariate bars if there are only a few of them.
     const targetFontSize = 7.5 + Math.max(0, 11 - bars.length) * 0.25;
-    const clientSize = MMGR.isRow(axis)
+    const clientSize = MAPREP.isRow(axis)
       ? mapItem.canvas.clientWidth
       : mapItem.canvas.clientHeight;
-    const dataViewSize = MMGR.isRow(axis)
+    const dataViewSize = MAPREP.isRow(axis)
       ? mapItem.dataViewWidth
       : mapItem.dataViewHeight;
 
@@ -3300,7 +3302,7 @@
     }
     const scaleRatio = scale / origScale;
     if (scaleRatio <= 0.9 || scaleRatio >= 1.1) {
-      if (MMGR.isRow(axis)) {
+      if (MAPREP.isRow(axis)) {
         mapItem.rowClassScale = scale;
       } else {
         mapItem.colClassScale = scale;

@@ -5,6 +5,7 @@
   const SUM = NgChm.createNS("NgChm.SUM");
 
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
+  const HEAT = NgChm.importNS("NgChm.HEAT");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const CMM = NgChm.importNS("NgChm.CMM");
   const SUMDDR = NgChm.importNS("NgChm.SUMDDR");
@@ -82,7 +83,7 @@
   // Callback that is notified every time there is an update to the heat map
   // initialize, new data, etc.  This callback draws the summary heat map.
   SUM.processSummaryMapUpdate = function (event, tile) {
-    if (event === MMGR.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL) {
+    if (event === HEAT.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL) {
       if (!MMGR.getHeatMap().initialized) {
         return;
       }
@@ -111,7 +112,7 @@
       },
       setSelectedRegion: function (axis, regionStart, regionStop) {
         // Clear any previous ribbon mode on either axis.
-        const otherDendro = MMGR.isRow(axis) ? SUM.colDendro : SUM.rowDendro;
+        const otherDendro = MAPREP.isRow(axis) ? SUM.colDendro : SUM.rowDendro;
 
         otherDendro.clearSelectedRegion();
         SUM.clearAxisSelectionMarks(axis);
@@ -154,9 +155,9 @@
         // - For columns, calculate the dendrogram height.
         // size is the current width/height of the detail dendrogram.
         // totalSize is maximum available width/height of the entire detail canvas.
-        const sumDendro = MMGR.isRow(axis) ? SUM.rowDendro : SUM.colDendro;
-        const covarCanvas = MMGR.isRow(axis) ? SUM.rCCanvas : SUM.cCCanvas;
-        const sizeProperty = MMGR.isRow(axis) ? "width" : "height";
+        const sumDendro = MAPREP.isRow(axis) ? SUM.rowDendro : SUM.colDendro;
+        const covarCanvas = MAPREP.isRow(axis) ? SUM.rCCanvas : SUM.cCCanvas;
+        const sizeProperty = MAPREP.isRow(axis) ? "width" : "height";
         const sumDendroSize = parseInt(
           sumDendro.dendroCanvas.style[sizeProperty],
           10,
@@ -1870,7 +1871,7 @@
   // Draw the selection marks on the specified axis.
   SUM.drawAxisSelectionMarks = function (axis) {
     const heatMap = MMGR.getHeatMap();
-    const isRow = MMGR.isRow(axis);
+    const isRow = MAPREP.isRow(axis);
     const selection = SRCHSTATE.getAxisSearchResults(isRow ? "Row" : "Column");
     const canvas = document.getElementById(
       isRow ? "summary_row_select_canvas" : "summary_col_select_canvas",
@@ -1977,7 +1978,7 @@
   };
 
   SUM.clearAxisSelectionMarks = function (axis) {
-    if (MMGR.isRow(axis)) SUM.clearRowSelectionMarks();
+    if (MAPREP.isRow(axis)) SUM.clearRowSelectionMarks();
     else SUM.clearColSelectionMarks();
   };
 
@@ -2301,7 +2302,7 @@
       // the topItemPosns array (returned from the topItemPosns
       // function above).
       function placeTopItemLabels(canvas, topItemPosns, axis, otherAxisPosn) {
-        const isRow = MMGR.isRow(axis);
+        const isRow = MAPREP.isRow(axis);
         const shownLabels = MMGR.getHeatMap().shownLabels(axis);
         topItemPosns.forEach((tip) => {
           const item = document.createElement("Div");
@@ -2334,7 +2335,7 @@
 
     // Return an array of the label indices of the top items on the specified axis.
     function getTopItemLabelIndices(axis) {
-      const topItems = MMGR.isRow(axis) ? SUM.rowTopItems : SUM.colTopItems;
+      const topItems = MAPREP.isRow(axis) ? SUM.rowTopItems : SUM.colTopItems;
       const mapLabels = MMGR.getHeatMap().actualLabels(axis);
       // Trim top items, filter out empty items, uniqify.
       const uniqTopItems = topItems

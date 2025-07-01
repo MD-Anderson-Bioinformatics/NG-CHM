@@ -1,7 +1,39 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion("2025-03-04");
+linkouts.setVersion("2025-06-15");
+
+if (false) {
+  // Example. Adding color preset.
+  linkouts.execCommand(["preset", "set-colors", "continuous", "Green White", "#00ff00", "#ffffff"]);
+  linkouts.execCommand(["preset", "list"]);
+  const mycolor = linkouts.execCommand(["preset", "get-missing", "continuous", "Green White"]);
+  if (mycolor) {
+    console.log ("Got preset missing color: " + mycolor);
+  }
+}
+
+// Add a continuous 'Mutation Load' covariate bar if there are at least two
+// covariates with 'mutation' in their name.
+// - Assumes mutations in such bars have the value 'MUT'.
+const mutationCovars = linkouts.execCommand(["covar", "get-list", "column"]).filter(name => /mutation/.test(name));
+if (mutationCovars.length > 1) {
+  const covarName = "Mutation Load";
+  linkouts.execCommand(["covar", "create", "column", covarName, "continuous"]);
+  linkouts.execCommand(["covar", "move", "column", covarName, "0"]);
+  linkouts.execCommand(["covar", "set", "--all", covarName, "0"]);
+  for (const cv of mutationCovars) {
+    linkouts.execCommand(["search", "clear", "column"]);
+    linkouts.execCommand(["search", "covariate", cv, "MUT"]);
+    linkouts.execCommand(["covar", "add", covarName, "1"]);
+  }
+  linkouts.execCommand(["search", "clear", "column"]);
+  // Determine the maximum mutation load and set the upper breakpoint
+  // to that value.
+  const values = linkouts.execCommand(["covar", "get-values", "column", covarName]).map(v => +v);
+  linkouts.execCommand(["covar", "change-break", "column", covarName, "0", "0", "#ffffff"]);
+  linkouts.execCommand(["covar", "change-break", "column", covarName, "1", ""+jStat.max(values), "#000000"]);
+}
 
 // 2D Scatter Plot plugin:
 linkouts.addPanePlugin({

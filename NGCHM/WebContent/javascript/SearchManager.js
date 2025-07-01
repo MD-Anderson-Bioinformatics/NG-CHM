@@ -6,6 +6,7 @@
   const SRCH = NgChm.createNS("NgChm.SRCH");
 
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
+  const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const SUM = NgChm.importNS("NgChm.SUM");
@@ -80,6 +81,10 @@
     // Perform initial search if search parameter has been specified.
     // To be called after initialization of the panels.
     const searchParam = UTIL.getURLParameter("search");
+    SRCH.searchForString (searchParam);
+  };
+
+  SRCH.searchForString = function searchForString (searchParam) {
     if (searchParam !== "") {
       let searchElement = document.getElementById("search_text");
       searchElement.value = searchParam;
@@ -261,7 +266,7 @@
     const searchOn = document.getElementById("search_on");
     const [covType, covVal] = searchOn.value.split("|");
 
-    const axis = MMGR.isRow(covType) ? "Row" : "Column";
+    const axis = MAPREP.isRow(covType) ? "Row" : "Column";
     const heatMap = MMGR.getHeatMap();
     const classDataValues = heatMap.getAxisCovariateData(axis)[covVal].values;
     const currentClassBar = heatMap.getAxisCovariateConfig(axis)[covVal];
@@ -274,7 +279,7 @@
       const cats = [...document.getElementsByClassName("srchCovCheckBox")]
         .filter((cb) => cb.checked)
         .map((cb) => cb.value);
-      results = getSelectedDiscreteSelections(axis, cats, classDataValues);
+      results = SRCH.getSelectedDiscreteSelections(cats, classDataValues);
       saveCovarState(searchOn.value);
     } else {
       searchElement = document.getElementById("search_cov_cont");
@@ -307,9 +312,8 @@
    * FUNCTION - continuousCovarSearch returns the indices of elements that match
    * searchString on the specified axis for a continuous covariate covar.
    ***********************************************************************************/
-  SRCH.continuousCovarSearch = function (axis, covar, searchString) {
-    axis = MMGR.isRow(axis) ? "Row" : "Column";
-    const heatMap = MMGR.getHeatMap();
+  SRCH.continuousCovarSearch = function (heatMap, axis, covar, searchString) {
+    axis = MAPREP.isRow(axis) ? "Row" : "Column";
     const classDataValues = heatMap.getAxisCovariateData(axis)[covar].values;
 
     const searchExprs = parseContinuousSearchString(
@@ -323,14 +327,14 @@
   };
 
   /**********************************************************************************
-   * Internal FUNCTION - getSelectedDiscreteSelections: The purpose of this function is to
+   * FUNCTION - getSelectedDiscreteSelections: The purpose of this function is to
    * find rows/cols that match the discrete category selections checked by the user.
    * It iterates the classDataValues data configuration for a given covariate bar
    * for either a direct match on category or, if missing is selected, missing values
    * on the covariate bar. If a value match is found, an item is added to the
    * searchResults array for the appropriate axis.
    ***********************************************************************************/
-  function getSelectedDiscreteSelections(axis, cats, classDataValues) {
+  SRCH.getSelectedDiscreteSelections = function getSelectedDiscreteSelections(cats, classDataValues) {
     const includeMissing = cats.indexOf("missing") > -1;
     const results = [];
     classDataValues.forEach((value, index) => {
@@ -342,7 +346,7 @@
       }
     });
     return results;
-  }
+  };
 
   /**********************************************************************************
    * FUNCTION - validateContinuousSearch: The purpose of this function it to validate
@@ -813,7 +817,7 @@
    * as the current search item.
    ***********************************************************************************/
   function findPrevSearchItem(mapItem, index, axis) {
-    axis = MMGR.isRow(axis) ? "Row" : "Column";
+    axis = MAPREP.isRow(axis) ? "Row" : "Column";
 
     // Try to find previous item on current axis.
     let curr = findPrevAxisSearchItem(mapItem, axis, index);
@@ -825,7 +829,7 @@
     // That failed, try other axis if allowed.
     const allowedAxes = mapItem.allowedOrientations;
     if (allowedAxes === "any") {
-      const otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
+      const otherAxis = MAPREP.isRow(axis) ? "Column" : "Row";
       curr = findPrevAxisSearchItem(mapItem, otherAxis, -1);
       if (curr > 0) {
         SRCHSTATE.setSearchItem(mapItem, otherAxis, curr);
@@ -984,10 +988,10 @@
     const pane = PANE.findPaneLocation(mapItem.chm).pane;
     const srchPrev = pane.getElementsByClassName("srchPrev");
     if (srchPrev.length > 0)
-      srchPrev[0].style.rotate = MMGR.isRow(axis) ? "90deg" : "";
+      srchPrev[0].style.rotate = MAPREP.isRow(axis) ? "90deg" : "";
     const srchNext = pane.getElementsByClassName("srchNext");
     if (srchNext.length > 0)
-      srchNext[0].style.rotate = MMGR.isRow(axis) ? "90deg" : "";
+      srchNext[0].style.rotate = MAPREP.isRow(axis) ? "90deg" : "";
   }
 
   /**********************************************************************************
@@ -1108,11 +1112,12 @@
    * items on a particular axis.
    ***********************************************************************************/
   SRCH.clearSearchItems = function (clickAxis) {
-    SRCHSTATE.clearAllAxisSearchItems(clickAxis);
-    if (clickAxis === "Row") {
-      SUM.rowDendro.clearSelectedBars();
-    } else if (clickAxis === "Column") {
-      SUM.colDendro.clearSelectedBars();
+    SRCHSTATE.clearAllAxisSearchItems(UTIL.capitalize(clickAxis));
+    clickAxis = clickAxis.toLowerCase();
+    if (clickAxis === "row") {
+      if (SUM.rowDendro) SUM.rowDendro.clearSelectedBars();
+    } else if (clickAxis === "column") {
+      if (SUM.colDendro) SUM.colDendro.clearSelectedBars();
     }
     let markLabels = document.getElementsByClassName("MarkLabel");
     for (let ii = 0; ii < markLabels.length; ii++) {
