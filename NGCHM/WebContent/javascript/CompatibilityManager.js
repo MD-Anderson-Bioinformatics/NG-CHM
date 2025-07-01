@@ -172,7 +172,7 @@
       let changed = false;
       const attrs = Object.entries(mapConfig.data_configuration.map_information.attributes).filter(attr => {
         // Remove any attributes beginning with !axistype.
-        if (mp(attr[0],'!axistype')) {
+        if (attr[0].startsWith('!axistype')) {
           changed = true;
           return false;
         }
@@ -181,11 +181,11 @@
       const extraPrefix = '!extraparam:';
       const datasetPrefix = '!datasettype:';
       for (let idx in attrs) {
-        if (mp (attrs[idx][0], extraPrefix)) {
+        if (attrs[idx][0].startsWith(extraPrefix)) {
           // Remove !extraparam: from attribute names.
           changed = true;
           attrs[idx][0] = attrs[idx][0].substr(extraPrefix.length);
-        } else if (mp (attrs[idx][0], datasetPrefix)) {
+        } else if (attrs[idx][0].startsWith(datasetPrefix)) {
           // Change attribute names like !datasettype:<MAP>-row:" into "datasettype-row: <MAP>:" (and
           // similarly for columns).
           const tmp = attrs[idx][0].substr(datasetPrefix.length);
@@ -194,7 +194,6 @@
             changed = true;
             const mapName = match[1];
             const axis = match[2];
-            const propval = tmp.substr(match[0].length);
             attrs[idx][0] = `datasettype-${axis}`; // new property name
             attrs[idx][1] = `${mapName}:${attrs[idx][1]}`; // new property value
           }
@@ -205,10 +204,6 @@
         mapConfig.data_configuration.map_information.attributes = Object.fromEntries(attrs);
       }
       return;
-      // Helper function.
-      function mp (string, prefix) {
-        return string.substr(0,prefix.length) == prefix;
-      }
     }
   };
 
