@@ -12,7 +12,7 @@
     //
     api: document.body.dataset.hasOwnProperty("ngchmApi")
       ? document.body.dataset.ngchmApi
-      : "",
+      : "api",
 
     // Is the location of custom.js specified explicitly?
     //
