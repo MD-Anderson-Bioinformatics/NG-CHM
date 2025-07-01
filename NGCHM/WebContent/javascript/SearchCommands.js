@@ -12,6 +12,7 @@
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
 
+  const debug = UTIL.getDebugFlag('cmd-search');
   const searchCommands = new Map();
 
   const axes = [ "row", "column" ];
@@ -99,7 +100,9 @@
       EXEC.genRequired("string"),
       EXEC.noMoreParams,
       function (req, res) {
-        console.log ("search covariate: ", { covar: req.covar });
+        if (debug) {
+          console.log ("search covariate: ", { covar: req.covar });
+        }
         let searchResult;
         if (req.covar.color_map.type == 'discrete') {
           const classDataValues = req.heatMap.getAxisCovariateData(req.axis)[req.covariateName].values;
