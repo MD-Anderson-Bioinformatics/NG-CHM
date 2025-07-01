@@ -1115,9 +1115,9 @@
     SRCHSTATE.clearAllAxisSearchItems(UTIL.capitalize(clickAxis));
     clickAxis = clickAxis.toLowerCase();
     if (clickAxis === "row") {
-      SUM.rowDendro.clearSelectedBars();
+      if (SUM.rowDendro) SUM.rowDendro.clearSelectedBars();
     } else if (clickAxis === "column") {
-      SUM.colDendro.clearSelectedBars();
+      if (SUM.colDendro) SUM.colDendro.clearSelectedBars();
     }
     let markLabels = document.getElementsByClassName("MarkLabel");
     for (let ii = 0; ii < markLabels.length; ii++) {
