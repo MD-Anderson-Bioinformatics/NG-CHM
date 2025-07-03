@@ -1913,3 +1913,77 @@ function linkoutHelp () {
     ],
   });
 })(linkouts);
+
+{
+  // Determine if either or both of the axes include Hugo gene symbols.
+  let axis = null
+  if (linkouts.execCommand(["heatmap", "get-label-types", "row"]).includes("bio.gene.hugo")) {
+    axis = "row";
+  }
+  if (linkouts.execCommand(["heatmap", "get-label-types", "column"]).includes("bio.gene.hugo")) {
+    axis = axis == "row" ? "" : "column";
+  }
+  // Add the Pathways Web search option if at least one axis includes Hugo gene symbols.
+  if (axis != null) {
+    linkouts.addSearchOption({
+      type: "text",
+      axis,
+      key: "Pathways Web",
+      onSelect: configPathwaysSearch,
+    });
+  }
+
+  // Helper function.
+  // Called when the user selects the "Pathways Web" search option.
+  // Set pathwaysSearch as the search function to use.
+  function configPathwaysSearch(opts, searchFor) {
+    searchFor.doSearch = pathwaysSearch;
+  }
+
+  // Helper function.
+  // Called when the user searches for a pathway.
+  function pathwaysSearch(searchInterface, searchFor, postFn) {
+    const searchString = searchInterface.getSearchString().trim();
+    fetch (`https://bioinformatics.mdanderson.org/PathwaysWeb/pathways/latest/?start=0&count=20&description=${searchString}`, {
+      headers: { 'Accept': 'application/json' },
+    })
+    .then (res => res.json())
+    .then (res => {
+      // console.log ('PathwaysWeb: ',  { res });
+      let found = false;
+      if (res.pathway.length > 0) {
+        // Determine gene symbols in the returned pathways.
+        let symbols = [];
+        for (const pathway of res.pathway) {
+          if (pathway.genes) {
+            symbols = symbols.concat (pathway.genes.filter(g => g.isHugoGene == 'Y').map(g => g.geneSymbol));
+          }
+        }
+        // Get unique symbols.
+        symbols = [...new Set(symbols)];
+        // Find all occurrences of those symbols in the heatMap.
+        for (const axis of [ "Row", "Column" ]) {
+          if (searchFor.axis == axis || searchFor.axis == "" || searchFor.axis == "Both") {
+            const labels = linkouts.getTypeValues(axis, "bio.gene.hugo");
+            const selectIndices = [];
+            for (const symbol of symbols) {
+              const index = labels.indexOf(symbol);
+              if (index != -1) {
+                selectIndices.push(index+1);
+              }
+            }
+            if (selectIndices.length > 0) {
+              linkouts.setSelectionVec (axis, selectIndices);
+              found = true;
+            }
+          }
+        }
+      }
+      postFn (true, found ? "all" : "none");
+    })
+    .catch (err => {
+      console.error (`pathwaysSearch failed: ${err}`);
+      postFn (true, "none");
+    });
+  }
+}
