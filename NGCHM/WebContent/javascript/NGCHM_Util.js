@@ -290,6 +290,17 @@
   };
 
   /**********************************************************************************
+   * FUNCTION - UTIL.createPopupPanel: Create and return a DIV html element that is
+   * configured for a help pop-up panel.
+   **********************************************************************************/
+  UTIL.createPopupPanel = function createPopupPanel (elemName) {
+    const panel = UTIL.newElement("DIV.ngchm-popup");
+    panel.id = elemName;
+    panel.style.display = "none";
+    return panel;
+  };
+
+  /**********************************************************************************
    * FUNCTION - showTab: This function shows the tab identified by buttonId and hides
    * all the other tabs in the group.
    *

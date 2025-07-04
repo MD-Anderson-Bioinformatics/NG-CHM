@@ -765,17 +765,14 @@ var linkoutsVersion = "undefined";
 
   //creates the divs for the label menu
   function createLabelMenu (axis) {
-    var labelMenu =
-      axis !== "Matrix"
-        ? UHM.getDivElement(axis + "LabelMenu")
-        : UHM.getDivElement(axis + "Menu");
+    const menuName = axis + (axis === "Matrix" ? "" : "Label") + "Menu";
+    const labelMenu = UTIL.createPopupPanel(menuName);
     document.body.appendChild(labelMenu);
     labelMenu.style.display = "block";
     labelMenu.style.position = "absolute";
     labelMenu.classList.add("labelMenu");
     labelMenu.classList.add("hide");
-    var topDiv = document.createElement("DIV");
-    topDiv.classList.add("labelMenuCaption");
+    const topDiv = UTIL.newElement("DIV.labelMenuCaption");
     topDiv.innerHTML =
       axis !== "Matrix"
         ? axis.replace("Covar", " Covariate") + " Label Menu:"
@@ -796,17 +793,17 @@ var linkoutsVersion = "undefined";
       },
       false,
     );
-    var table = document.createElement("TABLE");
+    const table = document.createElement("TABLE");
     table.id = axis !== "Matrix" ? axis + "LabelMenuTable" : axis + "MenuTable";
-    var tableHead = table.createTHead();
+    const tableHead = table.createTHead();
     tableHead.classList.add("labelMenuHeader");
-    var row = tableHead.insertRow();
+    const row = tableHead.insertRow();
     labelMenu.appendChild(topDiv);
     labelMenu.appendChild(table);
     labelMenu.appendChild(closeMenu);
-    var tableBody = table.createTBody();
+    const tableBody = table.createTBody();
     tableBody.classList.add("labelMenuBody");
-    var labelHelpCloseAxis = function (ev) {
+    const labelHelpCloseAxis = function (ev) {
       closeLinkoutMenu(axis, ev);
     };
     document.addEventListener("click", labelHelpCloseAxis);

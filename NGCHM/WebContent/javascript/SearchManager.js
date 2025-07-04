@@ -1216,7 +1216,7 @@
   }
 
   function showSearchError(type, searchItem) {
-    var searchError = UHM.getDivElement("searchError");
+    const searchError = UTIL.createPopupPanel("searchError");
     searchError.style.display = "inherit";
     var searchBar = document.getElementById("search_text");
     searchError.style.top = searchBar.offsetTop + searchBar.offsetHeight + "px";
