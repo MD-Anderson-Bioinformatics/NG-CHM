@@ -1786,7 +1786,7 @@
       },
     );
     const heightPref = keyaxis + "_heightPref";
-    const colHeight = UTIL.newElement("INPUT", {
+    const colHeight = UTIL.newElement("INPUT.ngchm-upm-input", {
       id: heightPref,
       name: heightPref,
       maxlength: 2,
