@@ -22,9 +22,44 @@
   const COMPAT = NgChm.importNS("NgChm.CM");
 
   const debug = UTIL.getDebugFlag("upm");
+  const debugLayers = UTIL.getDebugFlag("upm-layers");
+  const debugAxes = UTIL.getDebugFlag("upm-axes");
+  const debugCovars = UTIL.getDebugFlag("upm-covars");
+  const debugColors = UTIL.getDebugFlag("upm-colors");
+  const debugEvents = UTIL.getDebugFlag("upm-events");
 
   // The DIV that contains the entire Preferences Manager.
   const prefspanel = document.getElementById("prefs");
+
+  // The DIV that contains all the tabs.
+  const tabContainer = document.getElementById("prefPrefs");
+
+  // Listen for keydown events on the tabs.
+  // A keydown event on any element with class "ngchm-upm-input" within
+  // a tab will signify a change.
+  tabContainer.addEventListener("keydown", (ev) => {
+    if (debug || debugEvents) console.log(`User Preference Manager keydown handler`, { target: ev.target });
+    for (const target of tabTargetGen(ev)) {
+      if (target.classList.contains("ngchm-upm-input")) {
+        startChange();
+        break;
+      }
+    }
+  });
+
+  // Generate a list of potential target elements for an event, starting at
+  // the event.target and proceeding up through its parents, up to
+  // and including the tab's highest div.  The caller should stop processing
+  // the generator's results when an applicable element is found.
+  function* tabTargetGen (event) {
+    for (let target = event.target; target; target = target.parentElement) {
+      if (target === tabContainer) {
+        break;
+      }
+      yield (target);
+    }
+    return null;
+  }
 
   // The Preferences Manager interface consists of an overall interface and
   // four tabs.
@@ -170,20 +205,6 @@
     while (this.tabDiv.firstChild) {
       this.tabDiv.removeChild(this.tabDiv.firstChild);
     }
-  };
-
-  // Generate a list of potential target elements for an event, starting at
-  // the event.target and proceeding up through its parents, up to
-  // and including the tab's highest div.  The caller should stop processing
-  // the generator's results when an applicable element is found.
-  PreferencesTab.prototype.targetGen = function* targetGen (event) {
-    for (let target = event.target; target; target = target.parentElement) {
-      yield (target);
-      if (target === this.tabDiv) {
-        break;
-      }
-    }
-    return null;
   };
 
   // --------------------------------------------------------------------------
@@ -367,7 +388,6 @@
         tab.setupTab();
       }
       // Show the Preferences Manager.
-      const tabContainer = document.getElementById("prefPrefs");
       tabContainer.style.display = "block";
       // Ensure no error message is displayed.
       showErrorMessage("");
@@ -935,7 +955,7 @@
     // Add a change event handler for this tab.
     this.tabDiv.addEventListener("change", (ev) => {
       if (debug) console.log("DataLayersTab: Change handler", { target: ev.target });
-      for (const target of this.targetGen(ev)) {
+      for (const target of tabTargetGen(ev)) {
         if (target.id == "dlPref_list") {
           showDataLayerPanel();
           break;
@@ -1614,7 +1634,7 @@
     // Add a click handler for the entire tab.
     this.tabDiv.addEventListener("click", (ev) => {
       if (debug) console.log("CovariatesPrefsTab: Click handler", { target: ev.target });
-      for (const target of this.targetGen(ev)) {
+      for (const target of tabTargetGen(ev)) {
         if (target.id == "all_searchPref_btn") {
           // The user clicked on the filter covariates button.
           this.filterClassPrefs();
@@ -1622,10 +1642,11 @@
         }
       }
     });
+
     // Add a change handler for the entire tab.
     this.tabDiv.addEventListener("change", (ev) => {
       if (debug) console.log("CovariatesPrefsTab: Change handler", { target: ev.target });
-      for (const target of this.targetGen(ev)) {
+      for (const target of tabTargetGen(ev)) {
         if (target.classList.contains("ngchm-upm-show-covariate")) {
           // A "Show" checkbox on a covariate row changed.
           startChange();
@@ -1765,7 +1786,7 @@
       },
     );
     const heightPref = keyaxis + "_heightPref";
-    const colHeight = UTIL.newElement("INPUT", {
+    const colHeight = UTIL.newElement("INPUT.ngchm-upm-input", {
       id: heightPref,
       name: heightPref,
       maxlength: 2,
@@ -2580,7 +2601,7 @@
 
     this.tabDiv.addEventListener("change", (ev) => {
       if (debug) console.log("RowsColsTab: Change handler", { target: ev.target });
-      for (const target of this.targetGen(ev)) {
+      for (const target of tabTargetGen(ev)) {
         if (["row_DendroShowPref", "col_DendroShowPref"].includes(target.id)) {
           startChange();
           dendroShowChange(target.dataset.axis);
@@ -2596,6 +2617,7 @@
         }
       }
     });
+
     return rowcolprefs;
 
     // ------------------------------------------------------------------------

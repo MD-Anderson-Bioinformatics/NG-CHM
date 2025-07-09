@@ -10,8 +10,8 @@
   const DVW = NgChm.importNS("NgChm.DVW");
   const DET = NgChm.importNS("NgChm.DET");
   const UTIL = NgChm.importNS("NgChm.UTIL");
+  const TABLE = NgChm.importNS("NgChm.UI.TABLE");
   const UHM = NgChm.importNS("NgChm.UHM");
-  const DDR = NgChm.importNS("NgChm.DDR");
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const SRCH = NgChm.importNS("NgChm.SRCH");
   const SUM = NgChm.importNS("NgChm.SUM");
@@ -228,15 +228,16 @@
       }
     }
 
-    const helpContents = UTIL.newElement("TABLE#helpTable");
+    const helpTable = TABLE.createTable({ id: "helpTable", columns: 2 });
+    const helpContents = helpTable.content;
     if (objectType === "map") {
       var row = Math.floor(
         mapItem.currentRow +
-          (mapLocY / colElementSize) * getSamplingRatio("row"),
+          (mapLocY / colElementSize) * getSamplingRatio(mapItem.mode,"row"),
       );
       var col = Math.floor(
         mapItem.currentCol +
-          (mapLocX / rowElementSize) * getSamplingRatio("col"),
+          (mapLocX / rowElementSize) * getSamplingRatio(mapItem.mode,"col"),
       );
       if (row <= heatMap.getNumRows("d") && col <= heatMap.getNumColumns("d")) {
         // Gather the information about the current pixel.
@@ -300,192 +301,127 @@
         }
       }
     } else if (objectType === "rowClass" || objectType === "colClass") {
-      var pos, value, label;
-      var hoveredBar, hoveredBarColorScheme, hoveredBarValues;
-      if (objectType === "colClass") {
-        var col = Math.floor(
+      // Clicked on a covariate bar.
+      const axis = objectType == "rowClass" ? "row" : "col";
+      // Based on the axis, determine:
+      // - the index of the element (1-based) the user clicked on.
+      // - the offset of the mouse click in canvas units.
+      let itemIndex;
+      let clickOffset;
+      if (axis === "col") {
+        itemIndex = Math.floor(
           mapItem.currentCol +
-            (mapLocX / rowElementSize) * getSamplingRatio("col"),
+            (mapLocX / rowElementSize) * getSamplingRatio(mapItem.mode,axis),
         );
-        var colLabels = heatMap.getColLabels().labels;
-        label = colLabels[col - 1];
-        var coveredHeight = 0;
-        pos = Math.floor(mapItem.currentCol + mapLocX / rowElementSize);
-        var classBarsConfig = heatMap.getColClassificationConfig();
-        var classBarsConfigOrder = heatMap.getColClassificationOrder();
-        for (var i = 0; i < classBarsConfigOrder.length; i++) {
-          var key = classBarsConfigOrder[i];
-          var currentBar = classBarsConfig[key];
-          if (currentBar.show === "Y") {
-            coveredHeight +=
-              (mapItem.canvas.clientHeight * currentBar.height) /
-              mapItem.canvas.height;
-            if (Math.ceil(coveredHeight) >= mapItem.offsetY) {
-              hoveredBar = key;
-              hoveredBarValues = heatMap.getColClassificationData()[key].values;
-              break;
-            }
-          }
-        }
-        var colorMap = heatMap
-          .getColorMapManager()
-          .getColorMap("col", hoveredBar);
+        // Convert pixel offset to canvas offset.
+        clickOffset = mapItem.offsetY / mapItem.canvas.getBoundingClientRect().height * mapItem.canvas.height;
       } else {
-        var row = Math.floor(
+        itemIndex = Math.floor(
           mapItem.currentRow +
-            (mapLocY / colElementSize) * getSamplingRatio("row"),
+            (mapLocY / colElementSize) * getSamplingRatio(mapItem.mode,axis),
         );
-        var rowLabels = heatMap.getRowLabels().labels;
-        label = rowLabels[row - 1];
-        var coveredWidth = 0;
-        pos = Math.floor(mapItem.currentRow + mapLocY / colElementSize);
-        var classBarsConfig = heatMap.getRowClassificationConfig();
-        var classBarsConfigOrder = heatMap.getRowClassificationOrder();
-        for (var i = 0; i < classBarsConfigOrder.length; i++) {
-          var key = classBarsConfigOrder[i];
-          var currentBar = classBarsConfig[key];
-          if (currentBar.show === "Y") {
-            coveredWidth +=
-              (mapItem.canvas.clientWidth * currentBar.height) /
-              mapItem.canvas.width;
-            if (Math.ceil(coveredWidth) >= mapItem.offsetX) {
-              hoveredBar = key;
-              hoveredBarValues = heatMap.getRowClassificationData()[key].values;
-              break;
-            }
-          }
-        }
-        var colorMap = heatMap
-          .getColorMapManager()
-          .getColorMap("row", hoveredBar);
+        clickOffset = mapItem.offsetX / mapItem.canvas.getBoundingClientRect().width * mapItem.canvas.width;
       }
-      var value = hoveredBarValues[pos - 1];
+      // Get the label for the row/column that the user clicked on.
+      const label = heatMap.getAxisLabels(axis).labels[itemIndex];
+      // Get the visible covariate bars, scaled to the canvas.
+      const covBarScale = axis == "row" ? mapItem.rowClassScale : mapItem.colClassScale;
+      const bars = heatMap.getScaledVisibleCovariates(axis,covBarScale);
+      // Find the covariate bar that the user clicked on.
+      // This will be the first bar that "covers" (i.e. the end of the bar
+      // is past) the mouse clickOffset.
+      let hoveredBar;
+      let covered = 0;
+      for (const bar of bars) {
+        covered += bar.height;
+        if (covered > clickOffset) {
+          hoveredBar = bar;
+          break;
+        }
+      }
+      if (!hoveredBar) {
+        console.warn (`Did not find expected covariate bar`, { covered, clickOffset });
+        hoveredBar = bars[bars.length-1];  // Fall back to the last bar.
+      }
+      const hoveredBarValues = heatMap.getAxisCovariateData(axis)[hoveredBar.label].values;
+      let value = hoveredBarValues[itemIndex - 1];
       //No help popup when clicking on a gap in the class bar
       if (value === "!CUT!") {
         return;
       }
-      var colors = colorMap.getColors();
-      var classType = colorMap.getType();
       if (value === "null" || value === "NA") {
         value = "Missing Value";
       }
-      var thresholds = colorMap.getThresholds();
-      var thresholdSize = 0;
-      // For Continuous Classifications:
-      // 1. Retrieve continuous threshold array from colorMapManager
-      // 2. Retrieve threshold range size divided by 2 (1/2 range size)
-      // 3. If remainder of half range > .75 set threshold value up to next value, Else use floor value.
-      if (classType == "continuous") {
-        thresholds = colorMap.getContinuousThresholdKeys();
-        var threshSize = colorMap.getContinuousThresholdKeySize() / 2;
-        if (threshSize % 1 > 0.5) {
-          // Used to calculate modified threshold size for all but first and last threshold
-          // This modified value will be used for color and display later.
-          thresholdSize = Math.floor(threshSize) + 1;
-        } else {
-          thresholdSize = Math.floor(threshSize);
-        }
-      }
+      const colorMapManager = heatMap.getColorMapManager();
+      const colorMap = colorMapManager.getColorMap(axis, hoveredBar.label);
+      const colors = colorMap.getColors();
+      const classType = colorMap.getType();
+      const thresholds = classType == "discrete" ? colorMap.getThresholds() : colorMap.getContinuousThresholdKeys();
 
       // Build TABLE HTML for contents of help box
-      var displayName = hoveredBar;
-      if (hoveredBar.length > 20) {
+      let displayName = hoveredBar.label;
+      if (displayName.length > 20) {
         displayName = displayName.substring(0, 20) + "...";
       }
-      UHM.setTableRow(helpContents, ["Label: ", "&nbsp;" + label]);
-      UHM.setTableRow(helpContents, ["Covariate: ", "&nbsp;" + displayName]);
-      UHM.setTableRow(helpContents, ["Value: ", "&nbsp;" + value]);
-      helpContents.insertRow().innerHTML = UHM.formatBlankRow();
-      var rowCtr = 3 + thresholds.length;
-      var prevThresh = currThresh;
-      for (var i = 0; i < thresholds.length; i++) {
-        // generate the color scheme diagram
-        var color = colors[i];
-        var valSelected = 0;
-        var valTotal = hoveredBarValues.length;
-        var currThresh = thresholds[i];
-        var modThresh = currThresh;
-        if (classType == "continuous") {
-          // IF threshold not first or last, the modified threshold is set to the threshold value
-          // less 1/2 of the threshold range ELSE the modified threshold is set to the threshold value.
-          if (i != 0 && i != thresholds.length - 1) {
-            modThresh = currThresh - thresholdSize;
-          }
-          color = colorMap.getRgbToHex(
-            colorMap.getClassificationColor(modThresh),
-          );
-        }
+      helpTable.addBlankSpace();
+      helpTable.addRow(["Covariate:", displayName]);
+      helpTable.addBlankSpace();
+      helpTable.addRow(["Label:", label]);
+      helpTable.addRow(["Value:", value]);
+      helpTable.addBlankSpace();
 
-        //Count classification value occurrences within each breakpoint.
-        for (var j = 0; j < valTotal; j++) {
-          let classBarVal = hoveredBarValues[j];
-          if (classType == "continuous") {
-            // Count based upon location in threshold array
-            // 1. For first threshhold, count those values <= threshold.
-            // 2. For second threshold, count those values >= threshold.
-            // 3. For penultimate threshhold, count those values > previous threshold AND values < final threshold.
-            // 3. For all others, count those values > previous threshold AND values <= final threshold.
-            if (i == 0) {
-              if (classBarVal <= currThresh) {
-                valSelected++;
-              }
-            } else if (i == thresholds.length - 1) {
-              if (classBarVal >= currThresh) {
-                valSelected++;
-              }
-            } else if (i == thresholds.length - 2) {
-              if (classBarVal > prevThresh && classBarVal < currThresh) {
-                valSelected++;
-              }
-            } else {
-              if (classBarVal > prevThresh && classBarVal <= currThresh) {
-                valSelected++;
-              }
-            }
-          } else {
-            var value = thresholds[i];
-            if (classBarVal == value) {
+      // Generate the color scheme diagram
+      //
+      let prevThresh = 0;
+      let overRange = 0;
+      for (let i = 0; i < thresholds.length; i++) {
+
+        // Count the number of covariates within each breakpoint.
+        let valSelected = 0;
+        if (classType == "discrete") {
+          const currThresh = thresholds[i];
+          for (const classBarVal of hoveredBarValues) {
+            if (classBarVal == currThresh) {
               valSelected++;
             }
           }
-        }
-        var selPct = Math.round((valSelected / valTotal) * 100 * 100) / 100; //new line
-        if (currentBar.bar_type === "color_plot") {
-          UHM.setTableRow(helpContents, [
-            "<div class='input-color'><div class='color-box' style='background-color: " +
-              color +
-              ";'></div></div>",
-            modThresh + " (n = " + valSelected + ", " + selPct + "%)",
-          ]);
+          const threshBox = thresholds[i] + " " + countPctStr (valSelected, hoveredBarValues.length);
+          helpTable.addRow([ genColorBox(colors[i]), threshBox ]);
         } else {
-          UHM.setTableRow(helpContents, [
-            "<div> </div></div>",
-            modThresh + " (n = " + valSelected + ", " + selPct + "%)",
-          ]);
+          const thresh = Number(thresholds[i]);
+          for (const classBarVal of hoveredBarValues) {
+            const value = Number(classBarVal);
+            // Count the number less or equal the current threshold and greater
+            // than the previous one (if any).
+            if (value <= thresh && (i == 0 || value > prevThresh)) {
+              valSelected++;
+            }
+            // Also count the number over the last threshold.
+            if (i == thresholds.length - 1 && value > thresh) {
+              overRange++;
+            }
+          }
+          prevThresh = thresh;
+
+          const color = colorMap.getRgbToHex(colorMap.getClassificationColor(thresh));
+          const threshBox = "<= " + thresh.toFixed(4) + " " + countPctStr (valSelected, hoveredBarValues.length);
+          const colorBox = hoveredBar.bar_type === "color_plot" ? genColorBox(color) : "";
+          helpTable.addRow([ colorBox, threshBox ]);
         }
-        prevThresh = currThresh;
       }
-      var valSelected = 0;
-      var valTotal = hoveredBarValues.length;
-      for (var j = 0; j < valTotal; j++) {
+      if (classType == "continuous") {
+        const npct = countPctStr (overRange, hoveredBarValues.length);
+        helpTable.addRow([ "", `> ${prevThresh.toFixed(4)} ${npct}` ]);
+      }
+
+      let numMissing = 0;
+      for (let j = 0; j < hoveredBarValues.length; j++) {
         if (hoveredBarValues[j] == "null" || hoveredBarValues[j] == "NA") {
-          valSelected++;
+          numMissing++;
         }
       }
-      var selPct = Math.round((valSelected / valTotal) * 100 * 100) / 100; //new line
-      if (currentBar.bar_type === "color_plot") {
-        UHM.setTableRow(helpContents, [
-          "<div class='input-color'><div class='color-box' style='background-color: " +
-            colorMap.getMissingColor() +
-            ";'></div></div>",
-          "Missing Color (n = " + valSelected + ", " + selPct + "%)",
-        ]);
-      } else {
-        UHM.setTableRow(helpContents, [
-          "<div> </div></div>",
-          "Missing Color (n = " + valSelected + ", " + selPct + "%)",
-        ]);
-      }
+      const npct = countPctStr (numMissing, hoveredBarValues.length);
+      helpTable.addRow([ genColorBox(colorMap.getMissingColor()), "Missing " + npct, ]);
 
       // If the enclosing window wants to display the covarate info, send it to them.
       // Otherwise, display it ourselves.
@@ -507,7 +443,21 @@
         locateHelpBox(helptext, mapItem);
       }
     } else {
-      // on the blank area in the top left corner
+      // Clicked on the blank area in the top left corner.
+    }
+    // Helper functions.
+    // Return a color box div with the specified background color.
+    function genColorBox (color) {
+      const colorBox =
+        `<div class='input-color'>
+           <div class='color-box' style='background-color: ${color};'></div>
+         </div>`;
+      return colorBox;
+    }
+    // Return a string with the number of items, and its percentage of total.
+    function countPctStr (num, total) {
+      const pct = (100 * num / total).toFixed(2);
+      return `(n = ${num}, ${pct}%)`;
     }
   };
 
@@ -621,10 +571,10 @@
     const mapLocX = coords.x - DET.getRowClassPixelWidth(mapItem);
 
     const clickRow = Math.floor(
-      mapItem.currentRow + (mapLocY / colElementSize) * getSamplingRatio("row"),
+      mapItem.currentRow + (mapLocY / colElementSize) * getSamplingRatio(mapItem.mode,"row"),
     );
     const clickCol = Math.floor(
-      mapItem.currentCol + (mapLocX / rowElementSize) * getSamplingRatio("col"),
+      mapItem.currentCol + (mapLocX / rowElementSize) * getSamplingRatio(mapItem.mode,"col"),
     );
     const destRow =
       clickRow + 1 - Math.floor(DVW.getCurrentDetDataPerCol(mapItem) / 2);

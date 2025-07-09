@@ -26,6 +26,9 @@
   function Table (opts) {
     this.props = Object.assign({}, defaultProperties, opts);
     this.content = UTIL.newElement("TABLE.ngchm-ui-table");
+    if (this.props.id) {
+      this.content.id = this.props.id;
+    }
     this.indents = [];
     this.insertPosn = -1;
   }

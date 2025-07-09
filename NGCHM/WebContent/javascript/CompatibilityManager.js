@@ -150,7 +150,61 @@
       }
     }
 
+    fixIllegalAttributes();
+
     return foundUpdate;
+
+    // Helper function.
+    // Many old maps were generated with attribute names that are rejected by the GUI builder,
+    // causing users grief when they try to upload the maps (or parts thereof) to the builder.
+    // The problematic maps include all the old maps in the TCGA compendium at least.
+    //
+    // I have found six types of these attributes:
+    // 1. Those begin with '!extraparam:'. Removing the '!extraparam:' from the front of the attribute
+    //     name lets it function as a normal attribute.
+    // 2-4. Attributes beginning with '!axistype.row', '!axistype.column', or '!axistype.both'. These
+    //    duplicate information in the map's axistypes. Simply removing them seems fine.
+    // 5,6. Attributes beginning with '!datasettype:<MAP>-row:' and '!datasettype:<MAP>-column:', where
+    //    <MAP> is replaced by the name of a dataset associated with the map (not necessarily the
+    //    dataset included in the map itself). We map those into "datasettype-row: <MAP>:" (and
+    //    equivalently for columns).
+    function fixIllegalAttributes() {
+      let changed = false;
+      const attrs = Object.entries(mapConfig.data_configuration.map_information.attributes).filter(attr => {
+        // Remove any attributes beginning with !axistype.
+        if (attr[0].startsWith('!axistype')) {
+          changed = true;
+          return false;
+        }
+        return true;
+      });
+      const extraPrefix = '!extraparam:';
+      const datasetPrefix = '!datasettype:';
+      for (let idx in attrs) {
+        if (attrs[idx][0].startsWith(extraPrefix)) {
+          // Remove !extraparam: from attribute names.
+          changed = true;
+          attrs[idx][0] = attrs[idx][0].substr(extraPrefix.length);
+        } else if (attrs[idx][0].startsWith(datasetPrefix)) {
+          // Change attribute names like !datasettype:<MAP>-row:" into "datasettype-row: <MAP>:" (and
+          // similarly for columns).
+          const tmp = attrs[idx][0].substr(datasetPrefix.length);
+          const match = /^([^:]*)-(row|column)/.exec(tmp);
+          if (match) {
+            changed = true;
+            const mapName = match[1];
+            const axis = match[2];
+            attrs[idx][0] = `datasettype-${axis}`; // new property name
+            attrs[idx][1] = `${mapName}:${attrs[idx][1]}`; // new property value
+          }
+        }
+      }
+      if (changed) {
+        foundUpdate = true;
+        mapConfig.data_configuration.map_information.attributes = Object.fromEntries(attrs);
+      }
+      return;
+    }
   };
 
   function getObjectPart (obj, parts) {
