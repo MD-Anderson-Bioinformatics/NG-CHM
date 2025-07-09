@@ -92,7 +92,7 @@
       missing: "#ffffff",
     }),
     new ColorPreset({
-      name: "Palette3 3",
+      name: "Palette 3",
       colors: [
         "#393b79",
         "#637939",
