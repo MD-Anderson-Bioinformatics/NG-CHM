@@ -1076,13 +1076,7 @@
     prefTable.addBlankSpace();
     prefTable.addRow([
       "Missing Color:",
-      "<input class='spectrumColor' type='color' name='" +
-        mapName +
-        "_missing_colorPref' id='" +
-        mapName +
-        "_missing_colorPref' value='" +
-        colorMap.getMissingColor() +
-        "'>",
+      createColorInput (KAID(mapName,"missing","colorPref"), colorMap.getMissingColor()),
       "",
     ]);
     prefTable.addBlankSpace(2);
@@ -1092,62 +1086,26 @@
     const paletteTable = TABLE.createTable({ columns: 3 });
     paletteTable.content.style.width = 'fit-content';
     paletteTable.addIndent();
-    PALETTES.addPredefinedPalettes(paletteTable, mapName, setupLayerBreaksToPreset);
+    PALETTES.addPredefinedPalettes(paletteTable, mapName, setColorPrefsToPreset);
     layerPrefs.appendChild(paletteTable.content);
 
     //-------------------------------------------------------------------------
     const propsTable = TABLE.createTable({ columns: 4 });
     propsTable.content.style.width = 'fit-content';
     propsTable.addIndent();
-    let gridShow =
-      "<input class='ngchm-upm-input' name='" +
-      mapName +
-      "_gridPref' id='" +
-      mapName +
-      "_gridPref' type='checkbox' ";
-    if (layer.grid_show == "Y") {
-      gridShow = gridShow + "checked";
-    }
-    gridShow = gridShow + " >";
-
-    let gridColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      mapName +
-      "_gridColorPref' id='" +
-      mapName +
-      "_gridColorPref' value='" +
-      layer.grid_color +
-      "'>";
-
-    let selectionColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      mapName +
-      "_selectionColorPref' id='" +
-      mapName +
-      "_selectionColorPref' value='" +
-      layer.selection_color +
-      "'>";
-    let gapColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      mapName +
-      "_gapColorPref' id='" +
-      mapName +
-      "_gapColorPref' value='" +
-      layer.cuts_color +
-      "'>";
 
     propsTable.addBlankSpace(3);
     propsTable.addRow([
       "Grid Lines:",
-      gridColorInput,
+      createColorInput(KAID(mapName,"gridColorPref"), layer.grid_color),
       "Grid Show:",
-      gridShow,
+      createCheckBox(KAID(mapName,"gridPref"), layer.grid_show == "Y"),
     ], { fontWeight: [ "bold", "", "bold", "" ] });
     propsTable.addRow([
       "Selection Color:",
-      selectionColorInput,
+      createColorInput(KAID(mapName,"selectionColorPref"), layer.selection_color),
       "Gap Color:",
-      gapColorInput,
+      createColorInput(KAID(mapName,"gapColorPref"), layer.cuts_color),
     ], { fontWeight: [ "bold", "", "bold", "" ] });
     layerPrefs.appendChild(propsTable.content);
 
@@ -1230,22 +1188,9 @@
       var threshold = thresholds[j];
       var color = colors[j];
       var colorId = elementIdPrefix + "_color" + j;
-      var breakPtInput =
-        "&nbsp;&nbsp;<input class='ngchm-upm-input' name='" +
-        threshId +
-        "_breakPref' id='" +
-        threshId +
-        "_breakPref' value='" +
-        threshold +
-        "' maxlength='8' size='8'>";
-      var colorInput =
-        "<input class='spectrumColor' type='color' name='" +
-        colorId +
-        "_colorPref' id='" +
-        colorId +
-        "_colorPref' value='" +
-        color +
-        "'>";
+      const breakPtInput =
+        "&nbsp;&nbsp;" + createNumericInput(KAID(threshId,"breakPref"), threshold, 8);
+      const colorInput = createColorInput(KAID(colorId,"colorPref"), color);
       if (thresholds.length < 3) {
         UHM.setTableRow(breakpts, [breakPtInput, colorInput, buttonsDiv]);
       } else {
@@ -1371,88 +1316,66 @@
   }
 
   /**********************************************************************************
-   * FUNCTION setupLayerBreaksToPreset: This function will be executed when the user
-   * selects a predefined color scheme. It will fill the first and last breakpoints with the
-   * predefined colors and interpolate the breakpoints in between.
-   * "preset" is an array of the colors in HEX of the predefined color scheme
+   * FUNCTION setColorPrefsToPreset: This function will be executed when the user
+   * selects a predefined color scheme. It will set the color preferences based on the
+   * preset.
+   *
+   * For discrete color preferences: it will set the colors directly from the preset.
+   *
+   * For continuous color preferences: it will interpolate the colors from the preset
+   * based on the breakpoints.
    **********************************************************************************/
-  function setupLayerBreaksToPreset(
+  function setColorPrefsToPreset(
     key,
-    colors,
-    missingColor,
+    preset,
     axis,
     type,
   ) {
-    if (debug) console.log ("setupLayerBreaksToPreset:", {key, colors, missingColor, axis, type });
+    if (debug) console.log ("setColorPrefsToPreset:", {key, preset, axis, type });
     startChange();
     const keyaxis = key + (typeof axis == "undefined" ? "" : "_" + axis);
 
-    // Find the number of breakpoints in the color preference.
-    let i = 0;
-    while (KAE_OPT(keyaxis, "color" + ++i, "colorPref")) {}
-    const lastShown = i - 1;
+    // Find the number of breakpoints/colors in the color preference.
+    let numColorPrefs = 0;
+    while (KAE_OPT(keyaxis, "color" + ++numColorPrefs, "colorPref")) {}
 
-    // create dummy colorScheme
-    const thresh = [];
-    if (KAE_OPT(keyaxis,"breakPt0","breakPref")) {
-      // if the breakpoints are changeable (data layer)...
-      const firstBP = KAE(keyaxis,"breakPt0","breakPref").value;
-      const lastBP = KAE(keyaxis,"breakPt"+lastShown,"breakPref").value;
+    // Get that many colors.
+    const colors = type == "Discrete" ? preset.getColorArray(numColorPrefs) : getContColors ();
+
+    // Set the color preferences.
+    for (let j = 0; j < numColorPrefs; j++) {
+      KAE(keyaxis,"color"+j,"colorPref").value = colors[j];
+    }
+    KAE(keyaxis,"missing","colorPref").value = preset.missing;
+
+    // Helper function.
+    // Get the colors for a continuous color scheme (data layer or continuous covariate).
+    function getContColors() {
+      // Determine the total range of the breakpoints.
+      const firstBP = Number(KAE(keyaxis,"breakPt0","breakPref").value);
+      const lastBP = Number(KAE(keyaxis,"breakPt"+(numColorPrefs-1),"breakPref").value);
       const range = lastBP - firstBP;
-      for (let j = 0; j < colors.length; j++) {
-        thresh[j] = Number(firstBP) + j * (range / (colors.length - 1));
+
+      // Create a temporary color map for interpolating the color scheme colors.
+      const thresh = [];
+      for (let j = 0; j < preset.colors.length; j++) {
+        thresh[j] = firstBP + j * (range / (preset.colors.length - 1));
       }
       const colorScheme = {
         type: "continuous",
-        colors: colors,
+        colors: preset.colors,
         thresholds: thresh,
-        missing: missingColor,
+        missing: preset.missing,
       };
       const csTemp = new CMM.ColorMap(UPM.heatMap, colorScheme);
 
-      for (let j = 0; j < i; j++) {
-        const threshId = "breakPt" + j;
-        const colorId = "color" + j;
-        if (debug) console.log ("Getting breakpoint value", { elementId: `${keyaxis}_${threshId}_breakPref` });
-        const breakpoint = KAE(keyaxis,threshId,"breakPref").value;
-        KAE(keyaxis,colorId,"colorPref").value = csTemp.getRgbToHex(csTemp.getColor(breakpoint));
+      // Get the interpolated colors at each breakpoint.
+      const colors = [];
+      for (let j = 0; j < numColorPrefs; j++) {
+        const breakpoint = KAE(keyaxis,"breakPt"+j,"breakPref").value;
+        colors.push (csTemp.getRgbToHex(csTemp.getColor(breakpoint)));
       }
-      if (debug) console.log ("Getting missing color", { elementId: keyaxis + "_missingColorPref" });
-      KAE(keyaxis,"missing","colorPref").value =
-        csTemp.getRgbToHex(csTemp.getColor("Missing"));
-    } else {
-      // if the breakpoints are not changeable (covariate bar)...
-      if (type == "Discrete") {
-        // if colors can be mapped directly
-        for (let j = 0; j < i; j++) {
-          // in case there are more breakpoints than predef colors, we cycle back
-          KAE(keyaxis,"color"+j,"colorPref").value = colors[j % colors.length];
-        }
-        KAE(keyaxis,"missing","colorPref").value = missingColor;
-      } else {
-        // if colors need to be blended
-        const colorMapMgr = UPM.heatMap.getColorMapManager();
-        const colorMap = colorMapMgr.getColorMap(axis, key);
-        const thresholds = colorMap.getThresholds();
-        const range = thresholds[thresholds.length - 1] - thresholds[0];
-        for (let j = 0; j < colors.length; j++) {
-          thresh[j] = Number(thresholds[0]) + j * (range / (colors.length - 1));
-        }
-        const colorScheme = {
-          type: "continuous",
-          colors: colors,
-          thresholds: thresh,
-          missing: missingColor,
-        };
-        const csTemp = new CMM.ColorMap(UPM.heatMap, colorScheme);
-        for (let j = 0; j < thresholds.length; j++) {
-          const breakpoint = thresholds[j];
-          KAE(keyaxis,"color"+j,"colorPref").value =
-            csTemp.getRgbToHex(csTemp.getColor(breakpoint));
-        }
-        KAE(keyaxis,"missing","colorPref").value =
-          csTemp.getRgbToHex(csTemp.getColor("Missing"));
-      }
+      return colors;
     }
   }
 
@@ -1838,38 +1761,7 @@
 
     UHM.setTableRow(prefContents, ["&nbsp;Covariate Type: ", "<b>" + typ + "</b>"]);
     UHM.addBlankRow(prefContents, 2);
-    var bgColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      keyaxis +
-      "_bgColorPref' id='" +
-      keyaxis +
-      "_bgColorPref' value='" +
-      classBar.bg_color +
-      "'>";
-    var fgColorInput =
-      "<input class='spectrumColor' type='color' name='" +
-      keyaxis +
-      "_fgColorPref' id='" +
-      keyaxis +
-      "_fgColorPref' value='" +
-      classBar.fg_color +
-      "'>";
-    var lowBound =
-      "<input name='" +
-      keyaxis +
-      "_lowBoundPref' id='" +
-      keyaxis +
-      "_lowBoundPref' value='" +
-      classBar.low_bound +
-      "' maxlength='10' size='8'>&emsp;";
-    var highBound =
-      "<input name='" +
-      keyaxis +
-      "_highBoundPref' id='" +
-      keyaxis +
-      "_highBoundPref' value='" +
-      classBar.high_bound +
-      "' maxlength='10' size='8'>&emsp;";
+
     if (typ === "Discrete") {
       UHM.setTableRow(prefContents, [
         "&nbsp;Bar Type: ",
@@ -1904,8 +1796,6 @@
     }
 
     UHM.addBlankRow(prefContents);
-    var helpprefsCB = UTIL.newElement("DIV");
-    helpprefsCB.id = keyaxis + "_breakPrefsCB";
     const prefTableCB = TABLE.createTable({ columns: 3 });
     const prefContentsCB = prefTableCB.content;
     if (typ === "Discrete") {
@@ -1913,22 +1803,10 @@
         "&nbsp;<u>Category</u>",
         "<b><u>" + "Color" + "</b></u>",
       ]);
-      for (var j = 0; j < thresholds.length; j++) {
-        var threshold = thresholds[j];
-        var color = colors[j];
-        var threshId = keyaxis + "_breakPt" + j;
-        var colorId = keyaxis + "_color" + j;
-        var colorInput =
-          "<input class='spectrumColor' type='color' name='" +
-          colorId +
-          "_colorPref' id='" +
-          colorId +
-          "_colorPref' value='" +
-          color +
-          "'>";
+      for (let j = 0; j < thresholds.length; j++) {
         UHM.setTableRow(prefContentsCB, [
-          "&nbsp;&nbsp;" + threshold,
-          colorInput,
+          "&nbsp;&nbsp;" + thresholds[j],
+          createColorInput(KAID(keyaxis,"color"+j,"colorPref"), colors[j]),
         ]);
       }
     } else {
@@ -1944,32 +1822,35 @@
     UHM.addBlankRow(prefContentsCB);
     UHM.setTableRow(prefContentsCB, [
       "&nbsp;Missing Color:",
-      "<input class='spectrumColor' type='color' name='" +
-        keyaxis +
-        "_missing_colorPref' id='" +
-        keyaxis +
-        "_missing_colorPref' value='" +
-        colorMap.getMissingColor() +
-        "'>",
+      createColorInput(KAID(keyaxis,"missing","colorPref"), colorMap.getMissingColor()),
     ]);
 
     prefTableCB.addBlankSpace(3);
-    PALETTES.addPredefinedPalettes(prefTableCB, key, setupLayerBreaksToPreset, axis, typ);
+    PALETTES.addPredefinedPalettes(prefTableCB, key, setColorPrefsToPreset, axis, typ);
 
+    const helpprefsCB = UTIL.newElement("DIV");
+    helpprefsCB.id = KAID(keyaxis,"breakPrefsCB");
     helpprefsCB.style.height = prefContentsCB.rows.length;
     helpprefsCB.appendChild(prefContentsCB);
-    var helpprefsBB = UTIL.newElement("DIV");
-    helpprefsBB.id = keyaxis + "_breakPrefsBB";
+
+    const helpprefsBB = UTIL.newElement("DIV");
+    helpprefsBB.id = KAID(keyaxis,"breakPrefsBB");
     var prefContentsBB = document.createElement("TABLE");
-    UHM.setTableRow(prefContentsBB, ["&nbsp;&nbsp;Lower Bound:", lowBound]);
-    UHM.setTableRow(prefContentsBB, ["&nbsp;&nbsp;Upper Bound:", highBound]);
+    UHM.setTableRow(prefContentsBB, [
+      "&nbsp;&nbsp;Lower Bound:",
+      createNumericInput (KAID(keyaxis,"lowBoundPref"), classBar.low_bound, 8, 10),
+    ]);
+    UHM.setTableRow(prefContentsBB, [
+      "&nbsp;&nbsp;Upper Bound:",
+      createNumericInput (KAID(keyaxis,"highBoundPref"), classBar.high_bound, 8, 10),
+    ]);
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Foreground Color:",
-      fgColorInput,
+      createColorInput (KAID(keyaxis,"fgColorPref"), classBar.fg_color),
     ]);
     UHM.setTableRow(prefContentsBB, [
       "&nbsp;&nbsp;Background Color:",
-      bgColorInput,
+      createColorInput (KAID(keyaxis,"bgColorPref"), classBar.bg_color),
     ]);
     UHM.addBlankRow(prefContentsBB);
     helpprefsBB.appendChild(prefContentsBB);
@@ -2894,4 +2775,24 @@
       heightPref.disabled = false;
     }
   }
+
+  // Create a color input with the given id and initial color.
+  function createColorInput (id, color) {
+    const input = `<input class='spectrumColor' type='color' name='${id}' id='${id}' value='${color}'>`;
+    return input;
+  }
+
+  // Create a checkbox input with the given id and initial checked state.
+  function createCheckBox (id, checked) {
+    checked = checked ? "checked" : "";
+    return `<input class='ngchm-upm-input' name='${id}' id='${id}' type='checkbox' ${checked}>`;
+  }
+
+  // Create a numeric input with the given id, initial value, size, and maximum length.
+  function createNumericInput (id, value, size, maxlength) {
+    if (!size) size = 8;
+    if (!maxlength) maxlength = size;
+    return `<input class='ngchm-upm-input' name='${id}' id='${id}' value='${value}' maxlength='${maxlength}' size='${size}'>`;
+  }
+
 })();
