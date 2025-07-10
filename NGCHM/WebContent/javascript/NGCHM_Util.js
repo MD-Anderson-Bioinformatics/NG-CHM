@@ -523,14 +523,25 @@
     return rgbToHex.apply (null, color3);
   };
 
-  // Convert a hex color string such as "#0077ff" to
+  // Convert a hex color string such as "#0077ff" or "#07f" to
   // an array of three ints each in the range [0..255].
   function hexToInts (hex) {
-    return [
-      parseInt(hex[1] + hex[2], 16),
-      parseInt(hex[3] + hex[4], 16),
-      parseInt(hex[5] + hex[6], 16),
-    ];
+    if (hex.length == 7) {
+      return [
+        parseInt(hex[1] + hex[2], 16),
+        parseInt(hex[3] + hex[4], 16),
+        parseInt(hex[5] + hex[6], 16),
+      ];
+    } else if (hex.length == 4) {
+      return [
+        parseInt(hex[1] + hex[1], 16),
+        parseInt(hex[2] + hex[2], 16),
+        parseInt(hex[3] + hex[3], 16),
+      ];
+    } else {
+      console.error (`UTIL.hextoInts: Bad hex string value ${hex}.`);
+      return [ 0, 0, 0 ];
+    }
   }
 
   // Convert r,g,b to hex string.
