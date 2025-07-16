@@ -2173,14 +2173,16 @@
       // So, we won't provide that capability.
       // So, the user has to create new covariate bars on the appropriate
       // axis.
-      classSelect.options[classSelect.options.length] = new Option(
-        "Add new row covariate",
-        "NEW-row",
-      );
-      classSelect.options[classSelect.options.length] = new Option(
-        "Add new column covariate",
-        "NEW-col",
-      );
+      if (flagNewCovars) {
+        classSelect.options[classSelect.options.length] = new Option(
+          "Add new row covariate",
+          "NEW-row",
+        );
+        classSelect.options[classSelect.options.length] = new Option(
+          "Add new column covariate",
+          "NEW-col",
+        );
+      }
 
       // Add options for every covariate that passes the filter.
       // Add covariates that don't pass the filter to hiddenOpts.
