@@ -16,7 +16,7 @@ if (false) {
 // Add a continuous 'Mutation Load' covariate bar if there are at least two
 // covariates with 'mutation' in their name.
 // - Assumes mutations in such bars have the value 'MUT'.
-const mutationCovars = linkouts.execCommand(["covar", "get-list", "column"]).filter(name => /mutation/.test(name));
+var mutationCovars = linkouts.execCommand(["covar", "get-list", "column"]).filter(name => /mutation/.test(name));
 if (mutationCovars.length > 1) {
   const covarName = "Mutation Load";
   linkouts.execCommand(["covar", "create", "column", covarName, "continuous"]);
