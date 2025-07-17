@@ -70,7 +70,7 @@
       function (req, res) {
         // FIXME: Does not handle axis restrictions.
         // FIXME: Does not handle regex searching as described above.
-        SRCH.searchForString(req.string);
+        SRCH.searchForLabel(req.string);
         SRCH.redrawSearchResults ();
       }
     ]

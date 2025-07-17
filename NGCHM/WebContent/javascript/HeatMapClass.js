@@ -781,6 +781,18 @@
       );
     };
 
+    // Return the type (discrete or continuous) of the specified covariate.
+    //
+    HeatMap.prototype.getCovariateType = function (axis, covariateName) {
+      return this.getAxisCovariateConfig(axis)[covariateName].color_map.type;
+    };
+
+    // Return the thresholds of the specified covariate.
+    //
+    HeatMap.prototype.getCovariateThresholds = function (axis, covariateName) {
+      return this.getAxisCovariateConfig(axis)[covariateName].color_map.thresholds;
+    };
+
     // Returns a generator over all covariates on both axes.  The returned
     // values are objects with two entries: axis (row or col) and key.
     //
