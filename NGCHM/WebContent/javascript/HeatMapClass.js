@@ -556,6 +556,7 @@
       this.colorMapMgr = null; // The heatMap's color map manager.
       this.currentTileRequests = []; // Tiles we are currently reading
       this.pendingTileRequests = []; // Tiles we want to read
+      this.searchOptions = []; // Search options specific to this heatMap.
 
       this.updatedOnLoad = false;
       this.onready = onready;
@@ -2245,5 +2246,15 @@
     this.currentTileRequests.push(job.tileCacheName);
 
     this.loadTile(job);
+  };
+
+  // Add searchOption to the search options specific to this heat map.
+  HeatMap.prototype.addSearchOption = function addSearchOption (searchOption) {
+    this.searchOptions.push (searchOption);
+  };
+
+  // Return an array of search options specific to this heat map.
+  HeatMap.prototype.getSearchOptions = function getSearchOptions () {
+    return this.searchOptions;
   };
 })();

@@ -43,7 +43,7 @@
   };
 
   const localFunctions = {};
-  const updateCallbacks = [ SUM.processSummaryMapUpdate, DET.processDetailMapUpdate ];
+  const updateCallbacks = [ SRCH.heatMapListener, SUM.processSummaryMapUpdate, DET.processDetailMapUpdate ];
 
   /***
    *  Functions related to saving Ng-Chms.

@@ -15,6 +15,7 @@
   const UHM = NgChm.importNS("NgChm.UHM");
   const PIM = NgChm.importNS("NgChm.PIM");
   const PANE = NgChm.importNS("NgChm.Pane");
+  const HEAT = NgChm.importNS("NgChm.HEAT");
 
   SRCH.clearAllCurrentSearchItems = function () {
     SRCHSTATE.clearAllCurrentSearchItems();
@@ -533,6 +534,12 @@
   // Instantiate the search interface.
   const searchInterface = new SearchInterface();
 
+  SRCH.heatMapListener = function heatMapListener (event) {
+    if (event == HEAT.Event_PLUGINS) {
+      SRCH.configSearchInterface (MMGR.getHeatMap());
+    }
+  };
+
   /**********************************************************************************
    * FUNCTION SRCH.configSearchInterface: Initialize/reset the search interface
    * for the specified heatMap.  It is called from the UI-Manager after the
@@ -547,6 +554,9 @@
     searchInterface.reset();
     addCovariateOptions("col");
     addCovariateOptions("row");
+    for (const searchOption of heatMap.getSearchOptions()) {
+      searchInterface.addSearchOption(searchOption);
+    }
     return;
     // Helper function.
     // Add a search option for every covariate on the specified axis.
