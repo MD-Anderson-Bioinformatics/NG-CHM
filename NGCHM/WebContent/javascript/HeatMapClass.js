@@ -27,6 +27,7 @@
   HEAT.Event_INITIALIZED = "Init";
   HEAT.Event_JSON = "Json";
   HEAT.Event_NEWDATA = "NewData";
+  HEAT.Event_PLUGINS = "Plugins"; // Plugins have been defined.
 
   const debugMapInit = UTIL.getDebugFlag ("heat-init");
 

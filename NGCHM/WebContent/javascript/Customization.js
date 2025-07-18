@@ -13,6 +13,7 @@
   const UHM = NgChm.importNS("NgChm.UHM");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const CFG = NgChm.importNS("NgChm.CFG");
+  const HEAT = NgChm.importNS("NgChm.HEAT");
 
   CUST.verbose = false;
 
@@ -481,6 +482,7 @@
         console.log ("All customization scripts loaded");
         linkouts.setVersion (scriptVersions.join("; "));
         CUST.definePluginLinkouts();
+        heatMap.sendAllListeners (HEAT.Event_PLUGINS);
         return;
       }
       if (idx > 0) {
