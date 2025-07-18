@@ -2030,6 +2030,19 @@
       this.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
     };
 
+    // Returns an array of the heatMap labels of the specified type.
+    // Returns an empty array if the labels do not include the specified type.
+    HeatMap.prototype.getTypeValues = function getTypeValues (axis, typeName) {
+      const types = this.getLabelTypes(axis).map(t => t.type);
+      const index = types.indexOf(typeName);
+      if (index != -1) {
+        const labels = this.getAxisLabels(axis)["labels"];
+        return labels.map(label => label.split("|")[index]);
+      } else {
+        return [];
+      }
+    };
+
     // Returns an array of the "actual" labels for the specified axis
     // of the NG-CHM.  The "actual" labels currently consist of the
     // visible text fields of the "full" labels.

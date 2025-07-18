@@ -168,6 +168,18 @@ var linkoutsVersion = "undefined";
     return EXEC.execCommand (args, UTIL.consoleOutput, showLinkoutOutput);
   };
 
+  linkouts.addSearchOption = function addSearchOption (searchOption) {
+    MMGR.getHeatMap().addSearchOption (searchOption);
+  };
+
+  linkouts.setSelectionVec = function setSelectionVec (axis, selectIndices) {
+    LNK.setSelectionVec (axis, selectIndices);
+  };
+
+  linkouts.getTypeValues = function (axis, typeName) {
+    return MMGR.getHeatMap().getTypeValues(axis, typeName);
+  };
+
   /*******************************************
    * END EXTERNAL INTERFACE
    *******************************************/
@@ -4177,6 +4189,12 @@ var linkoutsVersion = "undefined";
       }
     }
   })();
+
+  LNK.setSelectionVec = function setSelectionVec (axis, selectIndices) {
+    SRCH.clearSearchItems(axis);
+    SRCH.setAxisSearchResultsVec(axis, selectIndices);
+    SRCH.redrawSearchResults();
+  };
 
   /* Used when dragging and dropping a plugin */
   LNK.loadLinkoutSpec = function loadLinkoutSpec(kind, spec) {
