@@ -367,9 +367,8 @@
     const debug = false;
     var firstTime = true;
 
-    UIMGR.configurePanelInterface = function configurePanelInterface() {
+    UIMGR.configurePanelInterface = function configurePanelInterface(heatMap) {
 
-      const heatMap = MMGR.getHeatMap();
       onMapReady (heatMap);
       UIMGR.initializeSummaryWindows(heatMap);
 
@@ -699,11 +698,34 @@
 
   function loadWebMaps () {
     UTIL.showLoader("Loading NG-CHM from server...");
-    MMGR.loadWebMaps (srcInfo, updateCallbacks, () => {
-      resetCHM();
-      initDisplayVars();
-      UIMGR.configurePanelInterface();
-    });
+    MMGR.loadWebMaps (srcInfo, updateCallbacks, allMapsLoaded);
+  }
+
+  function allMapsLoaded () {
+    const heatMap = MMGR.getHeatMap();
+    resetCHM();
+    initDisplayVars();
+    UIMGR.configurePanelInterface(heatMap);
+    return;
+    // Helper function : Reload CHM SelectionManager parameters after loading heatMaps.
+    function resetCHM() {
+      SRCH.clearAllSearchResults();
+      DVW.scrollTime = null;
+      SUM.colDendro = null;
+      SUM.rowDendro = null;
+    }
+    // Helper function : Reinitialize summary and detail display values after loading heatMaps.
+    function initDisplayVars() {
+      DRAW.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
+      DRAW.heightScale = 1;
+      SUM.summaryHeatMapCache = {};
+      SUM.colTopItemsWidth = 0;
+      SUM.rowTopItemsHeight = 0;
+      DMM.nextMapNumber = 1;
+      DEV.setMouseDown(false);
+      UTIL.removeElementsByClass("DynamicLabel");
+      SRCH.clearAllCurrentSearchItems();
+    }
   }
 
   // API.embedNGCHM (in NGCHM_Embed.js) allows the NG-CHM to be specified in 4 ways:
@@ -910,44 +932,7 @@
    **********************************************************************************/
   function displayZipFileCHM(chmFile) {
     UTIL.showLoader("Loading NG-CHM from zip file...");
-    MMGR.loadZipMaps(
-      chmFile,
-      updateCallbacks,
-      () => {
-        resetCHM();
-        initDisplayVars();
-        UIMGR.configurePanelInterface ();
-      }
-    );
-  }
-
-  /**********************************************************************************
-   * FUNCTION - resetCHM: This function will reload CHM SelectionManager parameters
-   * when loading a file mode heatmap.  Specifically for handling the case where switching
-   * from one file-mode heatmap to another
-   **********************************************************************************/
-  function resetCHM() {
-    SRCH.clearAllSearchResults();
-    DVW.scrollTime = null;
-    SUM.colDendro = null;
-    SUM.rowDendro = null;
-  }
-
-  /**********************************************************************************
-   * FUNCTION - initDisplayVars: This function reinitializes summary and detail
-   * display values whenever a file-mode map is opened.  This is done primarily
-   * to reset screens when a second, third, etc. map is opened.
-   **********************************************************************************/
-  function initDisplayVars() {
-    DRAW.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
-    DRAW.heightScale = 1;
-    SUM.summaryHeatMapCache = {};
-    SUM.colTopItemsWidth = 0;
-    SUM.rowTopItemsHeight = 0;
-    DMM.nextMapNumber = 1;
-    DEV.setMouseDown(false);
-    UTIL.removeElementsByClass("DynamicLabel");
-    SRCH.clearAllCurrentSearchItems();
+    MMGR.loadZipMaps(chmFile, updateCallbacks, allMapsLoaded);
   }
 
   /**********************************************************************************
