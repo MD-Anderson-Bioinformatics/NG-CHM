@@ -7,7 +7,6 @@
 
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
-  const MMGR = NgChm.importNS("NgChm.MMGR");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const SUM = NgChm.importNS("NgChm.SUM");
   const DVW = NgChm.importNS("NgChm.DVW");
@@ -89,7 +88,9 @@
   // METHOD SearchInterface.reset - Reset the searchOn options so that only
   // label search entry is available.
   //
-  SearchInterface.prototype.reset = function resetSearchInterface() {
+  SearchInterface.prototype.reset = function resetSearchInterface(heatMap) {
+    // Record current heatMap.
+    this.heatMap = heatMap;
     // Remove any existing options after the first (Labels).
     for (let i = this.ui.searchOn.options.length - 1; i >= 1; i--) {
       this.ui.searchOn.remove(i);
@@ -533,9 +534,9 @@
   // Instantiate the search interface.
   const searchInterface = new SearchInterface();
 
-  SRCH.heatMapListener = function heatMapListener (event) {
-    if (event == HEAT.Event_PLUGINS) {
-      SRCH.configSearchInterface (MMGR.getHeatMap());
+  SRCH.heatMapListener = function heatMapListener (heatMap, event) {
+    if (searchInterface.heatMap == heatMap && event == HEAT.Event_PLUGINS) {
+      SRCH.configSearchInterface (heatMap);
     }
   };
 
@@ -550,7 +551,7 @@
    *
    **********************************************************************************/
   SRCH.configSearchInterface = function (heatMap) {
-    searchInterface.reset();
+    searchInterface.reset(heatMap);
     addCovariateOptions("col");
     addCovariateOptions("row");
     for (const searchOption of heatMap.getSearchOptions()) {
@@ -686,7 +687,7 @@
    * the search and manages the appearance of the covariate search text box.
    **********************************************************************************/
   function covarSearch(searchInterface, searchFor, postFn) {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = searchInterface.heatMap;
     const classDataValues = heatMap.getAxisCovariateData(searchFor.axis)[searchFor.key].values;
     const currentClassBar = heatMap.getAxisCovariateConfig(searchFor.axis)[searchFor.key];
     let validSearch = true;
@@ -825,9 +826,8 @@
     // Helper function.
     // Find matches against labels on the specified axis.
     function searchLabels(axis) {
-      const heatMap = MMGR.getHeatMap();
       // Searches are case independent, so we map everything to upper case.
-      const labels = heatMap.actualLabels(axis).map(label => label.toUpperCase());
+      const labels = searchInterface.heatMap.actualLabels(axis).map(label => label.toUpperCase());
       for (const searchItem of searchItems) {
         if (searchItem == "." || searchItem == "*") {
           // if this is a search item that's going to return everything, skip it.

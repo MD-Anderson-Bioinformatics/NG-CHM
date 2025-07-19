@@ -82,9 +82,9 @@
 
   // Callback that is notified every time there is an update to the heat map
   // initialize, new data, etc.  This callback draws the summary heat map.
-  SUM.processSummaryMapUpdate = function (event, tile) {
+  SUM.processSummaryMapUpdate = function (heatMap, event, tile) {
     if (event === HEAT.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL) {
-      if (!MMGR.getHeatMap().initialized) {
+      if (!heatMap.initialized) {
         return;
       }
       //Summary tile - wait a bit to see if we get another tile quickly, then draw

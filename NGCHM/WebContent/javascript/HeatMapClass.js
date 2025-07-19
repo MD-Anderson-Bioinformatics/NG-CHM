@@ -1436,14 +1436,15 @@
       // Send event to all listeners.
       sendAllListeners: function sendAllListeners(event, tile) {
         // Send the event to all listeners.
-        this.eventListeners.forEach((callback) => callback(event, tile));
+        const heatMap = this;
+        this.eventListeners.forEach((callback) => callback(heatMap, event, tile));
         if (event === HEAT.Event_NEWDATA) {
           // Also broadcast NEWDATA events to all levels for which tile.level is an alternate.
           const { layer, level: mylevel, row, col, data } = tile;
           const alts = this.getAllAlternateLevels(mylevel);
           while (alts.length > 0) {
             const altTile = { layer, level: alts.shift(), row, col, data };
-            this.eventListeners.forEach((callback) => callback(event, altTile));
+            this.eventListeners.forEach((callback) => callback(heatMap, event, altTile));
           }
         }
       }
