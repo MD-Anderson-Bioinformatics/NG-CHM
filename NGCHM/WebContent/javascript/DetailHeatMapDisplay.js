@@ -72,7 +72,6 @@
         DVW.detailMaps[i].updateSelection();
       }
     }
-    MMGR.getHeatMap().setUnAppliedChanges(true);
   };
 
   /*********************************************************************************************
