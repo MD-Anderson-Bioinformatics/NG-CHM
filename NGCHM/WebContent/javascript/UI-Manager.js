@@ -34,6 +34,7 @@
   const CMDD = NgChm.importNS("NgChm.CMDD");
   const TOUR = NgChm.importNS("NgChm.TOUR");
   const EXEC = NgChm.importNS("NgChm.EXEC");
+  const UPM = NgChm.importNS("NgChm.UPM");
 
   const debugEmbed = UTIL.getDebugFlag("ui-embed");
   const srcInfo = {
@@ -1741,6 +1742,17 @@
   document.getElementById("menuFileOpen").onclick = () => {
     openFileToggle();
   };
+
+  // Two ways to open the Preferences Manager.
+  {
+    document.getElementById("colorMenu_btn").onclick = openPreferencesManager;
+    document.getElementById("menuGear").onclick = openPreferencesManager;
+    // Helper function.
+    function openPreferencesManager() {
+      const heatMap = MMGR.getHeatMap();
+      UPM.openPreferencesManager(heatMap);
+    }
+  }
 
   function clearSelectedDendrogram(mapItem) {
     if (mapItem.selectedIsDendrogram) {
