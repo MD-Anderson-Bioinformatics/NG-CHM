@@ -365,7 +365,6 @@
   //
   (function () {
     const debug = false;
-    var firstTime = true;
 
     UIMGR.configurePanelInterface = function configurePanelInterface(heatMap) {
 
@@ -380,24 +379,9 @@
       SRCH.configSearchInterface(heatMap);
 
       CUST.addCustomJS();
-      if (MMGR.getSource() === MMGR.ZIP_SOURCE) {
-        firstTime = true;
-        if (SUM.chmElement) {
-          PANE.emptyPaneLocation(PANE.findPaneLocation(SUM.chmElement));
-        }
-        if (DVW.detailMaps.length > 0) {
-          for (let i = 0; i < DVW.detailMaps.length; i++) {
-            PANE.emptyPaneLocation(PANE.findPaneLocation(DVW.detailMaps[i].chm));
-          }
-        }
-      }
+
       // Split the initial pane horizontally and insert the
       // summary and detail NGCHMs into the children.
-      if (firstTime) {
-        firstTime = false;
-      } else {
-        return;
-      }
       UTIL.showLoader("Configuring interface...");
       //
       // Define the DROP TARGET and set the drop event handler(s).
