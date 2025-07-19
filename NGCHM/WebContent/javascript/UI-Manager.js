@@ -376,7 +376,6 @@
         autoSaveHeatMap(heatMap);
       }
       heatMap.setSelectionColors();
-      SRCH.configSearchInterface(heatMap);
 
       CUST.addCustomJS();
 
@@ -471,7 +470,6 @@
     let flickInitialized = false;
     function onMapReady(heatMap) {
       if (!flickInitialized) {
-        configurePageHeader(heatMap);
         const dl = heatMap.getDataLayers();
         const numLayers = Object.keys(dl).length;
         if (numLayers > 1) {
@@ -560,17 +558,33 @@
 
   // Configure elements of the page header and top bar that depend on the
   // loaded NGCHM.
-  function configurePageHeader(heatMap) {
-    // Set document title if not embedded.
-    if (!srcInfo.embedded) {
-      // Don't set document title in case we're not in an iFrame
-      // (like in the builder for example).
-      document.title = heatMap.getMapInformation().name;
-    }
-
+  function configurePageHeader(heatMaps) {
     // Populate the header's nameDiv.
     const nameDiv = document.getElementById("mapName");
-    nameDiv.innerHTML = heatMap.getMapInformation().name;
+    const mapNames = heatMaps.map(heatMap => heatMap.getMapInformation().name);
+    if (mapNames.length == 1) {
+      nameDiv.innerText = mapNames[0];
+    } else {
+      const select = UTIL.newSelect (mapNames, mapNames);
+      nameDiv.appendChild (select);
+      select.onchange = () => {
+        selectHeatMap(select.value);
+      };
+    }
+    selectHeatMap (mapNames[0]);
+    // Helper function
+    function selectHeatMap (name) {
+      const index = mapNames.indexOf(name);
+      if (index < 0) {
+        throw `UIMGR.configurePageHeader: bad heatMap name ${name}`;
+      }
+      const heatMap = heatMaps[index];
+      if (!srcInfo.embedded) {
+        document.title = `NG-CHM Viewer: ${name}`;
+      }
+      MMGR.setHeatMap(heatMap);
+      SRCH.configSearchInterface(heatMap);
+    }
   }
 
   // FUNCTION onLoadCHM: Initialize the NG_CHM display.
@@ -686,6 +700,9 @@
   }
 
   function allMapsLoaded () {
+    const allHeatMaps = MMGR.getAllHeatMaps();
+    configurePageHeader(allHeatMaps);
+
     const heatMap = MMGR.getHeatMap();
     resetCHM();
     initDisplayVars();

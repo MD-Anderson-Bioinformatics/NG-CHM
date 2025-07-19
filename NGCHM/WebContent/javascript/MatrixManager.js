@@ -819,6 +819,11 @@
       return heatMap;
     };
 
+    // Set the current heat map.
+    MMGR.setHeatMap = function setHeatMap(hm) {
+      heatMap = hm;
+    };
+
     // Return all heat maps.
     MMGR.getAllHeatMaps = function getAllHeatMaps() {
       return allHeatMaps;
