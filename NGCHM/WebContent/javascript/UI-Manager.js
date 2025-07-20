@@ -323,8 +323,10 @@
      ***********************************************************************************************/
     UIMGR.changeDataLayer = function changeDataLayer(change) {
       const heatMap = MMGR.getHeatMap();
-      // Associated the flick element with an AccessWindow for the summary level for this layer.
-      summaryWindows[change.flickElement] = getSummaryAccessWindow(heatMap, change.layer);
+      // If needed, create an AccessWindow for the summary level for this layer.
+      if (!summaryWindows.hasOwnProperty(change.flickElement)) {
+        summaryWindows[change.flickElement] = getSummaryAccessWindow(heatMap, change.layer);
+      }
       // Redraw the UI if the currently visible layer changed.
       if (change.redrawRequired) {
         heatMap.setCurrentDL(change.layer);
@@ -337,9 +339,17 @@
     FLICK.setFlickHandler(UIMGR.changeDataLayer);
 
     UIMGR.initializeSummaryWindows = function (heatMap) {
+      // Remove summaryWindows from any previous heatMap.
+      for (const key in summaryWindows) {
+        if (summaryWindows.hasOwnProperty(key)) {
+          delete summaryWindows[key];
+        }
+      }
       const flickState = FLICK.getFlickState();
       const first = flickState.shift();
+      // Get summaryWindow for first layer immediately.
       summaryWindows[first.element] = getSummaryAccessWindow(heatMap, first.layer);
+      // Get summaryWindows for any alternate layers after a brief timeout.
       setTimeout(() => {
         flickState.forEach((alt) => {
           summaryWindows[alt.element] = getSummaryAccessWindow(heatMap, alt.layer);
@@ -359,153 +369,112 @@
     }
   })();
 
+  function configureDragDropHandler() {
+    const debug = UTIL.getDebugFlag("ui-dnd");
+    // Define the DROP TARGET and set the drop event handler(s).
+    if (debug) console.log("Configuring drop event handler");
+    const dropTarget = document.getElementById("droptarget");
+    ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+      dropTarget.addEventListener(eventName, function dropHandler(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (eventName == "drop") {
+          if (debug) console.log({ m: "drop related event", eventName, ev });
+          const dt = ev.dataTransfer;
+          const files = dt.files;
+          [...files].forEach((file) => {
+            if (debug) console.log({ m: "dropFile", file });
+            if (file.type == "application/json") {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                handleDropData(reader.result);
+              };
+              reader.readAsText(file);
+            }
+          });
+          const txt = dt.getData("Application/json");
+          if (txt) handleDropData(txt);
+          dropTarget.classList.remove("visible");
+        } else if (eventName === "dragenter") {
+          dropTarget.classList.add("visible");
+        } else if (eventName === "dragleave") {
+          dropTarget.classList.remove("visible");
+        }
+      });
+    });
+    // Helper function.
+    // Called when the user drops a file on the drop area.
+    function handleDropData(txt) {
+      if (debug) console.log({ m: "Got drop data", txt });
+      const j = JSON.parse(txt);
+      if (j && j.type === "linkout.spec" && j.kind && j.spec) {
+        LNK.loadLinkoutSpec(j.kind, j.spec);
+      }
+    }
+  }
+
   // Function configurePanelInterface must called once immediately after the HeatMap is loaded.
   // It configures the initial Panel user interface according to the heat map preferences and
   // the interface configuration parameters.
   //
-  (function () {
-    const debug = false;
-
-    UIMGR.configurePanelInterface = function configurePanelInterface(heatMap) {
-
-      onMapReady (heatMap);
-      UIMGR.initializeSummaryWindows(heatMap);
-
-      //If any new configs were added to the heatmap's config, save the config file.
-      if (MMGR.mapUpdatedOnLoad() && heatMap.getMapInformation().read_only !== "Y") {
-        autoSaveHeatMap(heatMap);
-      }
-      heatMap.setSelectionColors();
-
-      CUST.addCustomJS();
-
-      // Split the initial pane horizontally and insert the
-      // summary and detail NGCHMs into the children.
-      UTIL.showLoader("Configuring interface...");
-      //
-      // Define the DROP TARGET and set the drop event handler(s).
-      if (debug) console.log("Configuring drop event handler");
-      const dropTarget = document.getElementById("droptarget");
-      function handleDropData(txt) {
-        if (debug) console.log({ m: "Got drop data", txt });
-        const j = JSON.parse(txt);
-        if (j && j.type === "linkout.spec" && j.kind && j.spec) {
-          LNK.loadLinkoutSpec(j.kind, j.spec);
-        }
-      }
-      ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
-        dropTarget.addEventListener(eventName, function dropHandler(ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          if (eventName == "drop") {
-            if (debug) console.log({ m: "drop related event", eventName, ev });
-            const dt = ev.dataTransfer;
-            const files = dt.files;
-            [...files].forEach((file) => {
-              if (debug) console.log({ m: "dropFile", file });
-              if (file.type == "application/json") {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  handleDropData(reader.result);
-                };
-                reader.readAsText(file);
-              }
-            });
-            const txt = dt.getData("Application/json");
-            if (txt) handleDropData(txt);
-            dropTarget.classList.remove("visible");
-          } else if (eventName === "dragenter") {
-            dropTarget.classList.add("visible");
-          } else if (eventName === "dragleave") {
-            dropTarget.classList.remove("visible");
-          }
-        });
-      });
-      SUM.initSummaryData({
-        clearSearchItems: function (axis) {
-          // Clear all search items on an axis. Does not redraw.
-          SRCH.clearSearchItems(axis);
-        },
-        clearSearchRange: function (axis, left, right) {
-          // Clear range of search items on an axis.  Does not redraw.
-          SRCH.clearSearchRange(axis, left, right);
-        },
-        setAxisSearchResults: function (axis, left, right) {
-          // Set range of search items on an axis.  Does not redraw.
-          SRCH.setAxisSearchResults(axis, left, right);
-        },
-        showSearchResults: function () {
-          // Redraw search results.
-          //SRCH.showSearchResults,
-          SRCH.redrawSearchResults();
-        },
-        callDetailDrawFunction: DET.callDetailDrawFunction
-      });
-      const initialLoc = PANE.initializePanes();
-      const panelConfig = MMGR.getHeatMap().getPanelConfiguration();
-      if (panelConfig) {
-        RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig);
-      } else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
-        const s = PANE.splitPane(false, initialLoc);
-        PANE.setPanePropWidths(MMGR.getHeatMap().getDividerPref(), s.child2, s.child1, s.divider);
-        SMM.switchPaneToSummary(PANE.findPaneLocation(s.child2));
-        setTimeout(() => {
-          DMM.switchPaneToDetail(PANE.findPaneLocation(s.child1));
-          SRCH.doInitialSearch();
-          PANE.resizePane(SUM.chmElement);
-        }, 32);
-      } else if (UTIL.showSummaryPane) {
-        SMM.switchPaneToSummary(initialLoc);
+  UIMGR.configurePanelInterface = function configurePanelInterface(heatMap) {
+    // Split the initial pane horizontally and insert the
+    // summary and detail NGCHMs into the children.
+    const initialLoc = PANE.initializePanes();
+    const panelConfig = heatMap.getPanelConfiguration();
+    if (panelConfig) {
+      RECPANES.reconstructPanelsFromMapConfig(initialLoc, panelConfig);
+    } else if (UTIL.showSummaryPane && UTIL.showDetailPane) {
+      const s = PANE.splitPane(false, initialLoc);
+      PANE.setPanePropWidths(heatMap.getDividerPref(), s.child2, s.child1, s.divider);
+      SMM.switchPaneToSummary(PANE.findPaneLocation(s.child2));
+      setTimeout(() => {
+        DMM.switchPaneToDetail(PANE.findPaneLocation(s.child1));
         SRCH.doInitialSearch();
-      } else if (UTIL.showDetailPane) {
-        DMM.switchPaneToDetail(initialLoc);
-        SRCH.doInitialSearch();
-      }
-    };
-  })();
-
-    /*
-     * Set the 'flick' control and data layer
-     */
-    let flickInitialized = false;
-    function onMapReady(heatMap) {
-      if (!flickInitialized) {
-        const dl = heatMap.getDataLayers();
-        const numLayers = Object.keys(dl).length;
-        if (numLayers > 1) {
-          const dls = new Array(numLayers);
-          const orderedKeys = new Array(numLayers);
-          for (let key in dl) {
-            const dlNext = +key.substring(2, key.length); // Requires data layer ids to be dl1, dl2, etc.
-            orderedKeys[dlNext - 1] = key;
-            let displayName = dl[key].name;
-            if (displayName.length > 20) {
-              displayName = displayName.substring(0, 17) + "...";
-            }
-            dls[dlNext - 1] =
-              '<option value="' + key + '">' + displayName + "</option>";
-          }
-          const panelConfig = heatMap.getPanelConfiguration();
-          const flickInfo =
-            panelConfig && panelConfig.flickInfo ? panelConfig.flickInfo : {};
-          const layer = FLICK.enableFlicks(
-            orderedKeys,
-            dls.join(""),
-            flickInfo,
-          );
-          heatMap.setCurrentDL(layer);
-        } else {
-          heatMap.setCurrentDL("dl1");
-          FLICK.disableFlicks();
-        }
-        flickInitialized = true;
-
-        // Check viewer version if not embedded.
-        if (!srcInfo.embedded) {
-          checkViewerVersion();
-        }
-      }
+        PANE.resizePane(SUM.chmElement);
+      }, 32);
+    } else if (UTIL.showSummaryPane) {
+      SMM.switchPaneToSummary(initialLoc);
+      SRCH.doInitialSearch();
+    } else if (UTIL.showDetailPane) {
+      DMM.switchPaneToDetail(initialLoc);
+      SRCH.doInitialSearch();
     }
+  };
+
+  /*
+   * Set the 'flick' control and initial data layer.
+   */
+  function initializeLayersInterface(heatMap) {
+    const dl = heatMap.getDataLayers();
+    const numLayers = Object.keys(dl).length;
+    if (numLayers > 1) {
+      const dls = new Array(numLayers);
+      const orderedKeys = new Array(numLayers);
+      for (let key in dl) {
+        const dlNext = +key.substring(2, key.length); // Requires data layer ids to be dl1, dl2, etc.
+        orderedKeys[dlNext - 1] = key;
+        let displayName = dl[key].name;
+        if (displayName.length > 20) {
+          displayName = displayName.substring(0, 17) + "...";
+        }
+        dls[dlNext - 1] =
+          '<option value="' + key + '">' + displayName + "</option>";
+      }
+      const panelConfig = heatMap.getPanelConfiguration();
+      const flickInfo =
+        panelConfig && panelConfig.flickInfo ? panelConfig.flickInfo : {};
+      const layer = FLICK.enableFlicks(
+        orderedKeys,
+        dls.join(""),
+        flickInfo,
+      );
+      heatMap.setCurrentDL(layer);
+    } else {
+      heatMap.setCurrentDL("dl1");
+      FLICK.disableFlicks();
+    }
+  }
 
   // Compare the version of this NG-CHM viewer to the one recent available.
   // Notify the user if they're using a standalone viewer and it is out of date.
@@ -568,12 +537,18 @@
       const select = UTIL.newSelect (mapNames, mapNames);
       nameDiv.appendChild (select);
       select.onchange = () => {
-        selectHeatMap(select.value);
+        selectHeatMap(select.value, false);
       };
     }
-    selectHeatMap (mapNames[0]);
+    selectHeatMap (mapNames[0], true);
+    // Check viewer version if not embedded.
+    if (!srcInfo.embedded) {
+      checkViewerVersion();
+    }
+    return;
     // Helper function
-    function selectHeatMap (name) {
+    // Call initially and whenever a heatMap is selected from the maps drop down.
+    function selectHeatMap (name, firstTime) {
       const index = mapNames.indexOf(name);
       if (index < 0) {
         throw `UIMGR.configurePageHeader: bad heatMap name ${name}`;
@@ -584,6 +559,15 @@
       }
       MMGR.setHeatMap(heatMap);
       SRCH.configSearchInterface(heatMap);
+      UIMGR.initializeSummaryWindows(heatMap);
+      SUM.setHeatMap(heatMap);
+      initializeLayersInterface(heatMap);
+      CUST.addCustomJS();
+      if (firstTime) {
+        UIMGR.configurePanelInterface(heatMap);
+      } else {
+        SUM.redrawSummaryPanel ();
+      }
     }
   }
 
@@ -700,32 +684,46 @@
   }
 
   function allMapsLoaded () {
+    UTIL.showLoader("Configuring interface...");
     const allHeatMaps = MMGR.getAllHeatMaps();
-    configurePageHeader(allHeatMaps);
-
-    const heatMap = MMGR.getHeatMap();
-    resetCHM();
-    initDisplayVars();
-    UIMGR.configurePanelInterface(heatMap);
-    return;
-    // Helper function : Reload CHM SelectionManager parameters after loading heatMaps.
-    function resetCHM() {
-      SRCH.clearAllSearchResults();
-      DVW.scrollTime = null;
-      SUM.colDendro = null;
-      SUM.rowDendro = null;
+    // If any heatmap was updated by CompatibilityManager, save it.
+    if (MMGR.mapUpdatedOnLoad()) {
+      for (const heatMap of allHeatMaps) {
+        if (heatMap.mapUpdatedOnLoad && !isReadOnly(heatMap)) {
+          autoSaveHeatMap(heatMap);
+        }
+      }
     }
-    // Helper function : Reinitialize summary and detail display values after loading heatMaps.
-    function initDisplayVars() {
-      DRAW.widthScale = 1; // scalar used to stretch small maps (less than 250) to be proper size
-      DRAW.heightScale = 1;
-      SUM.summaryHeatMapCache = {};
-      SUM.colTopItemsWidth = 0;
-      SUM.rowTopItemsHeight = 0;
-      DMM.nextMapNumber = 1;
-      DEV.setMouseDown(false);
-      UTIL.removeElementsByClass("DynamicLabel");
-      SRCH.clearAllCurrentSearchItems();
+    configureDragDropHandler();
+    initializeDdrCallbacks();
+    configurePageHeader(allHeatMaps);
+    return;
+    // Helper function.
+    function isReadOnly (heatMap) {
+      return heatMap.getMapInformation().read_only == "Y";
+    }
+    // Helper function.
+    function initializeDdrCallbacks() {
+      SUM.initDdrCallbacks({
+        clearSearchItems: function (axis) {
+          // Clear all search items on an axis. Does not redraw.
+          SRCH.clearSearchItems(axis);
+        },
+        clearSearchRange: function (axis, left, right) {
+          // Clear range of search items on an axis.  Does not redraw.
+          SRCH.clearSearchRange(axis, left, right);
+        },
+        setAxisSearchResults: function (axis, left, right) {
+          // Set range of search items on an axis.  Does not redraw.
+          SRCH.setAxisSearchResults(axis, left, right);
+        },
+        showSearchResults: function () {
+          // Redraw search results.
+          //SRCH.showSearchResults,
+          SRCH.redrawSearchResults();
+        },
+        callDetailDrawFunction: DET.callDetailDrawFunction
+      });
     }
   }
 
