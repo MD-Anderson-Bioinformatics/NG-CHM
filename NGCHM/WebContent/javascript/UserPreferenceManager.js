@@ -270,10 +270,19 @@
 
     if (prefspanel.style.display !== "none") {
       // The user clicked to open the preferences panel, but we believe it is already open.
-      // Nothing to do, but we reshow the preferences panel just in case it's not visible.
-      prefspanel.style.display = "";
-      locatePrefsPanel();
-      return;
+      if (UPM.heatMap == heatMap) {
+        // Nothing to do, but we reshow the preferences panel just in case it's not visible.
+        prefspanel.style.display = "";
+        locatePrefsPanel();
+        return;
+      } else {
+        // Close preferences manager for old heatMap to allow for new one.
+        closePreferencesManager();
+        // Let the display update before opening the new manager, so the
+        // user sees the preferences manager flash.
+        setTimeout (() => openPreferencesManager(heatMap), 100);
+        return;
+      }
     }
 
     // Set the heatMap we are editing.
