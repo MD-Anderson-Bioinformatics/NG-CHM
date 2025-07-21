@@ -48,7 +48,7 @@
    * button on the menu bar.  The PDF preferences panel is then launched
    **********************************************************************************/
   PDF.canGeneratePdf = function () {
-    return SUM.isVisible() || DVW.anyVisible();
+    return SUM.isVisible() || DVW.anyVisible(MMGR.getHeatMap());
   };
 
   PDF.pdfDialogClosed = function () {
@@ -64,7 +64,7 @@
       let whyDisabled = "Cannot open the PDF dialog since it's already open";
       if (prefspanel.classList.contains("hide")) {
         whyDisabled =
-          "Cannot generate a PDF when the Summary and all Detail heat map panels are closed.";
+          "Cannot generate a PDF when the Summary and all Detail heat map panels for the current heat map are closed.";
       }
       UHM.systemMessage("NG-CHM PDF Generator", whyDisabled);
       return;
@@ -74,21 +74,15 @@
     const sumButton = document.getElementById("pdfInputSummaryMap");
     const detButton = document.getElementById("pdfInputDetailMap");
     const bothButton = document.getElementById("pdfInputBothMaps");
-    if (SUM.isVisible() && !DVW.anyVisible()) {
-      sumButton.checked = true;
-      sumButton.disabled = false;
-      detButton.disabled = true;
-      bothButton.disabled = true;
-    } else if (DVW.anyVisible() && !SUM.isVisible()) {
-      detButton.checked = true;
-      sumButton.disabled = true;
-      detButton.disabled = false;
-      bothButton.disabled = true;
-    } else if (SUM.isVisible() && DVW.anyVisible()) {
+    sumButton.disabled = !SUM.isVisible();
+    detButton.disabled = !DVW.anyVisible(MMGR.getHeatMap());
+    bothButton.disabled = sumButton.disabled || detButton.disabled;
+    if (!bothButton.disabled) {
       bothButton.checked = true;
-      sumButton.disabled = false;
-      detButton.disabled = false;
-      bothButton.disabled = false;
+    } else if (!sumButton.disabled) {
+      sumButton.checked = true;
+    } else if (!detButton.disabled) {
+      detButton.checked = true;
     } else {
       // Should not happen.
       UHM.systemMessage(
@@ -265,7 +259,7 @@
       }
       if (includeDetailMaps) {
         DVW.detailMaps
-          .filter((mapItem) => mapItem.isVisible())
+          .filter((mapItem) => mapItem.heatMap == heatMap && mapItem.isVisible())
           .forEach((mapItem) => {
             drawJobs.push({ job: "detail", mapItem });
           });
@@ -2125,7 +2119,7 @@
       const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
       const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
       DVW.detailMaps.forEach((mapItem) => {
-        if (mapItem.isVisible()) {
+        if (mapItem.heatMap == heatMap && mapItem.isVisible()) {
           const left = (mapItem.currentCol - 1) * xScale;
           const top = (mapItem.currentRow - 1) * yScale;
           const width = mapItem.dataPerRow * xScale;

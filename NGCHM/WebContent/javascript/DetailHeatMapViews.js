@@ -86,11 +86,11 @@
   };
 
   /*********************************************************************************************
-   * FUNCTION:  anyVisible - Return true if any Detail View is visible.
+   * FUNCTION:  anyVisible - Return true if any Detail View is visible for the specified heatMap.
    *********************************************************************************************/
-  DVW.anyVisible = function anyVisible() {
-    for (let i = 0; i < DVW.detailMaps.length; i++) {
-      if (DVW.detailMaps[i].isVisible()) {
+  DVW.anyVisible = function anyVisible(heatMap) {
+    for (const mapItem of DVW.detailMaps) {
+      if (mapItem.heatMap == heatMap && mapItem.isVisible()) {
         return true;
       }
     }
