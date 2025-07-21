@@ -28,6 +28,8 @@
   const debugColors = UTIL.getDebugFlag("upm-colors");
   const debugEvents = UTIL.getDebugFlag("upm-events");
 
+  const flagNewCovars = UTIL.getFeatureFlag("new-covars");
+
   // The DIV that contains the entire Preferences Manager.
   const prefspanel = document.getElementById("prefs");
 
@@ -1464,6 +1466,12 @@
     PreferencesTab.call(this, "prefClass_btn", "classPrefs");
   }
 
+  // Return true iff the covariate name is a value of covariates dropdown
+  // that does not correspond to a covariate.
+  function isDummyCovariate(name) {
+    return ["NEW-row", "NEW-col"].includes(name);
+  }
+
   // PROPERTY CovariatesPrefsTab.nextNumber - return a unique value on every access.
   //
   {
@@ -1577,8 +1585,30 @@
           break;
         } else if (target.id == "classPref_list") {
           // A new selection was made on the covariate bar dropdown.
-          // Change view to new selection.
-          this.showClassBreak();
+          if (flagNewCovars && isDummyCovariate(ev.target.value)) {
+            // Create a new covariate.
+            startChange();
+            const axis = ev.target.value.substr(4);
+            const number = this.nextNumber;
+            const name = "new_covariate" + number;
+            const key = name + "_" + axis;
+            // Add an entry for the new covariate to the covariate drop down.
+            const classSelect = document.getElementById("classPref_list");
+            classSelect.options[classSelect.options.length] = new Option(
+              name,
+              key,
+            );
+            classSelect.value = key;
+            // Create a DIV for the new covariate.
+            const newCovar = this.setupNewCovariate(axis, name);
+            newCovar.style.display = "none";
+            this.tabDiv.appendChild(newCovar);
+            // Show the new covariate.
+            this.showClassBreak(name, axis);
+          } else {
+            // Change view to new selection.
+            this.showClassBreak();
+          }
           break;
         } else if (target.classList.contains('spectrumColor')) {
           startChange();
@@ -1587,6 +1617,34 @@
       }
     });
     return this.tabDiv;
+  };
+
+  CovariatesPrefsTab.prototype.setupNewCovariate = function setupNewCovariate(
+    axis,
+    name,
+  ) {
+    const colorMapObj = {
+      type: "continuous",
+      thresholds: [1, 2],
+      colors: ["#fefefe", "#3f3f3f"],
+      missing: "#111111",
+    };
+    const newBarDetails = {
+      bar_type: "color_plot",
+      bg_color: "#fefefe",
+      color_map: colorMapObj,
+      fg_color: "#888888",
+      height: 10,
+      high_bound: "100",
+      low_bound: "0",
+      show: "Y",
+      missingColor: "#212121",
+    };
+    UPM.heatMap.addCovariate(axis, name, newBarDetails);
+    const newPrefs = setupClassBreaks(name, axis, newBarDetails);
+    const prefContents = document.getElementById("tableAllClasses");
+    this.addCovariateRow(prefContents, name, axis, newBarDetails);
+    return newPrefs;
   };
 
   /**********************************************************************************
@@ -2000,6 +2058,10 @@
       classBtn.value = selClass + (selAxis ? "_" + selAxis : "");
     }
     for (let i = 0; i < classBtn.length; i++) {
+      if (isDummyCovariate(classBtn.options[i].value)) {
+        // Dummy covariates do not have a corresponding DIV.
+        continue;
+      }
       const classVal = "breakPrefs_" + classBtn.options[i].value;
       const classDiv = document.getElementById(classVal);
       const classSel = classBtn.options[i].selected;
@@ -2096,10 +2158,32 @@
         col: new Array(),
       };
 
-      classSelect.options[classSelect.options.length] = new Option(
-        "ALL",
-        "ALL",
-      );
+      // Add an ALL option if there's at least one covariate bar.
+      if (this.hasClasses) {
+        classSelect.options[classSelect.options.length] = new Option(
+          "ALL",
+          "ALL",
+        );
+      }
+
+      // Add entries for creating new covariates.
+      // Moving a covariate between axes will be, in general:
+      // - very large and complex to implement, and
+      // - probably of very little practical utility.
+      // So, we won't provide that capability.
+      // So, the user has to create new covariate bars on the appropriate
+      // axis.
+      if (flagNewCovars) {
+        classSelect.options[classSelect.options.length] = new Option(
+          "Add new row covariate",
+          "NEW-row",
+        );
+        classSelect.options[classSelect.options.length] = new Option(
+          "Add new column covariate",
+          "NEW-col",
+        );
+      }
+
       // Add options for every covariate that passes the filter.
       // Add covariates that don't pass the filter to hiddenOpts.
       //
