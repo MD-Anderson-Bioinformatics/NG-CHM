@@ -26,6 +26,7 @@
   const mapTemplate = {
     pane: null,
     chm: null,
+    heatMap: null,
     version: "P",
     panelNbr: 1,
     mode: "NORMAL",
@@ -113,6 +114,7 @@
       Object.assign(this, template, {
         // When creating a new detail heat map view, the following fields must be
         // reset to their given values.
+        heatMap: null,
         glManager: null,
         version: "S",
         labelElements: {},
@@ -129,13 +131,6 @@
         detailHeatMapParams: {},
         detailHeatMapAccessWindow: null,
       });
-    }
-
-    /*********************************************************************************************
-     * GETTER:  heatMap - The heat map displayed in the mapItem.
-     *********************************************************************************************/
-    get heatMap() {
-      return MMGR.getHeatMap();
     }
 
     /*********************************************************************************************
@@ -241,6 +236,7 @@
   DMM.addDetailMap = function (chm, pane, mapNumber, isPrimary, restoreInfo) {
     const template = DVW.primaryMap || mapTemplate;
     const newMapObj = new DetailHeatMapView(template);
+    newMapObj.heatMap = MMGR.getHeatMap();
     newMapObj.pane = pane;
     DMM.completeMapItemConfig(newMapObj, chm, mapNumber);
     if (restoreInfo) {
@@ -289,7 +285,7 @@
       labelRightClick: DEV.labelRightClick,
     };
     mapItem.chm = chm;
-    mapItem.version = DVW.detailMaps.length === 0 ? "P" : "S";
+    mapItem.version = "S";
     mapItem.colDendroCanvas = chm.children[0];
     mapItem.rowDendroCanvas = chm.children[1];
     mapItem.canvas = chm.children[2];
@@ -298,13 +294,13 @@
     mapItem.rowDendro = new DETDDR.DetailRowDendrogram(
       mapItem,
       chm.children[1],
-      SUM.rowDendro,
+      SUM.getSummaryDendrogram(mapItem.heatMap, "row"),
       dendroCallbacks,
     );
     mapItem.colDendro = new DETDDR.DetailColumnDendrogram(
       mapItem,
       chm.children[0],
-      SUM.colDendro,
+      SUM.getSummaryDendrogram(mapItem.heatMap, "column"),
       dendroCallbacks,
     );
     mapItem.panelNbr = mapNumber;
@@ -319,10 +315,12 @@
    * object from the DetailMaps array.
    *********************************************************************************************/
   DMM.RemoveDetailMap = function (pane) {
+    let heatMap = null;
     let wasPrime = false;
     for (let i = 0; i < DVW.detailMaps.length; i++) {
       const mapItem = DVW.detailMaps[i];
       if (mapItem.pane === pane) {
+        heatMap = mapItem.heatMap;
         if (mapItem.version === "P") {
           wasPrime = true;
         }
@@ -331,12 +329,14 @@
       }
     }
     if (wasPrime) {
-      if (DVW.detailMaps.length > 0) {
-        DMM.switchToPrimary(DVW.detailMaps[0]);
-      } else {
-        DVW.primaryMap = null;
-      }
+      DMM.setPrimaryForHeatmap (heatMap);
     }
+  };
+
+  // Set a detail panel for heatMap as primary, if possible.
+  DMM.setPrimaryForHeatmap = function setPrimaryForHeatmap (heatMap) {
+    const maps = DVW.detailMaps.filter(mapItem => mapItem.heatMap == heatMap);
+    DMM.switchToPrimary(maps.length > 0 ? maps[0] : null);
   };
 
   /*********************************************************************************************
@@ -350,14 +350,19 @@
         return mapItem;
       }
     }
+    return null;
   };
 
   /*********************************************************************************************
    * FUNCTION:  switchToPrimary - The purpose of this function is to switch one map item from
-   * Secondary to Primary and set all others to Secondary.
+   * Secondary to Primary and set all others to Secondary.  If mapItem is null, switch all
+   * detail maps to Secondary.
    *********************************************************************************************/
   DMM.switchToPrimary = function (mapItem) {
-    const chm = mapItem.chm;
+    // Cannot switch to primary if not the same heatMap as SUMMARY heatMap.
+    if (mapItem && mapItem.heatMap != SUM.heatMap) return;
+    const chm = mapItem ? mapItem.chm : null;
+    DVW.primaryMap = null;
     for (let i = 0; i < DVW.detailMaps.length; i++) {
       const item = DVW.detailMaps[i];
       if (item.chm === chm) {
@@ -378,8 +383,9 @@
    * secondary map is open OR when assigned by the user.
    *********************************************************************************************/
   DMM.setPrimaryDetailMap = function (mapItem) {
-    mapItem.version = "P";
     DVW.primaryMap = mapItem;
+    if (!mapItem) return;
+    mapItem.version = "P";
     const pane = PANE.findPaneLocation(mapItem.chm);
     const makePrimaryButton = pane.paneHeader.querySelector(".make-primary");
     makePrimaryButton.dataset.version = "P";
@@ -412,14 +418,21 @@
     DVW.detailMaps.forEach(DET.setCanvasDimensions);
   };
 
+  // FUNCTION detailMapsForHeatMap - return an array of the detail map views
+  // for the specified heatMap.
+  function detailMapsForHeatMap (heatMap) {
+    return DVW.detailMaps.filter(mapItem => mapItem.heatMap == heatMap);
+  }
+
   /*********************************************************************************************
    * FUNCTION:  setDetailMapDisplay - The purpose of this function is to complete the construction
    * of a detail heat map object and add it to the DetailMaps object array.
    *********************************************************************************************/
   DMM.setDetailMapDisplay = function (mapItem, restoreInfo) {
     DET.setDendroShow(mapItem);
-    //If we are opening the first detail "copy" of this map set the data sizing for initial display
-    if (DVW.detailMaps.length === 0 && !restoreInfo) {
+    // If we are opening the first detail "copy" of this map,
+    // set the data sizing for initial display
+    if (detailMapsForHeatMap(mapItem.heatMap).length == 0 && !restoreInfo) {
       DET.setInitialDetailDisplaySize(mapItem);
     }
     LNK.createLabelMenus();

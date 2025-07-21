@@ -562,6 +562,7 @@
       UIMGR.initializeSummaryWindows(heatMap);
       SUM.setHeatMap(heatMap);
       initializeLayersInterface(heatMap);
+      DMM.setPrimaryForHeatmap(heatMap);
       CUST.addCustomJS();
       if (firstTime) {
         UIMGR.configurePanelInterface(heatMap);
@@ -696,6 +697,7 @@
     }
     configureDragDropHandler();
     initializeDdrCallbacks();
+    SUM.createSummaryDendrograms(allHeatMaps);
     configurePageHeader(allHeatMaps);
     return;
     // Helper function.

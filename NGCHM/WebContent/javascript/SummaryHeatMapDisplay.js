@@ -171,7 +171,7 @@
         callbacks.showSearchResults();
       },
 
-      calcDetailDendrogramSize: function (axis, size, totalSize) {
+      calcDetailDendrogramSize: function (heatMap, axis, size, totalSize) {
         // axis is 'row' or 'column'
         // - For rows, calculate the dendrogram width.
         // - For columns, calculate the dendrogram height.
@@ -184,8 +184,8 @@
           sumDendro.dendroCanvas.style[sizeProperty],
           10,
         );
-        if (!SUM.chmElement || sumDendroSize < 5) {
-          // Either no SUM element or it's minimized.
+        if (!SUM.chmElement || SUM.heatMap != heatMap || sumDendroSize < 5) {
+          // Either no SUM element, SUM element is for a different heatmap, or it's minimized.
           // Retain existing dendro size but ensure that it is
           // no smaller than 10% of the total detail size.
           const minSize = totalSize * 0.1;
@@ -207,19 +207,38 @@
     });
   };
 
+  // FUNCTION SUM.createSummaryDendrograms - Create a database of
+  // summary dendrograms for all heat maps.
+  // This is required when creating a detail map view, because
+  // the detail map dendrogram is built on the summary dendrogram
+  // for that map.
+  const summaryDendrograms = new WeakMap();
+  SUM.createSummaryDendrograms = function createSummaryDendrograms (allHeatMaps) {
+    for (const heatMap of allHeatMaps) {
+      const ddrs = {};
+      ddrs.row = new SUMDDR.SummaryRowDendrogram(heatMap, ddrCallbacks);
+      ddrs.column = new SUMDDR.SummaryColumnDendrogram(heatMap, ddrCallbacks);
+      summaryDendrograms.set (heatMap, ddrs);
+    }
+  };
+
+  // FUNCTION SUM.getSummaryDendrogram - Return the summary dendrogram
+  // for the specified heatMap and axis.
+  SUM.getSummaryDendrogram = function (heatMap, axis) {
+    const ddrs = summaryDendrograms.get(heatMap);
+    return MAPREP.isRow(axis) ? ddrs.row : ddrs.column;
+  };
+
   // Initialize heatmap summary data that is independent of there being
   // a summary panel.  This function is called once the heatmap data
   // has been loaded, but before creating any view panels.
   SUM.initSummaryData = function () {
     const heatMap = SUM.heatMap;
     if (!SUM.colDendro) {
-      SUM.colDendro = new SUMDDR.SummaryColumnDendrogram(
-        heatMap,
-        ddrCallbacks,
-      );
+      SUM.colDendro = SUM.getSummaryDendrogram(heatMap, "column");
     }
     if (!SUM.rowDendro) {
-      SUM.rowDendro = new SUMDDR.SummaryRowDendrogram(heatMap, ddrCallbacks);
+      SUM.rowDendro = SUM.getSummaryDendrogram(heatMap, "row");
     }
     SUM.colTopItems = heatMap.getTopItems("column", { count: 10 });
     SUM.rowTopItems = heatMap.getTopItems("row", { count: 10 });
@@ -959,6 +978,7 @@
     const heatMap = SUM.heatMap;
     const dataLayers = heatMap.getDataLayers();
     DVW.detailMaps.forEach((mapItem) => {
+      if (mapItem.heatMap != heatMap) return;
       // Draw the View Box using user-defined defined selection color
       const boxX =
         (((DVW.getCurrentSumCol(mapItem) - 1) * SUM.widthScale) /
