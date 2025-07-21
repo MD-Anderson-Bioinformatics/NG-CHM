@@ -2142,6 +2142,11 @@
             KAE(key, axis, "bgColorPref").value = bar.bg_color;
           } else {
             // It's a continuous color_plot.
+            updateRequiredBreakPoints();
+            removeExcessBreakPoints();
+          }
+          // Helper function.
+          function updateRequiredBreakPoints() {
             for (let i = 0; i < bar.color_map.colors.length; i++) {
               const el = getColorPrefElement(key, axis, i);
               if (el && !el.classList.contains("ngchm-upm-last-breakpoint")) {
@@ -2155,7 +2160,10 @@
                 scheme.addBreakpoint(i, bar.color_map.thresholds[i], bar.color_map.colors[i], true);
               }
             }
-            // Remove any excess breakpoints (caused by adding breakpoints before clicking reset).
+          }
+          // Helper function.
+          function removeExcessBreakPoints() {
+            // Excess breakpoints can be caused by adding breakpoints before clicking reset.
             for (let i = bar.color_map.colors.length; ; i++) {
               let el = getColorPrefElement(key, axis, i);
               if (!el || el.classList.contains("ngchm-upm-last-breakpoint")) break;
