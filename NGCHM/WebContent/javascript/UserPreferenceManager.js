@@ -80,9 +80,6 @@
   Object.setPrototypeOf(RowsColsTab.prototype, PreferencesTab.prototype);
   Object.setPrototypeOf(CovariatesPrefsTab.prototype, PreferencesTab.prototype);
 
-  // Define prototype chain for ColorSchemeTable.
-  Object.setPrototypeOf(ColorSchemeTable.prototype, TABLE.Table.prototype);
-
   // Create an instance of each tab.  These calls create the tab instances but do not
   // populate the body of the tabs.  For that, see method setupTab below.
   //
@@ -517,7 +514,6 @@
   // FUNCTION resetAllPreferences: Reset the heatMap state and the UI to the saved values.
   //
   function resetAllPreferences() {
-    // Restore all colorMaps.
     restoreColorMaps();
     const resetVal = JSON.parse(UPM.resetValJSON);
     // Reset all of the UI preferences.
@@ -2727,11 +2723,13 @@
 
   // CLASS ColorSchemeTable
   //
-  function ColorSchemeTable(axis, key, content) {
-    TABLE.Table.call(this, { columns: 3 }, content);
-    this.axis = axis;
-    this.key = key;
-    this.addIndent();
+  class ColorSchemeTable extends TABLE.Table {
+    constructor (axis, key, content) {
+      super({ columns: 3 }, content);
+      this.axis = axis;
+      this.key = key;
+      this.addIndent();
+    }
   }
 
   // Create a new colorSchemeTable and TABLE element for the specified axis and key.

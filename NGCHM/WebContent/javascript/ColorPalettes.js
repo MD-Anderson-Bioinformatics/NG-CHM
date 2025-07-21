@@ -245,10 +245,15 @@
       }
     );
     return UTIL.newElement("DIV", { style: { display: "flex" } }, [colorsEl, missingEl]);
+
+    // Helper function.
+    // Return a clickHandler that has access to the
+    // specified parameters.
     function genHandler(key, preset, axis, mapType) {
       return function () {
         clickHandler(key, preset, axis, mapType);
       };
     }
+
   }
 })();
