@@ -332,7 +332,7 @@
         // Determine the index before which to insert the breakpoint.
         const color_map = req.covar.color_map;
         if (color_map.type == "continuous") {
-          if (args.length > 0) {
+          if (req.args.length > 0) {
             throw `cannot specify an index for continuous covariates.`;
           }
           // Determine new breakpoint insert position specified.

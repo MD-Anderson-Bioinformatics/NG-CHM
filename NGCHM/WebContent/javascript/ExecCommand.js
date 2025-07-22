@@ -207,7 +207,6 @@
     return function subCommandHelp (req, res, next) {
       const output = res.output;
       output.write("");
-      console.log ('subcommandhelp', req);
       const props = subCommands.get (req.subcommand);
       if (props) {
         output.write(`Usage: ${req.command} ${req.subcommand} ${props.synopsis}`);
