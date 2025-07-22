@@ -12,7 +12,7 @@
   // Import other required name spaces.
   const UTIL = NgChm.importNS("NgChm.UTIL");
 
-  // Only export is a function for creating a new UI table.
+  // Export function for creating a new UI table.
   TABLE.createTable = function(opts = {}) {
     return new Table(opts);
   };
@@ -21,16 +21,18 @@
     columns: 2,
   };
 
-  // CLASS Table - Create a new Table using TABLE.createTable.
+  // Exported CLASS Table - Create a new Table using TABLE.createTable.
   //
-  function Table (opts) {
+  TABLE.Table = Table;
+  function Table (opts, content) {
     this.props = Object.assign({}, defaultProperties, opts);
-    this.content = UTIL.newElement("TABLE.ngchm-ui-table");
+    this.content = content || UTIL.newElement("TABLE.ngchm-ui-table");
     if (this.props.id) {
       this.content.id = this.props.id;
     }
     this.indents = [];
     this.insertPosn = -1;
+    if (opts.id) this.content.id = opts.id;
   }
 
   const blankSpaceUnit = 0.3125;// One unit of blank space (in em) for separator rows.
@@ -48,6 +50,7 @@
     blankSpace.style.lineHeight = (count * blankSpaceUnit).toFixed(3) + 'em';  // toFixed because of limited precision generating ridiculously many digits.
     blankSpace.setAttribute ('colspan', this.props.columns);
     blankSpace.innerHTML = "&nbsp;";
+    return newRow;
   };
 
   Table.prototype.addIndent = function(count) {
