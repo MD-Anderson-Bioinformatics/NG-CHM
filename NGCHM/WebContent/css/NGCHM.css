@@ -20,6 +20,7 @@
 	--selected-button-color: #00abcd;
 	--disabled-button-color: #7f7f7f;
 	--button-background-color: #efefef;
+  --ngchm-error-color: #DC143C;
 
 	box-sizing: border-box;
 }
@@ -2000,6 +2001,31 @@ div#droptarget.visible {
   top: 100px;
   margin-top: 5px;
   font-size: 10px;
+}
+
+#msgBox-for-command-dialog .msgBoxBody {
+  min-width: 400px;
+  margin: 0.5em;
+}
+
+#msgBox-for-command-dialog textarea {
+  width: calc(100% - 6px);
+  height: 3em;
+}
+
+#ngchm-cmd-output {
+  background-color: white;
+  min-height: 20em;
+  padding: 0.5em;
+}
+
+#ngchm-cmd-output span {
+  display: block;
+  min-height: 0.5em;
+}
+
+.ngchm-cmd-error {
+  color: var(--ngchm-error-color);
 }
 
 /* Use opacity:0 instead of display:none for elements that will be faded in

@@ -1285,6 +1285,76 @@
     }
   })();
 
+  // Export CLASS OutputClass;
+  // This is a virtual class that tracks indentation.
+  // To use, you will need to define a derived class that also implements the
+  // write and error methods.
+  UTIL.OutputClass = OutputClass;
+  function OutputClass () {
+    this.__indent = 0;
+  }
+  OutputClass.prototype.indent = function () {
+    this.__indent++;
+  };
+  OutputClass.prototype.unindent = function () {
+    if (this.__indent > 0) this.__indent--;
+  };
+
+  // ConsoleOutput is a subclass of OutputClass that writes messages to the console log.
+  Object.setPrototypeOf(ConsoleOutput.prototype, UTIL.OutputClass.prototype);
+  function ConsoleOutput() {
+    OutputClass.call(this);
+  }
+  ConsoleOutput.prototype.fmt = function (text) {
+    if (!text) return "";
+    let spaces = "";
+    if (this.__indent > 0) {
+      spaces += new Array(this.__indent * 2).fill("  ").join("");
+    }
+    return spaces + text;
+  };
+  ConsoleOutput.prototype.write = function (text) {
+    console.log (this.fmt(text));
+  };
+  ConsoleOutput.prototype.error = function (text) {
+    console.error (this.fmt(text));
+  };
+  UTIL.consoleOutput = new ConsoleOutput;
+
+  UTIL.cmdRegistry = new Map();
+
+  // CLASS Command.
+  function Command (name, route, help) {
+    this.name = name;
+    this.route = route;
+    this.help = help;
+  }
+
+  UTIL.registerCommand = function registerCommand (commandName, commandFn, helpFn) {
+    commandFn = Array.isArray(commandFn) ? commandFn : [commandFn];
+    helpFn = Array.isArray(helpFn) ? helpFn : [helpFn];
+    UTIL.cmdRegistry.set(commandName, new Command (commandName, commandFn, helpFn));
+  };
+
+  UTIL.writeKnownCommands = function writeKnownCommands (req, res) {
+    const output = res.output;
+    output.write("Available commands:");
+    output.write();
+    output.indent();
+    for (const [name, cmd] of UTIL.cmdRegistry) {
+      output.write(name);
+    }
+    output.unindent();
+  };
+
+  UTIL.getCommand = function getCommand (commandName) {
+    return UTIL.cmdRegistry.has (commandName) ? UTIL.cmdRegistry.get(commandName) : null;
+  };
+
+  UTIL.isCommand = function (object) {
+    return object instanceof Command;
+  };
+
   // Executed at startup.
   iESupport();
   setMinFontSize();

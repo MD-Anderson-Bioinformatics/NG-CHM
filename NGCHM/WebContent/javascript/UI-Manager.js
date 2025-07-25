@@ -30,7 +30,9 @@
   const RECPANES = NgChm.importNS("NgChm.RecPanes");
   const CUST = NgChm.importNS("NgChm.CUST");
   const UHM = NgChm.importNS("NgChm.UHM");
+  const CMDD = NgChm.importNS("NgChm.CMDD");
   const TOUR = NgChm.importNS("NgChm.TOUR");
+  const EXEC = NgChm.importNS("NgChm.EXEC");
 
   const localFunctions = {};
 
@@ -1684,6 +1686,11 @@
       }
     });
 
+    var cmdMsgBox = null;
+    stdAction("OpenCommandMode", "Open command dialog", (e) => {
+      cmdMsgBox = CMDD.openCommandDialog();
+    });
+
     // Default key to action map.
     const keyToAction = new Map([
       ["ArrowLeft", "MoveLeftOne"],
@@ -1707,7 +1714,8 @@
       ["PageDown", "ZoomOut"],
       ["shift-PageDown", "ChangeZoomModeRight"],
       ["F2", "ToggleLayers"],
-      ["Enter", "CloseDialog"],
+      ["ctrl-b", "OpenCommandMode"],
+      ["Enter", "CloseDialog"]
     ]);
 
     UTIL.setKeyData("keyActions", [keyToAction, actions]);
@@ -1718,7 +1726,7 @@
     navElement.addEventListener("keydown", keyNavigate);
 
     function keyNavigate(e) {
-      const debug = false;
+      const debug = UTIL.getDebugFlag("ui-keys");
 
       // Key press events that target the search_text input box are mostly
       // handled by that input..
@@ -1837,6 +1845,46 @@
     }
   }
 
+  // Define a simple "redraw" command.
+  {
+    UTIL.registerCommand ("redraw", redrawFn, redrawHelpFn);
+
+    function redrawFn(req, res, next) {
+      // Redraw the heat map.
+      next([
+        EXEC.genGetOptions (EXEC.mapOptions),
+        EXEC.getHeatMap,
+      ]);
+      if (req.args.length > 0) {
+        if (req.args[0] != "--help") {
+          if (req.args[0].substr(0,2) == "--") {
+            res.output.error (`redraw: unexpected option: ${req.args[0]}`);
+          } else {
+            res.output.error (`redraw: unexpected subcommand/parameter: ${req.args[0]}`);
+          }
+        }
+        return next (redrawHelpFn);
+      }
+      req.heatMap.initAxisLabels();
+      SUM.redrawSummaryPanel();
+      DMM.resizeDetailMapCanvases();
+      DET.updateSelections(false); // Do not skip resize: covariate bar changes may require resize
+    }
+
+    function redrawHelpFn (req, res, next) {
+      const output = res.output;
+      output.write("");
+      output.write("Usage:");
+      output.indent();
+      output.write("");
+      output.write(`redraw [--map name]`);
+      output.write("");
+      output.unindent();
+      output.write(`Redraw the user interface.`);
+      next(EXEC.helpMapOptions);
+    }
+  };
+
   /*********************************************************************************************/
 
   /*
@@ -1849,7 +1897,7 @@
     var heatMapAxisLabels;
     if (pluginLabels.length > 0 && pluginLabels[0].indexOf("|") !== -1) {
       // Plugin sent full labels
-      heatMapAxisLabels = heatMap.axisLabels(axis).labels;
+      heatMapAxisLabels = heatMap.getAxisLabels(axis).labels;
     } else {
       // Plugin sent actual labels (or actual and full are identical).
       heatMapAxisLabels = heatMap.actualLabels(axis);

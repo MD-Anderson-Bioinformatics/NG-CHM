@@ -11,6 +11,7 @@
 
   // Import other namespaces we need.
   const UTIL = NgChm.importNS("NgChm.UTIL");
+  const EXEC = NgChm.importNS("NgChm.EXEC");
 
   const presetPalettes = new Map();
 
@@ -255,5 +256,222 @@
       };
     }
 
+  }
+
+  // Support for querying/modifying presets via execCommand.
+  //
+  const presetCommands = new Map();
+  presetCommands.set ("list", {
+    synopsis: "",
+    helpRoute: [
+      function (req, res, next) {
+        res.output.write("list the available presets");
+        next();
+      },
+    ],
+    route: [
+      EXEC.noMoreParams,
+      function listPresets(req, res) {
+        const output = res.output;
+        for (const datatype of ["discrete", "continuous"]) {
+          output.write (`${UTIL.toTitleCase(datatype)} presets:`);
+          output.write();
+          output.indent();
+          for (const preset of presetPalettes.get(datatype)) {
+            output.write (`${preset.name}: ${preset.colors.length} colors.`);
+          }
+          output.unindent();
+          output.write();
+        }
+      }
+    ]
+  });
+  presetCommands.set ("set-colors", {
+    synopsis: "datatype name color1 color2...",
+    helpRoute: [
+      function (req, res, next) {
+        res.output.write("set the colors on a new or existing preset");
+        next();
+      },
+      helpPresetName,
+      EXEC.helpDataType,
+      EXEC.helpColorValue,
+    ],
+    route: [
+      EXEC.reqDataType,
+      EXEC.genRequired("name"),
+      EXEC.reqColorArray,
+      function (req, res) {
+        if (req.colors.length < 2) {
+          throw `${req.command} ${req.subcommand}: Not enough parameters. At least two colors are required.`;
+        }
+        return setPresetColors(req.datatype, req.name, req.colors, res.output);
+      }
+    ]
+  });
+  presetCommands.set ("set-missing", {
+    synopsis: "datatype name color",
+    helpRoute: [
+      function (req, res, next) {
+        res.output.write("set the missing color on an existing preset");
+        next();
+      },
+      helpPresetName,
+      EXEC.helpDataType,
+      EXEC.helpColorValue,
+    ],
+    route: [
+      EXEC.reqDataType,
+      EXEC.genRequired("name"),
+      EXEC.reqColor,
+      EXEC.noMoreParams,
+      function (req, res) {
+        const preset = getPreset (req.datatype, req.name, res.output);
+        if (preset) {
+          preset.missing = req.color;
+          res.output.write(`Replaced missing color in ${req.datatype} preset '${req.name}'`);
+        }
+      }
+    ]
+  });
+  presetCommands.set ("show", {
+    synopsis: "datatype name",
+    helpRoute: [
+      function (req, res, next) {
+        res.output.write("show an existing preset");
+        next();
+      },
+      helpPresetName,
+      EXEC.helpDataType,
+    ],
+    route: [
+      EXEC.reqDataType,
+      EXEC.genRequired("name"),
+      EXEC.noMoreParams,
+      function (req, res) {
+        return showPreset(req.datatype, req.name, res.output);
+      }
+    ]
+  });
+  presetCommands.set ("remove", {
+    synopsis: "datatype name",
+    helpRoute: [
+      function (req, res, next) {
+        res.output.write("remove an existing preset");
+        next();
+      },
+      helpPresetName,
+      EXEC.helpDataType,
+    ],
+    route: [
+      EXEC.reqDataType,
+      EXEC.genRequired("name"),
+      EXEC.noMoreParams,
+      function (req, res) {
+        return removePreset(req.datatype, req.name, res.output);
+      }
+    ]
+  });
+  presetCommands.set ("get-colors", {
+    synopsis: "datatype name",
+    helpRoute: [
+      function (req, res, next) {
+        res.output.write("get the colors of an existing preset");
+        next();
+      },
+      helpPresetName,
+      EXEC.helpDataType,
+    ],
+    route: [
+      EXEC.reqDataType,
+      EXEC.genRequired("name"),
+      EXEC.noMoreParams,
+      function (req, res) {
+        const preset = getPreset (req.datatype, req.name, res.output);
+        res.value = preset ? preset.colors : null;
+      }
+    ]
+  });
+  presetCommands.set ("get-missing", {
+    synopsis: "datatype name",
+    helpRoute: [
+      function (req, res, next) {
+        res.output.write("get the missing color of an existing preset");
+        next();
+      },
+      helpPresetName,
+      EXEC.helpDataType,
+    ],
+    route: [
+      EXEC.reqDataType,
+      EXEC.genRequired("name"),
+      EXEC.noMoreParams,
+      function (req, res) {
+        const preset = getPreset (req.datatype, req.name, res.output);
+        res.value = preset ? preset.missing : null;
+      }
+    ]
+  });
+
+  const helper = [
+    EXEC.genSubCommandHelp (presetCommands),
+    helpPresetName,
+    EXEC.helpDataType,
+    EXEC.helpColorValue,
+  ];
+
+  function helpPresetName (req, res, next) {
+    res.output.write();
+    res.output.write("Name is the name of a color preset.");
+    next();
+  }
+
+  UTIL.registerCommand ("preset", presetCommand, helper);
+
+  function presetCommand(req, res, next) {
+    EXEC.doSubCommand (presetCommands, helper, req, res, next);
+  }
+
+  function getPreset(datatype, name, output) {
+    const presets = presetPalettes.get(datatype);
+    const index = presets.map((p) => p.name).indexOf(name);
+    if (index < 0) {
+      output.error (`${UTIL.toTitleCase(datatype)} preset ${name} does not exist.`);
+      return null;
+    }
+    return presets[index];
+  }
+
+  function showPreset(datatype, name, output) {
+    const preset = getPreset (datatype, name, output);
+    if (preset) {
+      output.write (`${preset.name} (${preset.colors.length} colors):`);
+      output.write (`${preset.colors.join(', ')}`);
+      output.write (`Missing: ${preset.missing}`);
+    }
+  }
+
+  function setPresetColors(datatype, name, colors, output) {
+    const presets = presetPalettes.get(datatype);
+    const index = presets.map((p) => p.name).indexOf(name);
+    if (index < 0) {
+      const newPreset = new ColorPreset({ name, colors, missing: "#000000" });
+      presets.push(newPreset);
+      output.write(`Added ${datatype} preset '${name}'`);
+    } else {
+      presets[index].colors = colors;
+      output.write(`Replaced colors in ${datatype} preset '${name}'`);
+    }
+  }
+
+  function removePreset(datatype, name, output) {
+    const presets = presetPalettes.get(datatype);
+    const index = presets.map((p) => p.name).indexOf(name);
+    if (index < 0) {
+      throw `Unable to remove ${datatype} preset ${name}: no such preset`;
+      return;
+    }
+    presets.splice(index, index + 1);
+    output.write(`Removed ${datatype} preset '${name}'`);
   }
 })();

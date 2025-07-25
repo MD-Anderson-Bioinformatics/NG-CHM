@@ -886,14 +886,14 @@
   };
 
   MapLayersTab.prototype.setupTab = function setupLayersTab() {
-    const dataLayers = UPM.heatMap.getDataLayers();
+    const sortedLayers = UPM.heatMap.getSortedLayers();
 
-    this.tabDiv.appendChild(createDataLayerSelect(dataLayers));
+    this.tabDiv.appendChild(createDataLayerSelect(sortedLayers));
 
     // Loop over the data layers, creating a preferences div for each layer.
     // All are hidden initially. Switching to the tab will display one of them.
-    for (let key in dataLayers) {
-      this.createLayerPreferences(key);
+    for (const entry of sortedLayers) {
+      this.createLayerPreferences(entry[0]);
     }
 
     // Add a change event handler for this tab.
@@ -923,7 +923,7 @@
     // Helper function.
 
     // Create and return the data-layer select dropdown.
-    function createDataLayerSelect(dataLayers) {
+    function createDataLayerSelect(sortedLayers) {
       const dropdown = UTIL.newElement("DIV.ngchm-upm-layer-select");
 
       const label = UTIL.newElement("LABEL", { for: "dlPref_list" }, "Data Layer:");
@@ -934,23 +934,14 @@
       dropdown.appendChild(label);
       dropdown.appendChild(select);
 
-      // Create layer options in numeric order (which is lost on JSON save).
-      for (const key of Object.keys(dataLayers).sort(layerCmp)) {
-        let displayName = dataLayers[key].name;
+      for (const [key, layer] of sortedLayers) {
+        let displayName = layer.name;
         if (displayName.length > 20) {
           displayName = displayName.substring(0, 17) + "...";
         }
         select.appendChild(UTIL.newElement("OPTION", { value: key }, displayName));
       }
       return dropdown;
-
-      // Helper function.
-      // Compare two layer names for use by sort.
-      function layerCmp(a, b) {
-        // Layer names consist of "dl" followed by a number.
-        // Compares the numbers numerically.
-        return Number(a.substr(2)) - Number(b.substr(2));
-      }
     }
   };
 
@@ -1497,24 +1488,7 @@
   };
 
   CovariatesPrefsTab.prototype.setupNewCovariate = function setupNewCovariate(axis, name) {
-    const colorMapObj = {
-      type: "continuous",
-      thresholds: [1, 2],
-      colors: ["#fefefe", "#3f3f3f"],
-      missing: "#111111"
-    };
-    const newBarDetails = {
-      bar_type: "color_plot",
-      bg_color: "#fefefe",
-      color_map: colorMapObj,
-      fg_color: "#888888",
-      height: 10,
-      high_bound: "100",
-      low_bound: "0",
-      show: "Y",
-      missingColor: "#212121"
-    };
-    UPM.heatMap.addCovariate(axis, name, newBarDetails);
+    const newBarDetails = UPM.heatMap.addCovariate(axis, name, "continuous");
     const newPrefs = setupClassBreaks(name, axis, newBarDetails);
     const prefContents = document.getElementById("tableAllClasses");
     this.addCovariateRow(prefContents, name, axis, newBarDetails);
