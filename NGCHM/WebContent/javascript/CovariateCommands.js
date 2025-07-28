@@ -25,6 +25,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       function (req, res) {
         const output = res.output;
         for (const axis of ["row", "column"]) {
@@ -45,9 +47,15 @@
   const setOptions = new Map();
   setOptions.set ("--all", { field: "--all", args: 0 });
 
+  function helpAllOption (req, res, next) {
+    res.output.write(`--all : modify all of the covariate's values.`);
+    next();
+  }
+
   // Used by set, add, and scale commands.
   const calcRoute = [
-    EXEC.genGetOptions (EXEC.axisOptions, setOptions),
+    EXEC.genGetOptions (EXEC.mapOptions, EXEC.axisOptions, setOptions),
+    EXEC.getHeatMap,
     function (req, res, next) {
       if (req["--row"] && req["--column"]) {
         throw `specify either --row or --column, not both.`;
@@ -135,6 +143,7 @@
       },
       EXEC.showOptions([
         EXEC.helpMapOptions,
+        helpAllOption,
         EXEC.helpAxisOptions,
       ]),
     ],
@@ -153,6 +162,8 @@
       },
       EXEC.showOptions([
         EXEC.helpMapOptions,
+        helpAllOption,
+        EXEC.helpAxisOptions,
       ]),
     ],
     route: calcRoute
@@ -169,6 +180,8 @@
       },
       EXEC.showOptions([
         EXEC.helpMapOptions,
+        helpAllOption,
+        EXEC.helpAxisOptions,
       ]),
     ],
     route: calcRoute
@@ -186,6 +199,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.genRequired("name"),
       EXEC.reqDataType,
@@ -214,6 +229,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       reqIndex,
@@ -252,6 +269,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       function (req, res) {
         const covBars = req.heatMap.getAxisCovariateConfig(req.axis);
@@ -276,6 +295,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       function (req, res) {
@@ -324,6 +345,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       reqNewBreakPt,
@@ -384,6 +407,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       function (req, res, next) {
@@ -410,6 +435,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       reqExistingIndex,
@@ -479,7 +506,7 @@
   });
 
   covarCommands.set("change-missing", {
-    synopsis: "axis name color",
+    synopsis: "[--map name] axis name color",
     helpRoute: [
       function (req, res, next) {
         res.output.write(`Change the missing color of the covariate with the specified axis and name.`);
@@ -490,6 +517,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       EXEC.reqColor,
