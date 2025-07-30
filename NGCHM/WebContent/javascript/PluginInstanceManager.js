@@ -6,6 +6,7 @@
   const PIM = NgChm.createNS("NgChm.PIM");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const UHM = NgChm.importNS("NgChm.UHM");
+  const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const PANE = NgChm.importNS("NgChm.Pane");
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
@@ -220,7 +221,7 @@
     srcNonce,
   ) {
     const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-    const searchAxis = MMGR.isRow(axis) ? "Row" : "Column";
+    const searchAxis = MAPREP.isRow(axis) ? "Row" : "Column";
     const searchItems = SRCHSTATE.getAxisSearchResults(searchAxis);
     const pointLabelNames = [];
     for (let i = 0; i < searchItems.length; i++) {

@@ -6,6 +6,7 @@
   const SRCH = NgChm.createNS("NgChm.SRCH");
 
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
+  const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const SUM = NgChm.importNS("NgChm.SUM");
@@ -265,7 +266,7 @@
     const searchOn = document.getElementById("search_on");
     const [covType, covVal] = searchOn.value.split("|");
 
-    const axis = MMGR.isRow(covType) ? "Row" : "Column";
+    const axis = MAPREP.isRow(covType) ? "Row" : "Column";
     const heatMap = MMGR.getHeatMap();
     const classDataValues = heatMap.getAxisCovariateData(axis)[covVal].values;
     const currentClassBar = heatMap.getAxisCovariateConfig(axis)[covVal];
@@ -312,7 +313,7 @@
    * searchString on the specified axis for a continuous covariate covar.
    ***********************************************************************************/
   SRCH.continuousCovarSearch = function (heatMap, axis, covar, searchString) {
-    axis = MMGR.isRow(axis) ? "Row" : "Column";
+    axis = MAPREP.isRow(axis) ? "Row" : "Column";
     const classDataValues = heatMap.getAxisCovariateData(axis)[covar].values;
 
     const searchExprs = parseContinuousSearchString(
@@ -816,7 +817,7 @@
    * as the current search item.
    ***********************************************************************************/
   function findPrevSearchItem(mapItem, index, axis) {
-    axis = MMGR.isRow(axis) ? "Row" : "Column";
+    axis = MAPREP.isRow(axis) ? "Row" : "Column";
 
     // Try to find previous item on current axis.
     let curr = findPrevAxisSearchItem(mapItem, axis, index);
@@ -828,7 +829,7 @@
     // That failed, try other axis if allowed.
     const allowedAxes = mapItem.allowedOrientations;
     if (allowedAxes === "any") {
-      const otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
+      const otherAxis = MAPREP.isRow(axis) ? "Column" : "Row";
       curr = findPrevAxisSearchItem(mapItem, otherAxis, -1);
       if (curr > 0) {
         SRCHSTATE.setSearchItem(mapItem, otherAxis, curr);
@@ -987,10 +988,10 @@
     const pane = PANE.findPaneLocation(mapItem.chm).pane;
     const srchPrev = pane.getElementsByClassName("srchPrev");
     if (srchPrev.length > 0)
-      srchPrev[0].style.rotate = MMGR.isRow(axis) ? "90deg" : "";
+      srchPrev[0].style.rotate = MAPREP.isRow(axis) ? "90deg" : "";
     const srchNext = pane.getElementsByClassName("srchNext");
     if (srchNext.length > 0)
-      srchNext[0].style.rotate = MMGR.isRow(axis) ? "90deg" : "";
+      srchNext[0].style.rotate = MAPREP.isRow(axis) ? "90deg" : "";
   }
 
   /**********************************************************************************
@@ -1114,9 +1115,9 @@
     SRCHSTATE.clearAllAxisSearchItems(UTIL.capitalize(clickAxis));
     clickAxis = clickAxis.toLowerCase();
     if (clickAxis === "row") {
-      SUM.rowDendro.clearSelectedBars();
+      if (SUM.rowDendro) SUM.rowDendro.clearSelectedBars();
     } else if (clickAxis === "column") {
-      SUM.colDendro.clearSelectedBars();
+      if (SUM.colDendro) SUM.colDendro.clearSelectedBars();
     }
     let markLabels = document.getElementsByClassName("MarkLabel");
     for (let ii = 0; ii < markLabels.length; ii++) {

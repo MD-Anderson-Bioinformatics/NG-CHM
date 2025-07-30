@@ -45,7 +45,7 @@
     var success = true;
     if (heatMap.source() === MMGR.WEB_SOURCE) {
       success = MMGR.zipMapProperties(heatMap, JSON.stringify(heatMap.mapConfig));
-      showViewerSaveNotification(heatMap);
+      showViewerSaveNotification();
       UHM.messageBoxCancel();
     } else {
       UHM.showMsgBoxProgressBar();
@@ -62,7 +62,7 @@
           ).then((success) => {
             UHM.messageBoxCancel();
             if (success) {
-              showViewerSaveNotification(heatMap);
+              showViewerSaveNotification();
             }
           });
         }
@@ -178,7 +178,7 @@
         (success) => {
           UHM.messageBoxCancel();
           if (success) {
-            showViewerSaveNotification(heatMap);
+            showViewerSaveNotification();
           }
         }
       );
@@ -192,7 +192,7 @@
    * display a modal window whenever a zip file is being saved. The textId passed in
    * instructs the code to display either the startup save OR preferences save message.
    **********************************************************************************/
-  function showViewerSaveNotification(heatMap) {
+  function showViewerSaveNotification() {
     const title = "NG-CHM File Viewer";
     const text =
       "<br>You have just saved a heat map as a NG-CHM file.  To open this new file you will need the NG-CHM File Viewer application.  To get the lastest version, press the Download Viewer button.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you can run the application by double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
@@ -1891,7 +1891,7 @@
 		Process message from plugins to highlight points selected in plugin
 	*/
   LNK.defineVanodiMessageHandler("selectLabels", function vanodiSelectLabels(instance, msg) {
-    const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
+    const axis = MAPREP.isRow(msg.selection.axis) ? "Row" : "Column";
     const pluginLabels = msg.selection.pointIds.map((l) => l.toUpperCase()); // labels from plugin
     const heatMap = MMGR.getHeatMap();
     var heatMapAxisLabels;
@@ -1928,7 +1928,7 @@
 		Process message from scatter plot to highlight single point under mouse on plot
 	*/
   LNK.defineVanodiMessageHandler("mouseover", function vanodiMouseover(instance, msg) {
-    const axis = MMGR.isRow(msg.selection.axis) ? "Row" : "Column";
+    const axis = MAPREP.isRow(msg.selection.axis) ? "Row" : "Column";
     const allLabels = MMGR.getHeatMap().actualLabels(axis);
     const pointId = msg.selection.pointId;
     const ptIdx = allLabels.indexOf(pointId) + 1;

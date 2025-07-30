@@ -279,11 +279,6 @@
     });
   }
 
-  MMGR.isRow = isRow;
-  function isRow(axis) {
-    return axis && axis.toLowerCase() === "row";
-  }
-
   ///////////////////////////////////////////////////////////////////////////
   //
   // BEGIN class TileWindow.
@@ -903,7 +898,7 @@
     };
 
     HeatMap.prototype.getAxisConfig = function (axis) {
-      return isRow(axis) ? this.getRowConfig() : this.getColConfig();
+      return MAPREP.isRow(axis) ? this.getRowConfig() : this.getColConfig();
     };
 
     HeatMap.prototype.getRowConfig = function () {
@@ -1026,7 +1021,7 @@
     };
 
     HeatMap.prototype.getAxisCovariateOrder = function (axis) {
-      return isRow(axis)
+      return MAPREP.isRow(axis)
         ? this.getRowClassificationOrder()
         : this.getColClassificationOrder();
     };
@@ -1186,7 +1181,7 @@
      * - containsLegend, which returns true iff there's a bar with a bar/scatter plot legend.
      */
     HeatMap.prototype.getScaledVisibleCovariates = function (axis, scale) {
-      const axisConfig = isRow(axis)
+      const axisConfig = MAPREP.isRow(axis)
         ? this.mapConfig.row_configuration
         : this.mapConfig.col_configuration;
       const order = axisConfig.hasOwnProperty("classifications_order")
@@ -1225,7 +1220,7 @@
     /* Returns true iff there are hidden covariates on the specified axis of the heat map.
      */
     HeatMap.prototype.hasHiddenCovariates = function (axis) {
-      const axisConfig = isRow(axis)
+      const axisConfig = MAPREP.isRow(axis)
         ? this.mapConfig.row_configuration
         : this.mapConfig.col_configuration;
       const order = axisConfig.hasOwnProperty("classifications_order")
@@ -1297,7 +1292,7 @@
       showVal,
       heightVal,
     ) {
-      if (isRow(axis)) {
+      if (MAPREP.isRow(axis)) {
         this.mapConfig.row_configuration.classifications[classname].show =
           showVal ? "Y" : "N";
         this.mapConfig.row_configuration.classifications[classname].height =
@@ -1319,7 +1314,7 @@
       fgColorVal,
       bgColorVal,
     ) {
-      if (isRow(axis)) {
+      if (MAPREP.isRow(axis)) {
         this.mapConfig.row_configuration.classifications[classname].bar_type =
           barType;
         if (typeof lowBound !== "undefined") {
@@ -1594,7 +1589,7 @@
     /***********  Methods for accessing mapData ****************/
 
     HeatMap.prototype.getAxisCovariateData = function (axis) {
-      return isRow(axis)
+      return MAPREP.isRow(axis)
         ? this.mapData.row_data.classifications
         : this.mapData.col_data.classifications;
     };
@@ -1609,7 +1604,7 @@
 
     //Get Axis Labels
     HeatMap.prototype.getAxisLabels = function (axis) {
-      return isRow(axis)
+      return MAPREP.isRow(axis)
         ? this.mapData.row_data.label
         : this.mapData.col_data.label;
     };
@@ -1639,7 +1634,7 @@
     }
 
     HeatMap.prototype.getDendrogramData = function (axis) {
-      const data = isRow(axis)
+      const data = MAPREP.isRow(axis)
         ? this.mapData.row_data.dendrogram
         : this.mapData.col_data.dendrogram;
       return (data || []).map((entry) => {
@@ -1689,13 +1684,13 @@
     //Return the total number of rows/columns on the specified axis.
     HeatMap.prototype.getTotalElementsForAxis = function (axis) {
       const level = this.datalevels[MAPREP.DETAIL_LEVEL];
-      return isRow(axis) ? level.totalRows : level.totalColumns;
+      return MAPREP.isRow(axis) ? level.totalRows : level.totalColumns;
     };
 
     //Return the number of rows or columns for the given level
     HeatMap.prototype.getNumAxisElements = function (axis, level) {
       const l = this.datalevels[level];
-      return MMGR.isRow(axis) ? l.totalRows : l.totalColumns;
+      return MAPREP.isRow(axis) ? l.totalRows : l.totalColumns;
     };
 
     //Return the number of rows for a given level
@@ -2407,7 +2402,7 @@
     // of the NG-CHM.  The "actual" labels currently consist of the
     // visible text fields of the "full" labels.
     HeatMap.prototype.actualLabels = function actualLabels (axis) {
-      axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
+      axis = MAPREP.isRow(axis) ? "ROW" : "COLUMN";
       if (!this.actualAxisLabels.hasOwnProperty(axis)) {
         const labels = this.getAxisLabels(axis)["labels"];
         const types = this.getLabelTypes(axis);
@@ -2431,7 +2426,7 @@
     // if needed, to be no longer than the maximum label display length for
     // the specified axis.
     HeatMap.prototype.shownLabels = function shownLabels (axis) {
-      axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
+      axis = MAPREP.isRow(axis) ? "ROW" : "COLUMN";
       const config = this.getAxisConfig(axis);
       // Recalculate shown labels if parameters affecting them have changed.
       if (
@@ -2459,7 +2454,7 @@
      * separated by ellipsis (...);
      **********************************************************************************/
     HeatMap.prototype.getLabelText = function getLabelText (text, axis, builder) {
-      axis = MMGR.isRow(axis) ? "ROW" : "COLUMN";
+      axis = MAPREP.isRow(axis) ? "ROW" : "COLUMN";
       const config = this.getAxisConfig(axis);
       let size = parseInt(config.label_display_length);
       const elPos = config.label_display_method;

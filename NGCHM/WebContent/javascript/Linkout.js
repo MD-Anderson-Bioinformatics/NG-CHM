@@ -1681,7 +1681,7 @@ var linkoutsVersion = "undefined";
   // Return an array of values for the rows/columns specified by idx along axis.
   function getDataValues(axis, idx) {
     const heatMap = MMGR.getHeatMap();
-    const isRow = MMGR.isRow(axis);
+    const isRow = MAPREP.isRow(axis);
     const colorMap = heatMap.getCurrentColorMap();
     const colorThresholds = colorMap.getThresholds();
     idx = idx === undefined ? [] : Array.isArray(idx) ? idx : [idx];
@@ -1764,7 +1764,7 @@ var linkoutsVersion = "undefined";
    */
   function getSummaryStatistics(axis, axisIdx, groupIdx) {
     const heatMap = MMGR.getHeatMap();
-    const isRow = MMGR.isRow(axis);
+    const isRow = MAPREP.isRow(axis);
     axisIdx =
       axisIdx === undefined ? [] : Array.isArray(axisIdx) ? axisIdx : [axisIdx];
     groupIdx =
@@ -1947,7 +1947,7 @@ var linkoutsVersion = "undefined";
     };
     for (let ai = 0; ai < config.axes.length; ai++) {
       const axis = config.axes[ai];
-      const axisName = MMGR.isRow(axis.axisName) ? "Row" : "Column";
+      const axisName = MAPREP.isRow(axis.axisName) ? "Row" : "Column";
       const fullLabels = heatMap.getAxisLabels(axisName).labels;
       const searchItemsIdx = SRCHSTATE.getAxisSearchResults(axisName);
       const actualLabels = heatMap.actualLabels (axisName);
@@ -2013,7 +2013,7 @@ var linkoutsVersion = "undefined";
       return false;
     }
     const heatMap = MMGR.getHeatMap();
-    var otherAxisName = MMGR.isRow(msg.axisName) ? "column" : "row";
+    var otherAxisName = MAPREP.isRow(msg.axisName) ? "column" : "row";
     var otherAxisLabels = heatMap.actualLabels(otherAxisName);
     var heatMapAxisLabels = heatMap.actualLabels(msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
     heatMapAxisLabels = heatMapAxisLabels.map((l) => l.toUpperCase());
@@ -2150,7 +2150,7 @@ var linkoutsVersion = "undefined";
     const colorMapMgr = heatMap.getColorMapManager();
     const colClassificationData = heatMap.getAxisCovariateData("column");
     const rowClassificationData = heatMap.getAxisCovariateData("row");
-    const isRow = MMGR.isRow(axis.axisName);
+    const isRow = MAPREP.isRow(axis.axisName);
     const covData = isRow ? rowClassificationData : colClassificationData;
     const axisCovCfg = heatMap.getAxisCovariateConfig(axis.axisName);
     const valueField = coco + "s";
@@ -2284,7 +2284,7 @@ var linkoutsVersion = "undefined";
     const heatMap = MMGR.getHeatMap();
     const colClassificationData = heatMap.getAxisCovariateData("column");
     const rowClassificationData = heatMap.getAxisCovariateData("row");
-    const isRow = MMGR.isRow(axis.axisName);
+    const isRow = MAPREP.isRow(axis.axisName);
     const covData = isRow ? rowClassificationData : colClassificationData;
     const axisCovCfg = heatMap.getAxisCovariateConfig(axis.axisName);
     const valueField = group + "s";
@@ -2387,7 +2387,7 @@ var linkoutsVersion = "undefined";
 
     /** Creates text for option to use GRAB/SHOW */
     function selectedElementsOptionName(axis, uname) {
-      return "Selected " + (MMGR.isRow(axis) ? "columns" : "rows") + uname;
+      return "Selected " + (MAPREP.isRow(axis) ? "columns" : "rows") + uname;
     }
 
     /**
@@ -2512,7 +2512,7 @@ var linkoutsVersion = "undefined";
         if (debug) console.log({ m: "setAxis", axis, params });
         axis1Config = heatMap.getAxisCovariateConfig(axis);
         const axis1cvOrder = heatMap.getAxisCovariateOrder(axis);
-        otherAxis = MMGR.isRow(axis) ? "Column" : "Row";
+        otherAxis = MAPREP.isRow(axis) ? "Column" : "Row";
         if (plugin.hasOwnProperty("specialCoordinates") && plugin.specialCoordinates.hasOwnProperty("name")){
           defaultCoord = plugin.specialCoordinates.name + ".coordinate.";
         } else {
@@ -2535,7 +2535,7 @@ var linkoutsVersion = "undefined";
       } else if (plugin.hasOwnProperty("specialCoordinates") && plugin.specialCoordinates.hasOwnProperty("rowOrColumn")) {
         selectedAxis = plugin.specialCoordinates.rowOrColumn;
       } else {
-        selectedAxis = MMGR.isRow(axisParams[axisId].axisName)
+        selectedAxis = MAPREP.isRow(axisParams[axisId].axisName)
           ? "row"
           : "column";
       }
@@ -2905,7 +2905,7 @@ var linkoutsVersion = "undefined";
             }
             function updateAxis(newAxis) {
               axisName = newAxis;
-              axisNameU = MMGR.isRow(axisName) ? "Row" : "Column";
+              axisNameU = MAPREP.isRow(axisName) ? "Row" : "Column";
             }
             function setSummary(selected, label) {
               const data = sss[cid].data[idx];
