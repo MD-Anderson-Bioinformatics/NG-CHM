@@ -144,14 +144,12 @@
       p = p.parentElement;
     }
     if (!res.pane) {
-      if (UTIL.isBuilderView !== true) {
-        // Should have found the pane element.
-        console.error({
-          m: "findPaneLocation: could not find pane",
-          element,
-          res,
-        });
-      }
+      // Should have found the pane element.
+      console.error({
+        m: "findPaneLocation: could not find pane",
+        element,
+        res,
+      });
       return res;
     }
     if (!res.container) {

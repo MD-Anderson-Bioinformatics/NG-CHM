@@ -81,7 +81,7 @@
    * This callback draws the summary heat map.
    *********************************************************************************************/
   DET.processDetailMapUpdate = function (event, tile) {
-    if (event !== HEAT.Event_INITIALIZED) {
+    if (event === HEAT.Event_NEWDATA) {
       DET.flushDrawingCache(tile);
     }
   };

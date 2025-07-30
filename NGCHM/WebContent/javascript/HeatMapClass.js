@@ -28,6 +28,8 @@
   HEAT.Event_JSON = "Json";
   HEAT.Event_NEWDATA = "NewData";
 
+  const debugMapInit = UTIL.getDebugFlag ("heat-init");
+
   ///////////////////////////////////////////////////////////////////////////
   //
   // BEGIN class TileWindow.
@@ -541,7 +543,7 @@
   // HeatMap class - holds heat map properties and a tile cache
   // Used to get HeatMapLevel object.
   class HeatMap {
-    constructor (heatMapName, updateCallbacks, fileSrc, getLoader, onready) {
+    constructor (heatMapName, updateCallbacks, getTileLoader, onready) {
       this.initialized = false; // True once the minimum components have loaded.
       this.version = 0; // Update to indicate need to save or redraw.
       this.savedVersion = 0; // Last version that was saved.
@@ -551,7 +553,6 @@
       this.datalevels = {}; // HeatMapLevels for tile data at each level.
       this.alternateLevels = {}; // Alternate level to use for unloaded data.
       this.colorMapMgr = null; // The heatMap's color map manager.
-      this.fileSrc = fileSrc; // The source of the map (Web, File, etc.)
       this.currentTileRequests = []; // Tiles we are currently reading
       this.pendingTileRequests = []; // Tiles we want to read
 
@@ -562,7 +563,7 @@
       this.tileCache = new TileCache(this); // Initialize this.tileCache.
 
       // Configure loader.
-      this.loader = getLoader(this, addMapConfig, addMapData);
+      this.loadTile = getTileLoader(this);
     }
   }
   HEAT.HeatMap = HeatMap;
@@ -585,7 +586,7 @@
       }
     };
 
-    HeatMap.prototype.getCurrentDL = function (dl) {
+    HeatMap.prototype.getCurrentDL = function () {
       return this._currentDl;
     };
 
@@ -1512,11 +1513,6 @@
       return this.getMapInformation().map_cut_rows + this.getMapInformation().map_cut_cols != 0;
     };
 
-    // Return the source of this heat map.
-    HeatMap.prototype.source = function () {
-      return this.fileSrc;
-    };
-
     // setUnAppliedChanges (true) is called when something
     // changes the heatmap.
     //
@@ -1715,6 +1711,22 @@
    *
    ********************************************************************************************/
 
+  HeatMap.prototype.addJson = function addJson (name, data) {
+    if (debugMapInit) {
+      console.log (`Adding ${name}.json to heatMap`, { data });
+    }
+    switch (name) {
+      case "mapData":
+        addMapData (this, data);
+        break;
+      case "mapConfig":
+        addMapConfig (this, data);
+        break;
+      default:
+        console.error ("HeatMap.addJson: Unknown json object", { name, data });
+    }
+  };
+
   function addMapData(heatMap, md) {
     heatMap.mapData = md;
     if (COMPAT.mapDataCompatibility(heatMap.mapData)) {
@@ -1735,10 +1747,13 @@
 
   // Perform compatibility checks required once *both* mapConfig and mapData are available.
   function checkAxes(heatMap) {
+    if (debugMapInit) {
+      console.log ("checkAxes", { heatMap });
+    }
     if (heatMap.mapData != null && heatMap.mapConfig != null) {
+      heatMap.initAxisLabels();
       addDataLayers(heatMap);
       heatMap.onready(heatMap);
-      heatMap.initAxisLabels();
     }
   }
 
@@ -1790,7 +1805,9 @@
   // level tiles for all layers.
   function prefetchInitialTiles(heatMap) {
     const datalayers = heatMap.mapConfig.data_configuration.map_information.data_layer;
-    heatMap.thumbnailWindowRefs = Object.keys(datalayers).map((layer) =>
+    const layerKeys = Object.keys(datalayers);
+    heatMap._currentDl = layerKeys[0];
+    heatMap.thumbnailWindowRefs = layerKeys.map((layer) =>
       heatMap.getNewAccessWindow({
         layer: layer,
         level: MAPREP.THUMBNAIL_LEVEL,
@@ -2214,6 +2231,6 @@
     }
     this.currentTileRequests.push(job.tileCacheName);
 
-    this.loader.loadTile(job);
+    this.loadTile(job);
   };
 })();
