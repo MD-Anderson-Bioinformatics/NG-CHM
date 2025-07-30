@@ -5,6 +5,7 @@
   const SUM = NgChm.createNS("NgChm.SUM");
 
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
+  const HEAT = NgChm.importNS("NgChm.HEAT");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const CMM = NgChm.importNS("NgChm.CMM");
   const SUMDDR = NgChm.importNS("NgChm.SUMDDR");
@@ -82,7 +83,7 @@
   // Callback that is notified every time there is an update to the heat map
   // initialize, new data, etc.  This callback draws the summary heat map.
   SUM.processSummaryMapUpdate = function (event, tile) {
-    if (event === MMGR.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL) {
+    if (event === HEAT.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL) {
       if (!MMGR.getHeatMap().initialized) {
         return;
       }

@@ -6,6 +6,7 @@
   const DET = NgChm.createNS("NgChm.DET");
 
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
+  const HEAT = NgChm.importNS("NgChm.HEAT");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const CMM = NgChm.importNS("NgChm.CMM");
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
@@ -80,7 +81,7 @@
    * This callback draws the summary heat map.
    *********************************************************************************************/
   DET.processDetailMapUpdate = function (event, tile) {
-    if (event !== MMGR.Event_INITIALIZED) {
+    if (event !== HEAT.Event_INITIALIZED) {
       DET.flushDrawingCache(tile);
     }
   };
