@@ -538,13 +538,41 @@
   //
   // BEGIN class HeatMap
   //
-  // Class HeatMap is currently implemented using the prototype mechanism.
-  //
-  //
+  // HeatMap class - holds heat map properties and a tile cache
+  // Used to get HeatMapLevel object.
+  class HeatMap {
+    constructor (heatMapName, updateCallbacks, fileSrc, getLoader, onready) {
+      this.initialized = false; // True once the minimum components have loaded.
+      this.version = 0; // Update to indicate need to save or redraw.
+      this.savedVersion = 0; // Last version that was saved.
+      this.mapName = heatMapName; // Name of the map.
+      this.mapConfig = null; // Map configuration.
+      this.mapData = null; // Map data (excluding tiles).
+      this.datalevels = {}; // HeatMapLevels for tile data at each level.
+      this.alternateLevels = {}; // Alternate level to use for unloaded data.
+      this.colorMapMgr = null; // The heatMap's color map manager.
+      this.fileSrc = fileSrc; // The source of the map (Web, File, etc.)
+      this.currentTileRequests = []; // Tiles we are currently reading
+      this.pendingTileRequests = []; // Tiles we want to read
+
+      this.updatedOnLoad = false;
+      this.onready = onready;
+      this.initEventListeners(updateCallbacks); // Initialize this.eventListeners
+      this.initTileWindows(); // Initialize this.tileWindowListeners and this.tileWindowRefs
+      this.tileCache = new TileCache(this); // Initialize this.tileCache.
+
+      // Configure loader.
+      this.loader = getLoader(this, addMapConfig, addMapData);
+    }
+  }
+  HEAT.HeatMap = HeatMap;
+  // End class HeatMap
+
+  // Additional class methods.
   {
     // Functions for getting and setting the data layer of this heat map
     // currently being displayed.
-    // Set in the application by the user when, for exanple, flick views are toggled.
+    // Set in the application by the user when, for example, flick views are toggled.
     HeatMap.prototype.setCurrentDL = function (dl) {
       // Set the current data layer to dl.
       // If the current data layer changes, the colors used for
@@ -1686,36 +1714,6 @@
    * End of prototype methods for HeatMap "class".
    *
    ********************************************************************************************/
-
-  // Creator function for HeatMap class.
-  //
-  // HeatMap class - holds heat map properties and a tile cache
-  // Used to get HeatMapLevel object.
-  HEAT.HeatMap = HeatMap;
-  function HeatMap(heatMapName, updateCallbacks, fileSrc, getLoader, onready) {
-    this.initialized = false; // True once the minimum components have loaded.
-    this.version = 0; // Update to indicate need to save or redraw.
-    this.savedVersion = 0; // Last version that was saved.
-    this.mapName = heatMapName; // Name of the map.
-    this.mapConfig = null; // Map configuration.
-    this.mapData = null; // Map data (excluding tiles).
-    this.datalevels = {}; // HeatMapLevels for tile data at each level.
-    this.alternateLevels = {}; // Alternate level to use for unloaded data.
-    this.colorMapMgr = null; // The heatMap's color map manager.
-    this.fileSrc = fileSrc; // The source of the map (Web, File, etc.)
-    this.currentTileRequests = []; // Tiles we are currently reading
-    this.pendingTileRequests = []; // Tiles we want to read
-
-    this.updatedOnLoad = false;
-    this.onready = onready;
-    this.initEventListeners(updateCallbacks); // Initialize this.eventListeners
-    this.initTileWindows(); // Initialize this.tileWindowListeners and this.tileWindowRefs
-    this.tileCache = new TileCache(this); // Initialize this.tileCache.
-
-    // Configure loader.
-    this.loader = getLoader(this, addMapConfig, addMapData);
-  }
-  // End class HeatMap
 
   function addMapData(heatMap, md) {
     heatMap.mapData = md;
