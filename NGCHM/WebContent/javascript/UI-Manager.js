@@ -9,11 +9,11 @@
   //Define Namespace for NgChm UI Manager.
   const UIMGR = NgChm.createNS("NgChm.UI-Manager");
 
+  const CFG = NgChm.importNS("NgChm.CFG");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const COMPAT = NgChm.importNS("NgChm.CM");
   const FLICK = NgChm.importNS("NgChm.FLICK");
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
-  const HEAT = NgChm.importNS("NgChm.HEAT");
   const SUM = NgChm.importNS("NgChm.SUM");
   const SMM = NgChm.importNS("NgChm.SMM");
   const PDF = NgChm.importNS("NgChm.PDF");
@@ -35,7 +35,15 @@
   const TOUR = NgChm.importNS("NgChm.TOUR");
   const EXEC = NgChm.importNS("NgChm.EXEC");
 
+  const debugEmbed = UTIL.getDebugFlag("ui-embed");
+  const srcInfo = {
+    embedded: false,
+    spec: "",
+    options: {},
+  };
+
   const localFunctions = {};
+  const updateCallbacks = [ SUM.processSummaryMapUpdate, DET.processDetailMapUpdate ];
 
   /***
    *  Functions related to saving Ng-Chms.
@@ -44,7 +52,7 @@
     const heatMap = MMGR.getHeatMap();
     PIM.requestDataFromPlugins();
     var success = true;
-    if (heatMap.source() === MMGR.WEB_SOURCE) {
+    if (MMGR.getSource() === MMGR.API_SOURCE) {
       success = MMGR.zipMapProperties(heatMap, JSON.stringify(heatMap.mapConfig));
       showViewerSaveNotification();
       UHM.messageBoxCancel();
@@ -74,16 +82,24 @@
 
   function autoSaveHeatMap(heatMap) {
     let success = true;
-    if (MMGR.embeddedMapName === null) {
+    if (!srcInfo.embedded) {
       heatMap.setRowClassificationOrder();
       heatMap.setColClassificationOrder();
-      if (heatMap.source() !== MMGR.FILE_SOURCE) {
-        // FIXME: BMB. Verify this does what it's required to do.
-        // This appears to only be saving mapConfig.
-        // What about mapData?
-        success = MMGR.webSaveMapProperties(heatMap);
-      } else {
-        zipSaveOutdated(heatMap);
+      switch (MMGR.getSource()) {
+        case MMGR.API_SOURCE:
+          // FIXME: BMB. Verify this does what it's required to do.
+          // This appears to only be saving mapConfig.
+          // What about mapData?
+          success = MMGR.webSaveMapProperties(heatMap);
+          break;
+        case MMGR.ZIP_SOURCE:
+          zipSaveOutdated(heatMap);
+          break;
+        case MMGR.WEB_SOURCE:
+          // Don't bug user with an error message they can't do anything about.
+          break;
+        default:
+          throw `UIMGR.autoSaveHeatMap: Unknown NG-CHM source ${MMGR.getSource()}`;
       }
     }
     return success;
@@ -197,7 +213,71 @@
     const title = "NG-CHM File Viewer";
     const text =
       "<br>You have just saved a heat map as a NG-CHM file.  To open this new file you will need the NG-CHM File Viewer application.  To get the lastest version, press the Download Viewer button.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you can run the application by double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
-    MMGR.showDownloadViewerNotification(title, text);
+    showDownloadViewerNotification(title, text);
+  }
+
+  /**********************************************************************************
+   * FUNCTION - viewerAppVersionExpiredNotification: This function handles all of the tasks
+   * necessary display a modal window whenever a user's version of the file application
+   * has been superceded and a new version of the file application should be downloaded.
+   **********************************************************************************/
+  function viewerAppVersionExpiredNotification(oldVersion, newVersion) {
+    const title = "New NG-CHM File Viewer Version Available";
+    const text =
+      "<br>The version of the NG-CHM File Viewer application that you are running (" +
+      oldVersion +
+      ") has been superceded by a newer version (" +
+      newVersion +
+      "). You will be able to view all pre-existing heat maps with this new backward-compatible version. However, you may wish to download the latest version of the viewer.<br><br>The application downloads as a single HTML file (ngchmApp.html).  When the download completes, you may run the application by simply double-clicking on the downloaded file.  You may want to save this file to a location of your choice on your computer for future use.<br><br>";
+    showDownloadViewerNotification(title, text);
+  }
+
+  function showDownloadViewerNotification(title, bodyText) {
+    const msgBox = UHM.initMessageBox();
+    msgBox.classList.add("file-viewer");
+    UHM.setMessageBoxHeader(title);
+    UHM.setMessageBoxText(bodyText);
+    UHM.setMessageBoxButton(
+      "download",
+      { type: "text", text: "Download Viewer" },
+      "Download viewer button",
+      () => {
+        downloadFileApplication();
+        UHM.messageBoxCancel();
+      },
+    );
+    UHM.setMessageBoxButton(
+      "cancel",
+      { type: "text", text: "Cancel", default: true },
+      "Cancel button",
+      UHM.messageBoxCancel,
+    );
+    UHM.displayMessageBox();
+  }
+
+  // Initiate download of NGCHM File Viewer application zip
+  // If the NG-CHMs were loaded from an API_SOURCE, download from there.
+  // If the NG-CHMs were loaded in Galaxy, download from there.
+  // Otherwise, download from the NG-CHM website.
+  //
+  function downloadFileApplication() {
+    if (typeof NgChm.galaxy !== "undefined") {
+      // Current viewer is embedded within Galaxy.
+      // FIXME: BMB: Use a better way to determine Galaxy embedding.
+      window.open(
+        "/plugins/visualizations/mda_heatmap_viz/static/ngChmApp.zip",
+      );
+    } else if (MMGR.getSource() !== MMGR.API_SOURCE) {
+      // Heat map came from a zip file or a web folder, not from an api server.
+      // (This does not mean the viewer is not from a server, so this could be
+      // refined further for that case i.e. the "api" condition might be more appropriate)
+      // Use full URL, which must be complete!
+      MMGR.callServlet("GET", COMPAT.viewerAppUrl, false);
+    } else {
+      // Heat map came from a server.
+      // Use server "api" + special endpoint name
+      MMGR.callServlet("GET", MMGR.getApi() + "ZipAppDownload", false);
+    }
   }
 
   function saveHeatMapToServer() {
@@ -286,23 +366,21 @@
     const debug = false;
     var firstTime = true;
 
-    UIMGR.configurePanelInterface = function configurePanelInterface(event) {
-      if (event !== HEAT.Event_INITIALIZED) {
-        return;
-      }
+    UIMGR.configurePanelInterface = function configurePanelInterface() {
 
       const heatMap = MMGR.getHeatMap();
+      onMapReady (heatMap);
       UIMGR.initializeSummaryWindows(heatMap);
 
       //If any new configs were added to the heatmap's config, save the config file.
-      if (MMGR.mapUpdatedOnLoad(heatMap) && heatMap.getMapInformation().read_only !== "Y") {
-        var success = autoSaveHeatMap(heatMap);
+      if (MMGR.mapUpdatedOnLoad() && heatMap.getMapInformation().read_only !== "Y") {
+        autoSaveHeatMap(heatMap);
       }
       heatMap.setSelectionColors();
       SRCH.configSearchInterface(heatMap);
 
       CUST.addCustomJS();
-      if (heatMap.source() === MMGR.FILE_SOURCE) {
+      if (MMGR.getSource() === MMGR.ZIP_SOURCE) {
         firstTime = true;
         if (SUM.chmElement) {
           PANE.emptyPaneLocation(PANE.findPaneLocation(SUM.chmElement));
@@ -403,55 +481,181 @@
     };
   })();
 
-  /**********************************************************************************
-   * FUNCTION - onLoadCHM: This function performs "on load" processing for the NG_CHM
-   * Viewer.  It will load either the file mode viewer, standard viewer, or widgetized
-   * viewer.
-   **********************************************************************************/
-  UIMGR.onLoadCHM = function (sizeBuilderView) {
+    /*
+     * Set the 'flick' control and data layer
+     */
+    let flickInitialized = false;
+    function onMapReady(heatMap) {
+      if (!flickInitialized) {
+        configurePageHeader(heatMap);
+        const dl = heatMap.getDataLayers();
+        const numLayers = Object.keys(dl).length;
+        if (numLayers > 1) {
+          const dls = new Array(numLayers);
+          const orderedKeys = new Array(numLayers);
+          for (let key in dl) {
+            const dlNext = +key.substring(2, key.length); // Requires data layer ids to be dl1, dl2, etc.
+            orderedKeys[dlNext - 1] = key;
+            let displayName = dl[key].name;
+            if (displayName.length > 20) {
+              displayName = displayName.substring(0, 17) + "...";
+            }
+            dls[dlNext - 1] =
+              '<option value="' + key + '">' + displayName + "</option>";
+          }
+          const panelConfig = heatMap.getPanelConfiguration();
+          const flickInfo =
+            panelConfig && panelConfig.flickInfo ? panelConfig.flickInfo : {};
+          const layer = FLICK.enableFlicks(
+            orderedKeys,
+            dls.join(""),
+            flickInfo,
+          );
+          heatMap.setCurrentDL(layer);
+        } else {
+          heatMap.setCurrentDL("dl1");
+          FLICK.disableFlicks();
+        }
+        flickInitialized = true;
+
+        // Check viewer version if not embedded.
+        if (!srcInfo.embedded) {
+          checkViewerVersion();
+        }
+      }
+    }
+
+  // Compare the version of this NG-CHM viewer to the one recent available.
+  // Notify the user if they're using a standalone viewer and it is out of date.
+  //
+  function checkViewerVersion() {
+    const debug = false;
+    const req = new XMLHttpRequest();
+    const baseVersion = COMPAT.version.replace(/-.*$/, "");
+    req.open("GET", COMPAT.versionCheckUrl + baseVersion, true);
+    req.onreadystatechange = function () {
+      if (req.readyState == req.DONE) {
+        if (req.status != 200) {
+          //Log failure, otherwise, do nothing.
+          console.log("Failed to get software version: " + req.status);
+        } else {
+          const latestVersion = req.response;
+          if (debug)
+            console.log("Compare versions", {
+              latestVersion,
+              thisVersion: COMPAT.version,
+              newer: newer(latestVersion, baseVersion),
+            });
+          if (
+            newer(latestVersion, baseVersion) &&
+            typeof NgChm.galaxy === "undefined" &&
+            !srcInfo.embedded
+          ) {
+            viewerAppVersionExpiredNotification(COMPAT.version, latestVersion);
+          }
+        }
+      }
+    };
+    req.send();
+
+    // v1 and v2 are version numbers consisting of integers separated by periods.
+    // This function returns true if v1 is greater than v2.
+    function newer(v1, v2) {
+      // Split each into fields and convert each field to integer.
+      v1 = v1.split(".").map((v) => v | 0);
+      v2 = v2.split(".").map((v) => v | 0);
+      for (let i = 0; ; i++) {
+        if (i == v1.length && i == v2.length) return false; // Reached end of both with no differences.
+        if (i == v2.length) return true; // Exhausted v2 (we treat 2.21.0 > 2.21)
+        if (i == v1.length) return false; // Exhausted v1.
+        if (v1[i] > v2[i]) return true;
+        if (v1[i] < v2[i]) return false;
+      }
+    }
+  }
+
+  // Configure elements of the page header and top bar that depend on the
+  // loaded NGCHM.
+  function configurePageHeader(heatMap) {
+    // Set document title if not embedded.
+    if (!srcInfo.embedded) {
+      // Don't set document title in case we're not in an iFrame
+      // (like in the builder for example).
+      document.title = heatMap.getMapInformation().name;
+    }
+
+    // Populate the header's nameDiv.
+    const nameDiv = document.getElementById("mapName");
+    nameDiv.innerHTML = heatMap.getMapInformation().name;
+  }
+
+  // FUNCTION onLoadCHM: Initialize the NG_CHM display.
+  //
+  // srcInfo.embedded is true iff this is an embedded NG-CHM.
+  //
+  // If this is an embedded NG-CHM, the other entries in srcInfo
+  // will have been set by NgChm.API.embedCHM.
+  //
+  // Otherwise, we will need to determine them.
+  //
+  // If srcInfo.options.sourceType==api:
+  // - srcInfo.options.repository is the API endpoint of a shaidy server.
+  // - srcInfo.mapIds is an array of shaidy map ids to load.
+  // - srcInfo.mapNames is an array of named maps to load.
+  // - Uses the WEB loader in API_SOURCE mode.
+  //
+  // If srcInfo.options.sourceType==web:
+  // - srcInfo.options.repository is a URL to a directory on the web
+  // - srcInfo.mapIds is an array of subfolder names containing unzipped NG-CHMs.
+  // - Uses the WEB loader in WEB_SOURCE mode.
+  //
+  // If srcInfo.options.sourceType==zip:
+  // - spec is an embedded blob, or
+  //   spec is a URL to an ngchm file, or
+  //   options.repository/spec is an ngchm of the web page's server.
+  // - Uses the ZIP loader in ZIP_SOURCE mode.
+  //
+  // Otherwise:
+  // - error.
+  UIMGR.onLoadCHM = function () {
+
     // Flush summary cache before possibly replacing current CHM with a new map.
     SUM.summaryHeatMapCache = {};
 
-    UTIL.isBuilderView = sizeBuilderView;
     //Run startup checks that enable startup warnings button.
     setDragPanels();
 
     // See if we are running in file mode AND not from "widgetized" code - launcHed locally rather than from a web server (
-    if (UTIL.mapId === "" && UTIL.mapNameRef === "" && MMGR.embeddedMapName === null) {
-      //In local mode, need user to select the zip file with data (required by browser security)
-      var chmFileItem = document.getElementById("fileButton");
-      document.getElementById("menuFileOpen").style.display = "";
-      document.getElementById("detail_buttons").style.display = "none";
-      chmFileItem.style.display = "";
-      chmFileItem.addEventListener("change", loadFileModeCHM, false);
-      UTIL.showSplashExample();
-    } else {
-      UTIL.showLoader("Loading NG-CHM from server...");
-      //Run from a web server.
-      var mapName = UTIL.mapId;
-      var dataSource = MMGR.WEB_SOURCE;
-      if (MMGR.embeddedMapName !== null && ngChmWidgetMode !== "web") {
-        mapName = MMGR.embeddedMapName;
-        dataSource = MMGR.FILE_SOURCE;
-        var embedButton = document.getElementById("NGCHMEmbedButton");
-        if (embedButton !== null) {
-          document.getElementById("NGCHMEmbed").style.display = "none";
-        } else {
-          loadLocalModeCHM(sizeBuilderView);
-        }
+    if (debugEmbed) {
+      console.log ("onLoadCHM: checking srcInfo:", { srcInfo, });
+    }
+
+    // Maps can be specified in the following ways
+    // Specified as a shaidy server map:
+    // - ?map=id - Use web worker MMGR.API_SOURCE
+    // - ?name=name - Use web worker MMGR.API_SOURCE
+    // Specified as an embedded map via NgChm.API.embedCHM():
+    // - srcInfo.options.sourceType has been set to "web" MMGR.WEB_SOURCE
+    // - other embedded maps MMGR.ZIP_SOURCE (blob)
+    // Not specified via any of the above:
+    // - file mode - user gets a "Load NgChm" button MMGR.ZIP_SOURCE (file)
+
+    if (srcInfo.embedded) {
+      if (srcInfo.options.expandable) {
+        // Hide the embedded NG-CHM div and do not load
+        // the NG-CHMs until the user expands the div.
+        document.getElementById("NGCHMEmbed").style.display = "none";
       } else {
-        if (MMGR.embeddedMapName !== null) {
-          mapName = MMGR.embeddedMapName;
-          dataSource = MMGR.LOCAL_SOURCE;
-        }
-        resetCHM();
-        initDisplayVars();
-        MMGR.createHeatMap(dataSource, mapName, [
-          UIMGR.configurePanelInterface,
-          SUM.processSummaryMapUpdate,
-          DET.processDetailMapUpdate
-        ]);
+        // Load the non-expandable embedded NG-CHM immediately.
+        loadNGCHM();
       }
+    } else if (mapsSpecifiedOnURL()) {
+      // Load NG-CHMs specified on the URL immediately.
+      loadNGCHM();
+    } else {
+      // Not embedded and no maps specified on the URL.
+      // Show the open file button so the user can load a zipFile.
+      showOpenFileButton();
     }
     document
       .getElementById("summary_canvas")
@@ -463,39 +667,167 @@
     initializeKeyNavigation();
   };
 
+  // Check URL for maps to load.
+  // If found:
+  // - sets srcInfo
+  // - returns true
+  // Otherwise:
+  // - returns false.
+  // Currently can only specify sourceType=="api".
+  function mapsSpecifiedOnURL () {
+    const repo = UTIL.getURLParameter("repo");
+    if (repo) {
+      srcInfo.spec = UTIL.mapId;
+      srcInfo.options.sourceType = MMGR.WEB_SOURCE;
+      srcInfo.options.repository = repo;
+      return true;
+    }
+    const api = UTIL.getURLParameter("api");
+    srcInfo.options.repository = api || CFG.api;
+    if (UTIL.mapId.length + UTIL.mapNameRef.length > 0) {
+      srcInfo.spec = UTIL.mapId ? UTIL.mapId : "";
+      if (UTIL.mapNameRef) {
+        if (UTIL.mapId) srcInfo.spec += ',';
+        srcInfo.spec += UTIL.mapNameRef;
+      }
+      srcInfo.options.sourceType = MMGR.API_SOURCE;
+      return true;
+    }
+    return false;
+  }
+
+  function loadWebMaps () {
+    UTIL.showLoader("Loading NG-CHM from server...");
+    MMGR.loadWebMaps (srcInfo, updateCallbacks, () => {
+      resetCHM();
+      initDisplayVars();
+      UIMGR.configurePanelInterface();
+    });
+  }
+
+  // API.embedNGCHM (in NGCHM_Embed.js) allows the NG-CHM to be specified in 4 ways:
+  // srcType === "blob":     spec = info.srcSpec
+  // srcType === "base64":   spec = API.b64toBlob(info.srcSpec)
+  // srcType === "fileName": spec = info.srcSpec
+  // srcType === "url":      spec = info.srcSpec
+  //
+  // Historically:
+  // - These are all for sourceType="zip" (old widgetMode=='file').
+  // - info.srcType was not passed to API.embedCHM, so for backwards
+  //   compatibility we need to decipher what was intended by the form of spec.
+  //
+  // - srcType=="blob" and srcType=="base64" are the same by the time we get them:
+  //   spec is a blob.
+  //
+  // - For srcType=="url", spec is a complete URL to an ngchm zipFile.
+  //
+  // - The GuiBuilder calls API.embedCHM directly (not via API.embedNGCHM) and uses
+  //   options.repository/spec as the path to the ngchm zipFile.  spec is neither a
+  //   blob nor a url.
+  //
+  // Extending to other sourceTypes:
+  // - If spec is a blob, sourceType must be "zip".
+  // - If spec is a URL, sourceType must be "zip" or "web":
+  //   - "zip": spec is a URL to an ngchm zipFile.
+  //   - "web" : spec is a URL to a web directory containing an expanded ngchm.
+  // - If spec is neither of the above, sourceType can be any of the following:
+  //   - "zip": ${options.repository}/${spec} points to an ngchm zipFile.
+  //   - "web" : spec is a comma separated list.
+  //     - For each item in the list, ${options.repository}/${item} points to
+  //       a web directory containing an expanded ngchm.
+  //   - "api": spec is a comma separated list.
+  //     - options.repository is a URL to a shaidy server API endpoint.
+  //     - Each item in the list is either a mapId or a mapName to load:
+  //       - If it contains at least one slash ("/"), it is a mapName.
+  //       - If it contains no slashes, it is a mapId.
+  //
   /**********************************************************************************
-   * FUNCTION - loadLocalModeCHM: This function is called when running in local file mode and
-   * with the heat map embedded in a "widgetized" web page.
+   * FUNCTION - loadNGCHM: This function is called to load the map(s) specified in
+   * srcInfo.
    **********************************************************************************/
-  function loadLocalModeCHM(sizeBuilderView) {
-    //Special case for embedded version where a blob is passed in.
-    if (MMGR.embeddedMapName instanceof Blob) {
-      loadBlobModeCHM(sizeBuilderView);
+  function loadNGCHM() {
+    if (debugEmbed) {
+      console.log ("loadNGCHM: ", {
+        srcType: srcInfo.options.sourceType,
+        srcSpec: srcInfo.spec.substring(0,100)
+      });
+    }
+    // Check if srcInfo.spec is a blob.
+    if (srcInfo.spec instanceof Blob) {
+      if (srcInfo.options.sourceType != MMGR.ZIP_SOURCE) {
+        throw `blob NG-CHMs must be opened as zip files`;
+      }
+      loadZipFileFromBlob();
       return;
     }
-    if (UTIL.isValidURL(MMGR.embeddedMapName) === true) {
-      loadCHMFromURL(sizeBuilderView);
-      return;
+    // Otherwise, see if it is a URL.
+    if (UTIL.isValidURL(srcInfo.spec)) {
+      switch (srcInfo.options.sourceType) {
+        case MMGR.ZIP_SOURCE:
+          loadZipFileFromURL();
+          return;
+        case MMGR.WEB_SOURCE:
+          const lastSlash = srcInfo.spec.lastIndexOf('/');
+          if (lastSlash < 0) {
+            throw `malformed web URL ${srcInfo.spec}`;
+          }
+          srcInfo.options.repository = srcInfo.spec.substring(0, lastSlash);
+          srcInfo.mapIds = srcInfo.spec.substring(lastSlash+1).split(',');
+          srcInfo.mapNames = [];
+          loadWebMaps();
+          return;
+        default:
+          throw `URL must be for sourceType "zip" or "web", not ${srcInfo.options.sourceType}`;
+      }
     }
-    //Else, fetch the .ngchm file
-    var req = new XMLHttpRequest();
-    req.open("GET", MMGR.localRepository + "/" + MMGR.embeddedMapName);
+    // Not a blob and not a URL.
+    switch (srcInfo.options.sourceType) {
+      case MMGR.ZIP_SOURCE:
+        if (srcInfo.spec) {
+          loadZipFileFromURL2();
+        } else {
+          showOpenFileButton();
+        }
+        return;
+      case MMGR.WEB_SOURCE:
+        srcInfo.mapIds = srcInfo.spec.split(',');
+        srcInfo.mapNames = [];
+        loadWebMaps();
+        return;
+      case MMGR.API_SOURCE:
+        srcInfo.mapIds = [];
+        srcInfo.mapNames = [];
+        for (const item of srcInfo.spec.split(',')) {
+          (item.includes('/') ? srcInfo.mapNames : srcInfo.mapIds).push (item);
+        }
+        loadWebMaps();
+        return;
+      default:
+        throw `Unknown sourceType ${srcInfo.options.sourceType} for default embedded NG-CHM spec`;
+    }
+  }
+
+  function loadZipFileFromURL2() {
+    // Otherwise, fetch the .ngchm file
+    UTIL.showLoader("Loading NG-CHM zip file from a URL...");
+    const req = new XMLHttpRequest();
+    req.open("GET", srcInfo.options.repository + "/" + srcInfo.spec);
     req.responseType = "blob";
     req.onreadystatechange = function () {
       if (req.readyState == req.DONE) {
         if (req.status != 200) {
-          console.log("Failed in call to get NGCHM from server: " + req.status);
+          console.warn("Failed in call to get NGCHM from server: " + req.status);
           UTIL.showLoader("Failed to get NGCHM from server");
         } else {
-          var chmBlob = new Blob([req.response], { type: "application/zip" }); // req.response;
-          var chmFile = new File([chmBlob], MMGR.embeddedMapName);
-          resetCHM();
-          var split = chmFile.name.split(".");
+          console.log ("Got response in loadZipFileFromURL2()");
+          const chmBlob = new Blob([req.response], { type: "application/zip" }); // req.response;
+          const chmFile = new File([chmBlob], srcInfo.spec);
+          const split = chmFile.name.split(".");
           if (split[split.length - 1].toLowerCase() !== "ngchm") {
             // check if the file is a .ngchm file
             UHM.invalidFileFormat();
           } else {
-            displayFileModeCHM(chmFile, sizeBuilderView);
+            displayZipFileCHM(chmFile);
           }
         }
       }
@@ -504,48 +836,57 @@
   }
 
   /**********************************************************************************
-   * FUNCTION - loadCHMFromURL: Works kind of like local mode but works when javascript
+   * FUNCTION - loadZipFileFromURL: Works kind of like local mode but works when javascript
    * passes in the ngchm as a blob.
+   * - so why is it called loadZipFileFromURL????
    **********************************************************************************/
-  function loadCHMFromURL(sizeBuilderView) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", MMGR.embeddedMapName, true);
+  function loadZipFileFromURL() {
+    UTIL.showLoader("Loading NG-CHM zip file from a URL...");
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", srcInfo.spec, true);
     xhr.setRequestHeader("Access-Control-Allow-Origin", "*");
     xhr.responseType = "blob";
     xhr.onload = function (e) {
       if (this.status == 200) {
-        var myBlob = this.response;
-        resetCHM();
-        displayFileModeCHM(myBlob, sizeBuilderView);
+        const myBlob = this.response;
+        console.log ("Got blob in loadZipFileFromURL()");
+        displayZipFileCHM(myBlob);
       }
     };
     xhr.send();
   }
 
   /**********************************************************************************
-   * FUNCTION - loadCHMFromBlob: Works kind of like local mode but works when javascript
-   * passes in the ngchm as a blob.
+   * FUNCTION - loadZipFileFromBlob: Converts a blob (of a zipFile) into a file and
+   * opens it as a zipFile.
    **********************************************************************************/
-  function loadBlobModeCHM(sizeBuilderView) {
-    var chmFile = new File([MMGR.embeddedMapName], "ngchm");
-    resetCHM();
-    displayFileModeCHM(chmFile, sizeBuilderView);
+  function loadZipFileFromBlob() {
+    UTIL.showLoader("Loading NG-CHM from a blob...");
+    const chmFile = new File([srcInfo.spec], "ngchm");
+    displayZipFileCHM(chmFile);
   }
 
-  /**********************************************************************************
-   * FUNCTION - loadFileModeCHM: This function is called when running in stand-alone
-   * file mode and  user selects the chm data .zip file.
-   **********************************************************************************/
-  function loadFileModeCHM() {
-    UTIL.showLoader("Loading NG-CHM from file...");
-    var chmFile = document.getElementById("chmFile").files[0];
-    var split = chmFile.name.split(".");
-    if (split[split.length - 1].toLowerCase() !== "ngchm") {
-      // check if the file is a .ngchm file
-      UHM.invalidFileFormat();
-    } else {
-      displayFileModeCHM(chmFile);
-      openFileToggle();
+  // Show the open file button so that the user can select the ngchm file to load.
+  //
+  function showOpenFileButton() {
+    const chmFileItem = document.getElementById("fileButton");
+    document.getElementById("menuFileOpen").style.display = "";
+    document.getElementById("detail_buttons").style.display = "none";
+    chmFileItem.style.display = "";
+    chmFileItem.addEventListener("change", onFileSelected, false);
+    UTIL.showSplashExample();
+    return;
+
+    function onFileSelected() {
+      const chmFile = document.getElementById("chmFile").files[0];
+      const split = chmFile.name.split(".");
+      if (split[split.length - 1].toLowerCase() !== "ngchm") {
+        // check if the file is a .ngchm file
+        UHM.invalidFileFormat();
+      } else {
+        openFileToggle();
+        displayZipFileCHM(chmFile);
+      }
     }
   }
 
@@ -553,47 +894,30 @@
     const fileButton = document.getElementById("fileButton");
     const detailButtons = document.getElementById("detail_buttons");
     if (fileButton.style.display === "none") {
+      // File button is hidden: reload the page (which will reveal the button).
       location.reload();
     } else {
+      // File button is visible: hide the fileButton and show the map name / search
+      // controls.
       fileButton.style.display = "none";
       detailButtons.style.display = "";
     }
   }
 
   /**********************************************************************************
-   * FUNCTION - displayFileModeCHM: This function performs functions shared by the
-   * stand-alone and widgetized "file" versions of the application.
+   * FUNCTION displayZipFileCHM: Display an NG-CHM stored in a zip (.ngchm) file.
    **********************************************************************************/
-  function displayFileModeCHM(chmFile, sizeBuilderView) {
-    resetCHM();
-    initDisplayVars();
-    MMGR.createHeatMap(
-      MMGR.FILE_SOURCE,
-      "",
-      [UIMGR.configurePanelInterface, SUM.processSummaryMapUpdate, DET.processDetailMapUpdate],
-      chmFile
+  function displayZipFileCHM(chmFile) {
+    UTIL.showLoader("Loading NG-CHM from zip file...");
+    MMGR.loadZipMaps(
+      chmFile,
+      updateCallbacks,
+      () => {
+        resetCHM();
+        initDisplayVars();
+        UIMGR.configurePanelInterface ();
+      }
     );
-    if (typeof sizeBuilderView !== "undefined" && sizeBuilderView) {
-      UTIL.showDetailPane = false;
-      PANE.showPaneHeader = false;
-      MMGR.getHeatMap().addEventListener(builderViewSizing);
-    }
-  }
-
-  /**********************************************************************************
-   * FUNCTION - builderViewSizing: This function handles the resizing of the summary
-   * panel for the builder in cases where ONLY the summary panel is being drawn.
-   **********************************************************************************/
-  function builderViewSizing(event) {
-    if (typeof event !== "undefined" && event !== HEAT.Event_INITIALIZED) {
-      return;
-    }
-
-    const header = document.getElementById("mdaServiceHeader");
-    if (!header.classList.contains("hide")) {
-      header.classList.add("hide");
-      window.onresize();
-    }
   }
 
   /**********************************************************************************
@@ -639,34 +963,70 @@
     }
   }
 
-  /**********************************************************************************
-   * FUNCTION - embedCHM: This function is a special pre-processing function for the
-   * widgetized version of the NG-CHM Viewer.  It will take the map name provided
-   * by the user (embedded in an unaffiliated web page) and pass that on to the
-   * on load processing for the viewer.  repository (default .) is the path to the
-   * directory containing the specified map.
-   **********************************************************************************/
+  // Export functions related to embedding NG-CHMs.
+  //
+  // The functions are exported to NgChm.API (and for backward compatibility
+  // to NgChm.UTIL).
+  //
+  // NgChm.API.embedCHM (spec, options)
+  // - The NG-CHM widget has already been embedded into the page.
+  // - This function initializes and displays the NG-CHM.
+  // - The NG-CHM to display and its properties are determined by
+  //   the spec and options parameters.
+  //
+  // NgChm.API.showEmbedded (baseDiv, iframeStyle, customJS)
+  // - This function expands an expandable embedded NG-CHM.
+  //
+  // NgChm.API.showEmbed -- obsolete.  Kept for backward compatibility.
+  //
   NgChm.exportToNS("NgChm.API", { embedCHM, showEmbed, showEmbedded });
-  // FIXME: BMB: Why do both showEmbed and showEmbedded exist and how are they different?
-  // To preserve compatibility with old API:
   Object.assign(UTIL, { embedCHM, showEmbed, showEmbedded });
 
-  function embedCHM(map, repository, sizeBuilderView) {
-    MMGR.embeddedMapName = map;
-    MMGR.localRepository = repository || ".";
-    //Reset dendros for local/widget load
+  // Show an embedded NG-CHM.
+  //
+  const defaultEmbedOpts = {
+    sourceType: MMGR.ZIP_SOURCE,
+    repository: ".",
+    expandable: false,
+  };
+  function embedCHM(spec, o = {}) {
+    if (typeof o == "string") {
+      // Maintain compatibility with previous interface, at least for now.
+      console.warn (`Passing a repository string as the second parameter to NgChm.API.embedCHM is deprecated.
+      If you are using ngchmEmbed-min.js (recommended), upgrade to a recent version.
+      If you are calling NgChm.API.embedCHM directly, you now need to pass an options object with the repository field set.
+      For example, NgChm.API.embedCHM(filename, { repository: "${o}" }).
+      `);
+      o = { repository: o };
+    }
+    const options = Object.assign({}, defaultEmbedOpts, o);
+    options.expandable = document.getElementById("NGCHMEmbedButton") != null;
+    if (debugEmbed) {
+      console.log("embedCHM: ", { spec, o, options });
+    }
+
+    // Set source details (used by onLoadCHM).
+    srcInfo.embedded = true;
+    srcInfo.spec = spec;
+    srcInfo.options = options;
+
+    // UIMGR.onLoadCHM is not called for embedded NG-CHMS.
+    // Call it now.
+    //
+    // Reset dendros for local/widget load
     SUM.colDendro = null;
     SUM.rowDendro = null;
-    //	DET.colDendro = null;
-    //	DET.rowDendro = null;
-    UIMGR.onLoadCHM(sizeBuilderView);
+    UIMGR.onLoadCHM();
   }
+
+  var embedLoaded = false;  // Used to determine if we have already loaded an expandable embedded NGCHM.
 
   /**********************************************************************************
    * FUNCTION - showEmbed: This function shows the embedded heat map when the
    * user clicks on the embedded map image.
    **********************************************************************************/
   function showEmbed(baseDiv, dispWidth, dispHeight, customJS) {
+    console.warn ("OBSOLETE showEmbed: ", { baseDiv, dispWidth, dispHeight, customJS });
     var embeddedWrapper = document.getElementById("NGCHMEmbedWrapper");
     UTIL.embedThumbWidth = embeddedWrapper.style.width;
     UTIL.embedThumbHeight = embeddedWrapper.style.height;
@@ -691,9 +1051,9 @@
     embeddedMap.style.flexDirection = "column";
     embeddedWrapper.style.display = "none";
     embeddedCollapse.style.display = "";
-    if (UTIL.embedLoaded === false) {
-      UTIL.embedLoaded = true;
-      loadLocalModeCHM(false);
+    if (!embedLoaded) {
+      embedLoaded = true;
+      loadNGCHM();
       if (customJS !== "") {
         setTimeout(function () {
           CUST.addExtraCustomJS(customJS);
@@ -703,17 +1063,20 @@
   }
 
   /**********************************************************************************
-   * FUNCTION - showEmbed: This function shows the embedded heat map when the
-   * user clicks on the embedded map image.  It is used by NGCHM_Embed.js from
-   * the minimized file ngchmEmbed-min.js
+   * FUNCTION - showEmbedded: This function shows an expandable embedded heat map when the
+   * user clicks on the embedded map image to show the NG-CHM.  It is used by
+   * NGCHM_Embed.js from the minimized file ngchmEmbed-min.js
    **********************************************************************************/
   function showEmbedded(baseDiv, iframeStyle, customJS) {
-    var embeddedWrapper = document.getElementById("NGCHMEmbedWrapper");
+    if (debugEmbed) {
+      console.log ("showEmbedded: ", { baseDiv, iframeStyle, customJS });
+    }
+    const embeddedWrapper = document.getElementById("NGCHMEmbedWrapper");
     UTIL.embedThumbWidth = embeddedWrapper.style.width;
     UTIL.embedThumbHeight = embeddedWrapper.style.height;
-    var embeddedCollapse = document.getElementById("NGCHMEmbedCollapse");
-    var embeddedMap = document.getElementById("NGCHMEmbed");
-    var iFrame = window.frameElement; // reference to iframe element container
+    const embeddedCollapse = document.getElementById("NGCHMEmbedCollapse");
+    const embeddedMap = document.getElementById("NGCHMEmbed");
+    const iFrame = window.frameElement; // reference to iframe element container
     iFrame.className = "ngchm";
     iFrame.style = iframeStyle;
     iFrame.style.display = "flex";
@@ -723,9 +1086,9 @@
     embeddedMap.style.flexDirection = "column";
     embeddedWrapper.style.display = "none";
     embeddedCollapse.style.display = "";
-    if (UTIL.embedLoaded === false) {
-      UTIL.embedLoaded = true;
-      loadLocalModeCHM(false);
+    if (!embedLoaded) {
+      embedLoaded = true;
+      loadNGCHM();
       if (customJS !== "") {
         setTimeout(function () {
           CUST.addExtraCustomJS(customJS);
@@ -856,7 +1219,7 @@
       },
       function () {
         UHM.messageBoxCancel();
-        MMGR.zipAppDownload();
+        downloadFileApplication();
       }
     );
     UHM.setMessageBoxButton(
@@ -935,59 +1298,76 @@
   }
 
   /**********************************************************************************
-   * FUNCTION - saveHeatMapChanges: This function handles all of the tasks necessary
-   * display a modal window whenever the user requests to save heat map changes.
+   * FUNCTION - saveHeatMapChanges: Display a modal window whenever the user requests
+   * to save heat map changes.
    **********************************************************************************/
   function saveHeatMapChanges() {
     const heatMap = MMGR.getHeatMap();
-    var text;
     UHM.closeMenu();
     const msgBox = UHM.initMessageBox();
     msgBox.classList.add("save-heat-map");
     UHM.setMessageBoxHeader("Save Heat Map");
-    //Have changes been made?
-    if (heatMap.getUnAppliedChanges()) {
-      if (heatMap.source() == MMGR.FILE_SOURCE || typeof NgChm.galaxy !== "undefined") {
-        // FIXME: BMB.  Improve Galaxy detection.
-        if (typeof NgChm.galaxy !== "undefined") {
-          text =
-            "<br>Changes to the heatmap cannot be saved in the Galaxy history.  Your modifications to the heatmap may be written to a downloaded NG-CHM file.";
-        } else {
-          text =
-            "<br>You have elected to save changes made to this NG-CHM heat map file.<br><br>You may save them to a new NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-        }
-        UHM.setMessageBoxText(text);
-        addSaveToNgchmButton();
-        addCancelSaveButton();
-      } else {
-        // If so, is read only?
-        if (heatMap.isReadOnly()) {
-          text =
-            "<br>You have elected to save changes made to this READ-ONLY heat map. READ-ONLY heat maps cannot be updated.<br><br>However, you may save these changes to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-          UHM.setMessageBoxText(text);
-          addSaveToNgchmButton();
-          addCancelSaveButton();
-        } else {
-          text =
-            "<br>You have elected to save changes made to this heat map.<br><br>You have the option to save these changes to the original map OR to save them to an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-          UHM.setMessageBoxText(text);
-          addSaveToNgchmButton();
-          UHM.setMessageBoxButton(
-            "saveOriginal",
-            { type: "text", text: "Save original" },
-            saveHeatMapToServer
-          );
-          addCancelSaveButton();
-        }
-      }
-    } else {
-      text =
-        "<br>There are no changes to save to this heat map at this time.<br><br>However, you may save the map as an NG-CHM file that may be opened using the NG-CHM File Viewer application.<br><br>";
-      UHM.setMessageBoxText(text);
-      addSaveToNgchmButton();
+
+    if (MMGR.getSource() == MMGR.WEB_SOURCE) {
+      UHM.setMessageBoxText("<br>Saving an NG-CHM loaded from a web folder is not supported at this time.<br>");
       addCancelSaveButton();
+      UHM.displayMessageBox();
+      return;
     }
+    // Find a reason, if any, we can't save to the server.
+    const whyNot = checkSavingPermitted();
+
+    // Set the message box text depending on whether saving is permitted.
+    let msgBoxText = "<br>";
+    if (whyNot) {
+      msgBoxText += `The heatmap cannot be saved because ${whyNot}.<br><br>However, you may`;
+    } else {
+      msgBoxText += "You may either save these changes to the original map or ";
+    }
+    msgBoxText += " save a copy of the map as an NG-CHM file. An NG-CHM file can be opened using the NG-CHM File Viewer application.<br><br>";
+    UHM.setMessageBoxText(msgBoxText);
+
+    // Add the message box buttons and display it.
+    addSaveToNgchmButton();
+    if (!whyNot) {
+      // Add a saveOriginal button iff saving is permitted.
+      UHM.setMessageBoxButton(
+        "saveOriginal",
+        { type: "text", text: "Save original" },
+        saveHeatMapToServer
+      );
+    }
+    addCancelSaveButton();
     UHM.displayMessageBox();
+    return;
+
+    // Helper function.
+    // Return null iff saving permitted, otherwise reason.
+    function checkSavingPermitted() {
+      if (!MMGR.hasUnsavedChanges()) {
+        return "there are no changes at this time";
+      }
+      // FIXME: BMB.  Improve Galaxy detection.
+      if (typeof NgChm.galaxy !== "undefined") {
+        return "changes cannot be saved in the Galaxy history";
+      }
+      if (MMGR.hasReadOnlyChanges()) {
+        return "at least one NG-CHM with changes is marked READ-ONLY";
+      }
+      // Final check. Does the fileSource permit saving?
+      switch (MMGR.getSource()) {
+        case MMGR.API_SOURCE:
+          return null;
+        case MMGR.WEB_SOURCE:
+          return "the NG-CHM server is read only";
+        case MMGR.ZIP_SOURCE:
+          return "browsers cannot automatically overwrite files";
+        default:
+          // This should never happen.
+          console.error ("Unknown type of NG-CHM server: " + MMGR.getSource());
+          return "the type of the NG-CHM server is not recognized";
+      }
+    }
   }
 
   // Adds a "Save to .ngchm" button to an initialized UHM dialog.
@@ -1322,11 +1702,11 @@
         var boxHeight = contHeight * 0.92;
         linkBox.style.height = boxHeight;
         var boxTextHeight = boxHeight * 0.8;
-        if (MMGR.embeddedMapName !== null) {
+        if (srcInfo.embedded) {
           boxTextHeight = boxHeight * 0.6;
         }
         if (boxHeight < 400) {
-          if (MMGR.embeddedMapName !== null) {
+          if (srcInfo.embedded) {
             boxTextHeight = boxHeight * 0.6;
           } else {
             boxTextHeight = boxHeight * 0.7;
@@ -1858,7 +2238,7 @@
       ]);
       if (req.args.length > 0) {
         if (req.args[0] != "--help") {
-          if (req.args[0].substr(0,2) == "--") {
+          if (req.args[0].substring(0,2) == "--") {
             res.output.error (`redraw: unexpected option: ${req.args[0]}`);
           } else {
             res.output.error (`redraw: unexpected subcommand/parameter: ${req.args[0]}`);
@@ -1940,4 +2320,23 @@
     SRCH.showSearchResults();
     SUM.redrawSelectionMarks();
   });
+
+  // Special tooltip with content populated from the loaded heat map.
+  document.getElementById("mapName").addEventListener(
+    "mouseover",
+    (ev) => {
+      const heatMap = MMGR.getHeatMap();
+      UHM.hlp(
+        ev.target,
+        "Map Name: " +
+          (heatMap !== null
+            ? heatMap.getMapInformation().name
+            : "Not yet available") +
+          "<br><br>Description: " +
+          (heatMap !== null ? heatMap.getMapInformation().description : "N/A"),
+        350,
+      );
+    },
+    { passive: true },
+  );
 })();

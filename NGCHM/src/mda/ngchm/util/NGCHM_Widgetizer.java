@@ -108,14 +108,13 @@ public class NGCHM_Widgetizer {
     System.out.println("BEGIN NGCHM Widgetizer  " + new Date());
     try {
       if (args.length < 2) {
-        System.out.println("Usage: NGCHM_Widgetizer <web directory> <output file> <mode>");
+        System.out.println("Usage: NGCHM_Widgetizer <web directory> <output file>");
         System.exit(1);
       }
 
       StringBuffer cssLines = new StringBuffer();
       BufferedReader br = new BufferedReader(new FileReader(args[0] + "/chm.html"));
       BufferedWriter bw = new BufferedWriter(new FileWriter(args[1]));
-      String mode = args[2];
       String htmlString = "";
 
       String line = br.readLine();
@@ -240,7 +239,6 @@ public class NGCHM_Widgetizer {
         e.printStackTrace();
       }
       // Inject widget scripts.
-      bw.write("var ngChmWidgetMode = '" + mode + "';\n");
       copyToFile(args[0] + "javascript/ngchm-min.js", bw);
       bw.write("document.body.addEventListener('click', NgChm.UHM.closeMenu,true);\n");
 

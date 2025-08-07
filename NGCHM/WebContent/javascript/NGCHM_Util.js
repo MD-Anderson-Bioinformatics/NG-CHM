@@ -637,7 +637,6 @@
     return valArr;
   };
 
-  UTIL.isBuilderView = false;
   UTIL.containerElement = document.getElementById("ngChmContainer");
 
   /**********************************************************************************
@@ -948,7 +947,6 @@
    * We only only load once.
    *
    **********************************************************************************/
-  UTIL.embedLoaded = false;
   UTIL.embedThumbWidth = "150px";
   UTIL.embedThumbHeight = "150px";
   UTIL.defaultNgchmWidget = "ngchmWidget-min.js";
