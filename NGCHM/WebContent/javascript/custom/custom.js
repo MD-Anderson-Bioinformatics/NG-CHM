@@ -1916,12 +1916,15 @@ function linkoutHelp () {
 
 {
   // Determine if either or both of the axes include Hugo gene symbols.
+  const rowHasHugo = linkouts.execCommand(["heatmap", "get-label-types", "row"]).includes("bio.gene.hugo");
+  const colHasHugo = linkouts.execCommand(["heatmap", "get-label-types", "column"]).includes("bio.gene.hugo");
   let axis = null
-  if (linkouts.execCommand(["heatmap", "get-label-types", "row"]).includes("bio.gene.hugo")) {
+  if (rowHasHugo && colHasHugo) {
+    axis = "";
+  } else if (rowHasHugo) {
     axis = "row";
-  }
-  if (linkouts.execCommand(["heatmap", "get-label-types", "column"]).includes("bio.gene.hugo")) {
-    axis = axis == "row" ? "" : "column";
+  } else if (colHasHugo) {
+    axis = "column";
   }
   // Add the Pathways Web search option if at least one axis includes Hugo gene symbols.
   if (axis != null) {

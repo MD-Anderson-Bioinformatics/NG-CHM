@@ -207,7 +207,7 @@
     this.searchFor = {
       category: "label",
       type: "text",
-      axis: this.ui.searchAxis.value,
+      axis: searchParam,
       key: ""
     };
   };
@@ -307,7 +307,7 @@
 
   // METHOD SearchInterface.setSearchString - Sets the value of the text search
   // input element.
-  SearchInterface.prototype.setSearchString = function getSearchString(str) {
+  SearchInterface.prototype.setSearchString = function setSearchString(str) {
     this.ui.searchForText.value = str;
   };
 
