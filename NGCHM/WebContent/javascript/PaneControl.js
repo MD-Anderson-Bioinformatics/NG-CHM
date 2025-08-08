@@ -622,12 +622,15 @@
     const pane = UTIL.newElement("DIV.pane", { style, id: paneid });
     pane.addEventListener("paneresize", resizeHandler);
     if (title) {
-      const h = UTIL.newElement("DIV.paneHeader.activePane");
+      const h = UTIL.newElement("DIV.paneHeader");
       if (!PANE.showPaneHeader) h.classList.add("hide");
       pane.appendChild(h);
 
       const sc = UTIL.newElement("DIV.paneScreenMode");
       h.appendChild(sc);
+
+      const av = UTIL.newElement("DIV.paneAvatar");
+      h.appendChild(av);
 
       const t = UTIL.newElement("DIV.paneTitle");
       t.innerText = title;
@@ -657,6 +660,67 @@
       sc.appendChild(shrinker);
     }
     return pane;
+  }
+
+  // Exported function.
+  // Set the heatMap-specific decorative UI elements.
+  PANE.setPaneDecor = setPaneDecor;
+  function setPaneDecor (loc, decor) {
+    // Remove previous custom decor.
+    loc.paneHeader.style.backgroundColor = "";
+    const av = loc.paneHeader.getElementsByClassName("paneAvatar")[0];
+    while (av.firstChild) av.firstChild.remove();
+    if (!decor) {
+      // Quit if no custom decor.
+      return;
+    }
+    if (decor.hasOwnProperty('hue')) {
+      const bgColor = UTIL.hsvToRgb (decor.hue, 10, 90);
+      loc.paneHeader.style.backgroundColor = bgColor;
+    }
+    if (decor.avatar) {
+      const avatar =
+          UTIL.newAvatarButton(
+            ".ngchm-avatar",
+            decor.avatar,
+            {
+              dataset: {
+                tooltip:
+                  "Avatar button",
+                title: "avatar-button",
+                intro:
+                  "Long avatar button text",
+              },
+            },
+            (el) => {
+              el.onmousedown = (ev) => {
+                let button = ev.target;
+                while (button && button.tagName.toLowerCase() != "button") {
+                  button = button.parentElement;
+                }
+                if (button) {
+                  button.dataset.mouseDownTime = "" + performance.now();
+                }
+                console.log ("Avatar mousedown", { button });
+              };
+              el.onclick = (ev) => {
+                ev.stopPropagation();
+                let button = ev.target;
+                while (button && button.tagName.toLowerCase() != "button") {
+                  button = button.parentElement;
+                }
+                if (button) {
+                  const mapItem = findMapItem(ev);
+                  console.log ("Avatar button click", { button, mapItem });
+                } else {
+                  console.log ("Avatar click");
+                }
+              };
+              return el;
+            },
+          );
+      av.appendChild(avatar);
+    }
   }
 
   // Exported function.
@@ -761,7 +825,6 @@
     if (debug) console.log({ m: "splitPane", vertical, loc });
     if (!loc.pane || !loc.container) return;
     const verticalContainer = loc.container.classList.contains("vertical");
-    if (loc.paneHeader) loc.paneHeader.classList.remove("activePane");
     const style = {};
     style[vertical ? "height" : "width"] = "calc(50% - 5px)";
     const divider = UTIL.newElement("DIV.resizerHelper");
@@ -1476,6 +1539,8 @@
     setPaneTitle(loc, "empty");
     removePanelMenuGroupIcons(loc);
     PANE.setPaneClientIcons(loc, {});
+    // Clear any panel decoration.
+    PANE.setPaneDecor(loc, null);
     MMGR.getHeatMap().removePaneInfoFromMapConfig(loc.pane.id);
     // Return remaining client elements to caller.
     return clientElements;

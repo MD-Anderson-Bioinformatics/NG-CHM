@@ -906,6 +906,15 @@
     function saveMaps (callback) {
       return function onMapsLoaded (maps) {
         allHeatMaps = maps;
+        if (maps.length > 0) {
+          // Define map-specific decorations to help distinguish them in the UI.
+          for (let ii = 0; ii < maps.length; ii++) {
+            const map = maps[ii];
+            // Spread out hues evenly as much as possible.
+            map.decor.hue = 360 * ii / maps.length;
+            map.decor.avatar = UTIL.genAvatar (map.decor.hue);
+          }
+        }
         MMGR.setHeatMap(allHeatMaps[0]);
         callback();
       };

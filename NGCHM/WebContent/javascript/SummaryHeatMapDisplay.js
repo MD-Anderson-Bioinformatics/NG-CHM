@@ -92,6 +92,10 @@
     SUM.colTopItemsWidth = 0;
     SUM.rowTopItemsHeight = 0;
     SUM.initSummaryData();
+    if (SUM.chmElement) {
+      const loc = PANE.findPaneLocation(SUM.chmElement);
+      PANE.setPaneDecor (loc, SUM.heatMap.decor);
+    }
   };
 
   // Callback that is notified every time there is an update to the heat map

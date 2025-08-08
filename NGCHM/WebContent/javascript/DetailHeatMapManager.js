@@ -613,6 +613,7 @@
         isPrimary,
         restoreInfo ? restoreInfo.paneInfo : null,
       );
+      PANE.setPaneDecor (loc, mapItem.heatMap.decor);
       // If primary is collapsed set chm detail of clone to visible
       if (!restoreInfo && chm.style.display === "none") {
         chm.style.display = "";

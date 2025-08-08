@@ -188,10 +188,6 @@ div.paneHeader {
 	padding: 5px 5px 5px 5px;
 }
 
-div.paneHeader.activePane {
-	/* background-color: #ccccff; */
-}
-
 div.paneTitle {
 	margin: 2px;
 	display: inline-block;

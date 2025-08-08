@@ -1575,6 +1575,7 @@ var linkoutsVersion = "undefined";
     if (restoreInfo) {
       pluginRestoreInfo[loc.pane.id] = restoreInfo;
     }
+    PANE.setPaneDecor(loc, null);
     switchToPlugin(loc, plugin.name);
     MMGR.getHeatMap().setUnAppliedChanges(true);
     const params = plugin.params;

@@ -352,6 +352,7 @@
       PANE.emptyPaneLocation(loc);
       initializeSummaryPanel(loc.pane);
       PANE.setPaneTitle(loc, "Heat Map Summary");
+      PANE.setPaneDecor (loc, SUM.heatMap.decor);
       PANE.registerPaneEventHandler(loc.pane, "empty", emptySummaryPane);
       PANE.registerPaneEventHandler(loc.pane, "resize", resizeSummaryPane);
       loc.pane.dataset.title = "Summary Heat Map";
