@@ -200,7 +200,7 @@
   // discrete checkbox elements.
   //
   SearchInterface.prototype.getDiscCheckBoxes = function getDiscCheckBoxes() {
-    return this.ui.searchForDisc.getElementsByClassName("srchCovCheckBox");
+    return this.ui.checkBoxes.getElementsByClassName("srchCovCheckBox");
   };
 
   SearchInterface.prototype.setSearchString = function (searchParam) {
