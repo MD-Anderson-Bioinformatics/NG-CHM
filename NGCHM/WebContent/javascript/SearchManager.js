@@ -832,11 +832,20 @@
           continue;
         }
         let reg;
-        if (searchItem.charAt(0) == '"' && searchItem.slice(-1) == '"') {
-          // is it wrapped in ""?
-          reg = new RegExp("^" + searchItem.toUpperCase().slice(1, -1).replace(".", "\\.") + "$");
-        } else {
-          reg = new RegExp(searchItem.toUpperCase());
+        // Catch bad search strings that throw exceptions when creating RegExp.
+        try {
+          if (searchItem.charAt(0) === '"' && searchItem.slice(-1) === '"') {
+            // Escape all regex meta-chars.
+            const literal = searchItem.slice(1, -1).toUpperCase()
+              .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            reg = new RegExp("^" + literal + "$");
+          } else {
+            reg = new RegExp(searchItem.toUpperCase());
+          }
+        } catch (e) {
+          // Mark search invalid and stop.
+          postFn(false, "none");
+          return;
         }
         let matches = [];
         labels.forEach((label, index) => {
