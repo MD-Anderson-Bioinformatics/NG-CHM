@@ -500,7 +500,7 @@
         this.ui.searchForCont.value = "";
         break;
       case "discrete":
-        UTIL.resetCheckBoxDropdown("srchCovCheckBox");
+        UTIL.resetCheckBoxDropdown("srchCovCheckBoxes");
         break;
       default:
         throw `Unknown searchFor.type ${this.searchFor.type}`;
