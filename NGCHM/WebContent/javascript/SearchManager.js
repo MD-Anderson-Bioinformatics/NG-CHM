@@ -323,7 +323,15 @@
   //
   // The continuous search criteria input is updated to the canonical format.
   //
-  // If the continuous search input is invalid, null is returned.
+  SearchInterface.prototype.getContinuousSelectors = function getContinuousSelectors() {
+    // Remove all spaces from continuous selector(s).
+    const searchString = this.ui.searchForCont.value.trim().replace(/ /g, "");
+    this.ui.searchForCont.value = searchString;
+    return parseContinuousSearchString (searchString);
+  };
+
+  // FUNCTION parseContinuousSearchString - Parse a continuous search string into an
+  // array of selectors. If the continuous search string is invalid, null is returned.
   //
   // Otherwise, an array of selectors is returned. Each selector contains up to five
   // values:
@@ -338,13 +346,8 @@
   //
   // A value will match if it matches any selector in the array.
   //
-  SearchInterface.prototype.getContinuousSelectors = function getContinuousSelectors() {
+  function parseContinuousSearchString (searchString) {
     const operators = [">=", ">", "<=", "<"]; // Longer ops before shorter ones.
-
-    // Remove all spaces from continuous selector(s).
-    const searchString = this.ui.searchForCont.value.trim().replace(/ /g, "");
-    this.ui.searchForCont.value = searchString;
-
     // Parse out the individual selectors.
     const selectors = parseSearchString(searchString);
 
@@ -462,7 +465,7 @@
       // No second operator was found.
       return { firstValue: remain };
     }
-  };
+  }
 
   /**********************************************************************************
    * FUNCTION evaluateOperator: Returns true iff dataValue matches
@@ -715,7 +718,7 @@
     const classDataValues = heatMap.getAxisCovariateData(axis)[covar].values;
 
     const searchExprs = parseContinuousSearchString(searchString.trim().replace(/ /g, ""));
-    const validSearch = validateContinuousSearch(searchExprs);
+    const validSearch = searchExprs != null;
     const results = validSearch
       ? getSelectedContinuousSelections(searchExprs, classDataValues)
       : [];
