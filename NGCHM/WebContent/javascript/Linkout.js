@@ -1274,11 +1274,11 @@ var linkoutsVersion = "undefined";
   }
 
   function uploadSelectedToBuilder(heatMap, data, axis) {
-    const rowRanges = NgChm.UTIL.getContigRanges(
-      NgChm.SRCHSTATE.getAxisSearchResults("Row"),
+    const rowRanges = UTIL.getContigRanges(
+      SRCHSTATE.getAxisSearchResults("Row"),
     );
-    const colRanges = NgChm.UTIL.getContigRanges(
-      NgChm.SRCHSTATE.getAxisSearchResults("Column"),
+    const colRanges = UTIL.getContigRanges(
+      SRCHSTATE.getAxisSearchResults("Column"),
     );
     uploadToBuilder(heatMap, "selected", data, rowRanges, colRanges);
   }
