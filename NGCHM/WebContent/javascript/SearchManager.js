@@ -120,6 +120,11 @@
     this.searchOnOpts.push(opts);
   };
 
+  SearchInterface.prototype.setSearchAxis = function setSearchAxis (axis) {
+    this.ui.searchAxis.value = axis;
+    this.searchFor.axis = axis;
+  };
+
   // METHOD - SearchInterface.searchOnChange
   //
   // Change handler for the searchOn dropdown.
@@ -587,14 +592,17 @@
   // To be called after initialization of the panels.
   SRCH.doInitialSearch = function () {
     const searchParam = UTIL.getURLParameter("search");
-    SRCH.searchForLabel(searchParam);
+    SRCH.searchForLabel(searchParam, { axis: "Both", regex: true });
   };
 
   // FUNCTION SRCH.searchForLabel - Search for a label.
   // To be called after initialization of the panels.
-  SRCH.searchForLabel = function searchForLabel(searchParam) {
-    if (searchParam !== "") {
-      searchInterface.setSearchString(searchParam);
+  SRCH.searchForLabel = function searchForLabel(searchString, options) {
+    if (searchString !== "") {
+      // Wrap search string in double quotes if not using regex.
+      if (!options.regex) searchString = `"${searchString}"`;
+      if (options.axis) searchInterface.setSearchAxis(options.axis);
+      searchInterface.setSearchString(searchString);
       SRCH.detailSearch();
     }
   };

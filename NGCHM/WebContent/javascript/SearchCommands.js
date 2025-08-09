@@ -68,9 +68,13 @@
       EXEC.genRequired("string"),
       EXEC.noMoreParams,
       function (req, res) {
-        // FIXME: Does not handle axis restrictions.
-        // FIXME: Does not handle regex searching as described above.
-        SRCH.searchForLabel(req.string);
+        const options = {
+          axis: "Both",
+          regex: !!req.regex,
+        };
+        if (req["--row"] && !req["--column"]) options.axis = "Row";
+        if (req["--column"] && !req["--row"]) options.axis = "Column";
+        SRCH.searchForLabel(req.string, options);
         SRCH.redrawSearchResults ();
       }
     ]

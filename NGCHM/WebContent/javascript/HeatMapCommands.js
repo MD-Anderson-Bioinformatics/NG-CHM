@@ -24,6 +24,10 @@
     field: "--row",
     args: 0,
   });
+  EXEC.axisOptions.set ("--column", {
+    field: "--column",
+    args: 0,
+  });
   EXEC.helpAxisOptions = function (req, res, next) {
     res.output.write(`--row : use the heat map rows.`);
     res.output.write(`--column : use the heat map columns.`);
