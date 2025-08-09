@@ -291,13 +291,19 @@
 
   /**********************************************************************************
    * FUNCTION - UTIL.createPopupPanel: Create and return a DIV html element that is
-   * configured for a help pop-up panel.
+   * configured for a pop-up panel.
    **********************************************************************************/
   UTIL.createPopupPanel = function createPopupPanel (elemName) {
-    const panel = UTIL.newElement("DIV.ngchm-popup");
-    panel.id = elemName;
-    panel.style.display = "none";
-    return panel;
+    const existing = document.getElementById(elemName);
+    if (existing) {
+      existing.classList.add("ngchm-popup");
+      existing.style.display = "none";
+      return existing;
+    }
+    return UTIL.newElement(
+      "DIV.ngchm-popup",
+      { id: elemName, style: { display: "none" } }
+    );
   };
 
   /**********************************************************************************
