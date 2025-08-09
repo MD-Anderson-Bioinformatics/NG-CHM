@@ -1198,18 +1198,20 @@
       const label = labels[currentSearchItem.index-1];
       switch (reason) {
         case 0:
-          searchError.innerHTML = "No matching labels found";
+          searchError.textContent = "No matching labels found";
           break;
         case 1:
-          searchError.innerHTML = "Exit dendrogram selection to go to " + label;
+          searchError.textContent = "Exit dendrogram selection to go to " + label;
           break;
         case 2:
-          searchError.innerHTML =
+          searchError.textContent =
             "All " +
             searchItem.axis +
             " items are visible. Change the view mode to see " +
             label;
           break;
+        default:
+          searchError.textContent = `Unknown search error ${reason}`;
       }
       UHM.hlpC();
       document.body.appendChild(searchError);
