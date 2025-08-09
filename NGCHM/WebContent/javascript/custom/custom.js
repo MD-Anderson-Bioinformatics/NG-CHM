@@ -1947,14 +1947,22 @@ function linkoutHelp () {
   // Called when the user searches for a pathway.
   function pathwaysSearch(searchInterface, searchFor, postFn) {
     const searchString = searchInterface.getSearchString().trim();
-    fetch (`https://bioinformatics.mdanderson.org/PathwaysWeb/pathways/latest/?start=0&count=20&description=${searchString}`, {
+    if (!searchString) {
+      postFn(true, "none");
+      return;
+    }
+    const encSearchString = encodeURIComponent(searchString);
+    fetch (`https://bioinformatics.mdanderson.org/PathwaysWeb/pathways/latest/?start=0&count=20&description=${encSearchString}`, {
       headers: { 'Accept': 'application/json' },
     })
-    .then (res => res.json())
+    .then (res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
     .then (res => {
       // console.log ('PathwaysWeb: ',  { res });
       let found = false;
-      if (res.pathway.length > 0) {
+      if (res && Array.isArray(res.pathway) && res.pathway.length > 0) {
         // Determine gene symbols in the returned pathways.
         let symbols = [];
         for (const pathway of res.pathway) {
@@ -1968,12 +1976,12 @@ function linkoutHelp () {
         for (const axis of [ "Row", "Column" ]) {
           if (searchFor.axis == axis || searchFor.axis == "" || searchFor.axis == "Both") {
             const labels = linkouts.getTypeValues(axis, "bio.gene.hugo");
+            // Create an index for O(1) lookups; normalize case.
+            const idxMap = new Map(labels.map((lab, i) => [String(lab).toUpperCase(), i]));
             const selectIndices = [];
-            for (const symbol of symbols) {
-              const index = labels.indexOf(symbol);
-              if (index != -1) {
-                selectIndices.push(index+1);
-              }
+            for (const sym of symbols) {
+              const idx = idxMap.get(String(sym).toUpperCase());
+              if (idx != undefined) selectIndices.push(idx+1);
             }
             if (selectIndices.length > 0) {
               linkouts.setSelectionVec (axis, selectIndices);
