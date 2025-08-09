@@ -208,15 +208,6 @@
     return this.ui.checkBoxes.getElementsByClassName("srchCovCheckBox");
   };
 
-  SearchInterface.prototype.setSearchString = function (searchParam) {
-    this.searchFor = {
-      category: "label",
-      type: "text",
-      axis: searchParam,
-      key: ""
-    };
-  };
-
   /**********************************************************************************
    * Method SearchInterface.saveDiscreteState: Save the state of the discrete covariate
    * checkbox dropdown.
