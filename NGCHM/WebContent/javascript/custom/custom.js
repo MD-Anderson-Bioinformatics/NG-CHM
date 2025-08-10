@@ -1970,19 +1970,25 @@ function linkoutHelp () {
             symbols = symbols.concat (pathway.genes.filter(g => g.isHugoGene == 'Y').map(g => g.geneSymbol));
           }
         }
-        // Get unique symbols.
-        symbols = [...new Set(symbols)];
+        // Get unique symbols and normalize case.
+        symbols = [...new Set(symbols)].map(sym => String(sym).toUpperCase());
         // Find all occurrences of those symbols in the heatMap.
         for (const axis of [ "Row", "Column" ]) {
           if (searchFor.axis == axis || searchFor.axis == "" || searchFor.axis == "Both") {
             const labels = linkouts.getTypeValues(axis, "bio.gene.hugo");
-            // Create an index for O(1) lookups; normalize case.
-            const idxMap = new Map(labels.map((lab, i) => [String(lab).toUpperCase(), i]));
-            const selectIndices = [];
-            for (const sym of symbols) {
-              const idx = idxMap.get(String(sym).toUpperCase());
-              if (idx != undefined) selectIndices.push(idx+1);
+            // Create a map of normalized labels to an array of 1-based search
+            // indices (in case of duplicated symbols in labels).
+            const idxMap = new Map();
+            for (const [idx, lab] of labels.entries()) {
+              const key = String(lab).toUpperCase();
+              const indices = idxMap.get(key) || [];
+              indices.push(idx+1);
+              idxMap.set(key,indices);
             }
+            // Collect all indices.
+            const allIndices = symbols.flatMap(sym => idxMap.get(sym) || []);
+            // Dedupe and sort indices.
+            const selectIndices = Array.from(new Set(allIndices)).sort((a,b) => a-b);
             if (selectIndices.length > 0) {
               linkouts.setSelectionVec (axis, selectIndices);
               found = true;
