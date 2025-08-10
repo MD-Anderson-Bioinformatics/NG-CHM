@@ -235,7 +235,7 @@
    ***********************************************************************************/
   SearchInterface.prototype.loadDiscreteState = function loadDiscreteState() {
     const targetState = SRCHSTATE.getDiscreteState(this.searchFor.axis);
-    if (targetState === "") {
+    if (typeof targetState !== "string" || targetState.length == 0) {
       // No saved state for this axis.
       return;
     }

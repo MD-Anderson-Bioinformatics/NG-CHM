@@ -56,7 +56,7 @@
   };
 
   SRCHSTATE.getDiscreteState = function (axis) {
-    return discCovStates[axis];
+    return discCovStates.hasOwnProperty(axis) ? discCovStates[axis] : null;
   };
 
   /**********************************************************************************
