@@ -586,7 +586,9 @@
   // To be called after initialization of the panels.
   SRCH.doInitialSearch = function () {
     const searchParam = UTIL.getURLParameter("search");
-    SRCH.searchForLabel(searchParam, { axis: "Both", regex: true });
+    if (typeof searchParam === "string" && searchParam.trim() !== "") {
+      SRCH.searchForLabel(searchParam, { axis: "Both", regex: true });
+    }
   };
 
   // FUNCTION SRCH.searchForLabel - Search for a label.
