@@ -2039,7 +2039,11 @@
       const index = types.indexOf(typeName);
       if (index != -1) {
         const labels = this.getAxisLabels(axis)["labels"];
-        return labels.map(label => label.split("|")[index]);
+        return labels.map(label => {
+          if (!label) return "";
+          const parts = label.split("|");
+          return parts[index] == undefined ? "" : parts[index];
+        });
       } else {
         return [];
       }
