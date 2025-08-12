@@ -39,7 +39,7 @@
           const axis = EXEC.mustMatch (req.args[0], axes);
           SRCH.clearSearchItems (UTIL.toTitleCase(axis));
         }
-        SRCH.showSearchResults();
+        SRCH.redrawSearchResults();
       }
     ]
   });
