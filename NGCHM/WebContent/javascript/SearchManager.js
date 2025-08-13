@@ -15,6 +15,7 @@
   const UHM = NgChm.importNS("NgChm.UHM");
   const PIM = NgChm.importNS("NgChm.PIM");
   const PANE = NgChm.importNS("NgChm.Pane");
+  const HEAT = NgChm.importNS("NgChm.HEAT");
 
   SRCH.clearAllCurrentSearchItems = function () {
     SRCHSTATE.clearAllCurrentSearchItems();
@@ -32,42 +33,611 @@
     SRCHSTATE.clearSearchRange(axis, left, right);
   };
 
-  /**********************************************************************************
-   * FUNCTION - configSearchInterface: This function initializes/resets all
-   * search-related user interface elements.  It is called from the UI-Manager after the
-   * heatMap has initialized.
-   **********************************************************************************/
-  SRCH.configSearchInterface = configSearchInterface;
-  function configSearchInterface(heatMap) {
-    const searchOn = document.getElementById("search_on");
+  const debugNumeric = UTIL.getDebugFlag("srch-num");
 
-    // Clear any existing options after the first (Labels).
-    for (let i = searchOn.options.length - 1; i >= 1; i--) {
-      searchOn.remove(i);
-    }
-    // Add additional options for all covariate bars.
-    addCovariateOptions("col", heatMap.getColClassificationOrder());
-    addCovariateOptions("row", heatMap.getRowClassificationOrder());
-    searchOn.onchange = () => searchOnSel();
+  // CLASS SearchInterface.
+  //
+  // An instance of this class is used to manage all the UI elements
+  // related to searching.
+  //
+  // When we instantiate the class, we will grab references to all of
+  // the static search UI elements and setup event handlers.
+  //
+  class SearchInterface {
+    constructor () {
+      this.ui = {};
+      // Discover UI elements and connect to event handlers.
+      this.ui.searchOn = document.getElementById("search_on");
+      this.ui.searchOn.onchange = () => this.searchOnChange();
+      this.ui.cancelBtn = document.getElementById("cancel_btn");
+      if (this.ui.cancelBtn) this.ui.cancelBtn.onclick = () => SRCH.clearSearch();
+      this.ui.goBtn = document.getElementById("go_btn");
+      if (this.ui.goBtn) this.ui.goBtn.onclick = () => SRCH.detailSearch();
 
-    // Connect UI elements to onclick handlers.
-    let e = document.getElementById("cancel_btn");
-    if (e) e.onclick = () => SRCH.clearSearch();
-    e = document.getElementById("go_btn");
-    if (e) e.onclick = () => SRCH.detailSearch();
-
-    function addCovariateOptions(axis, barOrder) {
-      barOrder.forEach((key) => {
-        // create new option element
-        const opt = document.createElement("option");
-        const covname = key.length > 20 ? key.substring(0, 20) + "..." : key;
-        opt.appendChild(document.createTextNode(covname));
-        opt.value = axis + "|" + key;
-        // add opt to end of select box
-        searchOn.appendChild(opt);
-      });
+      // Discover other UI elements.
+      this.ui.searchAxis = document.getElementById("search_target");
+      this.ui.searchAxis.onchange = this.getAxisChangeHandler();
+      this.ui.searchForText = document.getElementById("search_text");
+      this.ui.searchForCont = document.getElementById("search_cov_cont");
+      this.ui.searchForDisc = document.getElementById("search_cov_disc");
+      this.ui.checkBoxes = document.getElementById("srchCovCheckBoxes");
+      this.ui.searchResults = document.getElementById("search_display_text");
     }
   }
+
+  // METHOD SearchInterface.getAxisChangeHandler - Returns an event handler
+  // that sets the search interface's searchFor.axis.
+  //
+  SearchInterface.prototype.getAxisChangeHandler = function () {
+    const searchInterface = this;
+    return function axisChangeHandler (ev) {
+      console.log ("Search axis change", ev);
+      switch (ev.target.value) {
+        case "Row":
+        case "Column":
+          searchInterface.searchFor.axis = ev.target.value;
+          break;
+        case "Both":
+          searchInterface.searchFor.axis = "";
+          break;
+        default:
+          throw `axisChangeHandler: Unknown axis value ${ev.target.value}`;
+      }
+    };
+  };
+
+  // METHOD SearchInterface.reset - Reset the searchOn options so that only
+  // label search entry is available.
+  //
+  SearchInterface.prototype.reset = function resetSearchInterface() {
+    // Remove any existing options after the first (Labels).
+    for (let i = this.ui.searchOn.options.length - 1; i >= 1; i--) {
+      this.ui.searchOn.remove(i);
+    }
+    // Initialize search options for the labels entry.
+    this.searchOnOpts = [
+      {
+        type: "text",
+        axis: "",
+        key: "",
+        onSelect: null,
+      }
+    ];
+    this.searchOnChange();
+  };
+
+  // METHOD SearchInterface.addSearchOption - Add an option to the searchOn dropdown
+  // for opts.axis and opts.key.
+  //
+  SearchInterface.prototype.addSearchOption = function addSearchOption(opts) {
+    // create new option element
+    const option = document.createElement("option");
+    const covname = opts.key.length > 20 ? opts.key.substring(0, 17) + "..." : opts.key;
+    option.appendChild(document.createTextNode(covname));
+    option.value = opts.axis + "|" + opts.key;
+    // add opt to end of select box
+    this.ui.searchOn.appendChild(option);
+    this.searchOnOpts.push(opts);
+  };
+
+  SearchInterface.prototype.setSearchAxis = function setSearchAxis (axis) {
+    this.ui.searchAxis.value = axis;
+    this.searchFor.axis = axis;
+  };
+
+  // METHOD - SearchInterface.searchOnChange
+  //
+  // Change handler for the searchOn dropdown.
+  //
+  // - close the discrete target selector if it's open.
+  // - display the appropriate search input element (text box, and discrete
+  //   dropdown checkbox) depending upon the entry that the user selects.
+  //
+  SearchInterface.prototype.searchOnChange = function searchOnChange() {
+    UTIL.closeCheckBoxDropdown("srchCovSelectBox", "srchCovCheckBoxes");
+
+    const index = this.ui.searchOn.selectedIndex;
+    const opts = this.searchOnOpts[index];
+
+    // Set default searchFor values.
+    this.searchFor = {
+      type: opts.type, // text, discrete, or continuous
+      axis: opts.axis, // "Row" or "Column" (forcing), or ""
+      key: opts.key,
+      discreteValues: [],
+      doSearch: labelSearch
+    };
+    // Set option-specific searchFor values.
+    if (opts.onSelect) opts.onSelect(opts, this.searchFor);
+    // Force the axis dropdown to a specific value if specified.
+    if (this.searchFor.axis) {
+      this.searchFor.axis = MAPREP.isRow(this.searchFor.axis) ? "Row" : "Column";
+      this.ui.searchAxis.value = this.searchFor.axis;
+      this.ui.searchAxis.disabled = true;
+    } else {
+      this.ui.searchAxis.disabled = false;
+      if (this.ui.searchAxis.value != "Both") {
+        this.searchFor.axis = this.ui.searchAxis.value;
+      }
+    }
+    // For discrete covariates, create the available options.
+    if (this.searchFor.type == "discrete") {
+      setDiscreteCheckBoxOptions(this.searchFor.discreteValues);
+      // This element is created when the discrete options are created.
+      this.ui.searchForDiscOverlay = document.getElementById("overSelect");
+      // Pre-populate those options from saved state if possiible.
+      this.loadDiscreteState();
+    }
+    // Display the appropriate searchFor input based on searchFor.type.
+    switch (this.searchFor.type) {
+      case "continuous":
+        this.ui.searchForText.style.display = "none";
+        this.ui.searchForCont.style.display = "";
+        this.ui.searchForDisc.style.display = "none";
+        break;
+      case "discrete":
+        this.ui.searchForText.style.display = "none";
+        this.ui.searchForCont.style.display = "none";
+        this.ui.searchForDisc.style.display = "inline-flex";
+        break;
+      case "text":
+        this.ui.searchForText.style.display = "";
+        this.ui.searchForCont.style.display = "none";
+        this.ui.searchForDisc.style.display = "none";
+        break;
+      default:
+        throw `searchOnChange: unknown searchFor.type ${this.searchFor.type}`;
+    }
+
+    // Helper FUNCTION - Set the options of the discrete covariate check box dropdown.
+    function setDiscreteCheckBoxOptions(options) {
+      UTIL.createCheckBoxDropDown(
+        "srchCovSelectBox",
+        "srchCovCheckBoxes",
+        "Select Category(s)",
+        options,
+        "300px"
+      );
+    }
+  };
+
+  // METHOD SearchInterface.getDiscCheckBoxes - returns an array of the
+  // discrete checkbox elements.
+  //
+  SearchInterface.prototype.getDiscCheckBoxes = function getDiscCheckBoxes() {
+    return this.ui.checkBoxes.getElementsByClassName("srchCovCheckBox");
+  };
+
+  /**********************************************************************************
+   * Method SearchInterface.saveDiscreteState: Save the state of the discrete covariate
+   * checkbox dropdown.
+   *
+   * A string is saved for the current search axis.
+   * The string consists of multiple fields separated by vertical bars ("|"):
+   * - The first two fields are the current search axis and key (e.g. the covariate name).
+   * - All subsequent fields, if any, are the indices of the checked boxes.
+   **********************************************************************************/
+  SearchInterface.prototype.saveDiscreteState = function saveDiscreteState() {
+    const currElems = this.getDiscCheckBoxes();
+    const state = [this.searchFor.axis, this.searchFor.key];
+    for (let i = 0; i < currElems.length; i++) {
+      if (currElems[i].checked) {
+        state.push(i);
+      }
+    }
+    SRCHSTATE.setDiscreteState(this.searchFor.axis, state.join("|"));
+  };
+
+  /**********************************************************************************
+   * Method loadDiscreteState: Load the
+   * saved state of a discrete covariate bar's checkboxes and check those boxes
+   * that have been used in a current search.
+   ***********************************************************************************/
+  SearchInterface.prototype.loadDiscreteState = function loadDiscreteState() {
+    const targetState = SRCHSTATE.getDiscreteState(this.searchFor.axis);
+    if (typeof targetState !== "string" || targetState.length == 0) {
+      // No saved state for this axis.
+      return;
+    }
+    const stateElems = targetState.split("|");
+    if (stateElems[0] === this.searchFor.axis && stateElems[1] === this.searchFor.key) {
+      // The save state matches the current searchFor value.
+      for (let i = 2; i < stateElems.length; i++) {
+        const checkBoxIndex = parseInt(stateElems[i]);
+        this.ui.checkBoxes.children[checkBoxIndex].children[0].click();
+      }
+    }
+  };
+
+  // Colors to set the search input to after a search, depending on how many
+  // search items were matched: all, some but not all, or none.
+  const textColors = {
+    all: "rgba(255,255,255,0.3)", // white
+    some: "rgba(255,255,0,0.3)", // yellow
+    none: "rgba(255,0,0,0.3)" // red
+  };
+
+  // METHOD SearchInterface.setBackgroundColor - sets the background color of
+  // the search element to reflect whether the last search matched none, some,
+  // or all of the searchItems. The specific UI element to set the background
+  // color on depends on the type of search that was performed.
+  SearchInterface.prototype.setBackgroundColor = function setBackgroundColor(matches) {
+    // Determine the color to set.
+    let color;
+    if (textColors.hasOwnProperty(matches)) {
+      color = textColors[matches];
+    } else {
+      console.error (`SearchInterface.setBackgroundColor: unknown matches ${matches}`);
+      color = textColors.none;
+    }
+    // Determine the UI element to color.
+    let colorizableSearchElement;
+    switch (this.searchFor.type) {
+      case "text":
+        colorizableSearchElement = this.ui.searchForText;
+        break;
+      case "continuous":
+        colorizableSearchElement = this.ui.searchForCont;
+        break;
+      case "discrete":
+        colorizableSearchElement = this.ui.searchForDiscOverlay;
+        break;
+      default:
+        throw `SearchInterface.setSearchBackgroundColor: unknown searchFor.type ${this.searchFor.type}`;
+    }
+    // Set the UI element to the desired color.
+    colorizableSearchElement.style.backgroundColor = color;
+  };
+
+  // METHOD SearchInterface.resetBackgroundColor - Clear the coloring of the search input box.
+  //
+  SearchInterface.prototype.resetBackgroundColor = function resetBackgroundColor() {
+    this.setBackgroundColor("all");
+  };
+
+  // METHOD SearchInterface.getSearchString - Returns the value of the text search
+  // input element.
+  SearchInterface.prototype.getSearchString = function getSearchString() {
+    return this.ui.searchForText.value;
+  };
+
+  // METHOD SearchInterface.setSearchString - Sets the value of the text search
+  // input element.
+  SearchInterface.prototype.setSearchString = function setSearchString(str) {
+    this.ui.searchForText.value = str;
+  };
+
+  // METHOD SearchInterface.getSelectedCategories - Returns an array containing the values
+  // of the selected search category boxes.
+  SearchInterface.prototype.getSelectedCategories = function getSelectedCategories() {
+    const cats = [];
+    for (const checkBox of this.getDiscCheckBoxes()) {
+      if (checkBox.checked) {
+        cats.push(checkBox.value);
+      }
+    }
+    return cats;
+  };
+
+  // METHOD SearchInterface.getContinuousSelectors - returns the continuous search criteria.
+  //
+  // The continuous search criteria input is updated to the canonical format.
+  //
+  SearchInterface.prototype.getContinuousSelectors = function getContinuousSelectors() {
+    // Remove all spaces from continuous selector(s).
+    const searchString = this.ui.searchForCont.value.trim().replace(/ /g, "");
+    this.ui.searchForCont.value = searchString;
+    return parseContinuousSearchString (searchString);
+  };
+
+  // FUNCTION parseContinuousSearchString - Parse a continuous search string into an
+  // array of selectors. If the continuous search string is invalid, null is returned.
+  //
+  // Otherwise, an array of selectors is returned. Each selector contains up to five
+  // values:
+  // - missing: matches a missing value if true
+  // - firstOper: (required if missing is false) - match operator for firstValue
+  // - firstValue: (required if missing is false) - firstValue to match against
+  // - secondOper: (optional) - match operator for secondValue
+  // - secondValue: (optional) - secondValue to match against.
+  //
+  // Non-missing values must match against firstOper (<, <=, =, >=, >) and firstValue.
+  // If secondOper is present, values must match that also.
+  //
+  // A value will match if it matches any selector in the array.
+  //
+  function parseContinuousSearchString (searchString) {
+    const operators = [">=", ">", "<=", "<"]; // Longer ops before shorter ones.
+    // Parse out the individual selectors.
+    const selectors = parseSearchString(searchString);
+
+    // Check all selectors are valid.
+    for (const selector of selectors) {
+      if (!selector) {
+        return null;
+      }
+    }
+
+    // Return the array of valid selectors.
+    return selectors;
+
+    // Helper function.
+    // Split searchString into individual selectors and parse each one.
+    function parseSearchString(searchString) {
+      return searchString.split(/[;,]+/).map((expr) => parseSelector(expr.trim().toLowerCase()));
+    }
+
+    // Helper function.
+    // Parse an individual search selector (such as >44, >45<=90, 88, or miss)
+    // and return a selector object with five variables (missing, firstOper,
+    // firstValue, secondOper, and secondValue).
+    //
+    // If expression begins with "miss", missing will be true.
+    //
+    // If expression is just a single number, firstOper will be "===" and firstValue will
+    // be the expression value.
+    //
+    // Null is returned if no valid expression is found.
+    function parseSelector(expr) {
+      try {
+        // Selector to return, if we find a valid one.
+        const selector = {
+          missing: false,
+          firstOper: "",
+          firstValue: 0,
+          secondOper: "",
+          secondValue: 0
+        };
+
+        // If expr starts with "miss", match against missing values.
+        if (expr.startsWith("miss")) {
+          selector.missing = true;
+          return selector;
+        }
+
+        // Get first operator, if any.
+        selector.firstOper = findInitialOperator(expr);
+
+        // If just a plain number, use the 'is equal' test to evaluate the expression.
+        if (selector.firstOper === "") {
+          if (UTIL.isNaN(expr)) {
+            throw `Unknown numeric operator ${expr}`;
+          }
+          selector.firstOper = "==";
+          selector.firstValue = parseFloat(expr);
+          return selector;
+        }
+
+        // See if there's a valid second operator.
+        const part2 = findSecondOperator(expr.substring(selector.firstOper.length));
+        // Check values are numeric.
+        if (UTIL.isNaN(part2.firstValue)) {
+          throw `Unknown numeric value ${part2.firstValue}`;
+        }
+        part2.firstValue = parseFloat(part2.firstValue);
+        if (part2.secondOper) {
+          if (UTIL.isNaN(part2.secondValue)) {
+            throw `Unknown numeric value ${part2.secondValue}`;
+          }
+          part2.secondValue = parseFloat(part2.secondValue);
+        }
+        return Object.assign({}, selector, part2);
+      } catch (err) {
+        if (debugNumeric) {
+          console.error("Error parsing numeric search string: " + err);
+        }
+        return null;
+      }
+    }
+
+    // Helper function.
+    // If str starts with an operator, return it. Otherwise return the empty string.
+    function findInitialOperator(str) {
+      for (const op of operators) {
+        if (str.startsWith(op)) {
+          return op;
+        }
+      }
+      return "";
+    }
+
+    // Helper function.
+    // Parses remain, which is what follows the first operator, into an object
+    // with one or three fields, depending on whether remain contains a second
+    // operator.
+    // firstValue will be set to the value following the first operator.
+    // secondOper will be set to the second operator, if there is one, and if so,
+    // secondValue will be set to the value following the second operator.
+    function findSecondOperator(remain) {
+      // Look for a second operator.
+      for (const op of operators) {
+        const idx = remain.indexOf(op);
+        if (idx !== -1) {
+          // Found a second operator.
+          // Split remain into three fields as described above.
+          return {
+            firstValue: remain.substring(0, idx),
+            secondOper: op,
+            secondValue: remain.substring(idx + op.length)
+          };
+        }
+      }
+      // No second operator was found.
+      return { firstValue: remain };
+    }
+  }
+
+  /**********************************************************************************
+   * FUNCTION evaluateOperator: Returns true iff dataValue matches
+   * against the specified operator and srchValue.
+   **********************************************************************************/
+  function evaluateOperator(operator, srchValue, dataValue) {
+    if (operator.charAt(0) === ">" && dataValue > srchValue) return true;
+    if (operator.charAt(0) === "<" && dataValue < srchValue) return true;
+    if (operator.charAt(1) === "=" && dataValue === srchValue) return true;
+    return false;
+  }
+
+  /**********************************************************************************
+   * METHOD SearchInterface.clearSearchElement: Clear the search data entry element.
+   **********************************************************************************/
+  SearchInterface.prototype.clearSearchElement = function clearSearchElement() {
+    // Clear the search box for the type of search selected.
+    switch (this.searchFor.type) {
+      case "text":
+        if (getSearchResultsCounts(this.searchFor.axis) != 0) {
+          return;
+        }
+        this.ui.searchForText.value = "";
+        break;
+      case "continuous":
+        this.ui.searchForCont.value = "";
+        break;
+      case "discrete":
+        UTIL.resetCheckBoxDropdown("srchCovCheckBoxes");
+        break;
+      default:
+        throw `Unknown searchFor.type ${this.searchFor.type}`;
+    }
+    // Clear the saved state for the search axis (axes).
+    switch (this.searchFor.axis) {
+      case "Row":
+      case "Column":
+        SRCHSTATE.setDiscreteState(this.searchFor.axis, "");
+        break;
+      case "":
+      case "Both":
+        SRCHSTATE.setDiscreteState("Row", "");
+        SRCHSTATE.setDiscreteState("Column", "");
+        break;
+      default:
+        throw `Unknown searchFor.axis ${this.searchFor.axis}`;
+    }
+  };
+
+  // METHOD SearchInterface.setSearchResults: Set the search results text area
+  // below the search controls.
+  //
+  SearchInterface.prototype.setSearchResults = function setSearchResults(text) {
+    this.ui.searchResults.innerText = text;
+  };
+
+  // Called from SRCH.detailSearch.
+  // Perform search based on options selected in the search interface.
+  // After the search completes, call postFn(valid, matches) where valid == true iff the
+  // search was valid and matches is one of "none", "some", or "all".
+  SearchInterface.prototype.doSearch = function doSearch(postFn) {
+    this.searchFor.doSearch(this, this.searchFor, postFn);
+  };
+
+  // Instantiate the search interface.
+  const searchInterface = new SearchInterface();
+
+  SRCH.heatMapListener = function heatMapListener (event) {
+    if (event == HEAT.Event_PLUGINS) {
+      SRCH.configSearchInterface (MMGR.getHeatMap());
+    }
+  };
+
+  /**********************************************************************************
+   * FUNCTION SRCH.configSearchInterface: Initialize/reset the search interface
+   * for the specified heatMap.  It is called from the UI-Manager after the
+   * heatMap has initialized.
+   *
+   * Specifically, it:
+   * - resets the search interface.
+   * - adds searchOn options for each covariate of the heatMap.
+   *
+   **********************************************************************************/
+  SRCH.configSearchInterface = function (heatMap) {
+    searchInterface.reset();
+    addCovariateOptions("col");
+    addCovariateOptions("row");
+    for (const searchOption of heatMap.getSearchOptions()) {
+      searchInterface.addSearchOption(searchOption);
+    }
+    return;
+    // Helper function.
+    // Add a search option for every covariate on the specified axis.
+    function addCovariateOptions(axis) {
+      for (const key of heatMap.getAxisCovariateOrder(axis)) {
+        searchInterface.addSearchOption({
+          type: heatMap.getCovariateType(axis, key),
+          axis,
+          key,
+          onSelect: configCovarSearch,
+        });
+      }
+    }
+    // Helper function.
+    // Configure the search interface for searching the specified covariate.
+    // Called when the covariate is selected on the searchOn dropdown.
+    function configCovarSearch(opts, searchFor) {
+      searchFor.doSearch = covarSearch;
+      if (opts.type == "discrete") {
+        // Set the discrete values that can be searched for.
+        searchFor.discreteValues = heatMap.getCovariateThresholds(opts.axis, opts.key);
+      }
+    }
+  };
+
+  // FUNCTION SRCH.doInitialSearch - Perform initial search if the search parameter
+  // was specified on the URL.
+  // To be called after initialization of the panels.
+  SRCH.doInitialSearch = function () {
+    const searchParam = UTIL.getURLParameter("search");
+    if (typeof searchParam === "string" && searchParam.trim() !== "") {
+      SRCH.searchForLabel(searchParam, { axis: "Both", regex: true });
+    }
+  };
+
+  // FUNCTION SRCH.searchForLabel - Search for a label.
+  // To be called after initialization of the panels.
+  SRCH.searchForLabel = function searchForLabel(searchString, options) {
+    if (searchString !== "") {
+      // Wrap search string in double quotes if not using regex.
+      if (!options.regex) searchString = `"${searchString}"`;
+      if (options.axis) searchInterface.setSearchAxis(options.axis);
+      searchInterface.setSearchString(searchString);
+      SRCH.detailSearch();
+    }
+  };
+
+  /**********************************************************************************
+   * FUNCTION SRCH.detailSearch: The top-level driver for the search process.
+   *
+   * It is called when:
+   * - the user initiates a search using the UI.
+   * - programmatically (e.g. on initialization, or during a command execution)
+   *
+   * As well as performing the search itself, it updates the other aspects of the
+   * NG-CHM's user interface that display the search results.
+   *
+   ***********************************************************************************/
+  SRCH.detailSearch = function () {
+    // Clear the results of any previous search.
+    UTIL.closeCheckBoxDropdown("srchCovSelectBox", "srchCovCheckBoxes");
+    // Clear any previous search parameters.
+    clearSearchRequest();
+    SRCH.showSearchResults();
+    // Perform the actual search.
+    searchInterface.doSearch(postFn);
+    return;
+    // Helper function.
+    // Update the NG-CHM UI with the search results.
+    function postFn (validSearch, matches) {
+      searchInterface.setBackgroundColor(matches);
+      SRCH.showSearchResults(validSearch);
+      SRCH.updateLinkoutSelections();
+      SUM.redrawSelectionMarks();
+      SUM.drawTopItems();
+      if (DVW.primaryMap) {
+        DET.updateSelections();
+        searchNext(true, DVW.primaryMap);
+        DVW.primaryMap.canvas.focus();
+      }
+    }
+  };
 
   /**********************************************************************************
    * FUNCTION - clearAllSearchResults: This function initializes/resets all
@@ -75,46 +645,6 @@
    **********************************************************************************/
   SRCH.clearAllSearchResults = function () {
     SRCHSTATE.clearAllSearchResults();
-  };
-
-  SRCH.doInitialSearch = function () {
-    // Perform initial search if search parameter has been specified.
-    // To be called after initialization of the panels.
-    const searchParam = UTIL.getURLParameter("search");
-    SRCH.searchForString (searchParam);
-  };
-
-  SRCH.searchForString = function searchForString (searchParam) {
-    if (searchParam !== "") {
-      let searchElement = document.getElementById("search_text");
-      searchElement.value = searchParam;
-      SRCH.detailSearch();
-    }
-  };
-
-  /**********************************************************************************
-   * FUNCTION - detailSearch: The purpose of this function is to serve as a driver
-   * for the entire search process.  It will fork search processing depending upon
-   * the search_on target (label or covar) and perform any functions that are common
-   * to both.  It is called when search string is entered.
-   ***********************************************************************************/
-  SRCH.detailSearch = function () {
-    UTIL.closeCheckBoxDropdown("srchCovSelectBox", "srchCovCheckBoxes");
-    clearSearchRequest();
-    SRCH.showSearchResults();
-    let validSearch = true;
-    const searchOn = document.getElementById("search_on");
-    if (searchOn.value === "labels") {
-      labelSearch();
-    } else {
-      validSearch = covarSearch();
-    }
-    SUM.redrawSelectionMarks();
-    SUM.drawTopItems();
-    SRCH.showSearchResults(validSearch);
-    SRCH.updateLinkoutSelections();
-    let dc = document.getElementById("detail_canvas");
-    if (dc != null) dc.focus();
   };
 
   /**********************************************************************************
@@ -125,113 +655,6 @@
     PIM.postSelectionToPlugins("column", "standardClick");
     PIM.postSelectionToPlugins("row", "standardClick");
   };
-
-  /**********************************************************************************
-   * Internal FUNCTION - searchOnSel: The purpose of this function is to manage the display
-   * of the various search boxes (std label search text box, continuous covariate search
-   * text box, and discrete dropdown checkbox) depending upon the entry that the user
-   * selects in the search on dropdown control.
-   **********************************************************************************/
-  function searchOnSel() {
-    UTIL.closeCheckBoxDropdown("srchCovSelectBox", "srchCovCheckBoxes");
-    const searchOn = document.getElementById("search_on");
-    var searchTarget = document.getElementById("search_target");
-    const covType = searchOn.value.split("|")[0];
-    const covVal = searchOn.value.split("|")[1];
-    const searchCovDisc = document.getElementById("search_cov_disc");
-    const searchCovCont = document.getElementById("search_cov_cont");
-    const searchTxt = document.getElementById("search_text");
-    const heatMap = MMGR.getHeatMap();
-    let classBarsConfig;
-    if (searchOn.value !== "labels") {
-      if (covType === "row") {
-        classBarsConfig = heatMap.getRowClassificationConfig();
-        searchTarget.value = "Row";
-      } else if (covType === "col") {
-        classBarsConfig = heatMap.getColClassificationConfig();
-        searchTarget.value = "Column";
-      }
-      searchTarget.disabled = true;
-      const currentClassBar = classBarsConfig[covVal];
-      if (currentClassBar.color_map.type === "continuous") {
-        searchTxt.style.display = "none";
-        searchCovCont.style.display = "";
-        searchCovDisc.style.display = "none";
-      } else {
-        loadCovarSearch();
-        searchTxt.style.display = "none";
-        searchCovCont.style.display = "none";
-        searchCovDisc.style.display = "inline-flex";
-      }
-    } else {
-      searchTarget.disabled = false;
-      searchTxt.style.display = "";
-      searchCovCont.style.display = "none";
-      searchCovDisc.style.display = "none";
-    }
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - loadCovarSearch: The purpose of this function is to populate
-   * a discrete covariate check box dropdown with items for a specific covariate
-   * bar selected from the search_on dropdown select box.
-   **********************************************************************************/
-  function loadCovarSearch() {
-    const searchOn = document.getElementById("search_on");
-    const searchTarget = document.getElementById("search_target");
-    const checkBoxes = document.getElementById("srchCovCheckBoxes");
-    const selectBox = document.getElementById("srchCovSelectBox");
-    const covAxis = searchOn.value.split("|")[0];
-    const covVal = searchOn.value.split("|")[1];
-    const heatMap = MMGR.getHeatMap();
-    const classBarsConfig = heatMap.getAxisCovariateConfig(covAxis);
-    const currentClassBar = classBarsConfig[covVal];
-    UTIL.createCheckBoxDropDown(
-      "srchCovSelectBox",
-      "srchCovCheckBoxes",
-      "Select Category(s)",
-      currentClassBar.color_map.thresholds,
-      "300px",
-    );
-    loadSavedCovarState(covAxis, covVal);
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - saveCovarState: The purpose of this function is to save the check
-   * box state of a discrete covariate checkbox dropdown when a search is run;
-   **********************************************************************************/
-  function saveCovarState(covVal) {
-    const searchTarget = document.getElementById("search_target").value;
-    const currElems = document.getElementsByClassName("srchCovCheckBox");
-    let state = covVal + "|";
-    for (let i = 0; i < currElems.length; i++) {
-      if (currElems[i].checked) {
-        state = state + i + "|";
-      }
-    }
-    SRCHSTATE.setDiscCovState(searchTarget, state);
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - loadSavedCovarState: The purpose of this function is to load the
-   * saved state of a discrete covariate bar's checkboxes and check those boxes
-   * that have been used in a current search.
-   ***********************************************************************************/
-  function loadSavedCovarState(covType, covVal) {
-    const searchTarget = document.getElementById("search_target").value;
-    const targetState = SRCHSTATE.getDiscCovState(searchTarget);
-    if (targetState === "") {
-      return;
-    }
-    const checkBoxes = document.getElementById("srchCovCheckBoxes");
-    const stateElems = targetState.split("|");
-    if (stateElems[0] === covType && stateElems[1] === covVal) {
-      for (let i = 2; i < stateElems.length - 1; i++) {
-        let stateElem = parseInt(stateElems[i]);
-        checkBoxes.children[stateElem].children[0].click();
-      }
-    }
-  }
 
   /**********************************************************************************
    * Internal FUNCTION - cleanseSearchString: The purpose of this function is primarily to strip
@@ -262,50 +685,30 @@
    * a covariate-bar based search. It calls the sub-functions necessary to execute
    * the search and manages the appearance of the covariate search text box.
    **********************************************************************************/
-  function covarSearch() {
-    const searchOn = document.getElementById("search_on");
-    const [covType, covVal] = searchOn.value.split("|");
-
-    const axis = MAPREP.isRow(covType) ? "Row" : "Column";
+  function covarSearch(searchInterface, searchFor, postFn) {
     const heatMap = MMGR.getHeatMap();
-    const classDataValues = heatMap.getAxisCovariateData(axis)[covVal].values;
-    const currentClassBar = heatMap.getAxisCovariateConfig(axis)[covVal];
+    const classDataValues = heatMap.getAxisCovariateData(searchFor.axis)[searchFor.key].values;
+    const currentClassBar = heatMap.getAxisCovariateConfig(searchFor.axis)[searchFor.key];
     let validSearch = true;
-    let searchElement;
     let results = [];
     if (currentClassBar.color_map.type === "discrete") {
-      searchElement = document.getElementById("overSelect");
-      // Get the values of the selected category boxes.
-      const cats = [...document.getElementsByClassName("srchCovCheckBox")]
-        .filter((cb) => cb.checked)
-        .map((cb) => cb.value);
+      const cats = searchInterface.getSelectedCategories();
       results = SRCH.getSelectedDiscreteSelections(cats, classDataValues);
-      saveCovarState(searchOn.value);
+      searchInterface.saveDiscreteState();
     } else {
-      searchElement = document.getElementById("search_cov_cont");
-      //Remove all spaces from expression
-      const searchString = searchElement.value.trim().replace(/ /g, "");
-      searchElement.value = searchString;
-      const searchExprs = parseContinuousSearchString(searchString);
-      validSearch = validateContinuousSearch(searchExprs);
-      if (validSearch) {
-        results = getSelectedContinuousSelections(
-          axis,
-          searchExprs,
-          classDataValues,
-        );
+      let selectors = searchInterface.getContinuousSelectors();
+      if (selectors) {
+        results = getSelectedContinuousSelections(selectors, classDataValues);
+      } else {
+        validSearch = false;
       }
     }
     if (results.length === 0) {
-      //Clear previous matches when search is empty.
-      DET.updateSelections();
-      searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
+      postFn(validSearch, "none");
     } else {
-      SRCHSTATE.setAxisSearchResultsVec(axis, results);
-      searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
+      SRCHSTATE.setAxisSearchResultsVec(searchFor.axis, results);
+      postFn(validSearch, "all");
     }
-    if (DVW.primaryMap) searchNext(true, DVW.primaryMap);
-    return validSearch;
   }
 
   /**********************************************************************************
@@ -316,12 +719,10 @@
     axis = MAPREP.isRow(axis) ? "Row" : "Column";
     const classDataValues = heatMap.getAxisCovariateData(axis)[covar].values;
 
-    const searchExprs = parseContinuousSearchString(
-      searchString.trim().replace(/ /g, ""),
-    );
-    const validSearch = validateContinuousSearch(searchExprs);
+    const searchExprs = parseContinuousSearchString(searchString.trim().replace(/ /g, ""));
+    const validSearch = searchExprs != null;
     const results = validSearch
-      ? getSelectedContinuousSelections(axis, searchExprs, classDataValues)
+      ? getSelectedContinuousSelections(searchExprs, classDataValues)
       : [];
     return [validSearch, results];
   };
@@ -334,14 +735,14 @@
    * on the covariate bar. If a value match is found, an item is added to the
    * searchResults array for the appropriate axis.
    ***********************************************************************************/
-  SRCH.getSelectedDiscreteSelections = function getSelectedDiscreteSelections(cats, classDataValues) {
+  SRCH.getSelectedDiscreteSelections = function getSelectedDiscreteSelections(
+    cats,
+    classDataValues
+  ) {
     const includeMissing = cats.indexOf("missing") > -1;
     const results = [];
     classDataValues.forEach((value, index) => {
-      if (
-        cats.includes(value) ||
-        (includeMissing && (value === "null" || value === "NA"))
-      ) {
+      if (cats.includes(value) || (includeMissing && (value === "null" || value === "NA"))) {
         results.push(index + 1);
       }
     });
@@ -349,229 +750,35 @@
   };
 
   /**********************************************************************************
-   * FUNCTION - validateContinuousSearch: The purpose of this function it to validate
-   * the  user entered continuous covariate search expressions and return a true/false
+   * Internal function getSelectedContinuousSelections returns an array of the
+   * "search indexes" of the dataValues that match the continuous search selectors.
+   * "search indexes" begin at 1.
    **********************************************************************************/
-  function parseContinuousSearchString(searchString) {
-    return searchString
-      .split(/[;,]+/)
-      .map((expr) => parseSearchExpression(expr.trim().toLowerCase()));
-  }
-
-  function validateContinuousSearch(exprs) {
-    for (let j = 0; j < exprs.length; j++) {
-      if (
-        isSearchValid(
-          exprs[j].firstOper,
-          exprs[j].firstValue,
-          exprs[j].secondOper,
-          exprs[j].secondValue,
-        ) === false
-      ) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**********************************************************************************
-   * Internal function getSelectedContinuousSelections finds the
-   * rows/cols that match the user-entered search expressions for continuous
-   * covariate bars.  It iterates the classDataValues data configuration for a given
-   * covariate bar and evaluates each value against an array of user entered expressions.
-   * If a value is found to exist within the parameters of an expression, that value
-   * is selected. This function also searches for missing values if the user enters
-   * an expression that contains the word "miss".  If a value match is found, an item
-   * is added to the searchResults array for the appropriate axis.
-   **********************************************************************************/
-  function getSelectedContinuousSelections(axis, searchExprs, classDataValues) {
-    /* Expand and convert searchExprs.  Determine if any matches missing values. */
-    var findMissing = false;
-    const firstOpers = [];
-    const firstValues = [];
-    const secondOpers = [];
-    const secondValues = [];
-    searchExprs.forEach(
-      ({ firstOper, firstValue, secondOper, secondValue }) => {
-        if (firstValue.includes("miss")) findMissing = true;
-        firstOpers.push(firstOper);
-        firstValues.push(parseFloat(firstValue)); // Pushes NaN for missing values
-        secondOpers.push(secondOper);
-        secondValues.push(parseFloat(secondValue));
-      },
-    );
-    /* Determine which values, if any, match at least one search expression. */
+  function getSelectedContinuousSelections(selectors, dataValues) {
+    // Determine if any search selector matches missing values.
+    const findMissing = selectors.map((s) => s.missing).reduce((t, a) => t || a);
+    /* Determine which values, if any, match at least one selector. */
     const searchResults = [];
-    classDataValues.forEach((value, index) => {
+    for (let index = 0; index < dataValues.length; index++) {
+      const value = dataValues[index];
       if (value === "null" || value === "NA") {
-        // Match if any search expression matches missing values.
         if (findMissing) searchResults.push(index + 1);
       } else {
         const floatValue = parseFloat(value);
-        for (let j = 0; j < searchExprs.length; j++) {
-          let selectItem = evaluateExpression(
-            firstOpers[j],
-            firstValues[j],
-            floatValue,
-          );
-          if (selectItem && secondOpers[j] !== null) {
-            selectItem = evaluateExpression(
-              secondOpers[j],
-              secondValues[j],
-              floatValue,
-            );
+        for (const selector of selectors) {
+          let selectItem = evaluateOperator(selector.firstOper, selector.firstValue, floatValue);
+          if (selectItem && selector.secondOper) {
+            selectItem = evaluateOperator(selector.secondOper, selector.secondValue, floatValue);
           }
           if (selectItem) {
             searchResults.push(index + 1);
-            return;
+            break;
           }
         }
       }
-    });
+    }
+    // Return the search indexes of the matching values.
     return searchResults;
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - evaluateExpression: The purpose of this function is to evaluate
-   * a user entered expression against a value from the classDataValues for a given
-   * covariate. It checks first for values that meet the greater than operators
-   * (> and >=).  Then it checks for values that meet the less than operators.
-   * Finally, it checks for values that meet the equal to operators (===,>=,<=).
-   * If a value satisfies any of these conditions a true value is returned.
-   **********************************************************************************/
-  function evaluateExpression(oper, srchValue, dataValue) {
-    if (oper.charAt(0) === ">" && dataValue > srchValue) return true;
-    if (oper.charAt(0) === "<" && dataValue < srchValue) return true;
-    if (oper.charAt(1) === "=" && dataValue === srchValue) return true;
-    return false;
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - parseSearchExpression: The purpose of this function is to
-   * take a search expression (>44,>45<=90,88, etc...), parse that expression, and
-   * return an object with 4 variables (the first expression operator, the first
-   * expression value, second operator, and second) value.  If an expression is just
-   * a single number, the first oper will be "===" and the first value, the expression.
-   * A null is returned if no valid expression is found.
-   ***********************************************************************************/
-  function parseSearchExpression(expr) {
-    //Make a first pass thru the expression
-    const firstPass = examineExpression(expr);
-    if (firstPass === null) {
-      return null;
-    }
-    let firstOper = null;
-    let firstValue = null;
-    let secondOper = null;
-    let secondValue = null;
-    // If we have an "equal to" expression (either a number OR 'missing') there is only one oper.
-    if (firstPass.oper === "===" || firstPass.oper === "txt") {
-      // Use the 'is equal' test to evaluate the expression
-      firstOper = firstPass.oper;
-      firstValue = firstPass.remainder;
-    } else {
-      // We have a numeric oper.
-      // We need to do a second pass to see if there's a second oper.
-      // examineExpression will find greater than operators first, even if they're later in the expr,
-      // so we check the position to see if the operator occurs first.
-      if (firstPass.position === 0) {
-        // The first pass found an operator in position 0.
-        // The firstOper is set AND the rest of the string needs a second pass
-        firstOper = firstPass.oper;
-        if (UTIL.isNaN(firstPass.remainder) === false) {
-          // The first pass remainder is a numeric value so we have identified the first value
-          // and there is no second operator.
-          firstValue = firstPass.remainder;
-        } else {
-          const secondPass = examineExpression(firstPass.remainder);
-          secondOper = secondPass.oper;
-          firstValue = firstPass.remainder.substring(0, secondPass.position);
-          secondValue = secondPass.remainder;
-        }
-      } else {
-        // If the first pass found an operator in position other than 0:
-        // the operator found is the second operator and the remainder is the second value
-        // AND the first half of the string needs a second pass
-        secondOper = firstPass.oper;
-        secondValue = firstPass.remainder;
-        const secondPass = examineExpression(
-          expr.substring(0, firstPass.position),
-        );
-        //With the results of the second pass we have now identified both operators and both values
-        firstValue = secondPass.remainder;
-        firstOper = secondPass.oper;
-      }
-    }
-    return {
-      firstOper: firstOper,
-      firstValue: firstValue,
-      secondOper: secondOper,
-      secondValue,
-    };
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - examineExpression: The purpose of this function is to evaluate an incoming
-   * string and pull out the components of the expression.  It returns an object
-   * containing the following values: The first operator (>,<,>=,<=) found, the position
-   * that the operator was found in, and the string remainder of that expression
-   * UNLESS the expression contains none of those above operators.  If none of them
-   * are found, the expression is evaluated to see if it contains a numeric value. If
-   * so, the first operator is "=" and the remainder is the expression.  Null is
-   * returned if the expression yields no results.
-   **********************************************************************************/
-  function examineExpression(expr) {
-    const ops = [">=", ">", "<=", "<"]; // Longer ops before shorter ones.
-    for (let i = 0; i < ops.length; i++) {
-      const idx = expr.indexOf(ops[i]);
-      if (idx !== -1) {
-        return {
-          oper: ops[i],
-          position: idx,
-          remainder: expr.substring(idx + ops[i].length, expr.length),
-        };
-      }
-    }
-    const oper = UTIL.isNaN(expr) ? "txt" : "===";
-    return { oper: oper, position: 0, remainder: expr }; // Position included for type compatibility.
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - isSearchValid: The purpose of this function is to evaluate the operators
-   * and values entered by the user ensure that they are actual operators and float values
-   * BEFORE using them in an EVAL statement.  This is done to preclude code injection.
-   **********************************************************************************/
-  function isSearchValid(firstOper, firstValue, secondOper, secondValue) {
-    if (
-      firstOper !== ">" &&
-      firstOper !== "<" &&
-      firstOper !== ">=" &&
-      firstOper !== "<=" &&
-      firstOper !== "==="
-    ) {
-      return false;
-    }
-    if (UTIL.isNaN(firstValue)) {
-      if (firstOper !== "===") return false;
-      if (!firstValue.includes("miss")) return false;
-    }
-    if (secondOper !== null) {
-      if (
-        secondOper !== ">" &&
-        secondOper !== "<" &&
-        secondOper !== ">=" &&
-        secondOper !== "<="
-      ) {
-        return false;
-      }
-      if (UTIL.isNaN(secondValue) === true) {
-        return false;
-      }
-      if (firstOper === "===") {
-        return false;
-      }
-    }
-    return true;
   }
 
   /**********************************************************************************
@@ -579,94 +786,78 @@
    * a label based search. It calls the sub-functions necessary to execute
    * the search and manages the appearance of the label search text box.
    ***********************************************************************************/
-  function labelSearch() {
-    let searchElement = document.getElementById("search_text");
-    let searchString = searchElement.value.trim();
+  function labelSearch(searchInterface, searchFor, postFn) {
+    let searchString = searchInterface.getSearchString().trim();
     searchString = cleanseSearchString(searchString);
-    searchElement.value = searchString;
+    searchInterface.setSearchString (searchString);
 
     if (searchString == "" || searchString == null || searchString == " ") {
-      return false;
+      postFn (false, "all");
+      return;
     }
 
-    let tmpSearchItems = searchString.split(/[;, ]+/);
+    const searchItems = searchString.split(/[;, ]+/);
     const itemsFound = [];
-
-    const searchTarget = document.getElementById("search_target").value;
 
     // Put labels into the global search item list if they match a user search string.
     // Regular expression is built for partial matches if the search string contains '*'.
     // toUpperCase is used to make the search case insensitive.
-    if (searchTarget !== "Column") {
-      searchLabels("Row", tmpSearchItems, itemsFound);
+    // Search on rows, columns, or both (rows then columns).
+    if (searchFor.axis !== "Column") {
+      searchLabels("Row");
     }
-    if (searchTarget !== "Row") {
-      searchLabels("Column", tmpSearchItems, itemsFound);
-    }
-
-    // Jump to the first match
-    if (searchString == null || searchString == "") {
-      return;
+    if (searchFor.axis !== "Row") {
+      searchLabels("Column");
     }
 
-    searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
-    if (DVW.primaryMap) {
-      searchNext(true, DVW.primaryMap);
-      const currentSearchItem = SRCHSTATE.getCurrentSearchItem(DVW.primaryMap);
-      if (currentSearchItem.index && currentSearchItem.axis) {
-        if (
-          itemsFound.length != tmpSearchItems.length &&
-          itemsFound.length > 0
-        ) {
-          searchElement.style.backgroundColor = "rgba(255,255,0,0.3)";
-        } else if (itemsFound.length == 0) {
-          searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
+    // Determine whether we matched none, some, or all of the searchItems.
+    let matches;
+    if (itemsFound.length == 0) {
+      matches = "none";
+    } else if (itemsFound.length != searchItems.length) {
+      matches = "some";
+    } else {
+      matches = "all";
+    }
+    postFn (true, matches);
+    return;
+
+    // Helper function.
+    // Find matches against labels on the specified axis.
+    function searchLabels(axis) {
+      const heatMap = MMGR.getHeatMap();
+      // Searches are case independent, so we map everything to upper case.
+      const labels = heatMap.actualLabels(axis).map(label => label.toUpperCase());
+      for (const searchItem of searchItems) {
+        if (searchItem == "." || searchItem == "*") {
+          // if this is a search item that's going to return everything, skip it.
+          continue;
         }
-      } else {
-        if (searchString != null && searchString.length > 0) {
-          searchElement.style.backgroundColor = "rgba(255,0,0,0.3)";
+        let reg;
+        // Catch bad search strings that throw exceptions when creating RegExp.
+        try {
+          if (searchItem.charAt(0) === '"' && searchItem.slice(-1) === '"') {
+            // Escape all regex meta-chars.
+            const literal = searchItem.slice(1, -1).toUpperCase()
+              .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            reg = new RegExp("^" + literal + "$");
+          } else {
+            reg = new RegExp(searchItem.toUpperCase());
+          }
+        } catch (e) {
+          // Mark search invalid and stop.
+          postFn(false, "none");
+          return;
         }
-        //Clear previous matches when search is empty.
-        DET.updateSelections();
-      }
-    }
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - searchLabels: The purpose of this function is to search through
-   * labels collections for matches.
-   ***********************************************************************************/
-  function searchLabels(axis, tmpSearchItems, itemsFound) {
-    const heatMap = MMGR.getHeatMap();
-    const labels = heatMap.getAxisLabels(axis)["labels"].map((label) => {
-      label = label.toUpperCase();
-      if (label.indexOf("|") > -1) {
-        label = label.substring(0, label.indexOf("|"));
-      }
-      return label;
-    });
-    for (let j = 0; j < tmpSearchItems.length; j++) {
-      let reg;
-      const searchItem = tmpSearchItems[j];
-      if (searchItem == "." || searchItem == "*") {
-        // if this is a search item that's going to return everything, skip it.
-        continue;
-      }
-      if (searchItem.charAt(0) == '"' && searchItem.slice(-1) == '"') {
-        // is it wrapped in ""?
-        reg = new RegExp(
-          "^" + searchItem.toUpperCase().slice(1, -1).replace(".", "\\.") + "$",
-        );
-      } else {
-        reg = new RegExp(searchItem.toUpperCase());
-      }
-      let matches = [];
-      labels.forEach((label, index) => {
-        if (reg.test(label)) matches.push(index + 1);
-      });
-      if (matches.length > 0) {
-        SRCHSTATE.setAxisSearchResultsVec(axis, matches);
-        if (itemsFound.indexOf(searchItem) == -1) itemsFound.push(searchItem);
+        let matches = [];
+        labels.forEach((label, index) => {
+          if (reg.test(label)) matches.push(index + 1);
+        });
+        if (matches.length > 0) {
+          // Save matches and note we found matches for this searchItem.
+          SRCHSTATE.setAxisSearchResultsVec(axis, matches);
+          if (itemsFound.indexOf(searchItem) == -1) itemsFound.push(searchItem);
+        }
       }
     }
   }
@@ -684,34 +875,15 @@
     const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
 
     UTIL.closeCheckBoxDropdown("srchCovSelectBox", "srchCovCheckBoxes");
-    if (
-      firstTime ||
-      !currentSearchItem["index"] ||
-      !currentSearchItem["axis"]
-    ) {
+    if (firstTime || !currentSearchItem["index"] || !currentSearchItem["axis"]) {
       // Start new search.  If searchAxis == "any", start on the rows.
-      findNextSearchItem(
-        mapItem,
-        -1,
-        searchAxis === "column" ? "Column" : "Row",
-      );
-    } else if (
-      searchAxis === "any" ||
-      currentSearchItem["axis"].toLowerCase() === searchAxis
-    ) {
+      findNextSearchItem(mapItem, -1, searchAxis === "column" ? "Column" : "Row");
+    } else if (searchAxis === "any" || currentSearchItem["axis"].toLowerCase() === searchAxis) {
       // Continue search on current axis if permitted.
-      findNextSearchItem(
-        mapItem,
-        currentSearchItem["index"],
-        currentSearchItem["axis"],
-      );
+      findNextSearchItem(mapItem, currentSearchItem["index"], currentSearchItem["axis"]);
     } else {
       // Start search from beginning of requested axis otherwise.
-      findNextSearchItem(
-        mapItem,
-        -1,
-        searchAxis == "column" ? "Column" : "Row",
-      );
+      findNextSearchItem(mapItem, -1, searchAxis == "column" ? "Column" : "Row");
     }
     goToCurrentSearchItem(mapItem);
   }
@@ -793,16 +965,9 @@
       // No search result.
       return;
     } else {
-      if (
-        searchAxis === "any" ||
-        currentSearchItem["axis"].toLowerCase() === searchAxis
-      ) {
+      if (searchAxis === "any" || currentSearchItem["axis"].toLowerCase() === searchAxis) {
         // Continue on current search axis if permitted.
-        findPrevSearchItem(
-          mapItem,
-          currentSearchItem["index"],
-          currentSearchItem["axis"],
-        );
+        findPrevSearchItem(mapItem, currentSearchItem["index"], currentSearchItem["axis"]);
       } else {
         // Start new search on requested axis.
         findPrevSearchItem(mapItem, -1, searchAxis);
@@ -846,11 +1011,7 @@
   }
 
   const orientMenuItems = ["Any axis", "Rows", "Columns"];
-  const orientMenuIcons = [
-    "icon-small-circle",
-    "icon-horizontal-bar",
-    "icon-horizontal-bar",
-  ];
+  const orientMenuIcons = ["icon-small-circle", "icon-horizontal-bar", "icon-horizontal-bar"];
   const orientMenuValues = ["any", "row", "column"];
   const orientMenuRotate = ["", "90deg", ""];
   SRCH.showOrientDialog = showOrientDialog;
@@ -862,12 +1023,11 @@
     dialog.style.left = btnPosn.x + "px";
     for (let i = 0; i < 3; i++) {
       const menuIcon = UTIL.newSvgMenuItem(orientMenuIcons[i]);
-      if (orientMenuRotate[i] != "")
-        menuIcon.firstChild.style.rotate = orientMenuRotate[i];
+      if (orientMenuRotate[i] != "") menuIcon.firstChild.style.rotate = orientMenuRotate[i];
       const menuItem = UTIL.newElement(
         "DIV.menuItem",
         { dataset: { orient: orientMenuValues[i] } },
-        [menuIcon, orientMenuItems[i]],
+        [menuIcon, orientMenuItems[i]]
       );
       dialog.appendChild(menuItem);
     }
@@ -904,9 +1064,7 @@
   function showNextOrientation(mapItem, button) {
     const idx = orientMenuValues.indexOf(mapItem.allowedOrientations);
     if (idx < 0) {
-      console.error(
-        "mapItem has unknown orientation: " + mapItem.allowedOrientations,
-      );
+      console.error("mapItem has unknown orientation: " + mapItem.allowedOrientations);
       return;
     }
     const newidx = (idx + 1) % orientMenuValues.length;
@@ -921,9 +1079,7 @@
       mapItem.searchOrientation = neworient;
     }
     button.innerHTML =
-      "<SVG width='1em' height='1em'><USE href='icons.svg#" +
-      orientMenuIcons[idx] +
-      "'/></SVG>";
+      "<SVG width='1em' height='1em'><USE href='icons.svg#" + orientMenuIcons[idx] + "'/></SVG>";
     button.style.rotate = orientMenuRotate[idx];
     enableDisableSearchButtons(mapItem);
   }
@@ -943,7 +1099,7 @@
       const rowOK = anyOutsideSearchResults(
         SRCHSTATE.getAxisSearchResults("row"),
         mapItem.currentRow,
-        mapItem.dataPerCol,
+        mapItem.dataPerCol
       );
       srchPrev.disabled = !rowOK;
       srchNext.disabled = !rowOK;
@@ -951,7 +1107,7 @@
       const colOK = anyOutsideSearchResults(
         SRCHSTATE.getAxisSearchResults("column"),
         mapItem.currentCol,
-        mapItem.dataPerRow,
+        mapItem.dataPerRow
       );
       srchPrev.disabled = !colOK;
       srchNext.disabled = !colOK;
@@ -959,12 +1115,12 @@
       const rowOK = anyOutsideSearchResults(
         SRCHSTATE.getAxisSearchResults("row"),
         mapItem.currentRow,
-        mapItem.dataPerCol,
+        mapItem.dataPerCol
       );
       const colOK = anyOutsideSearchResults(
         SRCHSTATE.getAxisSearchResults("column"),
         mapItem.currentCol,
-        mapItem.dataPerRow,
+        mapItem.dataPerRow
       );
       srchPrev.disabled = !rowOK && !colOK;
       srchNext.disabled = !rowOK && !colOK;
@@ -987,11 +1143,9 @@
     if (axis == "any") return;
     const pane = PANE.findPaneLocation(mapItem.chm).pane;
     const srchPrev = pane.getElementsByClassName("srchPrev");
-    if (srchPrev.length > 0)
-      srchPrev[0].style.rotate = MAPREP.isRow(axis) ? "90deg" : "";
+    if (srchPrev.length > 0) srchPrev[0].style.rotate = MAPREP.isRow(axis) ? "90deg" : "";
     const srchNext = pane.getElementsByClassName("srchNext");
-    if (srchNext.length > 0)
-      srchNext[0].style.rotate = MAPREP.isRow(axis) ? "90deg" : "";
+    if (srchNext.length > 0) srchNext[0].style.rotate = MAPREP.isRow(axis) ? "90deg" : "";
   }
 
   /**********************************************************************************
@@ -1034,6 +1188,42 @@
     }
     enableDisableSearchButtons(mapItem);
     DET.updateSelections();
+    return;
+    // Helper function.
+    // Display a popup explaining why the detail view cannot move
+    // to display the searchItem.
+    function showSearchError(reason, searchItem) {
+      const searchError = UTIL.createPopupPanel("searchError");
+      searchError.style.display = "inherit";
+      // Position popup at the bottom right of text input.
+      const searchBar = searchInterface.ui.searchForText;
+      searchError.style.top = searchBar.offsetTop + searchBar.offsetHeight + "px";
+      searchError.style.left = searchBar.offsetLeft + searchBar.offsetWidth + "px";
+      const labels = mapItem.heatMap.actualLabels(currentSearchItem.axis);
+      const label = labels[currentSearchItem.index-1];
+      switch (reason) {
+        case 0:
+          searchError.textContent = "No matching labels found";
+          break;
+        case 1:
+          searchError.textContent = "Exit dendrogram selection to go to " + label;
+          break;
+        case 2:
+          searchError.textContent =
+            "All " +
+            searchItem.axis +
+            " items are visible. Change the view mode to see " +
+            label;
+          break;
+        default:
+          searchError.textContent = `Unknown search error ${reason}`;
+      }
+      UHM.hlpC();
+      document.body.appendChild(searchError);
+      setTimeout(function () {
+        searchError.remove();
+      }, 2000);
+    }
   }
 
   /**********************************************************************************
@@ -1074,37 +1264,26 @@
       SUM.rowDendro.clearSelectedBars();
       SUM.colDendro.clearSelectedBars();
     }
-    clearSearchElement();
+    searchInterface.clearSearchElement();
     SRCH.showSearchResults();
     DET.updateSelections();
     SRCH.updateLinkoutSelections();
-    resetSearchBoxColor();
+    searchInterface.resetBackgroundColor();
   };
-
-  /**********************************************************************************
-   * FUNCTION - resetSearchBoxColor: The purpose of this function is to clear the coloring
-   * of the label and continuous covariate search boxes when the search is cleared
-   ***********************************************************************************/
-  function resetSearchBoxColor() {
-    let searchElement = document.getElementById("search_text");
-    searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
-    searchElement = document.getElementById("search_cov_cont");
-    searchElement.style.backgroundColor = "rgba(255,255,255,0.3)";
-  }
 
   /**********************************************************************************
    * FUNCTION - clearSearchRequest: The purpose of this function is to clear the search
    * items on one OR both axes.
    ***********************************************************************************/
   function clearSearchRequest() {
-    const searchTarget = document.getElementById("search_target").value;
-    if (searchTarget === "Both") {
+    const searchAxis = searchInterface.searchFor.axis;
+    if (searchAxis === "Both" || searchAxis == "") {
       SRCH.clearSearchItems("Row");
       SRCH.clearSearchItems("Column");
     } else {
-      SRCH.clearSearchItems(searchTarget);
+      SRCH.clearSearchItems(searchAxis);
     }
-    SUM.clearSelectionMarks(searchTarget);
+    SUM.clearSelectionMarks(searchAxis);
   }
 
   /**********************************************************************************
@@ -1113,68 +1292,19 @@
    ***********************************************************************************/
   SRCH.clearSearchItems = function (clickAxis) {
     SRCHSTATE.clearAllAxisSearchItems(UTIL.capitalize(clickAxis));
+    // Clear any dendrogram selections on the Summary View.
     clickAxis = clickAxis.toLowerCase();
     if (clickAxis === "row") {
       if (SUM.rowDendro) SUM.rowDendro.clearSelectedBars();
     } else if (clickAxis === "column") {
       if (SUM.colDendro) SUM.colDendro.clearSelectedBars();
     }
-    let markLabels = document.getElementsByClassName("MarkLabel");
-    for (let ii = 0; ii < markLabels.length; ii++) {
-      // clear tick marks
-      DVW.removeLabels(markLabels[ii].id);
+    // Clear tick marks
+    const markLabels = document.getElementsByClassName("MarkLabel");
+    for (const label of markLabels) {
+      DVW.removeLabels(label.id);
     }
   };
-
-  /**********************************************************************************
-   * FUNCTION - clearSearchElement: The purpose of this function is to clear the appropriate
-   * search data entry element.
-   **********************************************************************************/
-  function clearSearchElement() {
-    const searchOn = document.getElementById("search_on").value;
-    const searchTarget = document
-      .getElementById("search_target")
-      .value.toLowerCase();
-    const covType = searchOn.split("|")[0];
-    const covVal = searchOn.split("|")[1];
-    let classBarsConfig;
-    let classDataValues;
-    const covAxis = covType === "row" ? "row" : "column";
-    const heatMap = MMGR.getHeatMap();
-    if (searchOn === "labels") {
-      const resultsCnts = getSearchResultsCounts();
-      if (searchTarget === "both" && resultsCnts[2] !== 0) {
-        return;
-      } else if (searchTarget === "row" && resultsCnts[0] !== 0) {
-        return;
-      } else if (searchTarget === "col" && resultsCnts[1] !== 0) {
-        return;
-      }
-      document.getElementById("search_text").value = "";
-    } else {
-      if (covAxis === searchTarget || searchTarget === "both") {
-        if (covType === "row") {
-          classBarsConfig = heatMap.getRowClassificationConfig();
-        } else if (covType === "col") {
-          classBarsConfig = heatMap.getColClassificationConfig();
-        }
-        const currentClassBar = classBarsConfig[covVal];
-        if (currentClassBar.color_map.type === "continuous") {
-          document.getElementById("search_cov_cont").value = "";
-        } else {
-          UTIL.resetCheckBoxDropdown("srchCovCheckBox");
-        }
-      }
-    }
-    if (searchTarget === "row") {
-      SRCHSTATE.setDiscCovState("Row", "");
-    } else if (searchTarget === "column") {
-      SRCHSTATE.setDiscCovState("Column", "");
-    } else {
-      SRCHSTATE.setDiscCovState("Row", "");
-      SRCHSTATE.setDiscCovState("Column", "");
-    }
-  }
 
   /**********************************************************************************
    * FUNCTION - showSearchResults: The purpose of this function is to show the
@@ -1182,67 +1312,37 @@
    * results from the just-executed search IF there are search results to show.
    ***********************************************************************************/
   SRCH.showSearchResults = function (validSearch) {
-    const resultsCnts = getSearchResultsCounts();
-    if (resultsCnts[2] > 0) {
-      document.getElementById("search_display_text").innerHTML =
-        "Selected: Rows - " + resultsCnts[0] + " Columns - " + resultsCnts[1];
+    const rowCount = getSearchResultsCounts("Row");
+    const colCount = getSearchResultsCounts("Column");
+    if (rowCount + colCount > 0) {
+      searchInterface.setSearchResults("Selected: Rows - " + rowCount + " Columns - " + colCount);
       enableDisableAllSearchButtons();
     } else if (typeof validSearch !== "undefined" && validSearch === false) {
-      document.getElementById("search_display_text").innerHTML =
-        "Invalid search expression entered";
+      searchInterface.setSearchResults("Invalid search expression entered");
     } else {
       enableDisableAllSearchButtons();
-      hideSearchResults();
+      searchInterface.setSearchResults("");
     }
   };
 
   /**********************************************************************************
-   * Internal FUNCTION - hideSearchResults: The purpose of this function is to hide the
-   * search results text area below the search controls.
+   * Internal FUNCTION - getSearchResultsCounts: Return the number of search results
+   * for the specified axis.
    ***********************************************************************************/
-  function hideSearchResults() {
-    document.getElementById("search_display_text").innerHTML = "";
-  }
-
-  /**********************************************************************************
-   * Internal FUNCTION - getSearchResultsCounts: The purpose of this function is to retrieve
-   * counts for search results. It returns an integer array containing 3 values:
-   * total row search results, total column results, and total combined results.
-   ***********************************************************************************/
-  function getSearchResultsCounts() {
-    const rowCount = SRCHSTATE.getAxisSearchResults("Row").length;
-    const colCount = SRCHSTATE.getAxisSearchResults("Column").length;
-    return [rowCount, colCount, rowCount + colCount];
-  }
-
-  function showSearchError(type, searchItem) {
-    var searchError = UHM.getDivElement("searchError");
-    searchError.style.display = "inherit";
-    var searchBar = document.getElementById("search_text");
-    searchError.style.top = searchBar.offsetTop + searchBar.offsetHeight + "px";
-    searchError.style.left =
-      searchBar.offsetLeft + searchBar.offsetWidth + "px";
-    switch (type) {
-      case 0:
-        searchError.innerHTML = "No matching labels found";
-        break;
-      case 1:
-        searchError.innerHTML =
-          "Exit dendrogram selection to go to " + searchItem.label;
-        break;
-      case 2:
-        searchError.innerHTML =
-          "All " +
-          searchItem.axis +
-          " items are visible. Change the view mode to see " +
-          searchItem.label;
-        break;
+  function getSearchResultsCounts(axis) {
+    switch (axis) {
+      case "Row":
+      case "Column":
+        return SRCHSTATE.getAxisSearchResults(axis).length;
+      case "":
+      case "Both":
+        return (
+          SRCHSTATE.getAxisSearchResults("Row").length +
+          SRCHSTATE.getAxisSearchResults("Column").length
+        );
+      default:
+        throw `Unknown searchFor.axis ${axis}`;
     }
-    UHM.hlpC();
-    document.body.appendChild(searchError);
-    setTimeout(function () {
-      searchError.remove();
-    }, 2000);
   }
 
   /**

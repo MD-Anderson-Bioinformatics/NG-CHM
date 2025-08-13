@@ -1913,3 +1913,94 @@ function linkoutHelp () {
     ],
   });
 })(linkouts);
+
+{
+  // Determine if either or both of the axes include Hugo gene symbols.
+  const rowHasHugo = linkouts.execCommand(["heatmap", "get-label-types", "row"]).includes("bio.gene.hugo");
+  const colHasHugo = linkouts.execCommand(["heatmap", "get-label-types", "column"]).includes("bio.gene.hugo");
+  let axis = null
+  if (rowHasHugo && colHasHugo) {
+    axis = "";
+  } else if (rowHasHugo) {
+    axis = "row";
+  } else if (colHasHugo) {
+    axis = "column";
+  }
+  // Add the Pathways Web search option if at least one axis includes Hugo gene symbols.
+  if (axis != null) {
+    linkouts.addSearchOption({
+      type: "text",
+      axis,
+      key: "Pathways Web",
+      onSelect: configPathwaysSearch,
+    });
+  }
+
+  // Helper function.
+  // Called when the user selects the "Pathways Web" search option.
+  // Set pathwaysSearch as the search function to use.
+  function configPathwaysSearch(opts, searchFor) {
+    searchFor.doSearch = pathwaysSearch;
+  }
+
+  // Helper function.
+  // Called when the user searches for a pathway.
+  function pathwaysSearch(searchInterface, searchFor, postFn) {
+    const searchString = searchInterface.getSearchString().trim();
+    if (!searchString) {
+      postFn(true, "none");
+      return;
+    }
+    const encSearchString = encodeURIComponent(searchString);
+    fetch (`https://bioinformatics.mdanderson.org/PathwaysWeb/pathways/latest/?start=0&count=20&description=${encSearchString}`, {
+      headers: { 'Accept': 'application/json' },
+    })
+    .then (res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    })
+    .then (res => {
+      // console.log ('PathwaysWeb: ',  { res });
+      let found = false;
+      if (res && Array.isArray(res.pathway) && res.pathway.length > 0) {
+        // Determine gene symbols in the returned pathways.
+        let symbols = [];
+        for (const pathway of res.pathway) {
+          if (pathway.genes) {
+            symbols = symbols.concat (pathway.genes.filter(g => g.isHugoGene == 'Y').map(g => g.geneSymbol));
+          }
+        }
+        // Get unique symbols and normalize case.
+        symbols = [...new Set(symbols)].map(sym => String(sym).toUpperCase());
+        // Find all occurrences of those symbols in the heatMap.
+        for (const axis of [ "Row", "Column" ]) {
+          if (searchFor.axis == axis || searchFor.axis == "" || searchFor.axis == "Both") {
+            const labels = linkouts.getTypeValues(axis, "bio.gene.hugo");
+            // Create a map of normalized labels to an array of 1-based search
+            // indices (in case of duplicated symbols in labels).
+            const idxMap = new Map();
+            for (const [idx, lab] of labels.entries()) {
+              const key = String(lab).toUpperCase();
+              const indices = idxMap.get(key) || [];
+              indices.push(idx+1);
+              idxMap.set(key,indices);
+            }
+            // Collect all indices.
+            const allIndices = symbols.flatMap(sym => idxMap.get(sym) || []);
+            // Dedupe and sort indices.
+            const selectIndices = Array.from(new Set(allIndices)).sort((a,b) => a-b);
+            if (selectIndices.length > 0) {
+              linkouts.setSelectionVec (axis, selectIndices);
+              found = true;
+            }
+          }
+        }
+      }
+      postFn (true, found ? "all" : "none");
+    })
+    .catch (err => {
+      console.error (`pathwaysSearch failed: ${err}`);
+      postFn (true, "none");
+    });
+  }
+}

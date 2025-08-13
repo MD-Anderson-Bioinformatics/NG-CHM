@@ -55,8 +55,8 @@
     return axis in gapItems ? gapItems[axis] : null;
   };
 
-  SRCHSTATE.getDiscCovState = function (axis) {
-    return discCovStates[axis];
+  SRCHSTATE.getDiscreteState = function (axis) {
+    return discCovStates.hasOwnProperty(axis) ? discCovStates[axis] : null;
   };
 
   /**********************************************************************************
@@ -155,7 +155,7 @@
     gapItems[axis] = items;
   };
 
-  SRCHSTATE.setDiscCovState = function (axis, items) {
+  SRCHSTATE.setDiscreteState = function (axis, items) {
     discCovStates[axis] = items;
   };
 

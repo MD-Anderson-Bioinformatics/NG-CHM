@@ -278,18 +278,6 @@
   };
 
   /**********************************************************************************
-   * FUNCTION - getDivElement: The purpose of this function is to create and
-   * return a DIV html element that is configured for a help pop-up panel.
-   **********************************************************************************/
-  UHM.getDivElement = function (elemName) {
-    var divElem = document.createElement("div");
-    divElem.id = elemName;
-    divElem.style.backgroundColor = "#CBDBF6";
-    divElem.style.display = "none";
-    return divElem;
-  };
-
-  /**********************************************************************************
    * FUNCTION - setTableRow: The purpose of this function is to set a row into a help
    * or configuration html TABLE item for a given help pop-up panel. It receives text for
    * the header column, detail column, and the number of columns to span as inputs.

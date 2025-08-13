@@ -1890,6 +1890,9 @@ div#droptarget.visible {
     background-color: rgba(255,128,128,1);
 }
 
+.ngchm-popup {
+  background-color: #CBDBF6;
+}
 
 .tour-button {
     padding: 0.3em;

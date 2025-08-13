@@ -168,6 +168,18 @@ var linkoutsVersion = "undefined";
     return EXEC.execCommand (args, UTIL.consoleOutput, showLinkoutOutput);
   };
 
+  linkouts.addSearchOption = function addSearchOption (searchOption) {
+    MMGR.getHeatMap().addSearchOption (searchOption);
+  };
+
+  linkouts.setSelectionVec = function setSelectionVec (axis, selectIndices) {
+    LNK.setSelectionVec (axis, selectIndices);
+  };
+
+  linkouts.getTypeValues = function (axis, typeName) {
+    return MMGR.getHeatMap().getTypeValues(axis, typeName);
+  };
+
   /*******************************************
    * END EXTERNAL INTERFACE
    *******************************************/
@@ -765,17 +777,14 @@ var linkoutsVersion = "undefined";
 
   //creates the divs for the label menu
   function createLabelMenu (axis) {
-    var labelMenu =
-      axis !== "Matrix"
-        ? UHM.getDivElement(axis + "LabelMenu")
-        : UHM.getDivElement(axis + "Menu");
+    const menuName = axis + (axis === "Matrix" ? "" : "Label") + "Menu";
+    const labelMenu = UTIL.createPopupPanel(menuName);
     document.body.appendChild(labelMenu);
     labelMenu.style.display = "block";
     labelMenu.style.position = "absolute";
     labelMenu.classList.add("labelMenu");
     labelMenu.classList.add("hide");
-    var topDiv = document.createElement("DIV");
-    topDiv.classList.add("labelMenuCaption");
+    const topDiv = UTIL.newElement("DIV.labelMenuCaption");
     topDiv.innerHTML =
       axis !== "Matrix"
         ? axis.replace("Covar", " Covariate") + " Label Menu:"
@@ -796,17 +805,17 @@ var linkoutsVersion = "undefined";
       },
       false,
     );
-    var table = document.createElement("TABLE");
+    const table = document.createElement("TABLE");
     table.id = axis !== "Matrix" ? axis + "LabelMenuTable" : axis + "MenuTable";
-    var tableHead = table.createTHead();
+    const tableHead = table.createTHead();
     tableHead.classList.add("labelMenuHeader");
-    var row = tableHead.insertRow();
+    const row = tableHead.insertRow();
     labelMenu.appendChild(topDiv);
     labelMenu.appendChild(table);
     labelMenu.appendChild(closeMenu);
-    var tableBody = table.createTBody();
+    const tableBody = table.createTBody();
     tableBody.classList.add("labelMenuBody");
-    var labelHelpCloseAxis = function (ev) {
+    const labelHelpCloseAxis = function (ev) {
       closeLinkoutMenu(axis, ev);
     };
     document.addEventListener("click", labelHelpCloseAxis);
@@ -1265,11 +1274,11 @@ var linkoutsVersion = "undefined";
   }
 
   function uploadSelectedToBuilder(heatMap, data, axis) {
-    const rowRanges = NgChm.UTIL.getContigRanges(
-      NgChm.SRCHSTATE.getAxisSearchResults("Row"),
+    const rowRanges = UTIL.getContigRanges(
+      SRCHSTATE.getAxisSearchResults("Row"),
     );
-    const colRanges = NgChm.UTIL.getContigRanges(
-      NgChm.SRCHSTATE.getAxisSearchResults("Column"),
+    const colRanges = UTIL.getContigRanges(
+      SRCHSTATE.getAxisSearchResults("Column"),
     );
     uploadToBuilder(heatMap, "selected", data, rowRanges, colRanges);
   }
@@ -4180,6 +4189,12 @@ var linkoutsVersion = "undefined";
       }
     }
   })();
+
+  LNK.setSelectionVec = function setSelectionVec (axis, selectIndices) {
+    SRCH.clearSearchItems(axis);
+    SRCH.setAxisSearchResultsVec(axis, selectIndices);
+    SRCH.redrawSearchResults();
+  };
 
   /* Used when dragging and dropping a plugin */
   LNK.loadLinkoutSpec = function loadLinkoutSpec(kind, spec) {

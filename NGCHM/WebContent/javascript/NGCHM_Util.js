@@ -290,6 +290,23 @@
   };
 
   /**********************************************************************************
+   * FUNCTION - UTIL.createPopupPanel: Create and return a DIV html element that is
+   * configured for a pop-up panel.
+   **********************************************************************************/
+  UTIL.createPopupPanel = function createPopupPanel (elemName) {
+    const existing = document.getElementById(elemName);
+    if (existing) {
+      existing.classList.add("ngchm-popup");
+      existing.style.display = "none";
+      return existing;
+    }
+    return UTIL.newElement(
+      "DIV.ngchm-popup",
+      { id: elemName, style: { display: "none" } }
+    );
+  };
+
+  /**********************************************************************************
    * FUNCTION - showTab: This function shows the tab identified by buttonId and hides
    * all the other tabs in the group.
    *

@@ -197,7 +197,7 @@
       UTIL.newElement("SPAN"),
       CLOSE,
     ]);
-    const helptext = UHM.getDivElement("helptext");
+    const helptext = UTIL.createPopupPanel("helptext");
     helptext.style.position = "absolute";
     helptext.appendChild(HDR);
     document.getElementsByTagName("body")[0].appendChild(helptext);

@@ -27,6 +27,7 @@
   HEAT.Event_INITIALIZED = "Init";
   HEAT.Event_JSON = "Json";
   HEAT.Event_NEWDATA = "NewData";
+  HEAT.Event_PLUGINS = "Plugins"; // Plugins have been defined.
 
   const debugMapInit = UTIL.getDebugFlag ("heat-init");
 
@@ -555,6 +556,7 @@
       this.colorMapMgr = null; // The heatMap's color map manager.
       this.currentTileRequests = []; // Tiles we are currently reading
       this.pendingTileRequests = []; // Tiles we want to read
+      this.searchOptions = []; // Search options specific to this heatMap.
 
       this.updatedOnLoad = false;
       this.onready = onready;
@@ -779,6 +781,20 @@
       return Object.entries(this.getAxisCovariateConfig(axis)).map(([key, config]) =>
         config.show === "Y" ? config.bar_type : 0
       );
+    };
+
+    // Return the type (discrete or continuous) of the specified covariate.
+    //
+    HeatMap.prototype.getCovariateType = function (axis, covariateName) {
+      const cfg = this.getAxisCovariateConfig(axis)[covariateName];
+      return cfg ? cfg.color_map.type : undefined;
+    };
+
+    // Return the thresholds of the specified covariate.
+    //
+    HeatMap.prototype.getCovariateThresholds = function (axis, covariateName) {
+      const cfg = this.getAxisCovariateConfig(axis)[covariateName];
+      return cfg ? [...cfg.color_map.thresholds] : undefined;
     };
 
     // Returns a generator over all covariates on both axes.  The returned
@@ -2016,6 +2032,23 @@
       this.shownAxisLabelParams = { ROW: {}, COLUMN: {} };
     };
 
+    // Returns an array of the heatMap labels of the specified type.
+    // Returns an empty array if the labels do not include the specified type.
+    HeatMap.prototype.getTypeValues = function getTypeValues (axis, typeName) {
+      const types = this.getLabelTypes(axis).map(t => t.type);
+      const index = types.indexOf(typeName);
+      if (index != -1) {
+        const labels = this.getAxisLabels(axis)["labels"];
+        return labels.map(label => {
+          if (!label) return "";
+          const parts = label.split("|");
+          return parts[index] == undefined ? "" : parts[index];
+        });
+      } else {
+        return [];
+      }
+    };
+
     // Returns an array of the "actual" labels for the specified axis
     // of the NG-CHM.  The "actual" labels currently consist of the
     // visible text fields of the "full" labels.
@@ -2232,5 +2265,15 @@
     this.currentTileRequests.push(job.tileCacheName);
 
     this.loadTile(job);
+  };
+
+  // Add searchOption to the search options specific to this heat map.
+  HeatMap.prototype.addSearchOption = function addSearchOption (searchOption) {
+    this.searchOptions.push (searchOption);
+  };
+
+  // Return an array of search options specific to this heat map.
+  HeatMap.prototype.getSearchOptions = function getSearchOptions () {
+    return this.searchOptions;
   };
 })();
