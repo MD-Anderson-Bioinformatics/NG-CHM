@@ -157,7 +157,7 @@
     // In any case, data for the drawing window's level should also arrive soon
     // and the heat map would be redrawn then.
     DVW.detailMaps.forEach((mapItem) => {
-      if (heatMap == mapItem.heatMap) {
+      if (heatMap === mapItem.heatMap) {
         const aw = mapItem.detailHeatMapAccessWindow;
         if (!aw || aw.isTileInWindow(tile)) {
           mapItem.detailHeatMapValidator[tile.layer] = "";

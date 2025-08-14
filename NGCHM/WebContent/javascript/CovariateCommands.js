@@ -34,9 +34,7 @@
           output.write();
           output.indent();
           const covBars = req.heatMap.getAxisCovariateConfig(axis);
-          for (let key in covBars) {
-            output.write(key);
-          }
+          Object.keys(covBars).forEach((key) => output.write(key));
           output.unindent();
           output.write();
         }
@@ -274,11 +272,7 @@
       EXEC.reqAxis,
       function (req, res) {
         const covBars = req.heatMap.getAxisCovariateConfig(req.axis);
-        const keys = [];
-        for (let key in covBars) {
-          keys.push(key);
-        }
-        res.value = keys;
+        res.value = [...Object.keys(covBars)];
       }
     ]
   });
