@@ -94,6 +94,8 @@
       }
       SUM.flushDrawingCache(tile);
       SUM.eventTimer = setTimeout(SUM.buildSummaryTexture, 200);
+    } else if (event === HEAT.Event_PLUGINS && heatMap === MMGR.getHeatMap()) {
+      SUM.redrawSummaryPanel();
     }
     //Ignore updates to other tile types.
   };
