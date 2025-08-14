@@ -81,14 +81,14 @@
         }
       } else {
         if (["", "NA", "NAN"].includes(req.value.toUpperCase())) {
-          if (req.command != 'set') {
+          if (req.subcommand != 'set') {
             throw `cannot perform arithmetic using missing value`;
           }
           req.value = "NA";
         } else {
           const value = Number(req.value);
           if (isNaN(value)) {
-            if (req.command == 'set') {
+            if (req.subcommand == 'set') {
               throw `value must be empty/NA/NAN (missing) or a number, not ${req.value}`
             } else {
               throw `value must be a number, not ${req.value}`
@@ -620,7 +620,7 @@
   UTIL.registerCommand ("covar", covarCommand, helper);
 
   function covarCommand(req, res, next) {
-    req.heatMap = MMGR.getHeatMap();
+    if (!req.heatMap) req.heatMap = MMGR.getHeatMap();
     EXEC.doSubCommand (covarCommands, helper, req, res, next);
   }
 
