@@ -78,7 +78,7 @@
           throw `value must be either empty (missing) or a known category, not ${req.value}`;
         }
       } else {
-        if (["", "NA", "NAN"].includes(req.value.toUpperCase())) {
+        if (["", "NA", "NAN"].includes(String(req.value).trim().toUpperCase())) {
           if (req.subcommand != 'set') {
             throw `cannot perform arithmetic using missing value`;
           }
@@ -210,6 +210,7 @@
           throw `${UTIL.toTitleCase(req.axis)} ${req.name} already exists`;
         }
         req.heatMap.addCovariate (req.axis, req.name, req.datatype);
+        req.heatMap.setUnAppliedChanges(true);
         res.output.write (`Created ${req.datatype} ${req.axis} covariate ${req.name}`);
       }
     ]
@@ -241,15 +242,17 @@
         if (oldIndex < 0) {
           throw new Error('covariate is awol');
         }
-        if (oldIndex == req.index) {
+        const lastIndex = order.length - 1;
+        if (oldIndex == req.index || (req.index === order.length && oldIndex === lastIndex)) {
           // Moving it to the same position is a noop.
           res.output.write(`the move has no effect`);
           return;
         }
-        const barAtIndex = order[req.index];
-        // Remove covariate, and insert before barAtIndex.
+        // Remove the covariate bar from its current position and re-insert it
+        // at the new position (including at the end).
         order.splice(oldIndex, 1);
-        order.splice(order.indexOf(barAtIndex), 0, req.covariateName);
+        const insertIndex = Math.min(req.index, order.length);
+        order.splice(insertIndex, 0, req.covariateName);
         res.output.write(`Reordered ${req.axis} covariates`);
       }
     ]
