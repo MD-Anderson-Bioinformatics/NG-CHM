@@ -970,6 +970,16 @@
       }
     };
 
+    // Persist the axis covariate order and mark the heatmap as changed.
+    HeatMap.prototype.setAxisCovariateOrder = function (axis) {
+      if (MAPREP.isRow(axis)) {
+        this.setRowClassificationOrder ();
+      } else {
+        this.setColClassificationOrder ();
+      }
+      this.setUnAppliedChanges(true);
+    };
+
     HeatMap.prototype.getMapInformation = function () {
       return this.mapConfig.data_configuration.map_information;
     };

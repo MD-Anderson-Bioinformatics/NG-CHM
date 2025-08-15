@@ -33,8 +33,8 @@
           output.write(`${UTIL.toTitleCase(axis)} covariates:`);
           output.write();
           output.indent();
-          const covBars = req.heatMap.getAxisCovariateConfig(axis);
-          Object.keys(covBars).forEach((key) => output.write(key));
+          const order = req.heatMap.getAxisCovariateOrder(axis);
+          order.forEach((key) => output.write(key));
           output.unindent();
           output.write();
         }
@@ -99,8 +99,7 @@
     function (req, res) {
       const cvData = req.heatMap.getAxisCovariateData(req.axis)[req.covariateName];
       const op = { set: setOp, add: addOp, scale: scaleOp } [req.subcommand];
-      const value = req.dataType == "discrete" ? req.value : Number(req.value);
-      req.heatMap.setUnAppliedChanges(true);
+      const value = req.dataType == "discrete" || req.value === "NA" ? req.value : Number(req.value);
       if (req["--all"]) {
         for (let ii = 0; ii < cvData.values.length; ii++) {
           op(ii);
@@ -115,6 +114,7 @@
           op(selected[ii]-1);
         }
       }
+      req.heatMap.setUnAppliedChanges(true);
       req.heatMap.summarizeCovariate (req.axis, req.covariateName, req.dataType);
       // Helper functions.
       function setOp (idx) {
@@ -253,6 +253,7 @@
         order.splice(oldIndex, 1);
         const insertIndex = Math.min(req.index, order.length);
         order.splice(insertIndex, 0, req.covariateName);
+        req.heatMap.setAxisCovariateOrder(req.axis);
         res.output.write(`Reordered ${req.axis} covariates`);
       }
     ]
@@ -274,8 +275,8 @@
       EXEC.getHeatMap,
       EXEC.reqAxis,
       function (req, res) {
-        const covBars = req.heatMap.getAxisCovariateConfig(req.axis);
-        res.value = [...Object.keys(covBars)];
+        const order = req.heatMap.getAxisCovariateOrder(req.axis);
+        res.value = order.slice();
       }
     ]
   });
@@ -408,7 +409,7 @@
       EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
-      function (req, res, next) {
+      function (req, res) {
         res.value = req.heatMap.getAxisCovariateData(req.axis)[req.covariateName].values.slice();
       }
     ]

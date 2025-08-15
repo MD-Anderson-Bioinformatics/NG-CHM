@@ -83,6 +83,10 @@
   // Callback that is notified every time there is an update to the heat map
   // initialize, new data, etc.  This callback draws the summary heat map.
   SUM.processSummaryMapUpdate = function (heatMap, event, tile) {
+    // Ignore updates to any maps other than the one we are showing.
+    if (heatMap !== MMGR.getHeatMap()) {
+      return;
+    }
     if (event === HEAT.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL) {
       if (!heatMap.initialized) {
         return;
@@ -94,7 +98,7 @@
       }
       SUM.flushDrawingCache(tile);
       SUM.eventTimer = setTimeout(SUM.buildSummaryTexture, 200);
-    } else if (event === HEAT.Event_PLUGINS && heatMap === MMGR.getHeatMap()) {
+    } else if (event === HEAT.Event_PLUGINS) {
       SUM.redrawSummaryPanel();
     }
     //Ignore updates to other tile types.
