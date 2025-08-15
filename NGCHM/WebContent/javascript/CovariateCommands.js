@@ -25,16 +25,16 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       function (req, res) {
         const output = res.output;
         for (const axis of ["row", "column"]) {
           output.write(`${UTIL.toTitleCase(axis)} covariates:`);
           output.write();
           output.indent();
-          const covBars = req.heatMap.getAxisCovariateConfig(axis);
-          for (let key in covBars) {
-            output.write(key);
-          }
+          const order = req.heatMap.getAxisCovariateOrder(axis);
+          order.forEach((key) => output.write(key));
           output.unindent();
           output.write();
         }
@@ -45,9 +45,15 @@
   const setOptions = new Map();
   setOptions.set ("--all", { field: "--all", args: 0 });
 
+  function helpAllOption (req, res, next) {
+    res.output.write(`--all : modify all of the covariate's values.`);
+    next();
+  }
+
   // Used by set, add, and scale commands.
   const calcRoute = [
-    EXEC.genGetOptions (EXEC.axisOptions, setOptions),
+    EXEC.genGetOptions (EXEC.mapOptions, EXEC.axisOptions, setOptions),
+    EXEC.getHeatMap,
     function (req, res, next) {
       if (req["--row"] && req["--column"]) {
         throw `specify either --row or --column, not both.`;
@@ -72,15 +78,15 @@
           throw `value must be either empty (missing) or a known category, not ${req.value}`;
         }
       } else {
-        if (["", "NA", "NAN"].includes(req.value.toUpperCase())) {
-          if (req.command != 'set') {
+        if (["", "NA", "NAN"].includes(String(req.value).trim().toUpperCase())) {
+          if (req.subcommand != 'set') {
             throw `cannot perform arithmetic using missing value`;
           }
           req.value = "NA";
         } else {
           const value = Number(req.value);
           if (isNaN(value)) {
-            if (req.command == 'set') {
+            if (req.subcommand == 'set') {
               throw `value must be empty/NA/NAN (missing) or a number, not ${req.value}`
             } else {
               throw `value must be a number, not ${req.value}`
@@ -93,8 +99,7 @@
     function (req, res) {
       const cvData = req.heatMap.getAxisCovariateData(req.axis)[req.covariateName];
       const op = { set: setOp, add: addOp, scale: scaleOp } [req.subcommand];
-      const value = req.dataType == "discrete" ? req.value : Number(req.value);
-      req.heatMap.setUnAppliedChanges(true);
+      const value = req.dataType == "discrete" || req.value === "NA" ? req.value : Number(req.value);
       if (req["--all"]) {
         for (let ii = 0; ii < cvData.values.length; ii++) {
           op(ii);
@@ -109,6 +114,7 @@
           op(selected[ii]-1);
         }
       }
+      req.heatMap.setUnAppliedChanges(true);
       req.heatMap.summarizeCovariate (req.axis, req.covariateName, req.dataType);
       // Helper functions.
       function setOp (idx) {
@@ -135,6 +141,7 @@
       },
       EXEC.showOptions([
         EXEC.helpMapOptions,
+        helpAllOption,
         EXEC.helpAxisOptions,
       ]),
     ],
@@ -153,6 +160,8 @@
       },
       EXEC.showOptions([
         EXEC.helpMapOptions,
+        helpAllOption,
+        EXEC.helpAxisOptions,
       ]),
     ],
     route: calcRoute
@@ -169,6 +178,8 @@
       },
       EXEC.showOptions([
         EXEC.helpMapOptions,
+        helpAllOption,
+        EXEC.helpAxisOptions,
       ]),
     ],
     route: calcRoute
@@ -186,6 +197,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.genRequired("name"),
       EXEC.reqDataType,
@@ -197,6 +210,7 @@
           throw `${UTIL.toTitleCase(req.axis)} ${req.name} already exists`;
         }
         req.heatMap.addCovariate (req.axis, req.name, req.datatype);
+        req.heatMap.setUnAppliedChanges(true);
         res.output.write (`Created ${req.datatype} ${req.axis} covariate ${req.name}`);
       }
     ]
@@ -214,6 +228,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       reqIndex,
@@ -226,15 +242,18 @@
         if (oldIndex < 0) {
           throw new Error('covariate is awol');
         }
-        if (oldIndex == req.index) {
+        const lastIndex = order.length - 1;
+        if (oldIndex == req.index || (req.index === order.length && oldIndex === lastIndex)) {
           // Moving it to the same position is a noop.
           res.output.write(`the move has no effect`);
           return;
         }
-        const barAtIndex = order[req.index];
-        // Remove covariate, and insert before barAtIndex.
+        // Remove the covariate bar from its current position and re-insert it
+        // at the new position (including at the end).
         order.splice(oldIndex, 1);
-        order.splice(order.indexOf(barAtIndex), 0, req.covariateName);
+        const insertIndex = Math.min(req.index, order.length);
+        order.splice(insertIndex, 0, req.covariateName);
+        req.heatMap.setAxisCovariateOrder(req.axis, order);
         res.output.write(`Reordered ${req.axis} covariates`);
       }
     ]
@@ -252,14 +271,12 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       function (req, res) {
-        const covBars = req.heatMap.getAxisCovariateConfig(req.axis);
-        const keys = [];
-        for (let key in covBars) {
-          keys.push(key);
-        }
-        res.value = keys;
+        const order = req.heatMap.getAxisCovariateOrder(req.axis);
+        res.value = order.slice();
       }
     ]
   });
@@ -276,6 +293,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       function (req, res) {
@@ -324,6 +343,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       reqNewBreakPt,
@@ -384,9 +405,11 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
-      function (req, res, next) {
+      function (req, res) {
         res.value = req.heatMap.getAxisCovariateData(req.axis)[req.covariateName].values.slice();
       }
     ]
@@ -410,6 +433,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       reqExistingIndex,
@@ -479,7 +504,7 @@
   });
 
   covarCommands.set("change-missing", {
-    synopsis: "axis name color",
+    synopsis: "[--map name] axis name color",
     helpRoute: [
       function (req, res, next) {
         res.output.write(`Change the missing color of the covariate with the specified axis and name.`);
@@ -490,6 +515,8 @@
       ]),
     ],
     route: [
+      EXEC.genGetOptions (EXEC.mapOptions),
+      EXEC.getHeatMap,
       EXEC.reqAxis,
       EXEC.reqCovariate,
       EXEC.reqColor,
@@ -591,7 +618,7 @@
   UTIL.registerCommand ("covar", covarCommand, helper);
 
   function covarCommand(req, res, next) {
-    req.heatMap = MMGR.getHeatMap();
+    if (!req.heatMap) req.heatMap = MMGR.getHeatMap();
     EXEC.doSubCommand (covarCommands, helper, req, res, next);
   }
 

@@ -72,7 +72,6 @@
         DVW.detailMaps[i].updateSelection();
       }
     }
-    MMGR.getHeatMap().setUnAppliedChanges(true);
   };
 
   /*********************************************************************************************
@@ -80,9 +79,9 @@
    * that is notified every time there is an update to the heat map initialize, new data, etc.
    * This callback draws the summary heat map.
    *********************************************************************************************/
-  DET.processDetailMapUpdate = function (event, tile) {
+  DET.processDetailMapUpdate = function (heatMap, event, tile) {
     if (event === HEAT.Event_NEWDATA) {
-      DET.flushDrawingCache(tile);
+      DET.flushDrawingCache(heatMap, tile);
     }
   };
 
@@ -147,7 +146,7 @@
    * the new tile to be redrawn the next time it is displayed.  The currently displayed primary
    * heat map will be redrawn after a short delay if it might be affected by the tile.
    *********************************************************************************************/
-  DET.flushDrawingCache = function (tile) {
+  DET.flushDrawingCache = function (heatMap, tile) {
     // The cached heat map for the tile's layer will be
     // invalidated if the tile's level matches the level
     // of the cached heat map.
@@ -158,11 +157,13 @@
     // In any case, data for the drawing window's level should also arrive soon
     // and the heat map would be redrawn then.
     DVW.detailMaps.forEach((mapItem) => {
-      const aw = mapItem.detailHeatMapAccessWindow;
-      if (!aw || aw.isTileInWindow(tile)) {
-        mapItem.detailHeatMapValidator[tile.layer] = "";
-        // Redraw 'now', without resizing, if the tile is for the currently displayed layer.
-        DET.setDrawDetailTimeout(mapItem, DET.redrawUpdateTimeout, true);
+      if (heatMap === mapItem.heatMap) {
+        const aw = mapItem.detailHeatMapAccessWindow;
+        if (!aw || aw.isTileInWindow(tile)) {
+          mapItem.detailHeatMapValidator[tile.layer] = "";
+          // Redraw 'now', without resizing, if the tile is for the currently displayed layer.
+          DET.setDrawDetailTimeout(mapItem, DET.redrawUpdateTimeout, true);
+        }
       }
     });
   };

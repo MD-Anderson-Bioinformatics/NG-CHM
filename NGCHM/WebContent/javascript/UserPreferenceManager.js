@@ -216,10 +216,6 @@
 
   // Define a click handler for each of the Preferences Manager UI elements.
   (function () {
-    // Two ways to open the Preferences Manager.
-    KAE("colorMenu_btn").onclick = () => openPreferencesManager();
-    KAE("menuGear").onclick = () => openPreferencesManager();
-
     // Two ways to close the Preferences Manager.
     KAE("redX_btn").onclick = () => closePreferencesManager();
     KAE("prefClose_btn").onclick = () => closePreferencesManager();
@@ -261,14 +257,14 @@
    *  - getNewBreakThresholds
    =================================================================================*/
 
-  /* FUNCTION openPreferencesManager - Open the User Preferences Manager for the current
-   * heatmap.
+  /* FUNCTION UPM.openPreferencesManager - Open the User Preferences Manager for the
+   * specified heatmap.
    *
    * This function is called if
    * - the Edit Preferences "gear" button is pressed on the main application screen, or
    * - the Modify Map Preferences menu option is selected from the hamburger menu.
    */
-  function openPreferencesManager() {
+  UPM.openPreferencesManager = function openPreferencesManager(heatMap) {
     UHM.closeMenu();
     UHM.hlpC();
 
@@ -281,7 +277,7 @@
     }
 
     // Set the heatMap we are editing.
-    UPM.heatMap = MMGR.getHeatMap();
+    UPM.heatMap = heatMap;
 
     // Disable the apply and reset buttons until a change is made.
     applyButton.disabled = true;
@@ -289,7 +285,7 @@
 
     // Execute common code to display the contents of the Preferences Manager.
     editPreferences(null);
-  }
+  };
 
   /**********************************************************************************
    * FUNCTION closePreferencesManager: Close the Preferences Manager Window.
