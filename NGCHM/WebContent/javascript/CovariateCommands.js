@@ -253,7 +253,7 @@
         order.splice(oldIndex, 1);
         const insertIndex = Math.min(req.index, order.length);
         order.splice(insertIndex, 0, req.covariateName);
-        req.heatMap.setAxisCovariateOrder(req.axis);
+        req.heatMap.setAxisCovariateOrder(req.axis, order);
         res.output.write(`Reordered ${req.axis} covariates`);
       }
     ]

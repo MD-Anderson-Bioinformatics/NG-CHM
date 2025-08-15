@@ -971,12 +971,12 @@
     };
 
     // Persist the axis covariate order and mark the heatmap as changed.
-    HeatMap.prototype.setAxisCovariateOrder = function (axis) {
-      if (MAPREP.isRow(axis)) {
-        this.setRowClassificationOrder ();
-      } else {
-        this.setColClassificationOrder ();
+    HeatMap.prototype.setAxisCovariateOrder = function (axis, order) {
+      if (!Array.isArray(order)) {
+        console.error("setAxisCovariateOrder requires an order array", { axis, order });
+        return;
       }
+      this.getAxisConfig(axis).classifications_order = order.slice();
       this.setUnAppliedChanges(true);
     };
 
