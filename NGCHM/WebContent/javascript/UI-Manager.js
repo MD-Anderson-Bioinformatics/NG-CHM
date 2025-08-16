@@ -381,6 +381,7 @@
         if (eventName == "drop") {
           if (debug) console.log({ m: "drop related event", eventName, ev });
           const dt = ev.dataTransfer;
+          if (!dt) return;
           const files = dt.files;
           [...files].forEach((file) => {
             if (debug) console.log({ m: "dropFile", file });
@@ -392,7 +393,8 @@
               reader.readAsText(file);
             }
           });
-          const txt = dt.getData("Application/json");
+          // Try multiple common types for embedded data.
+          const txt = dt.getData("Application/json") || dt.getData("Application/json") || dt.getData("text/json");
           if (txt) handleDropData(txt);
           dropTarget.classList.remove("visible");
         } else if (eventName === "dragenter") {
@@ -406,9 +408,17 @@
     // Called when the user drops a file on the drop area.
     function handleDropData(txt) {
       if (debug) console.log({ m: "Got drop data", txt });
-      const j = JSON.parse(txt);
+      let j;
+      try {
+        j = JSON.parse(txt);
+      } catch (e) {
+        if (debug) console.warn("Dropped data is not valid JSON", e);
+        return;
+      }
       if (j && j.type === "linkout.spec" && j.kind && j.spec) {
         LNK.loadLinkoutSpec(j.kind, j.spec);
+      } else {
+        console.warn("Dropped data is not a valid linkout spec", { j });
       }
     }
   }
@@ -530,17 +540,23 @@
   function configurePageHeader(heatMaps) {
     // Populate the header's nameDiv.
     const nameDiv = document.getElementById("mapName");
+    nameDiv.innerHTML = "";
     const mapNames = heatMaps.map(heatMap => heatMap.getMapInformation().name);
     if (mapNames.length == 1) {
       nameDiv.innerText = mapNames[0];
     } else {
-      const select = UTIL.newSelect (mapNames, mapNames);
+      const nonces = heatMaps.map(heatMap => heatMap.nonce);
+      const select = UTIL.newSelect (nonces, mapNames);
       nameDiv.appendChild (select);
       select.onchange = () => {
-        selectHeatMap(select.value, false);
+        const heatMap = MMGR.getHeatMapByNonce(select.value);
+        if (!heatMap) {
+          throw `UIMGR.configurePageHeader: bad heatMap id ${select.value}`;
+        }
+        selectHeatMap(heatMap, false);
       };
     }
-    selectHeatMap (mapNames[0], true);
+    selectHeatMap (heatMaps[0], true);
     // Check viewer version if not embedded.
     if (!srcInfo.embedded) {
       checkViewerVersion();
@@ -548,14 +564,9 @@
     return;
     // Helper function
     // Call initially and whenever a heatMap is selected from the maps drop down.
-    function selectHeatMap (name, firstTime) {
-      const index = mapNames.indexOf(name);
-      if (index < 0) {
-        throw `UIMGR.configurePageHeader: bad heatMap name ${name}`;
-      }
-      const heatMap = heatMaps[index];
+    function selectHeatMap (heatMap, firstTime) {
       if (!srcInfo.embedded) {
-        document.title = `NG-CHM Viewer: ${name}`;
+        document.title = `NG-CHM Viewer: ${heatMap.name}`;
       }
       MMGR.setHeatMap(heatMap);
       SRCH.configSearchInterface(heatMap);

@@ -98,7 +98,7 @@
   // initialize, new data, etc.  This callback draws the summary heat map.
   SUM.processSummaryMapUpdate = function (heatMap, event, tile) {
     // Ignore updates to any maps other than the one we are showing.
-    if (heatMap !== MMGR.getHeatMap()) {
+    if (heatMap !== SUM.heatMap) {
       return;
     }
     if (event === HEAT.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL) {
@@ -226,6 +226,10 @@
   // for the specified heatMap and axis.
   SUM.getSummaryDendrogram = function (heatMap, axis) {
     const ddrs = summaryDendrograms.get(heatMap);
+    if (!ddrs) {
+      console.error("No summary dendrograms for heatMap", { heatMap, axis });
+      return null;
+    }
     return MAPREP.isRow(axis) ? ddrs.row : ddrs.column;
   };
 

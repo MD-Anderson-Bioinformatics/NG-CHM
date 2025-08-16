@@ -27,7 +27,7 @@
     pane: null,
     chm: null,
     heatMap: null,
-    version: "P",
+    version: "S",
     panelNbr: 1,
     mode: "NORMAL",
     prevMode: "NORMAL",
@@ -360,7 +360,7 @@
    *********************************************************************************************/
   DMM.switchToPrimary = function (mapItem) {
     // Cannot switch to primary if not the same heatMap as SUMMARY heatMap.
-    if (mapItem && mapItem.heatMap != SUM.heatMap) return;
+    if (mapItem && mapItem.heatMap !== SUM.heatMap) return;
     const chm = mapItem ? mapItem.chm : null;
     DVW.primaryMap = null;
     for (let i = 0; i < DVW.detailMaps.length; i++) {
@@ -421,7 +421,7 @@
   // FUNCTION detailMapsForHeatMap - return an array of the detail map views
   // for the specified heatMap.
   function detailMapsForHeatMap (heatMap) {
-    return DVW.detailMaps.filter(mapItem => mapItem.heatMap == heatMap);
+    return DVW.detailMaps.filter(mapItem => mapItem.heatMap === heatMap);
   }
 
   /*********************************************************************************************
@@ -557,7 +557,7 @@
       mapItem.saveCol = startCol;
       DET.callDetailDrawFunction("RIBBONV", mapItem);
     }
-    mapItem.updateSelection(mapItem);
+    mapItem.updateSelection();
     SUM.drawSelectionMarks();
   }
 

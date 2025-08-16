@@ -8,6 +8,7 @@
   // Once the maps have been loaded,
   // - MMGR.getAllHeatMaps() returns all maps.
   // - MMGR.getHeatMap() returns the current map.
+  // - MMGR.getHeatMapByNonce() returns the map with the specified nonce.
 
   // Define Namespace for NgChm MatrixManager
   const MMGR = NgChm.createNS("NgChm.MMGR");
@@ -829,10 +830,20 @@
       return allHeatMaps;
     };
 
+    // Return the heat map with the specified nonce.
+    MMGR.getHeatMapByNonce = function getHeatMapByNonce (nonce) {
+      for (const heatMap of allHeatMaps) {
+        if (heatMap.nonce === nonce) {
+          return heatMap;
+        }
+      }
+      return null;
+    };
+
     // Return true iff any heatmap has unsaved changes.
     MMGR.hasUnsavedChanges = function () {
-      for (const heatmap of allHeatMaps) {
-        if (heatmap.getUnAppliedChanges()) {
+      for (const heatMap of allHeatMaps) {
+        if (heatMap.getUnAppliedChanges()) {
           return true;
         }
       }
@@ -841,8 +852,8 @@
 
     // Return true iff any read-only heatmap has unsaved changes.
     MMGR.hasReadOnlyChanges = function () {
-      for (const heatmap of allHeatMaps) {
-        if (heatMap.isReadOnly() && heatmap.getUnAppliedChanges()) {
+      for (const heatMap of allHeatMaps) {
+        if (heatMap.isReadOnly() && heatMap.getUnAppliedChanges()) {
           return true;
         }
       }
@@ -851,15 +862,15 @@
 
     // Clear unsaved changes flag on all heat maps.
     MMGR.clearUnsavedChanges = function () {
-      for (const heatmap of allHeatMaps) {
-        heatmap.setUnAppliedChanges(false);
+      for (const heatMap of allHeatMaps) {
+        heatMap.setUnAppliedChanges(false);
       }
     };
 
     // Return true if any heatmap was updated on load.
     MMGR.mapUpdatedOnLoad = function () {
-      for (const heatmap of allHeatMaps) {
-        if (heatmap.mapUpdatedOnLoad) {
+      for (const heatMap of allHeatMaps) {
+        if (heatMap.mapUpdatedOnLoad) {
           return true;
         }
       }
@@ -895,7 +906,7 @@
     function saveMaps (callback) {
       return function onMapsLoaded (maps) {
         allHeatMaps = maps;
-        heatMap = allHeatMaps[0];
+        MMGR.setHeatMap(allHeatMaps[0]);
         callback();
       };
     }

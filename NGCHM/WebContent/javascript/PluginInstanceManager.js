@@ -82,22 +82,12 @@
     initializePlugin(nonce, options);
   };
 
-  // Create a new, unique nonce.
-  PIM.getNewNonce = getNewNonce;
-  function getNewNonce() {
-    const ta = new Uint8Array(16);
-    window.crypto.getRandomValues(ta);
-    return Array.from(ta)
-      .map((x) => x.toString(16))
-      .join("");
-  }
-
   // Create a new instance of the specified plugin and return the
   // iframe associated with the new instance.  The caller is
   // responsible for inserting the iframe into the correct place
   // in the DOM.
   PIM.createPluginInstance = function createPluginInstance(kind, plugin) {
-    const nonce = getNewNonce();
+    const nonce = UTIL.getNewNonce();
     const isBlob = /^blob:/.test(plugin.src);
     const url = isBlob
       ? plugin.src
