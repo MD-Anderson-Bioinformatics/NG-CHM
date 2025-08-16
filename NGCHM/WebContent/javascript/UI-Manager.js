@@ -394,7 +394,7 @@
             }
           });
           // Try multiple common types for embedded data.
-          const txt = dt.getData("Application/json") || dt.getData("Application/json") || dt.getData("text/json");
+          const txt = dt.getData("application/json") || dt.getData("Application/json") || dt.getData("text/json");
           if (txt) handleDropData(txt);
           dropTarget.classList.remove("visible");
         } else if (eventName === "dragenter") {
