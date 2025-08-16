@@ -21,6 +21,7 @@
   SMM.onMouseUpSelRowCanvas = function (evt) {
     evt.preventDefault();
     evt.stopPropagation();
+    if (!DVW.primaryMap) return;
     //When doing a shift drag, this block will actually do the selection on mouse up.
     var sumOffsetX = evt.touches ? evt.layerX : evt.offsetX;
     var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
@@ -43,6 +44,7 @@
   SMM.onMouseUpSelColCanvas = function (evt) {
     evt.preventDefault();
     evt.stopPropagation();
+    if (!DVW.primaryMap) return;
     //When doing a shift drag, this block will actually do the selection on mouse up.
     var sumOffsetX = evt.touches ? evt.layerX : evt.offsetX;
     var sumOffsetY = evt.touches ? evt.layerY : evt.offsetY;
@@ -106,8 +108,8 @@
     SUM.canvas.style.cursor = "default";
     //Gotta redraw everything because of event cascade occurring when mousing out of the layers that contain the canvas
     // (container and summary_chm) we set the right position mousing up on the canvas above, but move events are still coming in.
-    if (DVW.detailMaps.length > 0) {
-      // only 'redraw everything' if there are detail maps showing
+    if (DVW.primaryMap) {
+      // only 'redraw everything' if there is a primary detail map.
       DVW.primaryMap.updateSelection();
     }
   };
@@ -163,14 +165,16 @@
         var startCol = Math.max(Math.min(clickStartCol, clickEndCol) + 1, 1);
         var endRow = Math.max(clickStartRow, clickEndRow);
         var endCol = Math.max(clickStartCol, clickEndCol);
-        DVW.primaryMap.selectedIsDendrogram = false;
-        DMM.setSubRibbonView(
-          DVW.primaryMap,
-          startRow,
-          endRow,
-          startCol,
-          endCol,
-        );
+        if (DVW.primaryMap) {
+          DVW.primaryMap.selectedIsDendrogram = false;
+          DMM.setSubRibbonView(
+            DVW.primaryMap,
+            startRow,
+            endRow,
+            startCol,
+            endCol,
+          );
+        }
       } else {
         var xPos = SUM.getCanvasX(sumOffsetX);
         var yPos = SUM.getCanvasY(sumOffsetY);

@@ -6,7 +6,6 @@
 
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const HEAT = NgChm.importNS("NgChm.HEAT");
-  const MMGR = NgChm.importNS("NgChm.MMGR");
   const CMM = NgChm.importNS("NgChm.CMM");
   const SUMDDR = NgChm.importNS("NgChm.SUMDDR");
   const UTIL = NgChm.importNS("NgChm.UTIL");
@@ -15,11 +14,14 @@
   const PANE = NgChm.importNS("NgChm.Pane");
   const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
 
+  const debug = UTIL.getDebugFlag("sum");
+
   // Flags.
   SUM.flagDrawClassBarLabels = false; // Labels are only drawn in NGCHM_GUI_Builder
 
   //WebGl Canvas, Context, and Pixel Arrays
   SUM.chmElement = null; // div containing summary heatmap
+  SUM.heatMap = null; // HeatMap being displayed in SUM.chmElement.
   SUM.canvas = null; //Primary Heat Map Canvas
   SUM.rCCanvas = null; //Row Class Bar Canvas
   SUM.cCCanvas = null; //Column Class Bar Canvas
@@ -80,14 +82,29 @@
     SUM.cCCanvas = document.getElementById("col_class_canvas");
   };
 
+  // FUNCTION SUM.setHeatMap - Set the heatMap (to be) displayed in the
+  // summary panel.
+  SUM.setHeatMap = function setHeatMap(heatMap) {
+    SUM.heatMap = heatMap;
+    SUM.colDendro = null;
+    SUM.rowDendro = null;
+    SUM.summaryHeatMapCache = {};
+    SUM.colTopItemsWidth = 0;
+    SUM.rowTopItemsHeight = 0;
+    SUM.initSummaryData();
+  };
+
   // Callback that is notified every time there is an update to the heat map
   // initialize, new data, etc.  This callback draws the summary heat map.
   SUM.processSummaryMapUpdate = function (heatMap, event, tile) {
     // Ignore updates to any maps other than the one we are showing.
-    if (heatMap !== MMGR.getHeatMap()) {
+    if (heatMap !== SUM.heatMap) {
       return;
     }
     if (event === HEAT.Event_NEWDATA && tile.level === MAPREP.SUMMARY_LEVEL) {
+      if (debug) {
+        console.log("processSummaryMapUpdate", { heatMap, event, tile });
+      }
       if (!heatMap.initialized) {
         return;
       }
@@ -104,11 +121,10 @@
     //Ignore updates to other tile types.
   };
 
-  // Initialize heatmap summary data that is independent of there being
-  // a summary panel.  This function is called once the heatmap data
-  // has been loaded, but before creating any view panels.
-  SUM.initSummaryData = function (callbacks) {
-    const ddrCallbacks = {
+  const ddrCallbacks = {};
+  // FUNCTION SUM.initDdrCallbacks - Initialize dendrogram callbacks.
+  SUM.initDdrCallbacks = function (callbacks) {
+    Object.assign(ddrCallbacks, {
       clearSelectedRegion: function (axis) {
         callbacks.callDetailDrawFunction("NORMAL");
         if (DVW.primaryMap) {
@@ -155,7 +171,7 @@
         callbacks.showSearchResults();
       },
 
-      calcDetailDendrogramSize: function (axis, size, totalSize) {
+      calcDetailDendrogramSize: function (heatMap, axis, size, totalSize) {
         // axis is 'row' or 'column'
         // - For rows, calculate the dendrogram width.
         // - For columns, calculate the dendrogram height.
@@ -168,8 +184,8 @@
           sumDendro.dendroCanvas.style[sizeProperty],
           10,
         );
-        if (!SUM.chmElement || sumDendroSize < 5) {
-          // Either no SUM element or it's minimized.
+        if (!SUM.chmElement || SUM.heatMap != heatMap || sumDendroSize < 5) {
+          // Either no SUM element, SUM element is for a different heatmap, or it's minimized.
           // Retain existing dendro size but ensure that it is
           // no smaller than 10% of the total detail size.
           const minSize = totalSize * 0.1;
@@ -188,46 +204,70 @@
         }
         return size;
       },
-    };
+    });
+  };
 
-    SUM.reinitSummaryData = function () {
-      const heatMap = MMGR.getHeatMap();
-      if (!SUM.colDendro) {
-        SUM.colDendro = new SUMDDR.SummaryColumnDendrogram(
-          heatMap,
-          ddrCallbacks,
-        );
-      }
-      if (!SUM.rowDendro) {
-        SUM.rowDendro = new SUMDDR.SummaryRowDendrogram(heatMap, ddrCallbacks);
-      }
-      SUM.colTopItems = heatMap.getTopItems("column", { count: 10 });
-      SUM.rowTopItems = heatMap.getTopItems("row", { count: 10 });
+  // FUNCTION SUM.createSummaryDendrograms - Create a database of
+  // summary dendrograms for all heat maps.
+  // This is required when creating a detail map view, because
+  // the detail map dendrogram is built on the summary dendrogram
+  // for that map.
+  const summaryDendrograms = new WeakMap();
+  SUM.createSummaryDendrograms = function createSummaryDendrograms (allHeatMaps) {
+    for (const heatMap of allHeatMaps) {
+      const ddrs = {};
+      ddrs.row = new SUMDDR.SummaryRowDendrogram(heatMap, ddrCallbacks);
+      ddrs.column = new SUMDDR.SummaryColumnDendrogram(heatMap, ddrCallbacks);
+      summaryDendrograms.set (heatMap, ddrs);
+    }
+  };
 
-      SUM.matrixWidth = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
-      SUM.matrixHeight = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
+  // FUNCTION SUM.getSummaryDendrogram - Return the summary dendrogram
+  // for the specified heatMap and axis.
+  SUM.getSummaryDendrogram = function (heatMap, axis) {
+    const ddrs = summaryDendrograms.get(heatMap);
+    if (!ddrs) {
+      console.error("No summary dendrograms for heatMap", { heatMap, axis });
+      return null;
+    }
+    return MAPREP.isRow(axis) ? ddrs.row : ddrs.column;
+  };
 
-      if (SUM.matrixWidth < SUM.minDimensionSize) {
-        SUM.widthScale = Math.max(
-          2,
-          Math.ceil(SUM.minDimensionSize / SUM.matrixWidth),
-        );
-      }
-      if (SUM.matrixHeight < SUM.minDimensionSize) {
-        SUM.heightScale = Math.max(
-          2,
-          Math.ceil(SUM.minDimensionSize / SUM.matrixHeight),
-        );
-      }
-      SUM.calcTotalSize();
-    };
-    SUM.reinitSummaryData();
+  // Initialize heatmap summary data that is independent of there being
+  // a summary panel.  This function is called once the heatmap data
+  // has been loaded, but before creating any view panels.
+  SUM.initSummaryData = function () {
+    const heatMap = SUM.heatMap;
+    if (!SUM.colDendro) {
+      SUM.colDendro = SUM.getSummaryDendrogram(heatMap, "column");
+    }
+    if (!SUM.rowDendro) {
+      SUM.rowDendro = SUM.getSummaryDendrogram(heatMap, "row");
+    }
+    SUM.colTopItems = heatMap.getTopItems("column", { count: 10 });
+    SUM.rowTopItems = heatMap.getTopItems("row", { count: 10 });
+
+    SUM.matrixWidth = heatMap.getNumColumns(MAPREP.SUMMARY_LEVEL);
+    SUM.matrixHeight = heatMap.getNumRows(MAPREP.SUMMARY_LEVEL);
+
+    if (SUM.matrixWidth < SUM.minDimensionSize) {
+      SUM.widthScale = Math.max(
+        2,
+        Math.ceil(SUM.minDimensionSize / SUM.matrixWidth),
+      );
+    }
+    if (SUM.matrixHeight < SUM.minDimensionSize) {
+      SUM.heightScale = Math.max(
+        2,
+        Math.ceil(SUM.minDimensionSize / SUM.matrixHeight),
+      );
+    }
+    SUM.calcTotalSize();
   };
 
   SUM.redrawSummaryPanel = function () {
     // Nothing to redraw if never initialized.
     if (!SUM.chmElement) return;
-    SUM.reinitSummaryData();
 
     //Classificaton bars get stretched on small maps, scale down the bars and padding.
     SUM.rowClassBarWidth = SUM.calculateSummaryTotalClassBarHeight("row");
@@ -275,7 +315,7 @@
   //mimimum width is also set for the summary chm so that the divider bar cannot be dragged
   //further to the left.
   SUM.setMinimumSummaryWidth = function (minSumWidth) {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     var sumPct = parseInt(heatMap.getMapInformation().summary_width);
     if (typeof NgChm.galaxy === "undefined") {
       // FIXME: BMB: Implement a better way of determining Galaxy mode.
@@ -303,7 +343,7 @@
 
   SUM.setSelectionDivSize = function (width, height) {
     // input params used for PDF Generator to resize canvas based on PDF sizes
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     var colSel = document.getElementById("summary_col_select_canvas");
     var rowSel = document.getElementById("summary_row_select_canvas");
     var colTI = document.getElementById("summary_col_top_items_canvas");
@@ -469,9 +509,10 @@
 
   //Create a summary heat map for the current data layer and display it.
   SUM.buildSummaryTexture = function () {
-    const debug = false;
-
-    const heatMap = MMGR.getHeatMap();
+    if (debug) {
+      console.log("buildSummaryTexture");
+    }
+    const heatMap = SUM.heatMap;
     const currentDl = heatMap.getCurrentDL();
     let renderBuffer;
     if (SUM.summaryHeatMapCache.hasOwnProperty(currentDl)) {
@@ -535,7 +576,7 @@
 
   // Redisplay the summary heat map for the current data layer.
   SUM.drawHeatMap = function () {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     const currentDl = heatMap.getCurrentDL();
     if (SUM.summaryHeatMapCache[currentDl] !== undefined) {
       drawHeatMapRenderBuffer(SUM.summaryHeatMapCache[currentDl]);
@@ -555,7 +596,10 @@
 
   // Renders the Summary Heat Map for the current data layer into the specified renderBuffer.
   function renderSummaryHeatMap(renderBuffer, widthScale, heightScale) {
-    const heatMap = MMGR.getHeatMap();
+    if (debug) {
+      console.log("renderSummaryHeatMap");
+    }
+    const heatMap = SUM.heatMap;
     const currentDl = heatMap.getCurrentDL();
     const colorMap = heatMap
       .getColorMapManager()
@@ -618,7 +662,7 @@
 
   //Draws Row Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
   SUM.buildRowClassTexture = function buildRowClassTexture() {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     SUM.texRc = buildRowCovariateRenderBuffer(SUM.widthScale, SUM.heightScale);
 
     DVW.removeLabels("missingSumRowClassBars");
@@ -646,7 +690,7 @@
 
   SUM.buildRowCovariateRenderBuffer = buildRowCovariateRenderBuffer;
   function buildRowCovariateRenderBuffer(widthScale, heightScale) {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
 
     const renderBuffer = DRAW.createRenderBuffer(
       SUM.rowClassBarWidth * widthScale,
@@ -706,7 +750,7 @@
 
   //Draws Column Classification bars into the webGl texture array ("dataBuffer"). "names"/"colorSchemes" should be array of strings.
   SUM.buildColClassTexture = function () {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     SUM.texCc = SUM.buildColCovariateRenderBuffer(
       SUM.widthScale,
       SUM.heightScale,
@@ -737,7 +781,7 @@
   };
 
   SUM.buildColCovariateRenderBuffer = function (widthScale, heightScale) {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     // SUM.totalWidth includes a factor of SUM.widthScale, so we need to get the width without that scaling.
     const baseWidth = SUM.totalWidth / SUM.widthScale;
     const renderBuffer = DRAW.createRenderBuffer(
@@ -846,7 +890,7 @@
     ctx.lineWidth = 1;
     ctx.strokeStyle = "#000000";
 
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
 
     // If no row or column cuts, draw the heat map border in black
     if (!heatMap.hasGaps()) {
@@ -935,9 +979,10 @@
     if (!SUM.chmElement) return;
     // Reset the canvas (drawing borders and sub-dendro selections)
     const ctx = SUM.resetBoxCanvas(SUM.boxCanvas);
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     const dataLayers = heatMap.getDataLayers();
     DVW.detailMaps.forEach((mapItem) => {
+      if (mapItem.heatMap != heatMap) return;
       // Draw the View Box using user-defined defined selection color
       const boxX =
         (((DVW.getCurrentSumCol(mapItem) - 1) * SUM.widthScale) /
@@ -1112,7 +1157,7 @@
   };
 
   SUM.drawRowClassBarLabels = function () {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     SUM.removeRowClassBarLabels();
     var colCanvas = document.getElementById("summary_col_top_items_canvas");
     var rowCanvas = document.getElementById("summary_row_top_items_canvas");
@@ -1166,7 +1211,7 @@
   };
 
   SUM.drawColClassBarLabels = function () {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     SUM.removeColClassBarLabels();
     var classBarsConfig = heatMap.getColClassificationConfig();
     var classBarConfigOrder = heatMap.getColClassificationOrder();
@@ -1190,7 +1235,7 @@
     //find the first, middle, and last vertical positions for the bar legend being drawn
     var topPos = beginClasses + prevHeight;
     var midPos = topPos + (currentClassBar.height - 15) / 2 - 1;
-    var midVal = MMGR.getHeatMap().getLabelText(key, "ROW", true);
+    var midVal = SUM.heatMap.getLabelText(key, "ROW", true);
     //Create div and place mid legend value
     SUM.setLabelDivElement(key + "ColLabel", midVal, midPos, leftPos, false);
   };
@@ -1227,7 +1272,7 @@
   };
 
   SUM.drawColClassBarLegends = function () {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     var classBarsConfig = heatMap.getColClassificationConfig();
     var classBarConfigOrder = heatMap.getColClassificationOrder();
     var classBarsData = heatMap.getColClassificationData();
@@ -1422,7 +1467,7 @@
 
   //THIS FUNCTION NOT CURRENTLY FOR THE SUMMARY PANEL CALLED BUT MAY BE ADDED BACK IN IN THE FUTURE
   SUM.drawRowClassBarLegends = function () {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     var classBarsConfig = heatMap.getRowClassificationConfig();
     var classBarConfigOrder = heatMap.getRowClassificationOrder();
     var classBarsData = heatMap.getRowClassificationData();
@@ -1592,7 +1637,7 @@
   //Hidden bars will have height zero.  The order of entries is fixed but
   //not specified.
   SUM.getSummaryCovariateBarHeights = function (axis) {
-    return MMGR.getHeatMap()
+    return SUM.heatMap
       .getScaledVisibleCovariates(axis, 1.0)
       .map((bar) => SUM.getScaledHeight(bar.height, axis));
   };
@@ -1876,7 +1921,7 @@
 
   // Draw the selection marks on the specified axis.
   SUM.drawAxisSelectionMarks = function (axis) {
-    const heatMap = MMGR.getHeatMap();
+    const heatMap = SUM.heatMap;
     const isRow = MAPREP.isRow(axis);
     const selection = SRCHSTATE.getAxisSearchResults(isRow ? "Row" : "Column");
     const canvas = document.getElementById(
@@ -2049,7 +2094,7 @@
 
         // Helper function. Determine maximum width of top items on the specified axis.
         function calcTopItemsMaxWidth(axis) {
-          const shownLabels = MMGR.getHeatMap().shownLabels(axis);
+          const shownLabels = SUM.heatMap.shownLabels(axis);
           const topItems = getTopItemLabelIndices(axis);
           let maxWidth = 0;
           topItems.forEach((ti) => {
@@ -2076,7 +2121,7 @@
         return;
       }
 
-      const heatMap = MMGR.getHeatMap();
+      const heatMap = SUM.heatMap;
 
       if (SUM.colTopItems || SUM.rowTopItems) {
         // create a reference top item div to space the elements properly. removed at end
@@ -2309,7 +2354,7 @@
       // function above).
       function placeTopItemLabels(canvas, topItemPosns, axis, otherAxisPosn) {
         const isRow = MAPREP.isRow(axis);
-        const shownLabels = MMGR.getHeatMap().shownLabels(axis);
+        const shownLabels = SUM.heatMap.shownLabels(axis);
         topItemPosns.forEach((tip) => {
           const item = document.createElement("Div");
           item.classList.add("topItems");
@@ -2342,7 +2387,7 @@
     // Return an array of the label indices of the top items on the specified axis.
     function getTopItemLabelIndices(axis) {
       const topItems = MAPREP.isRow(axis) ? SUM.rowTopItems : SUM.colTopItems;
-      const mapLabels = MMGR.getHeatMap().actualLabels(axis);
+      const mapLabels = SUM.heatMap.actualLabels(axis);
       // Trim top items, filter out empty items, uniqify.
       const uniqTopItems = topItems
         .map((l) => l.trim())

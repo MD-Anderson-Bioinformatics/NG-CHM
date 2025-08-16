@@ -545,6 +545,7 @@
   // Used to get HeatMapLevel object.
   class HeatMap {
     constructor (heatMapName, updateCallbacks, getTileLoader, onready) {
+      this.nonce = UTIL.getNewNonce(); // Unique identifier for this heatMap.
       this.initialized = false; // True once the minimum components have loaded.
       this.version = 0; // Update to indicate need to save or redraw.
       this.savedVersion = 0; // Last version that was saved.

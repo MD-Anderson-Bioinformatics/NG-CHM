@@ -36,6 +36,15 @@
     return str.substr(0, 1).toUpperCase() + str.substr(1);
   };
 
+  // Create a new, unique nonce.
+  UTIL.getNewNonce = function getNewNonce() {
+    const ta = new Uint8Array(16);
+    window.crypto.getRandomValues(ta);
+    return Array.from(ta)
+      .map((x) => x.toString(16))
+      .join("");
+  };
+
   // UTIL.passiveCompat is a function that accepts an options
   // object for addEventListener and depending on the browser's
   // support for the passive flag returns either:

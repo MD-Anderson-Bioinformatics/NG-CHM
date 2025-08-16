@@ -89,6 +89,7 @@
   // label search entry is available.
   //
   SearchInterface.prototype.reset = function resetSearchInterface(heatMap) {
+    SRCHSTATE.clearAllSearchResults();
     // Record current heatMap.
     this.heatMap = heatMap;
     // Remove any existing options after the first (Labels).
@@ -543,7 +544,7 @@
   /**********************************************************************************
    * FUNCTION SRCH.configSearchInterface: Initialize/reset the search interface
    * for the specified heatMap.  It is called from the UI-Manager after the
-   * heatMap has initialized.
+   * heatMap has initialized, or whenever a new heatMap is selected.
    *
    * Specifically, it:
    * - resets the search interface.
@@ -638,14 +639,6 @@
         DVW.primaryMap.canvas.focus();
       }
     }
-  };
-
-  /**********************************************************************************
-   * FUNCTION - clearAllSearchResults: This function initializes/resets all
-   * search-related state variables.
-   **********************************************************************************/
-  SRCH.clearAllSearchResults = function () {
-    SRCHSTATE.clearAllSearchResults();
   };
 
   /**********************************************************************************
