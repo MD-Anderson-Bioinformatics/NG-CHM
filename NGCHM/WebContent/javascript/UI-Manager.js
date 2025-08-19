@@ -566,7 +566,7 @@
     // Call initially and whenever a heatMap is selected from the maps drop down.
     function selectHeatMap (heatMap, firstTime) {
       if (!srcInfo.embedded) {
-        document.title = `NG-CHM Viewer: ${heatMap.name}`;
+        document.title = `NG-CHM Viewer: ${heatMap.mapName}`;
       }
       MMGR.setHeatMap(heatMap);
       SRCH.configSearchInterface(heatMap);
