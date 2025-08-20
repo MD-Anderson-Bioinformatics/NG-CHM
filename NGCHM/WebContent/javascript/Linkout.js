@@ -1331,7 +1331,7 @@ var linkoutsVersion = "undefined";
 
     function sendDataToBuilder() {
       const debug = false;
-      const nonce = PIM.getNewNonce();
+      const nonce = UTIL.getNewNonce();
       const url = new URL(util.value.replace(/[/]*[A-Za-z0-9-.]*.html*$/, ""));
       const builder = window.open(
         url.href + "/Upload_Matrix.html?adv=Y&nonce=" + nonce,

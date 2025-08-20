@@ -2797,6 +2797,7 @@
         let height = parseInt(dendroCanvas.style.height, 10) | 0;
         height =
           mapItem.colDendro.summaryDendrogram.callbacks.calcDetailDendrogramSize(
+            mapItem.heatMap,
             "column",
             height,
             totalDetHeight,
@@ -2840,6 +2841,7 @@
 
         width =
           mapItem.rowDendro.summaryDendrogram.callbacks.calcDetailDendrogramSize(
+            mapItem.heatMap,
             "row",
             width,
             totalDetWidth,
