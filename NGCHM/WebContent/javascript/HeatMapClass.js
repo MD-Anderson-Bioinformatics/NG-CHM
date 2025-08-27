@@ -72,7 +72,7 @@
       this.endColTile = endColTile;
       this.numColumnTiles = endColTile - startColTile + 1;
       this.totalTiles = (endRowTile - startRowTile + 1) * this.numColumnTiles;
-      this.tiles = new Array({ length: this.totalTiles });
+      this.tiles = new Array(this.totalTiles);
 
       // Get hard references to tile data if it's already in the TileCache.
       // Set _allTilesAvailable to false if any tile's data is not available.
@@ -558,7 +558,7 @@
       this.currentTileRequests = []; // Tiles we are currently reading
       this.pendingTileRequests = []; // Tiles we want to read
       this.searchOptions = []; // Search options specific to this heatMap.
-      this.decor = {}; // UI decorations for distinguishing one heatMap from another.
+      this.decor = { hue: null, avatar: null }; // UI decorations for distinguishing one heatMap from another.
 
       this.mapUpdatedOnLoad = false;
       this.onready = onready;
@@ -834,11 +834,11 @@
     }
 
     HeatMap.prototype.getRowClassificationOrder = function (showOnly) {
-      var rowClassBarsOrder = this.mapConfig.row_configuration.classifications_order;
+      let rowClassBarsOrder = this.mapConfig.row_configuration.classifications_order;
       // If configuration not found, create order from classifications config
       if (typeof rowClassBarsOrder === "undefined") {
         rowClassBarsOrder = [];
-        for (key in this.mapConfig.row_configuration.classifications) {
+        for (const key in this.mapConfig.row_configuration.classifications) {
           rowClassBarsOrder.push(key);
         }
       }
@@ -847,9 +847,9 @@
         return rowClassBarsOrder;
       } else {
         const filterRowClassBarsOrder = [];
-        for (var i = 0; i < rowClassBarsOrder.length; i++) {
-          var newKey = rowClassBarsOrder[i];
-          var currConfig = this.mapConfig.row_configuration.classifications[newKey];
+        for (let i = 0; i < rowClassBarsOrder.length; i++) {
+          const newKey = rowClassBarsOrder[i];
+          const currConfig = this.mapConfig.row_configuration.classifications[newKey];
           if (currConfig.show == "Y") {
             filterRowClassBarsOrder.push(newKey);
           }
@@ -865,11 +865,11 @@
     };
 
     HeatMap.prototype.getColClassificationOrder = function (showOnly) {
-      var colClassBarsOrder = this.mapConfig.col_configuration.classifications_order;
+      let colClassBarsOrder = this.mapConfig.col_configuration.classifications_order;
       // If configuration not found, create order from classifications config
       if (typeof colClassBarsOrder === "undefined") {
         colClassBarsOrder = [];
-        for (key in this.mapConfig.col_configuration.classifications) {
+        for (const key in this.mapConfig.col_configuration.classifications) {
           colClassBarsOrder.push(key);
         }
       }
@@ -878,9 +878,9 @@
         return colClassBarsOrder;
       } else {
         const filterColClassBarsOrder = [];
-        for (var i = 0; i < colClassBarsOrder.length; i++) {
-          var newKey = colClassBarsOrder[i];
-          var currConfig = this.mapConfig.col_configuration.classifications[newKey];
+        for (let i = 0; i < colClassBarsOrder.length; i++) {
+          const newKey = colClassBarsOrder[i];
+          const currConfig = this.mapConfig.col_configuration.classifications[newKey];
           if (currConfig.show == "Y") {
             filterColClassBarsOrder.push(newKey);
           }
@@ -1341,12 +1341,7 @@
 
     /***********  Methods for accessing datalevels ****************/
 
-    //Return the total number of detail rows
-    HeatMap.prototype.getTotalRows = function () {
-      return this.datalevels[MAPREP.DETAIL_LEVEL].totalRows;
-    };
-
-    //Return the summary row ratio
+    // Return the summary row ratio.
     HeatMap.prototype.getSummaryRowRatio = function () {
       if (this.datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
         return this.datalevels[MAPREP.SUMMARY_LEVEL].rowSummaryRatio;
@@ -1355,52 +1350,53 @@
       }
     };
 
-    //Return the summary row ratio
+    // Return the summary column ratio.
     HeatMap.prototype.getSummaryColRatio = function () {
       if (this.datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
         return this.datalevels[MAPREP.SUMMARY_LEVEL].colSummaryRatio;
       } else {
-        return this.datalevels[MAPREP.THUMBNAIL_LEVEL].col_summaryRatio;
+        return this.datalevels[MAPREP.THUMBNAIL_LEVEL].colSummaryRatio;
       }
     };
-    //Return the total number of detail rows
+
+    // Return the total number of detail rows.
     HeatMap.prototype.getTotalRows = function () {
       return this.datalevels[MAPREP.DETAIL_LEVEL].totalRows;
     };
 
-    //Return the total number of detail rows
+    // Return the total number of detail columns.
     HeatMap.prototype.getTotalCols = function () {
       return this.datalevels[MAPREP.DETAIL_LEVEL].totalColumns;
     };
 
-    //Return the total number of rows/columns on the specified axis.
+    // Return the total number of rows/columns on the specified axis.
     HeatMap.prototype.getTotalElementsForAxis = function (axis) {
       const level = this.datalevels[MAPREP.DETAIL_LEVEL];
       return MAPREP.isRow(axis) ? level.totalRows : level.totalColumns;
     };
 
-    //Return the number of rows or columns for the given level
+    // Return the number of rows or columns for the given level
     HeatMap.prototype.getNumAxisElements = function (axis, level) {
       const l = this.datalevels[level];
       return MAPREP.isRow(axis) ? l.totalRows : l.totalColumns;
     };
 
-    //Return the number of rows for a given level
+    // Return the number of rows for a given level.
     HeatMap.prototype.getNumRows = function (level) {
       return this.datalevels[level].totalRows;
     };
 
-    //Return the number of columns for a given level
+    // Return the number of columns for a given level.
     HeatMap.prototype.getNumColumns = function (level) {
       return this.datalevels[level].totalColumns;
     };
 
-    //Return the row summary ratio for a given level
+    // Return the row summary ratio for a given level.
     HeatMap.prototype.getRowSummaryRatio = function (level) {
       return this.datalevels[level].rowSummaryRatio;
     };
 
-    //Return the column summary ratio for a given level
+    // Return the column summary ratio for a given level.
     HeatMap.prototype.getColSummaryRatio = function (level) {
       return this.datalevels[level].colSummaryRatio;
     };
