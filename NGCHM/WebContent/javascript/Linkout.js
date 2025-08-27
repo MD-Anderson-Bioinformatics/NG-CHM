@@ -408,9 +408,9 @@ var linkoutsVersion = "undefined";
     }
   };
 
-  // Returns TRUE iff there is a matrix linkout with the specified name.
-  LNK.isMatrixLinkout = function isMatrixLinkout (name) {
-    return matrixLinkouts.map(linkout => linkout.name).includes(name);
+  // Returns TRUE iff there is a matrix linkout with the specified title.
+  LNK.isMatrixLinkout = function isMatrixLinkout (title) {
+    return matrixLinkouts.some(linkout => linkout.title === title);
   };
 
   // Return the labels from heatMap required by the specified linkout (and axis if applicable).

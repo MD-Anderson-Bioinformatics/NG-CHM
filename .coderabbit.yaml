@@ -3,3 +3,4 @@ reviews:
     base_branches:
       - main
       - code-review
+    drafts: true
