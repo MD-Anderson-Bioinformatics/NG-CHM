@@ -4318,9 +4318,15 @@ var linkoutsVersion = "undefined";
                            .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
     let uniqueRowCoords = [...new Set(specialRowCoords)] /* remove duplicates */
                            .map((x) => ({name: x, rowOrColumn: "row"})); /* create object with name and rowOrColumn properties */
-    let specialCoords = uniqueColumnCoords.concat(uniqueRowCoords);
-    specialCoords = [...new Set(specialCoords)]; /* remove duplicates */
-    return specialCoords;
+
+    // Remove any duplicates.
+    const seen = new Set();
+    const unique = [];
+    for (const sc of uniqueColumnCoords.concat(uniqueRowCoords)) {
+      const key = sc.name + "|" + sc.rowOrColumn;
+      if (!seen.has(key)) { seen.add(key); unique.push(sc); }
+    }
+    return unique;
   }
 
   CUST.waitForPlugins(() => {
