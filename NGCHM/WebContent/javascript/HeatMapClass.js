@@ -832,26 +832,32 @@
     // If showOnly is specified, return only the visible covariates.
     HeatMap.prototype.getCovariateOrder = function (axis, showOnly) {
       const axisConfig = this.getAxisConfig(axis);
-      let barOrder = axisConfig.classifications_order;
       // If barOrder not defined, create order from classifications config.
-      if (typeof barOrder === "undefined") {
-        barOrder = Object.keys(axisConfig.classifications);
-      }
-      // Filter order for ONLY shown bars (if requested)
-      if (typeof showOnly === "undefined") {
-        return barOrder;
-      } else {
-        return barOrder.filter(
-          (key) => axisConfig.classifications[key].show == "Y"
-        );
-      }
+      const barOrder = Array.isArray(axisConfig.classifications_order)
+        ? axisConfig.classifications_order.slice()
+        : Object.keys(axisConfig.classifications);
+      // Filter order for only shown bars (if requested)
+      return showOnly === true || showOnly === "show"
+        ? barOrder.filter((key) => axisConfig.classifications[key].show == "Y")
+        : barOrder;
     };
 
-    // If not already defined, set the order in which the covariates on the
-    // specified axis should be displayed.
-    HeatMap.prototype.setCovariateOrder = function (axis) {
+    // Set the order in which the covariates on the specified axis should be
+    // displayed.
+    // If order is not specified and there is no existing order, set a
+    // default order.
+    HeatMap.prototype.setCovariateOrder = function (axis, order) {
       if (this.mapConfig !== null) {
         const axisConfig = this.getAxisConfig(axis);
+        if (order) {
+          if (!Array.isArray(order)) {
+            console.error("setCovariateOrder: if specified, order must be an array", { axis, order });
+            return;
+          }
+          axisConfig.classifications_order = order.slice();
+          this.setUnAppliedChanges(true);
+          return;
+        }
         if (typeof axisConfig.classifications_order === "undefined") {
           axisConfig.classifications_order = Object.keys(axisConfig.classifications);
         }
@@ -933,16 +939,6 @@
         order.map((key) => axisConfig.classifications[key].show).filter((show) => show !== "Y")
           .length > 0
       );
-    };
-
-    // Persist the axis covariate order and mark the heatmap as changed.
-    HeatMap.prototype.setAxisCovariateOrder = function (axis, order) {
-      if (!Array.isArray(order)) {
-        console.error("setAxisCovariateOrder requires an order array", { axis, order });
-        return;
-      }
-      this.getAxisConfig(axis).classifications_order = order.slice();
-      this.setUnAppliedChanges(true);
     };
 
     HeatMap.prototype.getMapInformation = function () {

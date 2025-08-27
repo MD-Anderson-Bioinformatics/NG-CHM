@@ -2114,8 +2114,8 @@
 
     // Draw the 'green' boundary rectangles that outline the detail map views.
     if (showDetailViewBounds) {
-      const color = heatMap.getCurrentDataLayer().selection_color;
-      pdfDoc.doc.setDrawColor(color);
+      const sel = CMM.hexToRgba(heatMap.getCurrentDataLayer().selection_color);
+      pdfDoc.doc.setDrawColor(sel.r, sel.g, sel.b);
       const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
       const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
       DVW.detailMaps.forEach((mapItem) => {
