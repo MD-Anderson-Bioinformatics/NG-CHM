@@ -558,7 +558,6 @@
       this.currentTileRequests = []; // Tiles we are currently reading
       this.pendingTileRequests = []; // Tiles we want to read
       this.searchOptions = []; // Search options specific to this heatMap.
-      this.searchState = new SRCHSTATE.SearchState(); // Search results for this heatMap.
       this.decor = {}; // UI decorations for distinguishing one heatMap from another.
 
       this.updatedOnLoad = false;

@@ -541,7 +541,7 @@
               // Add the modified config data.
               promise = addTextContents(
                 entry.filename,
-                JSON.stringify(heatMap == map ? (mapConf || heatMap.mapConfig) : map.mapConfig),
+                JSON.stringify(heatMap === map ? (mapConf || heatMap.mapConfig) : map.mapConfig),
               );
             } else if (keyVal.indexOf("/mapData.json") >= 0) {
               // Add the potentially modified data.

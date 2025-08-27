@@ -90,7 +90,7 @@
    *********************************************************************************************/
   DVW.anyVisible = function anyVisible(heatMap) {
     for (const mapItem of DVW.detailMaps) {
-      if (mapItem.heatMap == heatMap && mapItem.isVisible()) {
+      if (mapItem.heatMap === heatMap && mapItem.isVisible()) {
         return true;
       }
     }

@@ -259,7 +259,7 @@
       }
       if (includeDetailMaps) {
         DVW.detailMaps
-          .filter((mapItem) => mapItem.heatMap == heatMap && mapItem.isVisible())
+          .filter((mapItem) => mapItem.heatMap === heatMap && mapItem.isVisible())
           .forEach((mapItem) => {
             drawJobs.push({ job: "detail", mapItem });
           });
@@ -2119,7 +2119,7 @@
       const yScale = sumMapH / heatMap.getNumRows(MAPREP.DETAIL_LEVEL);
       const xScale = sumMapW / heatMap.getNumColumns(MAPREP.DETAIL_LEVEL);
       DVW.detailMaps.forEach((mapItem) => {
-        if (mapItem.heatMap == heatMap && mapItem.isVisible()) {
+        if (mapItem.heatMap === heatMap && mapItem.isVisible()) {
           const left = (mapItem.currentCol - 1) * xScale;
           const top = (mapItem.currentRow - 1) * yScale;
           const width = mapItem.dataPerRow * xScale;

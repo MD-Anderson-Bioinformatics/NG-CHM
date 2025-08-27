@@ -710,8 +710,8 @@
                   button = button.parentElement;
                 }
                 if (button) {
-                  const mapItem = findMapItem(ev);
-                  console.log ("Avatar button click", { button, mapItem });
+                  const paneLoc = PANE.findPaneLocation(ev.target);
+                  console.log ("Avatar button click", { button, paneLoc });
                 } else {
                   console.log ("Avatar click");
                 }

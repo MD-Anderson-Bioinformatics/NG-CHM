@@ -536,7 +536,7 @@
   const searchInterface = new SearchInterface();
 
   SRCH.heatMapListener = function heatMapListener (heatMap, event) {
-    if (searchInterface.heatMap == heatMap && event == HEAT.Event_PLUGINS) {
+    if (searchInterface.heatMap === heatMap && event == HEAT.Event_PLUGINS) {
       SRCH.configSearchInterface (heatMap);
     }
   };

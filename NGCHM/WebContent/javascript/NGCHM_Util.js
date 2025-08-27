@@ -168,7 +168,10 @@
   function genAvatar (hue) {
     const alines = [ "00100", "01010", "01110" ];
     const blines = [ "10001", "10101", "11011" ];
-    const nums = crypto.randomUUID().split("").filter(x=>x!='-').map(x => parseInt(x,16));
+    const guid = (window.crypto && typeof crypto.randomUUID === "function")
+      ? crypto.randomUUID()
+      : UTIL.getNewNonce();
+    const nums = guid.split("").filter(x=>x!='-').map(x => parseInt(x,16));
     let d = "";
     const brow = nums[0] % 5;
     for (let ii = 0; ii < 5; ii++) {
@@ -209,6 +212,7 @@
   function newAvatarButton(spec, avatar, attrs, fn) {
     const classes = spec.split(".");
     const names = classes.shift().split("#");
+    attrs = Object.assign({ type: "button", "aria-label": "Heat map avatar" }, attrs);
     const button = UTIL.newElement("BUTTON");
     button.innerHTML = avatar;
     return decorateElement(button, names, classes, attrs, [], fn);
