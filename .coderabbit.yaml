@@ -1,3 +1,5 @@
-base_branches:
-  - main
-  - code-review
+reviews:
+  auto_review:
+    base_branches:
+      - main
+      - code-review

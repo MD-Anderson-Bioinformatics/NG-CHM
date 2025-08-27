@@ -560,7 +560,7 @@
       this.searchOptions = []; // Search options specific to this heatMap.
       this.decor = {}; // UI decorations for distinguishing one heatMap from another.
 
-      this.updatedOnLoad = false;
+      this.mapUpdatedOnLoad = false;
       this.onready = onready;
       this.initEventListeners(updateCallbacks); // Initialize this.eventListeners
       this.initTileWindows(); // Initialize this.tileWindowListeners and this.tileWindowRefs
