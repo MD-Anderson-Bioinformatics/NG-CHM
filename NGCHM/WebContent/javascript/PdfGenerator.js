@@ -746,10 +746,10 @@
         barsInfo.rowBarsToDraw = [];
         barsInfo.colBarsToDraw = [];
         if (isChecked("pdfInputColumn")) {
-          barsInfo.colBarsToDraw = heatMap.getColClassificationOrder("show");
+          barsInfo.colBarsToDraw = heatMap.getCovariateOrder("column", "show");
         }
         if (isChecked("pdfInputRow")) {
-          barsInfo.rowBarsToDraw = heatMap.getRowClassificationOrder("show");
+          barsInfo.rowBarsToDraw = heatMap.getCovariateOrder("row", "show");
         }
         barsInfo.topOff = pdfDoc.paddingTop + barsInfo.classBarTitleSize + 5;
         barsInfo.leftOff = 20;
@@ -1818,13 +1818,13 @@
     function isLastClassBarToBeDrawn(heatMap, classBar, type) {
       var isItLast = false;
       if (isChecked("pdfInputColumn")) {
-        var colBars = heatMap.getColClassificationOrder("show");
+        var colBars = heatMap.getCovariateOrder("column", "show");
         if (type === "col" && classBar === colBars[colBars.length - 1]) {
           isItLast = true;
         }
       }
       if (isChecked("pdfInputRow")) {
-        var rowBars = heatMap.getRowClassificationOrder("show");
+        var rowBars = heatMap.getCovariateOrder("row", "show");
         if (type === "row" && classBar === rowBars[rowBars.length - 1]) {
           isItLast = true;
         }

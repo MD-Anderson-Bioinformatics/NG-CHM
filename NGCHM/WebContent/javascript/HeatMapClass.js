@@ -754,12 +754,6 @@
       }
     };
 
-    HeatMap.prototype.getAxisCovariateOrder = function (axis) {
-      return MAPREP.isRow(axis)
-        ? this.getRowClassificationOrder()
-        : this.getColClassificationOrder();
-    };
-
     HeatMap.prototype.getRowClassificationConfig = function () {
       return this.mapConfig.row_configuration.classifications;
     };
@@ -804,7 +798,7 @@
     //
     HeatMap.prototype.genAllCovars = function* genAllCovars() {
       for (const axis of ["row", "col"]) {
-        const covariates = this.getAxisCovariateOrder(axis);
+        const covariates = this.getCovariateOrder(axis);
         for (const key of covariates) {
           yield { axis, key };
         }
@@ -833,59 +827,34 @@
       }
     }
 
-    HeatMap.prototype.getRowClassificationOrder = function (showOnly) {
-      let rowClassBarsOrder = this.mapConfig.row_configuration.classifications_order;
-      // If configuration not found, create order from classifications config
-      if (typeof rowClassBarsOrder === "undefined") {
-        rowClassBarsOrder = [];
-        for (const key in this.mapConfig.row_configuration.classifications) {
-          rowClassBarsOrder.push(key);
-        }
+    // Return the order in which the covariates on the specified axis should be
+    // displayed.
+    // If showOnly is specified, return only the visible covariates.
+    HeatMap.prototype.getCovariateOrder = function (axis, showOnly) {
+      const axisConfig = this.getAxisConfig(axis);
+      let barOrder = axisConfig.classifications_order;
+      // If barOrder not defined, create order from classifications config.
+      if (typeof barOrder === "undefined") {
+        barOrder = Object.keys(axisConfig.classifications);
       }
       // Filter order for ONLY shown bars (if requested)
       if (typeof showOnly === "undefined") {
-        return rowClassBarsOrder;
+        return barOrder;
       } else {
-        const filterRowClassBarsOrder = [];
-        for (let i = 0; i < rowClassBarsOrder.length; i++) {
-          const newKey = rowClassBarsOrder[i];
-          const currConfig = this.mapConfig.row_configuration.classifications[newKey];
-          if (currConfig.show == "Y") {
-            filterRowClassBarsOrder.push(newKey);
-          }
-        }
-        return filterRowClassBarsOrder;
+        return barOrder.filter(
+          (key) => axisConfig.classifications[key].show == "Y"
+        );
       }
     };
 
-    HeatMap.prototype.setRowClassificationOrder = function () {
+    // If not already defined, set the order in which the covariates on the
+    // specified axis should be displayed.
+    HeatMap.prototype.setCovariateOrder = function (axis) {
       if (this.mapConfig !== null) {
-        this.mapConfig.row_configuration.classifications_order = this.getRowClassificationOrder();
-      }
-    };
-
-    HeatMap.prototype.getColClassificationOrder = function (showOnly) {
-      let colClassBarsOrder = this.mapConfig.col_configuration.classifications_order;
-      // If configuration not found, create order from classifications config
-      if (typeof colClassBarsOrder === "undefined") {
-        colClassBarsOrder = [];
-        for (const key in this.mapConfig.col_configuration.classifications) {
-          colClassBarsOrder.push(key);
+        const axisConfig = this.getAxisConfig(axis);
+        if (typeof axisConfig.classifications_order === "undefined") {
+          axisConfig.classifications_order = Object.keys(axisConfig.classifications);
         }
-      }
-      // Filter order for ONLY shown bars (if requested)
-      if (typeof showOnly === "undefined") {
-        return colClassBarsOrder;
-      } else {
-        const filterColClassBarsOrder = [];
-        for (let i = 0; i < colClassBarsOrder.length; i++) {
-          const newKey = colClassBarsOrder[i];
-          const currConfig = this.mapConfig.col_configuration.classifications[newKey];
-          if (currConfig.show == "Y") {
-            filterColClassBarsOrder.push(newKey);
-          }
-        }
-        return filterColClassBarsOrder;
       }
     };
 
@@ -964,12 +933,6 @@
         order.map((key) => axisConfig.classifications[key].show).filter((show) => show !== "Y")
           .length > 0
       );
-    };
-
-    HeatMap.prototype.setColClassificationOrder = function () {
-      if (this.mapConfig !== null) {
-        this.mapConfig.col_configuration.classifications_order = this.getColClassificationOrder();
-      }
     };
 
     // Persist the axis covariate order and mark the heatmap as changed.
@@ -1343,7 +1306,7 @@
 
     // Return the summary row ratio.
     HeatMap.prototype.getSummaryRowRatio = function () {
-      if (this.datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
+      if (this.datalevels[MAPREP.SUMMARY_LEVEL]) {
         return this.datalevels[MAPREP.SUMMARY_LEVEL].rowSummaryRatio;
       } else {
         return this.datalevels[MAPREP.THUMBNAIL_LEVEL].rowSummaryRatio;
@@ -1352,7 +1315,7 @@
 
     // Return the summary column ratio.
     HeatMap.prototype.getSummaryColRatio = function () {
-      if (this.datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
+      if (this.datalevels[MAPREP.SUMMARY_LEVEL]) {
         return this.datalevels[MAPREP.SUMMARY_LEVEL].colSummaryRatio;
       } else {
         return this.datalevels[MAPREP.THUMBNAIL_LEVEL].colSummaryRatio;

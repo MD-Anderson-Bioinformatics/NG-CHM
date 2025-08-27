@@ -446,7 +446,7 @@ var linkoutsVersion = "undefined";
       } else {
         const srchResults = SRCHSTATE.getAxisSearchResults(axis);
         if (axis.includes("Covar")) {
-          const labels = heatMap.getAxisCovariateOrder(axis.replace("Covar",""));
+          const labels = heatMap.getCovariateOrder(axis.replace("Covar",""));
           return srchResults.map(idx => generateLinkoutLabel(labels[idx], formatIndex));
         } else {
           const labels = heatMap.getAxisLabels(axis).labels;
@@ -2521,7 +2521,7 @@ var linkoutsVersion = "undefined";
         thisAxis = axis;
         if (debug) console.log({ m: "setAxis", axis, params });
         axis1Config = heatMap.getAxisCovariateConfig(axis);
-        const axis1cvOrder = heatMap.getAxisCovariateOrder(axis);
+        const axis1cvOrder = heatMap.getCovariateOrder(axis);
         otherAxis = MAPREP.isRow(axis) ? "Column" : "Row";
         if (plugin.hasOwnProperty("specialCoordinates") && plugin.specialCoordinates.hasOwnProperty("name")){
           defaultCoord = plugin.specialCoordinates.name + ".coordinate.";

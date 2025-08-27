@@ -33,7 +33,7 @@
           output.write(`${UTIL.toTitleCase(axis)} covariates:`);
           output.write();
           output.indent();
-          const order = req.heatMap.getAxisCovariateOrder(axis);
+          const order = req.heatMap.getCovariateOrder(axis);
           order.forEach((key) => output.write(key));
           output.unindent();
           output.write();
@@ -205,7 +205,7 @@
       EXEC.noMoreParams,
       function (req, res, next) {
         // Check value appropriate for covariate data type.
-        const order = req.heatMap.getAxisCovariateOrder(req.axis);
+        const order = req.heatMap.getCovariateOrder(req.axis);
         if (order.includes(req.name)) {
           throw `${UTIL.toTitleCase(req.axis)} ${req.name} already exists`;
         }
@@ -234,7 +234,7 @@
       EXEC.reqCovariate,
       reqIndex,
       function (req, res) {
-        const order = req.heatMap.getAxisCovariateOrder(req.axis);
+        const order = req.heatMap.getCovariateOrder(req.axis);
         if (req.index > order.length) {
           throw `index must be between zero and the number of covariates, inclusive`;
         }
@@ -275,7 +275,7 @@
       EXEC.getHeatMap,
       EXEC.reqAxis,
       function (req, res) {
-        const order = req.heatMap.getAxisCovariateOrder(req.axis);
+        const order = req.heatMap.getCovariateOrder(req.axis);
         res.value = order.slice();
       }
     ]

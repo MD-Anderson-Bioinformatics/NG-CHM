@@ -1167,7 +1167,7 @@
     var rowCanvas = document.getElementById("summary_row_top_items_canvas");
     var sumCanvas = document.getElementById("summary_canvas");
     var classBarsConfig = heatMap.getRowClassificationConfig();
-    var classBarConfigOrder = heatMap.getRowClassificationOrder();
+    var classBarConfigOrder = heatMap.getCovariateOrder("row");
     var totalHeight = 0;
     var matrixWidth = colCanvas.width;
     //Calc total width of all covariate bars
@@ -1218,7 +1218,7 @@
     const heatMap = SUM.heatMap;
     SUM.removeColClassBarLabels();
     var classBarsConfig = heatMap.getColClassificationConfig();
-    var classBarConfigOrder = heatMap.getColClassificationOrder();
+    var classBarConfigOrder = heatMap.getCovariateOrder("column");
     var classBarsData = heatMap.getColClassificationData();
     var prevHeight = 0;
     for (var i = 0; i < classBarConfigOrder.length; i++) {
@@ -1278,7 +1278,7 @@
   SUM.drawColClassBarLegends = function () {
     const heatMap = SUM.heatMap;
     var classBarsConfig = heatMap.getColClassificationConfig();
-    var classBarConfigOrder = heatMap.getColClassificationOrder();
+    var classBarConfigOrder = heatMap.getCovariateOrder("column");
     var classBarsData = heatMap.getColClassificationData();
     var totalHeight = 0;
     for (var i = 0; i < classBarConfigOrder.length; i++) {
@@ -1473,7 +1473,7 @@
   SUM.drawRowClassBarLegends = function () {
     const heatMap = SUM.heatMap;
     var classBarsConfig = heatMap.getRowClassificationConfig();
-    var classBarConfigOrder = heatMap.getRowClassificationOrder();
+    var classBarConfigOrder = heatMap.getCovariateOrder("row");
     var classBarsData = heatMap.getRowClassificationData();
     var totalHeight = 0;
     for (var i = 0; i < classBarConfigOrder.length; i++) {
