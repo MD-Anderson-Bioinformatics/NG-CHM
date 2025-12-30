@@ -72,7 +72,7 @@
       this.endColTile = endColTile;
       this.numColumnTiles = endColTile - startColTile + 1;
       this.totalTiles = (endRowTile - startRowTile + 1) * this.numColumnTiles;
-      this.tiles = new Array({ length: this.totalTiles });
+      this.tiles = new Array(this.totalTiles);
 
       // Get hard references to tile data if it's already in the TileCache.
       // Set _allTilesAvailable to false if any tile's data is not available.
@@ -558,8 +558,9 @@
       this.currentTileRequests = []; // Tiles we are currently reading
       this.pendingTileRequests = []; // Tiles we want to read
       this.searchOptions = []; // Search options specific to this heatMap.
+      this.decor = { hue: null, avatar: null }; // UI decorations for distinguishing one heatMap from another.
 
-      this.updatedOnLoad = false;
+      this.mapUpdatedOnLoad = false;
       this.onready = onready;
       this.initEventListeners(updateCallbacks); // Initialize this.eventListeners
       this.initTileWindows(); // Initialize this.tileWindowListeners and this.tileWindowRefs
@@ -753,12 +754,6 @@
       }
     };
 
-    HeatMap.prototype.getAxisCovariateOrder = function (axis) {
-      return MAPREP.isRow(axis)
-        ? this.getRowClassificationOrder()
-        : this.getColClassificationOrder();
-    };
-
     HeatMap.prototype.getRowClassificationConfig = function () {
       return this.mapConfig.row_configuration.classifications;
     };
@@ -803,7 +798,7 @@
     //
     HeatMap.prototype.genAllCovars = function* genAllCovars() {
       for (const axis of ["row", "col"]) {
-        const covariates = this.getAxisCovariateOrder(axis);
+        const covariates = this.getCovariateOrder(axis);
         for (const key of covariates) {
           yield { axis, key };
         }
@@ -832,59 +827,40 @@
       }
     }
 
-    HeatMap.prototype.getRowClassificationOrder = function (showOnly) {
-      var rowClassBarsOrder = this.mapConfig.row_configuration.classifications_order;
-      // If configuration not found, create order from classifications config
-      if (typeof rowClassBarsOrder === "undefined") {
-        rowClassBarsOrder = [];
-        for (key in this.mapConfig.row_configuration.classifications) {
-          rowClassBarsOrder.push(key);
-        }
-      }
-      // Filter order for ONLY shown bars (if requested)
-      if (typeof showOnly === "undefined") {
-        return rowClassBarsOrder;
-      } else {
-        const filterRowClassBarsOrder = [];
-        for (var i = 0; i < rowClassBarsOrder.length; i++) {
-          var newKey = rowClassBarsOrder[i];
-          var currConfig = this.mapConfig.row_configuration.classifications[newKey];
-          if (currConfig.show == "Y") {
-            filterRowClassBarsOrder.push(newKey);
-          }
-        }
-        return filterRowClassBarsOrder;
-      }
+    // Return the order in which the covariates on the specified axis should be
+    // displayed.
+    // If showOnly is specified, return only the visible covariates.
+    HeatMap.prototype.getCovariateOrder = function (axis, showOnly) {
+      const axisConfig = this.getAxisConfig(axis);
+      // If barOrder not defined, create order from classifications config.
+      const barOrder = Array.isArray(axisConfig.classifications_order)
+        ? axisConfig.classifications_order.slice()
+        : Object.keys(axisConfig.classifications);
+      // Filter order for only shown bars (if requested)
+      return showOnly === true || showOnly === "show"
+        ? barOrder.filter((key) => axisConfig.classifications[key].show == "Y")
+        : barOrder;
     };
 
-    HeatMap.prototype.setRowClassificationOrder = function () {
+    // Set the order in which the covariates on the specified axis should be
+    // displayed.
+    // If order is not specified and there is no existing order, set a
+    // default order.
+    HeatMap.prototype.setCovariateOrder = function (axis, order) {
       if (this.mapConfig !== null) {
-        this.mapConfig.row_configuration.classifications_order = this.getRowClassificationOrder();
-      }
-    };
-
-    HeatMap.prototype.getColClassificationOrder = function (showOnly) {
-      var colClassBarsOrder = this.mapConfig.col_configuration.classifications_order;
-      // If configuration not found, create order from classifications config
-      if (typeof colClassBarsOrder === "undefined") {
-        colClassBarsOrder = [];
-        for (key in this.mapConfig.col_configuration.classifications) {
-          colClassBarsOrder.push(key);
-        }
-      }
-      // Filter order for ONLY shown bars (if requested)
-      if (typeof showOnly === "undefined") {
-        return colClassBarsOrder;
-      } else {
-        const filterColClassBarsOrder = [];
-        for (var i = 0; i < colClassBarsOrder.length; i++) {
-          var newKey = colClassBarsOrder[i];
-          var currConfig = this.mapConfig.col_configuration.classifications[newKey];
-          if (currConfig.show == "Y") {
-            filterColClassBarsOrder.push(newKey);
+        const axisConfig = this.getAxisConfig(axis);
+        if (order) {
+          if (!Array.isArray(order)) {
+            console.error("setCovariateOrder: if specified, order must be an array", { axis, order });
+            return;
           }
+          axisConfig.classifications_order = order.slice();
+          this.setUnAppliedChanges(true);
+          return;
         }
-        return filterColClassBarsOrder;
+        if (typeof axisConfig.classifications_order === "undefined") {
+          axisConfig.classifications_order = Object.keys(axisConfig.classifications);
+        }
       }
     };
 
@@ -963,22 +939,6 @@
         order.map((key) => axisConfig.classifications[key].show).filter((show) => show !== "Y")
           .length > 0
       );
-    };
-
-    HeatMap.prototype.setColClassificationOrder = function () {
-      if (this.mapConfig !== null) {
-        this.mapConfig.col_configuration.classifications_order = this.getColClassificationOrder();
-      }
-    };
-
-    // Persist the axis covariate order and mark the heatmap as changed.
-    HeatMap.prototype.setAxisCovariateOrder = function (axis, order) {
-      if (!Array.isArray(order)) {
-        console.error("setAxisCovariateOrder requires an order array", { axis, order });
-        return;
-      }
-      this.getAxisConfig(axis).classifications_order = order.slice();
-      this.setUnAppliedChanges(true);
     };
 
     HeatMap.prototype.getMapInformation = function () {
@@ -1340,66 +1300,62 @@
 
     /***********  Methods for accessing datalevels ****************/
 
-    //Return the total number of detail rows
-    HeatMap.prototype.getTotalRows = function () {
-      return this.datalevels[MAPREP.DETAIL_LEVEL].totalRows;
-    };
-
-    //Return the summary row ratio
+    // Return the summary row ratio.
     HeatMap.prototype.getSummaryRowRatio = function () {
-      if (this.datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
+      if (this.datalevels[MAPREP.SUMMARY_LEVEL]) {
         return this.datalevels[MAPREP.SUMMARY_LEVEL].rowSummaryRatio;
       } else {
         return this.datalevels[MAPREP.THUMBNAIL_LEVEL].rowSummaryRatio;
       }
     };
 
-    //Return the summary row ratio
+    // Return the summary column ratio.
     HeatMap.prototype.getSummaryColRatio = function () {
-      if (this.datalevels[MAPREP.SUMMARY_LEVEL] !== null) {
+      if (this.datalevels[MAPREP.SUMMARY_LEVEL]) {
         return this.datalevels[MAPREP.SUMMARY_LEVEL].colSummaryRatio;
       } else {
-        return this.datalevels[MAPREP.THUMBNAIL_LEVEL].col_summaryRatio;
+        return this.datalevels[MAPREP.THUMBNAIL_LEVEL].colSummaryRatio;
       }
     };
-    //Return the total number of detail rows
+
+    // Return the total number of detail rows.
     HeatMap.prototype.getTotalRows = function () {
       return this.datalevels[MAPREP.DETAIL_LEVEL].totalRows;
     };
 
-    //Return the total number of detail rows
+    // Return the total number of detail columns.
     HeatMap.prototype.getTotalCols = function () {
       return this.datalevels[MAPREP.DETAIL_LEVEL].totalColumns;
     };
 
-    //Return the total number of rows/columns on the specified axis.
+    // Return the total number of rows/columns on the specified axis.
     HeatMap.prototype.getTotalElementsForAxis = function (axis) {
       const level = this.datalevels[MAPREP.DETAIL_LEVEL];
       return MAPREP.isRow(axis) ? level.totalRows : level.totalColumns;
     };
 
-    //Return the number of rows or columns for the given level
+    // Return the number of rows or columns for the given level
     HeatMap.prototype.getNumAxisElements = function (axis, level) {
       const l = this.datalevels[level];
       return MAPREP.isRow(axis) ? l.totalRows : l.totalColumns;
     };
 
-    //Return the number of rows for a given level
+    // Return the number of rows for a given level.
     HeatMap.prototype.getNumRows = function (level) {
       return this.datalevels[level].totalRows;
     };
 
-    //Return the number of columns for a given level
+    // Return the number of columns for a given level.
     HeatMap.prototype.getNumColumns = function (level) {
       return this.datalevels[level].totalColumns;
     };
 
-    //Return the row summary ratio for a given level
+    // Return the row summary ratio for a given level.
     HeatMap.prototype.getRowSummaryRatio = function (level) {
       return this.datalevels[level].rowSummaryRatio;
     };
 
-    //Return the column summary ratio for a given level
+    // Return the column summary ratio for a given level.
     HeatMap.prototype.getColSummaryRatio = function (level) {
       return this.datalevels[level].colSummaryRatio;
     };

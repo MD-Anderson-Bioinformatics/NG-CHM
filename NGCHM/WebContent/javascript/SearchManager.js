@@ -536,7 +536,7 @@
   const searchInterface = new SearchInterface();
 
   SRCH.heatMapListener = function heatMapListener (heatMap, event) {
-    if (searchInterface.heatMap == heatMap && event == HEAT.Event_PLUGINS) {
+    if (searchInterface.heatMap === heatMap && event == HEAT.Event_PLUGINS) {
       SRCH.configSearchInterface (heatMap);
     }
   };
@@ -562,7 +562,7 @@
     // Helper function.
     // Add a search option for every covariate on the specified axis.
     function addCovariateOptions(axis) {
-      for (const key of heatMap.getAxisCovariateOrder(axis)) {
+      for (const key of heatMap.getCovariateOrder(axis)) {
         searchInterface.addSearchOption({
           type: heatMap.getCovariateType(axis, key),
           axis,

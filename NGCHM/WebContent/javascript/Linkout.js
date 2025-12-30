@@ -408,9 +408,9 @@ var linkoutsVersion = "undefined";
     }
   };
 
-  // Returns TRUE iff there is a matrix linkout with the specified name.
-  LNK.isMatrixLinkout = function isMatrixLinkout (name) {
-    return matrixLinkouts.map(linkout => linkout.name).includes(name);
+  // Returns TRUE iff there is a matrix linkout with the specified title.
+  LNK.isMatrixLinkout = function isMatrixLinkout (title) {
+    return matrixLinkouts.some(linkout => linkout.title === title);
   };
 
   // Return the labels from heatMap required by the specified linkout (and axis if applicable).
@@ -446,7 +446,7 @@ var linkoutsVersion = "undefined";
       } else {
         const srchResults = SRCHSTATE.getAxisSearchResults(axis);
         if (axis.includes("Covar")) {
-          const labels = heatMap.getAxisCovariateOrder(axis.replace("Covar",""));
+          const labels = heatMap.getCovariateOrder(axis.replace("Covar",""));
           return srchResults.map(idx => generateLinkoutLabel(labels[idx], formatIndex));
         } else {
           const labels = heatMap.getAxisLabels(axis).labels;
@@ -1575,6 +1575,7 @@ var linkoutsVersion = "undefined";
     if (restoreInfo) {
       pluginRestoreInfo[loc.pane.id] = restoreInfo;
     }
+    PANE.setPaneDecor(loc, null);
     switchToPlugin(loc, plugin.name);
     MMGR.getHeatMap().setUnAppliedChanges(true);
     const params = plugin.params;
@@ -2520,7 +2521,7 @@ var linkoutsVersion = "undefined";
         thisAxis = axis;
         if (debug) console.log({ m: "setAxis", axis, params });
         axis1Config = heatMap.getAxisCovariateConfig(axis);
-        const axis1cvOrder = heatMap.getAxisCovariateOrder(axis);
+        const axis1cvOrder = heatMap.getCovariateOrder(axis);
         otherAxis = MAPREP.isRow(axis) ? "Column" : "Row";
         if (plugin.hasOwnProperty("specialCoordinates") && plugin.specialCoordinates.hasOwnProperty("name")){
           defaultCoord = plugin.specialCoordinates.name + ".coordinate.";
@@ -4317,9 +4318,15 @@ var linkoutsVersion = "undefined";
                            .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
     let uniqueRowCoords = [...new Set(specialRowCoords)] /* remove duplicates */
                            .map((x) => ({name: x, rowOrColumn: "row"})); /* create object with name and rowOrColumn properties */
-    let specialCoords = uniqueColumnCoords.concat(uniqueRowCoords);
-    specialCoords = [...new Set(specialCoords)]; /* remove duplicates */
-    return specialCoords;
+
+    // Remove any duplicates.
+    const seen = new Set();
+    const unique = [];
+    for (const sc of uniqueColumnCoords.concat(uniqueRowCoords)) {
+      const key = sc.name + "|" + sc.rowOrColumn;
+      if (!seen.has(key)) { seen.add(key); unique.push(sc); }
+    }
+    return unique;
   }
 
   CUST.waitForPlugins(() => {

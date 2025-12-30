@@ -84,8 +84,8 @@
   function autoSaveHeatMap(heatMap) {
     let success = true;
     if (!srcInfo.embedded) {
-      heatMap.setRowClassificationOrder();
-      heatMap.setColClassificationOrder();
+      heatMap.setCovariateOrder("row");
+      heatMap.setCovariateOrder("column");
       switch (MMGR.getSource()) {
         case MMGR.API_SOURCE:
           // FIXME: BMB. Verify this does what it's required to do.

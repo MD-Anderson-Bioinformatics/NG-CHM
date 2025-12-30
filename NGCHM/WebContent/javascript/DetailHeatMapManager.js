@@ -335,7 +335,7 @@
 
   // Set a detail panel for heatMap as primary, if possible.
   DMM.setPrimaryForHeatmap = function setPrimaryForHeatmap (heatMap) {
-    const maps = DVW.detailMaps.filter(mapItem => mapItem.heatMap == heatMap);
+    const maps = DVW.detailMaps.filter(mapItem => mapItem.heatMap === heatMap);
     DMM.switchToPrimary(maps.length > 0 ? maps[0] : null);
   };
 
@@ -622,6 +622,7 @@
       document.getElementById("primary_btn" + mapNumber).dataset.version =
         isPrimary ? "P" : "S";
       PANE.setPaneTitle(loc, "Heat Map Detail");
+      PANE.setPaneDecor(loc, mapItem.heatMap.decor);
       PANE.registerPaneEventHandler(loc.pane, "empty", emptyDetailPane);
       PANE.registerPaneEventHandler(loc.pane, "resize", resizeDetailPane);
       DET.setDrawDetailTimeout(mapItem, 0, false);

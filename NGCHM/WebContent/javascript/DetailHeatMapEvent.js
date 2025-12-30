@@ -263,7 +263,7 @@
         const rowClassBars = heatMap.getRowClassificationData();
         const rowClassConfig = heatMap.getRowClassificationConfig();
         pixelInfo.rowCovariates = heatMap
-          .getRowClassificationOrder()
+          .getCovariateOrder("row")
           .filter((key) => rowClassConfig[key].show === "Y")
           .map((key) => ({
             name: key,
@@ -272,7 +272,7 @@
         const colClassBars = heatMap.getColClassificationData();
         const colClassConfig = heatMap.getColClassificationConfig();
         pixelInfo.colCovariates = heatMap
-          .getColClassificationOrder()
+          .getCovariateOrder("column")
           .filter((key) => colClassConfig[key].show === "Y")
           .map((key) => ({
             name: key,

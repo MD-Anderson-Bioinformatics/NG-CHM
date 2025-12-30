@@ -162,6 +162,64 @@
     return decorateElement(button, names, classes, attrs, [], fn);
   }
 
+  // Create an "avatar" of the specified hue.
+  //
+  UTIL.genAvatar = genAvatar;
+  function genAvatar (hue) {
+    const alines = [ "00100", "01010", "01110" ];
+    const blines = [ "10001", "10101", "11011" ];
+    const guid = (window.crypto && typeof crypto.randomUUID === "function")
+      ? crypto.randomUUID()
+      : UTIL.getNewNonce();
+    const nums = guid.split("").filter(x=>x!='-').map(x => parseInt(x,16));
+    let d = "";
+    const brow = nums[0] % 5;
+    for (let ii = 0; ii < 5; ii++) {
+      const chars = pickline(ii).split("");
+      for (let jj = 0; jj < 5; jj++) {
+        if (chars[jj] == "1") {
+          d += B(jj,ii);
+        }
+      }
+    }
+    const sat = 100;
+    const val = 50 + Math.floor(Math.random() * 30);
+    const col = UTIL.hsvToRgb(hue,sat,val);
+    return `<SVG width="1em" height="1em" viewBox="0 0 15 15">
+              <path fill="${col}" stroke="${col}" class="" d="${d}"/>
+            </SVG>`;
+    // Helper function.
+    function pickline (idx) {
+      let lines = blines.slice();
+      if (idx != brow) {
+        lines = lines.concat(alines);
+      }
+      return lines[nums[idx+1] % lines.length];
+    }
+    // Helper function.
+    // Return an SVG path element for a box at coordinates x, y.
+    function B(x,y) {
+      const scale = 3;
+      x *= scale;
+      y *= scale;
+      return `M${x} ${y} L${x+scale} ${y} L${x+scale} ${y+scale} L${x} ${y+scale}z`;
+    }
+  }
+
+  // Create a button element containing the specified avatar.
+  //
+  UTIL.newAvatarButton = newAvatarButton;
+  function newAvatarButton(spec, avatar, attrs, fn) {
+    const classes = spec.split(".");
+    const names = classes.shift().split("#");
+    attrs = Object.assign({ type: "button", "aria-label": "Heat map avatar" }, attrs);
+    const button = UTIL.newElement("BUTTON");
+    button.innerHTML = avatar;
+    return decorateElement(button, names, classes, attrs, [], fn);
+  }
+
+  // Create a button element containing the specified SVG icon(s).
+  //
   UTIL.newSvgMenuItem = newSvgMenuItem;
   function newSvgMenuItem(iconIds, attrs, fn) {
     const classes = iconIds.split(".");

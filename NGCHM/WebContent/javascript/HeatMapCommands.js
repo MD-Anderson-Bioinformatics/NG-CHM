@@ -108,7 +108,7 @@
         output.write();
         for (const heatMap of MMGR.getAllHeatMaps()) {
           const info = heatMap.getMapInformation();
-          const flag = heatMap == currentHeatmap ? "(*) " : "";
+          const flag = heatMap === currentHeatmap ? "(*) " : "";
           output.write (`${flag}${info.name}`);
         }
         output.unindent();
