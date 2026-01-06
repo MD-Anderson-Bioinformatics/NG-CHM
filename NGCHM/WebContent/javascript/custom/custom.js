@@ -1370,10 +1370,7 @@ function linkoutHelp () {
   function searchClinicalTrialsForOne(labels) {
     var gname = labels[0];
     linkouts.openUrl(
-      "https://clinicaltrials.gov/ct2/results?term=" +
-        gname +
-        "&Search=" +
-        "Search",
+      "https://clinicaltrials.gov/search?term=" + gname,
       "ClinicalTrials",
       { noframe: true },
     );
@@ -1382,10 +1379,7 @@ function linkoutHelp () {
   function searchClinicalTrials(labels) {
     var gname = labels.join("+AND+");
     linkouts.openUrl(
-      "https://clinicaltrials.gov/ct2/results?term=" +
-        gname +
-        "&Search=" +
-        "Search",
+      "https://clinicaltrials.gov/search?term=" + gname,
       "ClinicalTrials",
       { noframe: true },
     );
