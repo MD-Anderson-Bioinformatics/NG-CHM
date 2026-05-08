@@ -2,7 +2,7 @@
 # Requires Docker 17.06 CE or later
 #
 # Stage -1: Build ant
-FROM openjdk:11-jdk AS ant
+FROM eclipse-temurin:11-jdk AS ant
 
 RUN apt-get update && apt-get install -y ant
 
@@ -70,7 +70,7 @@ RUN mkdir -p ${BMAPGEN} &&\
     ant -f NGCHM/build_guibuildermapgen.xml -Dmapgen.path=${BMAPGEN}/GUIBuilderMapGen.jar
 
 # Final stage: copy artifacts from previous stages into a minimal layer
-FROM multiarch/true:x86_64
+FROM busybox:stable
 
 VOLUME /NGCHM
 
