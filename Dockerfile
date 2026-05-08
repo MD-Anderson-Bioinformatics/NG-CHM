@@ -70,7 +70,7 @@ RUN mkdir -p ${BMAPGEN} &&\
     ant -f NGCHM/build_guibuildermapgen.xml -Dmapgen.path=${BMAPGEN}/GUIBuilderMapGen.jar
 
 # Final stage: copy artifacts from previous stages into a minimal layer
-FROM scratch
+FROM busybox:stable
 
 VOLUME /NGCHM
 
