@@ -1877,37 +1877,6 @@ function linkoutHelp () {
   });
 })(linkouts);
 
-//==============================================//
-// Vega plugin                                  //
-//==============================================//
-(function (linkouts) {
-  function searchVega(names) {
-    const gname = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-    linkouts.openUrl(
-      "http://vega.sanger.ac.uk/" + species + "/psychic?site=vega&q=" + gname,
-      "Vega",
-      { noframe: true },
-    );
-  }
-
-  linkouts.addPlugin({
-    name: "Vega",
-    description: "Adds linkouts to Vega.",
-    version: "0.1.1",
-    site: "http://vega.sanger.ac.uk/",
-    logo: "https://vega.archive.ensembl.org/i/vega.gif",
-    linkouts: [
-      {
-        menuEntry: "Search Vega",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: searchVega,
-      },
-    ],
-  });
-})(linkouts);
-
 {
   // Determine if either or both of the axes include Hugo gene symbols.
   const rowHasHugo = linkouts.execCommand(["heatmap", "get-label-types", "row"]).includes("bio.gene.hugo");
