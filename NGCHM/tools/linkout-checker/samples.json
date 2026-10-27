@@ -1,0 +1,45 @@
+{
+  "_comment": "Sample label values used to exercise each linkout in custom.js. Each type maps to a list of known-good values. Edit as needed; types missing here are reported as 'no sample'.",
+  "attributes": {
+    "bio.species": "Homo_sapiens",
+    "cbioportal.study": "gbm_tcga",
+    "bio.ucsc.browser.db": "hg38"
+  },
+  "types": {
+    "bio.gene.hugo": ["TP53"],
+    "bio.gene.entrezid": ["7157"],
+    "bio.gene.ensembl": ["ENSG00000141510"],
+    "bio.transcript.ensembl": ["ENST00000269305"],
+    "bio.protein.ensembl": ["ENSP00000269305"],
+    "bio.protein.uniprotid": ["P04637"],
+    "bio.mirna": ["hsa-mir-21.MIMAT0000076"],
+    "bio.go": ["GO:0006915"],
+    "bio.pubmed": ["TP53"],
+    "scholar": ["TP53"],
+    "search": ["TP53"],
+    "bio.geo.acc": ["GSE2034"],
+    "bio.genome.position": ["chr17:7661779-7687538"],
+    "bio.pathway.msigdb.name": ["HALLMARK_APOPTOSIS"],
+    "bio.mdacc.pathwayid": ["1"],
+    "bio.tcga.barcode.sample": ["TCGA-02-0001-01"],
+    "bio.cbioportal.sampleid": ["TCGA-02-0001-01"],
+    "bio.gdc.case.uuid": ["30a1fe5e-5b12-472c-aa86-c2db8167ab23"],
+    "bio.rrid": ["AB_2107436"],
+    "bio.metabolite.MW.name": ["Glucose"],
+    "bio.metabolite.MW.regno": ["11"],
+    "bio.metabolite.refmet": ["Glucose"],
+    "bio.metabolite.hmdb": ["HMDB0000122"],
+    "bio.compound.pubchem": ["5793"],
+    "bio.compound.kegg": ["C00031"],
+    "bio.compound.chebi": ["17234"],
+    "bio.compound.metacyc": ["GLC"]
+  },
+  "multiSelect": {
+    "bio.gene.hugo": ["TP53", "EGFR"],
+    "bio.mirna": ["hsa-mir-21.MIMAT0000076", "hsa-mir-155.MIMAT0000646"],
+    "bio.pubmed": ["TP53", "EGFR"],
+    "scholar": ["TP53", "EGFR"],
+    "search": ["TP53", "EGFR"]
+  },
+  "pathwaysSearch": "apoptosis"
+}
