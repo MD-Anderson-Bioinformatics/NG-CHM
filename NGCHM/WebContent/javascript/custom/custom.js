@@ -1057,9 +1057,8 @@ function linkoutHelp () {
 (function (linkouts) {
   function openMavedbGene(names) {
     const gname = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
     linkouts.openUrl(
-      "https://mavedb.org/search/?target-organism-name=" + species.replace('_','+') + "&search=" + gname,
+      "https://mavedb.org/genes/" + gname,
       "MaveDB",
       { noframe: true },
     );
