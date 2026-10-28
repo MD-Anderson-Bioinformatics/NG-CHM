@@ -336,7 +336,7 @@ function linkoutHelp () {
          "</ul>",
     version: "0.1.0",
     site: "https://cansar.ai",
-    logo: "https://cansar.ai/img/logo.svg",
+    logo: "https://cansar.ai/icon-512x512.png",
     linkouts: [
       {
         menuEntry: "View canSAR.ai",
@@ -359,7 +359,7 @@ function linkoutHelp () {
   async function openCanSAR_gene(names) {
     const gname = names[0];
     const primaryAccession = await linkouts.getUniprotID(gname);
-    const cansarURL = "https://cansar.ai/target/" + encodeURIComponent(primaryAccession) + "/synopsis"
+    const cansarURL = "https://cansar.ai/target/" + encodeURIComponent(primaryAccession) + "/synopsis/ligandability";
     linkouts.openUrl(cansarURL, "CansarAI", { noframe: true });
   }
 
