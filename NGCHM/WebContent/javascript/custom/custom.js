@@ -1838,40 +1838,6 @@ function linkoutHelp () {
 })(linkouts);
 
 //==============================================//
-// TumorPortal plugin                           //
-//==============================================//
-(function (linkouts) {
-  function openTumorPortalGene(names) {
-    var gname = names[0];
-    linkouts.openUrl(
-      "http://www.tumorportal.org/view?geneSymbol=" + gname,
-      "TumorPortal",
-      { noframe: true },
-    );
-  }
-
-  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-  const menuEntries = [];
-  if (species == "Homo_sapiens") {
-      menuEntries.push ({
-        menuEntry: "View Tumor Portal",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openTumorPortalGene,
-      });
-  }
-
-  linkouts.addPlugin({
-    name: "TumorPortal",
-    description: "Adds linkouts to TumorPortal",
-    version: "0.1.0",
-    site: "http://www.tumorportal.org/",
-    //logo: "http://www.tumorportal.org/assets/tplogo-b2692452952b98eee833d30f08757924.png",
-    linkouts: menuEntries,
-  });
-})(linkouts);
-
-//==============================================//
 // UCSC Genome Browser Plugin                   //
 //==============================================//
 (function (linkouts) {
