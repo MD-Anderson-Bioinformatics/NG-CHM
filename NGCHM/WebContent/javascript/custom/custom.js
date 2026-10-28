@@ -749,8 +749,7 @@ function linkoutHelp () {
     name: "GDC",
     description: "Adds linkouts to the GDC Data Portal.",
     version: "1.0.0",
-    site: "http://www.portal.gdc.cancer.gov/",
-    logo: "https://portal.gdc.cancer.gov/static/media/NHI_GDC_DataPortal-logo.23e6ca47.svg",
+    site: "https://portal.gdc.cancer.gov/",
     linkouts: [
       {
         menuEntry: "View GDC Gene",
