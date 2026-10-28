@@ -614,7 +614,11 @@ function linkoutHelp () {
       }
     } catch (e) {
       console.log("Error in Ensebml plugin query: " + e)
-      throw new Error("Unable to access Ensembl plugin")
+      linkouts.openUrl(
+      "https://jun2026.archive.ensembl.org/" + species + "/Search/Results?type=Gene;q=" + encodeURIComponent(symbol),
+      "Ensembl",
+      { noframe: true },
+    );
     }
   }
 
