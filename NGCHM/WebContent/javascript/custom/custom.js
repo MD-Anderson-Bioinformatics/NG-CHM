@@ -541,8 +541,8 @@ function linkoutHelp () {
     name: "Decipher",
     description: "Adds linkouts to the Decipher database",
     version: "0.1.0",
-    site: "https://decipher.sanger.ac.uk/",
-    logo: "https://decipher.sanger.ac.uk/img/decipher-logo.png",
+    site: "https://deciphergenomics.org",
+    logo: "https://deciphergenomics.org/img/decipher-logo-grch38.png",
     linkouts: menuItems,
   });
 })(linkouts);
