@@ -872,7 +872,7 @@ function linkoutHelp () {
     description: "Adds linkouts to the GTEx Portal",
     version: "0.1.0",
     site: "https://gtexportal.org/home/",
-    logo: "https://gtexportal.org/img/gtex2.1a2a339c.png",
+    logo: "https://gtexportal.org/img/gtex-logo.372cd1b4.png",
     linkouts: menuEntries,
   });
 })(linkouts);
