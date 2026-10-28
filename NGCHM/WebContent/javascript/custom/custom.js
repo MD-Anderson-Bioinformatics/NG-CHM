@@ -1085,10 +1085,10 @@ function linkoutHelp () {
 //==============================================//
 (function (linkouts) {
   function viewMiRBasePage(eids) {
-    var gid = eids[0];
-    gid = gid.substr(gid.lastIndexOf(".MIMAT") + 1);
+    const match = /MIMAT\d+/.exec(eids[0]);
+    const mimat = match ? match[0] : eids[0];
     linkouts.openUrl(
-      "https://www.mirbase.org/textsearch.shtml?q=" + gid,
+      "https://www.mirbase.org/mature/" + encodeURIComponent(mimat),
       "miRBase",
     );
   }
@@ -1098,7 +1098,7 @@ function linkoutHelp () {
     description: "Adds links to miRBase.",
     version: "0.1.1",
     site: "https://www.mirbase.org/",
-    logo: "https://www.mirbase.org/images/mirbase-logo-blue-web.png",
+    logo: "https://mirbase.org/static/images/mirbase-logo_new.png",
     linkouts: [
       {
         menuEntry: "View miRBase Page",
