@@ -580,37 +580,92 @@ function linkoutHelp () {
 // Ensembl plugin                               //
 //==============================================//
 (function (linkouts) {
-  function searchEnsemblForGene(names) {
-    const gname = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-    linkouts.openUrl(
-      "https://ensembl.org/Multi/psychic?site=ensembl&species=" +
-        species +
-        "&q=" +
-        gname,
-      "Ensembl",
-      { noframe: true },
-    );
+  // Map the legacy species names used by bio.species to genome accessions
+  // on the new Ensembl site. Add species here as you need them.
+  const GENOME_IDS = {
+    Homo_sapiens: "GCA_000001405.29", // GRCh38
+    Mus_musculus: "GCA_000001635.9", // GRCm39
+    Danio_rerio: "GCA_000002035.4", // GRCz11
+    Caenorhabditis_elegans: "GCA_000002985.3", // WBcel235
+  };
+
+  function getSpecies() {
+    return linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  }
+
+  async function searchEnsemblForGene(names) {
+    const symbol = names[0];
+    const species = getSpecies();
+    const genomeId = GENOME_IDS[species];
+    try {
+      const res = await fetch(
+        "https://rest.ensembl.org/lookup/symbol/" +
+          species.toLowerCase() + "/" + encodeURIComponent(symbol) +
+          "?content-type=application/json"
+      );
+      if (res.ok && genomeId) {
+        const gene = await res.json(); // { id: "ENSG00000141510", ... }
+        linkouts.openUrl(
+          "https://www.ensembl.org/feature-explorer/" + genomeId + "/gene:" + gene.id,
+          "Ensembl",
+          { noframe: true },
+        );
+        return;
+      }
+    } catch (e) {
+      console.log("Error in Ensebml plugin query: " + e)
+      throw new Error("Unable to access Ensembl plugin")
+    }
   }
 
   function openEnsemblGene(names) {
-    const ensgid = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-    linkouts.openUrl(
-      "https://ensembl.org/" + species + "/Gene/Summary?db=core;g=" + ensgid,
-      "Ensembl",
-      { noframe: true },
-    );
+    const species = getSpecies();
+    const geneId = names[0].replace(/\.\d+$/, ""); // new site URLs use unversioned IDs
+    const genomeId = GENOME_IDS[species];
+    if (genomeId) {
+      linkouts.openUrl(
+        "https://www.ensembl.org/feature-explorer/" + genomeId + "/gene:" + encodeURIComponent(geneId),
+        "Ensembl",
+        { noframe: true },
+      );
+    } else {
+      // Species not mapped yet: fall back to the legacy gene page
+      linkouts.openUrl(
+        "https://jun2026.archive.ensembl.org/" + species + "/Gene/Summary?g=" + encodeURIComponent(geneId),
+        "Ensembl",
+        { noframe: true },
+      );
+    }
   }
 
-  function searchEnsemblForTranscript(names) {
-    const tname = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  async function searchEnsemblForTranscript(names) {
+    // New-site and REST lookups use unversioned IDs (ENST00000269305.9 -> ENST00000269305)
+    const transcriptId = names[0].replace(/^(ENS[A-Z]*T\d+)\.\d+$/, "$1");
+    const species = getSpecies();
+    const genomeId = GENOME_IDS[species];
+    try {
+      const res = await fetch(
+        "https://rest.ensembl.org/lookup/id/" + encodeURIComponent(transcriptId) +
+          "?content-type=application/json"
+      );
+      if (res.ok && genomeId) {
+        const transcript = await res.json(); // { id: "ENST...", Parent: "ENSG...", ... }
+        if (transcript.Parent) {
+          linkouts.openUrl(
+            "https://www.ensembl.org/feature-explorer/" + genomeId + "/gene:" + transcript.Parent,
+            "Ensembl",
+            { noframe: true },
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      console.log("Error in Ensembl plugin query: " + e);
+    }
+    // Fallback: the legacy transcript page, which shows this exact transcript
     linkouts.openUrl(
-      "https://ensembl.org/Multi/psychic?site=ensembl&species=" +
-        species +
-        "&q=" +
-        tname,
+      "https://jun2026.archive.ensembl.org/" + species + "/Transcript/Summary?t=" +
+        encodeURIComponent(transcriptId),
       "Ensembl",
       { noframe: true },
     );
@@ -621,7 +676,7 @@ function linkoutHelp () {
     description: "Adds linkouts to Ensembl genome browser.",
     version: "0.1.1",
     site: "https://www.ensembl.org/index.html",
-    logo: "https://www.sanger.ac.uk/sites/default/files/ensembl_1.gif",
+    logo: "https://www.ensembl.org/static/images/ensembl_mark.74c9b6ccbe07396bdf8c.svg",
     linkouts: [
       // linkouts for gene symbols
       {
