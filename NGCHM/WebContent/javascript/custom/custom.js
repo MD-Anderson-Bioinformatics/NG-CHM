@@ -1830,7 +1830,6 @@ function linkoutHelp () {
   }
   linkouts.addPlugin({
     name: "TCGA",
-    logo: "https://www.cancer.gov/sites/g/files/xnrzdm211/files/styles/cgov_social_media/public/cgov_image/media_image/100/000/3/files/TCGA%20topic%20-%20feature%20card.png",
     site: "https://cancergenome.nih.gov/",
     description: "Enhances linkouts to The Cancer Genome Atlas.",
     version: "0.1.0",
