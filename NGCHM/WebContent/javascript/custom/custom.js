@@ -784,7 +784,7 @@ function linkoutHelp () {
     description: "Adds linkouts to the GeneCards Human Gene Card Database.",
     version: "0.1.2",
     site: "https://www.genecards.org/",
-    logo: "https://www.genecards.org/Images/logo_genecards.png",
+    logo: "https://www.genecards.org/Images/genecards_logo.qontlgr7tr.png",
     linkouts: [
       {
         menuEntry: "View GeneCards",
