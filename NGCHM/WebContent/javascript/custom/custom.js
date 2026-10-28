@@ -1377,7 +1377,7 @@ function linkoutHelp () {
   function openClinVar(names) {
     var gname = names[0];
     linkouts.openUrl(
-      "https://www.ncbi.nlm.nih.gov/clinvar/?term=" + gname + "%5Bgene%5D",
+      "https://www.ncbi.nlm.nih.gov/clinvar/search/?term=" + gname + "%5Bgene%5D",
       "ClinVar",
     );
   }
