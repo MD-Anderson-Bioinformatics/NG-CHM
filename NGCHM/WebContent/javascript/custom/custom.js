@@ -432,21 +432,21 @@ function linkoutHelp () {
     ],
     linkouts: [
       {
-        menuEntry: "View in cBio Portal",
+        menuEntry: "View in cBioPortal",
         typeName: "bio.cbioportal.sampleid",
         selectMode: linkouts.SINGLE_SELECT,
         linkoutFn: openCBIOSamp,
         attributes: ["cbioportal.study"],
       },
       {
-        menuEntry: "View in cBio Portal",
+        menuEntry: "View in cBioPortal",
         typeName: "bio.tcga.barcode.sample",
         selectMode: linkouts.SINGLE_SELECT,
         linkoutFn: openCBIOSampTCGA,
         attributes: ["cbioportal.study"],
       },
       {
-        menuEntry: "View in cBio Portal",
+        menuEntry: "View in cBioPortal",
         typeName: "bio.gene.hugo",
         selectMode: linkouts.MULTI_SELECT,
         linkoutFn: openCBIOGenes,
