@@ -407,9 +407,9 @@ function linkoutHelp () {
   function openCBIOSamp(ids) {
     var studyid = linkouts.getAttribute("cbioportal.study");
     linkouts.openUrl(
-      "https://www.cbioportal.org/case.do?cancer_study_id=" +
+      "https://www.cbioportal.org/patient?studyId=" +
         studyid +
-        "&case_id=" +
+        "&caseId=" +
         ids[0],
       "cbio",
       { noframe: true },
