@@ -1519,7 +1519,7 @@ function linkoutHelp () {
     description: "Adds linkouts to NDEx IQuery.",
     version: "0.1.1",
     site: "https://iquery.ndexbio.org/",
-    logo: "https://iquery.ndexbio.org/static/media/ndex-logo.04d7bf44.svg",
+    logo: "https://iquery.ndexbio.org/static/media/ndex-logo.f56fed50e0869937b95860eae24ceb6c.svg",
     linkouts: [
       {
         menuEntry: "NDEx IQuery Single",
