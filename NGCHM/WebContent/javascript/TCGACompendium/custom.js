@@ -3,7 +3,7 @@
 //==============================================//
 
 // linouts for samples
-linkouts.addLinkout("View in cBio Portal", "SAMPLE", linkouts.SINGLE_SELECT,openCBIOSamp);
+linkouts.addLinkout("View in cBioPortal", "SAMPLE", linkouts.SINGLE_SELECT,openCBIOSamp);
 
 // linkouts for genes
 linkouts.addLinkout("View points plot", ["GENE_SYM","GENE_ID"], linkouts.MULTI_SELECT,pointsplot,["dataset"]);
@@ -16,7 +16,7 @@ linkouts.addLinkout("View NCBI Entrez ID", "GENE_ID", linkouts.SINGLE_SELECT,ope
 linkouts.addLinkout("Search Google Scholar", "GENE_SYM", linkouts.MULTI_SELECT,searchGoogleScholar);
 linkouts.addLinkout("Search PubMed for All", "GENE_SYM", linkouts.MULTI_SELECT,searchPubMedForAll);
 linkouts.addLinkout("Search PubMed for Any", "GENE_SYM", linkouts.MULTI_SELECT,searchPubMedForAny);
-linkouts.addLinkout("View in cBio Portal", "GENE_SYM", linkouts.MULTI_SELECT,openCBIOGenes, ["studyId"]);
+linkouts.addLinkout("View in cBioPortal", "GENE_SYM", linkouts.MULTI_SELECT,openCBIOGenes, ["studyId"]);
 
 
 // linkouts for methylation probes

@@ -336,7 +336,7 @@ function linkoutHelp () {
          "</ul>",
     version: "0.1.0",
     site: "https://cansar.ai",
-    logo: "https://cansar.ai/img/logo.svg",
+    logo: "https://cansar.ai/icon-512x512.png",
     linkouts: [
       {
         menuEntry: "View canSAR.ai",
@@ -359,7 +359,7 @@ function linkoutHelp () {
   async function openCanSAR_gene(names) {
     const gname = names[0];
     const primaryAccession = await linkouts.getUniprotID(gname);
-    const cansarURL = "https://cansar.ai/target/" + encodeURIComponent(primaryAccession) + "/synopsis"
+    const cansarURL = "https://cansar.ai/target/" + encodeURIComponent(primaryAccession) + "/synopsis/ligandability";
     linkouts.openUrl(cansarURL, "CansarAI", { noframe: true });
   }
 
@@ -407,9 +407,9 @@ function linkoutHelp () {
   function openCBIOSamp(ids) {
     var studyid = linkouts.getAttribute("cbioportal.study");
     linkouts.openUrl(
-      "https://www.cbioportal.org/case.do?cancer_study_id=" +
+      "https://www.cbioportal.org/patient?studyId=" +
         studyid +
-        "&case_id=" +
+        "&caseId=" +
         ids[0],
       "cbio",
       { noframe: true },
@@ -432,21 +432,21 @@ function linkoutHelp () {
     ],
     linkouts: [
       {
-        menuEntry: "View in cBio Portal",
+        menuEntry: "View in cBioPortal",
         typeName: "bio.cbioportal.sampleid",
         selectMode: linkouts.SINGLE_SELECT,
         linkoutFn: openCBIOSamp,
         attributes: ["cbioportal.study"],
       },
       {
-        menuEntry: "View in cBio Portal",
+        menuEntry: "View in cBioPortal",
         typeName: "bio.tcga.barcode.sample",
         selectMode: linkouts.SINGLE_SELECT,
         linkoutFn: openCBIOSampTCGA,
         attributes: ["cbioportal.study"],
       },
       {
-        menuEntry: "View in cBio Portal",
+        menuEntry: "View in cBioPortal",
         typeName: "bio.gene.hugo",
         selectMode: linkouts.MULTI_SELECT,
         linkoutFn: openCBIOGenes,
@@ -541,8 +541,8 @@ function linkoutHelp () {
     name: "Decipher",
     description: "Adds linkouts to the Decipher database",
     version: "0.1.0",
-    site: "https://decipher.sanger.ac.uk/",
-    logo: "https://decipher.sanger.ac.uk/img/decipher-logo.png",
+    site: "https://deciphergenomics.org",
+    logo: "https://deciphergenomics.org/img/decipher-logo-grch38.png",
     linkouts: menuItems,
   });
 })(linkouts);
@@ -580,37 +580,96 @@ function linkoutHelp () {
 // Ensembl plugin                               //
 //==============================================//
 (function (linkouts) {
-  function searchEnsemblForGene(names) {
-    const gname = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-    linkouts.openUrl(
-      "https://ensembl.org/Multi/psychic?site=ensembl&species=" +
-        species +
-        "&q=" +
-        gname,
+  // Map the legacy species names used by bio.species to genome accessions
+  // on the new Ensembl site. Add species here as you need them.
+  const GENOME_IDS = {
+    Homo_sapiens: "GCA_000001405.29", // GRCh38
+    Mus_musculus: "GCA_000001635.9", // GRCm39
+    Danio_rerio: "GCA_000002035.4", // GRCz11
+    Caenorhabditis_elegans: "GCA_000002985.3", // WBcel235
+  };
+
+  function getSpecies() {
+    return linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  }
+
+  async function searchEnsemblForGene(names) {
+    const symbol = names[0];
+    const species = getSpecies();
+    const genomeId = GENOME_IDS[species];
+    try {
+      const res = await fetch(
+        "https://rest.ensembl.org/lookup/symbol/" +
+          species.toLowerCase() + "/" + encodeURIComponent(symbol) +
+          "?content-type=application/json"
+      );
+      if (res.ok && genomeId) {
+        const gene = await res.json(); // { id: "ENSG00000141510", ... }
+        linkouts.openUrl(
+          "https://www.ensembl.org/feature-explorer/" + genomeId + "/gene:" + gene.id,
+          "Ensembl",
+          { noframe: true },
+        );
+        return;
+      }
+    } catch (e) {
+      console.log("Error in Ensebml plugin query: " + e)
+      linkouts.openUrl(
+      "https://jun2026.archive.ensembl.org/" + species + "/Search/Results?type=Gene;q=" + encodeURIComponent(symbol),
       "Ensembl",
       { noframe: true },
     );
+    }
   }
 
   function openEnsemblGene(names) {
-    const ensgid = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-    linkouts.openUrl(
-      "https://ensembl.org/" + species + "/Gene/Summary?db=core;g=" + ensgid,
-      "Ensembl",
-      { noframe: true },
-    );
+    const species = getSpecies();
+    const geneId = names[0].replace(/\.\d+$/, ""); // new site URLs use unversioned IDs
+    const genomeId = GENOME_IDS[species];
+    if (genomeId) {
+      linkouts.openUrl(
+        "https://www.ensembl.org/feature-explorer/" + genomeId + "/gene:" + encodeURIComponent(geneId),
+        "Ensembl",
+        { noframe: true },
+      );
+    } else {
+      // Species not mapped yet: fall back to the legacy gene page
+      linkouts.openUrl(
+        "https://jun2026.archive.ensembl.org/" + species + "/Gene/Summary?g=" + encodeURIComponent(geneId),
+        "Ensembl",
+        { noframe: true },
+      );
+    }
   }
 
-  function searchEnsemblForTranscript(names) {
-    const tname = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
+  async function searchEnsemblForTranscript(names) {
+    // New-site and REST lookups use unversioned IDs (ENST00000269305.9 -> ENST00000269305)
+    const transcriptId = names[0].replace(/^(ENS[A-Z]*T\d+)\.\d+$/, "$1");
+    const species = getSpecies();
+    const genomeId = GENOME_IDS[species];
+    try {
+      const res = await fetch(
+        "https://rest.ensembl.org/lookup/id/" + encodeURIComponent(transcriptId) +
+          "?content-type=application/json"
+      );
+      if (res.ok && genomeId) {
+        const transcript = await res.json(); // { id: "ENST...", Parent: "ENSG...", ... }
+        if (transcript.Parent) {
+          linkouts.openUrl(
+            "https://www.ensembl.org/feature-explorer/" + genomeId + "/gene:" + transcript.Parent,
+            "Ensembl",
+            { noframe: true },
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      console.log("Error in Ensembl plugin query: " + e);
+    }
+    // Fallback: the legacy transcript page, which shows this exact transcript
     linkouts.openUrl(
-      "https://ensembl.org/Multi/psychic?site=ensembl&species=" +
-        species +
-        "&q=" +
-        tname,
+      "https://jun2026.archive.ensembl.org/" + species + "/Transcript/Summary?t=" +
+        encodeURIComponent(transcriptId),
       "Ensembl",
       { noframe: true },
     );
@@ -621,7 +680,7 @@ function linkoutHelp () {
     description: "Adds linkouts to Ensembl genome browser.",
     version: "0.1.1",
     site: "https://www.ensembl.org/index.html",
-    logo: "https://www.sanger.ac.uk/sites/default/files/ensembl_1.gif",
+    logo: "https://www.ensembl.org/static/images/ensembl_mark.74c9b6ccbe07396bdf8c.svg",
     linkouts: [
       // linkouts for gene symbols
       {
@@ -694,8 +753,7 @@ function linkoutHelp () {
     name: "GDC",
     description: "Adds linkouts to the GDC Data Portal.",
     version: "1.0.0",
-    site: "http://www.portal.gdc.cancer.gov/",
-    logo: "https://portal.gdc.cancer.gov/static/media/NHI_GDC_DataPortal-logo.23e6ca47.svg",
+    site: "https://portal.gdc.cancer.gov/",
     linkouts: [
       {
         menuEntry: "View GDC Gene",
@@ -730,7 +788,7 @@ function linkoutHelp () {
     description: "Adds linkouts to the GeneCards Human Gene Card Database.",
     version: "0.1.2",
     site: "https://www.genecards.org/",
-    logo: "https://www.genecards.org/Images/logo_genecards.png",
+    logo: "https://www.genecards.org/Images/genecards_logo.qontlgr7tr.png",
     linkouts: [
       {
         menuEntry: "View GeneCards",
@@ -818,7 +876,7 @@ function linkoutHelp () {
     description: "Adds linkouts to the GTEx Portal",
     version: "0.1.0",
     site: "https://gtexportal.org/home/",
-    logo: "https://gtexportal.org/img/gtex2.1a2a339c.png",
+    logo: "https://gtexportal.org/img/gtex-logo.372cd1b4.png",
     linkouts: menuEntries,
   });
 })(linkouts);
@@ -1003,9 +1061,8 @@ function linkoutHelp () {
 (function (linkouts) {
   function openMavedbGene(names) {
     const gname = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
     linkouts.openUrl(
-      "https://mavedb.org/search/?target-organism-name=" + species.replace('_','+') + "&search=" + gname,
+      "https://mavedb.org/genes/" + gname,
       "MaveDB",
       { noframe: true },
     );
@@ -1032,10 +1089,10 @@ function linkoutHelp () {
 //==============================================//
 (function (linkouts) {
   function viewMiRBasePage(eids) {
-    var gid = eids[0];
-    gid = gid.substr(gid.lastIndexOf(".MIMAT") + 1);
+    const match = /MIMAT\d+/.exec(eids[0]);
+    const mimat = match ? match[0] : eids[0];
     linkouts.openUrl(
-      "https://www.mirbase.org/textsearch.shtml?q=" + gid,
+      "https://www.mirbase.org/mature/" + encodeURIComponent(mimat),
       "miRBase",
     );
   }
@@ -1045,7 +1102,7 @@ function linkoutHelp () {
     description: "Adds links to miRBase.",
     version: "0.1.1",
     site: "https://www.mirbase.org/",
-    logo: "https://www.mirbase.org/images/mirbase-logo-blue-web.png",
+    logo: "https://mirbase.org/static/images/mirbase-logo_new.png",
     linkouts: [
       {
         menuEntry: "View miRBase Page",
@@ -1324,7 +1381,7 @@ function linkoutHelp () {
   function openClinVar(names) {
     var gname = names[0];
     linkouts.openUrl(
-      "https://www.ncbi.nlm.nih.gov/clinvar/?term=" + gname + "%5Bgene%5D",
+      "https://www.ncbi.nlm.nih.gov/clinvar/search/?term=" + gname + "%5Bgene%5D",
       "ClinVar",
     );
   }
@@ -1466,7 +1523,7 @@ function linkoutHelp () {
     description: "Adds linkouts to NDEx IQuery.",
     version: "0.1.1",
     site: "https://iquery.ndexbio.org/",
-    logo: "https://iquery.ndexbio.org/static/media/ndex-logo.04d7bf44.svg",
+    logo: "https://iquery.ndexbio.org/static/media/ndex-logo.f56fed50e0869937b95860eae24ceb6c.svg",
     linkouts: [
       {
         menuEntry: "NDEx IQuery Single",
@@ -1777,45 +1834,10 @@ function linkoutHelp () {
   }
   linkouts.addPlugin({
     name: "TCGA",
-    logo: "https://www.cancer.gov/sites/g/files/xnrzdm211/files/styles/cgov_social_media/public/cgov_image/media_image/100/000/3/files/TCGA%20topic%20-%20feature%20card.png",
     site: "https://cancergenome.nih.gov/",
     description: "Enhances linkouts to The Cancer Genome Atlas.",
     version: "0.1.0",
     expandLinkOuts: expandLinkOuts,
-  });
-})(linkouts);
-
-//==============================================//
-// TumorPortal plugin                           //
-//==============================================//
-(function (linkouts) {
-  function openTumorPortalGene(names) {
-    var gname = names[0];
-    linkouts.openUrl(
-      "http://www.tumorportal.org/view?geneSymbol=" + gname,
-      "TumorPortal",
-      { noframe: true },
-    );
-  }
-
-  const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-  const menuEntries = [];
-  if (species == "Homo_sapiens") {
-      menuEntries.push ({
-        menuEntry: "View Tumor Portal",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: openTumorPortalGene,
-      });
-  }
-
-  linkouts.addPlugin({
-    name: "TumorPortal",
-    description: "Adds linkouts to TumorPortal",
-    version: "0.1.0",
-    site: "http://www.tumorportal.org/",
-    //logo: "http://www.tumorportal.org/assets/tplogo-b2692452952b98eee833d30f08757924.png",
-    linkouts: menuEntries,
   });
 })(linkouts);
 
@@ -1872,37 +1894,6 @@ function linkoutHelp () {
         typeName: "bio.protein.uniprotid",
         selectMode: linkouts.SINGLE_SELECT,
         linkoutFn: openUniprot,
-      },
-    ],
-  });
-})(linkouts);
-
-//==============================================//
-// Vega plugin                                  //
-//==============================================//
-(function (linkouts) {
-  function searchVega(names) {
-    const gname = names[0];
-    const species = linkouts.getAttribute("bio.species") || "Homo_sapiens";
-    linkouts.openUrl(
-      "http://vega.sanger.ac.uk/" + species + "/psychic?site=vega&q=" + gname,
-      "Vega",
-      { noframe: true },
-    );
-  }
-
-  linkouts.addPlugin({
-    name: "Vega",
-    description: "Adds linkouts to Vega.",
-    version: "0.1.1",
-    site: "http://vega.sanger.ac.uk/",
-    logo: "https://vega.archive.ensembl.org/i/vega.gif",
-    linkouts: [
-      {
-        menuEntry: "Search Vega",
-        typeName: "bio.gene.hugo",
-        selectMode: linkouts.SINGLE_SELECT,
-        linkoutFn: searchVega,
       },
     ],
   });
