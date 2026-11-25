@@ -328,7 +328,7 @@ var linkoutsVersion = "undefined";
     );
     // If labelType includes multiple types (all of which are required), save it under one type,
     // independent of the order of the types given.
-    const key = labelType.length == "0" ? NullTypeKey : labelType.sort()[0];
+    const key = labelType.length == 0 ? NullTypeKey : labelType.toSorted()[0];
     if (!linkoutsDB.has(key)) {
       // Create the first linkout for that type.
       linkoutsDB.set(key, [linkout]);
@@ -380,7 +380,7 @@ var linkoutsVersion = "undefined";
   // "typeb|typea".
   function canonical (labelType) {
     if (!Array.isArray(labelType)) labelType = labelType.split("|");
-    return labelType.sort().join("|");
+    return labelType.toSorted().join("|");
   }
 
   LNK.addMatrixLinkout = function (
